@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="author" content="Thierry Gosselin and Anne-Laure Ferchaud" />
+
+<meta name="date" content="2017-06-16" />
+
+<title>Generate a ∂a∂i input file stackr::vcf2dadi</title>
+
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+</style>
+
+
+
+<link href="data:text/css;charset=utf-8,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23header%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0A%7D%0Apre%20%7B%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%20code%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" rel="stylesheet" type="text/css" />
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Generate a ∂a∂i input file <code>stackr::vcf2dadi</code></h1>
+<h4 class="author"><em>Thierry Gosselin and Anne-Laure Ferchaud</em></h4>
+<h4 class="date"><em>2017-06-16</em></h4>
+
+
+
+<div id="objectives" class="section level1">
+<h1>Objectives:</h1>
+<ul>
+<li>learn how to run the function <code>stackr::vcf2dadi</code></li>
+</ul>
+</div>
+<div id="workflow" class="section level1">
+<h1>Workflow</h1>
+<div id="prepare-your-r-workspace" class="section level2">
+<h2>Prepare your R workspace</h2>
+<ol style="list-style-type: decimal">
+<li><p>Clean your desk and remove the clutter in the global environment</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">rm</span>(<span class="dt">list=</span><span class="kw">ls</span>())</code></pre></div></li>
+<li><p>Load the required libraries</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">if (!<span class="kw">require</span>(<span class="st">&quot;stackr&quot;</span>)){
+  devtools::<span class="kw">install_github</span>(<span class="st">&quot;thierrygosselin/stackr&quot;</span>, <span class="dt">build_vignettes =</span> <span class="ot">TRUE</span>)
+  <span class="kw">library</span>(<span class="st">&quot;stackr&quot;</span>)
+}</code></pre></div></li>
+<li><p>Set your working directory</p>
+<pre><code>setwd(&quot;~/Documents/vcf2dadi_example&quot;)</code></pre></li>
+</ol>
+</div>
+<div id="get-the-data-and-create-a-strata-file" class="section level2">
+<h2>Get the data and create a strata file</h2>
+<ol style="list-style-type: decimal">
+<li><p>Dataset: in this example, we use the data in Ferchaud and Hansen (2015 and 2016) paper.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># download the file:</span>
+<span class="kw">writeBin</span>(
+  httr::<span class="kw">content</span>(
+httr::<span class="kw">GET</span>(
+  <span class="st">&quot;http://datadryad.org/bitstream/handle/10255/dryad.97237/sticklebacks_Danish.vcf?sequence=1&quot;</span>
+), <span class="st">&quot;raw&quot;</span>), <span class="st">&quot;example_vcf2dadi_ferchaud_2015.vcf&quot;</span>
+)</code></pre></div>
+<h2 id="section"></h2></li>
+<li>We need to generate a strata file necessary to make the vcf population-wise. The strata file is a tab-delimited file or object, in the global environment, with 2 columns: <code>INDIVIDUALS</code> and <code>STRATA</code>. The <code>STRATA</code> column can be any hierarchical grouping.</li>
+</ol>
+<ul>
+<li><p>Because the population id is contained in the name of the individuals and easily extracted with string command, we use the function <code>stackr::individuals2strata</code>.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># here is one individual id: </span>
+Hadsten10_q_75.align
+<span class="co"># with pop starting at position 1 and to keep only 3 characters (necessary to discriminate populations from each other) we stop at... 3</span></code></pre></div></li>
+<li><p>For info on the function use: <code>?individuals2strata</code>. Don’t have this kind of names… you can also make the strata file by hand, the old fashion way.</p></li>
+<li><p>For your data, you might not need to make a strata file if you have already run  on your data, the strata file is similar to a stacks <code>population map file</code>, make sure you have the required column names (<code>INDIVIDUALS</code> and <code>STRATA</code>).</p></li>
+<li><p>We will extract the id from the first line of the vcf file. If the individuals were in a single column in a file (e.g. “individuals.txt”), make sure the column is named <code>INDIVIDUALS</code> and use the file directly in the function <code>stackr::individuals2strata</code>.</p></li>
+<li><p>We could put all the lines below in one call, but for clarity we’ll break down the steps:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Isolate the first line</span>
+id.vcf &lt;-<span class="st"> </span>data.table::<span class="kw">fread</span>(
+  <span class="dt">input =</span> <span class="st">&quot;example_vcf2dadi_ferchaud_2015.vcf&quot;</span>,
+  <span class="dt">sep =</span> <span class="st">&quot;</span><span class="ch">\t</span><span class="st">&quot;</span>,
+  <span class="dt">stringsAsFactors =</span> <span class="ot">FALSE</span>, 
+  <span class="dt">header =</span> <span class="ot">TRUE</span>,
+  <span class="dt">drop =</span> <span class="kw">c</span>(<span class="st">&quot;POS&quot;</span>, <span class="st">&quot;ID&quot;</span>, <span class="st">&quot;REF&quot;</span>, <span class="st">&quot;ALT&quot;</span>, <span class="st">&quot;QUAL&quot;</span>, <span class="st">&quot;FILTER&quot;</span>, <span class="st">&quot;INFO&quot;</span>, <span class="st">&quot;FORMAT&quot;</span>),
+  <span class="dt">skip =</span> <span class="st">&quot;CHROM&quot;</span>,
+  <span class="dt">nrows =</span> <span class="dv">1</span>,
+  <span class="dt">showProgress =</span> <span class="ot">TRUE</span>,
+  <span class="dt">verbose =</span> <span class="ot">FALSE</span>
+) %&gt;%<span class="st"> </span>
+<span class="st">  </span><span class="kw">as_data_frame</span>() %&gt;%<span class="st"> </span>
+<span class="st">  </span><span class="kw">select</span>(-<span class="st">`</span><span class="dt">#CHROM</span><span class="st">`</span>)
+  <span class="co"># to keep only the column name</span>
+  individuals &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">INDIVIDUALS =</span> <span class="kw">colnames</span>(id.vcf)) </code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># create the strata</span>
+strata.stickleback &lt;-<span class="st"> </span>stackr::<span class="kw">individuals2strata</span>(
+<span class="dt">data =</span> individuals, 
+<span class="dt">strata.start =</span> <span class="dv">1</span>,
+<span class="dt">strata.end =</span> <span class="dv">3</span>,
+<span class="dt">filename =</span> <span class="st">&quot;strata.stickleback.tsv&quot;</span>
+)</code></pre></div></li>
+</ul>
+</div>
+<div id="generate-ai-input-file" class="section level2">
+<h2>Generate ∂a∂i input file</h2>
+<ol style="list-style-type: decimal">
+<li><p>First run of <code>stackr::vcf2dadi</code>, without imputation. The simplest expression, with 2 arguments:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">stackr::<span class="kw">vcf2dadi</span>(
+<span class="dt">data =</span> <span class="st">&quot;example_vcf2dadi_ferchaud_2015.vcf&quot;</span>, 
+<span class="dt">strata =</span> <span class="st">&quot;strata.stickleback.tsv&quot;</span>
+)
+<span class="co"># You can also use `strata = strata.stickleback` </span>
+<span class="co"># if the strata argument is an object in the global environment named </span>
+<span class="co"># `strata.stickleback`</span></code></pre></div>
+<p>72 sec later, this is what we get in RStudio console:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">#######################################################################
+########################## stackr::vcf2dadi ###########################
+#######################################################################
+vcf2dadi:<span class="st"> </span>no imputation...
+File type:<span class="st"> </span>VCF
+Whitelist of markers:<span class="st"> </span>no
+Blacklisted individuals:<span class="st"> </span>no
+strata object:<span class="st"> </span>yes
+Importing the VCF...
+Making the VCF population wise
+Tidying the vcf...
+Erasing genotype:<span class="st"> </span>no
+Using markers common in all populations:
+Number of original markers =<span class="st"> </span><span class="dv">31802</span>
+Number of markers present in all the populations =<span class="st"> </span><span class="dv">31802</span>
+Number of markers removed =<span class="st"> </span><span class="dv">0</span>
+Removing monomorphic markers...
+Number of monomorphic markers removed:<span class="st"> </span><span class="dv">0</span>
+Computing the Allele Frequency Spectrum
+Preparing ∂a∂i input SNP data format
+∂a∂i input file name is:<span class="st"> </span>dadi_input_20160601_224119.tsv
+Saved here:<span class="st"> </span><span class="er">/</span>Users/thierry/Documents/vcf2dadi_example
+#######################################################################</code></pre></div></li>
+<li><p>Since we didn’t redirect the function call in an object (next example will show you how) the ∂a∂i input data is not in the global environment, it’s only written to the working directory.</p></li>
+</ol>
+</div>
+<div id="filtering-the-dataset-before-generating-the-ai-input-file" class="section level2">
+<h2>Filtering the dataset before generating the ∂a∂i input file</h2>
+<p>It makes no sense to create a ∂a∂i input file with so many populations. If we want to keep just 3 populations: Had, Mos and Odd, we use the <code>pop.select</code> argument. This is where the default argument <code>common.markers = TRUE</code> becomes useful. It can be turned off with <code>FALSE</code>, however we don’t recommend since you should only use SNPs WITHOUT missing data for demographic inference.</p>
+<p>In the example below we also use the default argument <code>monomorphic.out = TRUE</code> (turn it off with <code>FALSE</code>). Monomorphic sites are useful to get absolute numbers for the timing event. Laurent Excoffier says that <em>it allows one to use the mutation rate to calibrate the parameters on an absolute scale</em> (see this <a href="https://groups.google.com/forum/#!searchin/fastsimcoal/impact$20of$20monomorphic/fastsimcoal/dkJ6P5y1ViY/Jn977V8EAwAJ">thread</a>, for more info on the utility of monomorphic sites and SFS). However, here the RAD markers were filtered based on 8 populations, consequently, to avoid filtering bias, it’s better to remove the monomorphic markers.</p>
+<p>The best approach is to either simulate the monomorphic markers based on genome-wide estimate of pi or do a new stacks <code>populations</code> run with the 3 populations to get the monomorphic sites. If you do this, use <code>monomorphic.out = FALSE</code>.</p>
+<ol style="list-style-type: decimal">
+<li>For the second run of <code>stackr::vcf2dadi</code>, we will also ask to generate a ∂a∂i input file with:</li>
+</ol>
+<ul>
+<li><p>short range LD pruning: the small reads of this experiment (RADseq &lt; 100 pb read) make the short range linkage disequillibrium pruning easy. We will keep the first SNP on every read (<code>snp.ld = &quot;first&quot;</code>). Don’t want the SNP pruning, turn it off with <code>snp.ld = NULL</code> or leave the argument missing.</p></li>
+<li><p>Minor Allele Frequency filter: for ∂a∂i we want to keep most of the Allele Frequency Spectrum because they are informative to date a demographic event. The arguments in the function are here to help you test the impact of the MAF. Here we are filtering differently than for population assignment. We want to make sure we don’t include the SNP with very very low frequency, the uninformative markers (most likely errors). If you have total confidence in your low frequency markers keep them (<code>maf.thresholds = NULL</code> or leave the argument missing). In this example we remove markers if the MAF is not at least 0.001 local (by pop) OR 0.001 global (overall pops) in a least 1 population (out of 3 the total selected). For further details on how to remove low polymorphism markers with arguments provided in <code>vcf2dadi</code>, see the maf arguments documentation of the function.</p></li>
+<li><p>imputations using random forest with default settings (see function arguments documentation for more details)</p></li>
+<li><p>the parallel process used by default will be all my CPU - 1.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># The function results are redirected in the object `dadi.df`</span>
+dadi.df &lt;-<span class="st"> </span>stackr::<span class="kw">vcf2dadi</span>(
+  <span class="dt">data =</span> <span class="st">&quot;example_vcf2dadi_ferchaud_2015.vcf&quot;</span>, 
+  <span class="dt">strata =</span> strata.stickleback, 
+  <span class="dt">pop.select =</span> <span class="kw">c</span>(<span class="st">&quot;Had&quot;</span>, <span class="st">&quot;Mos&quot;</span>, <span class="st">&quot;Odd&quot;</span>),
+  <span class="dt">snp.ld =</span> <span class="st">&quot;first&quot;</span>, 
+  <span class="dt">maf.thresholds =</span> <span class="kw">c</span>(<span class="fl">0.001</span>, <span class="fl">0.001</span>), 
+  <span class="dt">maf.pop.num.threshold =</span> <span class="dv">1</span>, <span class="dt">maf.approach =</span> <span class="st">&quot;SNP&quot;</span>, <span class="dt">maf.operator =</span> <span class="st">&quot;OR&quot;</span>, 
+  <span class="dt">imputation.method =</span> <span class="st">&quot;rf&quot;</span>,
+  <span class="co">#here we specify a custom output filename</span>
+  <span class="dt">dadi.input.filename =</span> <span class="st">&quot;my.first.dadi.input.file.tsv&quot;</span>
+)</code></pre></div>
+<p>60 sec later, this is what we get in RStudio console:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">#######################################################################
+########################## stackr::vcf2dadi ###########################
+#######################################################################
+vcf2dadi:<span class="st"> </span>with imputations...
+File type:<span class="st"> </span>VCF
+Whitelist of markers:<span class="st"> </span>no
+Blacklisted individuals:<span class="st"> </span>no
+strata object:<span class="st"> </span>yes
+Importing the VCF...
+Making the VCF population wise
+<span class="dv">3</span> <span class="kw">population</span>(s) selected
+Tidying the vcf...
+Erasing genotype:<span class="st"> </span>no
+Minimizing LD...
+Number of original SNP =<span class="st"> </span><span class="dv">31766</span>
+Number of SNP after keeping the first SNP on the read/haplotype =<span class="st"> </span><span class="dv">17088</span>
+Number of SNP removed =<span class="st"> </span><span class="dv">14678</span>
+Filtering the tidy VCF to minimize LD by keeping only <span class="dv">1</span> SNP per short read/haplotype
+Using markers common in all populations:
+Number of original markers =<span class="st"> </span><span class="dv">17088</span>
+Number of markers present in all the populations =<span class="st"> </span><span class="dv">17088</span>
+Number of markers removed =<span class="st"> </span><span class="dv">0</span>
+Removing monomorphic markers...
+Number of monomorphic markers removed:<span class="st"> </span><span class="dv">7880</span>
+MAF filter:<span class="st"> </span>yes
+The MAF table was written in your folder
+The number of MARKERS removed by the MAF filters =<span class="st"> </span><span class="dv">0</span>
+The number of MARKERS before -&gt;<span class="st"> </span>after the MAF filters:<span class="st"> </span><span class="dv">9208</span> -&gt;<span class="st"> </span><span class="dv">9208</span> MARKERS
+Computing the Allele Frequency Spectrum
+Preparing ∂a∂i input SNP data format
+∂a∂i input file name is:<span class="st"> </span>my.first.dadi.input.file.tsv
+Saved here:<span class="st"> </span><span class="er">/</span>Users/thierry/Documents/vcf2dadi_example
+Preparing the data for imputations
+Imputations computed by populations, take a break...
+Compiling imputations results
+Preparing imputed data set...
+Computing the Allele Frequency Spectrum for the imputed data
+∂a∂i input file name is:<span class="st"> </span>my.first.dadi.input.file_imputed.tsv
+Saved here:<span class="st"> </span><span class="er">/</span>Users/thierry/Documents/vcf2dadi_example
+#######################################################################</code></pre></div></li>
+</ul>
+<ol start="2" style="list-style-type: decimal">
+<li><p>To view the content of <code>dadi.df</code>:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">names</span>(dadi.df)</code></pre></div></li>
+<li><p>To redirect both data frame in separate object, outside the list:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dadi.no.imputation.df &lt;-<span class="st"> </span>dadi.df$dadi.no.imputation
+dadi.imputed.df &lt;-<span class="st"> </span>dadi.df$dadi.imputed</code></pre></div></li>
+<li><p>The first few line of the ∂a∂i non imputed file, written to the working directory:</p>
+<p><code>#∂a∂i SNP input file generated with stackr v.0.2.9 2016-06-01 23:20:32</code></p></li>
+</ol>
+<table>
+<thead>
+<tr class="header">
+<th align="center">IN_GROUP</th>
+<th align="center">OUT_GROUP</th>
+<th align="center">Allele1</th>
+<th align="center">Had</th>
+<th align="center">Mos</th>
+<th align="center">Odd</th>
+<th align="center">Allele2</th>
+<th align="center">Had</th>
+<th align="center">Mos</th>
+<th align="center">Odd</th>
+<th align="center">MARKERS</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center">—</td>
+<td align="center">—</td>
+<td align="center">T</td>
+<td align="center">38</td>
+<td align="center">40</td>
+<td align="center">39</td>
+<td align="center">G</td>
+<td align="center">0</td>
+<td align="center">0</td>
+<td align="center">1</td>
+<td align="center">groupI_28140_10711516</td>
+</tr>
+<tr class="even">
+<td align="center">—</td>
+<td align="center">—</td>
+<td align="center">C</td>
+<td align="center">36</td>
+<td align="center">32</td>
+<td align="center">36</td>
+<td align="center">T</td>
+<td align="center">0</td>
+<td align="center">0</td>
+<td align="center">2</td>
+<td align="center">groupI_28156_12157165</td>
+</tr>
+<tr class="odd">
+<td align="center">—</td>
+<td align="center">—</td>
+<td align="center">A</td>
+<td align="center">38</td>
+<td align="center">40</td>
+<td align="center">39</td>
+<td align="center">G</td>
+<td align="center">0</td>
+<td align="center">0</td>
+<td align="center">1</td>
+<td align="center">groupI_28157_12211985</td>
+</tr>
+<tr class="even">
+<td align="center">…</td>
+<td align="center">…</td>
+<td align="center">…</td>
+<td align="center">…</td>
+<td align="center">…</td>
+<td align="center">…</td>
+<td align="center">…</td>
+<td align="center">…</td>
+<td align="center">…</td>
+<td align="center">…</td>
+<td align="center">…</td>
+</tr>
+</tbody>
+</table>
+<p>We see that the first 2 columns are empty. This is because we didn’t specify the outgroup. With this type of input file, ∂a∂i generates a folded spectrum.</p>
+</div>
+<div id="using-an-outgroup-and-generate-the-ai-input-file" class="section level2">
+<h2>Using an outgroup and generate the ∂a∂i input file</h2>
+<p>To generate a ∂a∂i input file with an outgroup, we currently need stacks output files in order to get the fasta and SNP position. Very soon we’ll make an update where you can feed the function a file containing all this info, making the function truly stacks-free. For those of you using stacks you can do this to generate the file:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Do not run ##
+<span class="co"># the dataset doesn't include outgroup info.</span>
+stackr::<span class="kw">vcf2dadi</span>(
+  <span class="dt">data =</span> <span class="st">&quot;example_vcf2dadi_ferchaud_2015.vcf&quot;</span>, 
+  <span class="dt">strata =</span> strata.stickleback, 
+  <span class="dt">pop.select =</span> <span class="kw">c</span>(<span class="st">&quot;Had&quot;</span>, <span class="st">&quot;Mos&quot;</span>, <span class="st">&quot;Odd&quot;</span>),
+  <span class="dt">snp.ld =</span> <span class="st">&quot;first&quot;</span>, 
+  <span class="dt">maf.thresholds =</span> <span class="kw">c</span>(<span class="fl">0.001</span>, <span class="fl">0.001</span>), 
+  <span class="dt">maf.pop.num.threshold =</span> <span class="dv">1</span>, <span class="dt">maf.approach =</span> <span class="st">&quot;SNP&quot;</span>, <span class="dt">maf.operator =</span> <span class="st">&quot;OR&quot;</span>, 
+  <span class="dt">imputation.method =</span> <span class="st">&quot;rf&quot;</span>,
+  <span class="dt">fasta.ingroup =</span> <span class="st">&quot;batch_1.ingroup.fa&quot;</span>,
+  <span class="dt">fasta.outgroup =</span> <span class="st">&quot;batch_1.outgroup.fa&quot;</span>, 
+  <span class="dt">sumstats.ingroup =</span> <span class="st">&quot;batch_1.sumstats.ingroup.tsv&quot;</span>,
+  <span class="dt">sumstats.outgroup =</span> <span class="st">&quot;batch_1.sumstats.outgroup.tsv&quot;</span>
+)</code></pre></div>
+</div>
+</div>
+<div id="conclusion" class="section level1">
+<h1>Conclusion</h1>
+<p>Under construction</p>
+<p>Please send me suggestions and bug reports through github</p>
+<p>If you are using <strong>stackr</strong> package please cite my work.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">citation</span>(<span class="st">&quot;stackr&quot;</span>)</code></pre></div>
+<p><strong>References</strong></p>
+<p>Ferchaud A, Hansen MM (2016) The impact of selection, gene flow and demographic history on heterogeneous genomic divergence: threespine sticklebacks in divergent environments. Molecular Ecology 25(1): 238–259. <a href="http://dx.doi.org/10.1111/mec.13399" class="uri">http://dx.doi.org/10.1111/mec.13399</a></p>
+<p>Ferchaud A, Hansen MM (2015) Data from: The impact of selection, gene flow and demographic history on heterogeneous genomic divergence: threespine sticklebacks in divergent environments. Dryad Digital Repository. <a href="http://dx.doi.org/10.5061/dryad.kp11q" class="uri">http://dx.doi.org/10.5061/dryad.kp11q</a></p>
+<p>Catchen JM, Amores A, Hohenlohe PA et al. (2011) Stacks: Building and Genotyping Loci De Novo From Short-Read Sequences. G3, 1, 171-182.</p>
+<p>Catchen JM, Hohenlohe PA, Bassham S, Amores A, Cresko WA (2013) Stacks: an analysis tool set for population genomics. Molecular Ecology, 22, 3124-3140.</p>
+<p>Danecek P, Auton A, Abecasis G et al. (2011) The variant call format and VCFtools. Bioinformatics, 27, 2156-2158.</p>
+<p>Gutenkunst RN, Hernandez RD, Williamson SH, Bustamante CD (2009) Inferring the Joint Demographic History of Multiple Populations from Multidimensional SNP Frequency Data (G McVean, Ed,). PLoS genetics, 5, e1000695.</p>
+<p>Ishwaran H. and Kogalur U.B. (2015). Random Forests for Survival, Regression and Classification (RF-SRC), R package version 1.6.1.</p>
+<p>Ishwaran H. and Kogalur U.B. (2007). Random survival forests for R. R News 7(2), 25-31.</p>
+<p>Ishwaran H., Kogalur U.B., Blackstone E.H. and Lauer M.S. (2008). Random survival forests. Ann. Appl. Statist. 2(3), 841-860.</p>
+</div>
+
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
