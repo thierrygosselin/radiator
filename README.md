@@ -52,7 +52,7 @@ library(radiator)
 </tr>
 <tr class="odd">
 <td align="left"><strong>Pattern of missingness</strong></td>
-<td align="left"><code>missing_visualization</code>: Visualize patterns of missing data. Find patterns associated with different variables of your study (lanes, chips, sequencers, populations, sample sites, reads/samples, homozygosity, etc)</td>
+<td align="left">With the help of <code>grur::missing_visualization</code>: Visualize patterns of missing data. Find patterns associated with different variables of your study (lanes, chips, sequencers, populations, sample sites, reads/samples, homozygosity, etc)</td>
 </tr>
 <tr class="even">
 <td align="left"><strong>Filters</strong></td>
@@ -60,7 +60,7 @@ library(radiator)
 </tr>
 <tr class="odd">
 <td align="left"><strong>Imputations</strong></td>
-<td align="left"><strong>Map-independent</strong> imputations of missing genotypes.<br>Using <strong>Random Forests</strong> (on-the-fly-imputations or predictive modeling), <strong>Extreme Gradient Tree Boosting</strong> and Strawman imputations (~ max/mean/mode: the most frequently observed, non-missing genotypes is used).<br> Imputations can be conducted <strong>overall samples</strong> or <strong>by populations</strong>.<br><br>Imputations are integrated in several functions and in a separate module: <code>radiator_imputations_module</code></td>
+<td align="left">The imputation engine or <strong>grur</strong> inside <strong>radiator. </strong>Map-independent** imputations of missing genotypes.<br>Using <strong>Random Forests</strong> (on-the-fly-imputations or predictive modeling), <strong>Extreme Gradient Tree Boosting</strong> and Strawman imputations (~ max/mean/mode: the most frequently observed, non-missing genotypes is used).<br> Imputations can be conducted <strong>overall samples</strong> or <strong>by populations</strong>.<br><br>Imputations are integrated in several <strong>radiator</strong> functions. For the separate module, see <a href="https://github.com/thierrygosselin/grur">grur</a></td>
 </tr>
 <tr class="even">
 <td align="left"><strong><a href="http://ggplot2.org">ggplot2</a>-based plotting</strong></td>
