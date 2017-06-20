@@ -42,6 +42,11 @@ with polymorphism discovery. Avoid bad data exploration and control the impact
 of filters on your downstream genetic analysis. Use radiator to: import, explore,
 manipulate, visualize, filter, impute and export your GBS/RADseq data.
 
+**radiator** was born from **stackr**. All RADseq filters and visualization
+related code has been moved out of **stackr** and into a new package, **radiator**.
+This makes **stackr** and **radiator** simpler, and will make it easier to
+release fixes for bugs that only affect these packages.
+
 
 ## Installation
 To try out the dev version of **radiator**, copy/paste the code below:

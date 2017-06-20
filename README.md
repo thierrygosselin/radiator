@@ -1,6 +1,6 @@
 [![Travis-CI Build Status](https://travis-ci.org/thierrygosselin/radiator.svg?branch=master)](https://travis-ci.org/thierrygosselin/radiator) [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/thierrygosselin/radiator?branch=master&svg=true)](https://ci.appveyor.com/project/thierrygosselin/radiator) [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/radiator)](http://cran.r-project.org/package=radiator) [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active) [![DOI](https://zenodo.org/badge/14548/thierrygosselin/radiator.svg)](https://zenodo.org/badge/latestdoi/14548/thierrygosselin/radiator)
 
-[![packageversion](https://img.shields.io/badge/Package%20version-0.0.1-orange.svg)](commits/master) [![Last-changedate](https://img.shields.io/badge/last%20change-2017--06--17-brightgreen.svg)](/commits/master)
+[![packageversion](https://img.shields.io/badge/Package%20version-0.0.1-orange.svg)](commits/master) [![Last-changedate](https://img.shields.io/badge/last%20change-2017--06--19-brightgreen.svg)](/commits/master)
 
 ------------------------------------------------------------------------
 
@@ -10,6 +10,8 @@ radiator: an R package for the analysis of GBS/RADseq data
 This is the development page of the **radiator**, if you want to help, see [contributions section](https://github.com/thierrygosselin/radiator#contributions)
 
 Most genomic analysis look for patterns and trends with various statistics. Bias, noise and outliers can have bounded influence on estimators and interfere with polymorphism discovery. Avoid bad data exploration and control the impact of filters on your downstream genetic analysis. Use radiator to: import, explore, manipulate, visualize, filter, impute and export your GBS/RADseq data.
+
+**radiator** was born from **stackr**. All RADseq filters and visualization related code has been moved out of **stackr** and into a new package, **radiator**. This makes **stackr** and **radiator** simpler, and will make it easier to release fixes for bugs that only affect these packages.
 
 Installation
 ------------
