@@ -5,7 +5,7 @@
 \title{Figure density distribution of minor allele frequency (MAF)
 summary statistics.}
 \usage{
-plot_density_distribution_maf(data, maf.group, aes.colour = aes(y =
+plot_density_distribution_maf(data, maf.group, aes.colour = ggplot2::aes(y =
   ..scaled.., color = POP_ID), adjust.bin = 1, x.title)
 }
 \arguments{

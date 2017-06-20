@@ -131,9 +131,11 @@ The function returns a list with the function call and:
 use $ to access each #' objects in the list.
 }
 \description{
-Calculates the nucleotide diversity. For an estimate integrating
-consensus markers from STACKS batch_x.haplotypes.tsv file,
-use \code{\link[stackr]{summary_haplotypes}}.
+Calculates the nucleotide diversity.
+[stackr](https://github.com/thierrygosselin/stackr) \emph{summary_haplotypes}
+function provides an estimate integrating the consensus markers found in
+[STACKS](http://catchenlab.life.illinois.edu/stacks/)
+batch_x.haplotypes.tsv file.
 }
 \examples{
 \dontrun{

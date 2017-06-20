@@ -162,9 +162,11 @@ an estimate computed with more markers found at the population or at the
 overall level.
 }
 
-The FH measure is also computed in \code{\link[stackr]{summary_haplotypes}}
-and \code{\link[grur]{missing_visualization}}. See \strong{note} below
-for the equations.
+The FH measure is also computed in
+[stackr](https://github.com/thierrygosselin/stackr) \emph{summary_haplotypes}
+function and [grur](https://github.com/thierrygosselin/grur)
+\emph{missing_visualization} functions.
+See \strong{note} below for the equations.
 }
 \note{
 \strong{Modified FH:}
