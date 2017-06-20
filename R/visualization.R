@@ -34,8 +34,6 @@ plot_density_distribution_coverage <- function(data, aes.colour, adjust.bin) {
 }
 
 
-
-
 #' @title Figure box plot of coverage summary statistics
 #' @description Create box plots of coverage summary statistics.
 #' Use the coverage summary file created with coverage_summary function.
@@ -148,8 +146,8 @@ plot_coverage_imbalance_diagnostic <- function(tidy.vcf.file, pop.levels, read.d
   ggplot2::ggplot(imbalance.coverage, ggplot2::aes(x = ALLELE_COVERAGE_RATIO, na.rm = T)) +
     #   geom_bar() +
     ggplot2::geom_line(aes.colour, stat = "density", adjust = adjust.bin) +
-    ggplot2::labs(x="Coverage imbalance between REF and ALT alleles (ratio)") +
-    ggplot2::labs(y="Distribution of genotypes") +
+    ggplot2::labs(x = "Coverage imbalance between REF and ALT alleles (ratio)") +
+    ggplot2::labs(y = "Distribution of genotypes") +
     ggplot2::theme(
       axis.title.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
       axis.title.y = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
@@ -254,7 +252,7 @@ plot_boxplot_genotype_likelihood <- function(data) {
 #' @seealso \link{tidy_genomic_data} and  \link{summary_stats_vcf_tidy}
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
-plot_density_distribution_maf <- function(data, maf.group, aes.colour = aes(y = ..scaled.., color = POP_ID), adjust.bin = 1, x.title) {
+plot_density_distribution_maf <- function(data, maf.group, aes.colour = ggplot2::aes(y = ..scaled.., color = POP_ID), adjust.bin = 1, x.title) {
 
   ..scaled.. <- NULL #get rid of R CMD check note
 
@@ -267,7 +265,7 @@ plot_density_distribution_maf <- function(data, maf.group, aes.colour = aes(y = 
   graph <- ggplot2::ggplot(data, maf.group) +
     ggplot2::geom_line(aes.colour, stat = "density", adjust = adjust.bin) + # pop colored
     #   scale_colour_manual(name ="Sampling sites", values = colour_palette_sites.pink) +
-    ggplot2::scale_x_continuous(breaks=c(0, 0.05, 0.1, 0.2, 0.5, 1),
+    ggplot2::scale_x_continuous(breaks = c(0, 0.05, 0.1, 0.2, 0.5, 1),
                        labels = c("0", "0.05", "0.1", "0.2", "0.5", "1.0")) +
     ggplot2::labs(x = x.title) +
     ggplot2::labs(y = "Density of SNP (scaled)") +
@@ -470,15 +468,15 @@ plot_distribution_diversity <- function(data, aes.x, aes.colour, x.title, y.titl
     #   scale_color_manual(name="Populations", values=colour_palette_sites.pink, breaks = c("BUR", "GRA", "GUL", "LLI", "ANG", "WEI", "HAY", "GOD")) +
     ggplot2::labs(x = x.title) +
     ggplot2::labs(y = y.title) +
-    ggplot2::expand_limits(y=0) +
+    ggplot2::expand_limits(y = 0) +
     ggplot2::theme(
       legend.position = "none",
-      axis.title.x = ggplot2::element_text(size=12, family="Helvetica",face="bold"),
-      axis.title.y = ggplot2::element_text(size=12, family="Helvetica",face="bold"),
-      legend.title = ggplot2::element_text(size=12, family="Helvetica",face="bold"),
-      legend.text = ggplot2::element_text(size=12, family="Helvetica",face="bold"),
-      strip.text.y = ggplot2::element_text(angle=0,size=12, family="Helvetica",face="bold"),
-      strip.text.x = ggplot2::element_text(size=12, family="Helvetica",face="bold")
+      axis.title.x = ggplot2::element_text(size = 12, family = "Helvetica",face = "bold"),
+      axis.title.y = ggplot2::element_text(size = 12, family = "Helvetica",face = "bold"),
+      legend.title = ggplot2::element_text(size = 12, family = "Helvetica",face = "bold"),
+      legend.text = ggplot2::element_text(size = 12, family = "Helvetica",face = "bold"),
+      strip.text.y = ggplot2::element_text(angle = 0,size = 12, family = "Helvetica",face = "bold"),
+      strip.text.x = ggplot2::element_text(size = 12, family = "Helvetica",face = "bold")
     )
 }
 

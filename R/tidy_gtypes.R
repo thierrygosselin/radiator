@@ -2,8 +2,8 @@
 
 #' @name tidy_gtypes
 #' @title Tidy a gtypes object to a tidy dataframe
-#' @description Transform a \code{\link[strataG]{gtypes}} object from
-#' \code{\link[strataG]{strataG}} to a tidy dataframe.
+#' @description Transform a [strataG gtypes](https://github.com/EricArcher/strataG) object from
+#' to a tidy dataframe.
 #' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 #' and might be of interest for users.
 
