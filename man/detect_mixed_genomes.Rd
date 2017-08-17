@@ -16,13 +16,13 @@ Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.}
 Blacklist individuals based on observed heterozygosity (averaged across markers).
 
 
-The string contains 2 thresholds values (min and max). 
+The string contains 2 thresholds values (min and max).
 The values are proportions (0 to 1), where 0 turns off the min threshold and
 1 turns off the max threshold.
-Individuals with mean observed heterozygosity higher (>) or lower (<) 
-than the thresholds will be blacklisted. 
+Individuals with mean observed heterozygosity higher (>) or lower (<)
+than the thresholds will be blacklisted.
 
-Default: \code{ind.heterozygosity.threshold = NULL} will turn off completely 
+Default: \code{ind.heterozygosity.threshold = NULL} will turn off completely
 the filter and the function will only output the plots and table of heterozygosity.}
 }
 \value{
@@ -31,8 +31,8 @@ The function returns inside the global environment a list with
 
 \enumerate{
 \item the individual's heterozigosity (\code{$individual.heterozygosity})
-a dataframe containing for each individual, the population id, the number of 
-genotyped markers, the number of missing genotypes (based on the number of 
+a dataframe containing for each individual, the population id, the number of
+genotyped markers, the number of missing genotypes (based on the number of
 markers of the population and overall), the number of markers genotyped as heterozygote
 and it's proportion based on the number of genotyped markers.
 \item the heterozygosity statistics per populations and overall:\code{$heterozygosity.statistics}
@@ -55,7 +55,7 @@ To help discard an individual based on his observed heterozygosity
 use the manhanttan plot to:
 \enumerate{
 \item contrast the individual with population and overall samples.
-\item visualize the impact of missigness information (based on population or 
+\item visualize the impact of missigness information (based on population or
 overall number of markers) and the individual observed heterozygosity. The
 larger the point, the more missing genotypes.
 }
@@ -72,18 +72,18 @@ overall number of markers.
 
 
 You can visualize individual observed heterozygosity, choose thresholds and
-then visualize, choose thresholds and filter markers based on observed 
+then visualize, choose thresholds and filter markers based on observed
 heterozygosity in one run with: \pkg{radiator} \code{\link{filter_het}}.
 
 \strong{Outlier below average:}
 \itemize{
-\item A point with a size larger than the population or overall average (= lots of missing): 
+\item A point with a size larger than the population or overall average (= lots of missing):
 the poor polymorphism discovery of the sample is probably the result of bad
 DNA quality, a bias in sequencing effort, etc. (action: blacklist)
-\item A point with a size that looks average (not much missing): 
+\item A point with a size that looks average (not much missing):
 this sample requires more attention (action: blacklist) and conduct more tests.
 e.g. for biallelic data, look for coverage imbalance between ALT/REF allele.
-At this point you need to distinguish between an artifact of poor polymorphism discovery 
+At this point you need to distinguish between an artifact of poor polymorphism discovery
 or a biological reason (highly inbred individual, etc.).
 }
 }
@@ -101,7 +101,7 @@ strata = "strata.wombat.tsv",
 common.markers = FALSE,
 vcf.metadata = FALSE,
 verbose = TRUE
-) \%>\% 
+) \%>\%
 radiator::detect_mixed_genomes(.)
 
 

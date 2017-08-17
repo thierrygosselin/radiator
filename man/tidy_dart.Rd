@@ -72,13 +72,13 @@ Default: \code{detect_mixed_genomes = TRUE}.}
 Blacklist individuals based on observed heterozygosity (averaged across markers).
 
 
-The string contains 2 thresholds values (min and max). 
+The string contains 2 thresholds values (min and max).
 The values are proportions (0 to 1), where 0 turns off the min threshold and
 1 turns off the max threshold.
-Individuals with mean observed heterozygosity higher (>) or lower (<) 
-than the thresholds will be blacklisted. 
+Individuals with mean observed heterozygosity higher (>) or lower (<)
+than the thresholds will be blacklisted.
 
-Default: \code{ind.heterozygosity.threshold = NULL} will turn off completely 
+Default: \code{ind.heterozygosity.threshold = NULL} will turn off completely
 the filter and the function will only output the plots and table of heterozygosity.}
 
 \item{duplicate.genomes.analysis}{(optional) Detect duplicate individuals

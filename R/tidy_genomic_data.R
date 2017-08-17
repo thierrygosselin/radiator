@@ -342,10 +342,13 @@ tidy_genomic_data <- function(
 
   if (verbose) {
     cat("#######################################################################\n")
-    cat("###################### radiator::tidy_genomic_data ######################\n")
+    cat("##################### radiator::tidy_genomic_data #####################\n")
     cat("#######################################################################\n")
     timing <- proc.time()
   }
+  opt.change <- getOption("width")
+  options(width = 70)
+
   # Checking for missing and/or default arguments-------------------------------
   if (missing(data)) stop("Input file missing")
 
@@ -2059,6 +2062,7 @@ tidy_genomic_data <- function(
     cat("############################## completed ##############################\n")
   }
   res <- input
+  options(width = opt.change)
   return(res)
 } # tidy genomic data
 

@@ -2,22 +2,186 @@
 % Please edit documentation in R/filter_snp_number.R
 \name{filter_snp_number}
 \alias{filter_snp_number}
-\title{SNP number filter}
+\title{Filter SNP number per locus/read}
 \usage{
-filter_snp_number(data, max.snp.number, pop.threshold, percent, filename)
+filter_snp_number(data, vcf.metadata = FALSE, interactive.filter = TRUE,
+  max.snp.number, filename = NULL, blacklist.id = NULL,
+  blacklist.genotype = NULL, whitelist.markers = NULL,
+  monomorphic.out = TRUE, max.marker = NULL, snp.ld = NULL,
+  common.markers = FALSE, strata = NULL, pop.levels = NULL,
+  pop.labels = NULL, pop.select = NULL)
 }
 \arguments{
-\item{data}{A data frame object or file (using ".tsv")
-of class sumstats or a tidy VCF summarised.}
+\item{data}{11 options: VCF (SNPs or Haplotypes,
+to make the vcf population ready, see details below),
+plink, stacks haplotype file, genind (library(adegenet)),
+genlight (library(adegenet)), gtypes (library(strataG)), genepop,
+and a data frame in long/tidy or wide format.
+\emph{See details} of \code{\link{tidy_genomic_data}}.}
 
-\item{max.snp.number}{Number}
+\item{vcf.metadata}{(optional, logical or string) For VCF files only.
+With \code{logical, TRUE/FALSE}, \code{vcf.metadata = FALSE}, only the genotype
+information is kept (GT field). With \code{vcf.metadata = TRUE},
+all the metadata contained in the \code{FORMAT} field will be kept in
+the tidy data file. radiator is currently keeping/cleaning only these metadata:
+\code{"DP", "AD", "GL", "PL", "GQ", "GOF", "NR", "NV"}.
+If you need different one, submit a request.
+With \code{string}, explicitely ask for a particular FORMAT field you want
+to keep (except the GT field that is always imported).
+e.g. \code{vcf.metadata = "PL"} or \code{vcf.metadata = c("DP", "GL")}.
+Default: \code{vcf.metadata = FALSE}.}
 
-\item{pop.threshold}{Fixed number of pop required to keep the locus.}
+\item{interactive.filter}{(optional, logical) Do you want the filtering session to
+be interactive. With default: \code{interactive.filter == TRUE}, the user is
+asked to see figures of distribution before making filtering decisions.}
 
-\item{percent}{Is the threshold a percentage ? TRUE or FALSE.}
+\item{max.snp.number}{(integer) This is best decide after viewing the figures.
+If the argument is set to 2, locus with 3 and more SNPs will be blacklisted.}
 
-\item{filename}{Name of the file written to the working directory (optional).}
+\item{filename}{(optional) Name of the filtered tidy data frame file
+written to the working directory (ending with \code{.tsv})
+Default: \code{filename = NULL}.}
+
+\item{blacklist.id}{(optional) A blacklist with individual ID and
+a column header 'INDIVIDUALS'. The blacklist is an object in your
+global environment or a file in the working directory
+(e.g. "blacklist.txt").
+Default: \code{blacklist.id = NULL}.}
+
+\item{blacklist.genotype}{(optional) Useful to erase genotype with below
+average quality, e.g. genotype with more than 2 alleles in diploid likely
+sequencing errors or genotypes with poor genotype likelihood or coverage.
+The blacklist has a minimum of 2 column headers (markers and individuals).
+Markers can be 1 column (CHROM or LOCUS or POS),
+a combination of 2 (e.g. CHROM and POS or CHROM and LOCUS or LOCUS and POS) or
+all 3 (CHROM, LOCUS, POS). The markers columns must be designated: CHROM (character
+or integer) and/or LOCUS (integer) and/or POS (integer). The id column designated
+INDIVIDUALS (character) columns header. The blacklist must be in the working
+directory (e.g. "blacklist.genotype.txt"). For de novo VCF, CHROM column
+with 'un' need to be changed to 1.
+Default: \code{blacklist.genotype = NULL} for no blacklist of
+genotypes to erase.}
+
+\item{whitelist.markers}{(optional) A whitelist containing CHROM (character
+or integer) and/or LOCUS (integer) and/or
+POS (integer) columns header. To filter by chromosome and/or locus and/or by snp.
+The whitelist is in the working directory (e.g. "whitelist.txt").
+de novo CHROM column with 'un' need to be changed to 1.
+In the VCF, the column ID is the LOCUS identification.
+Default \code{whitelist.markers = NULL} for no whitelist of markers.}
+
+\item{monomorphic.out}{(optional) Should the monomorphic
+markers present in the dataset be filtered out ?
+Default: \code{monomorphic.out = TRUE}.}
+
+\item{max.marker}{(integer, optional) For large PLINK files,
+useful to subsample marker number. e.g. if the data set
+contains 200 000 markers and \code{max.marker = 10000}, 10000 markers are
+subsampled randomly from the 200000 markers. If you need specific markers,
+use \code{whitelist.markers} argument.
+Default: \code{max.marker = NULL}.}
+
+\item{snp.ld}{(optional) \strong{For VCF file only}.
+SNP short distance linkage disequilibrium pruning. With anonymous markers from
+RADseq/GBS de novo discovery, you can minimize linkage disequilibrium (LD) by
+choosing among these 3 options: \code{"random"} selection, \code{"first"} or
+\code{"last"} SNP on the same short read/haplotype. For long distance linkage
+disequilibrium pruning, see details below.
+Default: \code{snp.ld = NULL}.}
+
+\item{common.markers}{(optional) Logical. Default: \code{common.markers = TRUE},
+will only keep markers in common (genotyped) between all the populations.}
+
+\item{strata}{(optional/required) Required for VCF and haplotypes files,
+optional for the other formats supported.
+
+The strata file is a tab delimited file with a minimum of 2 columns headers:
+\code{INDIVIDUALS} and \code{STRATA}.
+If a \code{strata} file is specified with all file formats that don't
+require it, the strata argument will have precedence on the population
+groupings used internally in those file formats.
+The \code{STRATA} column can be any hierarchical grouping.
+To create a strata file see \code{\link[radiator]{individuals2strata}}.
+If you have already run
+\href{http://catchenlab.life.illinois.edu/stacks/}{stacks} on your data,
+the strata file is similar to a stacks \emph{population map file},
+make sure you
+have the required column names (\code{INDIVIDUALS} and \code{STRATA}).
+Default: \code{strata = NULL}.}
+
+\item{pop.levels}{(optional, string) This refers to the levels in a factor. In this
+case, the id of the pop.
+Use this argument to have the pop ordered your way instead of the default
+alphabetical or numerical order. e.g. \code{pop.levels = c("QUE", "ONT", "ALB")}
+instead of the default \code{pop.levels = c("ALB", "ONT", "QUE")}.
+White spaces in population names are replaced by underscore.
+Default: \code{pop.levels = NULL}.}
+
+\item{pop.labels}{(optional, string) Use this argument to rename/relabel
+your pop or combine your pop. e.g. To combine \code{"QUE"} and \code{"ONT"}
+into a new pop called \code{"NEW"}:
+(1) First, define the levels for your pop with \code{pop.levels} argument:
+\code{pop.levels = c("QUE", "ONT", "ALB")}.
+(2) then, use \code{pop.labels} argument:
+\code{pop.levels = c("NEW", "NEW", "ALB")}.
+To rename \code{"QUE"} to \code{"TAS"}:
+\code{pop.labels = c("TAS", "ONT", "ALB")}.
+Default: \code{pop.labels = NULL}. If you find this too complicated,
+there is also the \code{strata} argument that can do the same thing,
+see below.
+White spaces in population names are replaced by underscore.}
+
+\item{pop.select}{(string, optional) Selected list of populations for
+the analysis. e.g. \code{pop.select = c("QUE", "ONT")} to select \code{QUE}
+and \code{ONT} population samples (out of 20 pops).
+Default: \code{pop.select = NULL}}
+}
+\value{
+A list in the global environment with 6 objects:
+\enumerate{
+\item $snp.number.markers
+\item $number.snp.reads.plot
+\item $whitelist.markers
+\item $tidy.filtered.snp.number
+\item $blacklist.markers
+\item $filters.parameters
+}
+
+The object can be isolated in separate object outside the list by
+following the example below.
 }
 \description{
-Filter the dataset (sumstats or tidy vcf) to remove loci with more than x SNP.
+This filter removes outlier markers
+with too many SNP number per locus/read.
+The data requires snp and locus information (e.g. from a VCF file).
+Having a higher than "normal" SNP number is usually the results of
+assembly artifacts or bad assembly parameters.
+This filter is population-agnostic, but still requires a strata
+file if a vcf file is used as input.
+}
+\details{
+\strong{Interactive version}
+
+There are 2 steps in the interactive version to visualize and filter
+the data based on the number of SNP on the read/locus:
+
+Step 1. SNP number per read/locus visualization
+
+Step 2. Choose the filtering thresholds
+}
+\examples{
+\dontrun{
+turtle.outlier.snp.number <- radiator::filter_snp_number(
+data = "turtle.vcf",
+strata = "turtle.strata.tsv",
+max.snp.number = 4,
+filename = "tidy.data.turtle.tsv"
+)
+
+tidy.data <- turtle.outlier.snp.number$tidy.filtered.snp.number
+
+#Inside the same list, to isolate the markers blacklisted:
+blacklist <- turtle.outlier.snp.number$blacklist.markers
+
+}
 }

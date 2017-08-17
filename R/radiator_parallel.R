@@ -129,10 +129,8 @@ mclapply_win <- function(
 .radiator_parallel <- switch(
   Sys.info()[['sysname']],
   Windows = {mclapply_win},
-  # Linux   = {mclapply_progress_bar},
   # Linux   = {parallel::mclapply},
-  Linux   = {pbmcapply::pbmclapply},
-  # Darwin  = {mclapply_progress_bar}
   # Darwin  = {parallel::mclapply}
+  Linux   = {pbmcapply::pbmclapply},
   Darwin  = {pbmcapply::pbmclapply}
 )
