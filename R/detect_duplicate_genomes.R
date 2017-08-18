@@ -87,7 +87,7 @@
 #' @importFrom parallel detectCores
 #' @importFrom purrr flatten map
 #' @importFrom tibble as_data_frame has_name remove_rownames column_to_rownames
-#' @importFrom ggplot2 ggplot aes geom_violin geom_boxplot stat_summary labs theme element_blank element_text geom_jitter scale_colour_manual scale_y_reverse theme_light
+#' @importFrom ggplot2 ggplot aes geom_violin geom_boxplot stat_summary labs theme element_blank element_text geom_jitter scale_colour_manual scale_y_reverse theme_light ggsave
 
 
 #' @examples
@@ -152,13 +152,31 @@ detect_duplicate_genomes <- function(
 ) {
   cat("\n")
   cat("###############################################################################\n")
-  cat("###################### radiator::detect_duplicate_genomes #######################\n")
+  cat("##################### radiator::detect_duplicate_genomes ######################\n")
   cat("###############################################################################\n")
   timing <- proc.time()
-
+  opt.change <- getOption("width")
+  options(width = 70)
   # Manage missing arguments ---------------------------------------------------
   if (missing(data)) stop("missing data argument")
-  if (missing(distance.method)) distance.method <- NULL
+
+  # folder ---------------------------------------------------------------------
+  # Get date and time to have unique filenaming
+  file.date <- stringi::stri_replace_all_fixed(
+    Sys.time(),
+    pattern = " EDT", replacement = "") %>%
+    stringi::stri_replace_all_fixed(
+      str = .,
+      pattern = c("-", " ", ":"), replacement = c("", "@", ""),
+      vectorize_all = FALSE) %>%
+    stringi::stri_sub(str = ., from = 1, to = 13)
+
+  folder.extension <- stringi::stri_join("detect_duplicate_genomes_", file.date, sep = "")
+  path.folder <- stringi::stri_join(getwd(),"/", folder.extension, sep = "")
+  dir.create(file.path(path.folder))
+
+  message(stringi::stri_join("Folder created: \n", folder.extension))
+  file.date <- NULL #unused object
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {
@@ -267,7 +285,7 @@ detect_duplicate_genomes <- function(
 
     readr::write_tsv(
       x = res$distance,
-      path = "individuals.pairwise.dist.tsv",
+      path = stringi::stri_join(path.folder, "/individuals.pairwise.dist.tsv"),
       col_names = TRUE
     )
 
@@ -287,7 +305,7 @@ detect_duplicate_genomes <- function(
       )
     readr::write_tsv(
       x = res$distance.stats,
-      path = "individuals.pairwise.distance.stats.tsv",
+      path = stringi::stri_join(path.folder, "/individuals.pairwise.distance.stats.tsv"),
       col_names = TRUE
     )
 
@@ -312,6 +330,10 @@ detect_duplicate_genomes <- function(
         axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
         axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
       )
+    ggplot2::ggsave(
+      filename = stringi::stri_join(path.folder, "/violin.plot.distance.pdf"),
+      plot = res$violin.plot.distance,
+      width = 20, height = 15, dpi = 600, units = "cm", useDingbats = FALSE)
 
     # Manhattan plot
     res$manhattan.plot.distance <- ggplot2::ggplot(
@@ -335,6 +357,10 @@ detect_duplicate_genomes <- function(
         axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
         axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
       )
+    ggplot2::ggsave(
+      filename = stringi::stri_join(path.folder, "/manhattan.plot.distance.pdf"),
+      plot = res$manhattan.plot.distance,
+      width = 20, height = 15, dpi = 600, units = "cm", useDingbats = FALSE)
   } # end distance method
 
   # Compute genome similarity -------------------------------------------------
@@ -405,12 +431,13 @@ detect_duplicate_genomes <- function(
         METHOD = rep("genome similarity", n())
       )
     ID1.pop <- ID2.pop <- NULL
-    res$pairwise.genome.similarity <- pairwise.genome.similarity
+    res$pairwise.genome.similarity <- pairwise.genome.similarity %>%
+      dplyr::arrange(dplyr::desc(PROP_IDENTICAL))
     pairwise.genome.similarity <- NULL
 
     readr::write_tsv(
       x = res$pairwise.genome.similarity,
-      path = "individuals.pairwise.genome.similarity.tsv",
+      path = stringi::stri_join(path.folder, "/individuals.pairwise.genome.similarity.tsv"),
       col_names = TRUE
     )
 
@@ -430,7 +457,7 @@ detect_duplicate_genomes <- function(
       )
     readr::write_tsv(
       x = res$genome.stats,
-      path = "individuals.pairwise.genome.stats.tsv",
+      path = stringi::stri_join(path.folder, "/individuals.pairwise.genome.stats.tsv"),
       col_names = TRUE
     )
 
@@ -457,6 +484,11 @@ detect_duplicate_genomes <- function(
         axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
         axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
       )
+    ggplot2::ggsave(
+      filename = stringi::stri_join(path.folder, "/violin.plot.genome.pdf"),
+      plot = res$violin.plot.genome,
+      width = 20, height = 15, dpi = 600, units = "cm", useDingbats = FALSE)
+
     # Manhattan plot
     res$manhattan.plot.genome <- ggplot2::ggplot(
       data = res$pairwise.genome.similarity,
@@ -479,6 +511,11 @@ detect_duplicate_genomes <- function(
         axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
         axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
       )
+
+    ggplot2::ggsave(
+      filename = stringi::stri_join(path.folder, "/manhattan.plot.genome.pdf"),
+      plot = res$manhattan.plot.genome,
+      width = 20, height = 15, dpi = 600, units = "cm", useDingbats = FALSE)
   } # end genome method
 
   # RESULTS --------------------------------------------------------------------
@@ -489,19 +526,24 @@ $distance.stats                   # Summary statistics of the distance method
 $pairwise.genome.similarity       # Genome method results
 $genome.stats                     # Summary statistics of the genome method\n\n
 Visualization:
-$violin.plot.distance
-$manhattan.plot.distance
-$violin.plot.genome
-$manhattan.plot.genome\n
+    $violin.plot.distance
+    $manhattan.plot.distance
+    $violin.plot.genome
+    $manhattan.plot.genome\n
 Saved in the working directory:
-individuals.pairwise.dist.tsv
-individuals.pairwise.distance.stats.tsv
-individuals.pairwise.genome.similarity.tsv
-individuals.pairwise.genome.stats.tsv
+    individuals.pairwise.dist.tsv
+    individuals.pairwise.distance.stats.tsv
+    individuals.pairwise.genome.similarity.tsv
+    individuals.pairwise.genome.stats.tsv
+    violin.plot.distance.pdf
+    manhattan.plot.distance.pdf
+    violin.plot.genome.pdf
+    manhattan.plot.genome.pdf
 ")
-  message("Working directory: ", getwd())
+  message("More details in: ", folder.extension)
   message("Computation time: ", round((proc.time() - timing)[[3]]), " sec")
   cat("############################## completed ##############################\n")
+  options(width = opt.change)
   return(res)
 } # end function detect_duplicate_genomes
 

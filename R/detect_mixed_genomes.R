@@ -165,9 +165,29 @@ detect_mixed_genomes <- function(
   cat("#################### radiator::detect_mixed_genomes #####################\n")
   cat("#######################################################################\n")
   timing <- proc.time()
+  opt.change <- getOption("width")
+  options(width = 70)
   message("Analyzing data...")
   # manage missing arguments ---------------------------------------------------
   if (missing(data)) stop("missing data argument")
+
+  # folder ---------------------------------------------------------------------
+  # Get date and time to have unique filenaming
+  file.date <- stringi::stri_replace_all_fixed(
+    Sys.time(),
+    pattern = " EDT", replacement = "") %>%
+    stringi::stri_replace_all_fixed(
+      str = .,
+      pattern = c("-", " ", ":"), replacement = c("", "@", ""),
+      vectorize_all = FALSE) %>%
+    stringi::stri_sub(str = ., from = 1, to = 13)
+
+  folder.extension <- stringi::stri_join("detect_mixed_genomes_", file.date, sep = "")
+  path.folder <- stringi::stri_join(getwd(),"/", folder.extension, sep = "")
+  dir.create(file.path(path.folder))
+
+  message(stringi::stri_join("Folder created: \n", folder.extension))
+  file.date <- NULL #unused object
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {
@@ -252,6 +272,11 @@ detect_mixed_genomes <- function(
     dplyr::arrange(POP_ID, HET_PROP) %>%
     dplyr::ungroup(.)
 
+  readr::write_tsv(
+    x = het.ind,
+    path = stringi::stri_join(path.folder, "/individual.heterozygosity.tsv"),
+    col_names = TRUE)
+
   het.ind.overall <- dplyr::mutate(.data = het.ind, POP_ID = as.character(POP_ID)) %>%
     dplyr::bind_rows(dplyr::mutate(.data = het.ind, POP_ID = rep("OVERALL", n()))) %>%
     dplyr::mutate(POP_ID = factor(POP_ID, levels = c(levels(het.ind$POP_ID), "OVERALL"))) %>%
@@ -273,6 +298,12 @@ detect_mixed_genomes <- function(
     dplyr::mutate_if(.tbl = ., .predicate = is.numeric, .funs = round, digits = 4) %>%
     tidyr::unite(data = ., HET_RANGE, HET_MIN, HET_MAX, sep = " - ") %>%
     dplyr::arrange(POP_ID, HET_MEAN)
+
+  readr::write_tsv(
+    x = het.ind.stats,
+    path = stringi::stri_join(path.folder, "/heterozygosity.statistics.tsv"),
+    col_names = TRUE)
+
 
   # Plots ----------------------------------------------------------------------
   message("Generating plots")
@@ -317,6 +348,13 @@ detect_mixed_genomes <- function(
     ggplot2::facet_grid(MISSING_GROUP ~ POP_ID, switch = "x", scales = "free", labeller = ggplot2::labeller(MISSING_GROUP = facet_names))
   # individual.heterozygosity.manhattan.plot
 
+  ggplot2::ggsave(
+    filename = stringi::stri_join(path.folder, "/individual.heterozygosity.manhattan.plot.pdf"),
+    plot = individual.heterozygosity.manhattan.plot,
+    width = 20, height = 15, dpi = 600, units = "cm", useDingbats = FALSE)
+
+
+
   individual.heterozygosity.boxplot <- ggplot2::ggplot(data = het.ind.overall, ggplot2::aes(x = POP_ID, y = HET_PROP, colour = POP_ID)) +
     ggplot2::geom_boxplot() +
     ggplot2::labs(y = "Individual's Mean Observed Heterozygosity (proportion)") +
@@ -333,6 +371,10 @@ detect_mixed_genomes <- function(
       axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
     )
   # individual.heterozygosity.boxplot
+  ggplot2::ggsave(
+    filename = stringi::stri_join(path.folder, "/individual.heterozygosity.boxplot.pdf"),
+    plot = individual.heterozygosity.boxplot,
+    width = 20, height = 15, dpi = 600, units = "cm", useDingbats = FALSE)
 
   ## Step 2: Blacklist outlier individuals -------------------------------------
   # Blacklist individuals based a threshold of mean heterozygosity
@@ -346,10 +388,14 @@ detect_mixed_genomes <- function(
       dplyr::distinct(INDIVIDUALS)
 
     message(stringi::stri_join("Filter individual's heterozygosity: ", length(blacklist.ind.het$INDIVIDUALS), " individual(s) blacklisted"))
-
+    readr::write_tsv(
+      x = blacklist.ind.het,
+      path = stringi::stri_join(path.folder, "/blacklist.ind.het.tsv"),
+      col_names = TRUE)
   } else {
     blacklist.ind.het <- "ind.heterozygosity.threshold is necessary to get a blacklist of individuals"
   }
+
   message(stringi::stri_join("Computation time: ", round((proc.time() - timing)[[3]]), " sec"))
   cat("############################## completed ##############################\n")
   res <- list(
@@ -359,5 +405,6 @@ detect_mixed_genomes <- function(
     individual.heterozygosity.boxplot = individual.heterozygosity.boxplot,
     individual.heterozygosity.manhattan.plot = individual.heterozygosity.manhattan.plot
   )
+  options(width = opt.change)
   return(res)
 }

@@ -133,10 +133,11 @@ filter_snp_number <- function(
         vectorize_all = FALSE) %>%
       stringi::stri_sub(str = ., from = 1, to = 13)
 
-    path.folder <- stringi::stri_join(getwd(),"/", "filter_snp_number_", file.date, sep = "")
+    folder.extension <- stringi::stri_join("filter_snp_number_", file.date, sep = "")
+    path.folder <- stringi::stri_join(getwd(),"/", folder.extension, sep = "")
     dir.create(file.path(path.folder))
 
-    message(stringi::stri_join("Folder created: \n", path.folder))
+    message(stringi::stri_join("Folder created: \n", folder.extension))
     file.date <- NULL #unused object
   } else {
     path.folder <- getwd()
