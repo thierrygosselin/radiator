@@ -100,7 +100,6 @@ filter_snp_number <- function(
 
   # manage missing arguments -----------------------------------------------------
   if (missing(data)) stop("Input file missing")
-  if (missing(max.snp.number)) stop("max.snp.number argument value is missing")
 
   if (!is.null(pop.levels) & is.null(pop.labels)) {
     pop.levels <- stringi::stri_replace_all_fixed(pop.levels, pattern = " ", replacement = "_", vectorize_all = FALSE)
@@ -127,13 +126,13 @@ filter_snp_number <- function(
     # Get date and time to have unique filenaming
     file.date <- stringi::stri_replace_all_fixed(
       Sys.time(),
-      pattern = " EDT", replacement = "") %>% 
+      pattern = " EDT", replacement = "") %>%
       stringi::stri_replace_all_fixed(
         str = .,
         pattern = c("-", " ", ":"), replacement = c("", "@", ""),
-        vectorize_all = FALSE) %>% 
+        vectorize_all = FALSE) %>%
       stringi::stri_sub(str = ., from = 1, to = 13)
-    
+
     path.folder <- stringi::stri_join(getwd(),"/", "filter_snp_number_", file.date, sep = "")
     dir.create(file.path(path.folder))
 
