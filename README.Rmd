@@ -31,7 +31,7 @@ knitr::opts_chunk$set(
 ```
 
 
-# radiator: an R package for the analysis of GBS/RADseq data
+# radiator: an R package for RADseq Data Exploration, Manipulation and Visualization
 
 This is the development page of the **radiator**, 
 if you want to help, see [contributions section](https://github.com/thierrygosselin/radiator#contributions)

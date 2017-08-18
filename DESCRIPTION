@@ -10,7 +10,7 @@ Authors@R: c(
   person("Manuel", "Lamothe", role = "ctb"),
   person("Laura", "Benestan", role = "ctb"))
 Maintainer: Thierry Gosselin <thierrygosselin@icloud.com>
-Description: radiator: an R package for the analysis of RADseq data.
+Description: radiator: an R package for RADseq Data Exploration, Manipulation and Visualization.
 Depends:
     R (>= 3.2.3)
 Imports:

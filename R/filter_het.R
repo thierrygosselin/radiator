@@ -1475,3 +1475,56 @@ number of populations in the dataset turns off the filter.\n")
   return(res)
 }
 
+# param ind.heterozygosity.threshold (string, double, optional)
+# Blacklist individuals based on observed heterozygosity (averaged across markers).
+#
+#
+# The string contains 2 thresholds values (min and max).
+# The values are proportions (0 to 1), where 0 turns off the min threshold and
+# 1 turns off the max threshold.
+# Individuals with mean observed heterozygosity higher (>) or lower (<)
+# than the thresholds will be blacklisted.
+#
+# Default: \code{ind.heterozygosity.threshold = NULL} will turn off completely
+# the filter and the function will only output the plots and table of heterozygosity.
+
+
+
+#  \strong{Individual observed heterozygosity (averaged across markers):}
+# To help discard an individual based on his observed heterozygosity
+# (averaged across markers),
+# use the manhanttan plot to:
+# \enumerate{
+# \item contrast the individual with population and overall samples.
+# \item visualize the impact of missigness information (based on population or
+# overall number of markers) and the individual observed heterozygosity. The
+# larger the point, the more missing genotypes.
+# }
+# \strong{Outlier above average:}
+# \itemize{
+# \item potentially represent two samples mixed together (action: blacklist), or...
+# \item a sample with more sequecing effort (point size small): did you merge your replicates fq files ? (action : keep and monitor)
+# \item a sample with poor sequencing effort (point size large) where the genotyped markers are
+# all heterozygotes, verify this with missingness (action: discard)
+# }
+# In all cases, if there is no bias in the population sequencing effort,
+# the size of the point will usually be "average" based on the population or
+# overall number of markers.
+
+
+
+
+#
+# \strong{Outlier below average:}
+# \itemize{
+# \item A point with a size larger than the population or overall average (= lots of missing):
+# the poor polymorphism discovery of the sample is probably the result of bad
+# DNA quality, a bias in sequencing effort, etc. (action: blacklist)
+# \item A point with a size that looks average (not much missing):
+# this sample requires more attention (action: blacklist) and conduct more tests.
+# e.g. for biallelic data, look for coverage imbalance between ALT/REF allele.
+# At this point you need to distinguish between an artifact of poor polymorphism discovery
+# or a biological reason (highly inbred individual, etc.).
+# }
+#
+
