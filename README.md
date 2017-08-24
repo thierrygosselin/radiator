@@ -1,6 +1,6 @@
 [![Travis-CI Build Status](https://travis-ci.org/thierrygosselin/radiator.svg?branch=master)](https://travis-ci.org/thierrygosselin/radiator) [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/thierrygosselin/radiator?branch=master&svg=true)](https://ci.appveyor.com/project/thierrygosselin/radiator) [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/radiator)](http://cran.r-project.org/package=radiator) [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active) [![DOI](https://zenodo.org/badge/14548/thierrygosselin/radiator.svg)](https://zenodo.org/badge/latestdoi/14548/thierrygosselin/radiator)
 
-[![packageversion](https://img.shields.io/badge/Package%20version-0.0.3-orange.svg)](commits/master) [![Last-changedate](https://img.shields.io/badge/last%20change-2017--08--18-brightgreen.svg)](/commits/master)
+[![packageversion](https://img.shields.io/badge/Package%20version-0.0.3-orange.svg)](commits/master) [![Last-changedate](https://img.shields.io/badge/last%20change-2017--08--24-brightgreen.svg)](/commits/master)
 
 ------------------------------------------------------------------------
 
@@ -146,15 +146,10 @@ New to pull request on github ? The process is very easy:
 -   Submit a pull request and include a brief description of your changes.
 -   “Fixing typos” is perfectly adequate.
 
-GBS workflow
-------------
-
-The **radiator** package fits currently at the end of the GBS workflow. Below, a flow chart using [STACKS](http://catchenlab.life.illinois.edu/stacks/) and other software. ![](vignettes/GBS_workflow.png)
-
 radiator workflow
 -----------------
 
-Currently under construction. Come back soon!
+The **radiator** package fits currently at the end of the GBS workflow (e.g. after running [STACKS](http://catchenlab.life.illinois.edu/stacks/) inside R with [stackr](https://github.com/thierrygosselin/stackr).
 
 **Table 1: Quality control and filtering RAD/GBS data**
 
@@ -299,67 +294,73 @@ Currently under construction. Come back soon!
 
 **Step 1 Quality** Ask yourself these questions:
 
--   DNA quality, libraries quality, sequencing lanes quality ?
--   Please stop thinking in terms of quantity (e.g. millions of reads returned), and start thinking about actual quality of your new data.
--   Use quality metrics inside available software (e.g. fastqc)
+-   Quality of : DNA, libraries and sequencing lanes ?
+-   Please, stop thinking in terms of quantity (e.g. millions of reads returned), and prioritize and think more about the actual quality of your new data.
+-   Read about the quality metrics used in available software (e.g. fastqc)
 
 **Step 2 *de novo* assembly and genotyping**
 
--   This is conducted outside radiator
--   Integrated software pipelines include: [STACKS](http://catchenlab.life.illinois.edu/stacks/), [pyRAD](http://dereneaton.com/software/), [dDocent](https://ddocent.wordpress.com), [AftrRAD](http://u.osu.edu/sovic.1/downloads/). If you want to develop your own pipeline, there are a multitude of approaches, good luck.
+-   This part is conducted outside radiator (e.g. using [STACKS](http://catchenlab.life.illinois.edu/stacks/) inside R with the package [stackr](https://github.com/thierrygosselin/stackr))
+-   Software pipelines include: [STACKS](http://catchenlab.life.illinois.edu/stacks/), [pyRAD](http://dereneaton.com/software/), [dDocent](https://ddocent.wordpress.com), [AftrRAD](http://u.osu.edu/sovic.1/downloads/). If you want to develop your own pipeline, there are a multitude of approaches, good luck.
+-   At the end of the pipeline, use liberal filter thresholds the go in radiator and do the heavy lifting.
 
-**Step 3 Outliers**
+**Step 3 Pattern of missingness**
 
--   Remove replicates (I hope you have some).
--   Remove *de novo* assembly artifact, by creating blacklist of genotypes or whitelist of markers:
-    -   individuals with more than 2 alleles (use `summary_haplotypes`)
-    -   outlier markers with extreme number of SNP/read or haplotype (use `filter_snp_number`)
--   Remove potential duplicated samples that went off your radar, try `detect_duplicate_genomes`.
--   Highlight outliers individual's heterozygosity that might represent mixed samples with `detect_mixed_individuals`.
--   The metric you're using: a *de novo* artefact or a reliable signal of biological polymorphism?
--   Should the statistic you are interested in be consistent throughout the read ?
--   Will you consider haplotype or snp level statistics?
--   The consistensies of SNPs statistics among haplotype can be throughly tested by using `snp.ld` argument in several radiator functions.
--   Any other outliers with different individual's or markers metrics (reads/sample, etc) ?
-
-**Step 4 Pattern of missingness**
-
--   Use `grur::missing_visualization` with/without your new blacklists (e.g. of genotypes, individuals) and with/without whitelist of markers to examine patterns of missingness in you dataset before more extensive filtering (there is a vignette for this step)
+-   `grur::missing_visualization`: I really like running this function after modifying my RAD data, to make sure bias were not introduce.
 -   The trick here is to use the `strata` argument to find patterns associated with different variables of your study (lanes, chips, sequencers, populations, sample sites, reads/samples, etc).
 -   Do you see a trend between your missing pattern and reads/samples ? Heterozygosity?
 -   Do you need more sequencing? Do you have to re-run some lanes?
+-   Usually for this first run I only use the blacklists of ID and markers to start filtering with individuals and markers that won't drag down the polymorphism discovery. I re-introduce individuals at the end of the pipeline and re-run `grur::missing_visualization` to see what the new analysis reveal.
 
-**Step 5-6 Coverage and Genotype Likelihood**
+**Step 4 Outliers**
+
+-   Remove replicates (I hope you have some).
+-   Remove *de novo* assembly artifact:
+    -   run `summary_haplotypes` to automatically generate blacklist of genotypes and whitelist of markers. The function will highlight individuals and locus with more than 2 alleles (outlier individuals and markers).
+    -   run `filter_snp_number`, function will highlight outlier locus/reads with extreme number of SNP/read or haplotypethe
+-   Remove potential duplicated samples that went off your radar with `detect_duplicate_genomes`.
+-   Remove mixed samples or pooled samples that creates outliers individual's heterozygosity with the function `detect_mixed_individuals`.
+
+**Step 5 Pattern of missingness**
+
+-   Re-run `grur::missing_visualization` with/without your new blacklists (e.g. of genotypes, individuals) and with/without whitelist of markers to examine patterns of missingness in you dataset before more extensive filtering (there is a vignette for this step)
+-   The trick here is to use the `strata` argument to find patterns associated with different variables of your study (lanes, chips, sequencers, populations, sample sites, reads/samples, etc).
+-   Do you see a trend between your missing pattern and reads/samples ? Heterozygosity?
+
+**Step 6: Metrics and statistics, some thoughts** \* Metrics: what you're observing so far is it *de novo* artefact or a reliable signal of biological polymorphism? \* Statistics: are you going to use haplotype or snp level statistics? Should the statistic you are interested in be consistent throughout the read ? \* Use `snp.ld` argument in several of radiator functions to throughly test the consistensies of SNPs statistics among haplotype.
+
+**Step 7 Coverage and Genotype Likelihood**
 
 -   Coverage is an individual metric. With most software you'll find allele and genotype coverage info.
--   Genotype likelihood is usually a metric based on coverage of the different genotypes found in all of your data.
+-   Genotype likelihood is usually a metric based on coverage of the different genotypes found in all of your data. Since it's v.1.45, STACKS no longer output the useful GL metric inside the VCF. It was using only one number to qualify the genotype, while most other pipelline using GL/PL are using 3 numbers for homozygous REF, heterozygous and homozygous ALT genotypes.
 -   Good allele coverage is required for reliable genotypes.
 -   Reliable genotypes is required for reliable downstream summary statistics.
--   Explore filtering options in `filter_coverage` and `filter_genotype_likelihood`.
+-   If your data allows it (you have coverage and/or genotype likelihood metrics), explore filtering options in `filter_coverage` and `filter_genotype_likelihood`.
 
-**Step 7 Prop. Genotyped**
+**Step 8 Prop. Genotyped**
 
--   Do you have enough individuals in each sampling sites (`filter_individual`) and enough putative populations (`filter_population`) for each markers ?
+-   Use the functions `filter_individual` and `filter_population` to explore if you have enough individuals and enough putative populations for markers filtering.
 -   Use blacklist of individuals with different thresholds.
 -   Keep different whitelist of markers.
--   Use `common.markers` argument inside most of radiator functions to test the impact of vetting loci based on shared markers.
+-   Use `common.markers` argument inside most of radiator functions to test the impact of vetting loci based on shared markers. This can be use strategically for Fst calculations.
 -   Use imputation methods provided by radiator (inside `tidy_genomic_data` or `genomic_converter`, as a separate module: `radiator_imputations_module`) to assess the impact of lowering or increasing threshold that impact missing data.
 
-**Step 8 HET, Fis, HWE**
+**Step 9 HET, Fis, HWE**
 
 -   Overall and/or per populations hwe, heterozygosity and Fis statistics can highlight: *de novo* assembly problems (oversplitting/undermerging), genotyping problems or biological problems.
 -   These filters allows to test rapidly if departure from realistic expectations are a problem for downstream analysis ?
 -   Choose your threshold wisely and test impact on pipeline.
 -   Use `filter_het`, `filter_fis`, `filter_hwe` and look again at the individual's heterozygosity (`detect_mixed_individuals`) for outliers.
+-   Hardy-Weinberg Equilibrium: this analysis as [several underlying assumptions](https://en.wikipedia.org/wiki/Hardy–Weinberg_principle). Please do not conduct analysis with sampling sites. Note: most natural populations are violating one or more of the assumptions.
 
-**Step 9 MAF**
+**Step 10 MAF**
 
 -   Remove artifactual and uninformative markers.
 -   Use MAF arguments inside several of radiator functions to tailor MAF to your analysis tolerance to minor allelel frequencies.
 -   There is also a separate filter in radiator: `filter_maf`
+-   I usually run the filter to explore and understand the impact of the different thresholds on the data. Then use different ones inside the different functions of radiator.
 
-**Step 10 Pattern of missingness, again**
+**Step 11 Pattern of missingness, yes... again!**
 
--   Use `grur::missing_visualization` with your new blacklists (e.g. of genotypes, individuals) and with your whitelist of markers to examine patterns of missingness in your dataset after filtering (there is a vignette for this step)
--   The trick here is to use the `strata` argument to find patterns associated with different variables of your study (lanes, chips, sequencers, populations, sample sites, reads/samples, etc).
--   Do you see a trend between your missing pattern and reads/samples ? Heterozygosity?
+-   Use `grur::missing_visualization` with your latest blacklists (e.g. of genotypes, individuals) and with your latest whitelist of markers to examine patterns of missingness in your dataset after filtering.
+-   Hopefully, you will have remove all the bias with the filters.
