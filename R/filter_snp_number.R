@@ -89,11 +89,15 @@ filter_snp_number <- function(
   strata = NULL,
   pop.levels = NULL,
   pop.labels = NULL,
-  pop.select = NULL
+  pop.select = NULL,
+  parallel.core = parallel::detectCores() - 1
 ) {
   cat("#######################################################################\n")
   cat("#################### radiator::filter_snp_number ######################\n")
   cat("#######################################################################\n")
+  opt.change <- getOption("width")
+  options(width = 70)
+  timing <- proc.time()
 
   # list to store results
   res <- list()
@@ -123,7 +127,7 @@ filter_snp_number <- function(
     message("Step 2. Choose the filtering thresholds")
 
     # Folder -------------------------------------------------------------------
-    # Get date and time to have unique filenaming
+    # Date and time
     file.date <- stringi::stri_replace_all_fixed(
       Sys.time(),
       pattern = " EDT", replacement = "") %>%
@@ -132,12 +136,11 @@ filter_snp_number <- function(
         pattern = c("-", " ", ":"), replacement = c("", "@", ""),
         vectorize_all = FALSE) %>%
       stringi::stri_sub(str = ., from = 1, to = 13)
-
     folder.extension <- stringi::stri_join("filter_snp_number_", file.date, sep = "")
     path.folder <- stringi::stri_join(getwd(),"/", folder.extension, sep = "")
     dir.create(file.path(path.folder))
 
-    message(stringi::stri_join("Folder created: \n", folder.extension))
+    message("Folder created: \n", folder.extension)
     file.date <- NULL #unused object
   } else {
     path.folder <- getwd()
@@ -173,6 +176,7 @@ filter_snp_number <- function(
     pop.levels = pop.levels,
     pop.labels = pop.labels,
     pop.select = pop.select,
+    parallel.core = parallel.core,
     filename = NULL
   )
 
@@ -307,6 +311,8 @@ filter_snp_number <- function(
     message("The number of markers blacklisted (SNP/LOCUS): ", markers.blacklist)
     message("The number of markers before -> after filter_snp_number (SNP/LOCUS)")
     message(markers.before, " -> ", markers.after)
-  cat("############################## completed ##############################\n")
+    timing <- proc.time() - timing
+    message("\nComputation time: ", round(timing[[3]]), " sec")
+    cat("############################## completed ##############################\n")
   return(res)
 }

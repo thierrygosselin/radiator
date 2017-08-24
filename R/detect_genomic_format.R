@@ -26,15 +26,15 @@
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 detect_genomic_format <- function(data){
-  
+
   if (!is.vector(data)) {
     if (tibble::has_name(data, "POP_ID") & tibble::has_name(data, "INDIVIDUALS") & tibble::has_name(data, "MARKERS")) {
       data.type <- "tbl_df" #"df.file"
     } else {
       data.type <- class(data)[1]
-      
+
       if (!data.type %in% c("genind", "genlight", "gtypes")) stop("Input file not recognised")
-      
+
       # old code
       # if (adegenet::is.genind(data)) {
       #   data.type <- "genind.file"
@@ -47,12 +47,12 @@ detect_genomic_format <- function(data){
     }
   } else {
     data.type <- readChar(con = data, nchars = 16L, useBytes = TRUE)
-    
+
     if (identical(data.type, "##fileformat=VCF") | stringi::stri_detect_fixed(str = data, pattern = ".vcf")) {
       data.type <- "vcf.file"
       # message("File type: VCF")
     }
-    
+
     if (stringi::stri_detect_fixed(str = data, pattern = ".tped")) {
       data.type <- "plink.file"
       # message("File type: PLINK")
@@ -60,7 +60,7 @@ detect_genomic_format <- function(data){
         stop("Missing tfam file with the same prefix as your tped")
       }
     }
-    
+
     if (stringi::stri_detect_fixed(str = data.type, pattern = "POP_ID") | stringi::stri_detect_fixed(str = data.type, pattern = "INDIVIDUALS") | stringi::stri_detect_fixed(str = data.type, pattern = "MARKERS") | stringi::stri_detect_fixed(str = data.type, pattern = "LOCUS")) {
       data.type <- "tbl_df" #"df.file"
       # message("File type: data frame of genotypes")
@@ -68,13 +68,24 @@ detect_genomic_format <- function(data){
     if (stringi::stri_detect_fixed(str = data.type, pattern = "Catalog")) {
       data.type <- "haplo.file"
     }
-    if (stringi::stri_detect_fixed(str = data, pattern = ".gen")) {
+    if (stringi::stri_detect_fixed(
+      str = stringi::stri_sub(str = data, from = -4, to = -1),
+      pattern = ".gen")) {
       data.type <- "genepop.file"
     }
-    if (stringi::stri_detect_fixed(str = data, pattern = ".dat")) {
+    if (stringi::stri_detect_fixed(
+      str = stringi::stri_sub(str = data, from = -4, to = -1),
+      pattern = ".dat")) {
       data.type <- "fstat.file"
     }
-    
+
+    # fst file
+    if (stringi::stri_detect_fixed(
+      str = stringi::stri_sub(str = data, from = -4, to = -1),
+      pattern = ".rad")) {
+      data.type <- "fst.file"
+    }
+
   } # end file type detection
   return(data.type)
 } # End detect_genomic_format

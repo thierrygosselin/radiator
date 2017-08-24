@@ -10,7 +10,8 @@ filter_individual(data, vcf.metadata = FALSE, interactive.filter = TRUE,
   blacklist.genotype = NULL, whitelist.markers = NULL,
   monomorphic.out = TRUE, max.marker = NULL, snp.ld = NULL,
   common.markers = FALSE, strata = NULL, pop.levels = NULL,
-  pop.labels = NULL, pop.select = NULL)
+  pop.labels = NULL, pop.select = NULL,
+  parallel.core = parallel::detectCores() - 1)
 }
 \arguments{
 \item{data}{11 options: VCF (SNPs or Haplotypes,
@@ -32,28 +33,28 @@ to keep (except the GT field that is always imported).
 e.g. \code{vcf.metadata = "PL"} or \code{vcf.metadata = c("DP", "GL")}.
 Default: \code{vcf.metadata = FALSE}.}
 
-\item{interactive.filter}{(optional, logical) Do you want the filtering session to 
-be interactive. With default: \code{interactive.filter == TRUE}, the user is 
+\item{interactive.filter}{(optional, logical) Do you want the filtering session to
+be interactive. With default: \code{interactive.filter == TRUE}, the user is
 asked to see figures of distribution before making decisions for filtering.}
 
-\item{ind.approach}{(character). 
-The approach to filter a marker, is it based on the overall number of 
-genotyped individuals (no concept of populations here), 
-\code{ind.approach = "overall"}, or 
+\item{ind.approach}{(character).
+The approach to filter a marker, is it based on the overall number of
+genotyped individuals (no concept of populations here),
+\code{ind.approach = "overall"}, or
 the number of genotyped individuals per population \code{ind.approach = "pop"}.
 Default: \code{ind.approach = "pop"}.}
 
-\item{ind.threshold}{The individual threshold, proportion, percentage or 
+\item{ind.threshold}{The individual threshold, proportion, percentage or
 number e.g. 0.70, 70, 15.
 Default: \code{ind.threshold = 0.5}.}
 
-\item{prob.pop.threshold}{(integer, optional) Useful to incorporate problematic 
+\item{prob.pop.threshold}{(integer, optional) Useful to incorporate problematic
 populations dragging down polymorphism discovery, but still wanted for analysis.
-If individuals with missing genotypes are not managed upstream, 
-use this threshold to allow variance in the number of populations passing 
+If individuals with missing genotypes are not managed upstream,
+use this threshold to allow variance in the number of populations passing
 the \code{ind.threshold} argument. e.g. with \code{prob.pop.threshold = 2},
-you tolerate a maximum of 2 populations failing to pass the 
-\code{ind.threshold}. Manage after the problematic populations 
+you tolerate a maximum of 2 populations failing to pass the
+\code{ind.threshold}. Manage after the problematic populations
 downstream with blacklist of individuals and/or missing data imputations. This
 argument is not necessary with \code{ind.approach = "overall"}.
 Default: \code{prob.pop.threshold = 0}. See details for more info.}
@@ -63,8 +64,10 @@ This argument is necessary to distinguish percentage from integer individual
 threshold (e.g. 70 percent or 70 individuals).
 Default: \code{percent = FALSE}.}
 
-\item{filename}{(optional) Name of the filtered tidy data frame file 
-written to the working directory (ending with \code{.tsv})
+\item{filename}{(optional) The function uses \code{\link[fst]{write.fst}},
+to write the tidy data frame in
+the folder created in the working directory. The file extension appended to
+the \code{filename} provided is \code{.rad}.
 Default: \code{filename = NULL}.}
 
 \item{blacklist.id}{(optional) A blacklist with individual ID and
@@ -160,6 +163,10 @@ White spaces in population names are replaced by underscore.}
 the analysis. e.g. \code{pop.select = c("QUE", "ONT")} to select \code{QUE}
 and \code{ONT} population samples (out of 20 pops).
 Default: \code{pop.select = NULL}}
+
+\item{parallel.core}{(optional) The number of core used for parallel
+execution during vcf import.
+Default: \code{parallel::detectCores() - 1}.}
 }
 \value{
 With \code{interactive.filter = FALSE}, a list in the global environment,
@@ -178,18 +185,18 @@ With \code{interactive.filter = TRUE}, a list with 2 additionnal objects is crea
 \item $ind.threshold.helper.table
 }
 
-The object can be isolated in separate object outside the list by 
+The object can be isolated in separate object outside the list by
 following the example below.
 }
 \description{
-Filter individuals genotyped at a marker from a tidy data 
-set (long format) of any of these file format: 
-vcf, plink (tped/tfam), stacks haplotype file, genind, 
-genepop, data frame in wide format. The function uses 
-\code{\link[radiator]{tidy_genomic_data}} and 
+Filter individuals genotyped at a marker from a tidy data
+set (long format) of any of these file format:
+vcf, plink (tped/tfam), stacks haplotype file, genind,
+genepop, data frame in wide format. The function uses
+\code{\link[radiator]{tidy_genomic_data}} and
 \code{\link[radiator]{tidy_wide}} to load the file. For filtering
 you can consider the overall number of individuals (no concept of populations here),
-or the number of genotyped individuals per pop. The threshold can be a fixed 
+or the number of genotyped individuals per pop. The threshold can be a fixed
 number of individuals, a proportion or a percentage.
 }
 \details{
@@ -209,10 +216,10 @@ Step 2. Choose the filtering approach and thresholds
 If your a regular radiator user, you've seen the \code{pop.num.threshold}.
 \code{prob.pop.threshold}, is a bit different and requires more thinking,
 because the number of populations genotyped potentially vary across markers,
-which make difficult, sometimes, the use of \code{pop.num.threshold}. 
-e.g. If only 2 populations out of 10 are genotyped for a marker and you use 
+which make difficult, sometimes, the use of \code{pop.num.threshold}.
+e.g. If only 2 populations out of 10 are genotyped for a marker and you use
 \code{pop.num.threshold = 0.6} this could lead to inconsistensis. Thus,
-it's easier to use the number of population you are willing to accept 
+it's easier to use the number of population you are willing to accept
 failling to conform to the threshold.
 }
 \examples{
@@ -225,7 +232,7 @@ ind.threshold = 50,
 percent = TRUE,
 prob.pop.threshold = 2,
 filename = "tidy.data.turtle.tsv"
-) 
+)
 
 #If interactive.filter = TRUE, a list is created and to view the filtered tidy data:
 tidy.data <- turtle.ind$tidy.filtered.ind

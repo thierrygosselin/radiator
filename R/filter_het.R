@@ -83,15 +83,23 @@
 #' downstream with blacklists and whitelists produced by the function.
 #' Default: \code{outlier.pop.threshold = 1}. See details for more info.
 
+#' @param coverage.info (optional, logical) Use
+#' \code{coverage.info = TRUE}, if you want to visualize
+#' the relationshio between locus coverage and locus observed heterozygosity
+#' statistics. Coverage information is required (e.g. in a vcf file...).
+#' Default: {coverage.info = FALSE}.
+
 #' @param helper.tables (logical) Output tables that show
 #' the number of markers blacklisted or whitelisted based on a series of
 #' automatic thresholds to guide decisions. When \code{interactive.filter == TRUE},
 #' helper tables are written to the directory.
 #' Default: \code{helper.tables = FALSE}.
 
-#' @param filename Name of the tidy data set written to the working directory (optional).
-#' e.g. "tasmanian.devil.tidy.het.tsv".
-#' Default: \code{filename = NULL}
+#' @param filename (optional) The function uses \code{\link[fst]{write.fst}},
+#' to write the tidy data frame in
+#' the folder created in the working directory. The file extension appended to
+#' the \code{filename} provided is \code{.rad}.
+#' Default: \code{filename = NULL}.
 
 #' @details
 #' \strong{Interactive version}
@@ -176,6 +184,8 @@
 #' \item the boxplot of observed heterozygosity averaged across markers and pop:\code{$markers.pop.heterozygosity.boxplot}
 #' \item the density plot of observed heterozygosity averaged across markers and pop:\code{$markers.pop.heterozygosity.density.plot}
 #' \item the manhattan plot of observed heterozygosity averaged across markers and pop:\code{$markers.pop.heterozygosity.manhattan.plot}
+#' \item the relationship between the number of SNPs on a locus and locus observed heterozygosity statistics:\code{$snp.per.locus.het.plot}
+#' \item the relationship between locus coverage (read depth) and locus observed heterozygosity statistics:\code{$het.cov.plot}
 #' \item whitelist of markers:\code{$whitelist.markers}
 #' \item whitelist of markers:\code{$whitelist.markers}
 #' }
@@ -205,8 +215,9 @@ filter_het <- function(
   het.dif.threshold = 1,
   outlier.pop.threshold = 1,
   helper.tables = FALSE,
+  coverage.info = FALSE,
   filename = NULL,
-  vcf.metadata = FALSE,
+  vcf.metadata = TRUE,
   blacklist.id = NULL,
   blacklist.genotype = NULL,
   whitelist.markers = NULL,
@@ -223,7 +234,10 @@ filter_het <- function(
   cat("#######################################################################\n")
   cat("######################### radiator::filter_het ##########################\n")
   cat("#######################################################################\n")
+  opt.change <- getOption("width")
+  options(width = 70)
   timing <- proc.time()
+
   # manage missing arguments -----------------------------------------------------
   if (missing(data)) stop("Input file missing")
   if (!is.null(pop.levels) & is.null(pop.labels)) {
@@ -250,26 +264,30 @@ filter_het <- function(
     message("Step 4: Blacklist markers based on observed heterozygosity\n\n")
   }
   # Folder -------------------------------------------------------------------
-  # Get date and time to have unique filenaming
-  file.date <- stringi::stri_replace_all_fixed(Sys.time(), pattern = " EDT", replacement = "")
-  file.date <- stringi::stri_replace_all_fixed(file.date, pattern = c("-", " ", ":"), replacement = c("", "@", ""), vectorize_all = FALSE)
-  file.date <- stringi::stri_sub(file.date, from = 1, to = 13)
-
-  path.folder <- stringi::stri_join(getwd(),"/", "filter_het_", file.date, sep = "")
+  # Date and time
+  file.date <- stringi::stri_replace_all_fixed(
+    Sys.time(),
+    pattern = " EDT", replacement = "") %>%
+    stringi::stri_replace_all_fixed(
+      str = .,
+      pattern = c("-", " ", ":"), replacement = c("", "@", ""),
+      vectorize_all = FALSE) %>%
+    stringi::stri_sub(str = ., from = 1, to = 13)
+  folder.extension <- stringi::stri_join("filter_het_", file.date, sep = "")
+  path.folder <- stringi::stri_join(getwd(),"/", folder.extension, sep = "")
   dir.create(file.path(path.folder))
-
-  message("Folder created: ", path.folder)
+  message("\nFolder created: ", folder.extension)
   file.date <- NULL #unused object
 
   # Filter parameter file ------------------------------------------------------
-  message("\nParameters used in this run will be store in a file")
+  message("Parameters used in this run are stored in a file")
   filters.parameters <- list.files(path = getwd(), pattern = "filters_parameters.tsv", full.names = TRUE)
   if (length(filters.parameters) == 0) {
     filters.parameters <- tibble::data_frame(FILTERS = as.character(), PARAMETERS = as.character(), VALUES = as.integer(), BEFORE = as.character(), AFTER = as.character(), BLACKLIST = as.integer(), UNITS = as.character(), COMMENTS = as.character())
     readr::write_tsv(x = filters.parameters, path = "filters_parameters.tsv", append = FALSE, col_names = TRUE)
-    message("Created a file to store filters parameters: filters_parameters.tsv\n")
+    message("    Created a parameter file: filters_parameters.tsv")
   } else {
-    message("Using the filters parameters file found in the directory\n")
+    message("    Using the filters parameters file: filters_parameters.tsv")
   }
   # File type detection----------------------------------------------------------
   data.type <- radiator::detect_genomic_format(data)
@@ -278,6 +296,10 @@ filter_het <- function(
     message("With stacks haplotype file the approach is automatically set to: haplotype")
     # counter intuitive, but there is no snp or haplotype info in a stacks haplotypes file
     het.approach[1] <- "SNP"
+  }
+
+  if (coverage.info) {
+    vcf.metadata <- TRUE
   }
 
   # import data ----------------------------------------------------------------
@@ -312,10 +334,6 @@ filter_het <- function(
   # Biallelic data ?
   biallelic <- radiator::detect_biallelic_markers(data = input, verbose = FALSE)
 
-  # if (!biallelic && !tibble::has_name(input, "ALT")) {
-  #   input <- radiator::ref_alt_alleles(data = input, monomorphic.out = TRUE, parallel.core = parallel.core)$input
-  # }
-
   # scan for the columnn CHROM and keep the info to include it after imputations
   if (tibble::has_name(input, "CHROM")) {
     marker.meta <- dplyr::distinct(.data = input, MARKERS, CHROM, LOCUS, POS)
@@ -342,8 +360,6 @@ information")
 
   # n.markers.overall <- dplyr::n_distinct(input$MARKERS[input$GT != "000000"])
   n.markers.overall <- dplyr::n_distinct(input$MARKERS)
-
-
 
   if (tibble::has_name(input, "GT_BIN")) {
     het.summary <- dplyr::mutate(
@@ -423,9 +439,12 @@ information")
   y.breaks <- seq(0, y.breaks.max + y.breaks.by , by = y.breaks.by)
 
   # labeller to rename in the facet_grid or facet_wrap call:
-  facet_names <- ggplot2::as_labeller(c(`MISSING_PROP_OVERALL` = "Missing (overall)", `MISSING_PROP_POP` = "Missing (populations)"))
+  facet_names <- ggplot2::as_labeller(
+    c(`MISSING_PROP_OVERALL` = "Missing (overall)", `MISSING_PROP_POP` = "Missing (populations)"))
 
-  individual.heterozygosity.manhattan.plot <- ggplot2::ggplot(data = het.ind.overall, ggplot2::aes(x = POP_ID, y = HET_PROP, size = MISSING_PROP, colour = POP_ID)) +
+  individual.heterozygosity.manhattan.plot <- ggplot2::ggplot(
+    data = het.ind.overall,
+    ggplot2::aes(x = POP_ID, y = HET_PROP, size = MISSING_PROP, colour = POP_ID)) +
     ggplot2::geom_jitter(alpha = 0.6) +
     ggplot2::labs(y = "Individual's Mean Observed Heterozygosity (proportion)") +
     # labs(x = "Populations") +
@@ -455,7 +474,9 @@ information")
     ggplot2::facet_grid(MISSING_GROUP ~ POP_ID, switch = "x", scales = "free", labeller = ggplot2::labeller(MISSING_GROUP = facet_names))
   # individual.heterozygosity.manhattan.plot
 
-  individual.heterozygosity.boxplot <- ggplot2::ggplot(data = het.ind.overall, ggplot2::aes(x = POP_ID, y = HET_PROP, colour = POP_ID)) +
+  individual.heterozygosity.boxplot <- ggplot2::ggplot(
+    data = het.ind.overall,
+    ggplot2::aes(x = POP_ID, y = HET_PROP, colour = POP_ID)) +
     ggplot2::geom_boxplot() +
     ggplot2::labs(y = "Individual's Mean Observed Heterozygosity (proportion)") +
     ggplot2::labs(x = "Populations") +
@@ -473,26 +494,34 @@ information")
   # individual.heterozygosity.boxplot
 
   if (interactive.filter) {
-    message("\nStep 1. Individual's heterozygosity: outliers that might represent mixed samples or poorly sequenced individuals\n")
+    message("\nStep 1. Individual's heterozygosity visualization")
+    message("    Inspect the plot for outliers that might represent
+    mixed or pooled samples, on the higher end of the spectrum, or
+    poorly sequenced individuals, on the lower end.\n")
     print(individual.heterozygosity.manhattan.plot)
-    # save
-    ggplot2::ggsave(stringi::stri_join(path.folder, "/individual.heterozygosity.manhattan.plot.pdf"), width = pop.number * 4, height = 15, dpi = 600, units = "cm", useDingbats = FALSE)
-    ggplot2::ggsave(stringi::stri_join(path.folder, "/individual.heterozygosity.manhattan.plot.png"), width = pop.number * 4, height = 15, dpi = 300, units = "cm")
-    message("2 versions (pdf and png) of the plot (individual.heterozygosity.manhattan.plot) were saved in this directory:\n", path.folder)
+    message("\n    If pooled samples with higher heterozygosity are
+    problematic, use one of the replicate instead.")
   }
 
+  # save
+  ggplot2::ggsave(stringi::stri_join(path.folder, "/individual.heterozygosity.manhattan.plot.pdf"), width = pop.number * 4, height = 15, dpi = 600, units = "cm", useDingbats = FALSE)
+  ggplot2::ggsave(stringi::stri_join(path.folder, "/individual.heterozygosity.manhattan.plot.png"), width = pop.number * 4, height = 15, dpi = 300, units = "cm")
+  message("\n    2 versions (pdf and png) of the plot (individual.heterozygosity.manhattan.plot)
+    were written in the folder")
 
   if (interactive.filter) {
-    message("\n\nShow the box plot of individual's heterozygosity (y/n): ")
-    boxplot <- as.character(readLines(n = 1))
-    if (boxplot == "y") {
-      print(individual.heterozygosity.boxplot)
-      # save
-      ggplot2::ggsave(stringi::stri_join(path.folder, "/individual.heterozygosity.boxplot.pdf"), width = pop.number * 4, height = 10, dpi = 600, units = "cm", useDingbats = FALSE)
-      ggplot2::ggsave(stringi::stri_join(path.folder, "/individual.heterozygosity.boxplot.png"), width = pop.number * 4, height = 10, dpi = 300, units = "cm")
-      message("2 versions (pdf and png) of the plot (individual.heterozygosity.boxplot) were saved in this directory:\n", path.folder)
-    }
+    message("\n\n    Same data, but shown with a box plot of individual's heterozygosity:")
+    # boxplot <- as.character(readLines(n = 1))
+    # if (boxplot == "y") {
+    print(individual.heterozygosity.boxplot)
   }
+  # save
+  ggplot2::ggsave(stringi::stri_join(path.folder, "/individual.heterozygosity.boxplot.pdf"), width = pop.number * 4, height = 10, dpi = 600, units = "cm", useDingbats = FALSE)
+  ggplot2::ggsave(stringi::stri_join(path.folder, "/individual.heterozygosity.boxplot.png"), width = pop.number * 4, height = 10, dpi = 300, units = "cm")
+  message("    2 versions (pdf and png) of the plot (individual.heterozygosity.boxplot)
+    were written in the folder")
+
+  message("\nNote: in Rstudio it's easy to visualize the 2 plot produced and going back and forth in the plot window")
 
   ## Step 2: Blacklist outlier individuals -------------------------------------
   if (!is.null(ind.heterozygosity.threshold)) {
@@ -541,7 +570,7 @@ Enter the values (proportion, e.g. 0.34 for max threshold:")
       path = stringi::stri_join(path.folder, "/blacklist.individuals.heterozygosity.tsv"),
       col_names = TRUE
     )
-    message("Blacklist (blacklist.individuals.heterozygosity) written in the working directory")
+    message("Blacklist (blacklist.individuals.heterozygosity) written in the folder")
     het.summary <- dplyr::anti_join(het.summary, blacklist.ind.het, by = "INDIVIDUALS")
   }
 
@@ -570,7 +599,7 @@ independently analyzed and blacklisted.\n")
     het.approach[2] <- "not defined"
     while (isTRUE(het.approach[2] != "overall" & het.approach[2] != "pop")) {# to make sure the answer is ok
       message("het.approach argument: overall or by pop ?\n")
-      message("Decide on the best approach to filter the data based on oserved heterozygosity\n")
+      message("Decide on the best approach to filter the data based on observed heterozygosity\n")
       message("The overall approach doesn't look at the observed heterozygosity by populations.
 It's just 1 large population of sample.
 If you're not sure about your population structure and/or population sampling,
@@ -637,13 +666,15 @@ use the overall approach.\n")
       dplyr::mutate(POP_ID = rep("OVERALL", n()))
 
 
+
     het.summary.tidy <- suppressWarnings(
       dplyr::bind_rows(het.summary.pop, het.summary.overall) %>%
+        dplyr::full_join(het.missing.overall, by = c("LOCUS", "POP_ID")) %>%
         tidyr::gather(
           data = .,
           key = HET_GROUP,
           value = VALUE,
-          -c(LOCUS, POP_ID)
+          -c(LOCUS, POP_ID, MISSING_PROP)
         ) %>%
         dplyr::rename(MARKERS = LOCUS) %>%
         dplyr::mutate(
@@ -651,9 +682,7 @@ use the overall approach.\n")
             HET_GROUP,
             levels = c("HET_MEAN", "HET_MIN", "HET_MAX", "HET_DIF"),
             ordered = TRUE
-          )
-        )
-    )
+          )))
   } else {
     # By pop
     het.missing.pop <- input %>%
@@ -714,11 +743,10 @@ use the overall approach.\n")
       dplyr::arrange(POP_ID)
   }
 
-
-
   # Visualization --------------------------------------------------------------
   # Density plot markers het obs -------------------------------------------------
-  markers.pop.heterozygosity.density.plot <- ggplot2::ggplot(het.summary.tidy, ggplot2::aes(x = VALUE, na.rm = FALSE)) +
+  markers.pop.heterozygosity.density.plot <- ggplot2::ggplot(
+    het.summary.tidy, ggplot2::aes(x = VALUE, na.rm = FALSE)) +
     ggplot2::geom_line(ggplot2::aes(y = ..scaled..), stat = "density", adjust = 0.3) +
     ggplot2::labs(x = "Markers Observed Heterozygosity") +
     ggplot2::labs(y = "Density of SNP (scaled)") +
@@ -734,9 +762,11 @@ use the overall approach.\n")
     ggplot2::facet_grid(POP_ID ~ HET_GROUP)
 
   # manhattan plot markers het obs -------------------------------------------------
-  markers.pop.heterozygosity.manhattan.plot <- ggplot2::ggplot(data = het.summary.tidy, ggplot2::aes(x = POP_ID, y = VALUE, colour = POP_ID, size = MISSING_PROP)) +
+  markers.pop.heterozygosity.manhattan.plot <- ggplot2::ggplot(
+    data = dplyr::filter(het.summary.tidy, HET_GROUP == "HET_MEAN"),
+    ggplot2::aes(x = POP_ID, y = VALUE, colour = POP_ID, size = MISSING_PROP)) +
     ggplot2::geom_jitter(alpha = 0.3) +
-    ggplot2::labs(y = "Markers Observed Heterozygosity") +
+    ggplot2::labs(y = "Markers Observed Heterozygosity (mean)") +
     ggplot2::labs(x = "Populations") +
     ggplot2::labs(colour = "Populations") +
     ggplot2::scale_color_discrete(guide = "none") +
@@ -751,12 +781,12 @@ use the overall approach.\n")
       axis.text.x = ggplot2::element_text(size = 10, family = "Helvetica", angle = 90, hjust = 1, vjust = 0.5),
       axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
       axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
-    ) +
-    ggplot2::facet_grid(~ HET_GROUP)
+    ) #+ ggplot2::facet_grid(~ HET_GROUP)
   # markers.pop.heterozygosity.manhattan.plot
 
   # box plot markers het obs -------------------------------------------------
-  markers.pop.heterozygosity.boxplot <- ggplot2::ggplot(data = het.summary.tidy, ggplot2::aes(x = POP_ID, y = VALUE, colour = POP_ID)) +
+  markers.pop.heterozygosity.boxplot <- ggplot2::ggplot(
+    data = het.summary.tidy, ggplot2::aes(x = POP_ID, y = VALUE, colour = POP_ID)) +
     ggplot2::geom_boxplot() +
     ggplot2::labs(y = "Markers Observed Heterozygosity") +
     ggplot2::labs(x = "Populations") +
@@ -775,7 +805,7 @@ use the overall approach.\n")
   # helper tables ----------------------------------------------------------------
 
   if (helper.tables) {
-    message("Generating helper table(s)...")
+    message("Generating several helper table(s)...")
     if (tibble::has_name(het.summary, "LOCUS") &  het.approach[1] == "haplotype") {# by Haplotype
       n.markers <- dplyr::n_distinct(het.summary$LOCUS)
 
@@ -1048,33 +1078,31 @@ use the overall approach.\n")
         helper.table.het.max.dif.threshold.combined.overall = max.dif.threshold.combined.overall
 
       )
-      if (interactive.filter) {
-        readr::write_tsv(
-          x = max.threshold,
-          path = stringi::stri_join(path.folder, "/helper.table.het.max.threshold.tsv")
-        )
-        readr::write_tsv(
-          x = max.threshold.overall,
-          path = stringi::stri_join(path.folder, "/helper.table.het.max.threshold.overall.tsv")
-        )
+      readr::write_tsv(
+        x = max.threshold,
+        path = stringi::stri_join(path.folder, "/helper.table.het.max.threshold.tsv")
+      )
+      readr::write_tsv(
+        x = max.threshold.overall,
+        path = stringi::stri_join(path.folder, "/helper.table.het.max.threshold.overall.tsv")
+      )
 
-        readr::write_tsv(
-          x = dif.threshold,
-          path = stringi::stri_join(path.folder, "/helper.table.het.dif.threshold.tsv")
-        )
-        readr::write_tsv(
-          x = dif.threshold.overall,
-          path = stringi::stri_join(path.folder, "/helper.table.het.dif.threshold.overall.tsv")
-        )
-        readr::write_tsv(
-          x = max.dif.threshold.combined,
-          path = stringi::stri_join(path.folder, "/helper.table.het.max.dif.threshold.tsv")
-        )
-        readr::write_tsv(
-          x = max.dif.threshold.combined.overall,
-          path = stringi::stri_join(path.folder, "/helper.table.het.max.dif.threshold.overall.tsv")
-        )
-      }
+      readr::write_tsv(
+        x = dif.threshold,
+        path = stringi::stri_join(path.folder, "/helper.table.het.dif.threshold.tsv")
+      )
+      readr::write_tsv(
+        x = dif.threshold.overall,
+        path = stringi::stri_join(path.folder, "/helper.table.het.dif.threshold.overall.tsv")
+      )
+      readr::write_tsv(
+        x = max.dif.threshold.combined,
+        path = stringi::stri_join(path.folder, "/helper.table.het.max.dif.threshold.tsv")
+      )
+      readr::write_tsv(
+        x = max.dif.threshold.combined.overall,
+        path = stringi::stri_join(path.folder, "/helper.table.het.max.dif.threshold.overall.tsv")
+      )
       n.markers <- het.helper <- max.threshold <- max.threshold.overall <- dif.threshold <- dif.threshold.overall <- max.dif.threshold.combined <- max.dif.threshold.combined.overall <- NULL
     } else {# by SNP
       n.markers <- dplyr::n_distinct(het.summary$MARKERS)
@@ -1146,55 +1174,148 @@ use the overall approach.\n")
         helper.table.het.overall = helper.table.het.overall
       )
 
-      if (interactive.filter) {
-        readr::write_tsv(
-          x = helper.table.het.pop,
-          path = stringi::stri_join(path.folder, "/helper.table.het.threshold.pop.tsv")
-        )
-        readr::write_tsv(
-          x = helper.table.het.overall,
-          path = stringi::stri_join(path.folder, "/helper.table.het.threshold.overall.tsv")
-        )
-      }
+      readr::write_tsv(
+        x = helper.table.het.pop,
+        path = stringi::stri_join(path.folder, "/helper.table.het.threshold.pop.tsv")
+      )
+      readr::write_tsv(
+        x = helper.table.het.overall,
+        path = stringi::stri_join(path.folder, "/helper.table.het.threshold.overall.tsv")
+      )
       n.markers <- NULL
     }# End by SNP approach
   } else {
     helper.table.het <- "not selected"
   }# End helper table
 
-
+  message("Generating ", het.approach[1], " heterozygosity statistics plots")
   if (interactive.filter) {
     print(markers.pop.heterozygosity.density.plot)
-    # save
-    ggplot2::ggsave(stringi::stri_join(path.folder, "/markers.pop.heterozygosity.density.plot.pdf"), width = pop.number * 4, height = pop.number * 2, dpi = 600, units = "cm", useDingbats = FALSE)
-    ggplot2::ggsave(stringi::stri_join(path.folder, "/markers.pop.heterozygosity.density.plot.png"), width = pop.number * 4, height = pop.number * 2, dpi = 300, units = "cm")
-    message(stringi::stri_join("2 versions (pdf and png) of the plot (markers.pop.heterozygosity.density.plot) were saved in this directory:\n", path.folder))
+    message("\n\nGenerating the density plot of heterozygosity statistics: ")
+    message("    HET_MEAN: mean heterozygosity")
+    message("    HET_MIN: min heterozygosity")
+    message("    HET_MAX: max heterozygosity")
+    message("    HET_DIF: difference between MAX and MIN heterozygosity of SNPs on the same LOCUS")
   }
+  # save
+  ggplot2::ggsave(filename = stringi::stri_join(path.folder, "/markers.pop.heterozygosity.density.plot.pdf"), plot = markers.pop.heterozygosity.density.plot, width = pop.number * 4, height = pop.number * 2, dpi = 600, units = "cm", useDingbats = FALSE)
+  ggplot2::ggsave(filename = stringi::stri_join(path.folder, "/markers.pop.heterozygosity.density.plot.png"), plot = markers.pop.heterozygosity.density.plot, width = pop.number * 4, height = pop.number * 2, dpi = 300, units = "cm")
+  message("2 versions (pdf and png) of the plot (markers.pop.heterozygosity.density.plot) were written in the folder")
+
 
   if (interactive.filter) {
-    message("\n\nShow the manhattan plot of markers observed heterozygosity per populations and overall (y/n): ")
-    manhattan.plot <- as.character(readLines(n = 1))
-    if (manhattan.plot == "y") {
-      message("Rendering the plot may take some time depending on the number of markers and populations...")
-      print(markers.pop.heterozygosity.manhattan.plot)
-      # save
-      ggplot2::ggsave(stringi::stri_join(path.folder, "/markers.pop.heterozygosity.manhattan.plot.pdf"), width = pop.number * 4, height = 10, dpi = 600, units = "cm", useDingbats = FALSE)
-      ggplot2::ggsave(stringi::stri_join(path.folder, "/markers.pop.heterozygosity.manhattan.plot.png"), width = pop.number * 4, height = 10, dpi = 300, units = "cm")
-      message("2 versions (pdf and png) of the plot (markers.pop.heterozygosity.manhattan.plot) were saved in this directory:\n", path.folder)
-    }
+    message("\n\nNext, manhattan plot of markers mean observed heterozygosity")
+    message("   note: rendering the plot may take some time...")
+    print(markers.pop.heterozygosity.manhattan.plot)
   }
 
+  # save
+  ggplot2::ggsave(filename = stringi::stri_join(path.folder, "/markers.pop.heterozygosity.manhattan.plot.pdf"), plot = markers.pop.heterozygosity.manhattan.plot, width = pop.number * 4, height = 10, dpi = 600, units = "cm", useDingbats = FALSE)
+  ggplot2::ggsave(filename = stringi::stri_join(path.folder, "/markers.pop.heterozygosity.manhattan.plot.png"), plot = markers.pop.heterozygosity.manhattan.plot, width = pop.number * 4, height = 10, dpi = 300, units = "cm")
+  message("2 versions (pdf and png) of the plot (markers.pop.heterozygosity.manhattan.plot) were saved in the folder")
+
   if (interactive.filter) {
-    message("\n\nShow the boxplot of markers observed heterozygosity per populations and overall (y/n): ")
-    boxplot <- as.character(readLines(n = 1))
-    if (boxplot == "y") {
-      message("Rendering the plot may take some time depending on the number of markers and populations...")
-      print(markers.pop.heterozygosity.boxplot)
-      # save
-      ggplot2::ggsave(stringi::stri_join(path.folder, "/markers.pop.heterozygosity.boxplot.pdf"), width = pop.number * 2, height = 10, dpi = 600, units = "cm", useDingbats = FALSE)
-      ggplot2::ggsave(stringi::stri_join(path.folder, "/markers.pop.heterozygosity.boxplot.png"), width = pop.number * 2, height = 10, dpi = 300, units = "cm")
-      message("2 versions (pdf and png) of the plot (markers.pop.heterozygosity.boxplot) were saved in this directory:\n", path.folder)
+    message("\n\nNext plot is a boxplot of markers observed heterozygosity statistics")
+    message("   note: rendering the plot may take some time...")
+    print(markers.pop.heterozygosity.boxplot)
+  }
+  # save
+  ggplot2::ggsave(filename = stringi::stri_join(path.folder, "/markers.pop.heterozygosity.boxplot.pdf"), plot = markers.pop.heterozygosity.boxplot, width = pop.number * 2, height = 10, dpi = 600, units = "cm", useDingbats = FALSE)
+  ggplot2::ggsave(filename = stringi::stri_join(path.folder, "/markers.pop.heterozygosity.boxplot.png"), plot = markers.pop.heterozygosity.boxplot, width = pop.number * 2, height = 10, dpi = 300, units = "cm")
+  message("2 versions (pdf and png) of the plot (markers.pop.heterozygosity.boxplot) were saved in the folder")
+
+
+  if (tibble::has_name(input, "LOCUS") && tibble::has_name(input, "POS")) {
+    if (interactive.filter) {
+      message("\nThe next plot shows the relationship between the number of SNPs per locus
+    and the observed heterozygosity statistics.")
+      message("\nNote: more SNPs on the same locus usually = to higher heterozygosity for the locus")
     }
+    snp.per.locus.het <- dplyr::distinct(input, LOCUS, POS) %>%
+      dplyr::group_by(LOCUS) %>%
+      dplyr::tally(.) %>%
+      dplyr::rename(SNP_NUM = n) %>%
+      dplyr::left_join(het.summary.overall, by = "LOCUS") %>%
+      dplyr::select(-POP_ID) %>%
+      tidyr::gather(
+        data = .,
+        key = HET_GROUP,
+        value = VALUE,
+        -c(LOCUS, SNP_NUM)
+      ) %>%
+      dplyr::mutate(
+        HET_GROUP = factor(
+          HET_GROUP,
+          levels = c("HET_MEAN", "HET_MIN", "HET_MAX", "HET_DIF"),
+          ordered = TRUE))
+
+    snp.per.locus.het.plot <- ggplot2::ggplot(snp.per.locus.het, ggplot2::aes(y = VALUE, x = SNP_NUM)) +
+      ggplot2::geom_point() +
+      ggplot2::stat_smooth(method = stats::lm, level = 0.99, fullrange = FALSE) +
+      # labs(title = "Correlation between missingness and inbreeding coefficient") +
+      ggplot2::labs(x = "Number of SNPs per Locus") +
+      ggplot2::labs(y = "Observed Heterozygosity Statistics") +
+      ggplot2::theme(
+        axis.title.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
+        axis.title.y = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
+        legend.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
+        legend.text = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
+        strip.text.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold")
+      ) +
+      ggplot2::facet_grid(~HET_GROUP)
+    # snp.per.locus.het.plot
+
+    if (interactive.filter) print(snp.per.locus.het.plot)
+    ggplot2::ggsave(filename = stringi::stri_join(path.folder, "/snp.per.locus.het.plot.pdf"), plot = snp.per.locus.het.plot, width = 30, height = 15, dpi = 600, units = "cm", useDingbats = FALSE)
+    ggplot2::ggsave(filename = stringi::stri_join(path.folder, "/snp.per.locus.het.plot.png"), plot = snp.per.locus.het.plot, width = 30, height = 15, dpi = 300, units = "cm")
+    message("2 versions (pdf and png) of the plot (snp.per.locus.het.plot) were saved in the folder")
+  } else {
+    snp.per.locus.het.plot <- "not available for the data"
+  }
+
+  if (coverage.info && tibble::has_name(input, "READ_DEPTH")) {
+    if (interactive.filter) {
+      message("\nThe next plot shows the relationship between locus coverage and
+    the observed heterozygosity statistics.")
+    }
+    het.cov <- dplyr::group_by(input, LOCUS) %>%
+      dplyr::summarise(COVERAGE = mean(READ_DEPTH, na.rm = TRUE)) %>%
+      dplyr::left_join(het.summary.overall, by = "LOCUS") %>%
+      dplyr::select(-POP_ID) %>%
+      tidyr::gather(
+        data = .,
+        key = HET_GROUP,
+        value = VALUE,
+        -c(LOCUS, COVERAGE)
+      ) %>%
+      dplyr::mutate(
+        HET_GROUP = factor(
+          HET_GROUP,
+          levels = c("HET_MEAN", "HET_MIN", "HET_MAX", "HET_DIF"),
+          ordered = TRUE))
+
+    het.cov.plot <- ggplot2::ggplot(het.cov, ggplot2::aes(y = VALUE, x = COVERAGE)) +
+      ggplot2::geom_point() +
+      ggplot2::stat_smooth(method = stats::lm, level = 0.99, fullrange = FALSE) +
+      # labs(title = "Correlation between missingness and inbreeding coefficient") +
+      ggplot2::labs(x = "Locus coverage (read depth)") +
+      ggplot2::labs(y = "Observed Heterozygosity Statistics") +
+      ggplot2::theme(
+        axis.title.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
+        axis.title.y = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
+        legend.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
+        legend.text = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
+        strip.text.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold")
+      ) +
+      ggplot2::facet_grid(~HET_GROUP)
+    # het.cov.plot
+
+    if (interactive.filter) print(het.cov.plot)
+    ggplot2::ggsave(filename = stringi::stri_join(path.folder, "/het.cov.plot.plot.pdf"), plot = het.cov.plot, width = 30, height = 15, dpi = 600, units = "cm", useDingbats = FALSE)
+    ggplot2::ggsave(filename = stringi::stri_join(path.folder, "/het.cov.plot.png"), plot = het.cov.plot, width = 30, height = 15, dpi = 300, units = "cm")
+    message("2 versions (pdf and png) of the plot (het.cov.plot) were saved in the folder")
+  } else {
+    het.cov.plot <- "not available for the data"
   }
 
   # Step 4: Blacklist markers based on observed heterozygosity------------------
@@ -1236,7 +1357,7 @@ Locus (read/haplotypes and all SNP on it) are blacklisted if the difference in o
         message("Example: LOCUS 7654 as 2 SNP, snp1 HET_OBS = 0.1 and snp2 HET_OBS = 0.5.
 If you choose a threshold of 0.2 all SNP on this locus will be blacklisted.
 Choosing a threshold of 0.6 will not blacklist the SNPs and it's locus.
-The locus and it's SNPs will be discarded if they don't pass the remaining filter (het.pop.threshold)\n")
+The locus and it's SNPs will be discarded if they don't pass the remaining filter (het.pop.threshold, with het.approach by pop is selected)\n")
         message("Enter the het.dif.threshold value (0 to 1, where 0.1 is very strict and 1 turn off the filter):")
         het.dif.threshold <- as.double(readLines(n = 1))
       }
@@ -1276,7 +1397,8 @@ number of populations in the dataset turns off the filter.\n")
         dplyr::filter(OUTLIERS <= outlier.pop.threshold) %>%
         dplyr::select(LOCUS) %>%
         dplyr::left_join(input, by = "LOCUS") %>%
-        dplyr::arrange(LOCUS, POP_ID)
+        dplyr::arrange(LOCUS, POP_ID) %>%
+        dplyr::ungroup(.)
     } else {
       filter <- dplyr::ungroup(het.summary.overall) %>%
         dplyr::group_by(LOCUS) %>%
@@ -1284,7 +1406,8 @@ number of populations in the dataset turns off the filter.\n")
         dplyr::filter(HET_MAX <= het.threshold) %>%
         dplyr::select(LOCUS) %>%
         dplyr::left_join(input, by = "LOCUS") %>%
-        dplyr::arrange(LOCUS, POP_ID)
+        dplyr::arrange(LOCUS, POP_ID) %>%
+        dplyr::ungroup(.)
     }
   } else {# by SNP
     message("Approach selected: SNP")
@@ -1292,7 +1415,7 @@ number of populations in the dataset turns off the filter.\n")
     if (interactive.filter) {
       het.threshold <- 2
       while (isTRUE(het.threshold > 1)) {
-        message("het.threshold argument:\n
+        message("\nhet.threshold argument:\n
 With the SNP approach, the het.threshold argument is independent of the
 number of SNP/locus and is for filtering the observed heterozygosity
 of each SNP independently of it's haplotype
@@ -1337,30 +1460,37 @@ number of populations in the dataset turns off the filter.\n")
         dplyr::filter(OUTLIERS <= outlier.pop.threshold) %>%
         dplyr::select(MARKERS) %>%
         dplyr::left_join(input, by = "MARKERS") %>%
-        dplyr::arrange(MARKERS, POP_ID)
+        dplyr::arrange(MARKERS, POP_ID) %>%
+        dplyr::ungroup(.)
     } else {
       filter <- dplyr::ungroup(het.summary.overall) %>%
         dplyr::group_by(MARKERS) %>%
         dplyr::filter(HET_MEAN <= het.threshold) %>%
         dplyr::select(MARKERS) %>%
         dplyr::left_join(input, by = "MARKERS") %>%
-        dplyr::arrange(MARKERS, POP_ID)
+        dplyr::arrange(MARKERS, POP_ID) %>%
+        dplyr::ungroup(.)
     }
   }# end snp approach to filtering
 
   # Update filters.parameters SNP ----------------------------------------------
   # Prepare a list of markers and number of markers before filtering
-  if (tibble::has_name(het.summary, "LOCUS") & het.approach[1] == "haplotype") {
-    snp.before <- dplyr::n_distinct(input$POS)
-    locus.before <- dplyr::n_distinct(input$LOCUS)
-    snp.after <- as.integer(dplyr::n_distinct(filter$MARKERS))
-    snp.blacklist <- as.integer(snp.before - snp.after)
-    locus.after <- as.integer(dplyr::n_distinct(filter$LOCUS))
-    locus.blacklist <- as.integer(locus.before - locus.after)
+
+  if (data.type == "haplo.file") {
+    snp.before <- as.character("NA")
+    snp.after <- as.character("NA")
+    snp.blacklist <- as.character("NA")
   } else {
-    snp.before <- dplyr::n_distinct(input$MARKERS)
+    snp.before <- as.integer(dplyr::n_distinct(input$MARKERS))
     snp.after <- as.integer(dplyr::n_distinct(filter$MARKERS))
-    snp.blacklist <- as.integer(snp.before - snp.after)
+    snp.blacklist <- as.integer(dplyr::n_distinct(input$MARKERS) - dplyr::n_distinct(filter$MARKERS))
+  }
+
+  if (tibble::has_name(input, "LOCUS")) {
+    locus.before <- as.integer(dplyr::n_distinct(input$LOCUS))
+    locus.after <- as.integer(dplyr::n_distinct(filter$LOCUS))
+    locus.blacklist <- as.integer(dplyr::n_distinct(input$LOCUS) - dplyr::n_distinct(filter$LOCUS))
+  } else {
     locus.before <- as.character("NA")
     locus.after <- as.character("NA")
     locus.blacklist <- as.character("NA")
@@ -1373,6 +1503,7 @@ number of populations in the dataset turns off the filter.\n")
   markers.before <- stringi::stri_join(snp.before, locus.before, sep = "/")
   markers.after <- stringi::stri_join(snp.after, locus.after, sep = "/")
   markers.blacklist <- stringi::stri_join(snp.blacklist, locus.blacklist, sep = "/")
+
 
   if (tibble::has_name(het.summary, "LOCUS")) {
     markers.df <- dplyr::distinct(input, CHROM, LOCUS, POS)
@@ -1396,32 +1527,33 @@ number of populations in the dataset turns off the filter.\n")
   readr::write_tsv(x = filters.parameters, path = "filters_parameters.tsv", append = TRUE, col_names = FALSE)
 
   # saving filtered tidy data --------------------------------------------------
-  # filename <- "test.tidy.tsv"#test
   if (!is.null(filename)) {
-    message("Writing the filtered tidy data set in your working directory...")
-    readr::write_tsv(filter, paste0(path.folder,"/", filename), append = FALSE, col_names = TRUE)
+    tidy.name <- stringi::stri_join(filename, ".rad")
+    message("Writing the filtered tidy data set: ", tidy.name)
+    fst::write.fst(x = filter, path = stringi::stri_join(path.folder, "/", tidy.name), compress = 85)
   }
+
   # saving whitelist -----------------------------------------------------------
-  message("Writing the whitelist of markers in your working directory\nwhitelist.markers.het.tsv")
+  message("Writing the whitelist of markers: whitelist.markers.pop.tsv")
 
   if (tibble::has_name(het.summary, "LOCUS")) {
     whitelist.markers <- dplyr::ungroup(filter) %>%
-      dplyr::distinct(CHROM, LOCUS, POS)
+      dplyr::distinct(MARKERS, CHROM, LOCUS, POS)
   } else {
     whitelist.markers <- dplyr::ungroup(filter) %>%
       dplyr::distinct(MARKERS)
   }
 
   # Integrate marker.meta columns (double check from above)
-  if (!is.null(marker.meta)) {
-    whitelist.markers <- dplyr::left_join(whitelist.markers, marker.meta, by = "MARKERS")
-  }
+  # if (!is.null(marker.meta)) {
+  #   whitelist.markers <- dplyr::left_join(whitelist.markers, marker.meta, by = "MARKERS")
+  # }
 
-  readr::write_tsv(whitelist.markers, paste0(path.folder,"/whitelist.markers.het.tsv"), append = FALSE, col_names = TRUE)
+  readr::write_tsv(whitelist.markers, stringi::stri_join(path.folder, "/", "whitelist.markers.het.tsv"), append = FALSE, col_names = TRUE)
 
 
   # saving blacklist -----------------------------------------------------------
-  message("Writing the blacklist of markers in your working directory\nblacklist.markers.het.tsv")
+  message("Writing the blacklist of markers: blacklist.markers.pop.tsv")
   if (tibble::has_name(het.summary, "LOCUS")) {
     blacklist.markers <- dplyr::anti_join(markers.df, whitelist.markers, by = c("CHROM", "LOCUS", "POS"))
   } else {
@@ -1429,9 +1561,9 @@ number of populations in the dataset turns off the filter.\n")
   }
 
   # Integrate marker.meta columns (double check from above)
-  if (!is.null(marker.meta)) {
-    whitelist.markers <- dplyr::left_join(whitelist.markers, marker.meta, by = "MARKERS")
-  }
+  # if (!is.null(marker.meta)) {
+  #   blacklist.markers <- dplyr::left_join(blacklist.markers, marker.meta, by = "MARKERS")
+  # }
   readr::write_tsv(blacklist.markers, paste0(path.folder,"/blacklist.markers.het.tsv"), append = FALSE, col_names = TRUE)
 
   # results --------------------------------------------------------------------
@@ -1442,16 +1574,8 @@ number of populations in the dataset turns off the filter.\n")
   message("het.threshold: ", het.threshold)
   message("het.dif.threshold: ", het.dif.threshold)
   message("outlier.pop.threshold: ", outlier.pop.threshold)
-  if (tibble::has_name(het.summary, "LOCUS") & het.approach[1] == "haplotype") {
-    message("The number of markers removed by the HET filter:\nSNP: ", snp.before - dplyr::n_distinct(filter$POS), "\nLOCUS: ", locus.before - dplyr::n_distinct(filter$LOCUS))
-    message("The number of markers before -> after the HET filter")
-    message("SNP: ", snp.before, " -> ", as.integer(dplyr::n_distinct(filter$POS)))
-    message("LOCUS: ", locus.before, " -> ", as.integer(dplyr::n_distinct(filter$LOCUS)))
-  } else {# for haplotype file
-    message("The number of markers/locus removed by the HET filter: ", snp.before - dplyr::n_distinct(filter$MARKERS))
-    message("The number of markers before -> after the HET filter")
-    message("MARKERS/LOCUS: ", snp.before, " -> ", as.integer(dplyr::n_distinct(filter$MARKERS)))
-  }
+  message("The number of markers (SNP/LOCUS) removed by the HET filter:\n", markers.blacklist)
+  message("The number of markers (SNP/LOCUS) before -> after the HET filter:\n", markers.before, " -> ", markers.after)
   if (!interactive.filter) {
     message("Computation time: ", round((proc.time() - timing)[[3]]), " sec")
   }
@@ -1470,7 +1594,9 @@ number of populations in the dataset turns off the filter.\n")
     individual.heterozygosity.manhattan.plot = individual.heterozygosity.manhattan.plot,
     markers.pop.heterozygosity.boxplot = markers.pop.heterozygosity.boxplot,
     markers.pop.heterozygosity.density.plot = markers.pop.heterozygosity.density.plot,
-    markers.pop.heterozygosity.manhattan.plot = markers.pop.heterozygosity.manhattan.plot
+    markers.pop.heterozygosity.manhattan.plot = markers.pop.heterozygosity.manhattan.plot,
+    snp.per.locus.het.plot = snp.per.locus.het.plot,
+    het.cov.plot = het.cov.plot
   )
   return(res)
 }

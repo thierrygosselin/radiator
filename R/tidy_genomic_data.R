@@ -476,7 +476,7 @@ tidy_genomic_data <- function(
     strata.df$POP_ID <- stringi::stri_replace_all_fixed(strata.df$POP_ID, pattern = " ", replacement = "_", vectorize_all = FALSE)
   }
 
-# Import VCF------------------------------------------------------------------
+  # Import VCF------------------------------------------------------------------
   if (data.type == "vcf.file") { # VCF
     if (verbose) message("Importing and tidying the VCF...")
 
@@ -1033,6 +1033,13 @@ tidy_genomic_data <- function(
     data.type <- "tbl_df"
   }
 
+  # Import fst.file ------------------------------------------------------------
+  if (data.type == "fst.file") {
+    if (verbose) message("Importing the fst.file as a data frame...")
+    data <- fst::read.fst(path = data)
+    data.type <- "tbl_df"
+  }
+
   # Import DF-------------------------------------------------------------------
   if (data.type == "tbl_df") { # DATA FRAME OF GENOTYPES
     if (verbose) message("Importing the data frame ...")
@@ -1254,6 +1261,9 @@ tidy_genomic_data <- function(
         dplyr::select(-GT_HAPLO)
     }
 
+    if (tibble::has_name(input, "SPLIT_VEC")) {
+      input <- dplyr::select(input, -SPLIT_VEC)
+    }
     conversion.df <- input %>%
       dplyr::left_join(
         dplyr::distinct(input, MARKERS) %>%
@@ -1307,6 +1317,7 @@ tidy_genomic_data <- function(
     input <- dplyr::left_join(input, new.gt, by = c("MARKERS", "GT_VCF_NUC"))
     new.gt <- conversion.df <- NULL
     biallelic <- FALSE
+    input <- dplyr::rename(input, LOCUS = MARKERS)
   } # End import haplotypes file
 
   # Import GENIND--------------------------------------------------------------
@@ -1718,8 +1729,14 @@ tidy_genomic_data <- function(
     if (tibble::has_name(input, "POLYMORPHIC")) {
       if (verbose) message("Scanning for monomorphic markers...")
       if (verbose) message("    Number of markers before = ", dplyr::n_distinct(input$MARKERS))
-      mono.markers <- dplyr::filter(input, !POLYMORPHIC) %>%
-        dplyr::distinct(MARKERS, CHROM, LOCUS, POS)
+      if (tibble::has_name(input, "POS")) {
+        mono.markers <- dplyr::filter(input, !POLYMORPHIC) %>%
+          dplyr::distinct(MARKERS, CHROM, LOCUS, POS)
+      } else {
+        mono.markers <- dplyr::filter(input, !POLYMORPHIC) %>%
+          dplyr::distinct(MARKERS)
+      }
+
       if (nrow(mono.markers) > 0) {
         if (verbose) message("    Number of monomorphic markers removed = ", nrow(mono.markers))
         input <- dplyr::filter(input, POLYMORPHIC)
@@ -1731,9 +1748,9 @@ tidy_genomic_data <- function(
       mono.out <- radiator::discard_monomorphic_markers(input, verbose = TRUE)
       mono.markers <- mono.out$blacklist.momorphic.markers
       if (dplyr::n_distinct(mono.markers$MARKERS) > 0) {
-        if (data.type == "haplo.file") {
-          mono.markers <- dplyr::rename(.data = mono.markers, LOCUS = MARKERS)
-        }
+        # if (data.type == "haplo.file") {
+        #   mono.markers <- dplyr::rename(.data = mono.markers, LOCUS = MARKERS)
+        # }
         input <- mono.out$input
         readr::write_tsv(mono.markers, "blacklist.momorphic.markers.tsv")
       }
@@ -1877,46 +1894,53 @@ tidy_genomic_data <- function(
           GL = suppressWarnings(stringi::stri_replace_all_fixed(GL, c(".,.,.", ".,", ",."), c("NA", "", ""), vectorize_all = FALSE))
         )
 
-      gl.clean <- max(
-        unique(stringi::stri_count_fixed(
-          str = unique(sample(x = input$GL, size = 100, replace = FALSE)),
-          pattern = ",")
-        ), na.rm = TRUE
-      )
+      # check GL and new stacks version with no GL
+      all.missing <- all(is.na(input$GL))
 
-      if (gl.clean == 2) {
-        if (verbose) message("GL column: separating into PROB_HOM_REF, PROB_HET and PROB_HOM_ALT")
-        # Value 1: probability that the site is homozgyous REF
-        # Value 2: probability that the sample is heterzygous
-        # Value 2: probability that it is homozygous ALT
-        # system.time(input2 <- input %>%
-        #   tidyr::separate(data = ., GL, c("PROB_HOM_REF", "PROB_HET", "PROB_HOM_ALT"), sep = ",", extra = "drop", remove = FALSE) %>%
-        #   dplyr::mutate_at(.tbl = ., .vars = c("PROB_HOM_REF", "PROB_HET", "PROB_HOM_ALT"), .funs = as.numeric)
-        # )
-        clean_gl <- function(x) {
-          res <- x %>%
-            tidyr::separate(
-              data = ., GL, c("PROB_HOM_REF", "PROB_HET", "PROB_HOM_ALT"),
-              sep = ",", extra = "drop", remove = FALSE) %>%
-            dplyr::mutate_at(
-              .tbl = ., .vars = c("PROB_HOM_REF", "PROB_HET", "PROB_HOM_ALT"),
-              .funs = as.numeric)
-          return(res)
+      if (!all.missing) {
+        gl.clean <- max(
+          unique(stringi::stri_count_fixed(
+            str = unique(sample(x = input$GL, size = 100, replace = FALSE)),
+            pattern = ",")
+          ), na.rm = TRUE
+        )
+
+        if (gl.clean == 2) {
+          if (verbose) message("GL column: separating into PROB_HOM_REF, PROB_HET and PROB_HOM_ALT")
+          # Value 1: probability that the site is homozgyous REF
+          # Value 2: probability that the sample is heterzygous
+          # Value 2: probability that it is homozygous ALT
+          # system.time(input2 <- input %>%
+          #   tidyr::separate(data = ., GL, c("PROB_HOM_REF", "PROB_HET", "PROB_HOM_ALT"), sep = ",", extra = "drop", remove = FALSE) %>%
+          #   dplyr::mutate_at(.tbl = ., .vars = c("PROB_HOM_REF", "PROB_HET", "PROB_HOM_ALT"), .funs = as.numeric)
+          # )
+          clean_gl <- function(x) {
+            res <- x %>%
+              tidyr::separate(
+                data = ., GL, c("PROB_HOM_REF", "PROB_HET", "PROB_HOM_ALT"),
+                sep = ",", extra = "drop", remove = FALSE) %>%
+              dplyr::mutate_at(
+                .tbl = ., .vars = c("PROB_HOM_REF", "PROB_HET", "PROB_HOM_ALT"),
+                .funs = as.numeric)
+            return(res)
+          }
+          input <- dplyr::bind_cols(
+            dplyr::select(input, -GL),
+            dplyr::ungroup(input) %>%
+              dplyr::select(GL) %>%
+              split(x = ., f = split.vec) %>%
+              .radiator_parallel(
+                # parallel::mclapply(
+                X = ., FUN = clean_gl, mc.cores = parallel.core) %>%
+              dplyr::bind_rows(.))
+
+        } else {
+          input$GL <- suppressWarnings(as.numeric(input$GL))
         }
-        input <- dplyr::bind_cols(
-          dplyr::select(input, -GL),
-          dplyr::ungroup(input) %>%
-            dplyr::select(GL) %>%
-            split(x = ., f = split.vec) %>%
-            .radiator_parallel(
-              # parallel::mclapply(
-              X = ., FUN = clean_gl, mc.cores = parallel.core) %>%
-            dplyr::bind_rows(.))
-
+        gl.clean <- NULL
       } else {
-        input$GL <- suppressWarnings(as.numeric(input$GL))
+        input <- dplyr::select(input, -GL)
       }
-      gl.clean <- NULL
     }#End cleaning GL column
 
     # Cleaning GQ: Genotype quality as phred score

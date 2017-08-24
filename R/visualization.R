@@ -160,77 +160,10 @@ plot_coverage_imbalance_diagnostic <- function(tidy.vcf.file, pop.levels, read.d
 }
 
 
-#' @title Figure density distribution of genotype likelihood summary statistics
-#' @description Create density distribution of genotype likelihood
-#' summary statistics.
-#' Use the long version of coverage summary file created with
-#' genotype_likelihood_summary function ($gl.summary.long).
-#' @param data Genotype likelihood summary file.
-#' @param aes.colour GGPLOT2 aesthetics colour,
-#' e.g. aes(y = ..scaled.., color = GENOTYPE_LIKELIHOOD_GROUP).
-#' @param adjust.bin Adjust GGPLOT2 bin size (0 to 1).
-#' @export
-#' @rdname plot_density_distribution_genotype_likelihood
-#' @seealso \link{summary_genotype_likelihood}
-
-plot_density_distribution_genotype_likelihood <- function(data, aes.colour,
-                                                            adjust.bin) {
-
-  VALUE <- NULL
-
-  # BREAKS <- seq(0, 150, by = 20)
-  suppressWarnings(ggplot2::ggplot(data, ggplot2::aes(x = VALUE, na.rm = T)) +
-                     ggplot2::geom_line(aes.colour, stat = "density", size = 0.5, adjust = adjust.bin) +
-    #  scale_colour_manual(name = "Filters", values = c("black", "blue")) +
-    #  scale_x_continuous(breaks = BREAKS) +
-      ggplot2::labs(x = "Markers Genotype Likelihood") +
-      ggplot2::labs(y = "Markers (scaled density)") +
-      ggplot2::expand_limits(x = 0) +
-      ggplot2::theme(
-      legend.position = "none",
-      axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      legend.title = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      legend.text = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      strip.text.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"))
-  )
-}
 
 
 
 
-# Figure: Box Plot of genotype likelihood summary of loci
-#' @title Figure box plot of genotype likelihood summary statistics
-#' @description Create box plots of genotype likelihood summary statistics.
-#' Use the genotype likelihood summary file created
-#' with genotype_likelihood_summary function.
-#' @param data genotype likelihood summary file.
-#' @export
-#' @rdname plot_boxplot_genotype_likelihood
-
-plot_boxplot_genotype_likelihood <- function(data) {
-
-  POP_ID <- NULL
-  VALUE <- NULL
-
-
-
-  ggplot2::ggplot(data, ggplot2::aes(x = factor(POP_ID), y = VALUE, na.rm = T)) +
-    ggplot2::geom_violin(trim = TRUE) +
-    ggplot2::geom_boxplot(width = 0.1, fill = "black", outlier.colour = NA) +
-    ggplot2::stat_summary(fun.y = "mean", geom = "point", shape = 21, size = 2.5, fill = "white") +
-    ggplot2::labs(x = "Sampling sites") +
-    ggplot2::labs(y = "Genotype likelihood of markers") +
-    ggplot2::theme(
-      legend.position = "none",
-      axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica", angle = 90, hjust = 1, vjust = 0.5),
-      legend.title = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      legend.text = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      strip.text.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold")
-    )
-}
 
 
 

@@ -113,14 +113,17 @@ filter_maf <- function(
   strata = NULL,
   pop.levels = NULL,
   pop.labels = NULL,
-  pop.select = NULL
+  pop.select = NULL,
+  parallel.core = parallel::detectCores() - 1
 ) {
 
   cat("#######################################################################\n")
-  cat("######################### radiator::filter_maf ##########################\n")
+  cat("######################## radiator::filter_maf #########################\n")
   cat("#######################################################################\n")
-
+  opt.change <- getOption("width")
+  options(width = 70)
   timing <- proc.time()
+
   # manage missing arguments -----------------------------------------------------
   if (!interactive.filter & missing(maf.thresholds)) stop("The required maf.thresholds argument is missing")
   if (missing(data)) stop("Input file missing")
@@ -148,27 +151,31 @@ filter_maf <- function(
     message("Step 2. Local MAF: Inspecting the MAF at the populations level")
     message("Step 3. Filtering markers based on the different MAF arguments\n\n")
   }
-    # Folder -------------------------------------------------------------------
-    # Get date and time to have unique filenaming
-    file.date <- stringi::stri_replace_all_fixed(Sys.time(), pattern = " EDT", replacement = "")
-    file.date <- stringi::stri_replace_all_fixed(file.date, pattern = c("-", " ", ":"), replacement = c("", "@", ""), vectorize_all = FALSE)
-    file.date <- stringi::stri_sub(file.date, from = 1, to = 13)
-
-    path.folder <- stringi::stri_join(getwd(),"/", "filter_maf_", file.date, sep = "")
-    dir.create(file.path(path.folder))
-
-    message(stringi::stri_join("Folder created: \n", path.folder))
-    file.date <- NULL #unused object
+  # Folder -------------------------------------------------------------------
+  # Date and time
+  file.date <- stringi::stri_replace_all_fixed(
+    Sys.time(),
+    pattern = " EDT", replacement = "") %>%
+    stringi::stri_replace_all_fixed(
+      str = .,
+      pattern = c("-", " ", ":"), replacement = c("", "@", ""),
+      vectorize_all = FALSE) %>%
+    stringi::stri_sub(str = ., from = 1, to = 13)
+  folder.extension <- stringi::stri_join("filter_maf_", file.date, sep = "")
+  path.folder <- stringi::stri_join(getwd(),"/", folder.extension, sep = "")
+  dir.create(file.path(path.folder))
+  message("\nFolder created: ", folder.extension)
+  file.date <- NULL #unused object
 
   # Filter parameter file ------------------------------------------------------
-  message("\nParameters used in this run will be store in a file")
+  message("Parameters used in this run are stored in a file")
   filters.parameters <- list.files(path = getwd(), pattern = "filters_parameters.tsv", full.names = TRUE)
   if (length(filters.parameters) == 0) {
     filters.parameters <- tibble::data_frame(FILTERS = as.character(), PARAMETERS = as.character(), VALUES = as.integer(), BEFORE = as.character(), AFTER = as.character(), BLACKLIST = as.integer(), UNITS = as.character(), COMMENTS = as.character())
     readr::write_tsv(x = filters.parameters, path = "filters_parameters.tsv", append = FALSE, col_names = TRUE)
-    message("Created a file to store filters parameters: filters_parameters.tsv\n")
+    message("    Created a parameter file: filters_parameters.tsv")
   } else {
-    message("Using the filters parameters file found in the directory: \nfilters_parameters.tsv\n")
+    message("    Using the filters parameters file: filters_parameters.tsv")
   }
 
   # File type detection----------------------------------------------------------
@@ -180,13 +187,6 @@ filter_maf <- function(
     # confusing, but because the haplotpe file doesn't have snp info, only locus info
     # it's treated as markers/snp info and filtered the same way as the approach by SNP.
     # but it's really by haplotype
-  }
-
-  if (maf.approach == "haplotype") {
-    if (data.type != "vcf.file" & data.type != "haplo.file") {
-      stop("The haplotype approach during MAF filtering is for VCF and
-         stacks haplotypes file, only. Use the snp approach for the other file types")
-    }
   }
 
   # import data ----------------------------------------------------------------
@@ -205,7 +205,8 @@ filter_maf <- function(
     pop.levels = pop.levels,
     pop.labels = pop.labels,
     pop.select = pop.select,
-    filename = NULL
+    filename = NULL,
+    parallel.core = parallel.core
   )
 
   # create a strata.df
@@ -215,6 +216,14 @@ filter_maf <- function(
 
   pop.levels <- levels(input$POP_ID)
   pop.labels <- pop.levels
+
+  if (maf.approach == "haplotype") {
+    # if (data.type != "vcf.file" & data.type != "haplo.file") {
+    if (!tibble::has_name(input, "LOCUS") || !tibble::has_name(input, "POS")) {
+      stop("The haplotype approach during MAF filtering is for VCF and
+         stacks haplotypes file, only. Use the snp approach for the other file types")
+    }
+  }
 
   # Detection if data is summarized for MAF or not -----------------------------
   if ("MAF_LOCAL" %in% colnames(input)) {
@@ -284,142 +293,145 @@ filter_maf <- function(
 
   # Step 1. Global MAF: Inspecting the MAF globally----------------------------
   if (interactive.filter) {
-    message("\nStep 1. Global MAF: Inspecting the MAF globally\n")
+    message("\nStep 1. Global MAF visualization\n")
     # plot_1: Violin plot global MAF individuals and pop
-    message("Show the violin plot for the global MAF (y/n)): ")
-    violinplot <- as.character(readLines(n = 1))
-    if (violinplot == "y") {
+  }
+  # violinplot <- as.character(readLines(n = 1))
+  # if (violinplot == "y") {
 
-      message("Generating violin plot may take some time...")
-      # plot
-      OVERALL <- NULL
-      global.data <- dplyr::ungroup(maf.data) %>%
-        dplyr::distinct(MARKERS, MAF_GLOBAL) %>%
-        dplyr::mutate(OVERALL = rep("overall", n()))
+  # message("Generating violin plot may take some time...")
+  # plot
+  OVERALL <- NULL
+  global.data <- dplyr::ungroup(maf.data) %>%
+    dplyr::distinct(MARKERS, MAF_GLOBAL) %>%
+    dplyr::mutate(OVERALL = rep("overall", n()))
 
-      maf.global.summary <- dplyr::ungroup(global.data) %>%
-        dplyr::summarise(
-          MEAN = mean(MAF_GLOBAL, na.rm = TRUE),
-          MEDIAN = stats::median(MAF_GLOBAL, na.rm = TRUE),
-          RANGE = stringi::stri_join(round(min(MAF_GLOBAL, na.rm = TRUE), 4), " - ", round(max(MAF_GLOBAL, na.rm = TRUE), 4))
-        )
+  maf.global.summary <- dplyr::ungroup(global.data) %>%
+    dplyr::summarise(
+      MEAN = mean(MAF_GLOBAL, na.rm = TRUE),
+      MEDIAN = stats::median(MAF_GLOBAL, na.rm = TRUE),
+      RANGE = stringi::stri_join(round(min(MAF_GLOBAL, na.rm = TRUE), 4), " - ", round(max(MAF_GLOBAL, na.rm = TRUE), 4))
+    )
 
-      violinplot.maf.global <- ggplot(data = global.data, aes(x = OVERALL, y = MAF_GLOBAL, na.rm = TRUE)) +
-        geom_violin(trim = TRUE) +
-        geom_boxplot(width = 0.1, fill = "black", outlier.colour = NA) +
-        stat_summary(fun.y = "mean", geom = "point", shape = 21, size = 2.5, fill = "white") +
-        # scale_y_continuous(name = "Global MAF", breaks = c(0, 0.01, 0.02, 0.))
-        labs(x = "Overall") +
-        labs(y = "Global MAF") +
-        theme(
-          legend.position = "none",
-          axis.title.x = element_text(size = 10, family = "Helvetica", face = "bold"),
-          axis.title.y = element_text(size = 10, family = "Helvetica", face = "bold"),
-          axis.text.x = element_blank(),
-          # axis.text.x = element_text(size = 8, family = "Helvetica"),
-          legend.title = element_text(size = 10, family = "Helvetica", face = "bold"),
-          legend.text = element_text(size = 10, family = "Helvetica", face = "bold"),
-          strip.text.x = element_text(size = 10, family = "Helvetica", face = "bold")
-        )
-      print(violinplot.maf.global)
-      # save
-      ggsave(stringi::stri_join(path.folder, "/maf.global.pdf"), width = 10, height = 10, dpi = 600, units = "cm", useDingbats = F)
-      ggsave(stringi::stri_join(path.folder, "/maf.global.png"), width = 10, height = 10, dpi = 300, units = "cm")
-      message(stringi::stri_join("2 versions (pdf and png) of the violin plot for the global MAF were saved in this directory: \n", path.folder))
+  violinplot.maf.global <- ggplot2::ggplot(data = global.data, ggplot2::aes(x = OVERALL, y = MAF_GLOBAL, na.rm = TRUE)) +
+    ggplot2::geom_violin(trim = TRUE) +
+    ggplot2::geom_boxplot(width = 0.1, fill = "black", outlier.colour = NA) +
+    ggplot2::stat_summary(fun.y = "mean", geom = "point", shape = 21, size = 2.5, fill = "white") +
+    # scale_y_continuous(name = "Global MAF", breaks = c(0, 0.01, 0.02, 0.))
+    ggplot2::labs(x = "Overall") +
+    ggplot2::labs(y = "Global MAF") +
+    ggplot2::theme(
+      legend.position = "none",
+      axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+      axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+      axis.text.x = ggplot2::element_blank(),
+      # axis.text.x = element_text(size = 8, family = "Helvetica"),
+      legend.title = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+      legend.text = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+      strip.text.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold")
+    )
+  if (interactive.filter) {
+    message("    Showing the violin plot for the global MAF")
+    print(violinplot.maf.global)
+  }
+  # save
+  ggplot2::ggsave(filename = stringi::stri_join(path.folder, "/maf.global.pdf"), plot = violinplot.maf.global, width = 10, height = 10, dpi = 600, units = "cm", useDingbats = FALSE)
+  ggplot2::ggsave(filename = stringi::stri_join(path.folder, "/maf.global.png"), plot = violinplot.maf.global, width = 10, height = 10, dpi = 300, units = "cm")
+  message("2 versions (pdf and png) of the violin plot for the global MAF were written in the folder")
 
-      global.data <- NULL # unused object
+  global.data <- NULL # unused object
 
-      readr::write_tsv(x = maf.global.summary, path = paste0(path.folder, "/maf.global.summary.tsv"))
-      message(stringi::stri_join("The global MAF mean: ", round(maf.global.summary$MEAN, 4)))
-      message(stringi::stri_join("The global MAF median: ", round(maf.global.summary$MEDIAN, 4)))
-      message(stringi::stri_join("The global MAF range: ", maf.global.summary$RANGE))
-      message(stringi::stri_join("maf.global.summary.tsv was saved in this directory: \n", path.folder))
-    }
-    violinplot.maf.global <- "not selected"
-    maf.global.summary <- "not selected"
-  } # end global maf
+  readr::write_tsv(x = maf.global.summary, path = paste0(path.folder, "/maf.global.summary.tsv"))
+  message("maf.global.summary.tsv was saved in the folder")
+
+  if (interactive.filter) {
+    message("The global MAF mean: ", round(maf.global.summary$MEAN, 4))
+    message("The global MAF median: ", round(maf.global.summary$MEDIAN, 4))
+    message("The global MAF range: ", maf.global.summary$RANGE)
+  }
 
   # Step 2. Local MAF: Inspecting the MAF at the populations level--------------
   # plot_2: Violin plot local MAF
   if (interactive.filter) {
-    message("\nStep 2. Local MAF: Inspecting the MAF at the population level\n")
-    # plot_2: Violin plot local MAF
-    message("Show the violin plot for the local MAF (y/n)): ")
-    violinplot <- as.character(readLines(n = 1))
-    if (violinplot == "y") {
-      pop.number <- length(levels(maf.data$POP_ID))
-
-      message("Generating violin plot may take some time...")
-      # plot
-      # maf.local.summary <- maf.data %>%
-      #   ungroup %>%
-      #   summarise(
-      #     MEAN = mean(MAF_LOCAL, na.rm = TRUE),
-      #     MEDIAN = stats::median(MAF_LOCAL, na.rm = TRUE),
-      #     RANGE = stringi::stri_join(round(min(MAF_LOCAL, na.rm = TRUE), 4), " - ", round(max(MAF_GLOBAL, na.rm = TRUE), 4))
-      #   )
-
-      violinplot.maf.local <- ggplot(data = maf.data, aes(x = POP_ID, y = MAF_LOCAL, na.rm = TRUE)) +
-        geom_violin(trim = TRUE) +
-        geom_boxplot(width = 0.1, fill = "black", outlier.colour = NA) +
-        stat_summary(fun.y = "mean", geom = "point", shape = 21, size = 2.5, fill = "white") +
-        labs(x = "Populations/Groupings") +
-        labs(y = "Local/populations MAF") +
-        theme(
-          legend.position = "none",
-          axis.title.x = element_text(size = 10, family = "Helvetica", face = "bold"),
-          axis.title.y = element_text(size = 10, family = "Helvetica", face = "bold"),
-          # axis.text.x = element_blank(),
-          axis.text.x = element_text(size = 8, family = "Helvetica"),
-          legend.title = element_text(size = 10, family = "Helvetica", face = "bold"),
-          legend.text = element_text(size = 10, family = "Helvetica", face = "bold"),
-          strip.text.x = element_text(size = 10, family = "Helvetica", face = "bold")
-        )
-      print(violinplot.maf.local)
-      # save
-      ggsave(stringi::stri_join(path.folder, "/maf.local.violinplot.pdf"), width = pop.number, height = 10, dpi = 600, units = "cm", useDingbats = F)
-      ggsave(stringi::stri_join(path.folder, "/maf.local.violinplot.png"), width = pop.number, height = 10, dpi = 300, units = "cm")
-      message(stringi::stri_join("2 versions (pdf and png) of the violin plot for the global MAF were saved in this directory: \n", path.folder))
-    }
-    violinplot.maf.local <- "not selected"
+    message("\nStep 2. Local MAF visualization (population level)\n")
   }
+  # plot_2: Violin plot local MAF
+  # violinplot <- as.character(readLines(n = 1))
+  # if (violinplot == "y") {
+  pop.number <- length(levels(maf.data$POP_ID))
+
+  # message("Generating violin plot may take some time...")
+  # plot
+  # maf.local.summary <- maf.data %>%
+  #   ungroup %>%
+  #   summarise(
+  #     MEAN = mean(MAF_LOCAL, na.rm = TRUE),
+  #     MEDIAN = stats::median(MAF_LOCAL, na.rm = TRUE),
+  #     RANGE = stringi::stri_join(round(min(MAF_LOCAL, na.rm = TRUE), 4), " - ", round(max(MAF_GLOBAL, na.rm = TRUE), 4))
+  #   )
+
+  violinplot.maf.local <- ggplot2::ggplot(data = maf.data, ggplot2::aes(x = POP_ID, y = MAF_LOCAL, na.rm = TRUE)) +
+    ggplot2::geom_violin(trim = TRUE) +
+    ggplot2::geom_boxplot(width = 0.1, fill = "black", outlier.colour = NA) +
+    ggplot2::stat_summary(fun.y = "mean", geom = "point", shape = 21, size = 2.5, fill = "white") +
+    ggplot2::labs(x = "Populations/Groupings") +
+    ggplot2::labs(y = "Local/populations MAF") +
+    ggplot2::theme(
+      legend.position = "none",
+      axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+      axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+      # axis.text.x = element_blank(),
+      axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica"),
+      legend.title = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+      legend.text = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+      strip.text.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold")
+    )
+  if (interactive.filter) {
+    message("Showing the violin plot for the local MAF")
+    print(violinplot.maf.local)
+  }
+
+  # save
+  ggplot2::ggsave(filename = stringi::stri_join(path.folder, "/maf.local.violinplot.pdf"), plot = violinplot.maf.local, width = pop.number, height = 10, dpi = 600, units = "cm", useDingbats = FALSE)
+  ggplot2::ggsave(filename = stringi::stri_join(path.folder, "/maf.local.violinplot.png"), plot = violinplot.maf.local, width = pop.number, height = 10, dpi = 300, units = "cm")
+  message("2 versions (pdf and png) of the violin plot for the global MAF were saved in the folder")
 
   # plot_3: Distribution of local MAF
+
+  # spectrum <- as.character(readLines(n = 1))
+  # if (spectrum == "y") {
+  pop.number <- length(levels(maf.data$POP_ID))
+  plot.distribution.maf.local <- ggplot2::ggplot(data = maf.data, ggplot2::aes(x = MAF_LOCAL, na.rm = FALSE)) +
+    ggplot2::geom_line(ggplot2::aes(y = ..scaled.., color = POP_ID), stat = "density", adjust = 1) + # pop colored
+    #   scale_colour_manual(name ="Sampling sites", values = colour_palette_sites.pink) +
+    ggplot2::scale_x_continuous(breaks = seq(0,1, by = 0.1)) +
+    # labels = c("0", "0.02", "0.05", "0.10", "0.20", "0.50", "1.00"),
+    # limits = c(0,1)) +
+    ggplot2::labs(x = "Minor Allele Frequency (MAF)") +
+    ggplot2::labs(y = "Density of MARKERS (scaled)") +
+    ggplot2::expand_limits(y = 0) +
+    ggplot2::theme(
+      axis.title.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
+      axis.title.y = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
+      legend.position = "none",
+      axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica", angle = 90, hjust = 1, vjust = 0.5),
+      # legend.title = element_text(size = 12, family = "Helvetica", face = "bold"),
+      # legend.text = element_text(size = 12, family = "Helvetica", face = "bold"),
+      strip.text.y = ggplot2::element_text(angle = 0, size = 12, family = "Helvetica", face = "bold"),
+      strip.text.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold")
+    ) +
+    ggplot2::facet_grid(~POP_ID)
   if (interactive.filter) {
-    message("Show site frequency spectrum (y/n): ")
-    spectrum <- as.character(readLines(n = 1))
-    if (spectrum == "y") {
-      pop.number <- length(levels(maf.data$POP_ID))
-      plot.distribution.maf.local <- ggplot(data = maf.data, aes(x = MAF_LOCAL, na.rm = FALSE)) +
-        geom_line(aes(y = ..scaled.., color = POP_ID), stat = "density", adjust = 1) + # pop colored
-        #   scale_colour_manual(name ="Sampling sites", values = colour_palette_sites.pink) +
-        scale_x_continuous(breaks = seq(0,1, by = 0.1)) +
-        # labels = c("0", "0.02", "0.05", "0.10", "0.20", "0.50", "1.00"),
-        # limits = c(0,1)) +
-        labs(x = "Minor Allele Frequency (MAF)") +
-        labs(y = "Density of MARKERS (scaled)") +
-        expand_limits(y = 0) +
-        theme(
-          axis.title.x = element_text(size = 12, family = "Helvetica", face = "bold"),
-          axis.title.y = element_text(size = 12, family = "Helvetica", face = "bold"),
-          legend.position = "none",
-          axis.text.x = element_text(size = 8, family = "Helvetica", angle = 90, hjust = 1, vjust = 0.5),
-          # legend.title = element_text(size = 12, family = "Helvetica", face = "bold"),
-          # legend.text = element_text(size = 12, family = "Helvetica", face = "bold"),
-          strip.text.y = element_text(angle = 0, size = 12, family = "Helvetica", face = "bold"),
-          strip.text.x = element_text(size = 12, family = "Helvetica", face = "bold")
-        ) +
-        facet_grid(~POP_ID)
-      print(plot.distribution.maf.local)
-      ggsave(stringi::stri_join(path.folder, "/maf.local.spectrum.pdf"), width = pop.number * 5, height = 15, dpi = 600, units = "cm", useDingbats = F)
-      ggsave(stringi::stri_join(path.folder, "/maf.local.spectrum.png"), width = pop.number * 5, height = 10, dpi = 300, units = "cm")
-      message(stringi::stri_join("2 versions (pdf and png) of the local maf spectrum plot were saved in this directory: \n", path.folder))
-    }
-    plot.distribution.maf.local <- "not selected"
+    message("Showing site frequency spectrum")
+    print(plot.distribution.maf.local)
   }
+  ggplot2::ggsave(filename = stringi::stri_join(path.folder, "/maf.local.spectrum.pdf"), plot = plot.distribution.maf.local, width = pop.number * 5, height = 15, dpi = 600, units = "cm", useDingbats = FALSE)
+  ggplot2::ggsave(filename = stringi::stri_join(path.folder, "/maf.local.spectrum.png"), plot.distribution.maf.local, width = pop.number * 5, height = 10, dpi = 300, units = "cm")
+  message("2 versions (pdf and png) of the local maf spectrum plot were saved in the folder")
 
   # Helper table for global and local MAF --------------------------------------
   # number of individuals / pop
+  message("Generating maf.helper.table...")
   maf.helper.table <- input %>%
     dplyr::group_by(POP_ID, INDIVIDUALS) %>%
     dplyr::distinct(POP_ID, INDIVIDUALS, .keep_all = TRUE) %>%
@@ -442,33 +454,30 @@ filter_maf <- function(
         ALT_17 = 17/(2*n), ALT_18 = 18/(2*n), ALT_19 = 19/(2*n), ALT_20 = 20/(2*n)
       )
   )
-    # remove unused objects
+  # remove unused objects
   TOTAL <- n.ind <- NULL
 
   readr::write_tsv(x = maf.helper.table, path = paste0(path.folder, "/maf.helper.table.tsv"))
 
-  message(stringi::stri_join("\nTo visualize the local and global MAF, a table
-(maf.helper.table.tsv) was written in this directory: \n", path.folder))
+  message("\nA table of local and global MAF (maf.helper.table.tsv) was written in the directory")
   if (interactive.filter) {
     message("\nFirst and second variable columns: POP_ID and sample size.
-The last row is the TOTAL/GLOBAL observation.
-The remaining columns are the variable corresponding to the number of ALT allele (range 1 to 20).
+The last row is the TOTAL/GLOBAL observations.
+The remaining columns are the variable corresponding to the number of alternative (ALT) allele (ranging from 1 to 20).
 The observations in the ALT allele variable columns are the local (for the pop)
 and global (last row) MAF of your dataset.\n
-e.g. ALT_3 could be 3 heterozygote individuals with the ALT allele or
+e.g. ALT_3 can potentially represent 3 heterozygote individuals with the ALT allele or
 1 homozygote individuals for the ALT allele and 1 heterozygote individual. And so on...\n")
   }
+
   # Step 3. Thresholds selection -----------------------------------------------
 
   # maf.approach
   if (interactive.filter) {
     message("\nStep 3. Filtering markers based on the different MAF arguments\n")
     message("The maf.approach:\n
-maf.approach = \"haplotype\" : looks at the minimum MAF found on the read/haplotype.
-This will discard all the markers/snp on that read based on the thresholds chosen.
-This method is only available for VCF and haplotype files or tidy data frame from
-those file type.\n
-maf.approach = \"SNP\" : treats all the SNP on the same haplotype/read as independent.")
+maf.approach = \"haplotype\" : looks at the minimum MAF found on the read/haplotype.\n
+maf.approach = \"SNP\" : SNPs on the same haplotype/read are considered independent.")
     message("Choose the maf.approach (SNP/haplotype):")
     maf.approach <- as.character(readLines(n = 1))
     if (!maf.approach %in% c("SNP", "haplotype")) stop("maf.approach: SNP or haplotype")
@@ -485,8 +494,8 @@ maf.approach = \"SNP\" : treats all the SNP on the same haplotype/read as indepe
   # maf.operator
   if (interactive.filter) {
     message("The maf.operator:
-Option 1: AND = the local \"AND\" the global MAF threshold are required to pass.
-Option 2: OR = EITHER the local \"OR\" the global MAF threshold are required to pass.")
+Option 1: AND = to consider both the local \"AND\" the global MAF threshold.
+Option 2: OR = to consider EITHER the local \"OR\" the global MAF threshold.")
     message("Choose the maf.operator (AND/OR):")
     maf.operator <- as.character(readLines(n = 1))
     if (!maf.operator %in% c("OR", "AND")) stop("maf.operator: either OR/AND")
@@ -494,11 +503,10 @@ Option 2: OR = EITHER the local \"OR\" the global MAF threshold are required to 
 
   # maf.pop.num.threshold
   if (interactive.filter) {
-    message("The maf.pop.num.threshold:\n
-How many populations are required to pass the thresholds to keep the locus?\n
+    message("Last threshold... maf.pop.num.threshold:\n
+How many populations are required to pass all the thresholds and keep the locus?\n
 Example: if you have 10 populations and choose maf.pop.num.threshold = 3,
-3 populations out of 10 are required to have LOCAL and/or GLOBAL MAF higher than the
-thresholds entered.")
+3 populations out of 10 are required to pass previous thresholds")
     message("Choose the value for the maf.pop.num.threshold:")
     maf.pop.num.threshold <- as.numeric(readLines(n = 1))
   }
@@ -512,204 +520,199 @@ thresholds entered.")
   # Update the maf.data with pass or not filter based on threshold -------------
   maf.data.thresholds <- maf.data %>%
     dplyr::mutate(
-      OR = ifelse((MAF_LOCAL >= maf.local.threshold | MAF_GLOBAL >= maf.global.threshold), "pass", "pruned"),
-      AND = ifelse((MAF_LOCAL >= maf.local.threshold & MAF_GLOBAL >= maf.global.threshold), "pass", "pruned")
+      OR = dplyr::if_else((MAF_LOCAL >= maf.local.threshold | MAF_GLOBAL >= maf.global.threshold), "pass", "pruned"),
+      AND = dplyr::if_else((MAF_LOCAL >= maf.local.threshold & MAF_GLOBAL >= maf.global.threshold), "pass", "pruned")
     ) %>%
     dplyr::group_by(MARKERS) %>%
     dplyr::mutate(
-  OR_POP_THRESHOLD = ifelse(length(POP_ID[OR == "pass"]) >= maf.pop.num.threshold, "pass", "pruned"),
-  AND_POP_THRESHOLD  = ifelse(length(POP_ID[AND == "pass"]) >= maf.pop.num.threshold, "pass", "pruned")
+      OR_POP_THRESHOLD = dplyr::if_else(length(POP_ID[OR == "pass"]) >= maf.pop.num.threshold, "pass", "pruned"),
+      AND_POP_THRESHOLD  = dplyr::if_else(length(POP_ID[AND == "pass"]) >= maf.pop.num.threshold, "pass", "pruned")
+    )
+
+  readr::write_tsv(
+    x = maf.data.thresholds,
+    path = paste0(path.folder, "/maf.data.tsv"),
+    col_names = TRUE,
+    append = FALSE
   )
+  message("\nThe MAF summary statistics (maf.data.tsv) were written in the folder\n")
 
-readr::write_tsv(
-  x = maf.data.thresholds,
-  path = paste0(path.folder, "/maf.data.tsv"),
-  col_names = TRUE,
-  append = FALSE
-)
-message(stringi::stri_join("\nThe MAF summary statistics (maf.data.tsv), written in this directory: \n", path.folder))
+  # Filtering ------------------------------------------------------------------
+  if (maf.approach == "haplotype") {
+    filter <- tidyr::separate(
+      data = maf.data,
+      col = MARKERS,
+      into = c("CHROM", "LOCUS", "POS"),
+      sep = "__",
+      remove = FALSE,
+      extra = "warn"
+    )
 
-# Filtering ------------------------------------------------------------------
-if (maf.approach == "haplotype") {
-  filter <- tidyr::separate(
-    data = maf.data,
-    col = MARKERS,
-    into = c("CHROM", "LOCUS", "POS"),
-    sep = "__",
-    remove = FALSE,
-    extra = "warn"
+    if (maf.operator == "OR") {
+      filter <- filter %>%
+        dplyr::group_by(LOCUS, POP_ID) %>%
+        dplyr::summarise(
+          MAF_GLOBAL = mean(MAF_GLOBAL, na.rm = TRUE),
+          MAF_LOCAL = min(MAF_LOCAL, na.rm = TRUE)
+        ) %>%
+        dplyr::filter(MAF_LOCAL >= maf.local.threshold | MAF_GLOBAL >= maf.global.threshold) %>%
+        dplyr::group_by(LOCUS) %>%
+        dplyr::tally(.) %>%
+        dplyr::filter(n >= maf.pop.num.threshold) %>%
+        dplyr::select(LOCUS) %>%
+        dplyr::left_join(input, by = "LOCUS") %>%
+        dplyr::arrange(LOCUS, POP_ID)
+    } else {# AND operator between local and global maf
+      filter <- filter %>%
+        dplyr::group_by(LOCUS, POP_ID) %>%
+        dplyr::summarise(
+          MAF_GLOBAL = mean(MAF_GLOBAL, na.rm = TRUE),
+          MAF_LOCAL = min(MAF_LOCAL, na.rm = TRUE)
+        ) %>%
+        dplyr::filter(MAF_LOCAL >= maf.local.threshold & MAF_GLOBAL >= maf.global.threshold) %>%
+        dplyr::group_by(LOCUS) %>%
+        dplyr::tally(.) %>%
+        dplyr::filter(n >= maf.pop.num.threshold) %>%
+        dplyr::select(LOCUS) %>%
+        dplyr::left_join(input, by = "LOCUS") %>%
+        dplyr::arrange(LOCUS, POP_ID)
+    }
+    # filter <- filter %>% select(-c(CHROM, LOCUS, POS))
+  } # end maf haplotype approach
+
+  if (maf.approach == "SNP") { # SNP approach
+    if (maf.operator == "OR") {
+      filter <- maf.data %>%
+        dplyr::group_by(MARKERS, POP_ID) %>%
+        dplyr::summarise(
+          MAF_GLOBAL = mean(MAF_GLOBAL, na.rm = TRUE),
+          MAF_LOCAL = min(MAF_LOCAL, na.rm = TRUE)
+        ) %>%
+        dplyr::filter(MAF_LOCAL >= maf.local.threshold | MAF_GLOBAL >= maf.global.threshold) %>%
+        dplyr::group_by(MARKERS) %>%
+        dplyr::tally(.) %>%
+        dplyr::filter(n >= maf.pop.num.threshold) %>%
+        dplyr::select(MARKERS) %>%
+        dplyr::left_join(input, by = "MARKERS") %>%
+        dplyr::arrange(MARKERS, POP_ID)
+    } else {# AND operator between local and global maf
+      filter <- maf.data %>%
+        dplyr::group_by(MARKERS, POP_ID) %>%
+        dplyr::summarise(
+          MAF_GLOBAL = mean(MAF_GLOBAL, na.rm = TRUE),
+          MAF_LOCAL = min(MAF_LOCAL, na.rm = TRUE)
+        ) %>%
+        dplyr::filter(MAF_LOCAL >= maf.local.threshold & MAF_GLOBAL >= maf.global.threshold) %>%
+        dplyr::group_by(MARKERS) %>%
+        dplyr::tally(.) %>%
+        dplyr::filter(n >= maf.pop.num.threshold) %>%
+        dplyr::select(MARKERS) %>%
+        dplyr::left_join(input, by = "MARKERS") %>%
+        dplyr::arrange(MARKERS, POP_ID)
+    }
+  } # end maf snp approach
+
+  # unused object
+  maf.data <- NULL
+
+  # Update filters.parameters SNP ----------------------------------------------
+  if (tibble::has_name(input, "LOCUS") && maf.approach == "haplotype") {
+    snp.before <- as.integer(dplyr::n_distinct(input$MARKERS))
+    snp.after <- as.integer(dplyr::n_distinct(filter$MARKERS))
+    snp.blacklist <- snp.before - snp.after
+    locus.before <- as.integer(dplyr::n_distinct(input$LOCUS))
+    locus.after <- as.integer(dplyr::n_distinct(filter$LOCUS))
+    locus.blacklist <- locus.before - locus.after
+  } else {
+    snp.before <- as.integer(dplyr::n_distinct(input$MARKERS))
+    snp.after <- as.integer(dplyr::n_distinct(filter$MARKERS))
+    snp.blacklist <- snp.before - snp.after
+    locus.before <- as.character("NA")
+    locus.after <- as.character("NA")
+    locus.blacklist <- as.character("NA")
+  }
+
+  markers.before <- stringi::stri_join(snp.before, locus.before, sep = "/")
+  markers.after <- stringi::stri_join(snp.after, locus.after, sep = "/")
+  markers.blacklist <- stringi::stri_join(snp.blacklist, locus.blacklist, sep = "/")
+
+  filters.parameters <- tibble::data_frame(
+    FILTERS = c("Minor Allele Frequency", rep(as.character(""), 4)),
+    PARAMETERS = c("maf.approach", "maf.local.threshold", "maf.global.threshold", "maf.operator", "maf.pop.num.threshold"),
+    VALUES = c(maf.approach, paste(">=", maf.local.threshold), paste(">=", maf.global.threshold), maf.operator, paste(">=", maf.pop.num.threshold)),
+    BEFORE = c("", "", "", "", markers.before),
+    AFTER = c("", "", "", "", markers.after),
+    BLACKLIST = c("", "", "", "", markers.blacklist),
+    UNITS = c("", "", "", "", "SNP/LOCUS"),
+    COMMENTS = c("", "", "", "", "")
   )
+  readr::write_tsv(x = filters.parameters, path = "filters_parameters.tsv", append = TRUE, col_names = FALSE)
 
-  if (maf.operator == "OR") {
-    filter <- filter %>%
-      dplyr::group_by(LOCUS, POP_ID) %>%
-      dplyr::summarise(
-        MAF_GLOBAL = mean(MAF_GLOBAL, na.rm = TRUE),
-        MAF_LOCAL = min(MAF_LOCAL, na.rm = TRUE)
-      ) %>%
-      dplyr::filter(MAF_LOCAL >= maf.local.threshold | MAF_GLOBAL >= maf.global.threshold) %>%
-      dplyr::group_by(LOCUS) %>%
-      dplyr::tally(.) %>%
-      dplyr::filter(n >= maf.pop.num.threshold) %>%
-      dplyr::select(LOCUS) %>%
-      dplyr::left_join(input, by = "LOCUS") %>%
-      dplyr::arrange(LOCUS, POP_ID)
-  } else {# AND operator between local and global maf
-    filter <- filter %>%
-      dplyr::group_by(LOCUS, POP_ID) %>%
-      dplyr::summarise(
-        MAF_GLOBAL = mean(MAF_GLOBAL, na.rm = TRUE),
-        MAF_LOCAL = min(MAF_LOCAL, na.rm = TRUE)
-      ) %>%
-      dplyr::filter(MAF_LOCAL >= maf.local.threshold & MAF_GLOBAL >= maf.global.threshold) %>%
-      dplyr::group_by(LOCUS) %>%
-      dplyr::tally(.) %>%
-      dplyr::filter(n >= maf.pop.num.threshold) %>%
-      dplyr::select(LOCUS) %>%
-      dplyr::left_join(input, by = "LOCUS") %>%
-      dplyr::arrange(LOCUS, POP_ID)
+  # saving filtered tidy data --------------------------------------------------
+  if (!is.null(filename)) {
+    tidy.name <- stringi::stri_join(filename, ".rad")
+    message("Writing the filtered tidy data set: ", tidy.name)
+    fst::write.fst(x = filter, path = stringi::stri_join(path.folder, "/", tidy.name), compress = 85)
   }
-  # filter <- filter %>% select(-c(CHROM, LOCUS, POS))
-} # end maf haplotype approach
 
-if (maf.approach == "SNP") { # SNP approach
-  if (maf.operator == "OR") {
-    filter <- maf.data %>%
-      dplyr::group_by(MARKERS, POP_ID) %>%
-      dplyr::summarise(
-        MAF_GLOBAL = mean(MAF_GLOBAL, na.rm = TRUE),
-        MAF_LOCAL = min(MAF_LOCAL, na.rm = TRUE)
-      ) %>%
-      dplyr::filter(MAF_LOCAL >= maf.local.threshold | MAF_GLOBAL >= maf.global.threshold) %>%
-      dplyr::group_by(MARKERS) %>%
-      dplyr::tally(.) %>%
-      dplyr::filter(n >= maf.pop.num.threshold) %>%
-      dplyr::select(MARKERS) %>%
-      dplyr::left_join(input, by = "MARKERS") %>%
-      dplyr::arrange(MARKERS, POP_ID)
-  } else {# AND operator between local and global maf
-    filter <- maf.data %>%
-      dplyr::group_by(MARKERS, POP_ID) %>%
-      dplyr::summarise(
-        MAF_GLOBAL = mean(MAF_GLOBAL, na.rm = TRUE),
-        MAF_LOCAL = min(MAF_LOCAL, na.rm = TRUE)
-      ) %>%
-      dplyr::filter(MAF_LOCAL >= maf.local.threshold & MAF_GLOBAL >= maf.global.threshold) %>%
-      dplyr::group_by(MARKERS) %>%
-      dplyr::tally(.) %>%
-      dplyr::filter(n >= maf.pop.num.threshold) %>%
-      dplyr::select(MARKERS) %>%
-      dplyr::left_join(input, by = "MARKERS") %>%
-      dplyr::arrange(MARKERS, POP_ID)
+
+  # saving whitelist
+  message("\nWriting the whitelist of markers in your working directory\nwhitelist.markers.maf.tsv")
+
+  if (tibble::has_name(input, "CHROM")) {
+    whitelist.markers <- dplyr::ungroup(filter) %>%
+      dplyr::distinct(CHROM, LOCUS, POS)
+  } else {
+    whitelist.markers <- dplyr::ungroup(filter) %>%
+      dplyr::distinct(MARKERS)
   }
-} # end maf snp approach
-
-# unused object
-maf.data <- NULL
-
-# Update filters.parameters SNP ----------------------------------------------
-if (tibble::has_name(input, "LOCUS") & maf.approach == "haplotype") {
-  snp.before <- as.integer(dplyr::n_distinct(input$MARKERS))
-  snp.after <- as.integer(dplyr::n_distinct(filter$MARKERS))
-  snp.blacklist <- as.integer(dplyr::n_distinct(input$MARKERS) - dplyr::n_distinct(filter$MARKERS))
-  locus.before <- as.integer(dplyr::n_distinct(input$LOCUS))
-  locus.after <- as.integer(dplyr::n_distinct(filter$LOCUS))
-  locus.blacklist <- as.integer(locus.before - locus.after)
-} else {
-  snp.before <- as.integer(dplyr::n_distinct(input$MARKERS))
-  snp.after <- as.integer(dplyr::n_distinct(filter$MARKERS))
-  snp.blacklist <- as.integer(dplyr::n_distinct(input$MARKERS) - dplyr::n_distinct(filter$MARKERS))
-  locus.before <- as.character("NA")
-  locus.after <- as.character("NA")
-  locus.blacklist <- as.character("NA")
-}
-
-markers.before <- stringi::stri_join(snp.before, locus.before, sep = "/")
-markers.after <- stringi::stri_join(snp.after, locus.after, sep = "/")
-markers.blacklist <- stringi::stri_join(snp.blacklist, locus.blacklist, sep = "/")
-
-filters.parameters <- tibble::data_frame(
-  FILTERS = c("Minor Allele Frequency", rep(as.character(""), 4)),
-  PARAMETERS = c("maf.approach", "maf.local.threshold", "maf.global.threshold", "maf.operator", "maf.pop.num.threshold"),
-  VALUES = c(maf.approach, paste(">=", maf.local.threshold), paste(">=", maf.global.threshold), maf.operator, paste(">=", maf.pop.num.threshold)),
-  BEFORE = c("", "", "", "", markers.before),
-  AFTER = c("", "", "", "", markers.after),
-  BLACKLIST = c("", "", "", "", markers.blacklist),
-  UNITS = c("", "", "", "", "SNP/LOCUS"),
-  COMMENTS = c("", "", "", "", "")
-)
-readr::write_tsv(x = filters.parameters, path = "filters_parameters.tsv", append = TRUE, col_names = FALSE)
-
-# saving tidy data
-if (!is.null(filename)) {
-  message("\nWriting the filtered tidy data set in your working directory...")
-  # if (!is.null(save.feather)) {
-  # feather::write_feather(filter, stringi::stri_replace_all_fixed(filename, pattern = ".tsv", replacement = "_feather.tsv", vectorize_all = TRUE))
-  # } else {
-  readr::write_tsv(filter, filename, append = FALSE, col_names = TRUE)
-  # }
-}
-
-# saving whitelist
-message("\nWriting the whitelist of markers in your working directory\nwhitelist.markers.maf.tsv")
-
-if (tibble::has_name(input, "CHROM")) {
-  whitelist.markers <- dplyr::ungroup(filter) %>%
-    dplyr::distinct(CHROM, LOCUS, POS)
-} else {
-  whitelist.markers <- dplyr::ungroup(filter) %>%
-    dplyr::distinct(MARKERS)
-}
-readr::write_tsv(whitelist.markers, paste0(path.folder, "/whitelist.markers.maf.tsv"), append = FALSE, col_names = TRUE)
+  readr::write_tsv(whitelist.markers, paste0(path.folder, "/whitelist.markers.maf.tsv"), append = FALSE, col_names = TRUE)
 
 
-# saving blacklist
-message("\nWriting the blacklist of markers in your working directory\nblacklist.markers.maf.tsv")
-if (tibble::has_name(input, "CHROM")) {
-  blacklist.markers <- dplyr::ungroup(input) %>%
-    dplyr::distinct(CHROM, LOCUS, POS) %>%
-    dplyr::anti_join(whitelist.markers, by = c("CHROM", "LOCUS", "POS"))
-} else {
-  blacklist.markers <- dplyr::ungroup(input) %>%
-    dplyr::distinct(MARKERS) %>%
-    dplyr::anti_join(whitelist.markers, by = "MARKERS")
-}
-readr::write_tsv(blacklist.markers, paste0(path.folder, "/blacklist.markers.maf.tsv"), append = FALSE, col_names = TRUE)
+  # saving blacklist
+  message("\nWriting the blacklist of markers in your working directory\nblacklist.markers.maf.tsv")
+  if (tibble::has_name(input, "CHROM")) {
+    blacklist.markers <- dplyr::ungroup(input) %>%
+      dplyr::distinct(CHROM, LOCUS, POS) %>%
+      dplyr::anti_join(whitelist.markers, by = c("CHROM", "LOCUS", "POS"))
+  } else {
+    blacklist.markers <- dplyr::ungroup(input) %>%
+      dplyr::distinct(MARKERS) %>%
+      dplyr::anti_join(whitelist.markers, by = "MARKERS")
+  }
+  readr::write_tsv(blacklist.markers, paste0(path.folder, "/blacklist.markers.maf.tsv"), append = FALSE, col_names = TRUE)
 
-# results --------------------------------------------------------------------
-cat("############################### RESULTS ###############################\n")
-message(stringi::stri_join("maf.approach: ", maf.approach))
-message(stringi::stri_join("maf.thresholds: ", "local = ", maf.local.threshold, ", global = ", maf.global.threshold))
-message(stringi::stri_join("maf.operator: ", maf.operator))
-message(stringi::stri_join("maf.pop.num.threshold: ", maf.pop.num.threshold))
-if (tibble::has_name(input, "LOCUS") & maf.approach == "haplotype") {
-  message(stringi::stri_join("The number of markers removed by the MAF filter:\nSNP: ", snp.blacklist, "\nLOCUS: ", locus.blacklist))
-  message("The number of markers before -> after the MAF filter")
-  message(stringi::stri_join("SNP: ", snp.before, " -> ", snp.after))
-  message(stringi::stri_join("LOCUS: ", locus.before, " -> ", locus.after))
-} else {
-  message(stringi::stri_join("The number of markers removed by the MAF filter: ", snp.blacklist))
-  message("The number of markers before -> after the MAF filter")
-  message(stringi::stri_join("SNP: ", snp.before, " -> ", snp.after))
-}
-if (!interactive.filter) {
-  timing <- proc.time() - timing
-  message(stringi::stri_join("Computation time: ", round(timing[[3]]), " sec"))
-}
-cat("############################## completed ##############################\n")
-res <- list()
-res$tidy.filtered.maf <- filter
-res$whitelist.markers <- whitelist.markers
-res$blacklist.markers <- blacklist.markers
-res$maf.data.thresholds <- maf.data.thresholds
-res$maf.helper.table <- maf.helper.table
-res$strata <- strata
-res$filters.parameters <- filters.parameters
-if (interactive.filter) {
+  # results --------------------------------------------------------------------
+  cat("############################### RESULTS ###############################\n")
+  message(stringi::stri_join("maf.approach: ", maf.approach))
+  message(stringi::stri_join("maf.thresholds: ", "local = ", maf.local.threshold, ", global = ", maf.global.threshold))
+  message(stringi::stri_join("maf.operator: ", maf.operator))
+  message(stringi::stri_join("maf.pop.num.threshold: ", maf.pop.num.threshold))
+  if (tibble::has_name(input, "LOCUS") & maf.approach == "haplotype") {
+    message(stringi::stri_join("The number of markers removed by the MAF filter:\nSNP: ", snp.blacklist, "\nLOCUS: ", locus.blacklist))
+    message("The number of markers before -> after the MAF filter")
+    message(stringi::stri_join("SNP: ", snp.before, " -> ", snp.after))
+    message(stringi::stri_join("LOCUS: ", locus.before, " -> ", locus.after))
+  } else {
+    message(stringi::stri_join("The number of markers removed by the MAF filter: ", snp.blacklist))
+    message("The number of markers before -> after the MAF filter")
+    message(stringi::stri_join("SNP: ", snp.before, " -> ", snp.after))
+  }
+  if (!interactive.filter) {
+    message("Computation time: ", round((proc.time() - timing)[[3]]), " sec")
+  }
+  cat("############################## completed ##############################\n")
+  res <- list()
+  res$tidy.filtered.maf <- filter
+  res$whitelist.markers <- whitelist.markers
+  res$blacklist.markers <- blacklist.markers
+  res$maf.data.thresholds <- maf.data.thresholds
+  res$maf.helper.table <- maf.helper.table
+  res$strata <- strata
+  res$filters.parameters <- filters.parameters
   res$violinplot.maf.global <- violinplot.maf.global
   res$violinplot.maf.local <- violinplot.maf.local
   res$plot.distribution.maf.local <- plot.distribution.maf.local
   res$maf.global.summary <- maf.global.summary
-}
-return(res)
+  return(res)
 }

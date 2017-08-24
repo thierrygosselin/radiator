@@ -9,7 +9,8 @@ filter_snp_number(data, vcf.metadata = FALSE, interactive.filter = TRUE,
   blacklist.genotype = NULL, whitelist.markers = NULL,
   monomorphic.out = TRUE, max.marker = NULL, snp.ld = NULL,
   common.markers = FALSE, strata = NULL, pop.levels = NULL,
-  pop.labels = NULL, pop.select = NULL)
+  pop.labels = NULL, pop.select = NULL,
+  parallel.core = parallel::detectCores() - 1)
 }
 \arguments{
 \item{data}{11 options: VCF (SNPs or Haplotypes,
@@ -135,6 +136,10 @@ White spaces in population names are replaced by underscore.}
 the analysis. e.g. \code{pop.select = c("QUE", "ONT")} to select \code{QUE}
 and \code{ONT} population samples (out of 20 pops).
 Default: \code{pop.select = NULL}}
+
+\item{parallel.core}{(optional) The number of core used for parallel
+execution during vcf import.
+Default: \code{parallel::detectCores() - 1}.}
 }
 \value{
 A list in the global environment with 6 objects:

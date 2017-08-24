@@ -7,8 +7,8 @@
 filter_het(data, interactive.filter = TRUE,
   ind.heterozygosity.threshold = NULL, het.approach = c("SNP", "overall"),
   het.threshold = 1, het.dif.threshold = 1, outlier.pop.threshold = 1,
-  helper.tables = FALSE, filename = NULL, vcf.metadata = FALSE,
-  blacklist.id = NULL, blacklist.genotype = NULL,
+  helper.tables = FALSE, coverage.info = FALSE, filename = NULL,
+  vcf.metadata = TRUE, blacklist.id = NULL, blacklist.genotype = NULL,
   whitelist.markers = NULL, monomorphic.out = TRUE, max.marker = NULL,
   snp.ld = NULL, common.markers = FALSE, strata = NULL,
   pop.levels = NULL, pop.labels = NULL, pop.select = NULL,
@@ -82,9 +82,17 @@ automatic thresholds to guide decisions. When \code{interactive.filter == TRUE},
 helper tables are written to the directory.
 Default: \code{helper.tables = FALSE}.}
 
-\item{filename}{Name of the tidy data set written to the working directory (optional).
-e.g. "tasmanian.devil.tidy.het.tsv".
-Default: \code{filename = NULL}}
+\item{coverage.info}{(optional, logical) Use
+\code{coverage.info = TRUE}, if you want to visualize
+the relationshio between locus coverage and locus observed heterozygosity
+statistics. Coverage information is required (e.g. in a vcf file...).
+Default: {coverage.info = FALSE}.}
+
+\item{filename}{(optional) The function uses \code{\link[fst]{write.fst}},
+to write the tidy data frame in
+the folder created in the working directory. The file extension appended to
+the \code{filename} provided is \code{.rad}.
+Default: \code{filename = NULL}.}
 
 \item{vcf.metadata}{(optional, logical or string) For VCF files only.
 With \code{logical, TRUE/FALSE}, \code{vcf.metadata = FALSE}, only the genotype
@@ -214,6 +222,8 @@ The function returns inside the global environment a list with
 \item the boxplot of observed heterozygosity averaged across markers and pop:\code{$markers.pop.heterozygosity.boxplot}
 \item the density plot of observed heterozygosity averaged across markers and pop:\code{$markers.pop.heterozygosity.density.plot}
 \item the manhattan plot of observed heterozygosity averaged across markers and pop:\code{$markers.pop.heterozygosity.manhattan.plot}
+\item the relationship between the number of SNPs on a locus and locus observed heterozygosity statistics:\code{$snp.per.locus.het.plot}
+\item the relationship between locus coverage (read depth) and locus observed heterozygosity statistics:\code{$het.cov.plot}
 \item whitelist of markers:\code{$whitelist.markers}
 \item whitelist of markers:\code{$whitelist.markers}
 }

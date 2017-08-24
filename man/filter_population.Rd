@@ -9,7 +9,8 @@ filter_population(data, vcf.metadata = FALSE, interactive.filter = TRUE,
   blacklist.id = NULL, blacklist.genotype = NULL,
   whitelist.markers = NULL, monomorphic.out = TRUE, max.marker = NULL,
   snp.ld = NULL, common.markers = FALSE, strata = NULL,
-  pop.levels = NULL, pop.labels = NULL, pop.select = NULL)
+  pop.levels = NULL, pop.labels = NULL, pop.select = NULL,
+  parallel.core = parallel::detectCores() - 1)
 }
 \arguments{
 \item{data}{11 options: VCF (SNPs or Haplotypes,
@@ -31,11 +32,11 @@ to keep (except the GT field that is always imported).
 e.g. \code{vcf.metadata = "PL"} or \code{vcf.metadata = c("DP", "GL")}.
 Default: \code{vcf.metadata = FALSE}.}
 
-\item{interactive.filter}{(optional, logical) Do you want the filtering session to 
-be interactive. With default: \code{interactive.filter == TRUE}, the user is 
+\item{interactive.filter}{(optional, logical) Do you want the filtering session to
+be interactive. With default: \code{interactive.filter == TRUE}, the user is
 asked to see figures of distribution before making decisions for filtering.}
 
-\item{pop.threshold}{The population threshold, proportion, percentage or 
+\item{pop.threshold}{The population threshold, proportion, percentage or
 number e.g. 0.70, 70, 15.
 Default: \code{pop.threshold = 100}.}
 
@@ -44,8 +45,10 @@ This argument is necessary to distinguish percentage from integer population
 threshold (e.g. 50 percent or 50 populations).
 Default: \code{percent = TRUE}.}
 
-\item{filename}{(optional) Name of the filtered tidy data frame file 
-written to the working directory (ending with \code{.tsv})
+\item{filename}{(optional) The function uses \code{\link[fst]{write.fst}},
+to write the tidy data frame in
+the folder created in the working directory. The file extension appended to
+the \code{filename} provided is \code{.rad}.
 Default: \code{filename = NULL}.}
 
 \item{blacklist.id}{(optional) A blacklist with individual ID and
@@ -141,6 +144,10 @@ White spaces in population names are replaced by underscore.}
 the analysis. e.g. \code{pop.select = c("QUE", "ONT")} to select \code{QUE}
 and \code{ONT} population samples (out of 20 pops).
 Default: \code{pop.select = NULL}}
+
+\item{parallel.core}{(optional) The number of core used for parallel
+execution during vcf import.
+Default: \code{parallel::detectCores() - 1}.}
 }
 \value{
 With \code{interactive.filter = FALSE}, a list in the global environment,
@@ -159,15 +166,15 @@ With \code{interactive.filter = TRUE}, a list with 2 additionnal objects is crea
 \item $pop.threshold.helper.table
 }
 
-The object can be isolated in separate object outside the list by 
+The object can be isolated in separate object outside the list by
 following the example below.
 }
 \description{
-Filter markes based on populations genotyped. Use a tidy data 
-set (long format) of any of these file format: 
-vcf, plink (tped/tfam), stacks haplotype file, genind, 
-genepop, data frame in wide format. The function uses 
-\code{\link[radiator]{tidy_genomic_data}} and 
+Filter markers based on populations genotyped. Use a tidy data
+set (long format) of any of these file format:
+vcf, plink (tped/tfam), stacks haplotype file, genind,
+genepop, data frame in wide format. The function uses
+\code{\link[radiator]{tidy_genomic_data}} and
 \code{\link[radiator]{tidy_wide}} to load the file. For filtering
 The threshold can be a fixed number of population, a proportion or a percentage.
 }
@@ -189,7 +196,7 @@ strata = "turtle.strata.tsv",
 pop.thresholds = 100,
 percent = TRUE,
 filename = "tidy.data.turtle.tsv"
-) 
+)
 
 #If interactive.filter = TRUE, a list is created and to view the filtered tidy data:
 tidy.data <- turtle.ind$tidy.filtered.ind
