@@ -78,7 +78,6 @@ snp_ld <- function(data, snp.ld = "first") {
     snp.before <- nrow(snp.locus)
     snp.after <- nrow(snp.select)
     message("    Number of SNP before = ", snp.before)
-    message("    Number of SNP randomly selected to keep 1 SNP per read/haplotype = ", snp.after)
     message("    Number of SNP removed = ", snp.before - snp.after)
     message("    Number of SNP after = ", snp.after)
   }
@@ -91,7 +90,6 @@ snp_ld <- function(data, snp.ld = "first") {
     snp.before <- nrow(snp.locus)
     snp.after <- nrow(snp.select)
     message("    Number of SNP before = ", snp.before)
-    message("    Number of SNP after keeping the first SNP on the read/haplotype = ", snp.after)
     message("    Number of SNP removed = ", snp.before - snp.after)
     message("    Number of SNP after = ", snp.after)
   }
@@ -105,7 +103,6 @@ snp_ld <- function(data, snp.ld = "first") {
     snp.before <- nrow(snp.locus)
     snp.after <- nrow(snp.select)
     message("    Number of SNP before = ", snp.before)
-    message("    Number of SNP after keeping the last SNP on the read/haplotype = ", snp.after)
     message("    Number of SNP removed = ", snp.before - snp.after)
     message("    Number of SNP after = ", snp.after)
   }
