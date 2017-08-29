@@ -15,12 +15,13 @@
 #'   \item \strong{Imputations:} Map-independent imputation of missing genotype/alleles
 #'   using Random Forest or the most frequent category.
 #'   \item \strong{Parallel:} Some parts of the function are designed to be conduncted on multiple CPUs
-#'   \item \strong{Output:} 16 output file formats are supported (see \code{output} argument below)
+#'   \item \strong{Output:} 17 output file formats are supported (see \code{output} argument below)
 #' }
 
-#' @param output 16 genomic data formats can be exported: tidy (by default),
+#' @param output 17 genomic data formats can be exported: tidy (by default),
 #' genind, genlight, vcf (for file format version, see details below), plink, genepop,
-#' structure, arlequin, hierfstat, gtypes (strataG), betadiv, snprelate (for SNPRelate's GDS).
+#' structure, arlequin, hierfstat, gtypes (strataG), bayescan, betadiv,
+#' snprelate (for SNPRelate's GDS).
 #' Use a character string,
 #' e.g. \code{output = c("genind", "genepop", "structure")}, to have preferred
 #' output formats generated. The tidy format is generated automatically.
@@ -40,6 +41,7 @@
 #' @inheritParams write_vcf
 #' @inheritParams write_gtypes
 #' @inheritParams write_hierfstat
+#' @inheritParams write_bayescan
 #' @inheritParams radiator_imputations_module
 #' @inheritParams write_snprelate
 
@@ -154,6 +156,19 @@
 #' analysis of SNP data. Bioinformatics. 2012;28: 3326-3328.
 #' doi:10.1093/bioinformatics/bts606
 
+#' @references Foll, M and OE Gaggiotti (2008) A genome scan method to identify
+#' selected loci appropriate
+#' for both dominant and codominant markers: A Bayesian perspective.
+#' Genetics 180: 977-993
+
+#' @references Foll M, Fischer MC, Heckel G and L Excoffier (2010)
+#' Estimating population structure from
+#' AFLP amplification intensity. Molecular Ecology 19: 4638-4647
+
+#' @references Fischer MC, Foll M, Excoffier L and G Heckel (2011) Enhanced AFLP
+#' genome scans detect
+#' local adaptation in high-altitude populations of a small rodent (Microtus arvalis).
+#' Molecular Ecology 20: 1450-1462
 
 
 #' @seealso \code{beta.div} is available on Pierre Legendre web site \url{http://adn.biol.umontreal.ca/~numericalecology/Rcode/}
@@ -619,6 +634,28 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
       if (verbose) message("Generating SNPRelate object WITH imputations")
       res$snprelate.imputed <- radiator::write_snprelate(data = input.imp,
                                                        biallelic = TRUE)
+    }
+  }
+
+  # bayescan -------------------------------------------------------------------
+  if ("bayescan" %in% output) {
+    if (verbose) message("Generating BayeScan object without imputation")
+    res$bayescan.no.imputation <- radiator::write_bayescan(
+      data = input,
+      pop.select = NULL,
+      monomorphic.out = FALSE,
+      common.markers = FALSE,
+      snp.ld = NULL,
+      filename = filename)
+    if (!is.null(imputation.method)) {
+      if (verbose) message("Generating BayeScan object WITH imputations")
+      res$bayescan.imputed <- radiator::write_bayescan(
+        data = input.imp,
+        pop.select = NULL,
+        monomorphic.out = FALSE,
+        common.markers = FALSE,
+        snp.ld = NULL,
+        filename = filename)
     }
   }
 
