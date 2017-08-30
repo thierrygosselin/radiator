@@ -643,8 +643,6 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
     res$bayescan.no.imputation <- radiator::write_bayescan(
       data = input,
       pop.select = NULL,
-      monomorphic.out = FALSE,
-      common.markers = FALSE,
       snp.ld = NULL,
       filename = filename)
     if (!is.null(imputation.method)) {
@@ -652,8 +650,6 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
       res$bayescan.imputed <- radiator::write_bayescan(
         data = input.imp,
         pop.select = NULL,
-        monomorphic.out = FALSE,
-        common.markers = FALSE,
         snp.ld = NULL,
         filename = filename)
     }

@@ -112,7 +112,7 @@
 #' ind.threshold = 50,
 #' percent = TRUE,
 #' prob.pop.threshold = 2,
-#' filename = "tidy.data.turtle.tsv"
+#' filename = "tidy.data.turtle"
 #' )
 
 #'

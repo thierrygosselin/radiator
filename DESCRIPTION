@@ -42,7 +42,8 @@ Imports:
     pegas,
     purrrlyr,
     rlang,
-    SNPRelate
+    SNPRelate,
+    fst
 Suggests:
     knitr,
     rmarkdown

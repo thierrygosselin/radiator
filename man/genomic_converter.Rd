@@ -23,9 +23,10 @@ genlight (library(adegenet)), gtypes (library(strataG)), genepop,
 and a data frame in long/tidy or wide format.
 \emph{See details} of \code{\link{tidy_genomic_data}}.}
 
-\item{output}{16 genomic data formats can be exported: tidy (by default),
+\item{output}{17 genomic data formats can be exported: tidy (by default),
 genind, genlight, vcf (for file format version, see details below), plink, genepop,
-structure, arlequin, hierfstat, gtypes (strataG), betadiv, snprelate (for SNPRelate's GDS).
+structure, arlequin, hierfstat, gtypes (strataG), bayescan, betadiv,
+snprelate (for SNPRelate's GDS).
 Use a character string,
 e.g. \code{output = c("genind", "genepop", "structure")}, to have preferred
 output formats generated. The tidy format is generated automatically.
@@ -235,7 +236,7 @@ reality of GBS/RADseq data while maintaining a reproducible workflow.
   \item \strong{Imputations:} Map-independent imputation of missing genotype/alleles
   using Random Forest or the most frequent category.
   \item \strong{Parallel:} Some parts of the function are designed to be conduncted on multiple CPUs
-  \item \strong{Output:} 16 output file formats are supported (see \code{output} argument below)
+  \item \strong{Output:} 17 output file formats are supported (see \code{output} argument below)
 }
 }
 \details{
@@ -333,6 +334,20 @@ Zheng X, Levine D, Shen J, Gogarten SM, Laurie C, Weir BS.
 A high-performance computing toolset for relatedness and principal component
 analysis of SNP data. Bioinformatics. 2012;28: 3326-3328.
 doi:10.1093/bioinformatics/bts606
+
+Foll, M and OE Gaggiotti (2008) A genome scan method to identify
+selected loci appropriate
+for both dominant and codominant markers: A Bayesian perspective.
+Genetics 180: 977-993
+
+Foll M, Fischer MC, Heckel G and L Excoffier (2010)
+Estimating population structure from
+AFLP amplification intensity. Molecular Ecology 19: 4638-4647
+
+Fischer MC, Foll M, Excoffier L and G Heckel (2011) Enhanced AFLP
+genome scans detect
+local adaptation in high-altitude populations of a small rodent (Microtus arvalis).
+Molecular Ecology 20: 1450-1462
 }
 \seealso{
 \code{beta.div} is available on Pierre Legendre web site \url{http://adn.biol.umontreal.ca/~numericalecology/Rcode/}

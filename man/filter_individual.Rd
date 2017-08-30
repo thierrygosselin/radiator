@@ -231,7 +231,7 @@ ind.approach = "pop",
 ind.threshold = 50,
 percent = TRUE,
 prob.pop.threshold = 2,
-filename = "tidy.data.turtle.tsv"
+filename = "tidy.data.turtle"
 )
 
 #If interactive.filter = TRUE, a list is created and to view the filtered tidy data:

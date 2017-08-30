@@ -7,17 +7,17 @@
 snp_ld(data, snp.ld = "first")
 }
 \arguments{
-\item{data}{A data set with ID (LOCUS) and POS (SNP) information.
-Usually a VCF file in the working directory or
-object in the global environment in wide or long (tidy) formats.}
+\item{data}{A tidy data set with ID (LOCUS) and POS (SNP) information.
+\emph{How to get a tidy data frame ?}
+Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
+Usually the LOCUS and POS info is taken from a VCF file.}
 
-\item{snp.ld}{(character) \strong{For VCF file only}. 3 options:
+\item{snp.ld}{(character) 3 options:
 \code{snp.ld = "random"} selection, \code{snp.ld = "first"} or
 \code{snp.ld = "last"} for SNP on the same short read/haplotype.
 Default: \code{snp.ld = "first"}.}
 }
 \description{
-\strong{For VCF file only}.
 SNP short distance linkage disequilibrium pruning. With anonymous markers from
 RADseq/GBS de novo discovery, you can minimize linkage disequilibrium (LD) by
 choosing among these 3 options (see argument below).

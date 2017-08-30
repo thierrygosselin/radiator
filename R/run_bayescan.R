@@ -1,0 +1,826 @@
+#' @name run_bayescan
+#' @title Run BayeScan
+#' @description Run \href{http://cmpg.unibe.ch/software/BayeScan/}{BayeScan}
+#' inside R! This function requires a functional
+#' \href{http://cmpg.unibe.ch/software/BayeScan/}{BayeScan} program installed
+#' on the computer (\href{http://cmpg.unibe.ch/software/BayeScan/download.html}{intall instructions}).
+#' For UNIX machines, please install the 64bits version.
+
+#' @param data (character, path) Read carefully because there's 2 ways.
+#' \enumerate{
+#' \item Path to BayeScan input file.
+#' To get this input rapidly: \pkg{radiator} \code{\link{write_bayescan}}
+#' \item Path to a tidy data file or object.
+#' This type of input is generated with \pkg{radiator} \code{\link{tidy_genomic_data}}.
+#' Use this format if you intend to do subsampling with the
+#' arguments described below \code{subsample} and \code{iteration.subsample}.
+#' \item You can do both the BayeScan file and tidy data with
+#' \pkg{radiator} \code{\link{genomic_converter}}.
+#' }
+#' @param n (integer) Number of outputted iterations. Default: \code{n = 5000}.
+#' @param thin (integer) Thinning interval size. Default: \code{thin = 10}
+#' @param nbp (integer) Number of pilot runs. Default: \code{nbp = 20}.
+#' @param pilot (integer) Length of pilot runs. Default: \code{pilot = 5000}.
+#' @param burn (integer) Burn-in length. Default: \code{burn = 50000}.
+#' @param pr_odds (integer) Prior odds for the neutral model.
+
+#' @param subsample (Integer or character)
+#' With \code{subsample = 36}, 36 individuals in each populations are chosen
+#' randomly to represent the dataset. With \code{subsample = "min"}, the
+#' minimum number of individual/population found in the data is used automatically.
+#' Default is no subsampling, \code{subsample = NULL}.
+
+#' @param iteration.subsample (Integer) The number of iterations to repeat
+#' subsampling.
+#' With \code{subsample = 20} and \code{iteration.subsample = 10},
+#' 20 individuals/populations will be randomly chosen 10 times.
+#' Default: \code{iteration.subsample = 1}.
+
+#' @param parallel.core (integer) Number of CPU for parallel computations.
+#' Default: \code{parallel.core = parallel::detectCores() - 1}
+
+#' @param bayescan.path (character, path) Provide the FULL path to BayeScan program.
+#' Default: \code{bayescan.path = "/usr/local/bin/bayescan"}. See details.
+
+
+#' @rdname run_bayescan
+#' @export
+#' @importFrom stringi stri_join stri_replace_all_fixed stri_sub
+#' @importFrom dplyr mutate filter distinct
+#' @importFrom purrr keep
+#' @importFrom tibble data_frame
+#' @return For specific \href{http://cmpg.unibe.ch/software/BayeScan/}{BayeScan}
+#' output files, see \href{http://cmpg.unibe.ch/software/BayeScan/}{BayeScan}
+#' documentation, please read the manual.
+#'
+#' radiator::run_bayescan outputs without subsampling:
+#'
+#' \enumerate{
+#' \item \code{bayescan}: dataframe with results of BayeScan analysis.
+#' \item \code{selection.summary}: dataframe showing the number of markers in the different group of selections and model choice.
+#' \item \code{whitelist.markers.positive.selection}: Whitelist of markers under diversifying selection and common in all iterations.
+#' \item \code{whitelist.markers.neutral.selection}: Whitelist of neutral markers and common in all iterations.
+#' \item \code{whitelist.markers.neutral.positive.selection}: Whitelist of neutral markers and markers under diversifying selection and common in all iterations.
+#' \item \code{blacklist.markers.balancing.selection}: Blacklist of markers under balancing selection and common in all iterations.
+#' \item \code{markers.dictionary}: BayeScan use integer for MARKERS info. In this dataframe, the corresponding values used inside the function.
+#' \item \code{pop.dictionary}: BayeScan use integer for POP_ID info. In this dataframe, the corresponding values used inside the function.
+#' \item \code{bayescan.plot}: plot showing markers Fst and model choice.
+#' }
+#' radiator::run_bayescan outputs WITH subsampling:
+#'
+#' \enumerate{
+#' \item \code{subsampling.individuals}: dataframe with indivuals subsample id and random seed number.
+#' \item \code{bayescan.all.subsamples}: long dataframe with combined iterations of bayescan results.
+#' \item \code{selection.accuracy}: dataframe with all markers with selection grouping and number of times observed throughout iterations.
+#' \item \code{accurate.markers}: dataframe with markers attributed the same selection grouping in all iterations.
+#' \item \code{accuracy.summary}: dataframe with a summary of accuracy of selection grouping.
+#' \item \code{bayescan.summary}: dataframe with mean value, averaged accross iterations.
+#' \item \code{bayescan.summary.plot}: plot showing markers Fst and model choice.
+#' \item \code{selection.summary}: dataframe showing the number of markers in the different group of selections and model choice.
+#' \item \code{whitelist.markers.positive.selection}: Whitelist of markers under diversifying selection and common in all iterations.
+#' \item \code{whitelist.markers.neutral.selection}: Whitelist of neutral markers and common in all iterations.
+#' \item \code{whitelist.markers.neutral.positive.selection}: Whitelist of neutral markers and markers under diversifying selection and common in all iterations.
+#' \item \code{blacklist.markers.balancing.selection}: Blacklist of markers under balancing selection and common in all iterations.
+#' \item \code{whitelist.markers.without.balancing}: Whitelist of all original markers with markers under balancing selection removed. The markers that remain were tagged neutral and/or under diversifying selection and some didn't have accurate results in BayeScan.
+#' }
+#'
+#' Other files are present in the folder and subsampling folder.
+
+
+#' @examples
+#' \dontrun{
+#'
+#' #library(radiator)
+#' # get a tidy data frame and a bayescan file with radiator::genomic_converter:
+#' # to run with a vcf haplotype file
+#' data <- radiator::genomic_converter(
+#' data = "batch_1.haplotypes.vcf",
+#' strata = "../../02_project_info/strata.stacks.TL.tsv",
+#' whitelist.markers = "whitelist.filtered.markers.tsv",
+#' blacklist.id = "blacklist.id.tsv",
+#' output = "bayescan",
+#' filename = "bayescan.haplotypes")
+
+#' # to run BayeScan:
+#' scan.pops <- radiator::run_bayescan(data = "bayescan.haplotypes.txt",
+#' pr_odds = 1000)
+#'
+#' # This will use the default values for argument: n, thin, nbp, pilot and burn.
+#' The number of CPUs will be the number available - 1 (the default).
+#'
+#' # to test the impact of unbalance sampling run BayeScan with subsampling,
+#' # for this, you need to feed the function the tidy data frame generated above
+#' # with radiator::genomic_converter:
+#' scan.pops.sub <- radiator::run_bayescan(data = data$tidy.data,
+#' pr_odds = 1000, subsample = "min", iteration.subsample = 10)
+#'
+#' # This will run BayeScan 10 times, and for each iteration, the number of individuals
+#' # sampled in each pop will be equal to the minimal number found in the pops
+#' # (e.g. pop1 N = 36, pop2 N = 50 and pop3 N = 15, the subsampling will use 15
+#' # individuals in each pop, taken randomly.
+#' # You can also choose a specific subsample value with the argument.
+#' }
+
+#' @details
+#' \strong{subsampling:}
+#' During subsampling the function will automatically remove monomorphic
+#' markers that are generated by the removal of some individuals. Also, common markers
+#' between all populations are also automatically detected. Consequently, the number of
+#' markers will change throughout the iterations. The nice thing about the function
+#' is that since everything is automated there is less chance of making an error...
+#'
+#' \strong{SNPs data set: }
+#' You should not run BayeScan with SNPs data set that have multiple SNPs on the
+#' same LOCUS. Instead, run radiator::genomic_converter using the \code{snp.ld}
+#' argument to keep only one SNP on the locus. Or run the function by first converting
+#' an haplotype vcf or if your RAD dataset was produced by STACKS, use the
+#' \code{batch_x.haplotypes.tsv} file!
+#'
+#' \strong{UNIX install: } I like to transfer the \emph{BayeScan2.1_linux64bits}
+#' (for Linux) or the \emph{BayeScan2.1_macos64bits} (for MACOs) in \code{/usr/local/bin}
+#' and change it's name to \code{bayescan}. Too complicated ? and you've just
+#' downloaded the last BayeScan version, I would try this :
+#' \code{bayescan.path = "/Users/thierry/Downloads/BayeScan2.1/binaries/BayeScan2.1_macos64bits"}
+
+#' @seealso
+#' \href{http://cmpg.unibe.ch/software/BayeScan/}{BayeScan}
+
+#' @references Foll, M and OE Gaggiotti (2008) A genome scan method to identify
+#' selected loci appropriate
+#' for both dominant and codominant markers: A Bayesian perspective.
+#' Genetics 180: 977-993
+
+#' @references Foll M, Fischer MC, Heckel G and L Excoffier (2010)
+#' Estimating population structure from
+#' AFLP amplification intensity. Molecular Ecology 19: 4638-4647
+
+#' @references Fischer MC, Foll M, Excoffier L and G Heckel (2011) Enhanced AFLP
+#' genome scans detect
+#' local adaptation in high-altitude populations of a small rodent (Microtus arvalis).
+#' Molecular Ecology 20: 1450-1462
+
+# run_bayescan -----------------------------------------------------------------
+run_bayescan <- function(
+  data,
+  n = 5000,
+  thin = 10,
+  nbp = 20,
+  pilot = 5000,
+  burn = 50000,
+  pr_odds,
+  subsample = NULL,
+  iteration.subsample = 1,
+  parallel.core = parallel::detectCores() - 1,
+  bayescan.path = "/usr/local/bin/bayescan"
+) {
+  cat("#######################################################################\n")
+  cat("###################### radiator::run_bayescan #########################\n")
+  cat("#######################################################################\n")
+  timing <- proc.time()
+  res <- list() # return results in this list
+
+  # check BayeScan install -----------------------------------------------------
+  if (!file.exists(bayescan.path)) {
+    stop("Path to BayeScan install is not valid")
+  }
+
+  if (missing(data)) stop("Input file missing")
+  if (missing(pr_odds)) stop("Prior odds for the neutral model is missing.
+                             No shortcut with default here, sorry.
+                             Please read the BayeScan manual...")
+  # logs files and folder ----------------------------------------------------
+  file.date <- stringi::stri_replace_all_fixed(
+    Sys.time(),
+    pattern = " EDT", replacement = "") %>%
+    stringi::stri_replace_all_fixed(
+      str = .,
+      pattern = c("-", " ", ":"), replacement = c("", "@", ""),
+      vectorize_all = FALSE) %>%
+    stringi::stri_sub(str = ., from = 1, to = 13)
+
+  if ((!is.null(subsample))) {
+    folder.message <- stringi::stri_join("radiator_bayescan_subsampling_", file.date, sep = "")
+  } else {
+    folder.message <- stringi::stri_join("radiator_bayescan_", file.date, sep = "")
+  }
+  path.folder <- stringi::stri_join(getwd(),"/", folder.message, sep = "")
+  dir.create(file.path(path.folder))
+  message("\nFolder created: \n", folder.message)
+
+  # Subsampling ----------------------------------------------------------------
+  if (!is.null(subsample)) {
+    if (is.vector(data)) {
+      data.type <- radiator::detect_genomic_format(data = data)
+
+      if (data.type != "fst.file") {
+        stop("Using subsample argument requires a tidy data frame saved by
+             radiator::tidy_genomic_data function")
+      } else {
+        data <- radiator::tidy_genomic_data(
+          data = data,
+          monomorphic.out = FALSE,
+          common.markers = FALSE,
+          verbose = FALSE)
+      }
+
+    } else {#tidy data in global environment
+      columns.tidy <- colnames(data)
+      want <- c("GT_VCF", "GT_VCF_NUC", "GT", "GT_BIN")
+      want.check <- TRUE %in% (unique(want %in% columns.tidy))
+      want.more <- c("MARKERS", "INDIVIDUALS", "POP_ID")
+      want.more.check <- isTRUE(unique(want.more %in% columns.tidy))
+      is.tidy <- isTRUE(unique(c(want.check, want.more.check)))
+
+      if (is.tidy) {
+        data <- data
+      } else {
+        stop("Using subsample argument requires a tidy data frame object")
+      }
+    }
+    ind.pop.df <- dplyr::distinct(.data = data, POP_ID, INDIVIDUALS)
+
+    if (subsample == "min") {
+      subsample <- ind.pop.df %>%
+        dplyr::group_by(POP_ID) %>%
+        dplyr::tally(.) %>%
+        dplyr::filter(n == min(n)) %>%
+        dplyr::ungroup(.) %>%
+        dplyr::select(n) %>%
+        purrr::flatten_int(.)
+    }
+    subsample.list <- purrr::map(
+      .x = 1:iteration.subsample,
+      .f = subsampling_data,
+      ind.pop.df = ind.pop.df,
+      subsample = subsample
+    )
+    # keep track of subsampling individuals and write to directory
+    message("Subsampling: selected")
+    subsampling.individuals <- dplyr::bind_rows(subsample.list)
+    readr::write_tsv(
+      x = subsampling.individuals,
+      path = stringi::stri_join(path.folder, "/radiator_bayescan_subsampling_individuals.tsv"),
+      col_names = TRUE,
+      append = FALSE
+    )
+    res$subsampling.individuals <- subsampling.individuals
+  } else {
+    iteration.subsample <- 1
+  }
+
+  # Run BayeScan iterations-----------------------------------------------------
+  if (is.null(subsample)) {
+    res <- bayescan_one(
+      data = data,
+      n = n,
+      thin = thin,
+      nbp = nbp,
+      pilot = pilot,
+      burn = burn,
+      pr_odds = pr_odds,
+      parallel.core = parallel.core,
+      path.folder = path.folder,
+      file.date = file.date,
+      bayescan.path = bayescan.path
+    )
+  } else {# iterations
+    subsample.bayescan <- purrr::map(
+      .x = subsample.list,
+      .f = bayescan_one,
+      data = data,
+      n = n,
+      thin = thin,
+      nbp = nbp,
+      pilot = pilot,
+      burn = burn,
+      pr_odds = pr_odds,
+      subsample = subsample,
+      iteration.subsample = iteration.subsample,
+      parallel.core = parallel.core,
+      path.folder = path.folder,
+      file.date = file.date,
+      bayescan.path = bayescan.path
+    )
+    # Manage subsampling results -----------------------------------------------
+    res$bayescan.all.subsamples <- purrr::map_df(subsample.bayescan, "bayescan") %>%
+      dplyr::select(-BAYESCAN_MARKERS)
+    readr::write_tsv(
+      x = res$bayescan.all.subsamples,
+      path = stringi::stri_join(path.folder, "/bayescan.all.subsamples.tsv"),
+      col_names = TRUE,
+      append = FALSE
+    )
+
+    iteration.number <- dplyr::n_distinct(res$bayescan.all.subsamples$ITERATIONS)
+
+    # keep only markers present for all iterations
+    markers.summary <- dplyr::ungroup(res$bayescan.all.subsamples) %>%
+      dplyr::select(MARKERS) %>%
+      dplyr::group_by(MARKERS) %>%
+      dplyr::tally(.)
+
+    markers.whitelist <- dplyr::filter(markers.summary, n == iteration.number) %>%
+      dplyr::distinct(MARKERS)
+
+    markers.all.iterations <- nrow(markers.whitelist)
+    total.unique.markers <- dplyr::n_distinct(markers.summary$MARKERS)
+    proportion.keeper <- round(markers.all.iterations / total.unique.markers, 2)
+    message("BayeScan subsampling summary: ")
+    message("    number of unique markers: ", total.unique.markers)
+    message("    keeping markers common in all iterations: ", markers.all.iterations, " (= ", proportion.keeper, ")")
+
+    bayescan.all.subsamples.filtered <- dplyr::left_join(
+      markers.whitelist, res$bayescan.all.subsamples, by = "MARKERS")
+
+    res$selection.accuracy <- bayescan.all.subsamples.filtered %>%
+      dplyr::group_by(MARKERS, SELECTION) %>%
+      dplyr::tally(.)
+
+    readr::write_tsv(
+      x = res$selection.accuracy,
+      path = stringi::stri_join(path.folder, "/selection.accuracy.tsv"),
+      col_names = TRUE,
+      append = FALSE
+    )
+
+    res$accurate.markers <- dplyr::ungroup(res$selection.accuracy) %>%
+      dplyr::filter(n == iteration.number) %>%
+      dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
+      dplyr::select(-n)
+
+    readr::write_tsv(
+      x = res$accurate.markers,
+      path = stringi::stri_join(path.folder, "/accurate.markers.tsv"),
+      col_names = TRUE,
+      append = FALSE
+    )
+
+    accurate.markers.summary <- res$accurate.markers %>%
+      dplyr::group_by(SELECTION) %>%
+      dplyr::tally(.)
+
+    accurate.markers.number <- nrow(res$accurate.markers)
+
+    res$accuracy.summary <- tibble::data_frame(
+      total = total.unique.markers,
+      `found in all iterations` = markers.all.iterations,
+      `not accurate` = markers.all.iterations - accurate.markers.number,
+      `accurate` = accurate.markers.number,
+      `accurate + neutral` = accurate.markers.summary$n[accurate.markers.summary$SELECTION == "neutral"],
+      `accurate + balancing` = accurate.markers.summary$n[accurate.markers.summary$SELECTION == "balancing"],
+      `accurate + diversifying` = accurate.markers.summary$n[accurate.markers.summary$SELECTION == "diversifying"]#,
+      # ACCURATE_MARKERS_TEST = accurate.markers.summary$n[accurate.markers.summary$SELECTION == "test"]
+    ) %>%
+      tidyr::gather(key = "ACCURACY_MARKERS", value = "N") %>%
+      dplyr::mutate(PROP = N / total.unique.markers)
+
+    readr::write_tsv(
+      x = res$accuracy.summary,
+      path = stringi::stri_join(path.folder, "/accuracy.summary.tsv"),
+      col_names = TRUE,
+      append = FALSE
+    )
+    res$bayescan.summary <- dplyr::left_join(
+      dplyr::select(res$accurate.markers, MARKERS), res$bayescan.all.subsamples, by = "MARKERS") %>%
+      dplyr::group_by(MARKERS) %>%
+      dplyr::summarise_if(.tbl = ., .predicate = is.numeric, .funs = mean) %>%
+      dplyr::select(-ITERATIONS) %>%
+      # Grouping des groupes LOG10_PO and Quantile of FST
+      dplyr::mutate(
+        SELECTION = factor(
+          dplyr::if_else(ALPHA >= 0 & Q_VALUE <= 0.05, "diversifying",
+                         dplyr::if_else(ALPHA >= 0 & Q_VALUE > 0.05, "neutral", "balancing"))),
+        PO_GROUP = factor(
+          dplyr::if_else(LOG10_PO > 2, "decisive",
+                         dplyr::if_else(LOG10_PO > 1.5, "very strong",
+                                        dplyr::if_else(LOG10_PO > 1, "strong",
+                                                       dplyr::if_else(LOG10_PO > 0.5, "substantial", "no evidence")))),
+          levels = c("no evidence","substantial","strong","very strong","decisive"), ordered = TRUE)) %>%
+      dplyr::ungroup(.) %>%
+      dplyr::mutate(
+        FST_GROUP = dplyr::ntile(FST, 5),
+        FST_GROUP = dplyr::if_else(FST_GROUP == 1, "0-20%",
+                                   dplyr::if_else(FST_GROUP == 2,  "20-40%",
+                                                  dplyr::if_else(FST_GROUP == 3, "40-60%",
+                                                                 dplyr::if_else(FST_GROUP == 4, "60-80%", "80-100%"))))
+      ) %>%
+      dplyr::arrange(FST)
+
+    readr::write_tsv(
+      x = res$bayescan.summary,
+      path = stringi::stri_join(path.folder, "/bayescan.summary.tsv"),
+      col_names = TRUE,
+      append = FALSE
+    )
+
+    res$bayescan.summary.plot <- plot_bayescan(res$bayescan.summary)
+    ggplot2::ggsave(
+      filename = stringi::stri_join(path.folder, "/bayescan.summary.plot.pdf"),
+      plot = res$bayescan.summary.plot,
+      width = 30, height = 15,
+      dpi = 600, units = "cm",
+      useDingbats = FALSE)
+
+    res$selection.summary <- res$bayescan.summary %>%
+      dplyr::group_by(SELECTION, PO_GROUP) %>%
+      dplyr::tally(.) %>%
+      dplyr::rename(MARKERS = n)
+
+    readr::write_tsv(
+      x = res$selection.summary,
+      path = stringi::stri_join(path.folder, "/selection.summary.tsv"),
+      col_names = TRUE,
+      append = FALSE
+    )
+
+    # Generating blacklists and whitelists of all iterations -------------------
+    all.markers <- dplyr::distinct(markers.summary, MARKERS)
+
+    res$whitelist.markers.positive.selection <- res$bayescan.summary %>%
+      dplyr::filter(SELECTION == "diversifying" & PO_GROUP != "no evidence") %>%
+      dplyr::distinct(MARKERS) %>%
+      dplyr::arrange (MARKERS)
+    readr::write_tsv(
+      x = res$whitelist.markers.positive.selection,
+      path = stringi::stri_join(path.folder, "/whitelist.markers.positive.selection.tsv"))
+
+    res$whitelist.markers.neutral.selection <- res$bayescan.summary %>%
+      dplyr::filter(SELECTION == "neutral") %>%
+      dplyr::distinct(MARKERS) %>%
+      dplyr::arrange (MARKERS)
+    readr::write_tsv(
+      x = res$whitelist.markers.neutral.selection,
+      path = stringi::stri_join(path.folder, "/whitelist.markers.neutral.selection.tsv"))
+
+    # neutral and positive
+    res$whitelist.markers.neutral.positive.selection <- res$bayescan.summary %>%
+      dplyr::filter(SELECTION == "neutral" | (SELECTION == "diversifying" & PO_GROUP != "no evidence")) %>%
+      dplyr::distinct(MARKERS) %>%
+      dplyr::arrange (MARKERS)
+    readr::write_tsv(
+      x = res$whitelist.markers.neutral.positive.selection,
+      path = stringi::stri_join(path.folder, "/whitelist.markers.neutral.positive.selection.stv"))
+
+    res$blacklist.markers.balancing.selection <- res$bayescan.summary %>%
+      dplyr::filter(SELECTION == "balancing") %>%
+      dplyr::distinct(MARKERS) %>%
+      dplyr::arrange (MARKERS)
+    readr::write_tsv(
+      x = res$blacklist.markers.balancing.selection,
+      path = stringi::stri_join(path.folder, "/blacklist.markers.balancing.selection.tsv"))
+
+    res$whitelist.markers.without.balancing <- dplyr::anti_join(
+      all.markers, res$blacklist.markers.balancing.selection, by = "MARKERS")
+    readr::write_tsv(
+      x = res$whitelist.markers.without.balancing,
+      path = stringi::stri_join(path.folder, "/whitelist.markers.without.balancing.tsv"))
+    }
+
+  timing <- proc.time() - timing
+  message("\nComputation time: ", round(timing[[3]]), " sec")
+  cat("############################## completed ##############################\n")
+  return(res)
+}# end bayescan
+
+
+# internal function ------------------------------------------------------------
+
+# subsampling_data --------------------------------------------------------------
+#' @title subsampling data
+#' @description subsampling data
+#' @rdname subsampling_data
+#' @export
+#' @keywords internal
+#' @importFrom dplyr mutate group_by ungroup arrange sample_n sample_frac
+
+
+subsampling_data <- function(
+  iteration.subsample = 1,
+  ind.pop.df = NULL,
+  subsample = NULL,
+  random.seed = NULL
+) {
+  # message(paste0("Creating data subsample: ", iteration.subsample))
+  if (is.null(subsample)) {
+    subsample.select <- ind.pop.df %>%
+      dplyr::mutate(SUBSAMPLE = rep(iteration.subsample, n()))
+  } else {
+
+    # Set seed for sampling reproducibility
+    if (is.null(random.seed)) {
+      random.seed <- sample(x = 1:1000000, size = 1)
+      set.seed(random.seed)
+    } else {
+      set.seed(random.seed)
+    }
+
+    if (subsample > 1) {# integer
+      subsample.select <- ind.pop.df %>%
+        dplyr::group_by(POP_ID) %>%
+        dplyr::sample_n(tbl = ., size = subsample, replace = FALSE)# sampling individuals for each pop
+    }
+    if (subsample < 1) { # proportion
+      subsample.select <- ind.pop.df %>%
+        dplyr::group_by(POP_ID) %>%
+        dplyr::sample_frac(tbl = ., size = subsample, replace = FALSE)# sampling individuals for each pop
+    }
+    subsample.select <- subsample.select %>%
+      dplyr::mutate(
+        SUBSAMPLE = rep(iteration.subsample, n()),
+        RANDOM_SEED_NUMBER = rep(random.seed, n())
+      ) %>%
+      dplyr::arrange(POP_ID, INDIVIDUALS) %>%
+      dplyr::ungroup(.)
+  }
+  return(subsample.select)
+} # End subsampling function
+
+# bayescan_one --------------------------------------------------------------
+#' @title bayescan one iteration
+#' @description bayescan_one
+#' @rdname bayescan_one
+#' @export
+#' @keywords internal
+#' @importFrom dplyr mutate group_by ungroup arrange sample_n sample_frac
+
+
+bayescan_one <- function(
+  x = NULL,
+  data,
+  n = 5000,
+  thin = 10,
+  nbp = 20,
+  pilot = 5000,
+  burn = 50000,
+  pr_odds,
+  subsample = NULL,
+  iteration.subsample = 1,
+  parallel.core = parallel::detectCores() - 1,
+  path.folder,
+  file.date,
+  bayescan.path = "/usr/local/bin/bayescan"
+) {
+
+  if (!is.null(subsample)) {
+    # x <- subsample.list[[1]] # test
+    subsample.id <- unique(x$SUBSAMPLE)
+    message("\nBayeScan, subsample: ", subsample.id, "\n")
+    path.folder.subsample <- stringi::stri_join(path.folder, "/bayescan_subsample_", subsample.id)
+    dir.create(file.path(path.folder.subsample))
+    folder.message <- stringi::stri_join("bayescan_subsample_", subsample.id)
+    message("Subsampling folder created: ", folder.message)
+  } else {
+    path.folder.subsample <- path.folder
+  }
+  output.folder <- stringi::stri_join("-od ", path.folder.subsample)
+  # output.folder <- path.folder.subsample
+
+  log.file <- stringi::stri_join(path.folder.subsample, "/radiator_bayescan_", file.date,".log")
+  message("For progress, look in the log file: radiator_bayescan_", file.date,".log")
+
+  # arguments -------------------------------------
+  all.trace <- "-all_trace "
+  parallel.core.bk <- parallel.core
+  parallel.core <- stringi::stri_join("-threads ", parallel.core)
+  n <- stringi::stri_join("-n ", n)
+  thin <- stringi::stri_join("-thin ", thin)
+  nbp <- stringi::stri_join("-nbp ", nbp)
+  pilot <- stringi::stri_join("-pilot ", pilot)
+  burn <- stringi::stri_join("-burn ", burn)
+  pr.odds <- stringi::stri_join("-pr_odds ", pr_odds)
+
+  if (!is.null(subsample)) {
+    # Keep only the subsample
+    bayescan.filename <- stringi::stri_join(
+      "radiator_bayescan_subsample_", subsample.id)
+    bayescan.sub <- radiator::write_bayescan(
+      data = dplyr::semi_join(data, x, by = c("POP_ID", "INDIVIDUALS")),
+      parallel.core = parallel.core.bk,
+      filename = bayescan.filename)
+    x <- NULL #unused object
+    data <- stringi::stri_join(bayescan.filename, ".txt")
+  }
+
+  # Moving input file in folder
+  message("Moving input BayeScan file in folder")
+  link.problem <- stringi::stri_detect_fixed(str = data, pattern = getwd())
+
+  if (link.problem) {
+    new.data <- stringi::stri_replace_all_fixed(
+      str = data, pattern = getwd(), replacement = "", vectorize_all = FALSE
+    )
+    new.data <- stringi::stri_join(path.folder.subsample, new.data)
+  } else {
+    new.data <- stringi::stri_join(path.folder.subsample, "/", data)
+  }
+  file.rename(from = data, to = new.data)
+
+  # moving dictionary files --------------------------------------------------
+  pop.dic.file <- list.files(path = getwd(), pattern = "pop_dictionary")
+  markers.dic.file <- list.files(path = getwd(), pattern = "markers_dictionary")
+
+  if (!is.null(subsample)) {
+    pop.dictionary <- bayescan.sub$pop.dictionary
+    markers.dictionary <- bayescan.sub$markers.dictionary
+  } else {
+    pop.dictionary <- readr::read_tsv(
+      file = pop.dic.file,
+      col_types = "ci")
+    markers.dictionary <- readr::read_tsv(
+      file = markers.dic.file,
+      col_types = "ci")
+  }
+  file.rename(from = pop.dic.file,
+              to = stringi::stri_join(path.folder.subsample, "/", pop.dic.file))
+
+  file.rename(from = markers.dic.file,
+              to = stringi::stri_join(path.folder.subsample, "/", markers.dic.file))
+
+  pop.dic.file <- markers.dic.file <- bayescan.sub <- NULL
+
+  # command --------------------------------------------------------------------
+  command.arguments <- paste(new.data, output.folder, all.trace, parallel.core, n, thin, nbp, pilot, burn, pr.odds)
+
+  # command
+  system2(
+    command = bayescan.path,
+    args = command.arguments,
+    stderr = log.file
+  )
+
+
+  # Importing BayeScan file  ---------------------------------------------------
+  message("Importing BayeScan results")
+  bayescan <- markers.dictionary %>%
+    dplyr::right_join(
+      suppressWarnings(readr::read_table2(
+        file = list.files(path = path.folder.subsample, pattern = "_fst.txt", full.names = TRUE),
+        skip = 1,
+        col_names = c("BAYESCAN_MARKERS", "POST_PROB", "LOG10_PO", "Q_VALUE", "ALPHA", "FST"),
+        col_types = c("iddddd"))) %>%
+        dplyr::mutate(
+          Q_VALUE = dplyr::if_else(Q_VALUE <= 0.0001, 0.0001, Q_VALUE),
+          Q_VALUE = round(Q_VALUE, 4),
+          POST_PROB = round(POST_PROB, 4),
+          LOG10_PO = round(LOG10_PO, 4),
+          ALPHA = round(ALPHA, 4),
+          FST = round(FST, 6),
+          SELECTION = factor(
+            dplyr::if_else(ALPHA >= 0 & Q_VALUE <= 0.05, "diversifying",
+                           dplyr::if_else(ALPHA >= 0 & Q_VALUE > 0.05, "neutral", "balancing"))),
+          LOG10_Q = log10(Q_VALUE)
+        ), by = "BAYESCAN_MARKERS") %>%
+    dplyr::mutate(# Grouping des groupes LOG10_PO & #Quantile of FST
+      PO_GROUP = factor(
+        dplyr::if_else(LOG10_PO > 2, "decisive",
+                       dplyr::if_else(LOG10_PO > 1.5, "very strong",
+                                      dplyr::if_else(LOG10_PO > 1, "strong",
+                                                     dplyr::if_else(LOG10_PO > 0.5, "substantial", "no evidence")))),
+        levels = c("no evidence","substantial","strong","very strong","decisive"), ordered = TRUE)
+    ) %>%
+    dplyr::ungroup(.) %>%
+    dplyr::mutate(
+      FST_GROUP = dplyr::ntile(FST, 5),
+      FST_GROUP = dplyr::if_else(FST_GROUP == 1, "0-20%",
+                                 dplyr::if_else(FST_GROUP == 2,  "20-40%",
+                                                dplyr::if_else(FST_GROUP == 3, "40-60%",
+                                                               dplyr::if_else(FST_GROUP == 4, "60-80%", "80-100%"))))
+    ) %>%
+    dplyr::arrange(FST)
+
+  if (!is.null(subsample)) {
+    bayescan <- dplyr::mutate(bayescan, ITERATIONS = rep(subsample.id, n()))
+  }
+
+  positive <- bayescan %>%
+    dplyr::filter(SELECTION == "diversifying" & PO_GROUP != "no evidence") %>%
+    # dplyr::filter(SELECTION == "diversifying") %>%
+    dplyr::distinct(MARKERS) %>%
+    dplyr::arrange (MARKERS)
+
+  if (!is.null(subsample)) {
+    positive <- dplyr::mutate(positive, ITERATIONS = rep(subsample.id, n()))
+  }
+
+  readr::write_tsv(
+    x = positive,
+    path = stringi::stri_join(path.folder.subsample, "/whitelist.markers.positive.selection.tsv"))
+
+  neutral <- bayescan %>%
+    dplyr::filter(SELECTION == "neutral") %>%
+    dplyr::distinct(MARKERS) %>%
+    dplyr::arrange (MARKERS)
+
+  if (!is.null(subsample)) {
+    neutral <- dplyr::mutate(neutral, ITERATIONS = rep(subsample.id, n()))
+  }
+  readr::write_tsv(
+    x = neutral,
+    path = stringi::stri_join(path.folder.subsample, "/whitelist.markers.neutral.selection.tsv"))
+
+  # neutral and positive
+  neutral.positive <- bayescan %>%
+    dplyr::filter(SELECTION == "neutral" | (SELECTION == "diversifying" & PO_GROUP != "no evidence")) %>%
+    dplyr::distinct(MARKERS) %>%
+    dplyr::arrange (MARKERS)
+  if (!is.null(subsample)) {
+    neutral.positive <- dplyr::mutate(neutral.positive, ITERATIONS = rep(subsample.id, n()))
+  }
+  readr::write_tsv(
+    x = neutral.positive,
+    path = stringi::stri_join(path.folder.subsample, "/whitelist.markers.neutral.positive.selection.stv"))
+
+  balancing <- bayescan %>%
+    dplyr::filter(SELECTION == "balancing") %>%
+    dplyr::distinct(MARKERS) %>%
+    dplyr::arrange (MARKERS)
+  if (!is.null(subsample)) {
+    balancing <- dplyr::mutate(balancing, ITERATIONS = rep(subsample.id, n()))
+  }
+  readr::write_tsv(
+    x = balancing,
+    path = stringi::stri_join(path.folder.subsample, "/blacklist.markers.balancing.selection.tsv"))
+
+  # Get the numbers of LOCI under various evolutionary forces
+  # Get the numbers for markers under directional selection
+  selection <- dplyr::group_by(bayescan, SELECTION, PO_GROUP) %>%
+    dplyr::tally(.) %>%
+    dplyr::rename(MARKERS = n)
+  if (!is.null(subsample)) {
+    selection <- dplyr::mutate(selection, ITERATIONS = rep(subsample.id, n()))
+  }
+  readr::write_tsv(
+    x = selection,
+    path = stringi::stri_join(path.folder.subsample, "/selection.summary.tsv"))
+
+
+
+  # Generating plot ------------------------------------------------------------
+  bayescan.plot <- plot_bayescan(bayescan)
+
+  if (!is.null(subsample)) {
+    ggplot2::ggsave(
+      filename = stringi::stri_join(path.folder.subsample, "/bayescan_plot_", subsample.id, ".pdf"),
+      plot = bayescan.plot,
+      width = 30, height = 15,
+      dpi = 600, units = "cm",
+      useDingbats = FALSE)
+  } else {
+    ggplot2::ggsave(
+      filename = stringi::stri_join(path.folder.subsample, "/bayescan_plot.pdf"),
+      plot = bayescan.plot,
+      width = 30, height = 15,
+      dpi = 600, units = "cm",
+      useDingbats = FALSE)
+  }
+
+  # Saving bayescan data frame--------------------------------------------------
+  if (!is.null(subsample)) {
+    readr::write_tsv(
+      x = bayescan,
+      path = stringi::stri_join(path.folder.subsample, "/bayescan_", subsample.id, ".tsv"))
+  } else {
+    readr::write_tsv(
+      x = bayescan,
+      path = stringi::stri_join(path.folder.subsample, "/bayescan.tsv"))
+  }
+  # Return list ----------------------------------------------------------------
+
+  res <- list(
+    bayescan = bayescan,
+    selection.summary = selection,
+    whitelist.markers.positive.selection = positive,
+    whitelist.markers.neutral.selection = neutral,
+    whitelist.markers.neutral.positive.selection = neutral.positive,
+    blacklist.markers.balancing.selection = balancing,
+    markers.dictionary = markers.dictionary,
+    pop.dictionary = pop.dictionary,
+    bayescan.plot = bayescan.plot
+  )
+  return(res)
+} #End bayescan_one
+
+
+# BayeScan plot function -------------------------------------------------------
+#' @title plot_bayescan
+#' @description plot_bayescan
+#' @rdname plot_bayescan
+#' @export
+#' @keywords internal
+#' @importFrom dplyr mutate group_by ungroup arrange sample_n sample_frac
+
+plot_bayescan <- function(data){
+  plot <- ggplot2::ggplot(data, ggplot2::aes(x = LOG10_Q, y = FST)) +
+    ggplot2::geom_point(ggplot2::aes(colour = PO_GROUP,shape = FST_GROUP)) +
+    ggplot2::scale_shape_manual(name = "FST quantile group",values = c(5,2,3,4,1)) +
+    ggplot2::scale_colour_manual(name = "Model choice",values = c("darkred","yellow","orange","green","forestgreen")) +
+    ggplot2::labs(x = "Log10(Q_VALUE)") +
+    ggplot2::labs(y = "Fst") +
+    ggplot2::geom_vline(xintercept = c(log10(0.05)),color = "black") +
+    ggplot2::theme(
+      axis.title = ggplot2::element_text(size = 16, family = "Helvetica",face = "bold"),
+      legend.title = ggplot2::element_text(size = 16,family = "Helvetica",face = "bold"),
+      legend.text = ggplot2::element_text(size = 16,family = "Helvetica",face = "bold"),
+      legend.position = "right")
+  return(plot)
+}

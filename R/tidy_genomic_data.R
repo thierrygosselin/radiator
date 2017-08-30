@@ -153,11 +153,12 @@
 #' and \code{ONT} population samples (out of 20 pops).
 #' Default: \code{pop.select = NULL}
 
-
-#' @param filename (optional) The file name for the tidy data frame
-#' written to the working directory.
-#' Default: \code{filename = NULL}, the tidy data is
-#' in the global environment only (i.e. not written in the working directory).
+#' @param filename (optional) The function uses \code{\link[fst]{write.fst}},
+#' to write the tidy data frame in
+#' the working directory. The file extension appended to
+#' the \code{filename} provided is \code{.rad}.
+#' With default: \code{filename = NULL}, the tidy data frame is
+#' in the global environment only (i.e. not written in the working directory...).
 
 #' @param parallel.core (optional) The number of core used for parallel
 #' execution during vcf import.
@@ -252,7 +253,7 @@
 
 #' @return The output in your global environment is a tidy data frame.
 #' If \code{filename} is provided, the tidy data frame is also
-#' written to the working directory.
+#' written to the working directory with file extension \code{.rad}.
 
 #' @export
 #' @rdname tidy_genomic_data
@@ -270,6 +271,7 @@
 #' @importFrom tibble as_data_frame has_name
 #' @importFrom parallel detectCores
 #' @importFrom pegas VCFloci read.vcf
+#' @importFrom fst write.fst
 
 #' @examples
 #' \dontrun{
@@ -601,7 +603,7 @@ tidy_genomic_data <- function(
 
     # import genotypes
     want <- c("MARKERS", "CHROM", "LOCUS", "POS", "ID", "COL", "REF", "ALT", "INDIVIDUALS", "GT")
-
+    # bk <- input
     if (import.pegas) {
       if (verbose) message("Working on the vcf...")
       input.gt <- pegas::read.vcf(file = data, which.loci = keep.markers, quiet = verbose) %>%
@@ -773,66 +775,18 @@ tidy_genomic_data <- function(
       if (verbose) message("Recoding bi-allelic VCF...")
     } else {#multi-allelic vcf
       if (verbose) message("Recoding VCF haplotype...")
+      input <- dplyr::rename(input, GT_HAPLO = GT)
     }
 
     # split data for 3 rounds of CPU
     # to work, same markers in same split...
     if (verbose) message("Calculating REF/ALT alleles...")
-    conversion.df <- dplyr::select(input, MARKERS, GT_VCF_NUC = GT) %>%
-      dplyr::left_join(
-        dplyr::distinct(input, MARKERS) %>%
-          dplyr::mutate(
-            SPLIT_VEC = dplyr::ntile(x = 1:nrow(.), n = parallel.core * 3))
-        , by = "MARKERS") %>%
-      split(x = ., f = .$SPLIT_VEC) %>%
-      .radiator_parallel(
-        # parallel::mclapply(
-        X = .,
-        FUN = nuc2integers,
-        mc.cores = parallel.core
-      ) %>%
-      dplyr::bind_rows(.)
-
-    # if monomorphic markers, ALT column will have NA: check and tag
-    if (anyNA(conversion.df)) {
-      # fill ALT with REF
-      conversion.df <- dplyr::bind_rows(
-        dplyr::filter(conversion.df, is.na(ALT)) %>%
-          dplyr::mutate(
-            ALT = REF,
-            POLYMORPHIC = rep(FALSE, n())),
-        dplyr::filter(conversion.df, !is.na(ALT)) %>%
-          dplyr::mutate(POLYMORPHIC = rep(TRUE, n()))) %>%
-        dplyr::arrange(MARKERS, INTEGERS)
-    }
-
-    ref.alt.mono <- dplyr::distinct(conversion.df, MARKERS, REF, ALT, .keep_all = TRUE) %>% dplyr::select(-c(ALLELES, INTEGERS))
-    conversion.df <- dplyr::select(conversion.df, MARKERS, ALLELES, INTEGERS)
-
-    input <- dplyr::select(input, -c(REF, ALT)) %>%
-      dplyr::left_join(ref.alt.mono, by = "MARKERS") %>%
-      dplyr::rename(GT_VCF_NUC = GT)
-
-    ref.alt.mono <- NULL
-
-    # Integrating new coding
-    if (verbose) message("Integrating new genotype codings...")
-
-    new.gt <- dplyr::distinct(input, MARKERS, GT_VCF_NUC) %>%
-      dplyr::mutate(SPLIT_VEC = dplyr::ntile(x = 1:nrow(.), n = parallel.core * 3)) %>%
-      split(x = ., f = .$SPLIT_VEC) %>%
-      .radiator_parallel(
-        # parallel::mclapply(
-        X = .,
-        FUN = nuc2gt,
-        mc.cores = parallel.core,
-        conversion.data = conversion.df,
-        biallelic = biallelic
-      ) %>%
-      dplyr::bind_rows(.)
-
-    input <- dplyr::left_join(input, new.gt, by = c("MARKERS", "GT_VCF_NUC"))
-    new.gt <- conversion.df <- NULL
+    input <- change_alleles(
+      data = input,
+      monomorphic.out = FALSE,
+      biallelic = biallelic,
+      parallel.core = parallel.core,
+      verbose = verbose)$input
 
     # Re ordering columns
     want <- c("MARKERS", "CHROM", "LOCUS", "POS", "ID", "COL", "INDIVIDUALS", "POP_ID",
@@ -1157,7 +1111,7 @@ tidy_genomic_data <- function(
       id.vars = "LOCUS",
       variable.name = "INDIVIDUALS",
       variable.factor = FALSE,
-      value.name = "GT"
+      value.name = "GT_HAPLO"
     ) %>%
       tibble::as_data_frame()
 
@@ -1185,7 +1139,7 @@ tidy_genomic_data <- function(
     # remove consensus markers
     if (verbose) message("\nScanning for consensus markers...")
     consensus.markers <- input %>%
-      dplyr::filter(GT == "consensus") %>%
+      dplyr::filter(GT_HAPLO == "consensus") %>%
       dplyr::distinct(LOCUS, .keep_all = TRUE)
 
     if (length(consensus.markers$LOCUS) > 0) {
@@ -1215,107 +1169,31 @@ tidy_genomic_data <- function(
     # removing errors and potential paralogs (GT with > 2 alleles)
     if (verbose) message("Scanning for artifactual genotypes...")
     input <- input %>%
-      dplyr::mutate(POLYMORPHISM = stringi::stri_count_fixed(GT, "/"))
+      dplyr::mutate(POLYMORPHISM = stringi::stri_count_fixed(GT_HAPLO, "/"))
 
     blacklist.paralogs <- input %>%
       dplyr::filter(POLYMORPHISM > 1) %>%
       dplyr::select(LOCUS, INDIVIDUALS)
 
     if (verbose) message("    number of genotypes with more than 2 alleles: ", length(blacklist.paralogs$LOCUS))
+    # save.image("testing.haplo.RData")
 
     if (length(blacklist.paralogs$LOCUS) > 0) {
       input <- input %>%
-        dplyr::mutate(GT = ifelse(POLYMORPHISM > 1, NA, GT)) %>%
+        dplyr::mutate(GT_HAPLO = replace(GT_HAPLO, which(POLYMORPHISM > 1), NA)) %>%
         dplyr::select(-POLYMORPHISM)
 
       readr::write_tsv(blacklist.paralogs, "blacklist.genotypes.paralogs.tsv")
     }
 
-    # tidy.haplo <- input %>% dplyr::select(LOCUS, INDIVIDUALS, GT_HAPLO = GT)
-
     if (verbose) message("Calculating REF/ALT alleles...")
 
-    input <- dplyr::select(input, MARKERS = LOCUS, INDIVIDUALS, GT_HAPLO = GT, POP_ID)
+    input <- change_alleles(
+      data = input,
+      monomorphic.out = monomorphic.out,
+      parallel.core = parallel.core,
+      verbose = verbose)$input
 
-    if (n.catalog.locus > 200000) {
-      input <- input %>%
-        dplyr::mutate(
-          SPLIT_VEC = dplyr::ntile(x = 1:nrow(.), n = parallel.core * 3)) %>%
-        split(x = ., f = .$SPLIT_VEC) %>%
-        .radiator_parallel(
-          X = .,
-          FUN = gt_haplo2gt_vcf_nuc,
-          mc.cores = parallel.core
-        ) %>%
-        dplyr::bind_rows(.)
-    } else {
-      input <- input %>%
-        dplyr::mutate(
-          GT_VCF_NUC = dplyr::if_else(
-            stringi::stri_detect_fixed(
-              str = GT_HAPLO, pattern = "/"),
-            GT_HAPLO,
-            stringi::stri_join(GT_HAPLO, GT_HAPLO, sep = "/")),
-          GT_VCF_NUC = stringi::stri_replace_na(str = GT_VCF_NUC, replacement = "./.")
-        ) %>%
-        dplyr::select(-GT_HAPLO)
-    }
-
-    if (tibble::has_name(input, "SPLIT_VEC")) {
-      input <- dplyr::select(input, -SPLIT_VEC)
-    }
-    conversion.df <- input %>%
-      dplyr::left_join(
-        dplyr::distinct(input, MARKERS) %>%
-          dplyr::mutate(
-            SPLIT_VEC = dplyr::ntile(x = 1:nrow(.), n = parallel.core * 3))
-        , by = "MARKERS") %>%
-      split(x = ., f = .$SPLIT_VEC) %>%
-      .radiator_parallel(
-        X = .,
-        FUN = nuc2integers,
-        mc.cores = parallel.core
-      ) %>%
-      dplyr::bind_rows(.)
-
-    # if monomorphic markers, ALT column will have NA: check and tag
-    if (anyNA(conversion.df)) {
-      # fill ALT with REF
-      conversion.df <- dplyr::bind_rows(
-        dplyr::filter(conversion.df, is.na(ALT)) %>%
-          dplyr::mutate(
-            ALT = REF,
-            POLYMORPHIC = rep(FALSE, n())),
-        dplyr::filter(conversion.df, !is.na(ALT)) %>%
-          dplyr::mutate(POLYMORPHIC = rep(TRUE, n()))) %>%
-        dplyr::arrange(MARKERS, INTEGERS)
-    }
-
-    ref.alt.mono <- dplyr::distinct(conversion.df, MARKERS, REF, ALT, .keep_all = TRUE) %>% dplyr::select(-c(ALLELES, INTEGERS))
-    conversion.df <- dplyr::select(conversion.df, MARKERS, ALLELES, INTEGERS)
-
-    input <- dplyr::left_join(input, ref.alt.mono, by = "MARKERS")
-
-    ref.alt.mono <- NULL
-
-    # Integrating new coding
-    if (verbose) message("Integrating new genotype codings...")
-
-    new.gt <- dplyr::distinct(input, MARKERS, GT_VCF_NUC) %>%
-      dplyr::mutate(SPLIT_VEC = dplyr::ntile(x = 1:nrow(.), n = parallel.core * 3)) %>%
-      split(x = ., f = .$SPLIT_VEC) %>%
-      .radiator_parallel(
-        # parallel::mclapply(
-        X = .,
-        FUN = nuc2gt,
-        mc.cores = parallel.core,
-        conversion.data = conversion.df,
-        biallelic = FALSE
-      ) %>%
-      dplyr::bind_rows(.)
-
-    input <- dplyr::left_join(input, new.gt, by = c("MARKERS", "GT_VCF_NUC"))
-    new.gt <- conversion.df <- NULL
     biallelic <- FALSE
     input <- dplyr::rename(input, LOCUS = MARKERS)
   } # End import haplotypes file
@@ -2027,10 +1905,21 @@ tidy_genomic_data <- function(
 
 
   # Write to working directory -------------------------------------------------
+  # if (!is.null(filename)) {
+  #   if (verbose) message("Writing the tidy data to the working directory: \n", filename)
+  #   readr::write_tsv(x = input, path = filename, col_names = TRUE)
+  # }
+
   if (!is.null(filename)) {
-    if (verbose) message("Writing the tidy data to the working directory: \n", filename)
-    readr::write_tsv(x = input, path = filename, col_names = TRUE)
+    tidy.name <- stringi::stri_join(filename, ".rad")
+    message("Writing tidy data set: ", tidy.name)
+    # if (!is.null(save.feather)) {
+    # feather::write_feather(filter, stri_replace_all_fixed(filename, pattern = ".tsv", replacement = "_feather.tsv", vectorize_all = TRUE))
+    # } else {
+    fst::write.fst(x = input, path = tidy.name, compress = 85)
+    # }
   }
+
   # Results --------------------------------------------------------------------
   # messages
   n.markers <- dplyr::n_distinct(input$MARKERS)
@@ -2044,9 +1933,11 @@ tidy_genomic_data <- function(
 
   if (verbose) {
     cat("############################### RESULTS ###############################\n")
-    message("Tidy data in your global environment")
+
     if (!is.null(filename)) {
-      message("Tidy data written to your working directory: ", getwd())
+      message("Tidy data written in global environment and working directory")
+    } else {
+      message("Tidy data written in global environment")
     }
     message("Data format: ", data.type)
     if (biallelic) {

@@ -152,10 +152,12 @@ the analysis. e.g. \code{pop.select = c("QUE", "ONT")} to select \code{QUE}
 and \code{ONT} population samples (out of 20 pops).
 Default: \code{pop.select = NULL}}
 
-\item{filename}{(optional) The file name for the tidy data frame
-written to the working directory.
-Default: \code{filename = NULL}, the tidy data is
-in the global environment only (i.e. not written in the working directory).}
+\item{filename}{(optional) The function uses \code{\link[fst]{write.fst}},
+to write the tidy data frame in
+the working directory. The file extension appended to
+the \code{filename} provided is \code{.rad}.
+With default: \code{filename = NULL}, the tidy data frame is
+in the global environment only (i.e. not written in the working directory...).}
 
 \item{verbose}{(optional, logical) When \code{verbose = TRUE}
 the function is a little more chatty during execution.

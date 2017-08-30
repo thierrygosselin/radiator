@@ -1,7 +1,6 @@
 #' @name snp_ld
 #' @title GBS/RADseq short distance linkage disequilibrium pruning
-#' @description \strong{For VCF file only}.
-#' SNP short distance linkage disequilibrium pruning. With anonymous markers from
+#' @description SNP short distance linkage disequilibrium pruning. With anonymous markers from
 #' RADseq/GBS de novo discovery, you can minimize linkage disequilibrium (LD) by
 #' choosing among these 3 options (see argument below).
 #'
@@ -9,11 +8,12 @@
 #' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 #' and might be of interest for users.
 
-#' @param data A data set with ID (LOCUS) and POS (SNP) information.
-#' Usually a VCF file in the working directory or
-#' object in the global environment in wide or long (tidy) formats.
+#' @param data A tidy data set with ID (LOCUS) and POS (SNP) information.
+#' \emph{How to get a tidy data frame ?}
+#' Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
+#' Usually the LOCUS and POS info is taken from a VCF file.
 
-#' @param snp.ld (character) \strong{For VCF file only}. 3 options:
+#' @param snp.ld (character) 3 options:
 #' \code{snp.ld = "random"} selection, \code{snp.ld = "first"} or
 #' \code{snp.ld = "last"} for SNP on the same short read/haplotype.
 #' Default: \code{snp.ld = "first"}.
