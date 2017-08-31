@@ -72,7 +72,7 @@ radiator::run_bayescan outputs without subsampling:
 
 Additionnally, if multiple SNPs/locus are detected the object will also have:
 \item \code{accurate.locus.summary}: dataframe with the number of accurate locus and the selection types.
-\item \code{whithlist.accurate.locus}: whitelist of accurate locus.
+\item \code{whitelist.accurate.locus}: whitelist of accurate locus.
 \item \code{blacklist.not.accurate.locus}: blacklist of not accurate locus.
 \item \code{accuracy.snp.number}: dataframe with the number of SNPs per locus and the count of accurate/not accurate locus.
 \item \code{accuracy.snp.number.plot}: the plot showing the proportion of accurate/not accurate locus in relation to SNPs per locus.

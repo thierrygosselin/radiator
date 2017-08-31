@@ -79,7 +79,7 @@
 #'
 #' Additionnally, if multiple SNPs/locus are detected the object will also have:
 #' \item \code{accurate.locus.summary}: dataframe with the number of accurate locus and the selection types.
-#' \item \code{whithlist.accurate.locus}: whitelist of accurate locus.
+#' \item \code{whitelist.accurate.locus}: whitelist of accurate locus.
 #' \item \code{blacklist.not.accurate.locus}: blacklist of not accurate locus.
 #' \item \code{accuracy.snp.number}: dataframe with the number of SNPs per locus and the count of accurate/not accurate locus.
 #' \item \code{accuracy.snp.number.plot}: the plot showing the proportion of accurate/not accurate locus in relation to SNPs per locus.
@@ -762,17 +762,29 @@ bayescan_one <- function(
         dplyr::group_by(SELECTION) %>%
         dplyr::tally(.)
 
-      res$whithlist.accurate.locus <- dplyr::distinct(accurate.locus, LOCUS) %>% dplyr::arrange(LOCUS)
+      res$whitelist.accurate.locus <- dplyr::distinct(accurate.locus, LOCUS) %>%
+        dplyr::arrange(LOCUS)
+      readr::write_tsv(
+        x = res$whitelist.accurate.locus,
+        path = stringi::stri_join(path.folder.subsample, "/whitelist.accurate.locus.tsv"))
+
       res$blacklist.not.accurate.locus <- locus.accuracy %>%
         dplyr::filter(ACCURACY == "not accurate") %>%
         dplyr::distinct(LOCUS) %>%
         dplyr::arrange(LOCUS)
+      readr::write_tsv(
+        x = res$blacklist.not.accurate.locus,
+        path = stringi::stri_join(path.folder.subsample, "/blacklist.not.accurate.locus.tsv"))
+
 
       # correlation between number of snps and accuracy... ?
       res$accuracy.snp.number <- locus.accuracy %>%
         dplyr::distinct(LOCUS, SNP_NUMBER, ACCURACY) %>%
         dplyr::group_by(SNP_NUMBER, ACCURACY) %>%
         dplyr::tally(.)
+      readr::write_tsv(
+        x = res$accuracy.snp.number,
+        path = stringi::stri_join(path.folder.subsample, "/accuracy.snp.number.tsv"))
 
       res$accuracy.snp.number.plot <- ggplot2::ggplot(res$accuracy.snp.number, ggplot2::aes(y = n, x = SNP_NUMBER, fill = ACCURACY)) +
         ggplot2::geom_bar(stat = "identity") +
@@ -804,7 +816,9 @@ bayescan_one <- function(
         dplyr::mutate(
           PROP = round(LOCUS_NUMBER/sum(LOCUS_NUMBER), 4),
           PROP_TOTAL_MARKERS = round(LOCUS_NUMBER/markers.more.snp, 4))
-
+      readr::write_tsv(
+        x = res$not.accurate.summary,
+        path = stringi::stri_join(path.folder.subsample, "/not.accurate.summary.tsv"))
     }
 
   }
