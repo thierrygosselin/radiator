@@ -69,7 +69,16 @@ radiator::run_bayescan outputs without subsampling:
 \item \code{markers.dictionary}: BayeScan use integer for MARKERS info. In this dataframe, the corresponding values used inside the function.
 \item \code{pop.dictionary}: BayeScan use integer for POP_ID info. In this dataframe, the corresponding values used inside the function.
 \item \code{bayescan.plot}: plot showing markers Fst and model choice.
+
+Additionnally, if multiple SNPs/locus are detected the object will also have:
+\item \code{accurate.locus.summary}: dataframe with the number of accurate locus and the selection types.
+\item \code{whithlist.accurate.locus}: whitelist of accurate locus.
+\item \code{blacklist.not.accurate.locus}: blacklist of not accurate locus.
+\item \code{accuracy.snp.number}: dataframe with the number of SNPs per locus and the count of accurate/not accurate locus.
+\item \code{accuracy.snp.number.plot}: the plot showing the proportion of accurate/not accurate locus in relation to SNPs per locus.
+\item \code{not.accurate.summary}: dataframe summarizing the number of not accurate locus with selection type found on locus.
 }
+
 radiator::run_bayescan outputs WITH subsampling:
 
 \enumerate{
@@ -91,8 +100,19 @@ radiator::run_bayescan outputs WITH subsampling:
 Other files are present in the folder and subsampling folder.
 }
 \description{
-Run \href{http://cmpg.unibe.ch/software/BayeScan/}{BayeScan}
-inside R! This function requires a functional
+\strong{Function highlights:}
+
+\enumerate{
+\item \strong{integrated and seamless pipeline: } generate \href{http://cmpg.unibe.ch/software/BayeScan/}{BayeScan}
+files within radiator and run \href{http://cmpg.unibe.ch/software/BayeScan/}{BayeScan} inside R!
+\item \strong{unbalanced sampling sites impact: } measure and verify genome scan accurary in unbalanced sampling design with subsampling related arguments.
+\item \strong{SNP linkage: } detect automatically the presence of multiple SNPs on the same locus and
+measure/verify accuracy of genome scan within locus.
+\item \strong{summary tables and visualization: } the function generate summary tables and plots of genome scan.
+\item \strong{whitelists and blacklists} of markers under different selection types are automatically generated !
+}
+
+This function requires a working
 \href{http://cmpg.unibe.ch/software/BayeScan/}{BayeScan} program installed
 on the computer (\href{http://cmpg.unibe.ch/software/BayeScan/download.html}{intall instructions}).
 For UNIX machines, please install the 64bits version.
@@ -110,7 +130,8 @@ You should not run BayeScan with SNPs data set that have multiple SNPs on the
 same LOCUS. Instead, run radiator::genomic_converter using the \code{snp.ld}
 argument to keep only one SNP on the locus. Or run the function by first converting
 an haplotype vcf or if your RAD dataset was produced by STACKS, use the
-\code{batch_x.haplotypes.tsv} file!
+\code{batch_x.haplotypes.tsv} file! If the function detect multiple SNPs on
+the same locus, accuracy will be measured automatically.
 
 \strong{UNIX install: } I like to transfer the \emph{BayeScan2.1_linux64bits}
 (for Linux) or the \emph{BayeScan2.1_macos64bits} (for MACOs) in \code{/usr/local/bin}

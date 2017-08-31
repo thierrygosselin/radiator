@@ -1,7 +1,18 @@
 #' @name run_bayescan
 #' @title Run BayeScan
-#' @description Run \href{http://cmpg.unibe.ch/software/BayeScan/}{BayeScan}
-#' inside R! This function requires a functional
+#' @description \strong{Function highlights:}
+#'
+#' \enumerate{
+#' \item \strong{integrated and seamless pipeline: } generate \href{http://cmpg.unibe.ch/software/BayeScan/}{BayeScan}
+#' files within radiator and run \href{http://cmpg.unibe.ch/software/BayeScan/}{BayeScan} inside R!
+#' \item \strong{unbalanced sampling sites impact: } measure and verify genome scan accurary in unbalanced sampling design with subsampling related arguments.
+#' \item \strong{SNP linkage: } detect automatically the presence of multiple SNPs on the same locus and
+#' measure/verify accuracy of genome scan within locus.
+#' \item \strong{summary tables and visualization: } the function generate summary tables and plots of genome scan.
+#' \item \strong{whitelists and blacklists} of markers under different selection types are automatically generated !
+#' }
+#'
+#' This function requires a working
 #' \href{http://cmpg.unibe.ch/software/BayeScan/}{BayeScan} program installed
 #' on the computer (\href{http://cmpg.unibe.ch/software/BayeScan/download.html}{intall instructions}).
 #' For UNIX machines, please install the 64bits version.
@@ -65,7 +76,16 @@
 #' \item \code{markers.dictionary}: BayeScan use integer for MARKERS info. In this dataframe, the corresponding values used inside the function.
 #' \item \code{pop.dictionary}: BayeScan use integer for POP_ID info. In this dataframe, the corresponding values used inside the function.
 #' \item \code{bayescan.plot}: plot showing markers Fst and model choice.
+#'
+#' Additionnally, if multiple SNPs/locus are detected the object will also have:
+#' \item \code{accurate.locus.summary}: dataframe with the number of accurate locus and the selection types.
+#' \item \code{whithlist.accurate.locus}: whitelist of accurate locus.
+#' \item \code{blacklist.not.accurate.locus}: blacklist of not accurate locus.
+#' \item \code{accuracy.snp.number}: dataframe with the number of SNPs per locus and the count of accurate/not accurate locus.
+#' \item \code{accuracy.snp.number.plot}: the plot showing the proportion of accurate/not accurate locus in relation to SNPs per locus.
+#' \item \code{not.accurate.summary}: dataframe summarizing the number of not accurate locus with selection type found on locus.
 #' }
+#'
 #' radiator::run_bayescan outputs WITH subsampling:
 #'
 #' \enumerate{
@@ -134,7 +154,8 @@
 #' same LOCUS. Instead, run radiator::genomic_converter using the \code{snp.ld}
 #' argument to keep only one SNP on the locus. Or run the function by first converting
 #' an haplotype vcf or if your RAD dataset was produced by STACKS, use the
-#' \code{batch_x.haplotypes.tsv} file!
+#' \code{batch_x.haplotypes.tsv} file! If the function detect multiple SNPs on
+#' the same locus, accuracy will be measured automatically.
 #'
 #' \strong{UNIX install: } I like to transfer the \emph{BayeScan2.1_linux64bits}
 #' (for Linux) or the \emph{BayeScan2.1_macos64bits} (for MACOs) in \code{/usr/local/bin}
@@ -474,7 +495,7 @@ run_bayescan <- function(
     readr::write_tsv(
       x = res$whitelist.markers.without.balancing,
       path = stringi::stri_join(path.folder, "/whitelist.markers.without.balancing.tsv"))
-    }
+  }
 
   timing <- proc.time() - timing
   message("\nComputation time: ", round(timing[[3]]), " sec")
@@ -560,7 +581,7 @@ bayescan_one <- function(
   file.date,
   bayescan.path = "/usr/local/bin/bayescan"
 ) {
-
+  res <- list()
   if (!is.null(subsample)) {
     # x <- subsample.list[[1]] # test
     subsample.id <- unique(x$SUBSAMPLE)
@@ -651,7 +672,7 @@ bayescan_one <- function(
 
   # Importing BayeScan file  ---------------------------------------------------
   message("Importing BayeScan results")
-  bayescan <- markers.dictionary %>%
+  res$bayescan <- markers.dictionary %>%
     dplyr::right_join(
       suppressWarnings(readr::read_table2(
         file = list.files(path = path.folder.subsample, pattern = "_fst.txt", full.names = TRUE),
@@ -689,61 +710,159 @@ bayescan_one <- function(
     dplyr::arrange(FST)
 
   if (!is.null(subsample)) {
-    bayescan <- dplyr::mutate(bayescan, ITERATIONS = rep(subsample.id, n()))
+    res$bayescan <- dplyr::mutate(res$bayescan, ITERATIONS = rep(subsample.id, n()))
   }
+  # Accuracy within LOCUS ------------------------------------------------------
+  # special concern when > 1 SNP / LOCUS...
+  radiator.markers <- dplyr::distinct(res$bayescan, MARKERS)
+  radiator.markers <- unique(stringi::stri_detect_fixed(
+    str = radiator.markers$MARKERS, pattern = "__"))
+  if (radiator.markers) {
+    message("Detected SNP and LOCUS information in markers")
+    res$bayescan <- res$bayescan %>%
+      tidyr::separate(
+        data = .,
+        col = MARKERS,
+        into = c("CHROM", "LOCUS", "POS"),
+        sep = "__",
+        remove = FALSE,
+        extra = "warn"
+      )
 
-  positive <- bayescan %>%
+    whitelist.multiple.snp <- dplyr::distinct(res$bayescan, LOCUS, POS) %>%
+      dplyr::group_by(LOCUS) %>%
+      dplyr::tally(.) %>%
+      dplyr::filter(n > 1) %>%
+      dplyr::select(LOCUS)
+    markers.more.snp <- nrow(whitelist.multiple.snp)
+    n.markers <- dplyr::n_distinct(res$bayescan$MARKERS)
+    if (markers.more.snp > 0) {
+      message("Detected markers > 1 SNP per LOCUS...")
+      message("    total number of markers: ", n.markers)
+      message("    markers with >1 SNPs/LOCUS: ", markers.more.snp, " (", round(markers.more.snp/n.markers, 2), ")")
+      message("\nCalculating accuracy within LOCUS...")
+
+      locus.accuracy <- dplyr::left_join(whitelist.multiple.snp, res$bayescan, by = "LOCUS") %>%
+        dplyr::select(-BAYESCAN_MARKERS, -MARKERS) %>%
+        dplyr::group_by(LOCUS, SELECTION) %>%
+        dplyr::tally(.) %>%
+        dplyr::group_by(LOCUS) %>%
+        dplyr::mutate(
+          SNP_NUMBER = sum(n),
+          ACCURACY = dplyr::if_else(n == SNP_NUMBER, "accurate", "not accurate"))
+
+      accurate.locus <- locus.accuracy %>%
+        dplyr::filter(ACCURACY == "accurate") %>%
+        dplyr::select(LOCUS, SELECTION, SNP_NUMBER)
+      n.accurate.locus <- nrow(accurate.locus)
+      n.not.accurate.locus <- markers.more.snp - n.accurate.locus
+      message("Number of locus accurate: ", n.accurate.locus, " (", round(n.accurate.locus/markers.more.snp, 2), ")")
+      message("Number of locus NOT accurate: ", n.not.accurate.locus, " (", round(n.not.accurate.locus/markers.more.snp, 2), ")")
+      res$accurate.locus.summary <- accurate.locus %>%
+        dplyr::group_by(SELECTION) %>%
+        dplyr::tally(.)
+
+      res$whithlist.accurate.locus <- dplyr::distinct(accurate.locus, LOCUS) %>% dplyr::arrange(LOCUS)
+      res$blacklist.not.accurate.locus <- locus.accuracy %>%
+        dplyr::filter(ACCURACY == "not accurate") %>%
+        dplyr::distinct(LOCUS) %>%
+        dplyr::arrange(LOCUS)
+
+      # correlation between number of snps and accuracy... ?
+      res$accuracy.snp.number <- locus.accuracy %>%
+        dplyr::distinct(LOCUS, SNP_NUMBER, ACCURACY) %>%
+        dplyr::group_by(SNP_NUMBER, ACCURACY) %>%
+        dplyr::tally(.)
+
+      res$accuracy.snp.number.plot <- ggplot2::ggplot(res$accuracy.snp.number, ggplot2::aes(y = n, x = SNP_NUMBER, fill = ACCURACY)) +
+        ggplot2::geom_bar(stat = "identity") +
+        ggplot2::labs(y = "Number of locus") +
+        ggplot2::labs(x = "Number of SNPs per locus") +
+        ggplot2::theme(
+          axis.title.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
+          axis.title.y = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
+          legend.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
+          legend.text = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
+          strip.text.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold")
+        )
+
+      ggplot2::ggsave(
+        filename = stringi::stri_join(path.folder.subsample, "/accuracy.snp.number.plot.pdf"),
+        plot = res$accuracy.snp.number.plot,
+        width = 20, height = 15,
+        dpi = 600, units = "cm", useDingbats = FALSE)
+
+      res$not.accurate.summary <- locus.accuracy %>%
+        dplyr::filter(ACCURACY == "not accurate") %>%
+        dplyr::group_by(LOCUS) %>%
+        dplyr::summarise(
+          SELECTION_TYPE_ON_LOCUS = stringi::stri_join(SELECTION, collapse = " <-> ")
+        ) %>%
+        dplyr::group_by(SELECTION_TYPE_ON_LOCUS) %>%
+        dplyr::tally(.) %>%
+        dplyr::rename(LOCUS_NUMBER = n) %>%
+        dplyr::mutate(
+          PROP = round(LOCUS_NUMBER/sum(LOCUS_NUMBER), 4),
+          PROP_TOTAL_MARKERS = round(LOCUS_NUMBER/markers.more.snp, 4))
+
+    }
+
+  }
+  radiator.markers <- NULL
+
+  # selection ------------------------------------------------------------------
+  res$whitelist.markers.positive.selection <- res$bayescan %>%
     dplyr::filter(SELECTION == "diversifying" & PO_GROUP != "no evidence") %>%
     # dplyr::filter(SELECTION == "diversifying") %>%
     dplyr::distinct(MARKERS) %>%
     dplyr::arrange (MARKERS)
 
   if (!is.null(subsample)) {
-    positive <- dplyr::mutate(positive, ITERATIONS = rep(subsample.id, n()))
+    res$whitelist.markers.positive.selection <- dplyr::mutate(res$whitelist.markers.positive.selection, ITERATIONS = rep(subsample.id, n()))
   }
 
   readr::write_tsv(
-    x = positive,
+    x = res$whitelist.markers.positive.selection,
     path = stringi::stri_join(path.folder.subsample, "/whitelist.markers.positive.selection.tsv"))
 
-  neutral <- bayescan %>%
+  res$whitelist.markers.neutral.selection <- res$bayescan %>%
     dplyr::filter(SELECTION == "neutral") %>%
     dplyr::distinct(MARKERS) %>%
     dplyr::arrange (MARKERS)
 
   if (!is.null(subsample)) {
-    neutral <- dplyr::mutate(neutral, ITERATIONS = rep(subsample.id, n()))
+    res$whitelist.markers.neutral.selection <- dplyr::mutate(res$whitelist.markers.neutral.selection, ITERATIONS = rep(subsample.id, n()))
   }
   readr::write_tsv(
-    x = neutral,
+    x = res$whitelist.markers.neutral.selection,
     path = stringi::stri_join(path.folder.subsample, "/whitelist.markers.neutral.selection.tsv"))
 
   # neutral and positive
-  neutral.positive <- bayescan %>%
+  res$whitelist.markers.neutral.positive.selection <- res$bayescan %>%
     dplyr::filter(SELECTION == "neutral" | (SELECTION == "diversifying" & PO_GROUP != "no evidence")) %>%
     dplyr::distinct(MARKERS) %>%
     dplyr::arrange (MARKERS)
   if (!is.null(subsample)) {
-    neutral.positive <- dplyr::mutate(neutral.positive, ITERATIONS = rep(subsample.id, n()))
+    res$whitelist.markers.neutral.positive.selection <- dplyr::mutate(res$whitelist.markers.neutral.positive.selection, ITERATIONS = rep(subsample.id, n()))
   }
   readr::write_tsv(
-    x = neutral.positive,
+    x = res$whitelist.markers.neutral.positive.selection,
     path = stringi::stri_join(path.folder.subsample, "/whitelist.markers.neutral.positive.selection.stv"))
 
-  balancing <- bayescan %>%
+  res$blacklist.markers.balancing.selection <- res$bayescan %>%
     dplyr::filter(SELECTION == "balancing") %>%
     dplyr::distinct(MARKERS) %>%
     dplyr::arrange (MARKERS)
   if (!is.null(subsample)) {
-    balancing <- dplyr::mutate(balancing, ITERATIONS = rep(subsample.id, n()))
+    res$blacklist.markers.balancing.selection <- dplyr::mutate(res$blacklist.markers.balancing.selection, ITERATIONS = rep(subsample.id, n()))
   }
   readr::write_tsv(
-    x = balancing,
+    x = res$blacklist.markers.balancing.selection,
     path = stringi::stri_join(path.folder.subsample, "/blacklist.markers.balancing.selection.tsv"))
 
   # Get the numbers of LOCI under various evolutionary forces
   # Get the numbers for markers under directional selection
-  selection <- dplyr::group_by(bayescan, SELECTION, PO_GROUP) %>%
+  selection <- dplyr::group_by(res$bayescan, SELECTION, PO_GROUP) %>%
     dplyr::tally(.) %>%
     dplyr::rename(MARKERS = n)
   if (!is.null(subsample)) {
@@ -756,19 +875,19 @@ bayescan_one <- function(
 
 
   # Generating plot ------------------------------------------------------------
-  bayescan.plot <- plot_bayescan(bayescan)
+  res$bayescan.plot <- plot_bayescan(res$bayescan)
 
   if (!is.null(subsample)) {
     ggplot2::ggsave(
       filename = stringi::stri_join(path.folder.subsample, "/bayescan_plot_", subsample.id, ".pdf"),
-      plot = bayescan.plot,
+      plot = res$bayescan.plot,
       width = 30, height = 15,
       dpi = 600, units = "cm",
       useDingbats = FALSE)
   } else {
     ggplot2::ggsave(
       filename = stringi::stri_join(path.folder.subsample, "/bayescan_plot.pdf"),
-      plot = bayescan.plot,
+      plot = res$bayescan.plot,
       width = 30, height = 15,
       dpi = 600, units = "cm",
       useDingbats = FALSE)
@@ -777,26 +896,17 @@ bayescan_one <- function(
   # Saving bayescan data frame--------------------------------------------------
   if (!is.null(subsample)) {
     readr::write_tsv(
-      x = bayescan,
+      x = res$bayescan,
       path = stringi::stri_join(path.folder.subsample, "/bayescan_", subsample.id, ".tsv"))
   } else {
     readr::write_tsv(
-      x = bayescan,
+      x = res$bayescan,
       path = stringi::stri_join(path.folder.subsample, "/bayescan.tsv"))
   }
-  # Return list ----------------------------------------------------------------
-
-  res <- list(
-    bayescan = bayescan,
-    selection.summary = selection,
-    whitelist.markers.positive.selection = positive,
-    whitelist.markers.neutral.selection = neutral,
-    whitelist.markers.neutral.positive.selection = neutral.positive,
-    blacklist.markers.balancing.selection = balancing,
-    markers.dictionary = markers.dictionary,
-    pop.dictionary = pop.dictionary,
-    bayescan.plot = bayescan.plot
-  )
+  # Update results list --------------------------------------------------------
+  res$selection.summary <- selection
+  res$markers.dictionary <- markers.dictionary
+  res$pop.dictionary <- pop.dictionary
   return(res)
 } #End bayescan_one
 

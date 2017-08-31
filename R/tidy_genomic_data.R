@@ -516,6 +516,19 @@ tidy_genomic_data <- function(
         dplyr::mutate(KEEP = as.integer(KEEP))
     }
 
+    # bi- or multi-alllelic VCF
+    alt.num <- max(unique(
+      stringi::stri_count_fixed(str = unique(input$ALT), pattern = ","))) + 1
+
+    if (alt.num > 1) {
+      biallelic <- FALSE
+      message("VCF is multi-allelic")
+    } else {
+      biallelic <- TRUE
+      message("VCF is biallelic")
+    }
+
+
     # Check for duplicate indentifiers
     duplicate.markers <- nrow(input) - nrow(dplyr::distinct(input, CHROM, LOCUS, POS))
 
@@ -592,8 +605,31 @@ tidy_genomic_data <- function(
 
     # Filter with whitelist of markers and FILTER column
     if (!is.null(whitelist.markers)) {
+
+      if (!biallelic) {
+        if (ncol(whitelist.markers) >= 3) {
+          message("Note: whitelist with CHROM LOCUS POS columns and VCF haplotype:
+If the whitelist was not created from this VCF,
+the filtering could result in loosing all the markers.
+The POS column is different in biallelic and multiallelic file...\n")
+
+          message("Discarding the POS column in the whitelist")
+          whitelist.markers <- dplyr::select(whitelist.markers, -POS)
+          columns.names.whitelist <- colnames(whitelist.markers)
+        }
+
+        if (ncol(whitelist.markers) == 1 && tibble::has_name(whitelist.markers, "MARKERS")) {
+          message("Note: whitelist MARKERS column and VCF haplotype:
+If the whitelist was not created from this VCF,
+the filtering could result in loosing all the markers.
+The POS column used in the MARKERS column is different in biallelic and multiallelic file...\n")
+        }
+      }
+
       message("Filtering: ", nrow(whitelist.markers), " markers in whitelist")
       input <- suppressWarnings(dplyr::semi_join(input, whitelist.markers, by = columns.names.whitelist))
+
+      if (nrow(input) == 0) stop("No markers left in the dataset, check whitelist...")
     }
 
     # keep vector
@@ -647,15 +683,7 @@ tidy_genomic_data <- function(
       filter.check <- NULL
     }
 
-    # bi- or multi-alllelic VCF
-    alt.num <- max(unique(
-      stringi::stri_count_fixed(str = unique(input$ALT), pattern = ","))) + 1
 
-    if (alt.num > 1) {
-      biallelic <- FALSE
-    } else {
-      biallelic <- TRUE
-    }
 
     if (!import.pegas) {
       input <- dplyr::bind_cols(
@@ -769,7 +797,6 @@ tidy_genomic_data <- function(
     }
 
     # Haplotypes or biallelic VCF----------------------------------------------
-
     # recoding genotype
     if (biallelic) {# biallelic VCF
       if (verbose) message("Recoding bi-allelic VCF...")
