@@ -99,8 +99,26 @@ change_alleles <- function(
     input <- dplyr::rename(.data = input, MARKERS = LOCUS)
   }
 
+  if (!tibble::has_name(input, "GT_VCF_NUC")) {
+    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS", "POP_ID",
+              "REF", "ALT", "GT", "GT_HAPLO")
+
+    input <- suppressWarnings(
+      dplyr::select(input, dplyr::one_of(want)))
+    need.gt.vcf <- TRUE
+  } else {
+    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS", "POP_ID",
+              "REF", "ALT", "GT_VCF_NUC")
+
+    input <- suppressWarnings(
+      dplyr::select(input, dplyr::one_of(want)))
+
+    need.gt.vcf <- FALSE
+    biallelic <- TRUE
+  }
+
   # Detecting biallelic markers and removing monomorphic markers ---------------
-  if (verbose) message("Scanning for number of alleles per marker...")
+  if (verbose) message("    Scanning for number of alleles per marker...")
   if (tibble::has_name(input, "GT")) {
     input.genotyped.split <- dplyr::select(.data = input, MARKERS, POP_ID, INDIVIDUALS, GT) %>%
       dplyr::filter(GT != "000000") %>%
@@ -130,17 +148,17 @@ change_alleles <- function(
 
     if (biallelic > 3) {
       biallelic <- FALSE
-      if (verbose) message("Data is multiallellic")
+      if (verbose) message("    Data is multiallellic")
       if (!tibble::has_name(input, "GT_HAPLO")) {
         input <- dplyr::rename(input, GT_HAPLO = GT)
       }
     } else {
       biallelic <- TRUE
-      if (verbose) message("Data is biallellic")
+      if (verbose) message("    Data is biallellic")
     }
 
     marker.type <- NULL
-  }
+  } # end GT prep
 
   if (tibble::has_name(input, "GT_HAPLO")) biallelic <- FALSE
 
@@ -180,15 +198,14 @@ change_alleles <- function(
 
 
   # Detection and change -------------------------------------------------------
-
   if (tibble::has_name(input, "MARKERS") && tibble::has_name(input, "CHROM") && tibble::has_name(input, "LOCUS") && tibble::has_name(input, "POS")) {
     markers.meta <- dplyr::distinct(input, MARKERS, CHROM, LOCUS, POS)
   } else {
     markers.meta <- NULL
   }
 
-  if (biallelic) {
-    if (verbose) message("Generating vcf-style coding")
+  if (tibble::has_name(input, "GT")) {
+    if (verbose) message("    Generating vcf-style coding")
     alleles.new.ref <- dplyr::select(.data = input.genotyped.split, MARKERS, ALLELES) %>%
       dplyr::count(x = ., MARKERS, ALLELES) %>%
       dplyr::group_by(MARKERS) %>%
@@ -222,7 +239,7 @@ change_alleles <- function(
         dplyr::select(MARKERS) %>%
         purrr::flatten_chr(.)
 
-      if (verbose) message("Number of markers with REF/ALT change = ", length(change.ref))
+      message("    Number of markers with REF/ALT change = ", length(change.ref))
 
       # switch ALLELE_REF_DEPTH/ALLELE_ALT_DEPTH
       if (length(change.ref) > 0 & tibble::has_name(input, "ALLELE_REF_DEPTH")) {
@@ -252,36 +269,42 @@ change_alleles <- function(
       }
     }
   } else {# for vcf haplotypes and multiallelic data
+    n.catalog.locus <- dplyr::n_distinct(input$MARKERS)
+    if (tibble::has_name(input, "REF")) {
+      old.ref <- input %>%
+        dplyr::distinct(MARKERS, REF, ALT)
+    } else {
+      old.ref <- NULL
+    }
+
+
     if (tibble::has_name(input, "GT_HAPLO")) {
       input <- dplyr::select(input, MARKERS, INDIVIDUALS, GT_HAPLO, POP_ID)
-    } else {
-      input <- dplyr::select(input, MARKERS, INDIVIDUALS, GT_HAPLO = GT, POP_ID)
-    }
-    n.catalog.locus <- dplyr::n_distinct(input$MARKERS)
 
-    if (n.catalog.locus > 200000) {
-      input <- input %>%
-        dplyr::mutate(
-          SPLIT_VEC = dplyr::ntile(x = 1:nrow(.), n = parallel.core * 3)) %>%
-        split(x = ., f = .$SPLIT_VEC) %>%
-        .radiator_parallel(
-          X = .,
-          FUN = gt_haplo2gt_vcf_nuc,
-          mc.cores = parallel.core
-        ) %>%
-        dplyr::bind_rows(.) %>%
-        dplyr::select(-SPLIT_VEC)
-    } else {
-      input <- input %>%
-        dplyr::mutate(
-          GT_VCF_NUC = dplyr::if_else(
-            stringi::stri_detect_fixed(
-              str = GT_HAPLO, pattern = "/"),
-            GT_HAPLO,
-            stringi::stri_join(GT_HAPLO, GT_HAPLO, sep = "/")),
-          GT_VCF_NUC = stringi::stri_replace_na(str = GT_VCF_NUC, replacement = "./.")
-        ) %>%
-        dplyr::select(-GT_HAPLO)
+      if (n.catalog.locus > 200000) {
+        input <- input %>%
+          dplyr::mutate(
+            SPLIT_VEC = dplyr::ntile(x = 1:nrow(.), n = parallel.core * 3)) %>%
+          split(x = ., f = .$SPLIT_VEC) %>%
+          .radiator_parallel(
+            X = .,
+            FUN = gt_haplo2gt_vcf_nuc,
+            mc.cores = parallel.core
+          ) %>%
+          dplyr::bind_rows(.) %>%
+          dplyr::select(-SPLIT_VEC)
+      } else {
+        input <- input %>%
+          dplyr::mutate(
+            GT_VCF_NUC = dplyr::if_else(
+              stringi::stri_detect_fixed(
+                str = GT_HAPLO, pattern = "/"),
+              GT_HAPLO,
+              stringi::stri_join(GT_HAPLO, GT_HAPLO, sep = "/")),
+            GT_VCF_NUC = stringi::stri_replace_na(str = GT_VCF_NUC, replacement = "./.")
+          ) %>%
+          dplyr::select(-GT_HAPLO)
+      }
     }
 
     conversion.df <- dplyr::select(input, MARKERS, GT_VCF_NUC) %>%
@@ -310,16 +333,34 @@ change_alleles <- function(
           dplyr::mutate(POLYMORPHIC = rep(TRUE, n()))) %>%
         dplyr::arrange(MARKERS, INTEGERS)
     }
-    ref.alt.mono <- dplyr::distinct(conversion.df,
-                                    MARKERS, REF, ALT, .keep_all = TRUE) %>%
+    ref.alt.mono <- conversion.df %>%
+      dplyr::distinct(MARKERS, REF, ALT, .keep_all = TRUE) %>%
       dplyr::select(-c(ALLELES, INTEGERS))
     conversion.df <- dplyr::select(conversion.df, MARKERS, ALLELES, INTEGERS)
+
     if (tibble::has_name(input, "REF")) {
       input <- dplyr::select(input, -c(REF, ALT))
     }
     input <- dplyr::left_join(input, ref.alt.mono, by = "MARKERS")
     ref.alt.mono <- NULL
 
+    # Inversion: change in REF/ALT
+    if (!is.null(old.ref)) {
+      new.ref <- input %>%
+        dplyr::distinct(MARKERS, REF, ALT) %>%
+        dplyr::select(MARKERS, REF_NEW = REF)
+
+      change.ref <- dplyr::full_join(new.ref, old.ref, by = "MARKERS") %>%
+        dplyr::mutate(
+          CHANGE = dplyr::if_else(REF == REF_NEW, "identical", "different")
+        ) %>%
+        dplyr::filter(CHANGE == "different") %>%
+        dplyr::select(MARKERS) %>%
+        purrr::flatten_chr(.)
+
+      message("    Number of markers with REF/ALT change(s) = ", length(change.ref))
+      change.ref <- new.ref <- old.ref <- NULL
+    }
     if (verbose) message("Integrating new genotype codings...")
     new.gt <- dplyr::distinct(input, MARKERS, GT_VCF_NUC) %>%
       dplyr::mutate(SPLIT_VEC = dplyr::ntile(x = 1:nrow(.), n = parallel.core * 3)) %>%
@@ -337,9 +378,14 @@ change_alleles <- function(
     input <- dplyr::left_join(input, new.gt, by = c("MARKERS", "GT_VCF_NUC"))
     new.gt <- conversion.df <- NULL
 
+
     if (!is.null(markers.meta)) {
-      input <- dplyr::left_join(input, markers.meta, by = "MARKERS") %>%
-        dplyr::select(MARKERS, CHROM, LOCUS, POS, POP_ID, INDIVIDUALS, dplyr::everything())
+      no.need.markers.meta <- unique(colnames(markers.meta) %in% colnames(input))
+      if (length(no.need.markers.meta) == 1 && !no.need.markers.meta) {
+        input <- dplyr::left_join(input, markers.meta, by = "MARKERS") %>%
+          dplyr::select(MARKERS, CHROM, LOCUS, POS, POP_ID, INDIVIDUALS, dplyr::everything())
+      }
+      markers.meta <- NULL
     }
   }
 

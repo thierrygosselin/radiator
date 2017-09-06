@@ -675,6 +675,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
     } else {
       # filter the vcf.data
       vcf.data <- vcf.data[keep.markers,]
+      keep.markers <- NULL
 
       input <- suppressWarnings(dplyr::select(
         .data = input,
@@ -682,7 +683,6 @@ The POS column used in the MARKERS column is different in biallelic and multiall
 
       filter.check <- NULL
     }
-
 
 
     if (!import.pegas) {
@@ -800,6 +800,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
     # recoding genotype
     if (biallelic) {# biallelic VCF
       if (verbose) message("Recoding bi-allelic VCF...")
+      input <- dplyr::rename(input, GT_VCF_NUC = GT)
     } else {#multi-allelic vcf
       if (verbose) message("Recoding VCF haplotype...")
       input <- dplyr::rename(input, GT_HAPLO = GT)
@@ -1089,8 +1090,6 @@ The POS column used in the MARKERS column is different in biallelic and multiall
       input <- suppressWarnings(input %>% dplyr::filter(POP_ID %in% pop.select))
     }
 
-    # detect if biallelic give vcf style genotypes
-    # biallelic <- radiator::detect_biallelic_markers(input)
     input.temp <- change_alleles(data = input, monomorphic.out = FALSE, verbose = verbose)
     input <- input.temp$input
     biallelic <- input.temp$biallelic
@@ -1721,7 +1720,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
         res <- suppressWarnings(
           x %>%
             dplyr::mutate(
-              AD = dplyr::if_else(GT == "./.", NA_character_, AD)) %>%
+              AD = dplyr::if_else(GT_VCF == "./.", NA_character_, AD)) %>%
             tidyr::separate(AD, c("ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH"),
                             sep = ",", extra = "drop") %>%
             dplyr::mutate(
@@ -1732,7 +1731,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
                 stringi::stri_replace_all_regex(
                   ALLELE_ALT_DEPTH, "^0$", "NA", vectorize_all = TRUE))
             ) %>%
-            dplyr::select(-GT)
+            dplyr::select(-GT_VCF)
         )
         return(res)
       }#End clean_ad
@@ -1740,7 +1739,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
       input <- dplyr::bind_cols(
         input,
         dplyr::ungroup(input) %>%
-          dplyr::select(GT, AD) %>%
+          dplyr::select(GT_VCF, AD) %>%
           split(x = ., f = split.vec) %>%
           .radiator_parallel(
             # parallel::mclapply(
@@ -1753,7 +1752,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
       if (verbose) message("DP column: cleaning and renaming to READ_DEPTH")
       input <- dplyr::rename(.data = input, READ_DEPTH = DP) %>%
         dplyr::mutate(
-          READ_DEPTH = dplyr::if_else(GT == "./.", as.numeric(NA_character_),
+          READ_DEPTH = dplyr::if_else(GT_VCF == "./.", as.numeric(NA_character_),
                                       as.numeric(READ_DEPTH))
         )
     }#End cleaning DP column
@@ -1768,21 +1767,21 @@ The POS column used in the MARKERS column is different in biallelic and multiall
       clean_pl <- function(x) {
         res <- x %>%
           dplyr::mutate(
-            PL = dplyr::if_else(GT == "./.", NA_character_, PL)) %>%
+            PL = dplyr::if_else(GT_VCF == "./.", NA_character_, PL)) %>%
           tidyr::separate(
             data = ., PL, c("PROB_HOM_REF", "PROB_HET", "PROB_HOM_ALT"),
             sep = ",", extra = "drop", remove = FALSE) %>%
           dplyr::mutate_at(
             .tbl = ., .vars = c("PROB_HOM_REF", "PROB_HET", "PROB_HOM_ALT"),
             .funs = as.numeric) %>%
-          dplyr::select(-GT)
+          dplyr::select(-GT_VCF)
         return(res)
       }#End clean_pl
 
       input <- dplyr::bind_cols(
         dplyr::select(input, -PL),
         dplyr::ungroup(input) %>%
-          dplyr::select(GT, PL) %>%
+          dplyr::select(GT_VCF, PL) %>%
           split(x = ., f = split.vec) %>%
           .radiator_parallel(
             # parallel::mclapply(
@@ -1795,7 +1794,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
       if (verbose) message("GL column: cleaning Genotype Likelihood column")
       input <- input %>%
         dplyr::mutate(
-          GL = dplyr::if_else(GT == "./.", NA_character_, GL),
+          GL = dplyr::if_else(GT_VCF == "./.", NA_character_, GL),
           GL = suppressWarnings(stringi::stri_replace_all_fixed(GL, c(".,.,.", ".,", ",."), c("NA", "", ""), vectorize_all = FALSE))
         )
 
@@ -1853,7 +1852,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
       if (verbose) message("GQ column: Genotype Quality")
       input <- dplyr::mutate(
         input,
-        GQ = dplyr::if_else(GT == "./.", as.numeric(NA_character_), as.numeric(GQ))
+        GQ = dplyr::if_else(GT_VCF == "./.", as.numeric(NA_character_), as.numeric(GQ))
       )
     }#End cleaning GQ column
 
@@ -1862,7 +1861,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
       if (verbose) message("GOF column: Goodness of fit value")
       input <- dplyr::mutate(
         input,
-        GOF = dplyr::if_else(GT == "./.", as.numeric(NA_character_), as.numeric(GOF))
+        GOF = dplyr::if_else(GT_VCF == "./.", as.numeric(NA_character_), as.numeric(GOF))
       )
     }#End cleaning GOF column
 
@@ -1882,7 +1881,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
       input <- dplyr::bind_cols(
         dplyr::select(input, -NR),
         dplyr::ungroup(input) %>%
-          dplyr::mutate(NR = dplyr::if_else(GT == "./.", NA_character_, NR)) %>%
+          dplyr::mutate(NR = dplyr::if_else(GT_VCF == "./.", NA_character_, NR)) %>%
           dplyr::select(NR) %>%
           split(x = ., f = split.vec) %>%
           .radiator_parallel_mc(
@@ -1909,7 +1908,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
       input <- dplyr::bind_cols(
         dplyr::select(input, -NV),
         dplyr::ungroup(input) %>%
-          dplyr::mutate(NV = dplyr::if_else(GT == "./.", NA_character_, NV)) %>%
+          dplyr::mutate(NV = dplyr::if_else(GT_VCF == "./.", NA_character_, NV)) %>%
           dplyr::select(NV) %>%
           split(x = ., f = split.vec) %>%
           .radiator_parallel_mc(
