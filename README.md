@@ -117,7 +117,7 @@ Change log, version, new features and bug history lives in the [NEWS.md file](ht
 **radiator v.0.0.4 2017-09-07**
 
 -   new function: `run_bayescan` to run *BayeScan* ... with *radiator*
--   new separate `write` functions also included in `genomic_converter`: `write_bayescan`, `write_pcadapt` and `write_HZAR`.
+-   new separate `write` functions also included in `genomic_converter`: `write_bayescan`, `write_pcadapt` and `write_hzar`.
 
 For previous news: [NEWS.md file](https://github.com/thierrygosselin/radiator/blob/master/NEWS.md)
 
