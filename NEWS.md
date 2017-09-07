@@ -1,7 +1,7 @@
 # radiator v.0.0.4 2017-09-07
 
 * new function: `run_bayescan` to run *BayeScan* ... with *radiator*
-* new `write` function in format: bayescan, pcadapt and HZAR
+* new separate `write` functions also included in `genomic_converter`: `write_bayescan`, `write_pcadapt` and `write_hzar`.
 
 # radiator v.0.0.3 2017-07-18
 
