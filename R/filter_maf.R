@@ -102,7 +102,6 @@ filter_maf <- function(
   maf.operator = "OR",
   maf.pop.num.threshold = 1,
   filename = NULL,
-  #save.feather = NULL,
   blacklist.id = NULL,
   blacklist.genotype = NULL,
   whitelist.markers = NULL,

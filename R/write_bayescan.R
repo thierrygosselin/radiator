@@ -59,7 +59,7 @@ write_bayescan <- function(
 
   message("Generating BayeScan file...")
   # Checking for missing and/or default arguments ------------------------------
-  if (missing(data)) stop("Input file necessary to write the bayescan file is missing")
+  if (missing(data)) stop("Input file is missing")
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {

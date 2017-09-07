@@ -30,9 +30,9 @@ Note: the column \code{POP_ID} refers to any grouping of individuals. If a third
 named \code{NEW_ID} is used, this column will be used to replace the
 \code{INDIVIDUALS} column in the main data file.}
 
-\item{output}{17 genomic data formats can be exported: tidy (by default),
+\item{output}{18 genomic data formats can be exported: tidy (by default),
 genind, genlight, vcf (for file format version, see details below), plink, genepop,
-structure, arlequin, hierfstat, gtypes (strataG), bayescan, betadiv,
+structure, arlequin, hierfstat, gtypes (strataG), bayescan, betadiv, pcadapt,
 snprelate (for SNPRelate's GDS).
 Use a character string,
 e.g. \code{output = c("genind", "genepop", "structure")}, to have preferred

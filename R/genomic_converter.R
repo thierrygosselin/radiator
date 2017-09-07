@@ -15,12 +15,12 @@
 #'   \item \strong{Imputations:} Map-independent imputation of missing genotype/alleles
 #'   using Random Forest or the most frequent category.
 #'   \item \strong{Parallel:} Some parts of the function are designed to be conduncted on multiple CPUs
-#'   \item \strong{Output:} 17 output file formats are supported (see \code{output} argument below)
+#'   \item \strong{Output:} 18 output file formats are supported (see \code{output} argument below)
 #' }
 
-#' @param output 17 genomic data formats can be exported: tidy (by default),
+#' @param output 18 genomic data formats can be exported: tidy (by default),
 #' genind, genlight, vcf (for file format version, see details below), plink, genepop,
-#' structure, arlequin, hierfstat, gtypes (strataG), bayescan, betadiv,
+#' structure, arlequin, hierfstat, gtypes (strataG), bayescan, betadiv, pcadapt,
 #' snprelate (for SNPRelate's GDS).
 #' Use a character string,
 #' e.g. \code{output = c("genind", "genepop", "structure")}, to have preferred
@@ -42,6 +42,7 @@
 #' @inheritParams write_gtypes
 #' @inheritParams write_hierfstat
 #' @inheritParams write_bayescan
+#' @inheritParams write_pcadapt
 #' @inheritParams radiator_imputations_module
 #' @inheritParams write_snprelate
 
@@ -431,7 +432,7 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
         )
       } else {
         message("IMPORTANT: you have > 20 000 markers (", marker.number, ")",
-                                   "\nDo you want the more suitable genlight object instead of the current genind? (y/n):")
+                "\nDo you want the more suitable genlight object instead of the current genind? (y/n):")
         overide.genind <- as.character(readLines(n = 1))
         if (overide.genind == "y") {
           output <- stringi::stri_replace_all_fixed(
@@ -580,12 +581,12 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
   if ("genlight" %in% output) {
     if (verbose) message("Generating adegenet genlight object without imputation")
     res$genlight.no.imputation <- radiator::write_genlight(data = input,
-                                                         biallelic = TRUE)
+                                                           biallelic = TRUE)
 
     if (!is.null(imputation.method)) {
       if (verbose) message("Generating adegenet genlight object WITH imputations")
       res$genlight.imputed <- radiator::write_genlight(data = input.imp,
-                                                     biallelic = TRUE)
+                                                       biallelic = TRUE)
     }
   } # end genlight output
 
@@ -629,11 +630,11 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
   if ("snprelate" %in% output) {
     if (verbose) message("Generating SNPRelate object without imputation")
     res$snprelate.no.imputation <- radiator::write_snprelate(data = input,
-                                                           biallelic = TRUE)
+                                                             biallelic = TRUE)
     if (!is.null(imputation.method)) {
       if (verbose) message("Generating SNPRelate object WITH imputations")
       res$snprelate.imputed <- radiator::write_snprelate(data = input.imp,
-                                                       biallelic = TRUE)
+                                                         biallelic = TRUE)
     }
   }
 
@@ -642,16 +643,47 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
     if (verbose) message("Generating BayeScan object without imputation")
     res$bayescan.no.imputation <- radiator::write_bayescan(
       data = input,
-      pop.select = NULL,
-      snp.ld = NULL,
+      pop.select = pop.select,
+      snp.ld = snp.ld,
       filename = filename)
     if (!is.null(imputation.method)) {
       if (verbose) message("Generating BayeScan object WITH imputations")
       res$bayescan.imputed <- radiator::write_bayescan(
         data = input.imp,
-        pop.select = NULL,
-        snp.ld = NULL,
+        pop.select = pop.select,
+        snp.ld = snp.ld,
         filename = filename)
+    }
+  }
+
+  # pcadapt -------------------------------------------------------------------
+  if ("pcadapt" %in% output) {
+    if (verbose) message("Generating pcadapt file and object without imputation")
+    res$pcadapt.no.imputation <- radiator::write_pcadapt(
+      data = input,
+      pop.select = pop.select,
+      snp.ld = snp.ld,
+      maf.thresholds = maf.thresholds,
+      maf.pop.num.threshold = maf.pop.num.threshold,
+      maf.approach = maf.approach,
+      maf.operator = maf.operator,
+      filename = filename,
+      parallel.core = parallel.core
+    )
+
+    if (!is.null(imputation.method)) {
+      if (verbose) message("Generating pcadapt file and object WITH imputations")
+      res$pcadapt.imputed <- radiator::write_pcadapt(
+        data = input.imp,
+        pop.select = pop.select,
+        snp.ld = snp.ld,
+        maf.thresholds = maf.thresholds,
+        maf.pop.num.threshold = maf.pop.num.threshold,
+        maf.approach = maf.approach,
+        maf.operator = maf.operator,
+        filename = filename,
+        parallel.core = parallel.core
+      )
     }
   }
 
