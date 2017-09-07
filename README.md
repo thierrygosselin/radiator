@@ -114,7 +114,7 @@ New features
 
 Change log, version, new features and bug history lives in the [NEWS.md file](https://github.com/thierrygosselin/radiator/blob/master/NEWS.md)
 
-\*\* radiator v.0.0.4 2017-09-07\*\*
+**radiator v.0.0.4 2017-09-07**
 
 -   new function: `run_bayescan` to run *BayeScan* ... with *radiator*
 -   new `write` function in format: bayescan, pcadapt and HZAR
