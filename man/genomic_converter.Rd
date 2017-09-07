@@ -23,10 +23,10 @@ genlight (library(adegenet)), gtypes (library(strataG)), genepop,
 and a data frame in long/tidy or wide format.
 \emph{See details} of \code{\link{tidy_genomic_data}}.}
 
-\item{output}{18 genomic data formats can be exported: tidy (by default),
+\item{output}{19 genomic data formats can be exported: tidy (by default),
 genind, genlight, vcf (for file format version, see details below), plink, genepop,
 structure, arlequin, hierfstat, gtypes (strataG), bayescan, betadiv, pcadapt,
-snprelate (for SNPRelate's GDS).
+hzar, snprelate (for SNPRelate's GDS).
 Use a character string,
 e.g. \code{output = c("genind", "genepop", "structure")}, to have preferred
 output formats generated. The tidy format is generated automatically.

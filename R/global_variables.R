@@ -64,7 +64,7 @@ if (getRversion() >= "2.15.1") {
       "SEQ_TYPE", "ALLELE_N", "BAYESCAN_MARKERS", "BAYESCAN_POP", "COVERAGE",
       "GENE_N", "SNP_NUM", "ALPHA", "FST", "FST_GROUP", "ITERATIONS", "LOG10_PO",
       "LOG10_Q", "POST_PROB", "PO_GROUP", "Q_VALUE", "SELECTION", "ACCURACY",
-      "SELECTION_TYPE_ON_LOCUS"
+      "SELECTION_TYPE_ON_LOCUS", "Distance"
     )
   )
 }

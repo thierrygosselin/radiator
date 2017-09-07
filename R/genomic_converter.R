@@ -18,10 +18,10 @@
 #'   \item \strong{Output:} 18 output file formats are supported (see \code{output} argument below)
 #' }
 
-#' @param output 18 genomic data formats can be exported: tidy (by default),
+#' @param output 19 genomic data formats can be exported: tidy (by default),
 #' genind, genlight, vcf (for file format version, see details below), plink, genepop,
 #' structure, arlequin, hierfstat, gtypes (strataG), bayescan, betadiv, pcadapt,
-#' snprelate (for SNPRelate's GDS).
+#' hzar, snprelate (for SNPRelate's GDS).
 #' Use a character string,
 #' e.g. \code{output = c("genind", "genepop", "structure")}, to have preferred
 #' output formats generated. The tidy format is generated automatically.
@@ -43,6 +43,7 @@
 #' @inheritParams write_hierfstat
 #' @inheritParams write_bayescan
 #' @inheritParams write_pcadapt
+#' @inheritParams write_hzar
 #' @inheritParams radiator_imputations_module
 #' @inheritParams write_snprelate
 
@@ -681,6 +682,28 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
         maf.pop.num.threshold = maf.pop.num.threshold,
         maf.approach = maf.approach,
         maf.operator = maf.operator,
+        filename = filename,
+        parallel.core = parallel.core
+      )
+    }
+  }
+
+
+  # pcadapt -------------------------------------------------------------------
+  if ("hzar" %in% output) {
+    if (verbose) message("Generating HZAR file without imputation")
+    res$hzar.no.imputation <- radiator::write_hzar(
+      data = input,
+      distance = NULL,
+      filename = filename,
+      parallel.core = parallel.core
+    )
+
+    if (!is.null(imputation.method)) {
+      if (verbose) message("Generating HZAR file WITH imputations")
+      res$hzar.imputed <- radiator::write_hzar(
+        data = input.imp,
+        distance = NULL,
         filename = filename,
         parallel.core = parallel.core
       )

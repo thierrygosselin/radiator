@@ -209,7 +209,7 @@ write_pcadapt <- function(
     if (filename.problem) {
       filename <- stringi::stri_join(filename, "_pcadapt_", file.date, ".txt")
     } else {
-      filename <- stringi::stri_join(filename, ".txt")
+      filename <- stringi::stri_join(filename, "_pcadapt", ".txt")
     }
   }
 
