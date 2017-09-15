@@ -1,6 +1,6 @@
 [![Travis-CI Build Status](https://travis-ci.org/thierrygosselin/radiator.svg?branch=master)](https://travis-ci.org/thierrygosselin/radiator) [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/thierrygosselin/radiator?branch=master&svg=true)](https://ci.appveyor.com/project/thierrygosselin/radiator) [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/radiator)](http://cran.r-project.org/package=radiator) [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active) [![DOI](https://zenodo.org/badge/14548/thierrygosselin/radiator.svg)](https://zenodo.org/badge/latestdoi/14548/thierrygosselin/radiator)
 
-[![packageversion](https://img.shields.io/badge/Package%20version-0.0.4-orange.svg)](commits/master) [![Last-changedate](https://img.shields.io/badge/last%20change-2017--09--07-brightgreen.svg)](/commits/master)
+[![packageversion](https://img.shields.io/badge/Package%20version-0.0.4-orange.svg)](commits/master) [![Last-changedate](https://img.shields.io/badge/last%20change-2017--09--15-brightgreen.svg)](/commits/master)
 
 ------------------------------------------------------------------------
 
@@ -38,7 +38,7 @@ library(radiator)
 <tbody>
 <tr class="odd">
 <td align="left"><strong>Import</strong></td>
-<td align="left">List of the 11 supported genomic file formats in <code>tidy_genomic_format</code> and <code>genomic_converter</code>:<br> <a href="https://samtools.github.io/hts-specs/">VCF, SNPs and haplotypes</a> (Danecek et al., 2011)<br><a href="http://pngu.mgh.harvard.edu/~purcell/plink/data.shtml#tr">PLINK tped/tfam</a> (Purcell et al., 2007)<br><a href="https://github.com/thibautjombart/adegenet">genind</a> (Jombart et al., 2010; Jombart and Ahmed, 2011)<br> <a href="https://github.com/thibautjombart/adegenet">genlight</a> (Jombart et al., 2010; Jombart and Ahmed, 2011), also in <code>tidy_genlight</code><br><a href="https://github.com/EricArcher/strataG">strataG gtypes</a> (Archer et al., 2016)<br><a href="http://genepop.curtin.edu.au">Genepop</a> (Raymond and Rousset, 1995; Rousset, 2008), also in <code>tidy_genepop</code><br><a href="http://catchenlab.life.illinois.edu/stacks/">STACKS haplotype file</a> (Catchen et al., 2011, 2013)<br> <a href="https://github.com/jgx65/hierfstat">hierfstat</a> (Goudet, 2005), also in <code>tidy_fstat</code><br>Dataframes of genotypes in wide or long/tidy format, also in <code>tidy_wide</code></td>
+<td align="left">List of the 12 supported genomic file formats in <code>tidy_genomic_format</code> and <code>genomic_converter</code>:<br> <a href="https://samtools.github.io/hts-specs/">VCF, SNPs and haplotypes</a> (Danecek et al., 2011)<br><a href="http://pngu.mgh.harvard.edu/~purcell/plink/data.shtml#tr">PLINK tped/tfam</a> (Purcell et al., 2007)<br><a href="https://github.com/thibautjombart/adegenet">genind</a> (Jombart et al., 2010; Jombart and Ahmed, 2011)<br> <a href="https://github.com/thibautjombart/adegenet">genlight</a> (Jombart et al., 2010; Jombart and Ahmed, 2011), also in <code>tidy_genlight</code><br><a href="https://github.com/EricArcher/strataG">strataG gtypes</a> (Archer et al., 2016)<br><a href="http://genepop.curtin.edu.au">Genepop</a> (Raymond and Rousset, 1995; Rousset, 2008), also in <code>tidy_genepop</code><br><a href="http://catchenlab.life.illinois.edu/stacks/">STACKS haplotype file</a> (Catchen et al., 2011, 2013)<br><a href="https://github.com/jgx65/hierfstat">hierfstat</a> (Goudet, 2005), also in <code>tidy_fstat</code><br><a href="http://www.diversityarrays.com">DArT file</a><br>Dataframes of genotypes in wide or long/tidy format, also in <code>tidy_wide</code></td>
 </tr>
 <tr class="even">
 <td align="left"><strong>Output</strong></td>
@@ -80,8 +80,8 @@ library(radiator)
 Prerequisite - Suggestions - Troubleshooting
 --------------------------------------------
 
--   **Parallel computing**: Follow the steps in this [vignette](https://github.com/thierrygosselin/radiator/blob/master/vignettes/vignette_imputations_parallel.Rmd) to install [data.table](https://github.com/Rdatatable/data.table) and [XGBoost](https://github.com/dmlc/xgboost) packages (e.g. to do imputations in parallel).
--   **Installation problem:** see this [vignette](https://github.com/thierrygosselin/radiator/blob/master/vignettes/vignette_installation_problems.Rmd)
+-   **Parallel computing**: Follow the steps in this vignette [Rmd](https://www.dropbox.com/s/250r5zzuev25zvp/vignette_imputations_parallel.Rmd?dl=0) or [html](https://www.dropbox.com/s/czyli3bp8ua96tv/vignette_imputations_parallel.html?dl=0) to install [data.table](https://github.com/Rdatatable/data.table) and [XGBoost](https://github.com/dmlc/xgboost) packages (e.g. to do imputations in parallel).
+-   **Installation problem:** see this vignette [Rmd](https://www.dropbox.com/s/0swxjyxnnfaypxs/vignette_installation_problems.Rmd?dl=0) or [html](https://www.dropbox.com/s/qob8hi70117h2po/vignette_installation_problems.html?dl=0)
 -   **Windows users**: Install [Rtools](https://cran.r-project.org/bin/windows/Rtools/).
 -   For a better experience in **radiator** and in R in general, I recommend using [RStudio](https://www.rstudio.com/products/rstudio/download/). The R GUI is unstable with functions using parallel ([more info](https://stat.ethz.ch/R-manual/R-devel/library/parallel/html/mclapply.html)).
 
@@ -91,10 +91,9 @@ Vignettes, R Notebooks and examples
 **Vignettes (in development, check periodically for updates):**
 
 -   Vignettes with real data for example in the form of R Notebooks take too much space to be included in package, without CRAN complaining. Consequently, vignettes are gradually being excluded from the package and distributed separately, follow the links below.
--   [installation problems](https://github.com/thierrygosselin/radiator/blob/master/vignettes/vignette_installation_problems.Rmd)
--   [parallel computing during imputations](https://github.com/thierrygosselin/radiator/blob/master/vignettes/vignette_imputations_parallel.Rmd)
--   [vcf2dadi](https://github.com/thierrygosselin/radiator/blob/master/vignettes/vignette_vcf2dadi.Rmd)
--   [haplo2genind](https://github.com/thierrygosselin/radiator/blob/master/vignettes/vignette_haplo2genind.Rmd)
+-   **installation problems** [Rmd](https://www.dropbox.com/s/0swxjyxnnfaypxs/vignette_installation_problems.Rmd?dl=0) or [html](https://www.dropbox.com/s/qob8hi70117h2po/vignette_installation_problems.html?dl=0)
+-   **parallel computing during imputations** [Rmd](https://www.dropbox.com/s/250r5zzuev25zvp/vignette_imputations_parallel.Rmd?dl=0) or [html](https://www.dropbox.com/s/czyli3bp8ua96tv/vignette_imputations_parallel.html?dl=0)
+-   **vcf2dadi** [Rmd](https://www.dropbox.com/s/bl0mv6kavz97ibz/vignette_vcf2dadi.Rmd?dl=0) or [html](https://www.dropbox.com/s/xbgxk2valwl5o44/vignette_vcf2dadi.html?dl=0)
 
 **R Notebooks:**
 
