@@ -184,7 +184,7 @@ Random Forests algorithm.
 
 \code{imputation.method = NULL} will return the original dataset, without
 imputation.
-Default: \code{imputation.method = "rf"}.}
+Default: \code{imputation.method = "NULL"}.}
 
 \item{hierarchical.levels}{(character, optional) \code{c("global", "populations")}.
 Should the imputations be computed globally or by populations. Note that
