@@ -44,7 +44,7 @@ to keep (except the GT field that is always imported).
 e.g. \code{vcf.metadata = "PL"} or \code{vcf.metadata = c("DP", "GL")}.
 Default: \code{vcf.metadata = FALSE}.}
 
-\item{filename}{(optional) The filename prefix for the objet in the global environment
+\item{filename}{(optional) The filename prefix for the object in the global environment
 or the working directory. Default: \code{filename = NULL}. A default name will be used,
 customized with the output file(s) selected.}
 
