@@ -263,9 +263,9 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
     }
 
     if (is.null(output)) {
-      message("Ouput format(s): tidy")
+      message("Output format(s): tidy")
     } else {
-      message(stringi::stri_join("Ouput format(s): tidy, ", stringi::stri_join(output, collapse = ", ")))
+      message(stringi::stri_join("Output format(s): tidy, ", stringi::stri_join(output, collapse = ", ")))
     }
 
     if (is.null(filename)) {
