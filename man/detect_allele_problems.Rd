@@ -12,12 +12,12 @@ detect_allele_problems(data, allele.threshold = 3, whitelist.markers = NULL,
   strata = NULL, pop.select = NULL, filename = NULL, verbose = FALSE)
 }
 \arguments{
-\item{data}{11 options: VCF (SNPs or Haplotypes,
+\item{data}{12 options: VCF (SNPs or Haplotypes,
 to make the vcf population ready, see details below),
 plink, stacks haplotype file, genind (library(adegenet)),
-genlight (library(adegenet)), gtypes (library(strataG)), genepop,
+genlight (library(adegenet)), gtypes (library(strataG)), genepop, DArT,
 and a data frame in long/tidy or wide format.
-\emph{See details} of \code{\link{tidy_genomic_data}}.}
+\emph{See details} of \code{\link[radiator]{tidy_genomic_data}}.}
 
 \item{allele.threshold}{(integer) Threshold of alternate allele copies.
 Below this threshold markers are blacklisted. Choose this threshold based
@@ -51,7 +51,7 @@ with 'un' need to be changed to 1.
 Default: \code{blacklist.genotype = NULL} for no blacklist of
 genotypes to erase.}
 
-\item{snp.ld}{(optional) \strong{For VCF file only}.
+\item{snp.ld}{(optional) \strong{For data with locus and SNP info, like VCF and DArT file}.
 SNP short distance linkage disequilibrium pruning. With anonymous markers from
 RADseq/GBS de novo discovery, you can minimize linkage disequilibrium (LD) by
 choosing among these 3 options: \code{"random"} selection, \code{"first"} or

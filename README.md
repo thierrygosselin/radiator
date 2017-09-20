@@ -1,6 +1,6 @@
 [![Travis-CI Build Status](https://travis-ci.org/thierrygosselin/radiator.svg?branch=master)](https://travis-ci.org/thierrygosselin/radiator) [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/thierrygosselin/radiator?branch=master&svg=true)](https://ci.appveyor.com/project/thierrygosselin/radiator) [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/radiator)](http://cran.r-project.org/package=radiator) [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active) [![DOI](https://zenodo.org/badge/14548/thierrygosselin/radiator.svg)](https://zenodo.org/badge/latestdoi/14548/thierrygosselin/radiator)
 
-[![packageversion](https://img.shields.io/badge/Package%20version-0.0.4-orange.svg)](commits/master) [![Last-changedate](https://img.shields.io/badge/last%20change-2017--09--15-brightgreen.svg)](/commits/master)
+[![packageversion](https://img.shields.io/badge/Package%20version-0.0.4-orange.svg)](commits/master) [![Last-changedate](https://img.shields.io/badge/last%20change-2017--09--20-brightgreen.svg)](/commits/master)
 
 ------------------------------------------------------------------------
 
@@ -112,6 +112,8 @@ New features
 ------------
 
 Change log, version, new features and bug history lives in the [NEWS.md file](https://github.com/thierrygosselin/radiator/blob/master/NEWS.md)
+
+**radiator v.0.0.5 2017-09-20** \* `tidy_dart` and `filter_dart`: \* big overhaul. \* importing 1 and 2 row genotypes (called sometimes binary format) is easier and no longer require to prep the DArT file (the function parse DArT data with `*` at the beginning of certain lines). \* filtering is easier and now interactive for those who want. \* plots are generated automatically. \* `tidy_genomic_data` and `genomic_converter` can now accept DArT data directly. \* several typos where fix. Thanks to @IdoBar for this.
 
 **radiator v.0.0.4 2017-09-07**
 

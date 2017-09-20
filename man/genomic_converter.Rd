@@ -16,12 +16,12 @@ genomic_converter(data, output = NULL, vcf.metadata = FALSE,
   parallel.core = parallel::detectCores() - 1, verbose = FALSE)
 }
 \arguments{
-\item{data}{11 options: VCF (SNPs or Haplotypes,
+\item{data}{12 options: VCF (SNPs or Haplotypes,
 to make the vcf population ready, see details below),
 plink, stacks haplotype file, genind (library(adegenet)),
-genlight (library(adegenet)), gtypes (library(strataG)), genepop,
+genlight (library(adegenet)), gtypes (library(strataG)), genepop, DArT,
 and a data frame in long/tidy or wide format.
-\emph{See details} of \code{\link{tidy_genomic_data}}.}
+\emph{See details} of \code{\link[radiator]{tidy_genomic_data}}.}
 
 \item{output}{19 genomic data formats can be exported: tidy (by default),
 genind, genlight, vcf (for file format version, see details below), plink, genepop,
@@ -44,7 +44,7 @@ to keep (except the GT field that is always imported).
 e.g. \code{vcf.metadata = "PL"} or \code{vcf.metadata = c("DP", "GL")}.
 Default: \code{vcf.metadata = FALSE}.}
 
-\item{filename}{(optional) The filename prefix for the objet in the global environment
+\item{filename}{(optional) The filename prefix for the object in the global environment
 or the working directory. Default: \code{filename = NULL}. A default name will be used,
 customized with the output file(s) selected.}
 
@@ -80,7 +80,7 @@ Default \code{whitelist.markers = NULL} for no whitelist of markers.}
 markers present in the dataset be filtered out ?
 Default: \code{monomorphic.out = TRUE}.}
 
-\item{snp.ld}{(optional) \strong{For VCF file only}.
+\item{snp.ld}{(optional) \strong{For data with locus and SNP info, like VCF and DArT file}.
 SNP short distance linkage disequilibrium pruning. With anonymous markers from
 RADseq/GBS de novo discovery, you can minimize linkage disequilibrium (LD) by
 choosing among these 3 options: \code{"random"} selection, \code{"first"} or
@@ -182,9 +182,8 @@ Random Forests algorithm.
 
 (4) \code{imputation.method = "mca"} Multiple Correspondence Analysis.
 
-\code{imputation.method = NULL} will return the original dataset, without
-imputation.
-Default: \code{imputation.method = "rf"}.}
+\code{imputation.method = NULL} the function will stop.
+Default: \code{imputation.method = NULL}.}
 
 \item{hierarchical.levels}{(character, optional) \code{c("global", "populations")}.
 Should the imputations be computed globally or by populations. Note that
@@ -229,7 +228,7 @@ The arguments in the \code{genomic_converter} function were tailored for the
 reality of GBS/RADseq data while maintaining a reproducible workflow.
 
 \itemize{
-  \item \strong{Input file:} 11 file formats are supported (see \code{data} argument below)
+  \item \strong{Input file:} 12 file formats are supported (see \code{data} argument below)
   \item \strong{Filters:} genotypes, markers, individuals and populations can be
   filtered and/or selected in several ways using blacklist,
   whitelist and other arguments

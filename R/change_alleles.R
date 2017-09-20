@@ -65,6 +65,7 @@
 #' \emph{How to get a tidy data frame ?}
 #' \pkg{radiator} \code{\link{tidy_genomic_data}} can transform 6 genomic data formats
 #' in a tidy data frame.
+
 #' @export
 #' @rdname change_alleles
 #' @importFrom dplyr select mutate group_by ungroup rename tally filter if_else arrange summarise top_n distinct coalesce if_else full_join

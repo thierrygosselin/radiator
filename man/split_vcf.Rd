@@ -10,12 +10,12 @@ split_vcf(data, strata, monomorphic.out = FALSE, common.markers = FALSE,
   parallel.core = parallel::detectCores() - 1)
 }
 \arguments{
-\item{data}{11 options: VCF (SNPs or Haplotypes,
+\item{data}{12 options: VCF (SNPs or Haplotypes,
 to make the vcf population ready, see details below),
 plink, stacks haplotype file, genind (library(adegenet)),
-genlight (library(adegenet)), gtypes (library(strataG)), genepop,
+genlight (library(adegenet)), gtypes (library(strataG)), genepop, DArT,
 and a data frame in long/tidy or wide format.
-\emph{See details} of \code{\link{tidy_genomic_data}}.}
+\emph{See details} of \code{\link[radiator]{tidy_genomic_data}}.}
 
 \item{strata}{A file identical to the strata file usually used in radiator,
 with an additional column named: \code{SPLIT}.

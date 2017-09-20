@@ -22,8 +22,8 @@ during execution.
 Default: \code{verbose = FALSE}.}
 }
 \value{
-The filtered input data set with markers found in all the populations
-present in the data set.
+A list with the filtered input data set,
+the whitelist of markers in common and the blacklist of markers discarded.
 }
 \description{
 Keep markers in common between all populations.

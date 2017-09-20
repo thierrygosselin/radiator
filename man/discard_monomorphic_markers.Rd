@@ -12,8 +12,8 @@ a tidy data frame in wide or long format in the working directory.
 \emph{How to get a tidy data frame ?}
 Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.}
 
-\item{verbose}{(optional, logical) \code{verbose = TRUE} to be chatty 
-during execution. 
+\item{verbose}{(optional, logical) \code{verbose = TRUE} to be chatty
+during execution.
 Default: \code{verbose = FALSE}.}
 }
 \value{
@@ -21,7 +21,7 @@ A list with the filtered input file and the blacklist of markers removed.
 }
 \description{
 Discard monomorphic markers.
-Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator} 
+Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and might be of interest for users.
 }
 \author{

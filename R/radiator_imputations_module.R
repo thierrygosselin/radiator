@@ -77,9 +77,8 @@
 #'
 #' (4) \code{imputation.method = "mca"} Multiple Correspondence Analysis.
 #'
-#' \code{imputation.method = NULL} will return the original dataset, without
-#' imputation.
-#' Default: \code{imputation.method = "rf"}.
+#' \code{imputation.method = NULL} the function will stop.
+#' Default: \code{imputation.method = NULL}.
 
 #' @param hierarchical.levels (character, optional) \code{c("global", "populations")}.
 #' Should the imputations be computed globally or by populations. Note that
@@ -329,7 +328,7 @@
 
 radiator_imputations_module <- function(
   data,
-  imputation.method = "rf",
+  imputation.method = NULL,
   hierarchical.levels = "populations",
   # markers.linkage = "multivariate",
   num.tree = 50,
@@ -349,6 +348,11 @@ radiator_imputations_module <- function(
     cat("########################### grur::grur_imputations ############################\n")
     cat("###############################################################################\n")
   }
+  if (is.null(imputation.method)) {
+    message("Imputation method: NULL")
+    message("Returning the tidy dataset")
+    input.imp <- data
+  } else {
   message("Imputation method: ", imputation.method)
   message("Hierarchical levels: ", hierarchical.levels)
   # message("Markers linkage: ", markers.linkage, "\n")
@@ -1261,7 +1265,7 @@ radiator_imputations_module <- function(
             grur_imputations_error.txt
             email the problem to the author: thierrygosselin@icloud.com")
   }
-
+}
   if (verbose) {
     # output the proportion of missing genotypes after imputations
     timing <- proc.time() - timing

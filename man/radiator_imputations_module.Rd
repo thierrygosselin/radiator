@@ -4,7 +4,7 @@
 \alias{radiator_imputations_module}
 \title{Map-independent imputations of missing genotypes}
 \usage{
-radiator_imputations_module(data, imputation.method = "rf",
+radiator_imputations_module(data, imputation.method = NULL,
   hierarchical.levels = "populations", num.tree = 50,
   pred.mean.matching = 0, verbose = TRUE,
   parallel.core = parallel::detectCores() - 1, random.seed = NULL,
@@ -30,9 +30,8 @@ Random Forests algorithm.
 
 (4) \code{imputation.method = "mca"} Multiple Correspondence Analysis.
 
-\code{imputation.method = NULL} will return the original dataset, without
-imputation.
-Default: \code{imputation.method = "rf"}.}
+\code{imputation.method = NULL} the function will stop.
+Default: \code{imputation.method = NULL}.}
 
 \item{hierarchical.levels}{(character, optional) \code{c("global", "populations")}.
 Should the imputations be computed globally or by populations. Note that

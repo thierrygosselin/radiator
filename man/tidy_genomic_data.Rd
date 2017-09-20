@@ -13,12 +13,12 @@ tidy_genomic_data(data, vcf.metadata = FALSE, whitelist.markers = NULL,
   parallel.core = parallel::detectCores() - 1, verbose = TRUE)
 }
 \arguments{
-\item{data}{11 options: VCF (SNPs or Haplotypes,
+\item{data}{12 options: VCF (SNPs or Haplotypes,
 to make the vcf population ready, see details below),
 plink, stacks haplotype file, genind (library(adegenet)),
-genlight (library(adegenet)), gtypes (library(strataG)), genepop,
+genlight (library(adegenet)), gtypes (library(strataG)), genepop, DArT,
 and a data frame in long/tidy or wide format.
-\emph{See details} of \code{\link{tidy_genomic_data}}.}
+\emph{See details} of \code{\link[radiator]{tidy_genomic_data}}.}
 
 \item{vcf.metadata}{(optional, logical or string) For VCF files only.
 With \code{logical, TRUE/FALSE}, \code{vcf.metadata = FALSE}, only the genotype
@@ -58,7 +58,7 @@ with 'un' need to be changed to 1.
 Default: \code{blacklist.genotype = NULL} for no blacklist of
 genotypes to erase.}
 
-\item{snp.ld}{(optional) \strong{For VCF file only}.
+\item{snp.ld}{(optional) \strong{For data with locus and SNP info, like VCF and DArT file}.
 SNP short distance linkage disequilibrium pruning. With anonymous markers from
 RADseq/GBS de novo discovery, you can minimize linkage disequilibrium (LD) by
 choosing among these 3 options: \code{"random"} selection, \code{"first"} or
@@ -174,8 +174,9 @@ If \code{filename} is provided, the tidy data frame is also
 written to the working directory with file extension \code{.rad}.
 }
 \description{
-Transform genomic data set produced by massive parallel sequencing pipeline (e.g.GBS/RADseq,
-SNP chip, etc) into a tidy format. The use of blacklist and whitelist along
+Transform genomic data set produced by massive parallel
+sequencing pipeline (e.g.GBS/RADseq,
+SNP chip, DArT, etc) into a tidy format. The use of blacklist and whitelist along
 several filtering options are available to prune the dataset.
 Several arguments are available to make your data population-wise and easily
 rename the pop id.
@@ -240,13 +241,15 @@ PLINK or bash to convert.
 Use \href{http://vcftools.sourceforge.net/}{VCFTOOLS} with \code{--plink-tped}
 to convert very large VCF file. For \code{.ped} file conversion to
 \code{.tped} use \href{http://pngu.mgh.harvard.edu/~purcell/plink/}{PLINK}
-with \code{--recode transpose},
+with \code{--recode transpose}
 
 \item \code{\link[adegenet]{genind}} object from \code{\link[adegenet]{adegenet}}.
 
 \item \code{\link[adegenet]{genlight}} object from \code{\link[adegenet]{adegenet}}.
 
 \item \code{\link[strataG]{gtypes}} object from \code{\link[strataG]{strataG}}.
+
+\item \href{http://www.diversityarrays.com}{DArT} file.
 
 \item genepop data file (e.g. \code{data = "kiwi_data.gen"}). Here, the function can only use
 alleles encoded with 3 digits.

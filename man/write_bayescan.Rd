@@ -19,7 +19,7 @@ the analysis. e.g. \code{pop.select = c("QUE", "ONT")} to select \code{QUE}
 and \code{ONT} population samples (out of 20 pops).
 Default: \code{pop.select = NULL}}
 
-\item{snp.ld}{(optional) \strong{For VCF file only}.
+\item{snp.ld}{(optional) \strong{For data with locus and SNP info, like VCF and DArT file}.
 SNP short distance linkage disequilibrium pruning. With anonymous markers from
 RADseq/GBS de novo discovery, you can minimize linkage disequilibrium (LD) by
 choosing among these 3 options: \code{"random"} selection, \code{"first"} or

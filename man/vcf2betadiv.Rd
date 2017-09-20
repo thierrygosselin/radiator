@@ -15,12 +15,12 @@ vcf2betadiv(data, output, filename = NULL, blacklist.id = NULL,
   verbose = FALSE, parallel.core = detectCores() - 1)
 }
 \arguments{
-\item{data}{11 options: VCF (SNPs or Haplotypes,
+\item{data}{12 options: VCF (SNPs or Haplotypes,
 to make the vcf population ready, see details below),
 plink, stacks haplotype file, genind (library(adegenet)),
-genlight (library(adegenet)), gtypes (library(strataG)), genepop,
+genlight (library(adegenet)), gtypes (library(strataG)), genepop, DArT,
 and a data frame in long/tidy or wide format.
-\emph{See details} of \code{\link{tidy_genomic_data}}.}
+\emph{See details} of \code{\link[radiator]{tidy_genomic_data}}.}
 
 \item{output}{19 genomic data formats can be exported: tidy (by default),
 genind, genlight, vcf (for file format version, see details below), plink, genepop,
@@ -31,7 +31,7 @@ e.g. \code{output = c("genind", "genepop", "structure")}, to have preferred
 output formats generated. The tidy format is generated automatically.
 Default: \code{output = NULL}.}
 
-\item{filename}{(optional) The filename prefix for the objet in the global environment
+\item{filename}{(optional) The filename prefix for the object in the global environment
 or the working directory. Default: \code{filename = NULL}. A default name will be used,
 customized with the output file(s) selected.}
 
@@ -67,7 +67,7 @@ Default \code{whitelist.markers = NULL} for no whitelist of markers.}
 markers present in the dataset be filtered out ?
 Default: \code{monomorphic.out = TRUE}.}
 
-\item{snp.ld}{(optional) \strong{For VCF file only}.
+\item{snp.ld}{(optional) \strong{For data with locus and SNP info, like VCF and DArT file}.
 SNP short distance linkage disequilibrium pruning. With anonymous markers from
 RADseq/GBS de novo discovery, you can minimize linkage disequilibrium (LD) by
 choosing among these 3 options: \code{"random"} selection, \code{"first"} or
@@ -169,9 +169,8 @@ Random Forests algorithm.
 
 (4) \code{imputation.method = "mca"} Multiple Correspondence Analysis.
 
-\code{imputation.method = NULL} will return the original dataset, without
-imputation.
-Default: \code{imputation.method = "rf"}.}
+\code{imputation.method = NULL} the function will stop.
+Default: \code{imputation.method = NULL}.}
 
 \item{hierarchical.levels}{(character, optional) \code{c("global", "populations")}.
 Should the imputations be computed globally or by populations. Note that

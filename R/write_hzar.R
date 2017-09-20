@@ -78,7 +78,7 @@ write_hzar <- function(
   }
 
   # Keeping common markers -----------------------------------------------------
-  input <- radiator::keep_common_markers(data = input, verbose = TRUE)
+  input <- radiator::keep_common_markers(data = input, verbose = TRUE)$input
 
   # Removing monomorphic markers -----------------------------------------------
   input <- radiator::discard_monomorphic_markers(data = input, verbose = TRUE)$input

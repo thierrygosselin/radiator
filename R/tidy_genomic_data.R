@@ -2,8 +2,9 @@
 
 #' @name tidy_genomic_data
 #' @title Transform common genomic dataset format in a tidy data frame
-#' @description Transform genomic data set produced by massive parallel sequencing pipeline (e.g.GBS/RADseq,
-#' SNP chip, etc) into a tidy format. The use of blacklist and whitelist along
+#' @description Transform genomic data set produced by massive parallel
+#' sequencing pipeline (e.g.GBS/RADseq,
+#' SNP chip, DArT, etc) into a tidy format. The use of blacklist and whitelist along
 #' several filtering options are available to prune the dataset.
 #' Several arguments are available to make your data population-wise and easily
 #' rename the pop id.
@@ -11,12 +12,12 @@
 #' and \href{https://github.com/thierrygosselin/assigner}{assigner}
 #' and might be of interest for users.
 
-#' @param data 11 options: VCF (SNPs or Haplotypes,
+#' @param data 12 options: VCF (SNPs or Haplotypes,
 #' to make the vcf population ready, see details below),
 #' plink, stacks haplotype file, genind (library(adegenet)),
-#' genlight (library(adegenet)), gtypes (library(strataG)), genepop,
+#' genlight (library(adegenet)), gtypes (library(strataG)), genepop, DArT,
 #' and a data frame in long/tidy or wide format.
-#' \emph{See details} of \code{\link{tidy_genomic_data}}.
+#' \emph{See details} of \code{\link[radiator]{tidy_genomic_data}}.
 
 #' @param vcf.metadata (optional, logical or string) For VCF files only.
 #' With \code{logical, TRUE/FALSE}, \code{vcf.metadata = FALSE}, only the genotype
@@ -56,7 +57,7 @@
 #' Default: \code{blacklist.genotype = NULL} for no blacklist of
 #' genotypes to erase.
 
-#' @param snp.ld (optional) \strong{For VCF file only}.
+#' @param snp.ld (optional) \strong{For data with locus and SNP info, like VCF and DArT file}.
 #' SNP short distance linkage disequilibrium pruning. With anonymous markers from
 #' RADseq/GBS de novo discovery, you can minimize linkage disequilibrium (LD) by
 #' choosing among these 3 options: \code{"random"} selection, \code{"first"} or
@@ -228,13 +229,15 @@
 #' Use \href{http://vcftools.sourceforge.net/}{VCFTOOLS} with \code{--plink-tped}
 #' to convert very large VCF file. For \code{.ped} file conversion to
 #' \code{.tped} use \href{http://pngu.mgh.harvard.edu/~purcell/plink/}{PLINK}
-#' with \code{--recode transpose},
+#' with \code{--recode transpose}
 #'
 #' \item \code{\link[adegenet]{genind}} object from \code{\link[adegenet]{adegenet}}.
 #'
 #' \item \code{\link[adegenet]{genlight}} object from \code{\link[adegenet]{adegenet}}.
 #'
 #' \item \code{\link[strataG]{gtypes}} object from \code{\link[strataG]{strataG}}.
+#'
+#' \item \href{http://www.diversityarrays.com}{DArT} file.
 #'
 #' \item genepop data file (e.g. \code{data = "kiwi_data.gen"}). Here, the function can only use
 #' alleles encoded with 3 digits.
@@ -401,7 +404,9 @@ tidy_genomic_data <- function(
 
   # Import whitelist of markers-------------------------------------------------
   if (!is.null(whitelist.markers)) {# with Whitelist of markers
-    suppressMessages(whitelist.markers <- readr::read_tsv(whitelist.markers, col_names = TRUE))
+    if (is.vector(whitelist.markers)) {
+      suppressMessages(whitelist.markers <- readr::read_tsv(whitelist.markers, col_names = TRUE))
+    }
     columns.names.whitelist <- colnames(whitelist.markers)
     if ("CHROM" %in% columns.names.whitelist) {
       whitelist.markers$CHROM <- as.character(whitelist.markers$CHROM)
@@ -455,7 +460,7 @@ tidy_genomic_data <- function(
   if (!is.null(strata)) {
     if (is.vector(strata)) {
       # message("strata file: yes")
-      number.columns.strata <- max(utils::count.fields(strata, sep = "\t"))
+      number.columns.strata <- max(utils::count.fields(strata, sep = "\t"), na.rm = TRUE)
       col.types <- stringi::stri_join(rep("c", number.columns.strata), collapse = "")
       suppressMessages(strata.df <- readr::read_tsv(file = strata, col_names = TRUE, col_types = col.types) %>%
                          dplyr::rename(POP_ID = STRATA))
@@ -809,7 +814,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
     # split data for 3 rounds of CPU
     # to work, same markers in same split...
     if (verbose) message("Calculating REF/ALT alleles...")
-    input <- change_alleles(
+    input <- radiator::change_alleles(
       data = input,
       monomorphic.out = FALSE,
       biallelic = biallelic,
@@ -954,15 +959,42 @@ The POS column used in the MARKERS column is different in biallelic and multiall
       variable.factor = FALSE,
       value.factor = FALSE
     ) %>%
-      tibble::as_data_frame() %>%
-      dplyr::mutate(GT = stringi::stri_pad_left(str = GT, width = 3, pad = "0")) %>%
-      tidyr::separate(data = ., col = INDIVIDUALS_ALLELES, into = c("INDIVIDUALS", "ALLELES"), sep = "_")
+      tibble::as_data_frame()
 
-    input <- data.table::dcast.data.table(
-      data = data.table::as.data.table(input),
-      formula = LOCUS + INDIVIDUALS ~ ALLELES,
-      value.var = "GT"
-    ) %>%
+    # detect GT coding
+    if (verbose) message("Scanning for PLINK tped genotype coding")
+    detect.gt.coding <- unique(sample(x = input$GT, size = 100, replace = FALSE))
+    gt.letters <- c("A", "C", "G", "T")
+
+    if (TRUE %in% unique(gt.letters %in% detect.gt.coding)) {
+      if (verbose) message("    genotypes coded with letters")
+      gt.letters.df <- tibble::data_frame(GT = c("A", "C", "G", "T", "0"), NEW_GT = c("001", "002", "003", "004", "000"))
+      input <- dplyr::left_join(
+        input,
+        gt.letters.df, by = "GT") %>%
+        dplyr::select(-GT) %>%
+        dplyr::rename(GT = NEW_GT)
+      gt.letters.df <- NULL
+    } else {
+      if (verbose) message("    genotypes coded with integers")
+      input <- input %>%
+        dplyr::mutate(GT = stringi::stri_pad_left(str = GT, width = 3, pad = "0"))
+    }
+    detect.gt.coding <- gt.letters <- NULL
+
+
+    input <- input %>%
+      tidyr::separate(
+        data = .,
+        col = INDIVIDUALS_ALLELES,
+        into = c("INDIVIDUALS", "ALLELES"),
+        sep = "_") %>%
+      data.table::as.data.table(.) %>%
+      data.table::dcast.data.table(
+        data = .,
+        formula = LOCUS + INDIVIDUALS ~ ALLELES,
+        value.var = "GT"
+      ) %>%
       tibble::as_data_frame() %>%
       tidyr::unite(data = ., col = GT, A1, A2, sep = "") %>%
       dplyr::select(LOCUS, INDIVIDUALS, GT)
@@ -1003,7 +1035,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
 
     # detect if biallelic give vcf style genotypes
     # biallelic <- radiator::detect_biallelic_markers(input)
-    input.temp <- change_alleles(data = input, monomorphic.out = FALSE, verbose = verbose)
+    input.temp <- radiator::change_alleles(data = input, monomorphic.out = FALSE, verbose = verbose)
     input <- input.temp$input
     biallelic <- input.temp$biallelic
   } # End import PLINK
@@ -1019,6 +1051,17 @@ The POS column used in the MARKERS column is different in biallelic and multiall
   if (data.type == "fst.file") {
     if (verbose) message("Importing the fst.file as a data frame...")
     data <- fst::read.fst(path = data)
+    data.type <- "tbl_df"
+  }
+
+  # Import DArT ----------------------------------------------------------------
+  if (data.type == "dart") {
+    if (verbose) message("Tidying DArT data...")
+    data <- radiator::tidy_dart(
+      data = data,
+      strata = strata,
+      verbose = FALSE,
+      parallel.core = parallel.core)
     data.type <- "tbl_df"
   }
 
@@ -1090,7 +1133,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
       input <- suppressWarnings(input %>% dplyr::filter(POP_ID %in% pop.select))
     }
 
-    input.temp <- change_alleles(data = input, monomorphic.out = FALSE, verbose = verbose)
+    input.temp <- radiator::change_alleles(data = input, monomorphic.out = FALSE, verbose = verbose)
     input <- input.temp$input
     biallelic <- input.temp$biallelic
   } # End import data frame of genotypes
@@ -1214,7 +1257,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
 
     if (verbose) message("Calculating REF/ALT alleles...")
 
-    input <- change_alleles(
+    input <- radiator::change_alleles(
       data = input,
       monomorphic.out = monomorphic.out,
       parallel.core = parallel.core,
@@ -1313,7 +1356,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
 
     # detect if biallelic give vcf style genotypes
     # biallelic <- radiator::detect_biallelic_markers(input)
-    input.temp <- change_alleles(data = input, monomorphic.out = FALSE, verbose = verbose)
+    input.temp <- radiator::change_alleles(data = input, monomorphic.out = FALSE, verbose = verbose)
     input <- input.temp$input
     biallelic <- input.temp$biallelic
 
@@ -1454,7 +1497,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
 
     # detect if biallelic give vcf style genotypes
     # biallelic <- radiator::detect_biallelic_markers(input)
-    input.temp <- change_alleles(data = input, monomorphic.out = FALSE, verbose = verbose)
+    input.temp <- radiator::change_alleles(data = input, monomorphic.out = FALSE, verbose = verbose)
     input <- input.temp$input
     biallelic <- input.temp$biallelic
 
@@ -1549,56 +1592,57 @@ The POS column used in the MARKERS column is different in biallelic and multiall
   want <- blacklist.genotype <- NULL
   # SNP LD  --------------------------------------------------------------------
   if (!is.null(snp.ld)) {
-    if (!tibble::has_name(input, "POS")) {
-      stop("snp.ld is only available for VCF file, use radiator package for
-           haplotype file and create a whitelist, for other file type, use
-           SNPRelate package or PLINK linkage disequilibrium based SNP pruning
-           option")
-    }
-    if (verbose) message("Minimizing LD...")
-    snp.locus <- input %>% dplyr::distinct(LOCUS, POS)
-
-    # Random selection
-    if (snp.ld == "random") {
-      snp.select <- snp.locus %>%
-        dplyr::group_by(LOCUS) %>%
-        sample_n(size = 1, replace = FALSE)
-      message(
-        "Number of original SNP = ",
-        dplyr::n_distinct(snp.locus$POS), "\n",
-        "Number of SNP randomly selected to keep 1 SNP per read/haplotype = ",
-        dplyr::n_distinct(snp.select$POS), "\n", "Number of SNP removed = ",
-        dplyr::n_distinct(snp.locus$POS) - dplyr::n_distinct(snp.select$POS))
-    }
-
-    # Fist SNP on the read
-    if (snp.ld == "first") {
-      snp.select <- snp.locus %>%
-        dplyr::group_by(LOCUS) %>%
-        dplyr::summarise(POS = min(POS))
-      message(
-        "Number of original SNP = ",
-        dplyr::n_distinct(snp.locus$POS), "\n",
-        "Number of SNP after keeping the first SNP on the read/haplotype = ",
-        dplyr::n_distinct(snp.select$POS), "\n", "Number of SNP removed = ",
-        dplyr::n_distinct(snp.locus$POS) - dplyr::n_distinct(snp.select$POS))
-    }
-
-    # Last SNP on the read
-    if (snp.ld == "last") {
-      snp.select <- snp.locus %>%
-        dplyr::group_by(LOCUS) %>%
-        dplyr::summarise(POS = max(POS))
-      message(
-        "Number of original SNP = ", dplyr::n_distinct(snp.locus$POS), "\n",
-        "Number of SNP after keeping the first SNP on the read/haplotype = ",
-        dplyr::n_distinct(snp.select$POS), "\n", "Number of SNP removed = ",
-        dplyr::n_distinct(snp.locus$POS) - dplyr::n_distinct(snp.select$POS))
-    }
-
-    # filtering the VCF to minimize LD
-    input <- input %>% dplyr::semi_join(snp.select, by = c("LOCUS", "POS"))
-    if (verbose) message("Filtering the tidy VCF to minimize LD by keeping only 1 SNP per short read/haplotype")
+    input <- radiator::snp_ld(data = input, snp.ld = snp.ld)
+    # if (!tibble::has_name(input, "POS")) {
+    #   stop("snp.ld is only available for VCF file, use radiator package for
+    #        haplotype file and create a whitelist, for other file type, use
+    #        SNPRelate package or PLINK linkage disequilibrium based SNP pruning
+    #        option")
+    # }
+    # if (verbose) message("Minimizing LD...")
+    # snp.locus <- input %>% dplyr::distinct(LOCUS, POS)
+    #
+    # # Random selection
+    # if (snp.ld == "random") {
+    #   snp.select <- snp.locus %>%
+    #     dplyr::group_by(LOCUS) %>%
+    #     sample_n(size = 1, replace = FALSE)
+    #   message(
+    #     "Number of original SNP = ",
+    #     dplyr::n_distinct(snp.locus$POS), "\n",
+    #     "Number of SNP randomly selected to keep 1 SNP per read/haplotype = ",
+    #     dplyr::n_distinct(snp.select$POS), "\n", "Number of SNP removed = ",
+    #     dplyr::n_distinct(snp.locus$POS) - dplyr::n_distinct(snp.select$POS))
+    # }
+    #
+    # # Fist SNP on the read
+    # if (snp.ld == "first") {
+    #   snp.select <- snp.locus %>%
+    #     dplyr::group_by(LOCUS) %>%
+    #     dplyr::summarise(POS = min(POS))
+    #   message(
+    #     "Number of original SNP = ",
+    #     dplyr::n_distinct(snp.locus$POS), "\n",
+    #     "Number of SNP after keeping the first SNP on the read/haplotype = ",
+    #     dplyr::n_distinct(snp.select$POS), "\n", "Number of SNP removed = ",
+    #     dplyr::n_distinct(snp.locus$POS) - dplyr::n_distinct(snp.select$POS))
+    # }
+    #
+    # # Last SNP on the read
+    # if (snp.ld == "last") {
+    #   snp.select <- snp.locus %>%
+    #     dplyr::group_by(LOCUS) %>%
+    #     dplyr::summarise(POS = max(POS))
+    #   message(
+    #     "Number of original SNP = ", dplyr::n_distinct(snp.locus$POS), "\n",
+    #     "Number of SNP after keeping the first SNP on the read/haplotype = ",
+    #     dplyr::n_distinct(snp.select$POS), "\n", "Number of SNP removed = ",
+    #     dplyr::n_distinct(snp.locus$POS) - dplyr::n_distinct(snp.select$POS))
+    # }
+    #
+    # # filtering the VCF to minimize LD
+    # input <- input %>% dplyr::semi_join(snp.select, by = c("LOCUS", "POS"))
+    # if (verbose) message("Filtering the tidy VCF to minimize LD by keeping only 1 SNP per short read/haplotype")
   } # End of snp.ld control
 
   # Unique markers id ----------------------------------------------------------
@@ -1624,7 +1668,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
 
   # Markers in common between all populations (optional) -----------------------
   if (common.markers) { # keep only markers present in all pop
-    input <- radiator::keep_common_markers(input, verbose = TRUE)
+    input <- radiator::keep_common_markers(input, verbose = TRUE)$input
   } # End common markers
 
   # Removing monomorphic markers------------------------------------------------
@@ -1644,19 +1688,19 @@ The POS column used in the MARKERS column is different in biallelic and multiall
       if (nrow(mono.markers) > 0) {
         if (verbose) message("    Number of monomorphic markers removed = ", nrow(mono.markers))
         input <- dplyr::filter(input, POLYMORPHIC)
-        readr::write_tsv(mono.markers, "blacklist.momorphic.markers.tsv")
+        readr::write_tsv(mono.markers, "blacklist.monomorphic.markers.tsv")
         if (verbose) message("    Number of markers after = ", dplyr::n_distinct(input$MARKERS))
       }
       input <- dplyr::select(input, -POLYMORPHIC)
     } else {
       mono.out <- radiator::discard_monomorphic_markers(input, verbose = TRUE)
-      mono.markers <- mono.out$blacklist.momorphic.markers
-      if (dplyr::n_distinct(mono.markers$MARKERS) > 0) {
+      mono.markers <- mono.out$blacklist.monomorphic.markers
+      if (nrow(mono.markers) > 0) {
         # if (data.type == "haplo.file") {
         #   mono.markers <- dplyr::rename(.data = mono.markers, LOCUS = MARKERS)
         # }
         input <- mono.out$input
-        readr::write_tsv(mono.markers, "blacklist.momorphic.markers.tsv")
+        readr::write_tsv(mono.markers, "blacklist.monomorphic.markers.tsv")
       }
       mono.out <- NULL
     }

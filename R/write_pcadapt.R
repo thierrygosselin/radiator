@@ -108,7 +108,7 @@ write_pcadapt <- function(
   }
 
   # Keeping common markers -----------------------------------------------------
-  input <- radiator::keep_common_markers(data = input, verbose = TRUE)
+  input <- radiator::keep_common_markers(data = input, verbose = TRUE)$input
 
   # Removing monomorphic markers -----------------------------------------------
   input <- radiator::discard_monomorphic_markers(data = input, verbose = TRUE)$input
@@ -130,7 +130,7 @@ write_pcadapt <- function(
     #     dplyr::rename(GT_HAPLO = GT)
     # }
     #
-    # input <- change_alleles(
+    # input <- radiator::change_alleles(
     #   biallelic = FALSE,
     #   data = input, monomorphic.out = TRUE,
     #   parallel.core = parallel.core, verbose = TRUE)$input

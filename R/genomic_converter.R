@@ -8,7 +8,7 @@
 #' reality of GBS/RADseq data while maintaining a reproducible workflow.
 #'
 #' \itemize{
-#'   \item \strong{Input file:} 11 file formats are supported (see \code{data} argument below)
+#'   \item \strong{Input file:} 12 file formats are supported (see \code{data} argument below)
 #'   \item \strong{Filters:} genotypes, markers, individuals and populations can be
 #'   filtered and/or selected in several ways using blacklist,
 #'   whitelist and other arguments
@@ -27,7 +27,7 @@
 #' output formats generated. The tidy format is generated automatically.
 #' Default: \code{output = NULL}.
 
-#' @param filename (optional) The filename prefix for the objet in the global environment
+#' @param filename (optional) The filename prefix for the object in the global environment
 #' or the working directory. Default: \code{filename = NULL}. A default name will be used,
 #' customized with the output file(s) selected.
 
@@ -263,9 +263,9 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
     }
 
     if (is.null(output)) {
-      message("Ouput format(s): tidy")
+      message("Output format(s): tidy")
     } else {
-      message(stringi::stri_join("Ouput format(s): tidy, ", stringi::stri_join(output, collapse = ", ")))
+      message(stringi::stri_join("Output format(s): tidy, ", stringi::stri_join(output, collapse = ", ")))
     }
 
     if (is.null(filename)) {
@@ -689,7 +689,7 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
   }
 
 
-  # pcadapt -------------------------------------------------------------------
+  # hzar -------------------------------------------------------------------
   if ("hzar" %in% output) {
     if (verbose) message("Generating HZAR file without imputation")
     res$hzar.no.imputation <- radiator::write_hzar(

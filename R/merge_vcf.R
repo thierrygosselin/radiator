@@ -145,7 +145,7 @@ merge_vcf <- function(
   }
 
   message("Adjusting REF/ALT alleles...")
-  input <- change_alleles(
+  input <- radiator::change_alleles(
     data = input,
     monomorphic.out = monomorphic.out,
     parallel.core = parallel.core,
@@ -156,7 +156,7 @@ merge_vcf <- function(
   }
 
   if (common.markers) {
-    input <- radiator::keep_common_markers(data = input, verbose = TRUE)
+    input <- radiator::keep_common_markers(data = input, verbose = TRUE)$input
   }
 
   if (!is.null(maf.thresholds)) {

@@ -88,7 +88,7 @@ write_snprelate <- function(data, biallelic = TRUE) {
 
   message("Generating GDS format...")
   # keep markers in common
-  # gds.genotypes <- suppressMessages(radiator::keep_common_markers(data = input))
+  # gds.genotypes <- suppressMessages(radiator::keep_common_markers(data = input)$input)
 
   strata.df <- dplyr::distinct(input, POP_ID, INDIVIDUALS) %>%
     dplyr::mutate(POP_ID = factor(POP_ID))

@@ -1,3 +1,15 @@
+# radiator v.0.0.5 2017-09-20
+
+* `tidy_dart` and `filter_dart`: 
+    * big overhaul.
+    * importing 1 and 2 row genotypes (called sometimes binary format) is easier
+    and no longer require to prep the DArT file
+    (the function parse DArT data with `*` at the beginning of certain lines).
+    * filtering is easier and now interactive for those who want.
+    * plots are generated automatically. 
+* `tidy_genomic_data` and `genomic_converter` can now accept DArT data directly.
+* several typos where fix. Thanks to @IdoBar for this.
+
 # radiator v.0.0.4 2017-09-07
 
 * new function: `run_bayescan` to run *BayeScan* ... with *radiator*

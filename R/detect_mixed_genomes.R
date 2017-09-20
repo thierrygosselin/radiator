@@ -222,7 +222,7 @@ detect_mixed_genomes <- function(
     het.summary <- dplyr::mutate(
       .data = input,
       HET = dplyr::if_else(GT_BIN == 1, 1, 0, missing = 0)
-      ) %>%
+    ) %>%
       dplyr::group_by(INDIVIDUALS) %>%
       dplyr::mutate(GENOTYPED = length(GT_BIN[!is.na(GT_BIN)])) %>%
       dplyr::ungroup(.)
@@ -312,33 +312,36 @@ detect_mixed_genomes <- function(
     f(x / accuracy) * accuracy
   }
   y.breaks.by <- rounder(max(het.ind$HET_PROP, na.rm = TRUE)/10, 0.001, ceiling)
-  y.breaks.max <- rounder(max(het.ind$HET_PROP, na.rm = TRUE), 0.001, ceiling)
-  y.breaks <- seq(0, y.breaks.max + y.breaks.by , by = y.breaks.by)
+  y.breaks.max <- rounder(max(het.ind$HET_PROP, na.rm = TRUE), 0.001, ceiling) + (y.breaks.by / 2)
+  y.breaks.min <- rounder(min(het.ind$HET_PROP, na.rm = TRUE), 0.001, ceiling) - (y.breaks.by / 2)
+  y.breaks <- seq(y.breaks.min, y.breaks.max, by = y.breaks.by)
 
   # labeller to rename in the facet_grid or facet_wrap call:
   facet_names <- ggplot2::as_labeller(c(`MISSING_PROP_OVERALL` = "Missing (overall)", `MISSING_PROP_POP` = "Missing (populations)"))
 
-  individual.heterozygosity.manhattan.plot <- ggplot2::ggplot(data = het.ind.overall, ggplot2::aes(x = POP_ID, y = HET_PROP, size = MISSING_PROP, colour = POP_ID)) +
+  individual.heterozygosity.manhattan.plot <- ggplot2::ggplot(
+    data = het.ind.overall,
+    ggplot2::aes(x = POP_ID, y = HET_PROP, size = MISSING_PROP, colour = POP_ID)) +
     ggplot2::geom_jitter(alpha = 0.6) +
-    ggplot2::labs(y = "Individual's Mean Observed Heterozygosity (proportion)") +
     # labs(x = "Populations") +
     # labs(colour = "Populations") +
-    ggplot2::scale_y_continuous(name = ggplot2::waiver(), breaks = y.breaks) +#, limits = c(0, y.breaks.max), expand = c(0.1, 0)) +
+    ggplot2::scale_y_continuous(name = "Individual's Mean Observed Heterozygosity (proportion)",
+                                breaks = y.breaks, labels = y.breaks, limits = c(y.breaks.min, y.breaks.max)) + #y.breaks
     ggplot2::scale_color_discrete(guide = "none") +
     ggplot2::scale_size_continuous(name = "Missing proportion") +
     # theme_minimal() +
     ggplot2::theme(
       # legend.position = "none",
-      # panel.grid.major.y = element_line(linetype = "solid"),
-      # panel.grid.minor.y = element_line(linetype = "longdash", size = 1),
+      # panel.grid.major.y = ggplot2::element_line(linetype = "solid"),
+      # panel.grid.minor.y = ggplot2::element_line(linetype = "longdash", size = 1),
       # panel.background = element_blank(),
       panel.grid.major.x = ggplot2::element_blank(),
       axis.line.x = ggplot2::element_blank(),
-      # axis.title.x = ggplot2::element_blank(),
-      # axis.text.x = ggplot2::element_blank(),
-      # axis.ticks.x = ggplot2::element_blank(),
-      axis.title.x = element_text(size = 10, family = "Helvetica", face = "bold"),
-      axis.text.x = element_text(size = 10, family = "Helvetica"),
+      axis.title.x = ggplot2::element_blank(),
+      axis.text.x = ggplot2::element_blank(),
+      axis.ticks.x = ggplot2::element_blank(),
+      # axis.title.x = element_text(size = 10, family = "Helvetica", face = "bold"),
+      # axis.text.x = element_text(size = 10, family = "Helvetica"),
       axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
       axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
     ) +
@@ -346,7 +349,7 @@ detect_mixed_genomes <- function(
     # geom_hline(mapping = aes(yintercept = HET_sig_minus), het.ind.stats.pop, linetype = "dashed") + #3 sigma -
     # geom_hline(mapping = aes(yintercept = HET_sig_plus), het.ind.stats.pop, linetype = "dashed") + #3 sigma +
     ggplot2::facet_grid(MISSING_GROUP ~ POP_ID, switch = "x", scales = "free", labeller = ggplot2::labeller(MISSING_GROUP = facet_names))
-  # individual.heterozygosity.manhattan.plot
+  individual.heterozygosity.manhattan.plot
 
   ggplot2::ggsave(
     filename = stringi::stri_join(path.folder, "/individual.heterozygosity.manhattan.plot.pdf"),
@@ -357,10 +360,12 @@ detect_mixed_genomes <- function(
 
   individual.heterozygosity.boxplot <- ggplot2::ggplot(data = het.ind.overall, ggplot2::aes(x = POP_ID, y = HET_PROP, colour = POP_ID)) +
     ggplot2::geom_boxplot() +
-    ggplot2::labs(y = "Individual's Mean Observed Heterozygosity (proportion)") +
     ggplot2::labs(x = "Populations") +
     ggplot2::labs(colour = "Populations") +
-    ggplot2::scale_y_continuous(name = ggplot2::waiver(), breaks = y.breaks, limits = c(0, y.breaks.max), expand = c(0.06, 0)) +
+    ggplot2::scale_y_continuous(
+      name = "Individual's Mean Observed Heterozygosity (proportion)",
+      breaks = y.breaks, labels = y.breaks, limits = c(y.breaks.min, y.breaks.max)) + #y.breaks
+    # breaks = y.breaks, limits = c(0, y.breaks.max), expand = c(0.06, 0)) +
     ggplot2::theme_classic() +
     # theme_minimal() +
     ggplot2::theme(
@@ -380,6 +385,7 @@ detect_mixed_genomes <- function(
   # Blacklist individuals based a threshold of mean heterozygosity
   if (!is.null(ind.heterozygosity.threshold)) {
     # ind.heterozygosity.threshold <- c(0.035, 0.10)
+    # ind.heterozygosity.threshold <- c(0, 0.09)
     threshold.min <- ind.heterozygosity.threshold[1]
     threshold.max <- ind.heterozygosity.threshold[2]
 
@@ -387,7 +393,7 @@ detect_mixed_genomes <- function(
       dplyr::filter(HET_PROP > threshold.max | HET_PROP < threshold.min) %>%
       dplyr::distinct(INDIVIDUALS)
 
-    message(stringi::stri_join("Filter individual's heterozygosity: ", length(blacklist.ind.het$INDIVIDUALS), " individual(s) blacklisted"))
+    message("Filter individual's heterozygosity: ", length(blacklist.ind.het$INDIVIDUALS), " individual(s) blacklisted")
     readr::write_tsv(
       x = blacklist.ind.het,
       path = stringi::stri_join(path.folder, "/blacklist.ind.het.tsv"),

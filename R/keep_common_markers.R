@@ -23,8 +23,8 @@
 #' during execution.
 #' Default: \code{verbose = FALSE}.
 
-#' @return The filtered input data set with markers found in all the populations
-#' present in the data set.
+#' @return A list with the filtered input data set,
+#' the whitelist of markers in common and the blacklist of markers discarded.
 
 
 #' @export
@@ -62,21 +62,26 @@ keep_common_markers <- function(data, plot = FALSE, verbose = FALSE) {
     input <- dplyr::rename(.data = input, MARKERS = LOCUS)
   }
 
+  # markers.meta
+  want <- c("MARKERS", "CHROM", "LOCUS", "POS")
+  markers.meta <- dplyr::select(input, dplyr::one_of(want)) %>%
+    dplyr::distinct(MARKERS, .keep_all = TRUE)
+
   if (verbose) message("Using markers common in all populations:")
-  pop.filter <- dplyr::select(.data = input, MARKERS, POP_ID, GT) %>%
+  blacklist <- dplyr::select(.data = input, MARKERS, POP_ID, GT) %>%
     dplyr::filter(GT != "000000") %>%
     dplyr::distinct(MARKERS, POP_ID) %>%
     dplyr::count(x = ., MARKERS) %>%
-    dplyr::filter(n == dplyr::n_distinct(input$POP_ID)) %>%
+    dplyr::filter(n != dplyr::n_distinct(input$POP_ID)) %>%
     dplyr::distinct(MARKERS) %>%
     dplyr::arrange(MARKERS)
 
   markers.input <- dplyr::n_distinct(input$MARKERS)
-  markers.in.common <- nrow(pop.filter)
-  blacklist.markers.common <- markers.input - markers.in.common
+  blacklist.markers <- nrow(blacklist)
+  markers.in.common <- markers.input - blacklist.markers
 
   if (verbose) message("    Number of markers before = ", markers.input)
-  if (verbose) message("    Number of markers removed = ", blacklist.markers.common)
+  if (verbose) message("    Number of markers removed = ", blacklist.markers)
   if (verbose) message("    Number of markers after (common between populations) = ", markers.in.common)
 
   if (plot) {
@@ -95,9 +100,21 @@ keep_common_markers <- function(data, plot = FALSE, verbose = FALSE) {
     message("    UpSet plot generated to visualize common markers")
   }
 
-  if (blacklist.markers.common > 0) {
-    input <- suppressWarnings(dplyr::semi_join(input, pop.filter, by = "MARKERS"))
-    # readr::write_tsv(x = blacklist.markers.common, path = "blacklist.markes.common.tsv", col_names = TRUE)
+  if (blacklist.markers > 0) {
+    input <- dplyr::anti_join(input, blacklist, by = "MARKERS")
+
+    if (ncol(markers.meta) > 1) {
+      blacklist <- dplyr::left_join(blacklist, markers.meta, by = "MARKERS")
+    }
+
+  } else {
+    blacklist <- "markers all in common"
   }
-  return(input)
+  want <- c("MARKERS", "CHROM", "LOCUS", "POS")
+  whitelist <- dplyr::select(input, dplyr::one_of(want)) %>%
+    dplyr::distinct(MARKERS, .keep_all = TRUE)
+
+  return(res = list(input = input,
+                    whitelist.common.markers = whitelist,
+                    blacklist.not.in.common.markers = blacklist))
 }
