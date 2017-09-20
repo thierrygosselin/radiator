@@ -111,6 +111,7 @@ citation("radiator")
 Change log, version, new features and bug history lives in the [NEWS.md file](https://github.com/thierrygosselin/radiator/blob/master/NEWS.md)
 
 **radiator v.0.0.5 2017-09-20**
+
 * `tidy_dart` and `filter_dart`: 
     * big overhaul.
     * importing 1 and 2 row genotypes (called sometimes binary format) is easier
