@@ -256,7 +256,10 @@
 
 #' @return The output in your global environment is a tidy data frame.
 #' If \code{filename} is provided, the tidy data frame is also
-#' written to the working directory with file extension \code{.rad}.
+#' written in the working directory with file extension \code{.rad}.
+#' The file is written with the
+#' \href{https://github.com/fstpackage/fst}{Lightning Fast Serialization of Data Frames for R} package.
+#' To read the file back in R use \code{\link[fst]{read.fst}}.
 
 #' @export
 #' @rdname tidy_genomic_data
