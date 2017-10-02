@@ -338,27 +338,26 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
 
   # Filename -------------------------------------------------------------------
   # Get date and time to have unique filenaming
-  if (is.null(filename)) {
-    file.date <- stringi::stri_replace_all_fixed(
-      Sys.time(),
-      pattern = " EDT",
-      replacement = "",
-      vectorize_all = FALSE
-    )
-    file.date <- stringi::stri_replace_all_fixed(
-      file.date,
-      pattern = c("-", " ", ":"),
-      replacement = c("", "@", ""),
-      vectorize_all = FALSE
-    )
-    file.date <- stringi::stri_sub(file.date, from = 1, to = 13)
+  file.date <- stringi::stri_replace_all_fixed(
+    Sys.time(),
+    pattern = " EDT", replacement = "") %>%
+    stringi::stri_replace_all_fixed(
+      str = .,
+      pattern = c("-", " ", ":"), replacement = c("", "@", ""),
+      vectorize_all = FALSE) %>%
+    stringi::stri_sub(str = ., from = 1, to = 13)
 
+  if (is.null(filename)) {
     filename <- stringi::stri_join("radiator_data_", file.date)
 
     if (!is.null(imputation.method)) {
       filename.imp <- stringi::stri_join("radiator_data_imputed_", file.date)
     }
   } else {
+    filename.problem <- file.exists(filename)
+    if (filename.problem) {
+      filename <- stringi::stri_join(filename, "_", file.date)
+    }
     if (!is.null(imputation.method)) {
       filename.imp <- stringi::stri_join(filename, "_imputed")
     }
@@ -372,7 +371,7 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
   if (data.type == "haplo.file" & is.null(strata)) stop("strata argument is required")
 
   # Import----------------------------------------------------------------------
-  if(verbose) message("\nImporting data\n")
+  if (verbose) message("\nImporting data\n")
   input <- radiator::tidy_genomic_data(
     data = data,
     vcf.metadata = vcf.metadata,
