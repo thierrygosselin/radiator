@@ -46,7 +46,6 @@ Imports:
 Suggests:
     knitr,
     rmarkdown
-biocViews: 
 Remotes:
   github::kvnkuang/pbmcapply
 License: GPL (>=2)
