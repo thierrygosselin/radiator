@@ -633,8 +633,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
       }
 
       message("Filtering: ", nrow(whitelist.markers), " markers in whitelist")
-      input2 <- suppressWarnings(dplyr::semi_join(input, whitelist.markers, by = columns.names.whitelist))
-test <- input %>% dplyr::filter(LOCUS == "10024")
+      input <- suppressWarnings(dplyr::semi_join(input, whitelist.markers, by = columns.names.whitelist))
       if (nrow(input) == 0) stop("No markers left in the dataset, check whitelist...")
     }
 
@@ -696,7 +695,6 @@ test <- input %>% dplyr::filter(LOCUS == "10024")
         input,
         parse_genomic(x = "GT", data = vcf.data, return.alleles = TRUE,
                       verbose = verbose))
-      # }
 
       if (tibble::has_name(input, "ID")) {
         input <- data.table::melt.data.table(
@@ -735,7 +733,6 @@ test <- input %>% dplyr::filter(LOCUS == "10024")
         parse.format.list <- purrr::keep(.x = have, .p = have %in% want)
 
         # work on parallelization of this part
-        # if (length(parse.format.list) <= 2) {
         input <- dplyr::bind_cols(
           input,
           purrr::map(parse.format.list, parse_genomic, data = vcf.data,
@@ -792,7 +789,7 @@ test <- input %>% dplyr::filter(LOCUS == "10024")
     input <- dplyr::left_join(x = input, y = strata.df, by = "INDIVIDUALS")
 
     # Using pop.levels and pop.labels info if present
-    input <- change_pop_names(
+    input <- radiator::change_pop_names(
       data = input, pop.levels = pop.levels, pop.labels = pop.labels)
 
     # Pop select
@@ -1594,56 +1591,6 @@ test <- input %>% dplyr::filter(LOCUS == "10024")
   # SNP LD  --------------------------------------------------------------------
   if (!is.null(snp.ld)) {
     input <- radiator::snp_ld(data = input, snp.ld = snp.ld)
-    # if (!tibble::has_name(input, "POS")) {
-    #   stop("snp.ld is only available for VCF file, use radiator package for
-    #        haplotype file and create a whitelist, for other file type, use
-    #        SNPRelate package or PLINK linkage disequilibrium based SNP pruning
-    #        option")
-    # }
-    # if (verbose) message("Minimizing LD...")
-    # snp.locus <- input %>% dplyr::distinct(LOCUS, POS)
-    #
-    # # Random selection
-    # if (snp.ld == "random") {
-    #   snp.select <- snp.locus %>%
-    #     dplyr::group_by(LOCUS) %>%
-    #     sample_n(size = 1, replace = FALSE)
-    #   message(
-    #     "Number of original SNP = ",
-    #     dplyr::n_distinct(snp.locus$POS), "\n",
-    #     "Number of SNP randomly selected to keep 1 SNP per read/haplotype = ",
-    #     dplyr::n_distinct(snp.select$POS), "\n", "Number of SNP removed = ",
-    #     dplyr::n_distinct(snp.locus$POS) - dplyr::n_distinct(snp.select$POS))
-    # }
-    #
-    # # Fist SNP on the read
-    # if (snp.ld == "first") {
-    #   snp.select <- snp.locus %>%
-    #     dplyr::group_by(LOCUS) %>%
-    #     dplyr::summarise(POS = min(POS))
-    #   message(
-    #     "Number of original SNP = ",
-    #     dplyr::n_distinct(snp.locus$POS), "\n",
-    #     "Number of SNP after keeping the first SNP on the read/haplotype = ",
-    #     dplyr::n_distinct(snp.select$POS), "\n", "Number of SNP removed = ",
-    #     dplyr::n_distinct(snp.locus$POS) - dplyr::n_distinct(snp.select$POS))
-    # }
-    #
-    # # Last SNP on the read
-    # if (snp.ld == "last") {
-    #   snp.select <- snp.locus %>%
-    #     dplyr::group_by(LOCUS) %>%
-    #     dplyr::summarise(POS = max(POS))
-    #   message(
-    #     "Number of original SNP = ", dplyr::n_distinct(snp.locus$POS), "\n",
-    #     "Number of SNP after keeping the first SNP on the read/haplotype = ",
-    #     dplyr::n_distinct(snp.select$POS), "\n", "Number of SNP removed = ",
-    #     dplyr::n_distinct(snp.locus$POS) - dplyr::n_distinct(snp.select$POS))
-    # }
-    #
-    # # filtering the VCF to minimize LD
-    # input <- input %>% dplyr::semi_join(snp.select, by = c("LOCUS", "POS"))
-    # if (verbose) message("Filtering the tidy VCF to minimize LD by keeping only 1 SNP per short read/haplotype")
   } # End of snp.ld control
 
   # Unique markers id ----------------------------------------------------------
