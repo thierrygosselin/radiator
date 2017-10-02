@@ -5,7 +5,7 @@
 #' @title Detect markers with all missing genotypes
 
 #' @description Detect if markers in tidy dataset have no genotypes at all.
-#' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator} 
+#' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 #' and might be of interest for users.
 
 #' @param data A tidy data frame object in the global environment.
@@ -22,20 +22,30 @@
 
 
 detect_all_missing <- function(data) {
+  res <- list()
   # markers with all missing... yes I've seen it... breaks code...
-  marker.problem <- data %>% 
+  blacklist.markers <- data %>%
     dplyr::group_by(MARKERS) %>%
     dplyr::distinct(GT) %>%
-    dplyr::summarise(GENOTYPED = length(GT[GT != "000000"])) %>% 
-    dplyr::filter(GENOTYPED == 0) %>% 
+    dplyr::summarise(GENOTYPED = length(GT[GT != "000000"])) %>%
+    dplyr::filter(GENOTYPED == 0) %>%
     dplyr::ungroup(.)
-  
-  problem <- nrow(marker.problem)
+
+  problem <- nrow(blacklist.markers)
   if (problem > 0) {
     message("Data set contains ", problem," marker(s) with no genotypes (all missing)...")
     message("    removing problematic markers...")
-    data <- dplyr::filter(data, !MARKERS %in% marker.problem$MARKERS)
+    res$data <- dplyr::filter(data, !MARKERS %in% blacklist.markers$MARKERS)
+    readr::write_tsv(
+      x = blacklist.markers,
+      path = "blacklist.markers.all.missing.tsv"
+    )
+    res$blacklist.markers.all.missing <- blacklist.markers
+    res$marker.problem <- TRUE
+  } else {
+    res$marker.problem <- FALSE
   }
-  marker.problem <- problem <- NULL
-  return(data)
+
+
+  return(res)
 }#End detect_all_missing

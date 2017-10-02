@@ -15,7 +15,7 @@ the untouch dataset.
 }
 \description{
 Detect if markers in tidy dataset have no genotypes at all.
-Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator} 
+Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and might be of interest for users.
 }
 \author{

@@ -49,9 +49,9 @@ summary_stats_vcf_tidy <- function(data, filename = NULL) {
 
   if (!is.null(filename)) {
     readr::write_tsv(vcf.summary, filename, append = FALSE, col_names = TRUE)
-    message("Writting the summary file in your working directory: \n", getwd())
+    message("writing the summary file in your working directory: \n", getwd())
   } else {
-    message("Writting the summary file to the working directory: not selected")
+    message("writing the summary file to the working directory: not selected")
   }
   timing <- proc.time() - timing
   message("Computation time: ", round(timing[[3]]), " sec")

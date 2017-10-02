@@ -191,7 +191,7 @@ write_pcadapt <- function(
     dplyr::ungroup(.) %>%
     dplyr::select(-MARKERS)
 
-  # writting file to directory  ------------------------------------------------
+  # writing file to directory  ------------------------------------------------
   # Filename: date and time to have unique filenaming
   file.date <- stringi::stri_replace_all_fixed(
     Sys.time(),
@@ -213,7 +213,7 @@ write_pcadapt <- function(
     }
   }
 
-  message("Writting pcadapt file with:
+  message("writing pcadapt file with:
     Number of populations: ", n.pop, "\n    Number of individuals: ", n.ind,
           "\n    Number of markers: ", n.markers)
 

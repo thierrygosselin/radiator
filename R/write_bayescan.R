@@ -162,7 +162,7 @@ write_bayescan <- function(
 
   input <- dplyr::select(input, -POP_ID, -MARKERS)
 
-  # writting file to directory  ------------------------------------------------
+  # writing file to directory  ------------------------------------------------
   # Filename: date and time to have unique filenaming
   file.date <- stringi::stri_replace_all_fixed(
     Sys.time(),
@@ -190,7 +190,7 @@ write_bayescan <- function(
     markers.type <- "multiallelic"
   }
 
-  message("Writting BayeScan file with:
+  message("writing BayeScan file with:
     Number of populations: ", n.pop, "\n    Number of individuals: ", n.ind,
           "\n    Number of ", markers.type, " markers: ", n.markers)
 

@@ -206,11 +206,11 @@ genomic_converter <- function(
   pred.mean.matching = 0,
   random.seed = NULL,
   parallel.core = parallel::detectCores() - 1,
-  verbose = FALSE
+  verbose = TRUE
 ) {
   if (verbose) {
     cat("#######################################################################\n")
-    cat("###################### radiator::genomic_converter ######################\n")
+    cat("##################### radiator::genomic_converter #####################\n")
     cat("#######################################################################\n")
     timing <- proc.time()
 
@@ -291,7 +291,11 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
     if (is.null(whitelist.markers)) {
       message("Whitelist of markers: no")
     } else {
-      message("Whitelist of markers: ", whitelist.markers)
+      if (is.vector(whitelist.markers)) {
+        message("Whitelist of markers: ", whitelist.markers)
+      } else {
+        message("Whitelist of markers: ", nrow(whitelist.markers))
+      }
     }
 
     message("monomorphic.out: ", monomorphic.out)
@@ -368,6 +372,7 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
   if (data.type == "haplo.file" & is.null(strata)) stop("strata argument is required")
 
   # Import----------------------------------------------------------------------
+  if(verbose) message("\nImporting data\n")
   input <- radiator::tidy_genomic_data(
     data = data,
     vcf.metadata = vcf.metadata,
@@ -389,6 +394,8 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
     filename = NULL,
     verbose = verbose
   )
+
+  if(verbose) message("\nPreparing data for output\n")
 
   input$GT <- stringi::stri_replace_all_fixed(
     str = input$GT,
@@ -743,7 +750,7 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
     message("Number of populations ", n.pop)
     timing <- proc.time() - timing
     message("\nComputation time: ", round(timing[[3]]), " sec")
-    cat("############################## completed ##############################\n")
+    cat("################ radiator::genomic_converter completed ################\n")
   }
   return(res)
 } # end genomic_converter

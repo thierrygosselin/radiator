@@ -377,7 +377,7 @@ tidy_genomic_data <- function(
 
   # File type detection----------------------------------------------------------
 
-  data.type <- detect_genomic_format(data)
+  data.type <- radiator::detect_genomic_format(data)
 
   if (data.type == "haplo.file") {
     if (verbose && !is.null(maf.thresholds)) {
@@ -481,6 +481,7 @@ tidy_genomic_data <- function(
     }
     # Remove potential whitespace in pop_id
     strata.df$POP_ID <- stringi::stri_replace_all_fixed(strata.df$POP_ID, pattern = " ", replacement = "_", vectorize_all = FALSE)
+    colnames.strata <- colnames(strata.df)
   }
 
   # Import VCF------------------------------------------------------------------
@@ -632,8 +633,8 @@ The POS column used in the MARKERS column is different in biallelic and multiall
       }
 
       message("Filtering: ", nrow(whitelist.markers), " markers in whitelist")
-      input <- suppressWarnings(dplyr::semi_join(input, whitelist.markers, by = columns.names.whitelist))
-
+      input2 <- suppressWarnings(dplyr::semi_join(input, whitelist.markers, by = columns.names.whitelist))
+test <- input %>% dplyr::filter(LOCUS == "10024")
       if (nrow(input) == 0) stop("No markers left in the dataset, check whitelist...")
     }
 
@@ -2025,7 +2026,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
     message("Number of populations: ", n.pop)
     timing <- proc.time() - timing
     message("Computation time: ", round(timing[[3]]), " sec")
-    cat("############################## completed ##############################\n")
+    cat("################ radiator::tidy_genomic_data completed ################\n")
   }
   res <- input
   options(width = opt.change)

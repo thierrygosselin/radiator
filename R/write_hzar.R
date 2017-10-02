@@ -127,7 +127,7 @@ write_hzar <- function(
 
   input <- NULL
 
-  # writting file to directory  ------------------------------------------------
+  # writing file to directory  ------------------------------------------------
   # Filename: date and time to have unique filenaming
   file.date <- stringi::stri_replace_all_fixed(
     Sys.time(),
@@ -152,7 +152,7 @@ write_hzar <- function(
   readr::write_lines(x = header.line, path = filename)
   readr::write_csv(x = output, path = filename, append = TRUE, col_names = TRUE)
 
-  message("Writting HZAR file, (", filename,") with:
+  message("writing HZAR file, (", filename,") with:
     Number of populations: ", n.pop, "\n    Number of individuals: ", n.ind,
     "\n    Number of markers: ", n.markers)
 

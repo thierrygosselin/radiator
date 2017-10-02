@@ -307,51 +307,76 @@ ibdg_fh <- function(
 
   # plots ----------------------------------------------------------------------
   message("Generating plots")
+
   # manhattan
-  fh.manhattan.plot <- ggplot2::ggplot(data = fh, ggplot2::aes(x = INDIVIDUALS, y = FH, colour = POP_ID)) +
-    ggplot2::geom_jitter() +
-    ggplot2::labs(y = "Individual IBDg (FH)") +
-    ggplot2::labs(x = "Individuals") +
-    ggplot2::labs(colour = "Populations") +
-    # theme_minimal() +
-    ggplot2::theme_classic() +
-    # theme_dark() +
-    ggplot2::theme(
-      panel.grid.minor.x = ggplot2::element_blank(),
-      panel.grid.major.y = ggplot2::element_blank(),
-      axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      axis.text.x = ggplot2::element_blank(),
-      axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
-    )
+  # fh.manhattan.plot <- ggplot2::ggplot(data = fh, ggplot2::aes(x = INDIVIDUALS, y = FH, colour = POP_ID)) +
+  #   ggplot2::geom_jitter() +
+  #   ggplot2::labs(y = "Individual IBDg (FH)") +
+  #   ggplot2::labs(x = "Individuals") +
+  #   ggplot2::labs(colour = "Populations") +
+  #   # theme_minimal() +
+  #   ggplot2::theme_classic() +
+  #   # theme_dark() +
+  #   ggplot2::theme(
+  #     panel.grid.minor.x = ggplot2::element_blank(),
+  #     panel.grid.major.y = ggplot2::element_blank(),
+  #     axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+  #     axis.text.x = ggplot2::element_blank(),
+  #     axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+  #     axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
+  #   )
+
   # fh.manhattan.plot
 
-  fh.boxplot <- ggplot2::ggplot(data = fh, ggplot2::aes(x = POP_ID, y = FH)) +
-    ggplot2::geom_boxplot() +
+  # fh.boxplot <- ggplot2::ggplot(data = fh, ggplot2::aes(x = POP_ID, y = FH)) +
+  #   ggplot2::geom_boxplot() +
+  #   ggplot2::labs(y = "Individual IBDg (FH)") +
+  #   ggplot2::labs(x = "Populations") +
+  #   # theme_bw() +
+  #   ggplot2::theme(
+  #     panel.grid.minor.x = ggplot2::element_blank(),
+  #     panel.grid.major.y = ggplot2::element_blank(),
+  #     axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+  #     axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica"),
+  #     axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+  #     axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
+  #   )
+  fh.manhattan.plot <- fh.boxplot <- "deprecated: replaced by the fh.distribution.plot"
+  # fh.boxplot
+
+  fh.manhattan.box.plot <- ggplot2::ggplot(
+    data = fh, ggplot2::aes(x = POP_ID, y = FH, colour = POP_ID)) +
+    ggplot2::geom_jitter(alpha = 0.5) +
+    ggplot2::geom_violin(trim = TRUE, fill = NA) +
+    ggplot2::geom_boxplot(width = 0.1, fill = NA, outlier.colour = NA, outlier.fill = NA) +
     ggplot2::labs(y = "Individual IBDg (FH)") +
     ggplot2::labs(x = "Populations") +
-    # theme_bw() +
+    ggplot2::labs(colour = "Populations") +
+    ggplot2::theme_bw() +
+    # ggplot2::theme_classic() +
+    # theme_dark() +
     ggplot2::theme(
+      legend.position = "none",
       panel.grid.minor.x = ggplot2::element_blank(),
       panel.grid.major.y = ggplot2::element_blank(),
       axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica"),
+      axis.text.x = ggplot2::element_text(size = 10, family = "Helvetica"),
       axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
-    )
-  # fh.boxplot
-
+      axis.text.y = ggplot2::element_text(size = 10, family = "Helvetica")) +
+    ggplot2::coord_flip()
 
   # Histogram
   fh.distribution.plot <- ggplot2::ggplot(data = fh, ggplot2::aes(x = FH)) +
     ggplot2::geom_histogram() +
     ggplot2::labs(x = "Individual IBDg (FH)") +
     ggplot2::labs(y = "Markers (number)") +
+    ggplot2::theme_bw() +
     ggplot2::theme(
       legend.position = "none",
-      axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
       axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica", angle = 90, hjust = 1, vjust = 0.5),
+      axis.text.y = ggplot2::element_text(size = 10, family = "Helvetica"),
+      axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+      axis.text.x = ggplot2::element_text(size = 10, family = "Helvetica"),
       strip.text.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold")
     )
   # fh.distribution.plot
@@ -363,6 +388,11 @@ ibdg_fh <- function(
     message(stringi::stri_join("Computation time: ", round(timing[[3]]), " sec"))
     cat("############################## completed ##############################\n")
   }
-  res = list(call = function.call, fh = fh, fh.stats = fh.stats, fh.manhattan.plot = fh.manhattan.plot, fh.boxplot = fh.boxplot, fh.distribution.plot = fh.distribution.plot)
+  res = list(
+    call = function.call,
+    fh = fh, fh.stats = fh.stats,
+    fh.manhattan.box.plot = fh.manhattan.box.plot,
+    fh.manhattan.plot = fh.manhattan.plot, fh.boxplot = fh.boxplot,
+    fh.distribution.plot = fh.distribution.plot)
   return(res)
 }
