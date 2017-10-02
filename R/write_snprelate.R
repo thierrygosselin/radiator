@@ -50,8 +50,8 @@ write_snprelate <- function(data, biallelic = TRUE) {
 
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) stop("Input file missing")
-
-  # if (is.null(filename)) {
+  # Check if output filename was provided and create a unique one if not
+  if (is.null(filename)) {
   file.date <- stringi::stri_replace_all_fixed(Sys.time(), pattern = " EDT", replacement = "")
   file.date <- stringi::stri_replace_all_fixed(
     str = file.date,
@@ -60,7 +60,7 @@ write_snprelate <- function(data, biallelic = TRUE) {
     vectorize_all = FALSE
   )
   filename <- stringi::stri_join("radiator_", file.date, ".gds", sep = "")
-  # }
+  }
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {
