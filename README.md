@@ -113,10 +113,10 @@ New features
 
 Change log, version, new features and bug history lives in the [NEWS.md file](https://github.com/thierrygosselin/radiator/blob/master/NEWS.md)
 
-\*\* radiator v.0.0.6 2017-10-02\*\*
+**radiator v.0.0.6 2017-10-02**
 
 -   `tidy_genomic_data` and `genomic_converter`: bug fix and improvements.
--   `write_snprelate` and it's associated output from `genomic_converter` is no longer available because of difficulties students are having in installing package and/or using the output. The code remains available [here](https://www.dropbox.com/s/7xujizkvpi0ddac/write_snprelate.R?dl=0), without support.
+-   `write_snprelate` and it's associated output from `genomic_converter` is no longer available because of difficulties students are having in installing the package, it's dependencies and/or using the output. The code remains available [here](https://www.dropbox.com/s/7xujizkvpi0ddac/write_snprelate.R?dl=0), without support.
 
 **radiator v.0.0.5 2017-09-20**
 
