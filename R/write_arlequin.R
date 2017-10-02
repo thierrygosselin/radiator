@@ -104,9 +104,9 @@ write_arlequin <- function(
   # Write the file in arlequin format -----------------------------------------
   
   # Filename
+  # Get date and time to have unique filenaming
+  file.date <- stringi::stri_replace_all_fixed(Sys.time(), pattern = " EDT", replacement = "", vectorize_all = FALSE)
   if (is.null(filename)) {
-    # Get date and time to have unique filenaming
-    file.date <- stringi::stri_replace_all_fixed(Sys.time(), pattern = " EDT", replacement = "", vectorize_all = FALSE)
     file.date <- stringi::stri_replace_all_fixed(file.date, pattern = c("-", " ", ":"), replacement = c("", "@", ""), vectorize_all = FALSE)
     file.date <- stringi::stri_sub(file.date, from = 1, to = 13)
     filename <- stringi::stri_join("radiator_arlequin_", file.date, ".arp")
