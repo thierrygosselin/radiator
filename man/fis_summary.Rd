@@ -34,7 +34,8 @@ Default: \code{vcf.metadata = FALSE}.}
 \item{whitelist.markers}{(optional) A whitelist containing CHROM (character
 or integer) and/or LOCUS (integer) and/or
 POS (integer) columns header. To filter by chromosome and/or locus and/or by snp.
-The whitelist is in the working directory (e.g. "whitelist.txt").
+The whitelist is an object in your
+global environment or a file in the working directory (e.g. "whitelist.txt").
 de novo CHROM column with 'un' need to be changed to 1.
 In the VCF, the column ID is the LOCUS identification.
 Default \code{whitelist.markers = NULL} for no whitelist of markers.}
@@ -51,8 +52,10 @@ Markers can be 1 column (CHROM or LOCUS or POS),
 a combination of 2 (e.g. CHROM and POS or CHROM and LOCUS or LOCUS and POS) or
 all 3 (CHROM, LOCUS, POS). The markers columns must be designated: CHROM (character
 or integer) and/or LOCUS (integer) and/or POS (integer). The id column designated
-INDIVIDUALS (character) columns header. The blacklist must be in the working
-directory (e.g. "blacklist.genotype.txt"). For de novo VCF, CHROM column
+INDIVIDUALS (character) columns header.
+The blacklist is an object in your global environment or
+a file in the working directory (e.g. "blacklist.genotype.txt").
+For de novo VCF, CHROM column
 with 'un' need to be changed to 1.
 Default: \code{blacklist.genotype = NULL} for no blacklist of
 genotypes to erase.}

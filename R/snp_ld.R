@@ -1,8 +1,9 @@
 #' @name snp_ld
 #' @title GBS/RADseq short distance linkage disequilibrium pruning
-#' @description SNP short distance linkage disequilibrium pruning. With anonymous markers from
+#' @description SNP short distance linkage disequilibrium pruning.
+#' With anonymous markers from
 #' RADseq/GBS de novo discovery, you can minimize linkage disequilibrium (LD) by
-#' choosing among these 3 options (see argument below).
+#' choosing among these 4 options (see argument below).
 #'
 #' For long distance linkage disequilibrium pruning, see details below.
 #' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
@@ -13,9 +14,14 @@
 #' Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
 #' Usually the LOCUS and POS info is taken from a VCF file.
 
-#' @param snp.ld (character) 3 options:
-#' \code{snp.ld = "random"} selection, \code{snp.ld = "first"} or
-#' \code{snp.ld = "last"} for SNP on the same short read/haplotype.
+#' @param snp.ld (character) 4 options:
+#' \code{snp.ld = "random"} for a random selection of 1 SNP on the read,
+#' \code{snp.ld = "first"} for the first one on the read...,
+#' \code{snp.ld = "last"} for the last SNP on the read and
+#' \code{snp.ld = "middle"} for locus with > 2 SNPs/read the option to select at random
+#' one SNP between the first and the last SNP on the read. If the locus as <= 2
+#' SNPs on the read, the first one is selected. Note that for that last option,
+#' the numbers are reported.
 #' Default: \code{snp.ld = "first"}.
 
 #' @export
@@ -27,8 +33,7 @@
 #' @importFrom dplyr select distinct group_by sample_n summarise semi_join n_distinct
 
 snp_ld <- function(data, snp.ld = "first") {
-  snp.ld <- match.arg(snp.ld, c("first", "random", "last"))
-
+  snp.ld <- match.arg(snp.ld, c("first", "random", "last", "middle"))
 
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) stop("Input file missing")
@@ -56,10 +61,13 @@ snp_ld <- function(data, snp.ld = "first") {
   }
 
   message("Minimizing short distance LD...")
-  snp.locus <- dplyr::distinct(input, LOCUS, POS)
+  message("    snp.ld = ", snp.ld)
+
+  snp.locus <- dplyr::distinct(input, LOCUS, POS) %>% dplyr::arrange(LOCUS, POS)
 
   locus.stats <- dplyr::group_by(.data = snp.locus, LOCUS) %>%
-    dplyr::tally(.) %>% dplyr::rename(SNP_N = n) %>%
+    dplyr::tally(.) %>%
+    dplyr::rename(SNP_N = n) %>%
     dplyr::group_by(SNP_N) %>%
     dplyr::tally(.)
 
@@ -100,6 +108,52 @@ snp_ld <- function(data, snp.ld = "first") {
     snp.select <- snp.locus %>%
       dplyr::group_by(LOCUS) %>%
       dplyr::summarise(POS = max(POS))
+    snp.before <- nrow(snp.locus)
+    snp.after <- nrow(snp.select)
+    message("    Number of SNP before = ", snp.before)
+    message("    Number of SNP removed = ", snp.before - snp.after)
+    message("    Number of SNP after = ", snp.after)
+  }
+
+  # Middle SNP on the read -----------------------------------------------------
+
+  if (snp.ld == "middle") {
+    snp.locus.prep <- dplyr::group_by(.data = snp.locus, LOCUS) %>%
+      dplyr::tally(.)
+
+    pick.middle <- snp.locus.prep %>%
+      dplyr::filter(n > 2) %>%
+      dplyr::select(LOCUS)
+
+    if (nrow(pick.middle) == 0) {
+      message("IMPORTANT: the data doesn't have more than 3 SNPs per read")
+      message("    First SNP will be selected instead...")
+      snp.select <- snp.locus %>%
+        dplyr::group_by(LOCUS) %>%
+        dplyr::summarise(POS = min(POS))
+    } else {
+
+      # For locus with <= 2 SNPs/read just keep the first one.
+      keep.first <- snp.locus.prep %>%
+        dplyr::filter(n <= 2) %>%
+        dplyr::select(LOCUS)
+      message("    Number of locus with first SNP selected: ", nrow(keep.first))
+      keep.first.select <- snp.locus %>%
+        dplyr::filter(LOCUS %in% keep.first$LOCUS) %>%
+        dplyr::group_by(LOCUS) %>%
+        dplyr::summarise(POS = min(POS))
+
+      pick.middle.select <- snp.locus %>%
+        dplyr::filter(LOCUS %in% pick.middle$LOCUS) %>%
+        dplyr::group_by(LOCUS) %>%
+        dplyr::filter(POS != min(POS)) %>% # remove the first SNP
+        dplyr::filter(POS != max(POS)) %>% # remove the last SNP
+        dplyr::sample_n(tbl = ., size = 1, replace = FALSE) # pick one at random
+
+      message("    Number of locus with random middle SNP selected: ", nrow(pick.middle))
+      snp.select <- dplyr::bind_rows(keep.first.select, pick.middle.select) %>%
+        dplyr::arrange(LOCUS, POS)
+    }
     snp.before <- nrow(snp.locus)
     snp.after <- nrow(snp.select)
     message("    Number of SNP before = ", snp.before)

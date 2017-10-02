@@ -12,15 +12,21 @@ snp_ld(data, snp.ld = "first")
 Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
 Usually the LOCUS and POS info is taken from a VCF file.}
 
-\item{snp.ld}{(character) 3 options:
-\code{snp.ld = "random"} selection, \code{snp.ld = "first"} or
-\code{snp.ld = "last"} for SNP on the same short read/haplotype.
+\item{snp.ld}{(character) 4 options:
+\code{snp.ld = "random"} for a random selection of 1 SNP on the read,
+\code{snp.ld = "first"} for the first one on the read...,
+\code{snp.ld = "last"} for the last SNP on the read and
+\code{snp.ld = "middle"} for locus with > 2 SNPs/read the option to select at random
+one SNP between the first and the last SNP on the read. If the locus as <= 2
+SNPs on the read, the first one is selected. Note that for that last option,
+the numbers are reported.
 Default: \code{snp.ld = "first"}.}
 }
 \description{
-SNP short distance linkage disequilibrium pruning. With anonymous markers from
+SNP short distance linkage disequilibrium pruning.
+With anonymous markers from
 RADseq/GBS de novo discovery, you can minimize linkage disequilibrium (LD) by
-choosing among these 3 options (see argument below).
+choosing among these 4 options (see argument below).
 
 For long distance linkage disequilibrium pruning, see details below.
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}

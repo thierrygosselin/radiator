@@ -63,7 +63,8 @@ Default: \code{blacklist.id = NULL}.}
 \item{whitelist.markers}{(optional) A whitelist containing CHROM (character
 or integer) and/or LOCUS (integer) and/or
 POS (integer) columns header. To filter by chromosome and/or locus and/or by snp.
-The whitelist is in the working directory (e.g. "whitelist.txt").
+The whitelist is an object in your
+global environment or a file in the working directory (e.g. "whitelist.txt").
 de novo CHROM column with 'un' need to be changed to 1.
 In the VCF, the column ID is the LOCUS identification.
 Default \code{whitelist.markers = NULL} for no whitelist of markers.}

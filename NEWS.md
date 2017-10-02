@@ -5,6 +5,12 @@
 available because of difficulties students are having in installing the package,
 it's dependencies and/or using the output. The code remains available [here](https://www.dropbox.com/s/7xujizkvpi0ddac/write_snprelate.R?dl=0),
 without support.
+* `radiator::snp.ld`: the module inside `tidy_genomic_data` and `genomic_converter`
+to minimize short linkage disequilibrium as a new option `snp.ld = "middle"`. 
+For locus with > 2 SNPs/read the option allows to select at random one SNP between 
+the first and the last SNP on the read. If the locus as <= 2 SNPs on the read,
+the first one is selected. Note that for that last option, the numbers are reported.
+Thanks to Ido Bar for the idea.
 
 
 # radiator v.0.0.5 2017-09-20
