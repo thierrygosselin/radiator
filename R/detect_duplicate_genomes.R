@@ -79,7 +79,7 @@
 #' @export
 #' @rdname detect_duplicate_genomes
 #' @importFrom stringi stri_paste stri_replace_all_fixed
-#' @importFrom dplyr arrange rename select group_by filter mutate rename_ filter_ bind_cols bind_rows summarise n_distinct intersect
+#' @importFrom dplyr arrange rename select group_by filter mutate rename_ filter_ bind_cols bind_rows summarise n_distinct intersect desc
 #' @importFrom utils combn
 #' @importFrom stats na.omit var median quantile dist
 #' @importFrom amap Dist
