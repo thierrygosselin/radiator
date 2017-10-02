@@ -15,8 +15,8 @@ Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.}
 \item{pop.levels}{(optional, string) A character string with your populations ordered.
 Default: \code{pop.levels = NULL}.}
 
-\item{filename}{(optional) The file name prefix for the arlequin file 
-written to the working directory. With default: \code{filename = NULL}, 
+\item{filename}{(optional) The file name prefix for the arlequin file
+written to the working directory. With default: \code{filename = NULL},
 the date and time is appended to \code{radiator_arlequin_}.}
 
 \item{...}{other parameters passed to the function.}
@@ -26,13 +26,13 @@ An arlequin file is saved to the working directory.
 }
 \description{
 Write a arlequin file from a tidy data frame.
-Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator} 
+Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and \href{https://github.com/thierrygosselin/assigner}{assigner}
 and might be of interest for users.
 }
 \references{
-Excoffier, L.G. Laval, and S. Schneider (2005) 
-Arlequin ver. 3.0: An integrated software package for population genetics 
+Excoffier, L.G. Laval, and S. Schneider (2005)
+Arlequin ver. 3.0: An integrated software package for population genetics
 data analysis. Evolutionary Bioinformatics Online 1:47-50.
 }
 \author{
