@@ -36,7 +36,7 @@ named \code{NEW_ID} is used, this column will be used to replace the
 \item{output}{19 genomic data formats can be exported: tidy (by default),
 genind, genlight, vcf (for file format version, see details below), plink, genepop,
 structure, arlequin, hierfstat, gtypes (strataG), bayescan, betadiv, pcadapt,
-hzar, snprelate (for SNPRelate's GDS).
+hzar, snprelate (for SNPRelate's GDS, see details).
 Use a character string,
 e.g. \code{output = c("genind", "genepop", "structure")}, to have preferred
 output formats generated. The tidy format is generated automatically.

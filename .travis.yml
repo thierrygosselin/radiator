@@ -18,5 +18,3 @@ use_bioc: true
 bioc_required: true
 
 # Install packages from github
-r_github_packages:
-  - zhengxwen/gdsfmt

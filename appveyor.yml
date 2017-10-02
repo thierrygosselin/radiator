@@ -19,8 +19,6 @@ environment:
     USE_RTOOLS: true
 
 build_script:
-  - travis-tool.sh install_bioc_deps
-  - travis-tool.sh install_github zhengxwen/SNPRelate
   - travis-tool.sh install_deps
   - travis-tool.sh install_r R.oo R.utils
 

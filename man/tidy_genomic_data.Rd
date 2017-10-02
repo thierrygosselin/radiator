@@ -171,7 +171,10 @@ Default: \code{verbose = TRUE}.}
 \value{
 The output in your global environment is a tidy data frame.
 If \code{filename} is provided, the tidy data frame is also
-written to the working directory with file extension \code{.rad}.
+written in the working directory with file extension \code{.rad}.
+The file is written with the
+\href{https://github.com/fstpackage/fst}{Lightning Fast Serialization of Data Frames for R} package.
+To read the file back in R use \code{\link[fst]{read.fst}}.
 }
 \description{
 Transform genomic data set produced by massive parallel
@@ -187,7 +190,8 @@ and might be of interest for users.
 \details{
 \strong{Long distance SNP linkage disequilibrium pruning}
 If you have markers position on a genome or a linkage map,
-you can go further in removing linked markers by using \pkg{SNPRelate} or
+you can go further in removing linked markers by using
+\href{https://github.com/zhengxwen/SNPRelate}{SNPRelate} or
 \href{http://pngu.mgh.harvard.edu/~purcell/plink/}{PLINK}, \emph{linkage
 disequilibrium based SNP pruning} option.
 

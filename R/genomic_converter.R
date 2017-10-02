@@ -21,7 +21,7 @@
 #' @param output 19 genomic data formats can be exported: tidy (by default),
 #' genind, genlight, vcf (for file format version, see details below), plink, genepop,
 #' structure, arlequin, hierfstat, gtypes (strataG), bayescan, betadiv, pcadapt,
-#' hzar, snprelate (for SNPRelate's GDS).
+#' hzar, snprelate (for SNPRelate's GDS, see details).
 #' Use a character string,
 #' e.g. \code{output = c("genind", "genepop", "structure")}, to have preferred
 #' output formats generated. The tidy format is generated automatically.
@@ -45,7 +45,7 @@
 #' @inheritParams write_pcadapt
 #' @inheritParams write_hzar
 #' @inheritParams radiator_imputations_module
-#' @inheritParams write_snprelate
+# @inheritParams write_snprelate
 
 
 #' @details
@@ -67,6 +67,20 @@
 #' the version inside the newly created VCF, that should do the trick.
 #' \href{https://vcftools.github.io/specs.html}{For more
 #' information on Variant Call Format specifications}.
+#'
+#'
+#' \strong{SNPRelate:}
+#'
+#' I received too many emails with students having problem with SNPRelate, so
+#' I'm removing the option to output in SNPRelate from genomic_coverter.
+#' If you really want to do it,
+#' \href{https://github.com/zhengxwen/SNPRelate}{install SNPRelate}
+#' separately following the author's instruction. From a tidy data set created
+#' in genomic_converter you can download my code
+#' \href{https://www.dropbox.com/s/7xujizkvpi0ddac/write_snprelate.R?dl=0}{here}
+#' and source it to get a SNPRelate object. However, I'm no longer offering
+#' support for this.
+
 
 #' @return The function returns an object (list). The content of the object
 #' can be listed with \code{names(object)} and use \code{$} to isolate specific
@@ -223,12 +237,12 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
     }
 
     # Check that snprelate is installed
-    if ("snprelate" %in% output) {
-      if (!"SNPRelate" %in% utils::installed.packages()[,"Package"]) {
-        stop("Please install SNPRelate:\n
-           github::zhengxwen/SNPRelate")
-      }
-    }
+    # if ("snprelate" %in% output) {
+    #   if (!"SNPRelate" %in% utils::installed.packages()[,"Package"]) {
+    #     stop("Please install SNPRelate:\n
+    #        github::zhengxwen/SNPRelate")
+    #   }
+    # }
 
     # Checking for missing and/or default arguments-------------------------------
     if (missing(data)) stop("Input file missing")
@@ -634,16 +648,16 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
 
 
   # SNPRelate ------------------------------------------------------------------
-  if ("snprelate" %in% output) {
-    if (verbose) message("Generating SNPRelate object without imputation")
-    res$snprelate.no.imputation <- radiator::write_snprelate(data = input,
-                                                             biallelic = TRUE)
-    if (!is.null(imputation.method)) {
-      if (verbose) message("Generating SNPRelate object WITH imputations")
-      res$snprelate.imputed <- radiator::write_snprelate(data = input.imp,
-                                                         biallelic = TRUE)
-    }
-  }
+  # if ("snprelate" %in% output) {
+  #   if (verbose) message("Generating SNPRelate object without imputation")
+  #   res$snprelate.no.imputation <- radiator::write_snprelate(data = input,
+  #                                                            biallelic = TRUE)
+  #   if (!is.null(imputation.method)) {
+  #     if (verbose) message("Generating SNPRelate object WITH imputations")
+  #     res$snprelate.imputed <- radiator::write_snprelate(data = input.imp,
+  #                                                        biallelic = TRUE)
+  #   }
+  # }
 
   # bayescan -------------------------------------------------------------------
   if ("bayescan" %in% output) {

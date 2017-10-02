@@ -174,7 +174,8 @@
 #' @details
 #' \strong{Long distance SNP linkage disequilibrium pruning}
 #' If you have markers position on a genome or a linkage map,
-#' you can go further in removing linked markers by using \pkg{SNPRelate} or
+#' you can go further in removing linked markers by using
+#' \href{https://github.com/zhengxwen/SNPRelate}{SNPRelate} or
 #' \href{http://pngu.mgh.harvard.edu/~purcell/plink/}{PLINK}, \emph{linkage
 #' disequilibrium based SNP pruning} option.
 #'
