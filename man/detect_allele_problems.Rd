@@ -57,8 +57,14 @@ genotypes to erase.}
 \item{snp.ld}{(optional) \strong{For data with locus and SNP info, like VCF and DArT file}.
 SNP short distance linkage disequilibrium pruning. With anonymous markers from
 RADseq/GBS de novo discovery, you can minimize linkage disequilibrium (LD) by
-choosing among these 3 options: \code{"random"} selection, \code{"first"} or
-\code{"last"} SNP on the same short read/haplotype. For long distance linkage
+choosing among these 4 options:
+\code{snp.ld = "random"} for a random selection of 1 SNP on the read,
+\code{snp.ld = "first"} for the first one on the read...,
+\code{snp.ld = "last"} for the last SNP on the read and
+\code{snp.ld = "middle"} for locus with > 2 SNPs/read the option to select at random
+one SNP between the first and the last SNP on the read. If the locus as <= 2
+SNPs on the read, the first one is selected. Note that for that last option,
+the numbers are reported. For long distance linkage
 disequilibrium pruning, see details below.
 Default: \code{snp.ld = NULL}.}
 
