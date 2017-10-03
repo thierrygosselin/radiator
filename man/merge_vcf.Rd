@@ -66,7 +66,12 @@ POS (integer) columns header. To filter by chromosome and/or locus and/or by snp
 The whitelist is an object in your
 global environment or a file in the working directory (e.g. "whitelist.txt").
 de novo CHROM column with 'un' need to be changed to 1.
-In the VCF, the column ID is the LOCUS identification.
+In the VCF, the column ID is the LOCUS identification (VCF generated from
+stacks have the SNP position on the read embedded in the ID,
+so the ID = no longer represent the LOCUS). Marker names are cleaned of
+separators that interfere with some packages or codes:
+\code{/}, \code{:}, \code{-} and \code{.} are changed to an underscore
+\code{_}.
 Default \code{whitelist.markers = NULL} for no whitelist of markers.}
 
 \item{maf.thresholds}{(string, double, optional) String with

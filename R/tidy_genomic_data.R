@@ -37,7 +37,12 @@
 #' The whitelist is an object in your
 #' global environment or a file in the working directory (e.g. "whitelist.txt").
 #' de novo CHROM column with 'un' need to be changed to 1.
-#' In the VCF, the column ID is the LOCUS identification.
+#' In the VCF, the column ID is the LOCUS identification (VCF generated from
+#' stacks have the SNP position on the read embedded in the ID,
+#' so the ID = no longer represent the LOCUS). Marker names are cleaned of
+#' separators that interfere with some packages or codes:
+#' \code{/}, \code{:}, \code{-} and \code{.} are changed to an underscore
+#' \code{_}.
 #' Default \code{whitelist.markers = NULL} for no whitelist of markers.
 
 #' @param monomorphic.out (optional) Should the monomorphic
@@ -57,6 +62,12 @@
 #' a file in the working directory (e.g. "blacklist.genotype.txt").
 #' For de novo VCF, CHROM column
 #' with 'un' need to be changed to 1.
+#' Marker names are cleaned of
+#' separators that interfere with some packages or codes:
+#' \code{/}, \code{:}, \code{-} and \code{.} are changed to an underscore
+#' \code{_}.
+#' Ids are also cleaned of separators that interfere with some packages or codes:
+#' \code{_} and \code{:} are changed to a dash \code{-}.
 #' Default: \code{blacklist.genotype = NULL} for no blacklist of
 #' genotypes to erase.
 
@@ -156,6 +167,8 @@
 #' the strata file is similar to a stacks \emph{population map file},
 #' make sure you
 #' have the required column names (\code{INDIVIDUALS} and \code{STRATA}).
+#' The strata column is cleaned of a white spaces that interfere with some
+#' packages or codes: space is changed to an underscore \code{_}
 #' Default: \code{strata = NULL}.
 
 #' @param pop.select (string, optional) Selected list of populations for
@@ -357,7 +370,6 @@ tidy_genomic_data <- function(
   parallel.core = parallel::detectCores() - 1,
   verbose = TRUE
 ) {
-
   if (verbose) {
     cat("#######################################################################\n")
     cat("##################### radiator::tidy_genomic_data #####################\n")
@@ -445,7 +457,10 @@ tidy_genomic_data <- function(
       message("    Warning: downstream results might be impacted by this, check how you made your VCF file...")
     }
     nrow.before <- nrow.after <- duplicate.whitelist.markers <- NULL
-  }
+
+    whitelist.markers <- dplyr::mutate_all(
+      .tbl = whitelist.markers, .funs = radiator::clean_markers_names)
+    }
   # Import blacklist id --------------------------------------------------------
   if (!is.null(blacklist.id)) {# With blacklist of ID
     if (is.vector(blacklist.id)) {
@@ -457,12 +472,7 @@ tidy_genomic_data <- function(
     }
     # not for plink file, where it's done after.
     # see plink section to understand
-    blacklist.id$INDIVIDUALS <- stringi::stri_replace_all_fixed(
-      str = blacklist.id$INDIVIDUALS,
-      pattern = c("_", ":"),
-      replacement = c("-", "-"),
-      vectorize_all = FALSE
-    )
+    blacklist.id$INDIVIDUALS <- radiator::clean_ind_names(blacklist.id$INDIVIDUALS)
 
     # remove potential duplicate id
     blacklist.id <- dplyr::distinct(.data = blacklist.id, INDIVIDUALS)
@@ -473,10 +483,14 @@ tidy_genomic_data <- function(
   if (!is.null(strata)) {
     if (is.vector(strata)) {
       # message("strata file: yes")
-      number.columns.strata <- max(utils::count.fields(strata, sep = "\t"), na.rm = TRUE)
-      col.types <- stringi::stri_join(rep("c", number.columns.strata), collapse = "")
-      suppressMessages(strata.df <- readr::read_tsv(file = strata, col_names = TRUE, col_types = col.types) %>%
-                         dplyr::rename(POP_ID = STRATA))
+      number.columns.strata <- max(
+        utils::count.fields(strata, sep = "\t"), na.rm = TRUE)
+      col.types <- stringi::stri_join(
+        rep("c", number.columns.strata), collapse = "")
+      suppressMessages(
+        strata.df <- readr::read_tsv(
+          file = strata, col_names = TRUE, col_types = col.types) %>%
+          dplyr::rename(POP_ID = STRATA))
     } else {
       # message("strata object: yes")
       colnames(strata) <- stringi::stri_replace_all_fixed(
@@ -493,7 +507,7 @@ tidy_genomic_data <- function(
       strata.df <- dplyr::anti_join(x = strata.df, y = blacklist.id, by = "INDIVIDUALS")
     }
     # Remove potential whitespace in pop_id
-    strata.df$POP_ID <- stringi::stri_replace_all_fixed(strata.df$POP_ID, pattern = " ", replacement = "_", vectorize_all = FALSE)
+    strata.df$POP_ID <- radiator::clean_pop_names(strata.df$POP_ID)
     colnames.strata <- colnames(strata.df)
   }
 
@@ -614,11 +628,15 @@ tidy_genomic_data <- function(
           tidyr::separate(data = ., col = ID, into = c("LOCUS", "COL"),
                           sep = "_", extra = "drop", remove = FALSE) %>%
           dplyr::mutate_at(.tbl = ., .vars = c("CHROM", "POS", "LOCUS"), .funs = as.character) %>%
+          dplyr::mutate_at(.tbl = ., .vars = c("CHROM", "POS", "LOCUS"), .funs = radiator::clean_markers_names) %>%
           tidyr::unite(MARKERS, c(CHROM, LOCUS, POS), sep = "__", remove = FALSE)
       }
     } else {
-      input <- tidyr::unite(
-        data = input,
+      input <- dplyr::mutate_at(
+        .tbl = input,
+        .vars = c("CHROM", "POS", "LOCUS"), .funs = radiator::clean_markers_names) %>%
+        tidyr::unite(
+        data = .,
         MARKERS, c(CHROM, LOCUS, POS), sep = "__", remove = FALSE)
     }
 
@@ -644,9 +662,10 @@ the filtering could result in loosing all the markers.
 The POS column used in the MARKERS column is different in biallelic and multiallelic file...\n")
         }
       }
-
       message("Filtering: ", nrow(whitelist.markers), " markers in whitelist")
-      input <- suppressWarnings(dplyr::semi_join(input, whitelist.markers, by = columns.names.whitelist))
+      input <- suppressWarnings(
+        dplyr::semi_join(
+          input, whitelist.markers, by = columns.names.whitelist))
       if (nrow(input) == 0) stop("No markers left in the dataset, check whitelist...")
     }
 
@@ -674,21 +693,15 @@ The POS column used in the MARKERS column is different in biallelic and multiall
         ) %>%
         tibble::as_data_frame(.)
 
-      # input.gt <- pegas::read.vcf(file = data, from = 1, to = nrow(input), quiet = FALSE) %>%
-      #   `colnames<-`(input$MARKERS)
-
       input <- suppressWarnings(
         dplyr::full_join(input.gt, input, by = "MARKERS") %>%
           dplyr::select(dplyr::one_of(want)) %>%
-          dplyr::mutate(INDIVIDUALS = stringi::stri_replace_all_fixed(
-            str = INDIVIDUALS,
-            pattern = c("_", ":"),
-            replacement = c("-", "-"),
-            vectorize_all = FALSE)
-          ) %>%
+          dplyr::mutate_at(.tbl = ., .vars = "INDIVIDUALS",
+                           .funs = radiator::clean_ind_names) %>%
           dplyr::mutate(GT = stringi::stri_replace_na(
             str = GT, replacement = "./."))
       )
+
       input.gt <- NULL
     } else {
       # filter the vcf.data
@@ -717,7 +730,9 @@ The POS column used in the MARKERS column is different in biallelic and multiall
           variable.factor = FALSE,
           value.name = "GT"
         ) %>%
-          tibble::as_data_frame()
+          tibble::as_data_frame(.) %>%
+          dplyr::mutate_at(.tbl = ., .vars = "INDIVIDUALS",
+                           .funs = radiator::clean_ind_names)
       } else {
         input <- data.table::melt.data.table(
           data = data.table::as.data.table(input),
@@ -726,7 +741,9 @@ The POS column used in the MARKERS column is different in biallelic and multiall
           variable.factor = FALSE,
           value.name = "GT"
         ) %>%
-          tibble::as_data_frame()
+          tibble::as_data_frame(.) %>%
+          dplyr::mutate_at(.tbl = ., .vars = "INDIVIDUALS",
+                           .funs = radiator::clean_ind_names)
       }
       # metadata
       if (is.logical(vcf.metadata)) {
@@ -781,12 +798,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
 
     # Population levels and strata
     if (verbose) message("Making the vcf population-wise...")
-    strata.df$INDIVIDUALS <- stringi::stri_replace_all_fixed(
-      str = strata.df$INDIVIDUALS,
-      pattern = c("_", ":"),
-      replacement = c("-", "-"),
-      vectorize_all = FALSE
-    )
+    strata.df$INDIVIDUALS <- radiator::clean_ind_names(strata.df$INDIVIDUALS)
 
     # Filter blacklisted individuals
     if (!is.null(blacklist.id)) {
@@ -859,21 +871,11 @@ The POS column used in the MARKERS column is different in biallelic and multiall
       col.names = c("POP_ID", "INDIVIDUALS"),
       showProgress = TRUE,
       data.table = FALSE) %>%
-      tibble::as_data_frame() %>%
-      dplyr::mutate(
-        # remove unwanted sep in individual name and replace with "-"
-        INDIVIDUALS = stringi::stri_replace_all_fixed(
-          str = INDIVIDUALS,
-          pattern = c("_", ":"),
-          replacement = c("-", "-"),
-          vectorize_all = FALSE),
-        # remove potential whitespace in tfam pop id column
-        POP_ID = stringi::stri_replace_all_fixed(
-          POP_ID,
-          pattern = " ",
-          replacement = "_",
-          vectorize_all = FALSE)
-      )
+      tibble::as_data_frame(.) %>%
+      dplyr::mutate_at(.tbl = ., .vars = "INDIVIDUALS",
+                       .funs = radiator::clean_ind_names) %>%
+      dplyr::mutate_at(.tbl = ., .vars = "POP_ID",
+                       .funs = radiator::clean_pop_names)
 
     # if no strata tfam = strata.df
     if (is.null(strata)) {
@@ -887,12 +889,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
       }
     } else {
       # remove unwanted sep in individual name and replace with "-"
-      strata.df$INDIVIDUALS <- stringi::stri_replace_all_fixed(
-        str = strata.df$INDIVIDUALS,
-        pattern = c("_", ":"),
-        replacement = c("-", "-"),
-        vectorize_all = FALSE
-      )
+      strata.df$INDIVIDUALS <- radiator::clean_ind_names(strata.df$INDIVIDUALS)
     }
 
     tped.header.prep <- tfam %>%
@@ -933,7 +930,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
       col.names = tped.header.names,
       showProgress = TRUE,
       data.table = FALSE) %>%
-      tibble::as_data_frame() %>%
+      tibble::as_data_frame(.) %>%
       dplyr::mutate(LOCUS = as.character(LOCUS))
 
     # Filter with whitelist of markers
@@ -970,7 +967,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
       variable.factor = FALSE,
       value.factor = FALSE
     ) %>%
-      tibble::as_data_frame()
+      tibble::as_data_frame(.)
 
     # detect GT coding
     if (verbose) message("Scanning for PLINK tped genotype coding")
@@ -1006,7 +1003,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
         formula = LOCUS + INDIVIDUALS ~ ALLELES,
         value.var = "GT"
       ) %>%
-      tibble::as_data_frame() %>%
+      tibble::as_data_frame(.) %>%
       tidyr::unite(data = ., col = GT, A1, A2, sep = "") %>%
       dplyr::select(LOCUS, INDIVIDUALS, GT)
 
@@ -1087,12 +1084,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
     }
 
     # Change individuals names containing special character
-    input$INDIVIDUALS <- stringi::stri_replace_all_fixed(
-      str = input$INDIVIDUALS,
-      pattern = c("_", ":"),
-      replacement = c("-", "-"),
-      vectorize_all = FALSE
-    )
+    input$INDIVIDUALS <- radiator::clean_ind_names(input$INDIVIDUALS)
 
     # Filter with whitelist of markers
     if (!is.null(whitelist.markers)) {
@@ -1108,12 +1100,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
 
     # population levels and strata
     if (!is.null(strata)) {
-      strata.df$INDIVIDUALS <- stringi::stri_replace_all_fixed(
-        str = strata.df$INDIVIDUALS,
-        pattern = c("_", ":"),
-        replacement = c("-", "-"),
-        vectorize_all = FALSE
-      )
+      strata.df$INDIVIDUALS <- radiator::clean_ind_names(strata.df$INDIVIDUALS)
 
       input <- input %>%
         dplyr::select(-POP_ID) %>%
@@ -1121,12 +1108,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
     }
 
     # Change potential problematic POP_ID space
-    input$POP_ID = stringi::stri_replace_all_fixed(
-      input$POP_ID,
-      pattern = " ",
-      replacement = "_",
-      vectorize_all = FALSE
-    )
+    input$POP_ID <- radiator::clean_pop_names(input$POP_ID)
 
     # Check with strata and pop.levels/pop.labels
     if (!is.null(pop.levels)) {
@@ -1165,7 +1147,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
       data.table = FALSE,
       na.strings = "-"
     ) %>%
-      tibble::as_data_frame() %>%
+      tibble::as_data_frame(.) %>%
       dplyr::select(-Cnt)
 
     if (tibble::has_name(input, "# Catalog ID") || tibble::has_name(input, "Catalog ID")) {
@@ -1193,16 +1175,11 @@ The POS column used in the MARKERS column is different in biallelic and multiall
       variable.factor = FALSE,
       value.name = "GT_HAPLO"
     ) %>%
-      tibble::as_data_frame()
+      tibble::as_data_frame(.)
 
     number.columns <- NULL
 
-    input$INDIVIDUALS = stringi::stri_replace_all_fixed(
-      str = input$INDIVIDUALS,
-      pattern = c("_", ":"),
-      replacement = c("-", "-"),
-      vectorize_all = FALSE
-    )
+    input$INDIVIDUALS <- radiator::clean_ind_names(input$INDIVIDUALS)
 
     # Filter with whitelist of markers
     if (!is.null(whitelist.markers)) {
@@ -1228,12 +1205,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
     if (verbose) message("    number of consensus markers removed: ", dplyr::n_distinct(consensus.markers$LOCUS))
 
     # population levels and strata
-    strata.df$INDIVIDUALS = stringi::stri_replace_all_fixed(
-      str = strata.df$INDIVIDUALS,
-      pattern = c("_", ":"),
-      replacement = c("-", "-"),
-      vectorize_all = FALSE
-    )
+    strata.df$INDIVIDUALS <- radiator::clean_ind_names(strata.df$INDIVIDUALS)
 
     input <- dplyr::left_join(x = input, y = strata.df, by = "INDIVIDUALS")
 
@@ -1308,18 +1280,10 @@ The POS column used in the MARKERS column is different in biallelic and multiall
 
     # remove unwanted sep in id and pop.id names
     input <- input %>%
-      dplyr::mutate(
-        INDIVIDUALS = stringi::stri_replace_all_fixed(
-          str = INDIVIDUALS,
-          pattern = c("_", ":"),
-          replacement = c("-", "-"),
-          vectorize_all = FALSE),
-        POP_ID = stringi::stri_replace_all_fixed(
-          POP_ID,
-          pattern = " ",
-          replacement = "_",
-          vectorize_all = FALSE)
-      )
+      dplyr::mutate_at(.tbl = ., .vars = "INDIVIDUALS",
+                       .funs = radiator::clean_ind_names) %>%
+      dplyr::mutate_at(.tbl = ., .vars = "POP_ID",
+                       .funs = radiator::clean_pop_names)
 
     # Filter with whitelist of markers
     if (!is.null(whitelist.markers)) {
@@ -1342,12 +1306,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
     }
 
     # Change potential problematic POP_ID space
-    input$POP_ID = stringi::stri_replace_all_fixed(
-      input$POP_ID,
-      pattern = " ",
-      replacement = "_",
-      vectorize_all = FALSE
-    )
+    input$POP_ID <- radiator::clean_pop_names(input$POP_ID)
 
     # Check with strata and pop.levels/pop.labels
     if (!is.null(pop.levels)) {
@@ -1383,18 +1342,10 @@ The POS column used in the MARKERS column is different in biallelic and multiall
 
     # remove unwanted sep in id and pop.id names
     input <- input %>%
-      dplyr::mutate(
-        INDIVIDUALS = stringi::stri_replace_all_fixed(
-          str = INDIVIDUALS,
-          pattern = c("_", ":"),
-          replacement = c("-", "-"),
-          vectorize_all = FALSE),
-        POP_ID = stringi::stri_replace_all_fixed(
-          POP_ID,
-          pattern = " ",
-          replacement = "_",
-          vectorize_all = FALSE)
-      )
+      dplyr::mutate_at(.tbl = ., .vars = "INDIVIDUALS",
+                       .funs = radiator::clean_ind_names) %>%
+      dplyr::mutate_at(.tbl = ., .vars = "POP_ID",
+                       .funs = radiator::clean_pop_names)
 
     # Filter with whitelist of markers
     if (!is.null(whitelist.markers)) {
@@ -1417,12 +1368,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
     }
 
     # Change potential problematic POP_ID space
-    input$POP_ID = stringi::stri_replace_all_fixed(
-      input$POP_ID,
-      pattern = " ",
-      replacement = "_",
-      vectorize_all = FALSE
-    )
+    input$POP_ID <- radiator::clean_pop_names(input$POP_ID)
 
     # Check with strata and pop.levels/pop.labels
     if (!is.null(pop.levels)) {
@@ -1449,18 +1395,10 @@ The POS column used in the MARKERS column is different in biallelic and multiall
   if (data.type == "gtypes") { # DATA FRAME OF GENOTYPES
     if (verbose) message("Tidying the gtypes object ...")
     input <- tidy_gtypes(data) %>%
-      dplyr::mutate(
-        INDIVIDUALS = stringi::stri_replace_all_fixed(
-          str = INDIVIDUALS,
-          pattern = c("_", ":"),
-          replacement = c("-", "-"),
-          vectorize_all = FALSE),
-        POP_ID = stringi::stri_replace_all_fixed(
-          POP_ID,
-          pattern = " ",
-          replacement = "_",
-          vectorize_all = FALSE)
-      )
+      dplyr::mutate_at(.tbl = ., .vars = "INDIVIDUALS",
+                       .funs = radiator::clean_ind_names) %>%
+      dplyr::mutate_at(.tbl = ., .vars = "POP_ID",
+                       .funs = radiator::clean_pop_names)
 
     # Filter with whitelist of markers
     if (!is.null(whitelist.markers)) {
@@ -1483,12 +1421,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
     }
 
     # Change potential problematic POP_ID space
-    input$POP_ID = stringi::stri_replace_all_fixed(
-      input$POP_ID,
-      pattern = " ",
-      replacement = "_",
-      vectorize_all = FALSE
-    )
+    input$POP_ID <- radiator::clean_pop_names(input$POP_ID)
 
     # Check with strata and pop.levels/pop.labels
     if (!is.null(pop.levels)) {
@@ -1518,15 +1451,10 @@ The POS column used in the MARKERS column is different in biallelic and multiall
   } # End tidy gtypes
 
 
-  # END IMPORT DATA
+  # END IMPORT DATA-------------------------------------------------------------
 
   # Arrange the id and create a strata after pop select ------------------------
-  input$INDIVIDUALS <- stringi::stri_replace_all_fixed(
-    str = input$INDIVIDUALS,
-    pattern = c("_", ":"),
-    replacement = c("-", "-"),
-    vectorize_all = FALSE
-  )
+  input$INDIVIDUALS <- radiator::clean_ind_names(input$INDIVIDUALS)
 
   strata.df <- dplyr::ungroup(input) %>%
     dplyr::distinct(POP_ID, INDIVIDUALS)
@@ -1537,19 +1465,14 @@ The POS column used in the MARKERS column is different in biallelic and multiall
   } else {
     if (verbose) message("Erasing genotype: yes")
     want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS")
-    if (is.vector(blacklist.id)) {
+    if (is.vector(blacklist.genotype)) {
     suppressWarnings(suppressMessages(
       blacklist.genotype <- readr::read_tsv(blacklist.genotype, col_names = TRUE)))
     }
-    suppressWarnings(suppressMessages(blacklist.id <- blacklist.id %>%
-        dplyr::mutate(
-          INDIVIDUALS = stringi::stri_replace_all_fixed(
-            str = INDIVIDUALS,
-            pattern = c("_", ":"),
-            replacement = c("-", "-"),
-            vectorize_all = FALSE
-          )
-        ) %>%
+    suppressWarnings(suppressMessages(
+      blacklist.genotype <- blacklist.genotype %>%
+        dplyr::mutate_at(.tbl = ., .vars = "INDIVIDUALS",
+                         .funs = radiator::clean_ind_names) %>%
         dplyr::select(dplyr::one_of(want)) %>%
         dplyr::mutate_all(.tbl = ., .funs = as.character, exclude = NA)))
     columns.names.blacklist.genotype <- colnames(blacklist.genotype)
@@ -1577,28 +1500,40 @@ The POS column used in the MARKERS column is different in biallelic and multiall
       }
 
       # updating the blacklist.genotype
-      blacklist.genotype <- suppressWarnings(dplyr::semi_join(whitelist.markers.ind, blacklist.genotype, by = columns.names.blacklist.genotype))
+      blacklist.genotype <- suppressWarnings(
+        dplyr::semi_join(whitelist.markers.ind, blacklist.genotype,
+                         by = columns.names.blacklist.genotype))
       columns.names.blacklist.genotype <- colnames(blacklist.genotype)
     }
 
     # Update column names
     columns.names.blacklist.genotype <- colnames(blacklist.genotype)
 
-    input.erase <- dplyr::semi_join(input, blacklist.genotype, by = columns.names.blacklist.genotype) %>%
-      dplyr::mutate(GT = rep("000000", n()))
-    input <- dplyr::anti_join(input, blacklist.genotype, by = columns.names.blacklist.genotype)
-    if (tibble::has_name(input.erase, "GT_VCF")) {
-      input.erase <- dplyr::mutate(input.erase, GT_VCF = rep("./.", n()))
+    blacklisted.gen.number <- nrow(blacklist.genotype)
+    if (blacklisted.gen.number > 0) {
+      message("    Number of genotype(s) to erase: ", blacklisted.gen.number)
+      input.erase <- dplyr::semi_join(
+        input, blacklist.genotype, by = columns.names.blacklist.genotype) %>%
+        dplyr::mutate(GT = rep("000000", n()))
+      input <- dplyr::anti_join(
+        input, blacklist.genotype, by = columns.names.blacklist.genotype)
+      if (tibble::has_name(input.erase, "GT_VCF")) {
+        input.erase <- dplyr::mutate(input.erase, GT_VCF = rep("./.", n()))
+      }
+
+      if (tibble::has_name(input.erase, "GT_VCF_NUC")) {
+        input.erase <- dplyr::mutate(input.erase, GT_VCF_NUC = rep("./.", n()))
+      }
+
+      if (tibble::has_name(input.erase, "GT_BIN")) {
+        input.erase <- dplyr::mutate(input.erase, GT_BIN = rep(as.numeric(NA_character_), n()))
+      }
+      input <- dplyr::bind_rows(input, input.erase)
+    } else {
+      message("There are no genotype left in the blacklist: input file left intact")
     }
 
-    if (tibble::has_name(input.erase, "GT_VCF_NUC")) {
-      input.erase <- dplyr::mutate(input.erase, GT_VCF_NUC = rep("./.", n()))
-    }
 
-    if (tibble::has_name(input.erase, "GT_BIN")) {
-      input.erase <- dplyr::mutate(input.erase, GT_BIN = rep(as.numeric(NA_character_), n()))
-    }
-    input <- dplyr::bind_rows(input, input.erase)
   } # End erase genotypes
 
   # dump unused object
@@ -1621,14 +1556,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
   }
 
   # Removing special characters in markers id ----------------------------------
-  input <- input %>%
-    dplyr::mutate(
-      MARKERS = stringi::stri_replace_all_fixed(
-        str = as.character(MARKERS),
-        pattern = c("/", ":", "-", "."),
-        replacement = "_",
-        vectorize_all = FALSE)
-    )
+  input$MARKERS <- radiator::clean_markers_names(input$MARKERS)
 
   # Markers in common between all populations (optional) -----------------------
   if (common.markers) { # keep only markers present in all pop
@@ -1998,7 +1926,6 @@ The POS column used in the MARKERS column is different in biallelic and multiall
 
 
 # Internal nested Function -----------------------------------------------------
-
 #' @title parse_genomic
 #' @description function to parse the format field and tidy the results of VCF
 #' @rdname parse_genomic
@@ -2032,7 +1959,7 @@ parse_genomic <- function(
       variable.factor = FALSE,
       value.name = format.name
     ) %>%
-      tibble::as_data_frame() %>%
+      tibble::as_data_frame(.) %>%
       dplyr::select(-ID, -INDIVIDUALS)
   }
   return(x)
@@ -2168,6 +2095,7 @@ split_vcf_id <- function(x) {
     tidyr::separate(data = ., col = ID, into = c("LOCUS", "COL"),
                     sep = "_", extra = "drop", remove = FALSE) %>%
     dplyr::mutate_at(.tbl = ., .vars = c("CHROM", "POS", "LOCUS"), .funs = as.character) %>%
+    dplyr::mutate_at(.tbl = ., .vars = c("CHROM", "POS", "LOCUS"), .funs = radiator::clean_markers_names) %>%
     tidyr::unite(MARKERS, c(CHROM, LOCUS, POS), sep = "__", remove = FALSE)
   return(res)
 }#End split_vcf_id

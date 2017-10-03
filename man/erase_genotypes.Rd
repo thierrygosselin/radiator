@@ -18,7 +18,7 @@ erase the genotypes that don't pass the threshold.}
 \item{allele.depth.threshold}{(integer) Threhold for the min depth
 of REF or ALT alleles.}
 
-\item{allele.imbalance.threshold}{(numeric) Threshold of ratio between ALT and REF 
+\item{allele.imbalance.threshold}{(numeric) Threshold of ratio between ALT and REF
 depth of coverage. See details below.}
 
 \item{filename}{(optional) Name of the file written to the working directory.}
@@ -26,13 +26,13 @@ depth of coverage. See details below.}
 \value{
 The function returns the blacklisted individuals genotypes,
 by loci, position (SNP, POS in stacks), populations and individuals.
-For VCF, return the tidy vcf in the global environment only and in 
+For VCF, return the tidy vcf in the global environment only and in
 the directory with \code{filename}. For haplotype file the original
 filename with "_erased_geno" is appended.
 }
 \description{
-This function uses the information in the vcf tidy to i) make a 
-blacklist of individual genotypes to erase based on coverage and 
+This function uses the information in the vcf tidy to i) make a
+blacklist of individual genotypes to erase based on coverage and
 genotype likelihood thresholds and ii) erase those blacklisted genotypes from
  a tidy vcf file and a STACKS haplotypes file.
 }
@@ -41,11 +41,11 @@ Genotypes below average quality i.e. below threshold for the
 coverage of REF and/or ALT allele and genotype likelihood
 are zeroed from the file. The function erase SNP in the VCF file and loci
 in the haplotypes file.
-Also creates a blacklist of genotypes erased based on the genotype 
+Also creates a blacklist of genotypes erased based on the genotype
 likelihood threshold, the REF and ALT allele coverage threshold.
-The ratio is calculated : 
+The ratio is calculated :
 (read depth ALT allele - read depth REF allele)/(read depth ALT allele + read
-depth REF allele). 
+depth REF allele).
 e.g. REF = 3 and ALT = 2 the ratio = -0.2. For the function to work properly,
 use positive values, the function will calculate the +/- imbalance.
 }

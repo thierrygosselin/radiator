@@ -89,6 +89,12 @@ The blacklist is an object in your global environment or
 a file in the working directory (e.g. "blacklist.genotype.txt").
 For de novo VCF, CHROM column
 with 'un' need to be changed to 1.
+Marker names are cleaned of
+separators that interfere with some packages or codes:
+\code{/}, \code{:}, \code{-} and \code{.} are changed to an underscore
+\code{_}.
+Ids are also cleaned of separators that interfere with some packages or codes:
+\code{_} and \code{:} are changed to a dash \code{-}.
 Default: \code{blacklist.genotype = NULL} for no blacklist of
 genotypes to erase.}
 
@@ -98,7 +104,12 @@ POS (integer) columns header. To filter by chromosome and/or locus and/or by snp
 The whitelist is an object in your
 global environment or a file in the working directory (e.g. "whitelist.txt").
 de novo CHROM column with 'un' need to be changed to 1.
-In the VCF, the column ID is the LOCUS identification.
+In the VCF, the column ID is the LOCUS identification (VCF generated from
+stacks have the SNP position on the read embedded in the ID,
+so the ID = no longer represent the LOCUS). Marker names are cleaned of
+separators that interfere with some packages or codes:
+\code{/}, \code{:}, \code{-} and \code{.} are changed to an underscore
+\code{_}.
 Default \code{whitelist.markers = NULL} for no whitelist of markers.}
 
 \item{monomorphic.out}{(optional) Should the monomorphic
@@ -144,6 +155,8 @@ If you have already run
 the strata file is similar to a stacks \emph{population map file},
 make sure you
 have the required column names (\code{INDIVIDUALS} and \code{STRATA}).
+The strata column is cleaned of a white spaces that interfere with some
+packages or codes: space is changed to an underscore \code{_}
 Default: \code{strata = NULL}.}
 
 \item{pop.levels}{(optional, string) This refers to the levels in a factor. In this
