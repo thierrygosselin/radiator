@@ -24,24 +24,24 @@ genlight (library(adegenet)), gtypes (library(strataG)), genepop, DArT,
 and a data frame in long/tidy or wide format.
 \emph{See details} of \code{\link[radiator]{tidy_genomic_data}}.}
 
-\item{fasta.ingroup}{(optional) The fasta output file from STACKS. This file is 
-required to use with an outgroup. Leave empty if no outgroup. 
+\item{fasta.ingroup}{(optional) The fasta output file from STACKS. This file is
+required to use with an outgroup. Leave empty if no outgroup.
 Default: \code{fasta.ingroup = NULL}.}
 
-\item{fasta.outgroup}{(optional) The fasta output file from STACKS. This file is 
+\item{fasta.outgroup}{(optional) The fasta output file from STACKS. This file is
 required to use an outgroup. Default: \code{fasta.outgroup = NULL}.}
 
 \item{sumstats.ingroup}{(optional) The sumstats output file from STACKS
-when running STACKS for the ingroup fasta file.This file is 
-required to use with an outgroup. Leave empty if no outgroup. 
+when running STACKS for the ingroup fasta file.This file is
+required to use with an outgroup. Leave empty if no outgroup.
 Default: \code{sumstats.ingroup = NULL}.}
 
-\item{sumstats.outgroup}{(optional) The sumstats output file from STACKS 
-when running STACKS for the outgroup fasta file. This file is 
+\item{sumstats.outgroup}{(optional) The sumstats output file from STACKS
+when running STACKS for the outgroup fasta file. This file is
 required to use an outgroup. Default: \code{sumstats.outgroup = NULL}.}
 
-\item{dadi.input.filename}{(optional) Name of the \code{dadi} SNP input file 
-written to the working directory. e.g. \code{dadi.file.tsv}. 
+\item{dadi.input.filename}{(optional) Name of the \code{dadi} SNP input file
+written to the working directory. e.g. \code{dadi.file.tsv}.
 Default use date and time to make the file. If used, the file extension
 need to finish with \code{.tsv or .txt}.}
 
@@ -237,36 +237,36 @@ execution during vcf import.
 Default: \code{parallel::detectCores() - 1}.}
 }
 \value{
-The function returns a list with 1 or 2 objects (w/o imputations): 
+The function returns a list with 1 or 2 objects (w/o imputations):
 `$dadi.no.imputation`
 `$dadi.imputed`
 The data frame are accessed form the list with `$`.
 }
 \description{
 This function will create a \code{dadi} SNP input file using a
-VCF file (Danecek et al. 2011). Missing data can bias demographic inference, 
-\code{vcf2dadi} was created to address this problem, providing a customizable 
+VCF file (Danecek et al. 2011). Missing data can bias demographic inference,
+\code{vcf2dadi} was created to address this problem, providing a customizable
 imputation framework specifically designed to work with GBS/RAD data.
-If your VCF is not filtered, you can supply the function a whitelist of loci and a 
+If your VCF is not filtered, you can supply the function a whitelist of loci and a
 blacklist of individuals.
 }
 \details{
 \strong{Input data:}
- 
-To discriminate the long from the wide format, 
-the function \pkg{radiator} \code{\link[radiator]{tidy_wide}} searches 
+
+To discriminate the long from the wide format,
+the function \pkg{radiator} \code{\link[radiator]{tidy_wide}} searches
 for \code{MARKERS or LOCUS} in column names (TRUE = long format).
 The data frame is tab delimitted.
 \strong{Wide format:}
 The wide format cannot store metadata info.
-The wide format starts with these 2 id columns: 
-\code{INDIVIDUALS}, \code{POP_ID} (that refers to any grouping of individuals), 
+The wide format starts with these 2 id columns:
+\code{INDIVIDUALS}, \code{POP_ID} (that refers to any grouping of individuals),
 the remaining columns are the markers in separate columns storing genotypes.
 
 \strong{Long/Tidy format:}
-The long format is considered to be a tidy data frame and can store metadata info. 
+The long format is considered to be a tidy data frame and can store metadata info.
 (e.g. from a VCF see \pkg{radiator} \code{\link{tidy_genomic_data}}). A minimum of 4 columns
-are required in the long format: \code{INDIVIDUALS}, \code{POP_ID}, 
+are required in the long format: \code{INDIVIDUALS}, \code{POP_ID},
 \code{MARKERS or LOCUS} and \code{GENOTYPE or GT}. The rest are considered metata info.
 
 \strong{2 genotypes formats are available:}
@@ -278,40 +278,40 @@ The separator can be any of these: \code{"/", ":", "_", "-", "."}.
 \strong{Imputations details:}
 The imputations using Random Forest requires more time to compute and can take several
 minutes and hours depending on the size of the dataset and polymorphism of
-the species used. e.g. with a low polymorphic taxa, and a data set 
-containing 30\% missing data, 5 000 haplotypes loci and 500 individuals 
+the species used. e.g. with a low polymorphic taxa, and a data set
+containing 30\% missing data, 5 000 haplotypes loci and 500 individuals
 will require 15 min.
 }
 \examples{
 #See vignette `vignette_vcf2dadi` for more info.
 \dontrun{
 dadi.no.imputation <- vcf2dadi(
-data = "batch_1.vcf", 
+data = "batch_1.vcf",
 whitelist.markers = "whitelist.loci.txt",
 strata = "strata.file.tsv",
 pop.levels = c("PAN", "COS"),
-common.markers = TRUE, 
-fasta.ingroup = "batch_1.ingroup.fa", 
-fasta.outgroup = "batch_1.outgroup.fa", 
-sumstats.ingroup = "batch_1.sumstats.ingroup.tsv", 
+common.markers = TRUE,
+fasta.ingroup = "batch_1.ingroup.fa",
+fasta.outgroup = "batch_1.outgroup.fa",
+sumstats.ingroup = "batch_1.sumstats.ingroup.tsv",
 sumstats.outgroup = "batch_1.sumstats.outgroup.tsv"
 )
 
 With Imputations:
 dadi.files <- vcf2dadi(
-data = "batch_1.vcf", 
+data = "batch_1.vcf",
 whitelist.markers = "whitelist.loci.txt",
 strata = "strata.file.tsv",
 pop.levels = c("PAN", "COS"),
-common.markers = TRUE, 
-fasta.ingroup = "batch_1.ingroup.fa", 
-fasta.outgroup = "batch_1.outgroup.fa", 
-sumstats.ingroup = "batch_1.sumstats.ingroup.tsv", 
+common.markers = TRUE,
+fasta.ingroup = "batch_1.ingroup.fa",
+fasta.outgroup = "batch_1.outgroup.fa",
+sumstats.ingroup = "batch_1.sumstats.ingroup.tsv",
 sumstats.outgroup = "batch_1.sumstats.outgroup.tsv",
-imputation.method = "max", 
-hierarchical.levels = "populations", 
-num.tree = 100, 
-verbose = FALSE, 
+imputation.method = "max",
+hierarchical.levels = "populations",
+num.tree = 100,
+verbose = FALSE,
 parallel.core = 8
 )
 # to get the imputed data frame:
@@ -319,12 +319,12 @@ dadi.imputed.df <- dadi.files$dadi.imputed
 }
 }
 \references{
-Catchen JM, Amores A, Hohenlohe PA et al. (2011) 
-Stacks: Building and Genotyping Loci De Novo From Short-Read Sequences. 
+Catchen JM, Amores A, Hohenlohe PA et al. (2011)
+Stacks: Building and Genotyping Loci De Novo From Short-Read Sequences.
 G3, 1, 171-182.
 
-Catchen JM, Hohenlohe PA, Bassham S, Amores A, Cresko WA (2013) 
-Stacks: an analysis tool set for population genomics. 
+Catchen JM, Hohenlohe PA, Bassham S, Amores A, Cresko WA (2013)
+Stacks: an analysis tool set for population genomics.
 Molecular Ecology, 22, 3124-3140.
 
 Danecek P, Auton A, Abecasis G et al. (2011)
@@ -332,8 +332,8 @@ The variant call format and VCFtools.
 Bioinformatics, 27, 2156-2158.
 
 Gutenkunst RN, Hernandez RD, Williamson SH, Bustamante CD (2009)
-Inferring the Joint Demographic History of Multiple Populations 
-from Multidimensional SNP Frequency Data (G McVean, Ed,). 
+Inferring the Joint Demographic History of Multiple Populations
+from Multidimensional SNP Frequency Data (G McVean, Ed,).
 PLoS genetics, 5, e1000695.
 
 Ishwaran H. and Kogalur U.B. (2015). Random Forests for Survival,

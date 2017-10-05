@@ -1220,8 +1220,7 @@ radiator_imputations_module <- function(
   if (ref.column) {
     if (verbose) message("Adjusting REF/ALT alleles to account for imputations...")
     input.imp <- radiator::change_alleles(
-      data = input.imp,
-      monomorphic.out = FALSE, biallelic = biallelic,
+      data = input.imp, biallelic = biallelic,
       parallel.core = parallel.core,
       verbose = verbose)$input
   } # end computing REF/ALT

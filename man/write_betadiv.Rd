@@ -17,14 +17,14 @@ A betadiv object is returned.
 }
 \description{
 Write a betadiv file from a tidy data frame.
-Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator} 
+Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and \href{https://github.com/thierrygosselin/assigner}{assigner}
 and might be of interest for users.
 }
 \references{
-Lamy T, Legendre P, Chancerelle Y, Siu G, Claudet J (2015) 
-Understanding the Spatio-Temporal Response of Coral Reef Fish Communities to 
-Natural Disturbances: Insights from Beta-Diversity Decomposition. 
+Lamy T, Legendre P, Chancerelle Y, Siu G, Claudet J (2015)
+Understanding the Spatio-Temporal Response of Coral Reef Fish Communities to
+Natural Disturbances: Insights from Beta-Diversity Decomposition.
 PLoS ONE, 10, e0138696.
 }
 \seealso{

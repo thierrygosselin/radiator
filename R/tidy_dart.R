@@ -101,30 +101,59 @@ tidy_dart <- function(
   # Strata file ------------------------------------------------------------------
   strata.df <- suppressMessages(readr::read_tsv(file = strata, col_names = TRUE))
 
+
+  # We need to check that the names in DART_DB are in the strata...
+  # dart.names <- readr::read_tsv(file = data, skip = skip.number, n_max = 1) %>%
+    # colnames(.)
+  # c("AlleleID", "SNP", "SnpPosition", "CallRate",
+    # "AvgCountRef", "AvgCountSnp", "RepAvg") %in% dart.names
+
+  # test.strata <- strata.df %>%
+    # dplyr::mutate(VERIFIED = INDIVIDUALS %in% dart.names)
+
   # Import data ---------------------------------------------------------------
   colnames.keeper <- c(c("AlleleID", "SNP", "SnpPosition", "CallRate",
                          "AvgCountRef", "AvgCountSnp", "RepAvg"),
                        strata.df$INDIVIDUALS)
+  # Catch error while importing DArT with fread
+  import_dart <- function(data, skip.number, colnames.keeper) {
+    input <- suppressWarnings(
+      data.table::fread(
+        input = data,
+        skip = skip.number,
+        sep = "\t",
+        stringsAsFactors = FALSE,
+        header = TRUE,
+        na.strings = "-",
+        strip.white = TRUE,
+        select = colnames.keeper,
+        showProgress = TRUE,
+        verbose = FALSE
+      ) %>%
+        tibble::as_data_frame(.) %>%
+        dplyr::rename(LOCUS = AlleleID, POS = SnpPosition, CALL_RATE = CallRate,
+                      AVG_COUNT_REF = AvgCountRef, AVG_COUNT_SNP = AvgCountSnp,
+                      REP_AVG = RepAvg) %>%
+        dplyr::arrange(LOCUS, POS)
+    )
+  }#End import_dart
+  safe_dart <- purrr::safely(.f = import_dart)
 
-  input <- suppressWarnings(
-    data.table::fread(
-      input = data,
-      skip = skip.number,
-      sep = "\t",
-      stringsAsFactors = FALSE,
-      header = TRUE,
-      na.strings = "-",
-      strip.white = TRUE,
-      select = colnames.keeper,
-      showProgress = TRUE,
-      verbose = FALSE
-    ) %>%
-      tibble::as_data_frame(.) %>%
+  import.test <- safe_dart(data, skip.number, colnames.keeper)
+  # names(import.test)
+  # import.test$error
+
+  if (is.null(import.test$error)) {
+    input <- import.test$result
+  } else {
+    # plan B
+    input <- suppressMessages(suppressWarnings(readr::read_tsv(file = data, skip = skip.number))) %>%
+      dplyr::select(dplyr::one_of(colnames.keeper)) %>%
       dplyr::rename(LOCUS = AlleleID, POS = SnpPosition, CALL_RATE = CallRate,
                     AVG_COUNT_REF = AvgCountRef, AVG_COUNT_SNP = AvgCountSnp,
                     REP_AVG = RepAvg) %>%
       dplyr::arrange(LOCUS, POS)
-  )
+  }
 
   # Screen for duplicate names -------------------------------------------------
   remove.list <- c("LOCUS", "SNP", "POS", "CALL_RATE", "AVG_COUNT_REF",
@@ -269,7 +298,7 @@ tidy_dart <- function(
       return(res)
     }
 
-    input <- input %>%
+    input2 <- input %>%
       dplyr::select(-c(CHROM, LOCUS, POS, CALL_RATE, AVG_COUNT_REF,
                        AVG_COUNT_SNP, REP_AVG, REF, ALT)) %>%
       tidyr::gather(INDIVIDUALS, GT, -MARKERS) %>%

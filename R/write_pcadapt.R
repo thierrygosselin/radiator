@@ -118,22 +118,6 @@ write_pcadapt <- function(
 
   if (!biallelic) {
     stop("\npcadapt only work with biallelic dataset")
-    # want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS", "POP_ID", "GT_VCF_NUC", "GT")
-    # input <- suppressWarnings(dplyr::select(input, dplyr::one_of(want)))
-    # if (tibble::has_name(input, "GT_VCF_NUC")) {
-    #   want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS", "POP_ID", "GT_VCF_NUC")
-    #   input <- suppressWarnings(dplyr::select(input, dplyr::one_of(want))) %>%
-    #     dplyr::rename(GT_HAPLO = GT_VCF_NUC)
-    # } else {
-    #   want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS", "POP_ID", "GT")
-    #   input <- suppressWarnings(dplyr::select(input, dplyr::one_of(want))) %>%
-    #     dplyr::rename(GT_HAPLO = GT)
-    # }
-    #
-    # input <- radiator::change_alleles(
-    #   biallelic = FALSE,
-    #   data = input, monomorphic.out = TRUE,
-    #   parallel.core = parallel.core, verbose = TRUE)$input
   }
 
   # Linkage disequilibrium -----------------------------------------------------
@@ -165,13 +149,10 @@ write_pcadapt <- function(
 
 
   if (!tibble::has_name(input, "GT_BIN")) {
-    input <- dplyr::select(input, MARKERS, INDIVIDUALS, POP_ID, GT) %>%
-      radiator::change_alleles(
-        data = .,
-        monomorphic.out = TRUE,
+    input <- radiator::change_alleles(
+        data = dplyr::select(input, MARKERS, INDIVIDUALS, POP_ID, GT),
         biallelic = TRUE,
-        parallel.core = parallel.core, verbose = TRUE)
-    input <- input$input
+        parallel.core = parallel.core, verbose = TRUE)$input
   }
 
 

@@ -70,8 +70,8 @@ write_vcf <- function(data, pop.info = FALSE, filename = NULL) {
 
   # REF/ALT Alleles and VCF genotype format ------------------------------------
   if (!tibble::has_name(input, "GT_VCF")) {
-    ref.alt.alleles.change <- radiator::change_alleles(data = input)
-    input <- dplyr::left_join(input, ref.alt.alleles.change$input, by = c("MARKERS", "INDIVIDUALS"))
+    ref.change <- radiator::change_alleles(data = input)$input
+    input <- dplyr::left_join(input, ref.change, by = c("MARKERS", "INDIVIDUALS"))
   }
 
   # remove duplicate REF/ALT column

@@ -147,7 +147,6 @@ merge_vcf <- function(
   message("Adjusting REF/ALT alleles...")
   input <- radiator::change_alleles(
     data = input,
-    monomorphic.out = monomorphic.out,
     parallel.core = parallel.core,
     verbose = TRUE)$input
 

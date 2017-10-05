@@ -460,7 +460,7 @@ tidy_genomic_data <- function(
 
     whitelist.markers <- dplyr::mutate_all(
       .tbl = whitelist.markers, .funs = radiator::clean_markers_names)
-    }
+  }
   # Import blacklist id --------------------------------------------------------
   if (!is.null(blacklist.id)) {# With blacklist of ID
     if (is.vector(blacklist.id)) {
@@ -636,8 +636,8 @@ tidy_genomic_data <- function(
         .tbl = input,
         .vars = c("CHROM", "POS", "LOCUS"), .funs = radiator::clean_markers_names) %>%
         tidyr::unite(
-        data = .,
-        MARKERS, c(CHROM, LOCUS, POS), sep = "__", remove = FALSE)
+          data = .,
+          MARKERS, c(CHROM, LOCUS, POS), sep = "__", remove = FALSE)
     }
 
     # Filter with whitelist of markers and FILTER column
@@ -714,7 +714,6 @@ The POS column used in the MARKERS column is different in biallelic and multiall
 
       filter.check <- NULL
     }
-
 
     if (!import.pegas) {
       input <- dplyr::bind_cols(
@@ -834,12 +833,9 @@ The POS column used in the MARKERS column is different in biallelic and multiall
       input <- dplyr::rename(input, GT_HAPLO = GT)
     }
 
-    # split data for 3 rounds of CPU
-    # to work, same markers in same split...
     if (verbose) message("Calculating REF/ALT alleles...")
     input <- radiator::change_alleles(
       data = input,
-      monomorphic.out = FALSE,
       biallelic = biallelic,
       parallel.core = parallel.core,
       verbose = verbose)$input
@@ -851,6 +847,100 @@ The POS column used in the MARKERS column is different in biallelic and multiall
 
     input <- suppressWarnings(
       dplyr::select(input, dplyr::one_of(want), dplyr::everything()))
+
+    # More VCF cleaning here -----------------------------------------------------
+    # check, parse and clean FORMAT columns
+    # Some software that produce vcf do strange thing and don't follow convention
+    # You need the GT field to clean correctly the remaining fields...
+
+
+    if (data.type == "vcf.file" && vcf.metadata) {
+
+      input <-  dplyr::mutate_at(
+        .tbl = input, .vars = parse.format.list, .funs =  replace_by_na)
+
+      split.vec <- split_vec_row(input, 3, parallel.core = parallel.core)
+
+      # Cleaning AD (ALLELES_DEPTH)
+      if (tibble::has_name(input, "AD")) {
+        if (verbose) message("AD column: splitting coverage info into ALLELE_REF_DEPTH and ALLELE_ALT_DEPTH")
+        input <- clean_ad(x = input, split.vec = split.vec,
+                          parallel.core = parallel.core)
+      }#End cleaning AD column
+
+      # Cleaning DP and changing name to READ_DEPTH
+      if (tibble::has_name(input, "DP")) {
+        if (verbose) message("DP column: cleaning and renaming to READ_DEPTH")
+        input <- dplyr::rename(.data = input, READ_DEPTH = DP) %>%
+          dplyr::mutate(
+            READ_DEPTH = dplyr::if_else(GT_VCF == "./.", as.numeric(NA_character_),
+                                        as.numeric(READ_DEPTH))
+          )
+      }#End cleaning DP column
+
+      # PL for biallelic as 3 values:
+      if (tibble::has_name(input, "PL")) {
+        if (verbose) message("PL column (normalized, phred-scaled likelihoods for genotypes): separating into PROB_HOM_REF, PROB_HET and PROB_HOM_ALT")
+        # Value 1: probability that the site is homozgyous REF
+        # Value 2: probability that the sample is heterzygous
+        # Value 2: probability that it is homozygous ALT
+        input <- clean_pl(x = input, split.vec = split.vec,
+                          parallel.core = parallel.core)
+      }#End cleaning PL column
+
+      # GL cleaning
+      if (tibble::has_name(input, "GL")) {
+        if (verbose) message("GL column: cleaning Genotype Likelihood column")
+        input <- clean_gl(x = input,
+                          split.vec = split.vec,
+                          parallel.core = parallel.core)
+      }#End cleaning GL column
+
+      # Cleaning GQ: Genotype quality as phred score
+      if (tibble::has_name(input, "GQ")) {
+        if (verbose) message("GQ column: Genotype Quality")
+        input <- dplyr::mutate(
+          input,
+          GQ = dplyr::if_else(GT_VCF == "./.", as.numeric(NA_character_), as.numeric(GQ))
+        )
+      }#End cleaning GQ column
+
+      # Cleaning GOF: Goodness of fit value
+      if (tibble::has_name(input, "GOF")) {
+        if (verbose) message("GOF column: Goodness of fit value")
+        input <- dplyr::mutate(
+          input,
+          GOF = dplyr::if_else(GT_VCF == "./.", as.numeric(NA_character_), as.numeric(GOF))
+        )
+      }#End cleaning GOF column
+
+      # Cleaning NR: Number of reads covering variant location in this sample
+      if (tibble::has_name(input, "NR")) {
+        if (verbose) message("NR column: splitting column into the number of variant")
+        input <- clean_nr(x = input,
+                          split.vec = split.vec,
+                          parallel.core = parallel.core)
+      }#End cleaning NR column
+
+      # Cleaning NV: Number of reads containing variant in this sample
+      if (tibble::has_name(input, "NV")) {
+        if (verbose) message("NV column: splitting column into the number of variant")
+        input <- clean_nv(x = input,
+                          split.vec = split.vec,
+                          parallel.core = parallel.core)
+      }#End cleaning NV column
+
+      split.vec <- NULL
+
+      # Re ordering columns
+      want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS", "POP_ID",
+                "REF", "ALT", "GT_VCF", "GT_VCF_NUC", "GT", "GT_BIN")
+
+      input <- suppressWarnings(
+        dplyr::select(input, dplyr::one_of(want), dplyr::everything()))
+
+    }# end cleaning columns
+
 
   } # End import VCF
 
@@ -1043,7 +1133,8 @@ The POS column used in the MARKERS column is different in biallelic and multiall
 
     # detect if biallelic give vcf style genotypes
     # biallelic <- radiator::detect_biallelic_markers(input)
-    input.temp <- radiator::change_alleles(data = input, monomorphic.out = FALSE, verbose = verbose)
+    input.temp <- radiator::change_alleles(data = input,
+                                           verbose = verbose)
     input <- input.temp$input
     biallelic <- input.temp$biallelic
   } # End import PLINK
@@ -1126,7 +1217,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
       input <- suppressWarnings(input %>% dplyr::filter(POP_ID %in% pop.select))
     }
 
-    input.temp <- radiator::change_alleles(data = input, monomorphic.out = FALSE, verbose = verbose)
+    input.temp <- radiator::change_alleles(data = input)
     input <- input.temp$input
     biallelic <- input.temp$biallelic
   } # End import data frame of genotypes
@@ -1242,7 +1333,6 @@ The POS column used in the MARKERS column is different in biallelic and multiall
 
     input <- radiator::change_alleles(
       data = input,
-      monomorphic.out = monomorphic.out,
       parallel.core = parallel.core,
       verbose = verbose)$input
 
@@ -1326,7 +1416,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
 
     # detect if biallelic give vcf style genotypes
     # biallelic <- radiator::detect_biallelic_markers(input)
-    input.temp <- radiator::change_alleles(data = input, monomorphic.out = FALSE, verbose = verbose)
+    input.temp <- radiator::change_alleles(data = input, verbose = verbose)
     input <- input.temp$input
     biallelic <- input.temp$biallelic
 
@@ -1441,7 +1531,7 @@ The POS column used in the MARKERS column is different in biallelic and multiall
 
     # detect if biallelic give vcf style genotypes
     # biallelic <- radiator::detect_biallelic_markers(input)
-    input.temp <- radiator::change_alleles(data = input, monomorphic.out = FALSE, verbose = verbose)
+    input.temp <- radiator::change_alleles(data = input, verbose = verbose)
     input <- input.temp$input
     biallelic <- input.temp$biallelic
 
@@ -1466,8 +1556,8 @@ The POS column used in the MARKERS column is different in biallelic and multiall
     if (verbose) message("Erasing genotype: yes")
     want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS")
     if (is.vector(blacklist.genotype)) {
-    suppressWarnings(suppressMessages(
-      blacklist.genotype <- readr::read_tsv(blacklist.genotype, col_names = TRUE)))
+      suppressWarnings(suppressMessages(
+        blacklist.genotype <- readr::read_tsv(blacklist.genotype, col_names = TRUE)))
     }
     suppressWarnings(suppressMessages(
       blacklist.genotype <- blacklist.genotype %>%
@@ -1615,256 +1705,6 @@ The POS column used in the MARKERS column is different in biallelic and multiall
     maf.info <- NULL
   } # End of MAF filters
 
-  # More VCF cleaning here -----------------------------------------------------
-  # check, parse and clean FORMAT columns
-  # Note to myself: why not do this at the same time as importing from vcf object?
-  # Some software that produce vcf do strange thing and don't follow convention
-  # You need the GT field to clean correctly the remaining fields...
-
-  if (data.type == "vcf.file" && vcf.metadata) {
-
-    # for parallel cleaning
-    # system.time(split.vec <- dplyr::ntile(x = 1:nrow(input), n = parallel.core * 3))
-    n.row <- nrow(input)
-    # as.integer is usually twice as light as numeric vector...
-    split.vec <- as.integer(floor((parallel.core * 3 * (1:n.row - 1) / n.row) + 1))
-    n.row <- NULL
-
-    # chunk <- parallel.core * 3
-    # num.row <- nrow(input)
-    # split.vec <- rep(1:ceiling(num.row/chunk), each = chunk)[1:num.row]
-
-    # Detect the columns that need a check, parsing and cleaning
-    # have <- colnames(input)
-    # want <- c("DP", "AD", "GL", "PL", "GQ", "GOF", "NR", "NV")
-    # clean.columns <- purrr::keep(.x = have, .p = have %in% want)
-
-    # Fast cleaning columns
-    replace_by_na <- function(data, what = ".") {
-      replace(data, which(data == what), NA)
-    }
-
-    input <-  dplyr::mutate_at(
-      .tbl = input, .vars = parse.format.list, .funs =  replace_by_na)
-
-    # Cleaning AD (ALLELES_DEPTH)
-    if (tibble::has_name(input, "AD")) {
-
-      if (verbose) message("AD column: splitting coverage info into ALLELE_REF_DEPTH and ALLELE_ALT_DEPTH")
-
-      clean_ad <- function(x) {
-        res <- suppressWarnings(
-          x %>%
-            dplyr::mutate(
-              AD = dplyr::if_else(GT_VCF == "./.", NA_character_, AD)) %>%
-            tidyr::separate(AD, c("ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH"),
-                            sep = ",", extra = "drop") %>%
-            dplyr::mutate(
-              ALLELE_REF_DEPTH = as.numeric(
-                stringi::stri_replace_all_regex(
-                  ALLELE_REF_DEPTH, "^0$", "NA", vectorize_all = TRUE)),
-              ALLELE_ALT_DEPTH = as.numeric(
-                stringi::stri_replace_all_regex(
-                  ALLELE_ALT_DEPTH, "^0$", "NA", vectorize_all = TRUE))
-            ) %>%
-            dplyr::select(-GT_VCF)
-        )
-        return(res)
-      }#End clean_ad
-
-      input <- dplyr::bind_cols(
-        input,
-        dplyr::ungroup(input) %>%
-          dplyr::select(GT_VCF, AD) %>%
-          split(x = ., f = split.vec) %>%
-          .radiator_parallel(
-            # parallel::mclapply(
-            X = ., FUN = clean_ad, mc.cores = parallel.core) %>%
-          dplyr::bind_rows(.))
-    }#End cleaning AD column
-
-    # Cleaning DP and changing name to READ_DEPTH
-    if (tibble::has_name(input, "DP")) {
-      if (verbose) message("DP column: cleaning and renaming to READ_DEPTH")
-      input <- dplyr::rename(.data = input, READ_DEPTH = DP) %>%
-        dplyr::mutate(
-          READ_DEPTH = dplyr::if_else(GT_VCF == "./.", as.numeric(NA_character_),
-                                      as.numeric(READ_DEPTH))
-        )
-    }#End cleaning DP column
-
-    # PL for biallelic as 3 values:
-    if (tibble::has_name(input, "PL")) {
-      if (verbose) message("PL column (normalized, phred-scaled likelihoods for genotypes): separating into PROB_HOM_REF, PROB_HET and PROB_HOM_ALT")
-      # Value 1: probability that the site is homozgyous REF
-      # Value 2: probability that the sample is heterzygous
-      # Value 2: probability that it is homozygous ALT
-
-      clean_pl <- function(x) {
-        res <- x %>%
-          dplyr::mutate(
-            PL = dplyr::if_else(GT_VCF == "./.", NA_character_, PL)) %>%
-          tidyr::separate(
-            data = ., PL, c("PROB_HOM_REF", "PROB_HET", "PROB_HOM_ALT"),
-            sep = ",", extra = "drop", remove = FALSE) %>%
-          dplyr::mutate_at(
-            .tbl = ., .vars = c("PROB_HOM_REF", "PROB_HET", "PROB_HOM_ALT"),
-            .funs = as.numeric) %>%
-          dplyr::select(-GT_VCF)
-        return(res)
-      }#End clean_pl
-
-      input <- dplyr::bind_cols(
-        dplyr::select(input, -PL),
-        dplyr::ungroup(input) %>%
-          dplyr::select(GT_VCF, PL) %>%
-          split(x = ., f = split.vec) %>%
-          .radiator_parallel(
-            # parallel::mclapply(
-            X = ., FUN = clean_pl, mc.cores = parallel.core) %>%
-          dplyr::bind_rows(.))
-    }#End cleaning PL column
-
-    # GL cleaning
-    if (tibble::has_name(input, "GL")) {
-      if (verbose) message("GL column: cleaning Genotype Likelihood column")
-      input <- input %>%
-        dplyr::mutate(
-          GL = dplyr::if_else(GT_VCF == "./.", NA_character_, GL),
-          GL = suppressWarnings(stringi::stri_replace_all_fixed(GL, c(".,.,.", ".,", ",."), c("NA", "", ""), vectorize_all = FALSE))
-        )
-
-      # check GL and new stacks version with no GL
-      all.missing <- all(is.na(input$GL))
-
-      if (!all.missing) {
-        gl.clean <- max(
-          unique(stringi::stri_count_fixed(
-            str = unique(sample(x = input$GL, size = 100, replace = FALSE)),
-            pattern = ",")
-          ), na.rm = TRUE
-        )
-
-        if (gl.clean == 2) {
-          if (verbose) message("GL column: separating into PROB_HOM_REF, PROB_HET and PROB_HOM_ALT")
-          # Value 1: probability that the site is homozgyous REF
-          # Value 2: probability that the sample is heterzygous
-          # Value 2: probability that it is homozygous ALT
-          # system.time(input2 <- input %>%
-          #   tidyr::separate(data = ., GL, c("PROB_HOM_REF", "PROB_HET", "PROB_HOM_ALT"), sep = ",", extra = "drop", remove = FALSE) %>%
-          #   dplyr::mutate_at(.tbl = ., .vars = c("PROB_HOM_REF", "PROB_HET", "PROB_HOM_ALT"), .funs = as.numeric)
-          # )
-          clean_gl <- function(x) {
-            res <- x %>%
-              tidyr::separate(
-                data = ., GL, c("PROB_HOM_REF", "PROB_HET", "PROB_HOM_ALT"),
-                sep = ",", extra = "drop", remove = FALSE) %>%
-              dplyr::mutate_at(
-                .tbl = ., .vars = c("PROB_HOM_REF", "PROB_HET", "PROB_HOM_ALT"),
-                .funs = as.numeric)
-            return(res)
-          }
-          input <- dplyr::bind_cols(
-            dplyr::select(input, -GL),
-            dplyr::ungroup(input) %>%
-              dplyr::select(GL) %>%
-              split(x = ., f = split.vec) %>%
-              .radiator_parallel(
-                # parallel::mclapply(
-                X = ., FUN = clean_gl, mc.cores = parallel.core) %>%
-              dplyr::bind_rows(.))
-
-        } else {
-          input$GL <- suppressWarnings(as.numeric(input$GL))
-        }
-        gl.clean <- NULL
-      } else {
-        input <- dplyr::select(input, -GL)
-      }
-    }#End cleaning GL column
-
-    # Cleaning GQ: Genotype quality as phred score
-    if (tibble::has_name(input, "GQ")) {
-      if (verbose) message("GQ column: Genotype Quality")
-      input <- dplyr::mutate(
-        input,
-        GQ = dplyr::if_else(GT_VCF == "./.", as.numeric(NA_character_), as.numeric(GQ))
-      )
-    }#End cleaning GQ column
-
-    # Cleaning GOF: Goodness of fit value
-    if (tibble::has_name(input, "GOF")) {
-      if (verbose) message("GOF column: Goodness of fit value")
-      input <- dplyr::mutate(
-        input,
-        GOF = dplyr::if_else(GT_VCF == "./.", as.numeric(NA_character_), as.numeric(GOF))
-      )
-    }#End cleaning GOF column
-
-    # Cleaning NR: Number of reads covering variant location in this sample
-    if (tibble::has_name(input, "NR")) {
-      if (verbose) message("NR column: splitting column into the number of variant")
-      nr.col <- max(unique(stringi::stri_count_fixed(str = unique(input$NR), pattern = ","))) + 1
-      nr.col.names <- stringi::stri_join(rep("NR_", nr.col), seq(1:nr.col))
-      nr.col <- NULL
-
-      clean_nr <- function(x, nr.col.names = NULL) {
-        res <- tidyr::separate(data = x, col = NR, into = nr.col.names,
-                               sep = ",", extra = "drop", remove = FALSE)
-        return(res)
-      }#End clean_nr
-
-      input <- dplyr::bind_cols(
-        dplyr::select(input, -NR),
-        dplyr::ungroup(input) %>%
-          dplyr::mutate(NR = dplyr::if_else(GT_VCF == "./.", NA_character_, NR)) %>%
-          dplyr::select(NR) %>%
-          split(x = ., f = split.vec) %>%
-          .radiator_parallel_mc(
-            # parallel::mclapply(
-            X = ., FUN = clean_nr, mc.cores = parallel.core,
-            nr.col.names = nr.col.names) %>%
-          dplyr::bind_rows(.))
-    }#End cleaning NR column
-
-    # Cleaning NV: Number of reads containing variant in this sample
-    if (tibble::has_name(input, "NV")) {
-      if (verbose) message("NV column: splitting column into the number of variant")
-      nv.col <- max(unique(stringi::stri_count_fixed(str = unique(input$NV), pattern = ","))) + 1
-      nv.col.names <- stringi::stri_join(rep("NV_", nv.col), seq(1:nv.col))
-      nv.col <- NULL
-
-      clean_nv <- function(x, nv.col.names = NULL) {
-        res <- tidyr::separate(
-          data = x, col = NV, into = nv.col.names,
-          sep = ",", extra = "drop", remove = FALSE)
-        return(res)
-      }
-
-      input <- dplyr::bind_cols(
-        dplyr::select(input, -NV),
-        dplyr::ungroup(input) %>%
-          dplyr::mutate(NV = dplyr::if_else(GT_VCF == "./.", NA_character_, NV)) %>%
-          dplyr::select(NV) %>%
-          split(x = ., f = split.vec) %>%
-          .radiator_parallel_mc(
-            # parallel::mclapply(
-            X = ., FUN = clean_nv, mc.cores = parallel.core,
-            nv.col.names = nv.col.names) %>%
-          dplyr::bind_rows(.))
-    }#End cleaning NV column
-
-    split.vec <- NULL
-
-    # Re ordering columns
-    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS", "POP_ID",
-              "REF", "ALT", "GT_VCF", "GT_VCF_NUC", "GT", "GT_BIN")
-
-    input <- suppressWarnings(
-      dplyr::select(input, dplyr::one_of(want), dplyr::everything()))
-
-  }# end cleaning columns
-
 
   # Write to working directory -------------------------------------------------
   # if (!is.null(filename)) {
@@ -1965,125 +1805,6 @@ parse_genomic <- function(
   return(x)
 }#End parse_genomic
 
-
-#' @title nuc2integers
-#' @description convert nucleotides to integers. Useful while tidying VCF
-#' @rdname nuc2integers
-#' @keywords internal
-#' @export
-nuc2integers <- function(x) {
-
-  res <- dplyr::select(x, MARKERS, GT_VCF_NUC) %>%
-    dplyr::filter(GT_VCF_NUC != "./.") %>%
-    tidyr::separate(col = GT_VCF_NUC, into = c("A1", "A2"), sep = "/") %>%
-    tidyr::gather(data = ., key = ALLELES_GROUP, value = ALLELES, -MARKERS) %>%
-    dplyr::select(-ALLELES_GROUP) %>%
-    dplyr::group_by(MARKERS, ALLELES) %>%
-    dplyr::tally(.) %>%
-    dplyr::arrange(-n) %>%
-    dplyr::mutate(INTEGERS = seq(0, n() - 1)) %>%
-    dplyr::select(-n) %>%
-    dplyr::arrange(MARKERS, INTEGERS) %>%
-    dplyr::ungroup(.)
-
-
-  ref.alleles <- res %>%
-    dplyr::filter(INTEGERS == 0) %>%
-    dplyr::mutate(REF = ALLELES) %>%
-    dplyr::distinct(MARKERS, REF)
-
-  alt.alleles <- res %>%
-    dplyr::filter(INTEGERS != 0) %>%
-    dplyr::group_by(MARKERS) %>%
-    dplyr::mutate(ALT = stringi::stri_join(ALLELES, collapse = ",")) %>%
-    dplyr::ungroup(.) %>%
-    dplyr::distinct(MARKERS, ALT)
-
-  res <- dplyr::left_join(
-    res,
-    dplyr::left_join(ref.alleles, alt.alleles, by = "MARKERS")
-    , by = "MARKERS"
-  ) %>%
-    dplyr::arrange(MARKERS, INTEGERS)
-  return(res)
-}#End nuc2integers
-
-#' @title nuc2gt
-#' @description to apply the conversion of haplo to gt in parallel
-#' @rdname nuc2gt
-#' @keywords internal
-#' @export
-nuc2gt <- function(x, conversion.data = NULL, biallelic = TRUE) {
-  if (biallelic) {
-    res <- dplyr::select(x, MARKERS, GT_VCF_NUC) %>%
-      tidyr::separate(data = ., col = GT_VCF_NUC, into = c("A1", "A2"), sep = "/", remove = FALSE) %>%
-      dplyr::left_join(dplyr::rename(conversion.data, A1 = ALLELES), by = c("MARKERS", "A1")) %>%
-      dplyr::rename(A1_NUC = INTEGERS) %>%
-      dplyr::left_join(dplyr::rename(conversion.data, A2 = ALLELES), by = c("MARKERS", "A2")) %>%
-      dplyr::rename(A2_NUC = INTEGERS) %>%
-      dplyr::mutate(
-        GT_VCF = stringi::stri_join(A1_NUC, A2_NUC, sep = "/"),
-        GT_VCF = stringi::stri_replace_na(str = GT_VCF, replacement = "./."),
-        A1_NUC = as.character(A1_NUC + 1),
-        A2_NUC = as.character(A2_NUC + 1),
-        A1_NUC = stringi::stri_replace_na(str = A1_NUC, replacement = "0"),
-        A2_NUC = stringi::stri_replace_na(str = A2_NUC, replacement = "0"),
-        A1_NUC = stringi::stri_pad_left(str = A1_NUC, pad = "0", width = 3),
-        A2_NUC = stringi::stri_pad_left(str = A2_NUC, pad = "0", width = 3),
-        GT_BIN = as.numeric(stringi::stri_replace_all_fixed(
-          str = GT_VCF, pattern = c("0/0", "1/1", "0/1", "1/0", "./."),
-          replacement = c("0", "2", "1", "1", NA), vectorize_all = FALSE))
-      ) %>%
-      tidyr::unite(data = ., col = GT, A1_NUC, A2_NUC, sep = "") %>%
-      dplyr::select(-A1, -A2)
-  } else {
-    res <- dplyr::select(x, MARKERS, GT_VCF_NUC) %>%
-      tidyr::separate(data = ., col = GT_VCF_NUC, into = c("A1", "A2"), sep = "/", remove = FALSE) %>%
-      dplyr::left_join(dplyr::rename(conversion.data, A1 = ALLELES), by = c("MARKERS", "A1")) %>%
-      dplyr::rename(A1_NUC = INTEGERS) %>%
-      dplyr::left_join(dplyr::rename(conversion.data, A2 = ALLELES), by = c("MARKERS", "A2")) %>%
-      dplyr::rename(A2_NUC = INTEGERS) %>%
-      dplyr::mutate(
-        GT_VCF = stringi::stri_join(A1_NUC, A2_NUC, sep = "/"),
-        A1_NUC = as.character(A1_NUC + 1),
-        A2_NUC = as.character(A2_NUC + 1),
-        A1_NUC = stringi::stri_replace_na(str = A1_NUC, replacement = "0"),
-        A2_NUC = stringi::stri_replace_na(str = A2_NUC, replacement = "0"),
-        A1_NUC = stringi::stri_pad_left(str = A1_NUC, pad = "0", width = 3),
-        A2_NUC = stringi::stri_pad_left(str = A2_NUC, pad = "0", width = 3)
-      ) %>%
-      tidyr::unite(data = ., col = GT, A1_NUC, A2_NUC, sep = "") %>%
-      dplyr::select(-A1, -A2) %>%
-      dplyr::mutate(
-        GT_VCF = stringi::stri_replace_na(str = GT_VCF, replacement = "./.")
-        # GT_BIN = as.numeric(rep(NA, n()))
-      )
-  }
-  return(res)
-}#End nuc2gt
-
-
-#' @title gt_haplo2gt_vcf_nuc
-#' @description to apply the conversion of GT haplotype coding to gt_vcf_nuc in parallel
-#' @rdname gt_haplo2gt_vcf_nuc
-#' @keywords internal
-#' @export
-
-gt_haplo2gt_vcf_nuc <- function(x) {
-  res <- x %>%
-    dplyr::mutate(
-      GT_VCF_NUC = dplyr::if_else(
-        stringi::stri_detect_fixed(
-          str = GT_HAPLO, pattern = "/"),
-        GT_HAPLO,
-        stringi::stri_join(GT_HAPLO, GT_HAPLO, sep = "/")),
-      GT_VCF_NUC = stringi::stri_replace_na(str = GT_VCF_NUC, replacement = "./.")
-    ) %>%
-    dplyr::select(-GT_HAPLO)
-  return(res)
-}#End gt_haplo2gt_vcf_nuc
-
-
 #' @title split_vcf_id
 #' @description split VCF ID in parallel
 #' @rdname split_vcf_id
@@ -2099,3 +1820,225 @@ split_vcf_id <- function(x) {
     tidyr::unite(MARKERS, c(CHROM, LOCUS, POS), sep = "__", remove = FALSE)
   return(res)
 }#End split_vcf_id
+
+#' @title split_vec_row
+#' @description Split input into chunk for parallel processing
+#' @rdname split_vec_row
+#' @keywords internal
+#' @export
+split_vec_row <- function(x, cpu.rounds, parallel.core = parallel::detectCores() - 1) {
+  n.row <- nrow(x)
+  split.vec <- as.integer(floor((parallel.core * cpu.rounds * (1:n.row - 1) / n.row) + 1))
+  return(split.vec)
+}#End split_vec_row
+
+
+#' @title replace_by_na
+#' @description Fast removal of NA
+#' @rdname replace_by_na
+#' @keywords internal
+#' @export
+replace_by_na <- function(data, what = ".") {
+  replace(data, which(data == what), NA)
+}#End replace_by_na
+
+
+#' @title clean_ad
+#' @description Clean allele depth field in VCF.
+#' AD column: splitting coverage info into ALLELE_REF_DEPTH and ALLELE_ALT_DEPTH
+#' @rdname clean_ad
+#' @keywords internal
+#' @export
+clean_ad <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) {
+  clean <- function(x) {
+    res <- suppressWarnings(
+      x %>%
+        dplyr::mutate(
+          AD = dplyr::if_else(GT_VCF == "./.", NA_character_, AD)) %>%
+        tidyr::separate(AD, c("ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH"),
+                        sep = ",", extra = "drop") %>%
+        dplyr::mutate(
+          ALLELE_REF_DEPTH = as.numeric(
+            stringi::stri_replace_all_regex(
+              ALLELE_REF_DEPTH, "^0$", "NA", vectorize_all = TRUE)),
+          ALLELE_ALT_DEPTH = as.numeric(
+            stringi::stri_replace_all_regex(
+              ALLELE_ALT_DEPTH, "^0$", "NA", vectorize_all = TRUE))
+        ) %>%
+        dplyr::select(-GT_VCF)
+    )
+    return(res)
+  }
+  x <- dplyr::bind_cols(
+    x,
+    dplyr::ungroup(x) %>%
+      dplyr::select(GT_VCF, AD) %>%
+      split(x = ., f = split.vec) %>%
+      .radiator_parallel(
+        X = ., FUN = clean, mc.cores = parallel.core) %>%
+      dplyr::bind_rows(.))
+  return(x)
+}#End clean_ad
+
+
+#' @title clean_pl
+#' @description Clean PL column.
+#' PL column (normalized, phred-scaled likelihoods for genotypes):
+#' separating into PROB_HOM_REF, PROB_HET and PROB_HOM_ALT")
+#' Value 1: probability that the site is homozgyous REF
+#' Value 2: probability that the sample is heterzygous
+#' Value 2: probability that it is homozygous ALT
+#' @rdname clean_pl
+#' @keywords internal
+#' @export
+clean_pl <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) {
+  clean <- function(x) {
+    res <- x %>%
+      dplyr::mutate(
+        PL = dplyr::if_else(GT_VCF == "./.", NA_character_, PL)) %>%
+      tidyr::separate(
+        data = ., PL, c("PROB_HOM_REF", "PROB_HET", "PROB_HOM_ALT"),
+        sep = ",", extra = "drop", remove = FALSE) %>%
+      dplyr::mutate_at(
+        .tbl = ., .vars = c("PROB_HOM_REF", "PROB_HET", "PROB_HOM_ALT"),
+        .funs = as.numeric) %>%
+      dplyr::select(-GT_VCF)
+    return(res)
+  }#End clean
+  x <- dplyr::bind_cols(
+    dplyr::select(x, -PL),
+    dplyr::ungroup(x) %>%
+      dplyr::select(GT_VCF, PL) %>%
+      split(x = ., f = split.vec) %>%
+      .radiator_parallel(
+        X = ., FUN = clean, mc.cores = parallel.core) %>%
+      dplyr::bind_rows(.))
+  return(x)
+}#End clean_pl
+
+#' @title clean_gl
+#' @description Clean GL column.
+#' GL column: cleaning Genotype Likelihood column
+#' @rdname clean_gl
+#' @keywords internal
+#' @export
+
+clean_gl <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) {
+  x <- x %>%
+    dplyr::mutate(
+      GL = dplyr::if_else(GT_VCF == "./.", NA_character_, GL),
+      GL = suppressWarnings(
+        stringi::stri_replace_all_fixed(
+          GL, c(".,.,.", ".,", ",."), c("NA", "", ""), vectorize_all = FALSE))
+    )
+
+  # check GL and new stacks version with no GL
+  all.missing <- all(is.na(x$GL))
+
+  if (!all.missing) {
+    gl.clean <- max(
+      unique(stringi::stri_count_fixed(
+        str = unique(sample(x = x$GL, size = 100, replace = FALSE)),
+        pattern = ",")
+      ), na.rm = TRUE
+    )
+
+    if (gl.clean == 2) {
+      message("GL column: separating into PROB_HOM_REF, PROB_HET and PROB_HOM_ALT")
+      # Value 1: probability that the site is homozgyous REF
+      # Value 2: probability that the sample is heterzygous
+      # Value 2: probability that it is homozygous ALT
+      # system.time(input2 <- input %>%
+      #   tidyr::separate(data = ., GL, c("PROB_HOM_REF", "PROB_HET", "PROB_HOM_ALT"), sep = ",", extra = "drop", remove = FALSE) %>%
+      #   dplyr::mutate_at(.tbl = ., .vars = c("PROB_HOM_REF", "PROB_HET", "PROB_HOM_ALT"), .funs = as.numeric)
+      # )
+      clean <- function(x) {
+        res <- x %>%
+          tidyr::separate(
+            data = ., GL, c("PROB_HOM_REF", "PROB_HET", "PROB_HOM_ALT"),
+            sep = ",", extra = "drop", remove = FALSE) %>%
+          dplyr::mutate_at(
+            .tbl = ., .vars = c("PROB_HOM_REF", "PROB_HET", "PROB_HOM_ALT"),
+            .funs = as.numeric)
+        return(res)
+      }
+
+      x <- dplyr::bind_cols(
+        dplyr::select(x, -GL),
+        dplyr::ungroup(x) %>%
+          dplyr::select(GL) %>%
+          split(x = ., f = split.vec) %>%
+          .radiator_parallel(
+            X = ., FUN = clean, mc.cores = parallel.core) %>%
+          dplyr::bind_rows(.))
+
+    } else {
+      x$GL <- suppressWarnings(as.numeric(x$GL))
+    }
+  } else {
+    message("    GL values are all missing: removing column")
+    x <- dplyr::select(x, -GL)
+  }
+  return(x)
+}#End clean_gl
+
+#' @title clean_nr
+#' @description Cleaning NR: Number of reads covering variant location in
+#' this sample
+#' @rdname clean_nr
+#' @keywords internal
+#' @export
+clean_nr <- function(x, split.vec, parallel.core = parallel::detectCores() - 1){
+  nr.col <- max(unique(stringi::stri_count_fixed(str = unique(x$NR), pattern = ","))) + 1
+  nr.col.names <- stringi::stri_join(rep("NR_", nr.col), seq(1:nr.col))
+  nr.col <- NULL
+
+  clean <- function(x, nr.col.names = NULL) {
+    res <- tidyr::separate(data = x, col = NR, into = nr.col.names,
+                           sep = ",", extra = "drop", remove = FALSE)
+    return(res)
+  }#End clean
+
+  x <- dplyr::bind_cols(
+    dplyr::select(x, -NR),
+    dplyr::ungroup(x) %>%
+      dplyr::mutate(NR = dplyr::if_else(GT_VCF == "./.", NA_character_, NR)) %>%
+      dplyr::select(NR) %>%
+      split(x = ., f = split.vec) %>%
+      .radiator_parallel_mc(
+        X = ., FUN = clean, mc.cores = parallel.core,
+        nr.col.names = nr.col.names) %>%
+      dplyr::bind_rows(.))
+  return(x)
+}#End clean_nr
+
+#' @title clean_nv
+#' @description Cleaning NV: Number of reads containing variant in this sample
+#' @rdname clean_nv
+#' @keywords internal
+#' @export
+clean_nv <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) {
+
+  nv.col <- max(unique(stringi::stri_count_fixed(str = unique(x$NV), pattern = ","))) + 1
+  nv.col.names <- stringi::stri_join(rep("NV_", nv.col), seq(1:nv.col))
+  nv.col <- NULL
+
+  clean <- function(x, nv.col.names = NULL) {
+    res <- tidyr::separate(
+      data = x, col = NV, into = nv.col.names,
+      sep = ",", extra = "drop", remove = FALSE)
+    return(res)
+  }
+
+  x <- dplyr::bind_cols(
+    dplyr::select(x, -NV),
+    dplyr::ungroup(x) %>%
+      dplyr::mutate(NV = dplyr::if_else(GT_VCF == "./.", NA_character_, NV)) %>%
+      dplyr::select(NV) %>%
+      split(x = ., f = split.vec) %>%
+      .radiator_parallel_mc(
+        X = ., FUN = clean, mc.cores = parallel.core,
+        nv.col.names = nv.col.names) %>%
+      dplyr::bind_rows(.))
+  return(x)
+}#End clean_nv

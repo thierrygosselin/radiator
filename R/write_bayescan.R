@@ -112,7 +112,7 @@ write_bayescan <- function(
 
     input <- radiator::change_alleles(
         biallelic = FALSE,
-        data = input, monomorphic.out = TRUE,
+        data = input,
         parallel.core = parallel.core, verbose = TRUE)$input
   }
 
@@ -126,13 +126,10 @@ write_bayescan <- function(
   }
 
   # Biallelic and GT_BIN -------------------------------------------------------
-
-
   if (biallelic) {
     input <- dplyr::select(input, MARKERS, INDIVIDUALS, POP_ID, GT)
     input <- radiator::change_alleles(
       data = input,
-      monomorphic.out = TRUE,
       biallelic = TRUE,
       parallel.core = parallel.core, verbose = TRUE)$input
     input <- dplyr::select(input, MARKERS, INDIVIDUALS, POP_ID, GT_BIN)
