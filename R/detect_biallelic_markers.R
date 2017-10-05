@@ -79,11 +79,17 @@ detect_biallelic_markers <- function(data, verbose = FALSE) {
     }
     alt.num <- NULL
   } else {
-    # 10% of the markers are randomly sampled
-    sampled.markers <- unique(input$MARKERS)
-    sampled.markers <- sample(x = sampled.markers,
-                              size = length(sampled.markers) * 0.10,
-                              replace = FALSE)
+
+    # If there are less than 100 markers, sample all of them
+    if (length(unique(input$MARKERS)) < 100) {
+      sampled.markers <- unique(input$MARKERS)
+    } else {
+      # otherwise 10% of the markers are randomly sampled
+      sampled.markers <- unique(input$MARKERS)
+      sampled.markers <- sample(x = sampled.markers,
+                                size = length(sampled.markers) * 0.10,
+                                replace = FALSE)
+    }
 
     # system.time(input2 <- dplyr::select(.data = input, MARKERS, GT) %>%
     #   dplyr::filter(GT != "000000") %>%
@@ -114,7 +120,7 @@ detect_biallelic_markers <- function(data, verbose = FALSE) {
     biallelic <- max(biallelic$n)
     # if (length(biallelic) != 1) stop("Mix of bi- and multi-allelic markers is not supported")
 
-    if (biallelic > 4) {
+    if (biallelic > 2) {
       biallelic <- FALSE
       if (verbose) message("    Data is multi-allelic")
     } else {

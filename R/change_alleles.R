@@ -158,6 +158,7 @@ change_alleles <- function(
     message("    Number of markers with REF/ALT change(s) = ", nrow(change.ref))
   } else {
     inversion <- FALSE # not yet used
+    change.ref <- NULL
   }
 
   if (tibble::has_name(data, "REF")) {
@@ -176,7 +177,7 @@ change_alleles <- function(
   conversion.df <- NULL
 
   # switch ALLELE_REF_DEPTH/ALLELE_ALT_DEPTH
-  if (nrow(change.ref) > 0 & tibble::has_name(data, "ALLELE_REF_DEPTH")) {
+  if (!is.null(change.ref) & tibble::has_name(data, "ALLELE_REF_DEPTH")) {
     data <- data %>%
       dplyr::mutate(
         ALLELE_REF_DEPTH_NEW = dplyr::if_else(
@@ -357,7 +358,7 @@ integrate_ref <- function(
           A2_NUC = stringi::stri_pad_left(str = A2_NUC, pad = "0", width = 3)
         ) %>%
         tidyr::unite(data = ., col = GT, A1_NUC, A2_NUC, sep = "") %>%
-        dplyr::select(-A1, -A2)
+        tidyr::unite(data = ., col = ORIG_GT, A1, A2, sep = "")
 
       if (biallelic) {
         res <- res %>%
@@ -389,10 +390,13 @@ integrate_ref <- function(
     dplyr::bind_rows(.)
 
   if (nuc.info) {
-    x <- dplyr::left_join(x, new.gt, by = c("MARKERS", "GT_VCF_NUC"))
+    x <- dplyr::left_join(x, new.gt, by = c("MARKERS", "GT_VCF_NUC")) %>%
+      dplyr::select(-ORIG_GT)
   } else {
     if (tibble::has_name(x, "GT_VCF")) x <- dplyr::select(x, -GT_VCF)
-    x <- dplyr::left_join(x, new.gt, by = c("MARKERS", "GT"))
+    x <- dplyr::left_join(rename(x, ORIG_GT = GT), new.gt, by = c("MARKERS", "ORIG_GT")) %>%
+      dplyr::select(-GT) %>%
+      dplyr::rename(GT = ORIG_GT)
   }
   return(x)
 } #End integrate_ref
