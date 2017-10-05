@@ -386,7 +386,9 @@ tidy_vcf <- function(
     data = input,
     biallelic = biallelic,
     parallel.core = parallel.core,
-    verbose = verbose)$input
+    verbose = verbose)
+
+  input <- input$input
 
   # Re ordering columns
   want <- c("MARKERS", "CHROM", "LOCUS", "POS", "ID", "COL", "INDIVIDUALS", "POP_ID",
@@ -486,7 +488,7 @@ tidy_vcf <- function(
       dplyr::select(input, dplyr::one_of(want), dplyr::everything()))
 
   }# end cleaning columns
-
+  return(input)
 }#End tidy_vcf
 
 
