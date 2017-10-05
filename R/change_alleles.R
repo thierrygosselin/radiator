@@ -153,15 +153,18 @@ change_alleles <- function(
       dplyr::select(new.ref, MARKERS, REF),
       old.ref, by = "MARKERS") %>%
       dplyr::filter(REF != REF_OLD)
-    inversion <- TRUE # not yet used
+    if (nrow(change.ref) > 0) {
+      inversion <- TRUE
+    } else {
+      inversion <- FALSE
+    }
     old.ref <- NULL
     message("    Number of markers with REF/ALT change(s) = ", nrow(change.ref))
   } else {
-    inversion <- FALSE # not yet used
+    inversion <- FALSE
   }
 
   if (tibble::has_name(data, "REF")) {
-    # if (tibble::has_name(data, "REF") && inversion) {
     data <- dplyr::select(data, -c(REF, ALT))
   }
   data <- dplyr::left_join(data, new.ref, by = "MARKERS")
@@ -176,7 +179,7 @@ change_alleles <- function(
   conversion.df <- NULL
 
   # switch ALLELE_REF_DEPTH/ALLELE_ALT_DEPTH
-  if (nrow(change.ref) > 0 & tibble::has_name(data, "ALLELE_REF_DEPTH")) {
+  if (inversion & tibble::has_name(data, "ALLELE_REF_DEPTH")) {
     data <- data %>%
       dplyr::mutate(
         ALLELE_REF_DEPTH_NEW = dplyr::if_else(
@@ -357,8 +360,7 @@ integrate_ref <- function(
           A2_NUC = stringi::stri_pad_left(str = A2_NUC, pad = "0", width = 3)
         ) %>%
         tidyr::unite(data = ., col = GT, A1_NUC, A2_NUC, sep = "") %>%
-        dplyr::select(-A1, -A2)
-
+        tidyr::unite(data = ., col = ORIG_GT, A1, A2, sep = "")
       if (biallelic) {
         res <- res %>%
           dplyr::mutate(
@@ -389,10 +391,14 @@ integrate_ref <- function(
     dplyr::bind_rows(.)
 
   if (nuc.info) {
+    if (tibble::has_name(x, "GT_VCF")) x <- dplyr::select(x, -GT_VCF)
+    if (tibble::has_name(x, "GT")) x <- dplyr::select(x, -GT)
     x <- dplyr::left_join(x, new.gt, by = c("MARKERS", "GT_VCF_NUC"))
   } else {
     if (tibble::has_name(x, "GT_VCF")) x <- dplyr::select(x, -GT_VCF)
-    x <- dplyr::left_join(x, new.gt, by = c("MARKERS", "GT"))
+    x <- dplyr::left_join(dplyr::rename(x, ORIG_GT = GT), new.gt, by = c("MARKERS", "ORIG_GT")) %>%
+      dplyr::select(-GT) %>%
+      dplyr::rename(GT = ORIG_GT)
   }
   return(x)
 } #End integrate_ref
