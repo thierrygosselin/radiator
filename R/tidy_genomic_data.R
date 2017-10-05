@@ -519,6 +519,7 @@ tidy_genomic_data <- function(
       pop.levels = pop.levels,
       pop.labels = pop.labels
       )
+    biallelic <- radiator::detect_biallelic_markers(input)
   } # End import VCF
 
   # Import PLINK ---------------------------------------------------------------
@@ -907,12 +908,11 @@ tidy_genomic_data <- function(
     }
 
     if (verbose) message("Calculating REF/ALT alleles...")
-
-    input <- radiator::change_alleles(
+    input.temp <- radiator::change_alleles(
       data = input,
       parallel.core = parallel.core,
-      verbose = verbose)$input
-
+      verbose = verbose)
+    input <- input.temp$input
     biallelic <- FALSE
     input <- dplyr::rename(input, LOCUS = MARKERS)
   } # End import haplotypes file
@@ -992,7 +992,6 @@ tidy_genomic_data <- function(
     }
 
     # detect if biallelic give vcf style genotypes
-    # biallelic <- radiator::detect_biallelic_markers(input)
     input.temp <- radiator::change_alleles(data = input, verbose = verbose)
     input <- input.temp$input
     biallelic <- input.temp$biallelic
