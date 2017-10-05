@@ -158,6 +158,7 @@ change_alleles <- function(
     message("    Number of markers with REF/ALT change(s) = ", nrow(change.ref))
   } else {
     inversion <- FALSE # not yet used
+    change.ref <- NULL
   }
 
   if (tibble::has_name(data, "REF")) {
@@ -176,7 +177,7 @@ change_alleles <- function(
   conversion.df <- NULL
 
   # switch ALLELE_REF_DEPTH/ALLELE_ALT_DEPTH
-  if (nrow(change.ref) > 0 & tibble::has_name(data, "ALLELE_REF_DEPTH")) {
+  if (!is.null(change.ref) & tibble::has_name(data, "ALLELE_REF_DEPTH")) {
     data <- data %>%
       dplyr::mutate(
         ALLELE_REF_DEPTH_NEW = dplyr::if_else(
