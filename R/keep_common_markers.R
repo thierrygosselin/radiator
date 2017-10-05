@@ -64,8 +64,8 @@ keep_common_markers <- function(data, plot = FALSE, verbose = FALSE) {
 
   # markers.meta
   want <- c("MARKERS", "CHROM", "LOCUS", "POS")
-  markers.meta <- dplyr::select(input, dplyr::one_of(want)) %>%
-    dplyr::distinct(MARKERS, .keep_all = TRUE)
+  markers.meta <- suppressWarnings(dplyr::select(input, dplyr::one_of(want)) %>%
+    dplyr::distinct(MARKERS, .keep_all = TRUE))
 
   if (verbose) message("Using markers common in all populations:")
   blacklist <- dplyr::select(.data = input, MARKERS, POP_ID, GT) %>%
@@ -111,8 +111,8 @@ keep_common_markers <- function(data, plot = FALSE, verbose = FALSE) {
     blacklist <- "markers all in common"
   }
   want <- c("MARKERS", "CHROM", "LOCUS", "POS")
-  whitelist <- dplyr::select(input, dplyr::one_of(want)) %>%
-    dplyr::distinct(MARKERS, .keep_all = TRUE)
+  whitelist <- suppressWarnings(dplyr::select(input, dplyr::one_of(want)) %>%
+    dplyr::distinct(MARKERS, .keep_all = TRUE))
 
   return(res = list(input = input,
                     whitelist.common.markers = whitelist,

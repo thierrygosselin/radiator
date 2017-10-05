@@ -79,23 +79,18 @@ detect_biallelic_markers <- function(data, verbose = FALSE) {
     }
     alt.num <- NULL
   } else {
-    # 10% of the markers are randomly sampled
+    # If there are less than 100 markers, sample all of them
     sampled.markers <- unique(input$MARKERS)
-    sampled.markers <- sample(x = sampled.markers,
-                              size = length(sampled.markers) * 0.10,
-                              replace = FALSE)
-
-    # system.time(input2 <- dplyr::select(.data = input, MARKERS, GT) %>%
-    #   dplyr::filter(GT != "000000") %>%
-    #   dplyr::distinct(MARKERS, GT) %>%
-    #   dplyr::mutate(A1 = stringi::stri_sub(GT, 1, 3), A2 = stringi::stri_sub(GT, 4,6)) %>%
-    #   dplyr::select(-GT) %>%
-    #   tidyr::gather(data = ., key = ALLELES_GROUP, value = ALLELES, -MARKERS) %>%
-    #   dplyr::distinct(MARKERS, ALLELES) %>%
-    #   dplyr::count(x = ., MARKERS) %>%
-    #   dplyr::summarise(BIALLELIC = max(n, na.rm = TRUE)) %>%
-    #   purrr::flatten_chr(.x = .))
-
+    n.markers <- length(sampled.markers)
+    if (n.markers < 100) {
+      small.panel <- TRUE
+    } else {
+      # otherwise 30% of the markers are randomly sampled
+      small.panel <- FALSE
+      sampled.markers <- sample(x = sampled.markers,
+                                size = length(sampled.markers) * 0.30,
+                                replace = FALSE)
+    }
 
     biallelic <- dplyr::select(.data = input, MARKERS, GT) %>%
       dplyr::filter(GT != "000000") %>%
@@ -106,20 +101,26 @@ detect_biallelic_markers <- function(data, verbose = FALSE) {
       tidyr::gather(data = ., key = ALLELES_GROUP, value = ALLELES, -MARKERS) %>%
       dplyr::distinct(MARKERS, ALLELES) %>%
       dplyr::count(x = ., MARKERS) %>%
-      dplyr::select(n) #%>%
-      # dplyr::summarise(BIALLELIC = max(n, na.rm = TRUE)) %>%
-      # purrr::flatten_chr(.x = .) %>%
-      # unique(.)
+      dplyr::select(n)
 
-    biallelic <- max(biallelic$n)
-    # if (length(biallelic) != 1) stop("Mix of bi- and multi-allelic markers is not supported")
-
-    if (biallelic > 4) {
-      biallelic <- FALSE
-      if (verbose) message("    Data is multi-allelic")
+    if (small.panel) {
+      n.allele <- dplyr::filter(biallelic, n > 2)
+      if (nrow(n.allele) == n.markers) {
+        biallelic <- FALSE
+        if (verbose) message("    Data is multi-allelic")
+      } else {
+        biallelic <- TRUE
+        if (verbose) message("    Data is bi-allelic")
+      }
     } else {
-      biallelic <- TRUE
-      if (verbose) message("    Data is bi-allelic")
+      biallelic <- max(biallelic$n)
+      if (biallelic > 4) {
+        biallelic <- FALSE
+        if (verbose) message("    Data is multi-allelic")
+      } else {
+        biallelic <- TRUE
+        if (verbose) message("    Data is bi-allelic")
+      }
     }
   }
   return(biallelic)

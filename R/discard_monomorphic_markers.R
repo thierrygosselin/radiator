@@ -88,8 +88,9 @@ discard_monomorphic_markers <- function(data, verbose = FALSE) {
   }
 
   want <- c("MARKERS", "CHROM", "LOCUS", "POS")
-  whitelist.polymorphic.markers <- dplyr::select(input, dplyr::one_of(want)) %>%
-    dplyr::distinct(MARKERS, .keep_all = TRUE)
+  whitelist.polymorphic.markers <- suppressWarnings(
+    dplyr::select(input, dplyr::one_of(want)) %>%
+    dplyr::distinct(MARKERS, .keep_all = TRUE))
   res <- list(input = input,
               blacklist.monomorphic.markers = mono.markers,
               whitelist.polymorphic.markers = whitelist.polymorphic.markers
