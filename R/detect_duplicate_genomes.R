@@ -318,8 +318,9 @@ detect_duplicate_genomes <- function(
       ggplot2::geom_violin(trim = TRUE) +
       ggplot2::geom_boxplot(width = 0.1, fill = "black", outlier.colour = "black") +
       ggplot2::stat_summary(fun.y = "mean", geom = "point", shape = 21, size = 2.5, fill = "white") +
-      ggplot2::labs(y = "Distance (relative)\n <- close     distant ->") +
+      ggplot2::labs(y = "Distance (relative)\n <- distant      close->") +
       ggplot2::labs(x = "Pairwise comparisons") +
+      ggplot2::scale_y_reverse() +
       ggplot2::theme(
         # legend.position = "none",
         panel.grid.minor.x = ggplot2::element_blank(),
@@ -341,11 +342,11 @@ detect_duplicate_genomes <- function(
       ggplot2::aes(x = PAIRWISE, y = DISTANCE_RELATIVE, colour = POP_COMP)
     ) +
       ggplot2::geom_jitter(alpha = 0.3) +
-      ggplot2::labs(y = "Distance (relative)\n <- close     distant ->") +
+      ggplot2::labs(y = "Distance (relative)\n <- distant      close->") +
       ggplot2::labs(x = "Pairwise comparisons") +
       ggplot2::labs(colour = "Population comparisons") +
       ggplot2::scale_colour_manual(values = c("#0571b0", "black")) +
-      # ggplot2::scale_y_reverse() +
+      ggplot2::scale_y_reverse() +
       ggplot2::theme_light() +
       ggplot2::theme(
         # legend.position = "none",
