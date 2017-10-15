@@ -393,9 +393,11 @@ integrate_ref <- function(
   if (nuc.info) {
     if (tibble::has_name(x, "GT_VCF")) x <- dplyr::select(x, -GT_VCF)
     if (tibble::has_name(x, "GT")) x <- dplyr::select(x, -GT)
+    if (tibble::has_name(x, "GT_BIN")) x <- dplyr::select(x, -GT_BIN)
     x <- dplyr::left_join(x, new.gt, by = c("MARKERS", "GT_VCF_NUC"))
   } else {
     if (tibble::has_name(x, "GT_VCF")) x <- dplyr::select(x, -GT_VCF)
+    if (tibble::has_name(x, "GT_BIN")) x <- dplyr::select(x, -GT_BIN)
     x <- dplyr::left_join(dplyr::rename(x, ORIG_GT = GT), new.gt, by = c("MARKERS", "ORIG_GT")) %>%
       dplyr::select(-GT) %>%
       dplyr::rename(GT = ORIG_GT)
