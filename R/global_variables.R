@@ -65,7 +65,7 @@ if (getRversion() >= "2.15.1") {
       "GENE_N", "SNP_NUM", "ALPHA", "FST", "FST_GROUP", "ITERATIONS", "LOG10_PO",
       "LOG10_Q", "POST_PROB", "PO_GROUP", "Q_VALUE", "SELECTION", "ACCURACY",
       "SELECTION_TYPE_ON_LOCUS", "Distance", "R", "A", "NEW_GT", "Markers", "READS",
-      "CONSENSUS_MAX", "REF_OLD", "ORIG_GT"
+      "CONSENSUS_MAX", "REF_OLD", "ORIG_GT", "GT_1", "GT_2", "TEMP", "VCF_A1", "VCF_A2"
     )
   )
 }
