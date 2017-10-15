@@ -662,7 +662,6 @@ bayescan_one <- function(
   # command --------------------------------------------------------------------
   command.arguments <- paste(new.data, output.folder, all.trace, parallel.core, n, thin, nbp, pilot, burn, pr.odds)
 
-  # command
   system2(
     command = bayescan.path,
     args = command.arguments,
