@@ -3,7 +3,10 @@
 \name{filter_dart}
 \alias{filter_dart}
 \title{Swiss Army knife tool to prepare \href{http://www.diversityarrays.com}{DArT}
-output file for population genetics analysis.}
+output file for population genetics analysis.
+The function uses \code{\link[radiator]{tidy_dart}} to import and tidy DArT input file.
+Currently 3 formats are recognized: 1- and 2- row format (also called binary),
+and count data.}
 \usage{
 filter_dart(interactive.filter = TRUE, data, strata, output = NULL,
   pop.levels = NULL, blacklist.id = NULL, pop.select = NULL,
@@ -24,8 +27,10 @@ be interactive. The user is asked to see figures of distribution before
 making decisions for filtering.
 Default: \code{interactive.filter = TRUE}.}
 
-\item{data}{DArT output file with genotype in 1 or 2 row \emph{binary} format
-used in CSIRO genomic projects.}
+\item{data}{DArT output file. Note that most popular format used by DArT are
+recognised (1- and 2- row format,also called binary, and count data.).
+If you encounter a problem, sent me your data so that I can update
+the function. The data is a tab delimited file ending with \code{.tsv}.}
 
 \item{strata}{A tab delimited file with columns header:
 \code{INDIVIDUALS} and \code{STRATA}.

@@ -9,13 +9,17 @@ tidy_dart(data, strata, verbose = FALSE,
 }
 \arguments{
 \item{data}{DArT output file. Note that most popular format used by DArT are
-recognised. If you encounter a problem, sent me your data so that I can update
-the function. The data is a tab delimited file (.tsv).}
+recognised (1- and 2- row format,also called binary, and count data.).
+If you encounter a problem, sent me your data so that I can update
+the function. The data is a tab delimited file ending with \code{.tsv}.}
 
 \item{strata}{A tab delimited file with columns header:
 \code{INDIVIDUALS} and \code{STRATA}.
-Note: the column \code{STRATA} refers to any grouping of individuals. If a third column
-named \code{NEW_ID} is used, this column will be used to replace the
+Note: the column \code{STRATA} refers to any grouping of individuals.
+You need to make sure that
+the column \code{INDIVIDUALS} match the id used by DArT. Sometimes it's a
+DArT DB integer name.
+Use a third column in the strata, named \code{NEW_ID}, to replace the
 \code{INDIVIDUALS} column in the main data file.}
 
 \item{verbose}{(optional, logical) When \code{verbose = TRUE}

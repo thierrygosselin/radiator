@@ -7,7 +7,7 @@
 individuals2strata(data, strata.start, strata.end, filename = NULL)
 }
 \arguments{
-\item{data}{A file or data frame object with individuals in a column. The 
+\item{data}{A file or data frame object with individuals in a column. The
 column name is \code{INDIVIDUALS}.}
 
 \item{strata.start}{(integer) The start of your strata id. See details for more info.}
@@ -16,41 +16,41 @@ column name is \code{INDIVIDUALS}.}
 
 \item{filename}{(optional) The file name for the strata object if you
 want to save it in the working directory.
-Default: \code{filename = NULL}, the starta objct is in the global 
+Default: \code{filename = NULL}, the starta object is in the global
 environment only (i.e. not written in the working directory).}
 }
 \value{
 a strata object and file, if requested. The file is tab delimited
 with 2 columns named:
-\code{INDIVIDUALS} and \code{STRATA}. 
+\code{INDIVIDUALS} and \code{STRATA}.
 The \code{STRATA} column can be any hierarchical grouping.
 }
 \description{
-If your individuals have a consistent naming scheme 
-(e.g. SPECIES-POPULATION-MATURITY-YEAR-ID = CHI-QUE-ADU-2014-020), 
-use this function to rapidly create a strata file. 
-Several functions in \pkg{radiator} and \pkg{assigner} requires 
-a \code{strata} argument, i.e. a data frame with the individuals and 
-associated groupings. If you have already run 
-\href{http://catchenlab.life.illinois.edu/stacks/}{stacks} on your data, 
-the strata file is similar to a stacks `population map file`, make sure you 
+If your individuals have a consistent naming scheme
+(e.g. SPECIES-POPULATION-MATURITY-YEAR-ID = CHI-QUE-ADU-2014-020),
+use this function to rapidly create a strata file.
+Several functions in \pkg{radiator} and \pkg{assigner} requires
+a \code{strata} argument, i.e. a data frame with the individuals and
+associated groupings. If you have already run
+\href{http://catchenlab.life.illinois.edu/stacks/}{stacks} on your data,
+the strata file is similar to a stacks `population map file`, make sure you
 have the required column names  (\code{INDIVIDUALS} and \code{STRATA}).
 }
 \details{
 \code{strata.start} and \code{strata.end}
-The info must be found within the name of your individual sample. If not, 
+The info must be found within the name of your individual sample. If not,
 you'll have to create a strata file by hand, the old fashion way.
-e.g. if your individuals are identified 
+e.g. if your individuals are identified
 in this form : SPECIES-POPULATION-MATURITY-YEAR-ID = CHI-QUE-ADU-2014-020,
-then, to have the population id in the \code{STRATA} column, 
-\code{strata.start = 5} and \code{strata.end = 7}. 
+then, to have the population id in the \code{STRATA} column,
+\code{strata.start = 5} and \code{strata.end = 7}.
 The \code{STRATA} column can be any hierarchical grouping.
 }
 \examples{
 \dontrun{
 strata.abalone <- individuals2strata(
 data = "individuals.abalone.tsv",
-strata.start = 5, 
+strata.start = 5,
 strata.end = 7,
 filename = "strata.abalone.tsv"
 )
