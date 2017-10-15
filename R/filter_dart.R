@@ -153,7 +153,7 @@ filter_dart <- function(
 ) {
   if (verbose) {
     cat("#######################################################################\n")
-    cat("######################### radiator::tidy_dart #########################\n")
+    cat("######################## radiator::filter_dart ########################\n")
     cat("#######################################################################\n")
   }
   opt.change <- getOption("width")
@@ -176,7 +176,7 @@ filter_dart <- function(
     stringi::stri_sub(str = ., from = 1, to = 13)
 
   if (is.null(filename)) {
-    filename <- stringi::stri_join("filter_dart_", file.date)
+    folder.extension <- filename <- stringi::stri_join("filter_dart_", file.date)
 
     # if (!is.null(imputation.method)) {
     #   filename.imp <- stringi::stri_join("filter_dart_imputed_", file.date)
@@ -196,14 +196,34 @@ filter_dart <- function(
   message("\nFolder created: \n", folder.extension)
 
   # Filter parameter file ------------------------------------------------------
-  filters.parameters <- tibble::data_frame(FILTERS = as.character(), PARAMETERS = as.character(), VALUES = as.integer(), BEFORE = as.character(), AFTER = as.character(), BLACKLIST = as.integer(), UNITS = as.character(), COMMENTS = as.character())
-  filters.parameters.path <- stringi::stri_join(path.folder, "/filters_parameters_dart.tsv")
-  readr::write_tsv(x = filters.parameters, path = filters.parameters.path, append = FALSE, col_names = TRUE)
+  filters.parameters <- tibble::data_frame(
+    FILTERS = as.character(),
+    PARAMETERS = as.character(),
+    VALUES = as.integer(),
+    BEFORE = as.character(),
+    AFTER = as.character(),
+    BLACKLIST = as.integer(),
+    UNITS = as.character(),
+    COMMENTS = as.character())
+  filters.parameters.path <- stringi::stri_join(
+    path.folder, "/filters_parameters_dart.tsv")
+  readr::write_tsv(x = filters.parameters,
+                   path = filters.parameters.path,
+                   append = FALSE,
+                   col_names = TRUE)
   message("Generated a filters parameters file: filters_parameters_dart.tsv")
 
   # Tidy DArT ------------------------------------------------------------------
   input <- radiator::tidy_dart(data = data, strata = strata, verbose = TRUE,
                                parallel.core = parallel.core)
+
+  if (!is.null(filename)) {
+    tidy.name <- stringi::stri_join(path.folder, "/", filename, ".rad")
+    fst::write.fst(
+    x = input,
+    path = tidy.name)
+    message("Tidy DArT data, unfiltered, written to folder: \n", tidy.name)
+  }
 
   # create 2 data.info
   data.info <- first.data.info <- data_info(input, print.info = FALSE)
@@ -1152,7 +1172,10 @@ filter_dart <- function(
   if (interactive.filter || duplicate.genomes.analysis) {
     if (verbose) message("Duplicate genomes analysis...")
     duplicate.genomes <- radiator::detect_duplicate_genomes(
-      data = input, distance.method = "manhattan", genome = genome, parallel.core = parallel.core)
+      data = input,
+      distance.method = "manhattan",
+      genome = genome,
+      parallel.core = parallel.core)
 
     if (interactive.filter) {
       message("\n\n    Inspect plots and tables in folder created...")
@@ -1164,7 +1187,9 @@ filter_dart <- function(
       genome <- as.character(readLines(n = 1))
       if (genome == "y") {
         duplicate.genomes <- radiator::detect_duplicate_genomes(
-          data = input, distance.method = "manhattan", genome = TRUE,
+          data = input,
+          distance.method = "manhattan",
+          genome = TRUE,
           parallel.core = parallel.core)
       }
       message("    Open the tables in Excel or open another R session to decide which individual(s) to blacklist(s)")
@@ -1285,7 +1310,7 @@ filter_dart <- function(
   # write tidy to working directory
   if (!is.null(filename)) {
     tidy.name <- stringi::stri_join(filename, ".rad")
-    message("Writing the filtered tidy data set: ", tidy.name)
+    message("Tidy DArT data, filtered, written to folder: \ntidy.name")
     fst::write.fst(x = res$tidy.data, path = tidy.name, compress = 85)
   }
 

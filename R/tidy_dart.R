@@ -88,6 +88,7 @@ tidy_dart <- function(
   } else {
     skip.number <- 0
   }
+  temp.file <- NULL
   dart.clone.id <- stringi::stri_detect_fixed(str = data.type, pattern = "CloneID")
   dart.allele.id <- stringi::stri_detect_fixed(str = data.type, pattern = "AlleleID")
 
@@ -99,17 +100,8 @@ tidy_dart <- function(
   if (verbose) message("Importing DArT data")
 
   # Strata file ------------------------------------------------------------------
-  strata.df <- suppressMessages(readr::read_tsv(file = strata, col_names = TRUE))
-
-
-  # We need to check that the names in DART_DB are in the strata...
-  # dart.names <- readr::read_tsv(file = data, skip = skip.number, n_max = 1) %>%
-    # colnames(.)
-  # c("AlleleID", "SNP", "SnpPosition", "CallRate",
-    # "AvgCountRef", "AvgCountSnp", "RepAvg") %in% dart.names
-
-  # test.strata <- strata.df %>%
-    # dplyr::mutate(VERIFIED = INDIVIDUALS %in% dart.names)
+  strata.df <- suppressMessages(readr::read_tsv(file = strata, col_names = TRUE)) %>%
+    dplyr::mutate_all(.tbl = ., .funs = as.character)
 
   # Import data ---------------------------------------------------------------
   colnames.keeper <- c(c("AlleleID", "SNP", "SnpPosition", "CallRate",
@@ -138,22 +130,20 @@ tidy_dart <- function(
     )
   }#End import_dart
   safe_dart <- purrr::safely(.f = import_dart)
-
   import.test <- safe_dart(data, skip.number, colnames.keeper)
-  # names(import.test)
-  # import.test$error
 
   if (is.null(import.test$error)) {
     input <- import.test$result
-  } else {
-    # plan B
-    input <- suppressMessages(suppressWarnings(readr::read_tsv(file = data, skip = skip.number))) %>%
+  } else {# plan B using readr
+    input <- suppressMessages(suppressWarnings(
+      readr::read_tsv(file = data, skip = skip.number, na = "-"))) %>%
       dplyr::select(dplyr::one_of(colnames.keeper)) %>%
       dplyr::rename(LOCUS = AlleleID, POS = SnpPosition, CALL_RATE = CallRate,
                     AVG_COUNT_REF = AvgCountRef, AVG_COUNT_SNP = AvgCountSnp,
                     REP_AVG = RepAvg) %>%
       dplyr::arrange(LOCUS, POS)
   }
+  safe_dart <- import.test <- NULL
 
   # Screen for duplicate names -------------------------------------------------
   remove.list <- c("LOCUS", "SNP", "POS", "CALL_RATE", "AVG_COUNT_REF",
@@ -178,30 +168,30 @@ tidy_dart <- function(
       tidyr::separate(col = KEEPER, into = c("REF", "ALT"), sep = ">") %>%
       dplyr::mutate(
         CHROM = rep("CHROM_1", n()),
-        MARKERS = stringi::stri_join(CHROM, LOCUS, POS, sep = "__"))
+        MARKERS = stringi::stri_join(CHROM, LOCUS, POS, sep = "__")) %>%
+      dplyr::select(MARKERS, CHROM, LOCUS, POS, REF, ALT, CALL_RATE, AVG_COUNT_REF,
+                    AVG_COUNT_SNP, REP_AVG, dplyr::everything()) %>%
+      dplyr::mutate_at(.tbl = ., .vars = c("MARKERS", "CHROM", "LOCUS", "POS"), .funs = as.character)
   )
 
-  # Determine the type of DArT file
-  # binary = 2-row-format
+  # Determine the type of DArT file: 1 or 2-row format (binary)
+  binary <- anyDuplicated(input$LOCUS) == 2
 
-  binary <- anyDuplicated(input$LOCUS)
-
-  if (binary != 2) {
+  if (!binary) {
     if (verbose) message("Tidying DArT data...")
 
     input <- data.table::melt.data.table(
       data = data.table::as.data.table(input),
-      id.vars = c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG"),
+      id.vars = c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "CALL_RATE",
+                  "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG"),
       variable.name = "INDIVIDUALS",
       variable.factor = FALSE,
       value.name = "GT"
     ) %>%
       tibble::as_data_frame(.)
 
-    n.row <- nrow(input)
-    # as.integer is usually twice as light as numeric vector...
-    split.vec <- as.integer(floor((parallel.core * 3 * (1:n.row - 1) / n.row) + 1))
-    n.row <- NULL
+    # generate the split vector
+    split.vec <- split_vec_row(x = input, cpu.rounds = 3, parallel.core = parallel.core)
 
     dart2gt <- function(x) {
       res <- x %>%
@@ -231,7 +221,7 @@ tidy_dart <- function(
         ) %>%
         dplyr::select(GT, GT_VCF, GT_VCF_NUC, GT_BIN)
       return(res)
-    }
+    }#End dart2gt
 
     input <- dplyr::bind_cols(
       dplyr::select(input, -GT),
@@ -242,26 +232,12 @@ tidy_dart <- function(
         dplyr::bind_rows(.)
     )
     split.vec <- NULL
-  }
+  }#End 1 row format DArT file
 
-  if (binary == 2) {
+  if (binary) {
     if (verbose) message("Tidying DArT 2-row-format data...")
 
-    # necessary to deal with the duplication of lines because of the GT in 2 lines
-    grouping.col <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT",
-                      "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")
-
-    grouping.column <- dplyr::ungroup(input) %>%
-      dplyr::select(dplyr::one_of(grouping.col)) %>%
-      dplyr::filter(!is.na(REF) | !is.na(ALT)) %>%
-      dplyr::distinct(MARKERS, CHROM, LOCUS, POS, REF, ALT, CALL_RATE, AVG_COUNT_REF,
-                      AVG_COUNT_SNP, REP_AVG, .keep_all = TRUE)
-
-    ref.info <- dplyr::distinct(grouping.column, MARKERS, REF, ALT)
-
-    markers.split <- dplyr::distinct(grouping.column, MARKERS) %>%
-      dplyr::mutate(SPLIT_VEC = as.integer(floor((parallel.core * 100 * (1:n() - 1) / n()) + 1)))
-
+    # To do: merge these 2 functions and simplify codes
     dart_binary <- function(x) {
       res <- dplyr::select(x, -SPLIT_VEC) %>%
         data.table::as.data.table(.) %>%
@@ -296,34 +272,170 @@ tidy_dart <- function(
         ) %>%
         dplyr::select(MARKERS, INDIVIDUALS, GT, GT_VCF, GT_VCF_NUC, GT_BIN)
       return(res)
+    }#End dart_binary
+    dart_count <- function(x) {
+      x <- dplyr::select(x, -SPLIT_VEC) %>%
+        dplyr::arrange(MARKERS, REF) %>%
+        dplyr::mutate(TEMP = rep(1:2, n()/2)) %>%
+        dplyr::select(dplyr::one_of(c("TEMP", "MARKERS", "REF", "ALT")), dplyr::everything())
+
+      x <- dplyr::bind_cols(
+        dplyr::filter(x, TEMP == 1) %>%
+          dplyr::arrange(MARKERS) %>%
+          dplyr::select(-TEMP) %>%
+          tidyr::gather(data = .,
+                        key = INDIVIDUALS,
+                        value = ALLELE_ALT_DEPTH,
+                        -dplyr::one_of(c("MARKERS", "REF", "ALT"))) %>%
+          dplyr::arrange(MARKERS, INDIVIDUALS),
+        dplyr::filter(x, TEMP == 2) %>%
+          dplyr::arrange(MARKERS) %>%
+          dplyr::select(-dplyr::one_of(c("TEMP", "REF", "ALT"))) %>%
+          tidyr::gather(data = .,
+                        key = INDIVIDUALS,
+                        value = ALLELE_REF_DEPTH,
+                        -MARKERS) %>%
+          dplyr::arrange(MARKERS, INDIVIDUALS) %>%
+          dplyr::select(ALLELE_REF_DEPTH)) %>%
+        dplyr::mutate(
+          A1 = dplyr::if_else(ALLELE_REF_DEPTH > 0, REF, NA_character_),
+          A2 = dplyr::if_else(ALLELE_ALT_DEPTH > 0, ALT, NA_character_),
+          VCF_A1 = dplyr::if_else(is.na(A1), NA_integer_, 0L),
+          VCF_A2 = dplyr::if_else(is.na(A2), NA_integer_, 1L)
+        ) %>%
+        dplyr::arrange(MARKERS, INDIVIDUALS) %>%
+        dplyr::mutate(
+          A1 = dplyr::if_else(is.na(A1), A2, A1),
+          A2 = dplyr::if_else(is.na(A2), A1, A2),
+          GT_VCF_NUC = stringi::stri_join(A1, A2, sep = "/"),
+          GT_VCF_NUC = stringi::stri_replace_na(str = GT_VCF_NUC, replacement = "./."),
+          GT_1 = stringi::stri_replace_all_fixed(
+            str = A1,
+            pattern = c("A", "C", "G", "T"),
+            replacement = c("001", "002", "003", "004"),
+            vectorize_all = FALSE),
+          GT_2 = stringi::stri_replace_all_fixed(
+            str = A2,
+            pattern = c("A", "C", "G", "T"),
+            replacement = c("001", "002", "003", "004"),
+            vectorize_all = FALSE),
+          GT = stringi::stri_join(GT_1, GT_2),
+          GT = stringi::stri_replace_na(str = GT, replacement = "000000")) %>%
+        dplyr::select(-c(A1, A2, GT_1, GT_2)) %>%
+        dplyr::mutate(
+          VCF_A1 = dplyr::if_else(is.na(VCF_A1), VCF_A2, VCF_A1),
+          VCF_A2 = dplyr::if_else(is.na(VCF_A2), VCF_A1, VCF_A2),
+          GT_VCF = stringi::stri_join(VCF_A1, VCF_A2, sep = "/"),
+          GT_VCF = stringi::stri_replace_na(str = GT_VCF, replacement = "./.")
+        ) %>%
+        dplyr::select(-c(VCF_A1, VCF_A2)) %>%
+        dplyr::mutate(
+          GT_BIN = as.numeric(
+            stringi::stri_replace_all_fixed(
+              str = GT_VCF,
+              pattern = c("0/0", "1/1", "0/1", "1/0", "./."),
+              replacement = c("0", "2", "1", "1", NA),
+              vectorize_all = FALSE)))
+      return(x)
+    }#End dart_count
+
+    # keep one marker and check if genotypes are count data
+    gt.counts <- 0 #required to start the while loop
+    while (gt.counts == 0) {
+      gt.counts <- dplyr::select(
+        input,
+        -c(MARKERS, CHROM, LOCUS, POS, CALL_RATE, AVG_COUNT_REF,
+           AVG_COUNT_SNP, REP_AVG, REF, ALT)) %>%
+        dplyr::sample_n(tbl = ., size = 1) %>%
+        purrr::flatten_chr(.) %>%
+        as.integer %>%
+        unique %>% sum(na.rm = TRUE)
     }
+    count.data <- gt.counts > 3
+    n.markers <- dplyr::n_distinct(input$MARKERS)
+    n.individuals <- length(colnames(input)) - 10
+    grouping.col <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")
 
-    input2 <- input %>%
-      dplyr::select(-c(CHROM, LOCUS, POS, CALL_RATE, AVG_COUNT_REF,
-                       AVG_COUNT_SNP, REP_AVG, REF, ALT)) %>%
-      tidyr::gather(INDIVIDUALS, GT, -MARKERS) %>%
-      dplyr::mutate(
-        GT = as.character(GT),
-        ALLELES = rep("GT", n())
-      ) %>%
-      dplyr::left_join(ref.info, by = "MARKERS") %>%
-      dplyr::left_join(markers.split, by = "MARKERS") %>%
-      split(x = ., f = .$SPLIT_VEC) %>%
-      .radiator_parallel(
-        X = ., FUN = dart_binary, mc.cores = parallel.core) %>%
-      dplyr::bind_rows(.) %>%
-      dplyr::left_join(grouping.column, by = "MARKERS") %>%
-      dplyr::select(MARKERS, CHROM, LOCUS, POS, REF, ALT, INDIVIDUALS, GT,
-                    GT_VCF, GT_VCF_NUC, GT_BIN, CALL_RATE, AVG_COUNT_REF,
-                    AVG_COUNT_SNP, REP_AVG)
+    if (!count.data) {#Genotypes coded 0, 1, 2
+      # necessary to deal with the duplication of lines because of the GT in 2 lines
+      grouping.column <- dplyr::ungroup(input) %>%
+        dplyr::select(dplyr::one_of(grouping.col)) %>%
+        dplyr::filter(!is.na(REF) | !is.na(ALT)) %>%
+        dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
+        dplyr::arrange(MARKERS)
 
-    grouping.column <- ref.info <- markers.split <- NULL # remove unused object
-  }
+      ref.info <- dplyr::distinct(grouping.column, MARKERS, REF, ALT) %>%
+        dplyr::arrange(MARKERS)
+
+      markers.split <- dplyr::distinct(ref.info, MARKERS) %>%
+        dplyr::mutate(SPLIT_VEC = as.integer(floor((parallel.core * 100 * (1:n() - 1) / n()) + 1)))
+
+      input <- dplyr::select(
+        input,
+        -c(CHROM, LOCUS, POS, CALL_RATE, AVG_COUNT_REF, AVG_COUNT_SNP,
+           REP_AVG, REF, ALT)) %>%
+        tidyr::gather(INDIVIDUALS, GT, -MARKERS) %>%
+        dplyr::mutate(
+          GT = as.character(GT),
+          ALLELES = rep("GT", n())
+        ) %>%
+        dplyr::left_join(ref.info, by = "MARKERS") %>%
+        dplyr::left_join(markers.split, by = "MARKERS") %>%
+        split(x = ., f = .$SPLIT_VEC) %>%
+        .radiator_parallel(
+          X = ., FUN = dart_binary, mc.cores = parallel.core) %>%
+        dplyr::bind_rows(.) %>%
+        dplyr::left_join(grouping.column, by = "MARKERS") %>%
+        dplyr::select(MARKERS, CHROM, LOCUS, POS, REF, ALT, INDIVIDUALS, GT,
+                      GT_VCF, GT_VCF_NUC, GT_BIN, CALL_RATE, AVG_COUNT_REF,
+                      AVG_COUNT_SNP, REP_AVG)
+
+      grouping.column <- ref.info <- markers.split <- NULL # remove unused object
+
+    } else {
+      if (verbose) message("DArT genotype field is count information")
+      grouping.column <- dplyr::ungroup(input) %>%
+        dplyr::select(dplyr::one_of(grouping.col)) %>%
+        dplyr::filter(!is.na(REF) | !is.na(ALT)) %>%
+        dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
+        dplyr::arrange(MARKERS) %>%
+        dplyr::select(-REF, -ALT)
+      grouping.column <- dplyr::bind_rows(replicate(n.individuals, grouping.column, simplify = FALSE)) %>%
+        dplyr::arrange(MARKERS)
+
+      markers.split <- dplyr::distinct(input, MARKERS) %>%
+        dplyr::mutate(SPLIT_VEC = split_vec_row(., 10, parallel.core = parallel.core))
+
+      input <- input %>%
+        dplyr::select(-dplyr::one_of(
+          c("CHROM", "LOCUS", "POS", "CALL_RATE", "AVG_COUNT_REF",
+            "AVG_COUNT_SNP", "REP_AVG"))) %>%
+        dplyr::arrange(MARKERS, REF) %>%
+        dplyr::left_join(markers.split, by = "MARKERS") %>%
+        split(x = ., f = .$SPLIT_VEC) %>%
+        .radiator_parallel_mc(X = ., FUN = dart_count, mc.cores = parallel.core) %>%
+        dplyr::bind_rows(.) %>%
+        dplyr::bind_cols(grouping.column) %>%
+        dplyr::select(MARKERS, CHROM, LOCUS, POS, REF, ALT, INDIVIDUALS, GT,
+                      GT_VCF, GT_VCF_NUC, GT_BIN, ALLELE_REF_DEPTH,
+                      ALLELE_ALT_DEPTH, CALL_RATE, AVG_COUNT_REF, AVG_COUNT_SNP,
+                      REP_AVG)
+      grouping.column <- markers.split <- NULL
+
+    }
+  }#End binary (2-row format) DArT file
+
 
   # Strata file ----------------------------------------------------------------
+  # ind.char <- unique(stringi::stri_detect_regex(
+  #   str = unique(input$INDIVIDUALS),
+  #   pattern = "[A-Za-z]"))
+  # input.ind.class <- is.character(input$INDIVIDUALS)
+  # if (input.ind.class && !ind.char) input$INDIVIDUALS <- as.integer(input$INDIVIDUALS)
+
   input <- dplyr::left_join(input, strata.df, by = "INDIVIDUALS")
 
-  if (ncol(strata.df) == 3) {
+  if (tibble::has_name(input, "NEW_ID")) {
     input <- input %>%
       dplyr::select(-INDIVIDUALS) %>%
       dplyr::rename(INDIVIDUALS = NEW_ID)
