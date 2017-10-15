@@ -400,6 +400,8 @@ tidy_genomic_data <- function(
     pop.select <- stringi::stri_replace_all_fixed(pop.select, pattern = " ", replacement = "_", vectorize_all = FALSE)
   }
 
+  skip.tidy.wide <- NULL
+
   # File type detection----------------------------------------------------------
 
   data.type <- radiator::detect_genomic_format(data)
@@ -720,32 +722,44 @@ tidy_genomic_data <- function(
   # Import genepop--------------------------------------------------------------
   if (data.type == "genepop.file") {
     if (verbose) message("Tidying the genepop file ...")
-    data <- radiator::tidy_genepop(data = data, tidy = TRUE)
+    input <- radiator::tidy_genepop(data = data, tidy = TRUE)
     data.type <- "tbl_df"
-  }
-
-  # Import fst.file ------------------------------------------------------------
-  if (data.type == "fst.file") {
-    if (verbose) message("Importing the fst.file as a data frame...")
-    data <- fst::read.fst(path = data)
-    data.type <- "tbl_df"
+    skip.tidy.wide <- TRUE
   }
 
   # Import DArT ----------------------------------------------------------------
   if (data.type == "dart") {
     if (verbose) message("Tidying DArT data...")
-    data <- radiator::tidy_dart(
+    input <- radiator::tidy_dart(
       data = data,
       strata = strata,
       verbose = FALSE,
       parallel.core = parallel.core)
+    data.type <- "tbl_df"
+
+    if (tibble::has_name(strata.df, "NEW_ID")) {
+      strata.df <- strata.df %>%
+        dplyr::select(-INDIVIDUALS) %>%
+        dplyr::rename(INDIVIDUALS = NEW_ID)
+    }
+    skip.tidy.wide <- TRUE
+  }
+
+  # Import fst.file ------------------------------------------------------------
+  if (data.type == "fst.file") {
+    if (verbose) message("Importing the fst.file as a data frame...")
+    input <- fst::read.fst(path = data)
+    skip.tidy.wide <- TRUE
     data.type <- "tbl_df"
   }
 
   # Import DF-------------------------------------------------------------------
   if (data.type == "tbl_df") { # DATA FRAME OF GENOTYPES
     if (verbose) message("Importing the data frame ...")
-    input <- radiator::tidy_wide(data = data, import.metadata = TRUE)
+    if (is.null(skip.tidy.wide)) skip.tidy.wide <- FALSE
+    if (!skip.tidy.wide) {
+      input <- radiator::tidy_wide(data = data, import.metadata = TRUE)
+    }
 
     # For long tidy format, switch LOCUS to MARKERS column name, if found MARKERS not found
     if (tibble::has_name(input, "LOCUS") && !tibble::has_name(input, "MARKERS")) {
@@ -771,8 +785,8 @@ tidy_genomic_data <- function(
     if (!is.null(strata)) {
       strata.df$INDIVIDUALS <- radiator::clean_ind_names(strata.df$INDIVIDUALS)
 
+      if (tibble::has_name(input, "POP_ID")) input <- dplyr::select(input, -POP_ID)
       input <- input %>%
-        dplyr::select(-POP_ID) %>%
         dplyr::left_join(strata.df, by = "INDIVIDUALS")
     }
 
