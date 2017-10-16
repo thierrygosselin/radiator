@@ -93,12 +93,15 @@ change_alleles <- function(
 
   # Check if nucleotide info is available --------------------------------------
   nuc.info <- tibble::has_name(data, "GT_VCF_NUC")
+
+
   if (ref.info) {
     letter.coding <- unique(stringi::stri_detect_regex(
       str = unique(data$REF),
       pattern = "[A-Za-z]"))
     if (!nuc.info && letter.coding) ref.info <- FALSE
   }
+
   # Check for markers meta info ------------------------------------------------
   want <- c("MARKERS", "CHROM", "LOCUS", "POS")
   markers.meta <- suppressWarnings(
@@ -171,9 +174,10 @@ change_alleles <- function(
   new.ref <- NULL
 
   if (verbose) message("    Integrating new genotype codings...")
+  if (tibble::has_name(data, "POLYMORPHIC")) data <- dplyr::select(data, -POLYMORPHIC)
   data <- integrate_ref(
     x = data,
-    conversion.data = conversion.df,
+    conversion.df = conversion.df,
     biallelic = biallelic,
     parallel.core = parallel.core)
   conversion.df <- NULL
@@ -278,8 +282,7 @@ ref_dictionary <- function(x, parallel.core = parallel::detectCores() - 1) {
   res <- x %>%
     dplyr::left_join(
       dplyr::distinct(x, MARKERS) %>%
-        dplyr::mutate(
-          SPLIT_VEC = dplyr::ntile(x = 1:nrow(.), n = parallel.core * 3))
+        dplyr::mutate(SPLIT_VEC = split_vec_row(x = ., cpu.rounds = 3, parallel.core = parallel.core))
       , by = "MARKERS") %>%
     split(x = ., f = .$SPLIT_VEC) %>%
     .radiator_parallel(
@@ -298,14 +301,14 @@ ref_dictionary <- function(x, parallel.core = parallel::detectCores() - 1) {
 #' @export
 integrate_ref <- function(
   x,
-  conversion.data = NULL,
+  conversion.df = NULL,
   biallelic = TRUE,
   parallel.core = parallel::detectCores() - 1
 ) {
   # function needed
   new_gt <- function(
     x,
-    conversion.data = NULL,
+    conversion.df = NULL,
     biallelic = TRUE,
     parallel.core = parallel::detectCores() - 1
   ) {
@@ -314,9 +317,14 @@ integrate_ref <- function(
     if (nuc.info) {
       res <- dplyr::select(x, MARKERS, GT_VCF_NUC) %>%
         tidyr::separate(data = ., col = GT_VCF_NUC, into = c("A1", "A2"), sep = "/", remove = FALSE) %>%
-        dplyr::left_join(dplyr::rename(conversion.data, A1 = ALLELES), by = c("MARKERS", "A1")) %>%
-        dplyr::rename(A1_NUC = INTEGERS) %>%
-        dplyr::left_join(dplyr::rename(conversion.data, A2 = ALLELES), by = c("MARKERS", "A2")) %>%
+        dplyr::left_join(dplyr::rename(conversion.df, A1 = ALLELES), by = c("MARKERS", "A1")) %>%
+        dplyr::rename(A1_NUC = INTEGERS)
+
+      if (tibble::has_name(res, "POLYMORPHIC")) res <- dplyr::select(res, -POLYMORPHIC)
+
+      res <- dplyr::left_join(
+        res,
+        dplyr::rename(conversion.df, A2 = ALLELES), by = c("MARKERS", "A2")) %>%
         dplyr::rename(A2_NUC = INTEGERS) %>%
         dplyr::mutate(
           GT_VCF = stringi::stri_join(A1_NUC, A2_NUC, sep = "/"),
@@ -344,10 +352,15 @@ integrate_ref <- function(
           A1 = stringi::stri_sub(str = GT, from = 1, to = 3),
           A2 = stringi::stri_sub(str = GT, from = 4, to = 6)
         ) %>%
-        dplyr::select(-GT) %>%
-        dplyr::left_join(dplyr::rename(conversion.data, A1 = ALLELES), by = c("MARKERS", "A1")) %>%
+        dplyr::select(-GT)
+
+      if (tibble::has_name(res, "POLYMORPHIC")) res <- dplyr::select(res, -POLYMORPHIC)
+
+      res <- dplyr::left_join(
+        res,
+        dplyr::rename(conversion.df, A1 = ALLELES), by = c("MARKERS", "A1")) %>%
         dplyr::rename(A1_NUC = INTEGERS) %>%
-        dplyr::left_join(dplyr::rename(conversion.data, A2 = ALLELES), by = c("MARKERS", "A2")) %>%
+        dplyr::left_join(dplyr::rename(conversion.df, A2 = ALLELES), by = c("MARKERS", "A2")) %>%
         dplyr::rename(A2_NUC = INTEGERS) %>%
         dplyr::mutate(
           GT_VCF = stringi::stri_join(A1_NUC, A2_NUC, sep = "/"),
@@ -379,13 +392,13 @@ integrate_ref <- function(
     new.gt <- dplyr::distinct(x, MARKERS, GT)
   }
   new.gt <- new.gt %>%
-    dplyr::mutate(SPLIT_VEC = dplyr::ntile(x = 1:nrow(.), n = parallel.core * 3)) %>%
+    dplyr::mutate(SPLIT_VEC = split_vec_row(x = ., cpu.rounds = 3, parallel.core = parallel.core)) %>%
     split(x = ., f = .$SPLIT_VEC) %>%
     .radiator_parallel(
       X = .,
       FUN = new_gt,
       mc.cores = parallel.core,
-      conversion.data = conversion.data,
+      conversion.df = conversion.df,
       biallelic = biallelic
     ) %>%
     dplyr::bind_rows(.)

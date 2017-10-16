@@ -128,7 +128,7 @@ summary_stats_vcf_tidy <- function(data, filename = NULL) {
 #' 0/1 : heterozygote with coverage REF > ALT allele.
 #' 1/0 : heterozygote with coverage REF < ALT allele.
 
-#' @importFrom reshape2 dcast
+#' @importFrom tidyr spread
 #' @rdname table_low_coverage_summary
 #' @export
 
@@ -198,13 +198,13 @@ table_low_coverage_summary <- function(
     )
 
   low.coverage.summary.table <- low.coverage.summary %>%
-    reshape2::dcast(POP_ID ~ GT, value.var = "LOW_COVERAGE_PERCENT")
+    tidyr::spread(data = ., key = GT, value = LOW_COVERAGE_PERCENT, -POP_ID)
 
   utils::write.table(low.coverage.summary.table, filename.low.coverage, sep = "\t", row.names = F, col.names = T, quote = F)
 
   low.coverage.imbalance.summary.table <- low.coverage.summary %>%
     dplyr::filter(GT != "0/0" & GT != "1/1") %>%
-    reshape2::dcast(POP_ID ~ GT, value.var = "IMBALANCE_PERCENT")
+    tidyr::spread(data = ., key = GT, value = IMBALANCE_PERCENT, -POP_ID)
 
   utils::write.table(low.coverage.imbalance.summary.table, filename.low.coverage.imbalance, sep = "\t", row.names = F, col.names = T, quote = F)
 

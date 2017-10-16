@@ -4,7 +4,7 @@
 \alias{integrate_ref}
 \title{integrate_ref}
 \usage{
-integrate_ref(x, conversion.data = NULL, biallelic = TRUE,
+integrate_ref(x, conversion.df = NULL, biallelic = TRUE,
   parallel.core = parallel::detectCores() - 1)
 }
 \description{

@@ -478,13 +478,16 @@ tidy_genomic_data <- function(
   if (!is.null(strata)) {
     if (is.vector(strata)) {
       # message("strata file: yes")
-      number.columns.strata <- max(
-        utils::count.fields(strata, sep = "\t"), na.rm = TRUE)
-      col.types <- stringi::stri_join(
-        rep("c", number.columns.strata), collapse = "")
+      # number.columns.strata <- max(
+      #   utils::count.fields(strata, sep = "\t"), na.rm = TRUE)
+      # col.types <- stringi::stri_join(
+      #   rep("c", number.columns.strata), collapse = "")
       suppressMessages(
         strata.df <- readr::read_tsv(
-          file = strata, col_names = TRUE, col_types = col.types) %>%
+          file = strata, col_names = TRUE,
+          # col_types = col.types
+          col_types = readr::cols(.default = readr::col_character())
+          ) %>%
           dplyr::rename(POP_ID = STRATA))
     } else {
       # message("strata object: yes")
@@ -814,29 +817,39 @@ tidy_genomic_data <- function(
     biallelic <- input.temp$biallelic
   } # End import data frame of genotypes
 
-  # Import haplo---------------------------------------------------------------
+  # Import stacks haplotypes----------------------------------------------------
   if (data.type == "haplo.file") { # Haplotype file
     if (verbose) message("Importing STACKS haplotype file")
-    number.columns <- max(utils::count.fields(data, sep = "\t"))
+    # number.columns <- max(utils::count.fields(data, sep = "\t"))
 
-    input <- data.table::fread(
-      input = data,
-      sep = "\t",
-      header = TRUE,
-      stringsAsFactors = FALSE,
-      colClasses = list(character = 1:number.columns),
-      verbose = FALSE,
-      showProgress = TRUE,
-      data.table = FALSE,
-      na.strings = "-"
-    ) %>%
-      tibble::as_data_frame(.) %>%
+    # input <- data.table::fread(
+    #   input = data,
+    #   sep = "\t",
+    #   header = TRUE,
+    #   stringsAsFactors = FALSE,
+    #   colClasses = list(character = 1:number.columns),
+    #   verbose = FALSE,
+    #   showProgress = TRUE,
+    #   data.table = FALSE,
+    #   na.strings = "-"
+    # ) %>%
+    #   tibble::as_data_frame(.) %>%
+    #   dplyr::select(-Cnt)
+    # number.columns <- NULL
+
+    # readr now faster/easier than fread...
+    input <- readr::read_tsv(
+      file = data, col_names = TRUE, na = "-",
+      col_types = readr::cols(.default = readr::col_character())) %>%
       dplyr::select(-Cnt)
 
-    if (tibble::has_name(input, "# Catalog ID") || tibble::has_name(input, "Catalog ID")) {
+    if (tibble::has_name(input, "# Catalog ID") ||
+        tibble::has_name(input, "Catalog ID") ||
+        tibble::has_name(input, "# Catalog Locus ID")) {
       colnames(input) <- stringi::stri_replace_all_fixed(
         str = colnames(input),
-        pattern = c("# Catalog ID", "Catalog ID"), replacement = c("LOCUS", "LOCUS"), vectorize_all = FALSE
+        pattern = c("# Catalog ID", "Catalog ID", "# Catalog Locus ID"),
+        replacement = c("LOCUS", "LOCUS", "LOCUS"), vectorize_all = FALSE
       )
     }
 
@@ -851,16 +864,19 @@ tidy_genomic_data <- function(
     message("Number of individuals: ", n.individuals)
 
     # tidy df, individuals in 1 column
-    input <- data.table::melt.data.table(
-      data = data.table::as.data.table(input),
-      id.vars = "LOCUS",
-      variable.name = "INDIVIDUALS",
-      variable.factor = FALSE,
-      value.name = "GT_HAPLO"
-    ) %>%
-      tibble::as_data_frame(.)
+    # input <- data.table::melt.data.table(
+    #   data = data.table::as.data.table(input),
+    #   id.vars = "LOCUS",
+    #   variable.name = "INDIVIDUALS",
+    #   variable.factor = FALSE,
+    #   value.name = "GT_HAPLO"
+    # ) %>%
+    #   tibble::as_data_frame(.)
+    input <- tidyr::gather(data = input,
+                           key = "INDIVIDUALS",
+                           value = "GT_VCF_NUC", # previously using "GT_HAPLO"
+                           -LOCUS)
 
-    number.columns <- NULL
 
     input$INDIVIDUALS <- radiator::clean_ind_names(input$INDIVIDUALS)
 
@@ -878,14 +894,15 @@ tidy_genomic_data <- function(
 
     # remove consensus markers
     if (verbose) message("\nScanning for consensus markers...")
-    consensus.markers <- input %>%
-      dplyr::filter(GT_HAPLO == "consensus") %>%
-      dplyr::distinct(LOCUS, .keep_all = TRUE)
+    consensus.markers <- dplyr::filter(input, GT_VCF_NUC == "consensus") %>%
+      dplyr::distinct(LOCUS)
 
     if (length(consensus.markers$LOCUS) > 0) {
       input <- suppressWarnings(dplyr::anti_join(input, consensus.markers, by = "LOCUS"))
+      readr::write_tsv(consensus.markers, "radiator.tidy.genomic.data.consensus.markers.tsv")
     }
     if (verbose) message("    number of consensus markers removed: ", dplyr::n_distinct(consensus.markers$LOCUS))
+    consensus.markers <- NULL
 
     # population levels and strata
     strata.df$INDIVIDUALS <- radiator::clean_ind_names(strata.df$INDIVIDUALS)
@@ -904,29 +921,43 @@ tidy_genomic_data <- function(
     # removing errors and potential paralogs (GT with > 2 alleles)
     if (verbose) message("Scanning for artifactual genotypes...")
     input <- input %>%
-      dplyr::mutate(POLYMORPHISM = stringi::stri_count_fixed(GT_HAPLO, "/"))
+      dplyr::mutate(POLYMORPHISM = stringi::stri_count_fixed(GT_VCF_NUC, "/"))
 
     blacklist.paralogs <- input %>%
       dplyr::filter(POLYMORPHISM > 1) %>%
       dplyr::select(LOCUS, INDIVIDUALS)
 
     if (verbose) message("    number of genotypes with more than 2 alleles: ", length(blacklist.paralogs$LOCUS))
-    # save.image("testing.haplo.RData")
-
     if (length(blacklist.paralogs$LOCUS) > 0) {
       input <- input %>%
-        dplyr::mutate(GT_HAPLO = replace(GT_HAPLO, which(POLYMORPHISM > 1), NA)) %>%
+        dplyr::mutate(GT_VCF_NUC = replace(GT_VCF_NUC, which(POLYMORPHISM > 1), NA)) %>%
         dplyr::select(-POLYMORPHISM)
 
       readr::write_tsv(blacklist.paralogs, "blacklist.genotypes.paralogs.tsv")
     }
+    blacklist.paralogs <- NULL
 
     if (verbose) message("Calculating REF/ALT alleles...")
+    # Prep for REF/ALT alleles and new genotype coding
+    # part below could be parallelized if necessary, test with larger dataset for bottleneck...
+    input <- input %>%
+      dplyr::mutate(
+        GT_VCF_NUC = dplyr::if_else(
+          POLYMORPHISM == 0,
+          stringi::stri_join(GT_VCF_NUC, "/", GT_VCF_NUC), GT_VCF_NUC,
+          missing = "./."),
+        GT_VCF_NUC = dplyr::if_else(stringi::stri_detect_fixed(GT_VCF_NUC, "N"),
+                                    "./.", GT_VCF_NUC)
+      ) %>%
+      dplyr::select(-POLYMORPHISM)
+
     input.temp <- radiator::change_alleles(
       data = input,
+      biallelic = FALSE,
       parallel.core = parallel.core,
       verbose = verbose)
     input <- input.temp$input
+    input.temp <- NULL
     biallelic <- FALSE
     input <- dplyr::rename(input, LOCUS = MARKERS)
   } # End import haplotypes file
@@ -1268,9 +1299,6 @@ tidy_genomic_data <- function(
       mono.out <- radiator::discard_monomorphic_markers(input, verbose = TRUE)
       mono.markers <- mono.out$blacklist.monomorphic.markers
       if (nrow(mono.markers) > 0) {
-        # if (data.type == "haplo.file") {
-        #   mono.markers <- dplyr::rename(.data = mono.markers, LOCUS = MARKERS)
-        # }
         input <- mono.out$input
         readr::write_tsv(mono.markers, "blacklist.monomorphic.markers.tsv")
       }

@@ -161,8 +161,7 @@ tidy_vcf <- function(
   if (detect.snp.col && stacks.vcf) {
     if (nrow(input) > 30000) {
       input <- input %>%
-        dplyr::mutate(
-          SPLIT_VEC = dplyr::ntile(x = 1:nrow(.), n = parallel.core * 3)) %>%
+        dplyr::mutate(SPLIT_VEC = split_vec_row(x = ., cpu.rounds = 3, parallel.core = parallel.core)) %>%
         split(x = ., f = .$SPLIT_VEC) %>%
         .radiator_parallel(
           X = .,
@@ -548,26 +547,6 @@ split_vcf_id <- function(x) {
   return(res)
 }#End split_vcf_id
 
-#' @title split_vec_row
-#' @description Split input into chunk for parallel processing
-#' @rdname split_vec_row
-#' @keywords internal
-#' @export
-split_vec_row <- function(x, cpu.rounds, parallel.core = parallel::detectCores() - 1) {
-  n.row <- nrow(x)
-  split.vec <- as.integer(floor((parallel.core * cpu.rounds * (1:n.row - 1) / n.row) + 1))
-  return(split.vec)
-}#End split_vec_row
-
-
-#' @title replace_by_na
-#' @description Fast removal of NA
-#' @rdname replace_by_na
-#' @keywords internal
-#' @export
-replace_by_na <- function(data, what = ".") {
-  replace(data, which(data == what), NA)
-}#End replace_by_na
 
 
 #' @title clean_ad
