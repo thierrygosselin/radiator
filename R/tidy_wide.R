@@ -28,8 +28,8 @@
 #' @rdname tidy_wide
 #' @importFrom stringi stri_replace_all_fixed stri_pad_left
 #' @importFrom dplyr mutate select
-#' @importFrom data.table fread melt.data.table as.data.table
 #' @importFrom tibble as_data_frame has_name
+#' @importFrom tidyr gather spread
 
 #' @details \strong{Input data:}
 #'
@@ -70,16 +70,10 @@ tidy_wide <- function(data, import.metadata = FALSE, ...) {
 
   if (is.vector(data)) {# for file in the working directory
     # Scan column names
-    scan.colnames <- data.table::fread(
-      input = data.table::as.data.table(data),
-      sep = "\t",
-      stringsAsFactors = FALSE,
-      header = TRUE,
-      nrows = 1,
-      showProgress = TRUE,
-      verbose = FALSE,
-      data.table = FALSE
-    )
+    scan.colnames <- readr::read_tsv(
+      file = data,
+      col_types = readr::cols(.default = readr::col_character()),
+      n_max = 1)
 
     # Determine long (tidy) or wide dataset
     if ("MARKERS" %in% colnames(scan.colnames) | "LOCUS" %in% colnames(scan.colnames) ) {
@@ -91,18 +85,8 @@ tidy_wide <- function(data, import.metadata = FALSE, ...) {
 
     if (long.format) { # long (tidy) format
       # to select columns while importing the file
+      input <- readr::read_tsv(file = data, col_types = readr::cols(.default = readr::col_character()))
 
-      input <- data.table::fread(
-        input = data,
-        sep = "\t",
-        stringsAsFactors = FALSE,
-        header = TRUE,
-        # col.names = import.colnames,
-        # select = import.colnames,
-        showProgress = FALSE,
-        verbose = FALSE
-      ) %>%
-        tibble::as_data_frame()
 
       # switch GENOTYPE for GT in colnames if found
       if ("GENOTYPE" %in% colnames(input)) {
@@ -124,24 +108,10 @@ tidy_wide <- function(data, import.metadata = FALSE, ...) {
       }
 
     } else {# wide format
-      input <- data.table::fread(
-        input = data,
-        sep = "\t",
-        stringsAsFactors = FALSE,
-        header = TRUE,
-        showProgress = FALSE,
-        verbose = FALSE,
-        data.table = TRUE
-      ) %>%
-        data.table::melt.data.table(
-          data = .,
-          id.vars = c("POP_ID", "INDIVIDUALS"),
-          variable.name = "LOCUS",
-          value.name = as.character("GT"),
-          variable.factor = FALSE,
-          value.factor = FALSE
-        ) %>%
-        tibble::as_data_frame()
+      input <- readr::read_tsv(
+        file = data,
+        col_types = readr::cols(.default = readr::col_character())) %>%
+        dplyr::gather(data = ., key = LOCUS, value = GT, -c(POP_ID, INDIVIDUALS))
     }
   } else {# object in global environment
     input <- data
@@ -176,14 +146,7 @@ tidy_wide <- function(data, import.metadata = FALSE, ...) {
       }
 
     } else {# wide format
-      input <- data.table::melt.data.table(
-        data = data.table::as.data.table(input),
-        id.vars = c("POP_ID", "INDIVIDUALS"),
-        variable.name = "LOCUS",
-        value.name = as.character("GT"),
-        variable.factor = FALSE,
-        value.factor = FALSE) %>%
-        tibble::as_data_frame()
+      input <- tidyr::gather(data = input, key = LOCUS, value = GT, -c(POP_ID, INDIVIDUALS))
     }
   }
 

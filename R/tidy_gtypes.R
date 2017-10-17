@@ -16,7 +16,6 @@
 #' @importFrom stringi stri_replace_all_fixed stri_replace_all_regex stri_join stri_pad_left
 #' @importFrom tibble rownames_to_column data_frame as_data_frame
 #' @importFrom tidyr gather unite
-#' @importFrom data.table as.data.table dcast.data.table
 
 #' @references Archer FI, Adams PE, Schneiders BB.
 #' strataG: An r package for manipulating, summarizing and analysing population
@@ -64,13 +63,9 @@ tidy_gtypes <- function(data) {
   # prep tidy ------------------------------------------------------------------
   input <- input %>%
     dplyr::mutate(GT = replace(GT, which(is.na(GT)), "000")) %>%
-    data.table::as.data.table(.) %>%
-    data.table::dcast.data.table(
-      data = .,
-      formula = POP_ID + INDIVIDUALS + MARKERS ~ ALLELES,
-      value.var = "GT"
-    ) %>%
-    tibble::as_data_frame() %>%
+    dplyr::group_by(POP_ID, INDIVIDUALS, MARKERS) %>%
+    tidyr::spread(data = ., key = ALLELES, value = GT) %>%
+    dplyr::ungroup(.) %>%
     tidyr::unite(data = ., col = GT, A1, A2, sep = "") %>%
     dplyr::select(POP_ID, INDIVIDUALS, MARKERS, GT)
   return(input)

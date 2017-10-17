@@ -29,7 +29,6 @@
 #' @importFrom dplyr select rename n_distinct distinct mutate summarise group_by ungroup arrange left_join full_join semi_join anti_join bind_rows bind_cols if_else
 #' @importFrom readr write_tsv read_tsv
 #' @importFrom tidyr separate gather
-#' @importFrom data.table fread melt.data.table as.data.table
 #' @importFrom parallel detectCores
 #' @importFrom ggplot2 ggplot aes geom_violin geom_boxplot stat_summary labs theme element_blank element_text geom_jitter scale_colour_manual scale_y_reverse theme_light geom_bar facet_grid stat_smooth
 #' @importFrom purrr flatten_chr map_df flatten_dbl

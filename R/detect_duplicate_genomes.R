@@ -565,12 +565,9 @@ distance_individuals <- function(
   # Prep data
   dist.computation <- suppressWarnings(
     dplyr::ungroup(x) %>%
-      data.table::as.data.table() %>%
-      data.table::dcast.data.table(
-        data = .,
-        formula = INDIVIDUALS ~ MARKERS_ALLELES,
-        value.var = "n"
-      ) %>%
+      dplyr::group_by(INDIVIDUALS) %>%
+      tidyr::spread(data = ., key = MARKERS_ALLELES, value = n) %>%
+      dplyr::ungroup(.) %>%
       tibble::as_data_frame(.) %>%
       tibble::remove_rownames(.) %>%
       tibble::column_to_rownames(df = ., var = "INDIVIDUALS")

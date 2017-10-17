@@ -23,7 +23,6 @@
 #' @importFrom stringi stri_replace_all_fixed
 #' @importFrom methods new
 #' @importFrom adegenet indNames pop chromosome locNames position
-#' @importFrom data.table dcast.data.table as.data.table
 #' @importFrom tibble has_name
 #' @importFrom tidyr spread
 

@@ -106,7 +106,6 @@
 #' @importFrom stringi stri_join stri_replace_all_fixed stri_replace_all_regex
 #' @importFrom utils count.fields
 #' @importFrom readr read_tsv write_tsv
-#' @importFrom data.table fread melt.data.table as.data.table
 #' @importFrom ape pcoa
 #' @importFrom stats dist
 #' @importFrom tibble data_frame

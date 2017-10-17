@@ -109,7 +109,6 @@
 #' @importFrom parallel detectCores
 #' @importFrom stringi stri_replace_all_fixed stri_join stri_sub stri_replace_na stri_pad_left
 #' @importFrom purrr discard
-#' @importFrom data.table fread melt.data.table as.data.table
 #' @importFrom readr read_tsv write_tsv
 #' @importFrom tibble as_data_frame data_frame
 #' @importFrom tidyr spread gather unite separate

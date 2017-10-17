@@ -44,8 +44,7 @@
 #' @rdname individuals2strata
 #' @importFrom stringi stri_sub
 #' @importFrom dplyr mutate
-#' @importFrom data.table fread
-#' @importFrom readr write_tsv
+#' @importFrom readr write_tsv read_tsv
 #' @importFrom tibble as_data_frame
 
 
@@ -83,15 +82,8 @@ individuals2strata <- function(
   if (missing(strata.end)) stop("strata.end argument missing")
 
   if (is.vector(data)) { # for file in the working directory
-    input <- data.table::fread(
-      input = data,
-      sep = "\t",
-      stringsAsFactors = FALSE,
-      header = TRUE,
-      showProgress = TRUE,
-      verbose = FALSE,
-      data.table = FALSE
-    )
+    input <- readr::read_tsv(file = data)
+
   } else {# object in global environment
     input <- data
   }

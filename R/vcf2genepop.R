@@ -3,28 +3,25 @@
 #' @name vcf2genepop
 #' @title VCF to genepop with filters and data imputation
 
-#' @description For full details of the function, please use 
+#' @description For full details of the function, please use
 #' \pkg{radiator} \code{\link[radiator]{genomic_converter}}. This function is a shorcut
 #' to output only genepop file.
-#' @inheritParams genomic_converter 
-#' @inheritParams tidy_genomic_data 
+#' @inheritParams genomic_converter
+#' @inheritParams tidy_genomic_data
 #' @inheritParams write_genepop
-#' @inheritParams write_genind 
-#' @inheritParams write_genlight 
+#' @inheritParams write_genind
+#' @inheritParams write_genlight
 #' @inheritParams write_structure
 #' @inheritParams write_plink
 #' @inheritParams write_vcf
 #' @inheritParams write_gtypes
 #' @inheritParams write_hierfstat
-#' @inheritParams radiator_imputations_module 
+#' @inheritParams radiator_imputations_module
 #' @seealso \code{\link[radiator]{genomic_converter}}
 
 
 #' @export
 #' @rdname vcf2genepop
-#' @import dplyr
-#' @import stringi
-#' @importFrom data.table fread
 
 
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
@@ -56,7 +53,7 @@ vcf2genepop <- function(
   verbose = FALSE,
   parallel.core = detectCores() - 1
 ) {
-  
+
   res <- genomic_converter(
     data,
     output = "genepop",

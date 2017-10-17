@@ -292,7 +292,7 @@
 #' @importFrom stringi stri_join stri_replace_all_fixed stri_extract_all_fixed stri_replace_all_regex stri_sub stri_pad_left stri_count_fixed stri_replace_na
 #' @importFrom stats var median quantile
 #' @importFrom purrr map flatten keep discard
-#' @importFrom data.table fread melt.data.table as.data.table
+#' @importFrom data.table fread as.data.table
 #' @importFrom tidyr spread gather unite separate
 #' @importFrom utils count.fields
 #' @importFrom readr write_tsv read_tsv
@@ -632,15 +632,7 @@ tidy_genomic_data <- function(
     if (verbose) message("Tidying the PLINK file ...")
     # Filling GT and new separating INDIVIDUALS from ALLELES
     # combining alleles
-    input <- data.table::melt.data.table(
-      data = data.table::as.data.table(input),
-      id.vars = "LOCUS",
-      variable.name = "INDIVIDUALS_ALLELES",
-      value.name = as.character("GT"),
-      variable.factor = FALSE,
-      value.factor = FALSE
-    ) %>%
-      tibble::as_data_frame(.)
+    input <- tidyr::gather(data = input, key = INDIVIDUALS_ALLELES, value = GT, -LOCUS)
 
     # detect GT coding
     if (verbose) message("Scanning for PLINK tped genotype coding")
@@ -670,13 +662,9 @@ tidy_genomic_data <- function(
         col = INDIVIDUALS_ALLELES,
         into = c("INDIVIDUALS", "ALLELES"),
         sep = "_") %>%
-      data.table::as.data.table(.) %>%
-      data.table::dcast.data.table(
-        data = .,
-        formula = LOCUS + INDIVIDUALS ~ ALLELES,
-        value.var = "GT"
-      ) %>%
-      tibble::as_data_frame(.) %>%
+      dplyr::group_by(LOCUS, INDIVIDUALS) %>%
+      dplyr::spread(data = ., key = ALLELES, value = GT) %>%
+      dplyr::ungroup(.) %>%
       tidyr::unite(data = ., col = GT, A1, A2, sep = "") %>%
       dplyr::select(LOCUS, INDIVIDUALS, GT)
 
@@ -820,23 +808,6 @@ tidy_genomic_data <- function(
   # Import stacks haplotypes----------------------------------------------------
   if (data.type == "haplo.file") { # Haplotype file
     if (verbose) message("Importing STACKS haplotype file")
-    # number.columns <- max(utils::count.fields(data, sep = "\t"))
-
-    # input <- data.table::fread(
-    #   input = data,
-    #   sep = "\t",
-    #   header = TRUE,
-    #   stringsAsFactors = FALSE,
-    #   colClasses = list(character = 1:number.columns),
-    #   verbose = FALSE,
-    #   showProgress = TRUE,
-    #   data.table = FALSE,
-    #   na.strings = "-"
-    # ) %>%
-    #   tibble::as_data_frame(.) %>%
-    #   dplyr::select(-Cnt)
-    # number.columns <- NULL
-
     # readr now faster/easier than fread...
     input <- readr::read_tsv(
       file = data, col_names = TRUE, na = "-",
@@ -862,16 +833,6 @@ tidy_genomic_data <- function(
 
     message("\nNumber of loci in catalog: ", n.catalog.locus)
     message("Number of individuals: ", n.individuals)
-
-    # tidy df, individuals in 1 column
-    # input <- data.table::melt.data.table(
-    #   data = data.table::as.data.table(input),
-    #   id.vars = "LOCUS",
-    #   variable.name = "INDIVIDUALS",
-    #   variable.factor = FALSE,
-    #   value.name = "GT_HAPLO"
-    # ) %>%
-    #   tibble::as_data_frame(.)
     input <- tidyr::gather(data = input,
                            key = "INDIVIDUALS",
                            value = "GT_VCF_NUC", # previously using "GT_HAPLO"

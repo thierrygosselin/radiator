@@ -55,7 +55,6 @@
 #' @rdname change_alleles
 #' @importFrom dplyr select mutate group_by ungroup rename tally filter if_else arrange summarise top_n distinct coalesce if_else full_join
 #' @importFrom stringi stri_replace_all_fixed stri_join stri_sub
-#' @importFrom data.table fread
 #' @importFrom tibble has_name
 #' @importFrom tidyr spread gather
 #' @importFrom purrr flatten_chr
@@ -120,7 +119,7 @@ change_alleles <- function(
   }
 
   # Generating REF/ALT dictionary  ---------------------------------------------
-  if (verbose) message("    Generating REF/ALT dictionary")
+  if (verbose) message("    generating REF/ALT dictionary")
   if (ref.info) {
     old.ref <- data %>%
       dplyr::distinct(MARKERS, REF, ALT) %>%
@@ -162,7 +161,7 @@ change_alleles <- function(
       inversion <- FALSE
     }
     old.ref <- NULL
-    message("    Number of markers with REF/ALT change(s) = ", nrow(change.ref))
+    message("    number of markers with REF/ALT change(s) = ", nrow(change.ref))
   } else {
     inversion <- FALSE
   }
@@ -173,7 +172,7 @@ change_alleles <- function(
   data <- dplyr::left_join(data, new.ref, by = "MARKERS")
   new.ref <- NULL
 
-  if (verbose) message("    Integrating new genotype codings...")
+  if (verbose) message("    integrating new genotype codings...")
   if (tibble::has_name(data, "POLYMORPHIC")) data <- dplyr::select(data, -POLYMORPHIC)
   data <- integrate_ref(
     x = data,
@@ -285,7 +284,7 @@ ref_dictionary <- function(x, parallel.core = parallel::detectCores() - 1) {
         dplyr::mutate(SPLIT_VEC = split_vec_row(x = ., cpu.rounds = 3, parallel.core = parallel.core))
       , by = "MARKERS") %>%
     split(x = ., f = .$SPLIT_VEC) %>%
-    .radiator_parallel(
+    .radiator_parallel_mc(
       X = .,
       FUN = generate_ref,
       mc.cores = parallel.core
@@ -394,7 +393,7 @@ integrate_ref <- function(
   new.gt <- new.gt %>%
     dplyr::mutate(SPLIT_VEC = split_vec_row(x = ., cpu.rounds = 3, parallel.core = parallel.core)) %>%
     split(x = ., f = .$SPLIT_VEC) %>%
-    .radiator_parallel(
+    .radiator_parallel_mc(
       X = .,
       FUN = new_gt,
       mc.cores = parallel.core,

@@ -3,40 +3,35 @@
 #' @name vcf2plink
 #' @title VCF to plink with filters and data imputation
 
-#' @description For full details of the function, please use 
+#' @description For full details of the function, please use
 #' \pkg{radiator} \code{\link[radiator]{genomic_converter}}. This function is a shorcut
 #' to output only plink tped/tmap files.
-#' @inheritParams genomic_converter 
-#' @inheritParams tidy_genomic_data 
+#' @inheritParams genomic_converter
+#' @inheritParams tidy_genomic_data
 #' @inheritParams write_genepop
-#' @inheritParams write_genind 
-#' @inheritParams write_genlight 
+#' @inheritParams write_genind
+#' @inheritParams write_genlight
 #' @inheritParams write_structure
 #' @inheritParams write_plink
 #' @inheritParams write_vcf
 #' @inheritParams write_gtypes
 #' @inheritParams write_hierfstat
-#' @inheritParams radiator_imputations_module 
+#' @inheritParams radiator_imputations_module
 
 #' @export
 #' @rdname vcf2plink
-#' @import dplyr
-#' @import stringi
-#' @importFrom data.table fread
 
 #' @references Danecek P, Auton A, Abecasis G et al. (2011)
 #' The variant call format and VCFtools.
 #' Bioinformatics, 27, 2156-2158.
-#' @references Purcell S, Neale B, Todd-Brown K, Thomas L, Ferreira MAR, 
-#' Bender D, et al. 
-#' PLINK: a tool set for whole-genome association and population-based linkage 
-#' analyses. 
+#' @references Purcell S, Neale B, Todd-Brown K, Thomas L, Ferreira MAR,
+#' Bender D, et al.
+#' PLINK: a tool set for whole-genome association and population-based linkage
+#' analyses.
 #' American Journal of Human Genetics. 2007; 81: 559–575. doi:10.1086/519795
 
 
 #' @seealso \code{\link[radiator]{genomic_converter}}
-
-
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 
@@ -67,8 +62,8 @@ vcf2plink <- function(
   verbose = FALSE,
   parallel.core = detectCores() - 1
 ) {
-  
-  res <- genomic_converter(
+
+  res <- radiator::genomic_converter(
     data,
     output = "plink",
     filename = filename,

@@ -107,9 +107,8 @@
 
 #' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join slice bind_cols bind_rows
 #' @importFrom purrr invoke flatten_chr
-#' @importFrom data.table fread as.data.table
 #' @importFrom stringi stri_split_fixed stri_replace_all_fixed stri_join stri_trim_both stri_trim_right stri_pad_left
-#' @importFrom readr write_tsv read_tsv
+#' @importFrom readr write_tsv read_tsv read_delim
 #' @importFrom utils count.fields
 #' @importFrom tidyr separate gather unite spread
 #' @importFrom tibble as_data_frame
@@ -160,18 +159,9 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
 
   # Import data ------------------------------------------------------------------
   if (is.vector(data)) {
-    data <- data.table::fread(
-      data,
-      header = FALSE,
-      skip = 1, # removes genepop header
-      sep = "?",
-      stringsAsFactors = FALSE,
-      col.names = "data",
-      strip.white = TRUE
-    ) %>%
-      tibble::as_data_frame()
+    data <- readr::read_delim(file = data, delim = "?", skip = 1, trim_ws = TRUE, col_names = "data", col_types = "c")
   } else {
-    data <- data.table::as.data.table(data) %>%
+    data <- data %>%
       dplyr::rename(data = V1) %>%
       dplyr::slice(-1) %>% # removes genepop header
       tibble::as_data_frame()
@@ -391,12 +381,9 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
       dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
 
     if (!tidy) {
-      data <- data.table::dcast.data.table(
-        data = data.table::as.data.table(data),
-        formula = POP_ID + INDIVIDUALS ~ MARKERS,
-        value.var = "GENOTYPE"
-      ) %>%
-        tibble::as_data_frame()
+      data <- data %>%
+        dplyr::group_by(POP_ID, INDIVIDUALS) %>%
+        tidyr::spread(data = ., key = MARKERS, value = GENOTYPE)
     }
   }
 
@@ -414,12 +401,9 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
       dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
 
     if (!tidy) {
-      data <- data.table::dcast.data.table(
-        data = data.table::as.data.table(data),
-        formula = POP_ID + INDIVIDUALS ~ MARKERS,
-        value.var = "GENOTYPE"
-      ) %>%
-        tibble::as_data_frame()
+      data <- data %>%
+        dplyr::group_by(POP_ID, INDIVIDUALS) %>%
+        tidyr::spread(data = ., key = MARKERS, value = GENOTYPE)
     }
   }
 

@@ -50,7 +50,7 @@
 #' @importFrom parallel detectCores
 #' @importFrom stringi stri_replace_all_fixed stri_join stri_sub stri_replace_na stri_pad_left
 #' @importFrom purrr discard
-#' @importFrom data.table fread melt.data.table as.data.table dcast.data.table
+#' @importFrom data.table fread as.data.table dcast.data.table
 #' @importFrom readr read_tsv write_tsv
 #' @importFrom tibble as_data_frame data_frame
 #' @importFrom tidyr spread gather unite separate
@@ -183,16 +183,11 @@ tidy_dart <- function(
 
   if (!binary) {
     if (verbose) message("Tidying DArT data...")
-
-    input <- data.table::melt.data.table(
-      data = data.table::as.data.table(input),
-      id.vars = c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "CALL_RATE",
-                  "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG"),
-      variable.name = "INDIVIDUALS",
-      variable.factor = FALSE,
-      value.name = "GT"
-    ) %>%
-      tibble::as_data_frame(.)
+    input <- input %>%
+      dplyr::group_by(MARKERS, CHROM, LOCUS, POS, REF, ALT, CALL_RATE,
+                      AVG_COUNT_REF, AVG_COUNT_SNP, REP_AVG) %>%
+      tidyr::spread(data = ., key = INDIVIDUALS, value = GT) %>%
+      dplyr::ungroup(.)
 
     # generate the split vector
     split.vec <- split_vec_row(x = input, cpu.rounds = 3, parallel.core = parallel.core)

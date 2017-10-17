@@ -229,15 +229,7 @@ tidy_vcf <- function(
       `colnames<-`(input$MARKERS) %>%
       tibble::as_data_frame(.) %>%
       tibble::rownames_to_column(., var = "INDIVIDUALS") %>%
-      data.table::as.data.table(.) %>%
-      data.table::melt.data.table(
-        data = .,
-        id.vars = "INDIVIDUALS",
-        variable.name = "MARKERS",
-        variable.factor = FALSE,
-        value.name = as.character("GT")
-      ) %>%
-      tibble::as_data_frame(.)
+      tidyr::gather(data = ., key = MARKERS, value = GT, -INDIVIDUALS)
 
     input <- suppressWarnings(
       dplyr::full_join(input.gt, input, by = "MARKERS") %>%
@@ -268,25 +260,19 @@ tidy_vcf <- function(
                     verbose = verbose))
 
     if (tibble::has_name(input, "ID")) {
-      input <- data.table::melt.data.table(
-        data = data.table::as.data.table(input),
-        id.vars = c("MARKERS", "CHROM", "LOCUS", "POS", "ID", "COL", "REF", "ALT"),
-        variable.name = "INDIVIDUALS",
-        variable.factor = FALSE,
-        value.name = "GT"
-      ) %>%
-        tibble::as_data_frame(.) %>%
+      input <- tidyr::gather(
+        data = input,
+        key = INDIVIDUALS,
+        value = GT,
+        -c(MARKERS, CHROM, LOCUS, POS, ID, COL, REF, ALT)) %>%
         dplyr::mutate_at(.tbl = ., .vars = "INDIVIDUALS",
                          .funs = radiator::clean_ind_names)
     } else {
-      input <- data.table::melt.data.table(
-        data = data.table::as.data.table(input),
-        id.vars = c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT"),
-        variable.name = "INDIVIDUALS",
-        variable.factor = FALSE,
-        value.name = "GT"
-      ) %>%
-        tibble::as_data_frame(.) %>%
+      input <- tidyr::gather(
+        data = input,
+        key = INDIVIDUALS,
+        value = GT,
+        -c(MARKERS, CHROM, LOCUS, POS, REF, ALT)) %>%
         dplyr::mutate_at(.tbl = ., .vars = "INDIVIDUALS",
                          .funs = radiator::clean_ind_names)
     }
@@ -518,14 +504,7 @@ parse_genomic <- function(
 
   if (gather.data) {
     x <- dplyr::mutate(x, ID = seq(1, n()))
-    x <- data.table::melt.data.table(
-      data = data.table::as.data.table(x),
-      id.vars = c("ID"),
-      variable.name = "INDIVIDUALS",
-      variable.factor = FALSE,
-      value.name = format.name
-    ) %>%
-      tibble::as_data_frame(.) %>%
+    x <- tidyr::gather(data = x, key = INDIVIDUALS, value = format.name, -ID) %>%
       dplyr::select(-ID, -INDIVIDUALS)
   }
   return(x)
