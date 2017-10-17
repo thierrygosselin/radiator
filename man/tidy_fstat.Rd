@@ -7,40 +7,40 @@
 tidy_fstat(data, strata = NULL, tidy = TRUE, filename = NULL)
 }
 \arguments{
-\item{data}{A \href{http://www2.unil.ch/popgen/softwares/fstat.htm}{fstat} 
+\item{data}{A \href{http://www2.unil.ch/popgen/softwares/fstat.htm}{fstat}
 filename with extension \code{.dat}.}
 
 \item{strata}{(optional) A tab delimited file with 2 columns. Header:
-\code{INDIVIDUALS} and \code{STRATA}. 
-The \code{STRATA} column can be any hierarchical grouping. 
+\code{INDIVIDUALS} and \code{STRATA}.
+The \code{STRATA} column can be any hierarchical grouping.
 To create a strata file see \code{\link[radiator]{individuals2strata}}.
 Default: \code{strata = NULL}.}
 
-\item{tidy}{(optional, logical) With \code{tidy = FALSE}, 
-the markers are the variables and the genotypes the observations (wide format). 
-With the default: \code{tidy = TRUE}, markers and genotypes are variables 
+\item{tidy}{(optional, logical) With \code{tidy = FALSE},
+the markers are the variables and the genotypes the observations (wide format).
+With the default: \code{tidy = TRUE}, markers and genotypes are variables
 with their own columns (long format).}
 
 \item{filename}{(optional) The file name for the tidy data frame
 written to the working directory.
-Default: \code{filename = NULL}, the tidy data is 
+Default: \code{filename = NULL}, the tidy data is
 in the global environment only (i.e. not written in the working directory).}
 }
 \value{
-The output in your global environment is a wide or long/tidy data frame. 
-If \code{filename} is provided, the wide or long/tidy data frame is also 
+The output in your global environment is a wide or long/tidy data frame.
+If \code{filename} is provided, the wide or long/tidy data frame is also
 written to the working directory.
 }
 \description{
-Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator} 
-and might be of interest for users. 
-The function \code{tidy_fstat} reads a file in the 
-\href{http://www2.unil.ch/popgen/softwares/fstat.htm}{fstat} file (Goudet, 1995) 
+Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
+and might be of interest for users.
+The function \code{tidy_fstat} reads a file in the
+\href{http://www2.unil.ch/popgen/softwares/fstat.htm}{fstat} file (Goudet, 1995)
 into a wide or long/tidy data frame
 
-To manipulate and prune the dataset prior to tidying, use the functions 
-\code{\link[radiator]{tidy_genomic_data}} and 
-\code{\link[radiator]{genomic_converter}}, that uses blacklist and whitelist along 
+To manipulate and prune the dataset prior to tidying, use the functions
+\code{\link[radiator]{tidy_genomic_data}} and
+\code{\link[radiator]{genomic_converter}}, that uses blacklist and whitelist along
 several other filtering options.
 }
 \examples{
@@ -49,25 +49,25 @@ We will use the fstat dataset provided with adegenet package
 if (!require("hierfstat")) install.packages("hierfstat")
 
 The simplest form of the function:
-fstat.file <- tidy_fstat(
+fstat.file <- radiator::tidy_fstat(
 data = system.file(
-"extdata/diploid.dat", 
+"extdata/diploid.dat",
 package = "hierfstat"
 )
 )
 
 # To output a data frame in wide format, with markers in separate columns:
-nancycats.wide <- tidy_fstat(
+nancycats.wide <- radiator::tidy_fstat(
 data = system.file(
-"extdata/diploid.dat", 
+"extdata/diploid.dat",
 package = "hierfstat"
 ), tidy = FALSE
 )
 }
 }
 \references{
-Goudet J. (1995). 
-FSTAT (Version 1.2): A computer program to calculate F-statistics. 
+Goudet J. (1995).
+FSTAT (Version 1.2): A computer program to calculate F-statistics.
 Journal of Heredity 86:485-486
 }
 \seealso{

@@ -14,7 +14,7 @@ Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.}
 }
 \description{
 Write a genind object from a tidy data frame.
-Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator} 
+Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and \href{https://github.com/thierrygosselin/assigner}{assigner}
 and might be of interest for users.
 }
@@ -22,8 +22,8 @@ and might be of interest for users.
 Jombart T (2008) adegenet: a R package for the multivariate
 analysis of genetic markers. Bioinformatics, 24, 1403-1405.
 
-Jombart T, Ahmed I (2011) adegenet 1.3-1: 
-new tools for the analysis of genome-wide SNP data. 
+Jombart T, Ahmed I (2011) adegenet 1.3-1:
+new tools for the analysis of genome-wide SNP data.
 Bioinformatics, 27, 3070-3071.
 }
 \author{

@@ -227,7 +227,7 @@ execution during vcf import.
 Default: \code{parallel::detectCores() - 1}.}
 }
 \description{
-For full details of the function, please use 
+For full details of the function, please use
 \pkg{radiator} \code{\link[radiator]{genomic_converter}}. This function is a shorcut
 to output only plink tped/tmap files.
 }
@@ -236,10 +236,10 @@ Danecek P, Auton A, Abecasis G et al. (2011)
 The variant call format and VCFtools.
 Bioinformatics, 27, 2156-2158.
 
-Purcell S, Neale B, Todd-Brown K, Thomas L, Ferreira MAR, 
-Bender D, et al. 
-PLINK: a tool set for whole-genome association and population-based linkage 
-analyses. 
+Purcell S, Neale B, Todd-Brown K, Thomas L, Ferreira MAR,
+Bender D, et al.
+PLINK: a tool set for whole-genome association and population-based linkage
+analyses.
 American Journal of Human Genetics. 2007; 81: 559–575. doi:10.1086/519795
 }
 \seealso{

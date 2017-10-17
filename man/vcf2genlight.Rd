@@ -227,7 +227,7 @@ execution during vcf import.
 Default: \code{parallel::detectCores() - 1}.}
 }
 \description{
-For full details of the function, please use 
+For full details of the function, please use
 \pkg{radiator} \code{\link[radiator]{genomic_converter}}. This function is a shorcut
 to output only genlight object.
 }
@@ -235,8 +235,8 @@ to output only genlight object.
 Jombart T (2008) adegenet: a R package for the multivariate
 analysis of genetic markers. Bioinformatics, 24, 1403-1405.
 
-Jombart T, Ahmed I (2011) adegenet 1.3-1: 
-new tools for the analysis of genome-wide SNP data. 
+Jombart T, Ahmed I (2011) adegenet 1.3-1:
+new tools for the analysis of genome-wide SNP data.
 Bioinformatics, 27, 3070-3071.
 }
 \seealso{

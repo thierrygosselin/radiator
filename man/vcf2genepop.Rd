@@ -227,7 +227,7 @@ execution during vcf import.
 Default: \code{parallel::detectCores() - 1}.}
 }
 \description{
-For full details of the function, please use 
+For full details of the function, please use
 \pkg{radiator} \code{\link[radiator]{genomic_converter}}. This function is a shorcut
 to output only genepop file.
 }

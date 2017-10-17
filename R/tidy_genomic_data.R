@@ -663,7 +663,7 @@ tidy_genomic_data <- function(
         into = c("INDIVIDUALS", "ALLELES"),
         sep = "_") %>%
       dplyr::group_by(LOCUS, INDIVIDUALS) %>%
-      dplyr::spread(data = ., key = ALLELES, value = GT) %>%
+      tidyr::spread(data = ., key = ALLELES, value = GT) %>%
       dplyr::ungroup(.) %>%
       tidyr::unite(data = ., col = GT, A1, A2, sep = "") %>%
       dplyr::select(LOCUS, INDIVIDUALS, GT)

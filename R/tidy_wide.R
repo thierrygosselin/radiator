@@ -111,7 +111,7 @@ tidy_wide <- function(data, import.metadata = FALSE, ...) {
       input <- readr::read_tsv(
         file = data,
         col_types = readr::cols(.default = readr::col_character())) %>%
-        dplyr::gather(data = ., key = LOCUS, value = GT, -c(POP_ID, INDIVIDUALS))
+        tidyr::gather(data = ., key = LOCUS, value = GT, -c(POP_ID, INDIVIDUALS))
     }
   } else {# object in global environment
     input <- data

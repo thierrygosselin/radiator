@@ -66,7 +66,8 @@ if (getRversion() >= "2.15.1") {
       "LOG10_Q", "POST_PROB", "PO_GROUP", "Q_VALUE", "SELECTION", "ACCURACY",
       "SELECTION_TYPE_ON_LOCUS", "Distance", "R", "A", "NEW_GT", "Markers", "READS",
       "CONSENSUS_MAX", "REF_OLD", "ORIG_GT", "GT_1", "GT_2", "TEMP", "VCF_A1",
-      "VCF_A2", "IMBALANCE_PERCENT", "LOW_COVERAGE_PERCENT", "BLACKLIST_PSTACKS", "n"
+      "VCF_A2", "IMBALANCE_PERCENT", "LOW_COVERAGE_PERCENT", "BLACKLIST_PSTACKS", "n",
+      "COL"
     )
   )
 }
