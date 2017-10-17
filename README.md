@@ -24,7 +24,9 @@ devtools::install_github("thierrygosselin/radiator")
 library(radiator)
 ```
 
-There's currently a bug with the current CRAN release of package `data.table` causing R/RStudio to crash under macOS [details](https://github.com/Rdatatable/data.table/issues/2418). The quick solution is to install data.table version 1.10.4. I'm currently working on removing data.table dependency in *radiator*
+**Warning:**
+
+There's currently a bug with the current CRAN release of package `data.table` causing R/RStudio to crash under macOS [details](https://github.com/Rdatatable/data.table/issues/2418). The quick solution is to install data.table version 1.10.4. I'm currently working on removing data.table dependency in *radiator*...
 
 <table style="width:100%;">
 <colgroup>
