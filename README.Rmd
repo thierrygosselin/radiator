@@ -62,6 +62,12 @@ library(radiator)
 There's currently a bug with the current CRAN release of package `data.table` causing
 R/RStudio to crash under macOS [details](https://github.com/Rdatatable/data.table/issues/2418). The quick solution is to install data.table version 1.10.4. I'm currently working on removing data.table dependency in *radiator*...
 
+```{r}
+# to install a prior version
+devtools::install_version("data.table", version = "1.10.4", repos = "http://cran.us.r-project.org")
+```
+
+
 | Caracteristics | Description |
 |:-------------------|:--------------------------------------------------------|
 | **Import** | List of the 12 supported genomic file formats in `tidy_genomic_format` and `genomic_converter`:<br> [VCF, SNPs and haplotypes](https://samtools.github.io/hts-specs/) (Danecek et al., 2011)<br>[PLINK tped/tfam](http://pngu.mgh.harvard.edu/~purcell/plink/data.shtml#tr) (Purcell et al., 2007)<br>[genind](https://github.com/thibautjombart/adegenet) (Jombart et al., 2010; Jombart and Ahmed, 2011)<br>  [genlight](https://github.com/thibautjombart/adegenet) (Jombart et al., 2010; Jombart and Ahmed, 2011), also in `tidy_genlight`<br>[strataG gtypes](https://github.com/EricArcher/strataG) (Archer et al., 2016)<br>[Genepop](http://genepop.curtin.edu.au) (Raymond and Rousset, 1995; Rousset, 2008), also in `tidy_genepop`<br>[STACKS haplotype file](http://catchenlab.life.illinois.edu/stacks/) (Catchen et al., 2011, 2013)<br>[hierfstat](https://github.com/jgx65/hierfstat) (Goudet, 2005), also in `tidy_fstat`<br>[DArT file](http://www.diversityarrays.com)<br>Dataframes of genotypes in wide or long/tidy format, also in `tidy_wide`|
