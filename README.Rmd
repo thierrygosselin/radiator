@@ -60,7 +60,9 @@ library(radiator)
 **Warning:**
 
 There's currently a bug with the current CRAN release of package `data.table` causing
-R/RStudio to crash under macOS [details](https://github.com/Rdatatable/data.table/issues/2418). The quick solution is to install data.table version 1.10.4. I'm currently working on removing data.table dependency in *radiator*...
+R/RStudio to crash under macOS [details](https://github.com/Rdatatable/data.table/issues/2418). 
+radiator currently rely on the devel version (1.10.5 commit:9d1f3e2) that seems
+to have fix the problem.
 
 ```r
 # to install a prior version

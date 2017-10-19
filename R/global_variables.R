@@ -67,7 +67,7 @@ if (getRversion() >= "2.15.1") {
       "SELECTION_TYPE_ON_LOCUS", "Distance", "R", "A", "NEW_GT", "Markers", "READS",
       "CONSENSUS_MAX", "REF_OLD", "ORIG_GT", "GT_1", "GT_2", "TEMP", "VCF_A1",
       "VCF_A2", "IMBALANCE_PERCENT", "LOW_COVERAGE_PERCENT", "BLACKLIST_PSTACKS", "n",
-      "COL"
+      "COL", "COL_TYPE", "DELETE", "OR_POP_THRESHOLD"
     )
   )
 }

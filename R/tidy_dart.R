@@ -50,7 +50,7 @@
 #' @importFrom parallel detectCores
 #' @importFrom stringi stri_replace_all_fixed stri_join stri_sub stri_replace_na stri_pad_left
 #' @importFrom purrr discard
-#' @importFrom data.table fread as.data.table dcast.data.table
+# @importFrom data.table as.data.table dcast.data.table
 #' @importFrom readr read_tsv write_tsv
 #' @importFrom tibble as_data_frame data_frame
 #' @importFrom tidyr spread gather unite separate
@@ -104,50 +104,84 @@ tidy_dart <- function(
   if (verbose) message("Importing DArT data")
 
   # Strata file ------------------------------------------------------------------
-  strata.df <- suppressMessages(readr::read_tsv(file = strata, col_names = TRUE)) %>%
-    dplyr::mutate_all(.tbl = ., .funs = as.character)
+  strata.df <- readr::read_tsv(
+    file = strata, col_names = TRUE,
+    col_types = readr::cols(.default = readr::col_character()))
+
+  # need to check for duplicate names... yes happening all the time
+  duplicate.id.strata <- length(strata.df$INDIVIDUALS) - dplyr::n_distinct(strata.df$INDIVIDUALS)
+
+  if (duplicate.id.strata > 0) {
+    message("Duplicated individuals names found in the strata.\n   number of duplicate names = ", duplicate.id.strata, "\n")
+    stop("Fix the strata with unique names and\nverify the DArT file for the same issue, adjust accordingly...")
+  }
 
   # Import data ---------------------------------------------------------------
-  colnames.keeper <- c(c("AlleleID", "SNP", "SnpPosition", "CallRate",
-                         "AvgCountRef", "AvgCountSnp", "RepAvg"),
-                       strata.df$INDIVIDUALS)
-  # Catch error while importing DArT with fread
-  import_dart <- function(data, skip.number, colnames.keeper) {
-    input <- suppressWarnings(
-      data.table::fread(
-        input = data,
-        skip = skip.number,
-        sep = "\t",
-        stringsAsFactors = FALSE,
-        header = TRUE,
-        na.strings = "-",
-        strip.white = TRUE,
-        select = colnames.keeper,
-        showProgress = TRUE,
-        verbose = FALSE
-      ) %>%
-        tibble::as_data_frame(.) %>%
-        dplyr::rename(LOCUS = AlleleID, POS = SnpPosition, CALL_RATE = CallRate,
-                      AVG_COUNT_REF = AvgCountRef, AVG_COUNT_SNP = AvgCountSnp,
-                      REP_AVG = RepAvg) %>%
-        dplyr::arrange(LOCUS, POS)
-    )
-  }#End import_dart
-  safe_dart <- purrr::safely(.f = import_dart)
-  import.test <- safe_dart(data, skip.number, colnames.keeper)
+  want <- tibble::data_frame(
+    INFO = c("AlleleID", "SNP", "SnpPosition", "CallRate",
+             "AvgCountRef", "AvgCountSnp", "RepAvg"),
+    COL_TYPE = c("c", "c", "i", "d", "d", "d", "d")) %>%
+    dplyr::bind_rows(
+      dplyr::select(strata.df, INFO = INDIVIDUALS) %>%
+        dplyr::mutate(COL_TYPE = rep("c", n())))
 
-  if (is.null(import.test$error)) {
-    input <- import.test$result
-  } else {# plan B using readr
+
+  dart.col.type <- readr::read_tsv(
+    file = data,
+    skip = skip.number, n_max = 1,
+    na = "-",
+    col_names = FALSE,
+    col_types = readr::cols(.default = readr::col_character())) %>%
+    tidyr::gather(data = .,key = DELETE, value = INFO) %>%
+    dplyr::select(-DELETE) %>%
+    dplyr::left_join(want, by = "INFO") %>%
+    dplyr::mutate(COL_TYPE = stringi::stri_replace_na(str = COL_TYPE, replacement = "_")) %>%
+    dplyr::select(COL_TYPE) %>%
+    purrr::flatten_chr(.) %>% stringi::stri_join(collapse = "")
+
+
+  # Catch error while importing DArT with fread
+  # import_dart <- function(data, skip.number, colnames.keeper) {
+  #   input <- suppressWarnings(
+  #     data.table::fread(
+  #       input = data,
+  #       skip = skip.number,
+  #       sep = "\t",
+  #       stringsAsFactors = FALSE,
+  #       header = TRUE,
+  #       na.strings = "-",
+  #       strip.white = TRUE,
+  #       select = colnames.keeper,
+  #       showProgress = TRUE,
+  #       verbose = FALSE
+  #     ) %>%
+  #       tibble::as_data_frame(.) %>%
+  #       dplyr::rename(LOCUS = AlleleID, POS = SnpPosition, CALL_RATE = CallRate,
+  #                     AVG_COUNT_REF = AvgCountRef, AVG_COUNT_SNP = AvgCountSnp,
+  #                     REP_AVG = RepAvg) %>%
+  #       dplyr::arrange(LOCUS, POS)
+  #   )
+  # }#End import_dart
+  # safe_dart <- purrr::safely(.f = import_dart)
+  # import.test <- safe_dart(data, skip.number, colnames.keeper)
+  #
+  # if (is.null(import.test$error)) {
+  #   input <- import.test$result
+  # } else {# plan B using readr
     input <- suppressMessages(suppressWarnings(
-      readr::read_tsv(file = data, skip = skip.number, na = "-"))) %>%
-      dplyr::select(dplyr::one_of(colnames.keeper)) %>%
+      readr::read_tsv(
+        file = data,
+        skip = skip.number,
+        na = "-",
+        col_names = TRUE,
+        col_types = dart.col.type)
+      )) %>%
       dplyr::rename(LOCUS = AlleleID, POS = SnpPosition, CALL_RATE = CallRate,
                     AVG_COUNT_REF = AvgCountRef, AVG_COUNT_SNP = AvgCountSnp,
                     REP_AVG = RepAvg) %>%
       dplyr::arrange(LOCUS, POS)
-  }
-  safe_dart <- import.test <- NULL
+  # }
+  # safe_dart <- import.test <- NULL
 
   # Screen for duplicate names -------------------------------------------------
   remove.list <- c("LOCUS", "SNP", "POS", "CALL_RATE", "AVG_COUNT_REF",
@@ -239,14 +273,18 @@ tidy_dart <- function(
     # To do: merge these 2 functions and simplify codes
     dart_binary <- function(x) {
       res <- dplyr::select(x, -SPLIT_VEC) %>%
-        data.table::as.data.table(.) %>%
-        data.table::dcast.data.table(
-          data = .,
-          formula = MARKERS + INDIVIDUALS + REF + ALT ~ ALLELES,
-          fun.aggregate = function(y) paste(y, collapse = "_"),
-          value.var = "GT"
-        ) %>%
-        tibble::as_data_frame(.) %>%
+        dplyr::group_by(MARKERS, INDIVIDUALS, REF, ALT) %>%
+        dplyr::summarise(GT = stringi::stri_join(GT, collapse = "_")) %>%
+        dplyr::ungroup(.) %>%
+        # to remove data.table dependency and macOS/parallel problem
+        # data.table::as.data.table(.) %>%
+        # data.table::dcast.data.table(
+        #   data = .,
+        #   formula = MARKERS + INDIVIDUALS + REF + ALT ~ ALLELES,
+        #   fun.aggregate = function(y) paste(y, collapse = "_"),
+        #   value.var = "GT"
+        # ) %>%
+        # tibble::as_data_frame(.) %>%
         dplyr::mutate(
           R = REF,
           A = ALT,
@@ -353,7 +391,8 @@ tidy_dart <- function(
     count.data <- gt.counts > 3
     n.markers <- dplyr::n_distinct(input$MARKERS)
     n.individuals <- length(colnames(input)) - 10
-    grouping.col <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")
+    grouping.col <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT",
+                      "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")
 
     if (!count.data) {#Genotypes coded 0, 1, 2
       # necessary to deal with the duplication of lines because of the GT in 2 lines
@@ -367,9 +406,13 @@ tidy_dart <- function(
         dplyr::arrange(MARKERS)
 
       markers.split <- dplyr::distinct(ref.info, MARKERS) %>%
-        dplyr::mutate(SPLIT_VEC = as.integer(floor((parallel.core * 100 * (1:n() - 1) / n()) + 1)))
+        dplyr::mutate(
+          SPLIT_VEC = split_vec_row(
+            x = .,
+            cpu.rounds = 100,
+            parallel.core = parallel.core))
 
-      input <- dplyr::select(
+      system.time(input2 <- dplyr::select(
         input,
         -c(CHROM, LOCUS, POS, CALL_RATE, AVG_COUNT_REF, AVG_COUNT_SNP,
            REP_AVG, REF, ALT)) %>%
@@ -387,7 +430,7 @@ tidy_dart <- function(
         dplyr::left_join(grouping.column, by = "MARKERS") %>%
         dplyr::select(MARKERS, CHROM, LOCUS, POS, REF, ALT, INDIVIDUALS, GT,
                       GT_VCF, GT_VCF_NUC, GT_BIN, CALL_RATE, AVG_COUNT_REF,
-                      AVG_COUNT_SNP, REP_AVG)
+                      AVG_COUNT_SNP, REP_AVG))
 
       grouping.column <- ref.info <- markers.split <- NULL # remove unused object
 
