@@ -424,7 +424,7 @@ tidy_genomic_data <- function(
   }
 
 
-  # Strata argument required for VCF and haplotypes files-----------------------
+  # STRATA argument required for VCF and haplotypes files-----------------------
   if (data.type == "haplo.file" | data.type == "vcf.file") {
     if (is.null(strata)) stop("strata argument is required")
   }
