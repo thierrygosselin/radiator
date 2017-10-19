@@ -45,7 +45,7 @@ Suggests:
     knitr,
     rmarkdown
 Remotes:
-  github::kvnkuang/pbmcapply
+  github::kvnkuang/pbmcapply,
   github::Rdatatable/data.table@9d1f3e2
 License: GPL (>=2)
 LazyLoad: yes
