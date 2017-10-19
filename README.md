@@ -31,14 +31,6 @@ There's currently a bug with the current CRAN release of package `data.table` ca
 ``` r
 # to install a prior version
 devtools::install_version("data.table", version = "1.10.4", repos = "http://cran.us.r-project.org")
-#> Downloading package from url: http://cran.us.r-project.org/src/contrib/Archive/data.table/data.table_1.10.4.tar.gz
-#> Installing data.table
-#> '/Library/Frameworks/R.framework/Resources/bin/R' --no-site-file  \
-#>   --no-environ --no-save --no-restore --quiet CMD INSTALL  \
-#>   '/private/var/folders/l_/vmf27bgn4yv1fbdc_kghmzy00000gn/T/RtmpBliOWF/devtools119659f59344/data.table'  \
-#>   --library='/Library/Frameworks/R.framework/Versions/3.4/Resources/library'  \
-#>   --install-tests
-#> 
 ```
 
 <table style="width:100%;">
