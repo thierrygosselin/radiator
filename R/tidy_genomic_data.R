@@ -454,7 +454,7 @@ tidy_genomic_data <- function(
     nrow.before <- nrow.after <- duplicate.whitelist.markers <- NULL
 
     whitelist.markers <- dplyr::mutate_all(
-      .tbl = whitelist.markers, .funs = radiator::clean_markers_names)
+      .tbl = whitelist.markers, .funs = clean_markers_names)
   }
   # Import blacklist id --------------------------------------------------------
   if (!is.null(blacklist.id)) {# With blacklist of ID
@@ -546,9 +546,9 @@ tidy_genomic_data <- function(
       data.table = FALSE) %>%
       tibble::as_data_frame(.) %>%
       dplyr::mutate_at(.tbl = ., .vars = "INDIVIDUALS",
-                       .funs = radiator::clean_ind_names) %>%
+                       .funs = clean_ind_names) %>%
       dplyr::mutate_at(.tbl = ., .vars = "POP_ID",
-                       .funs = radiator::clean_pop_names)
+                       .funs = clean_pop_names)
 
     # if no strata tfam = strata.df
     if (is.null(strata)) {
@@ -954,9 +954,9 @@ tidy_genomic_data <- function(
     # remove unwanted sep in id and pop.id names
     input <- input %>%
       dplyr::mutate_at(.tbl = ., .vars = "INDIVIDUALS",
-                       .funs = radiator::clean_ind_names) %>%
+                       .funs = clean_ind_names) %>%
       dplyr::mutate_at(.tbl = ., .vars = "POP_ID",
-                       .funs = radiator::clean_pop_names)
+                       .funs = clean_pop_names)
 
     # Filter with whitelist of markers
     if (!is.null(whitelist.markers)) {
@@ -1015,9 +1015,9 @@ tidy_genomic_data <- function(
     # remove unwanted sep in id and pop.id names
     input <- input %>%
       dplyr::mutate_at(.tbl = ., .vars = "INDIVIDUALS",
-                       .funs = radiator::clean_ind_names) %>%
+                       .funs = clean_ind_names) %>%
       dplyr::mutate_at(.tbl = ., .vars = "POP_ID",
-                       .funs = radiator::clean_pop_names)
+                       .funs = clean_pop_names)
 
     # Filter with whitelist of markers
     if (!is.null(whitelist.markers)) {
@@ -1068,9 +1068,9 @@ tidy_genomic_data <- function(
     if (verbose) message("Tidying the gtypes object ...")
     input <- tidy_gtypes(data) %>%
       dplyr::mutate_at(.tbl = ., .vars = "INDIVIDUALS",
-                       .funs = radiator::clean_ind_names) %>%
+                       .funs = clean_ind_names) %>%
       dplyr::mutate_at(.tbl = ., .vars = "POP_ID",
-                       .funs = radiator::clean_pop_names)
+                       .funs = clean_pop_names)
 
     # Filter with whitelist of markers
     if (!is.null(whitelist.markers)) {
@@ -1144,7 +1144,7 @@ tidy_genomic_data <- function(
     suppressWarnings(suppressMessages(
       blacklist.genotype <- blacklist.genotype %>%
         dplyr::mutate_at(.tbl = ., .vars = "INDIVIDUALS",
-                         .funs = radiator::clean_ind_names) %>%
+                         .funs = clean_ind_names) %>%
         dplyr::select(dplyr::one_of(want)) %>%
         dplyr::mutate_all(.tbl = ., .funs = as.character, exclude = NA)))
     columns.names.blacklist.genotype <- colnames(blacklist.genotype)
@@ -1251,7 +1251,7 @@ tidy_genomic_data <- function(
 
       if (nrow(mono.markers) > 0) {
         if (verbose) message("    Number of monomorphic markers removed = ", nrow(mono.markers))
-        input <- dplyr::filter(input, POLYMORPHIC)
+        input <- dplyr::filter(input, !MARKERS %in% mono.markers$MARKERS)
         readr::write_tsv(mono.markers, "blacklist.monomorphic.markers.tsv")
         if (verbose) message("    Number of markers after = ", dplyr::n_distinct(input$MARKERS))
       }
