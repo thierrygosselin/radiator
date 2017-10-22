@@ -189,27 +189,36 @@ and \code{ONT} population samples (out of 20 pops).
 Default: \code{pop.select = NULL}}
 
 \item{imputation.method}{(character, optional)
-Methods available for map-independent imputations of missing genotype:
+Methods available for map-independent imputations of missing genotype
+(see details for more info):
 
-(1) \code{imputation.method = "max"} Strawman imputation,
+\enumerate{
+\item \code{imputation.method = "max"} Strawman imputation,
 the most frequently observed genotypes (ties are broken at random).
 
-(2) \code{imputation.method = "rf"} On-the-fly-imputations using
+\item \code{imputation.method = "rf"} On-the-fly-imputations using
 Random Forests algorithm.
 
-(3) \code{imputation.method = "boost"} extreme gradient boosting trees.
+\item \code{imputation.method = "rf_pred"} Random Forests algorith is used
+as a prediction problem.
 
-(4) \code{imputation.method = "mca"} Multiple Correspondence Analysis.
+\item \code{imputation.method = "boost"} extreme gradient boosting trees.
+
+\item \code{imputation.method = "mca"} Multiple Correspondence Analysis (in devel).
 
 \code{imputation.method = NULL} the function will stop.
-Default: \code{imputation.method = NULL}.}
+Default: \code{imputation.method = NULL}.
+}}
 
-\item{hierarchical.levels}{(character, optional) \code{c("global", "populations")}.
-Should the imputations be computed globally or by populations. Note that
-imputing genotype globally in conjunction with \code{imputation.method = "max"}
-can create huge bias for example by
-introducing foreign genotypes in some populations (see note for more info).
-Default: \code{hierarchical.levels = "populations"}.}
+\item{hierarchical.levels}{(character, optional) \code{c("global", "strata")}.
+Should the imputations be computed by markers globally or by strata.
+Historically, this was \code{"populations"}.
+
+Note that imputing genotype globally in conjunction with
+\code{imputation.method = "max"} can potentially create huge bias.
+e.g. by introducing foreign genotypes/haplotypes in some populations
+(see note for more info).
+Default: \code{hierarchical.levels = "strata"}.}
 
 \item{num.tree}{(integer, optional) The number of trees to grow
 when \code{imputation.method = "rf"} or \code{imputation.method = "rf_pred"}.
@@ -220,7 +229,7 @@ random Forests (\code{imputation.method = "rf_pred"}).
 Number of candidate non-missing
 value to sample from during the predictive mean matching step.
 A fast k-nearest neighbor searching algorithms is used with this approach.
-\code{pred.mean.matching = 3} will use 3 nighbors.
+\code{pred.mean.matching = 3} will use 3 neighbors.
 Default: \code{pred.mean.matching = 0}, avoids this step.}
 
 \item{random.seed}{(integer, optional) For reproducibility, set an integer

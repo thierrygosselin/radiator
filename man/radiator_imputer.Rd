@@ -6,7 +6,7 @@
 \usage{
 radiator_imputer(data, num.tree = 100, pred.mean.matching = 0,
   random.seed = NULL, parallel.core = parallel::detectCores() - 1,
-  hierarchical.levels = "populations", marker.list = marker.list,
+  hierarchical.levels = "strata", marker.list = marker.list,
   verbose = verbose)
 }
 \description{

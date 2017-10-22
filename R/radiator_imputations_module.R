@@ -1,10 +1,6 @@
-# grur imputations module
+# radiator imputations module
 
 #' @name radiator_imputations_module
-#' @keywords internal
-
-
-
 #' @title Map-independent imputations of missing genotypes
 #'
 #' @description Used internally in \href{https://github.com/thierrygosselin/assigner}{assigner} and
@@ -58,35 +54,45 @@
 #' for more info.
 
 
-#' @param data A file in the working directory or object in the global environment
-#' in wide or long (tidy) formats. To import, the function uses
+#' @param data A tidy genomic dataset.
+#' It can be file in the working directory or
+#' an object in the global environment.
+#' To get a tidy dataset from various genomic format, see
 #' \href{https://github.com/thierrygosselin/radiator}{radiator}
-#' \code{\link[radiator]{tidy_wide}}.
+#' \code{\link[radiator]{tidy_genomic_data}}.
 #' \emph{See details of this function for more info}.
 
 #' @param imputation.method (character, optional)
-#' Methods available for map-independent imputations of missing genotype:
+#' Methods available for map-independent imputations of missing genotype
+#' (see details for more info):
 #'
-#' (1) \code{imputation.method = "max"} Strawman imputation,
+#' \enumerate{
+#' \item \code{imputation.method = "max"} Strawman imputation,
 #' the most frequently observed genotypes (ties are broken at random).
 #'
-#' (2) \code{imputation.method = "rf"} On-the-fly-imputations using
+#' \item \code{imputation.method = "rf"} On-the-fly-imputations using
 #' Random Forests algorithm.
 #'
-#' (3) \code{imputation.method = "boost"} extreme gradient boosting trees.
+#' \item \code{imputation.method = "rf_pred"} Random Forests algorith is used
+#' as a prediction problem.
 #'
-#' (4) \code{imputation.method = "mca"} Multiple Correspondence Analysis.
+#' \item \code{imputation.method = "boost"} extreme gradient boosting trees.
+#'
+#' \item \code{imputation.method = "mca"} Multiple Correspondence Analysis (in devel).
 #'
 #' \code{imputation.method = NULL} the function will stop.
 #' Default: \code{imputation.method = NULL}.
+#' }
 
-#' @param hierarchical.levels (character, optional) \code{c("global", "populations")}.
-#' Should the imputations be computed globally or by populations. Note that
-#' imputing genotype globally in conjunction with \code{imputation.method = "max"}
-#' can create huge bias for example by
-#' introducing foreign genotypes in some populations (see note for more info).
-#' Default: \code{hierarchical.levels = "populations"}.
-
+#' @param hierarchical.levels (character, optional) \code{c("global", "strata")}.
+#' Should the imputations be computed by markers globally or by strata.
+#' Historically, this was \code{"populations"}.
+#'
+#' Note that imputing genotype globally in conjunction with
+#' \code{imputation.method = "max"} can potentially create huge bias.
+#' e.g. by introducing foreign genotypes/haplotypes in some populations
+#' (see note for more info).
+#' Default: \code{hierarchical.levels = "strata"}.
 #' @param num.tree (integer, optional) The number of trees to grow
 #' when \code{imputation.method = "rf"} or \code{imputation.method = "rf_pred"}.
 #' Default: \code{num.tree = 50}.
@@ -96,7 +102,7 @@
 #' Number of candidate non-missing
 #' value to sample from during the predictive mean matching step.
 #' A fast k-nearest neighbor searching algorithms is used with this approach.
-#' \code{pred.mean.matching = 3} will use 3 nighbors.
+#' \code{pred.mean.matching = 3} will use 3 neighbors.
 #' Default: \code{pred.mean.matching = 0}, avoids this step.
 
 #' @param random.seed (integer, optional) For reproducibility, set an integer
@@ -113,11 +119,14 @@
 #' Markers are imputed in parallel, populations are processed sequentially.
 #' Default: \code{parallel::detectCores() - 1}.
 
-#' @param filename (optional) The file name for the \strong{imputed}
-#' tidy data frame written to the working directory.
-#' With missing argument or default: \code{filename = NULL}, the imputed
-#' tidy data is in the global environment only
-#' (i.e. not written in the working directory).
+#' @param filename (optional) The function uses \code{\link[fst]{write.fst}},
+#' to write the tidy data frame in
+#' the working directory. The file extension appended to
+#' the \code{filename} provided is \code{.rad}.
+#' With default: \code{filename = NULL}, the imputed tidy data frame is
+#' in the global environment only (i.e. not written in the working directory...).
+
+
 
 #' @param ... (optional) To pass further argument for fine-tuning your
 #' imputations. See details below.
@@ -225,7 +234,7 @@
 #' Refer to \code{\link[randomForestSRC]{impute.rfsrc}} for arguments documentation.
 #'
 #'
-# Multiple Correspondence Analysis option available (upcomming):
+#  Multiple Correspondence Analysis option available (upcomming):
 # \emph{ncp}.
 # Refer to \code{\link[missMDA]{imputeMCA}} for argument documentation.
 
@@ -290,12 +299,13 @@
 #' @importFrom xgboost xgb.DMatrix cb.early.stop xgb.train
 #' @importFrom randomForestSRC impute.rfsrc
 #' @importFrom readr write_lines write_tsv
+#' @importFrom fst write.fst
 
 #' @examples
 #' \dontrun{
 #' # The simplest way to run when you have a tidy dataset:
 #'
-#' wolf.imputed <- grur::grur_imputations(data = "wolf.tidy.dataset.tsv")
+#' wolf.imputed <- radiator::radiator_imputations_module(data = "wolf.tidy.dataset.tsv")
 #'
 #' # This will impute the missing genotypes by population using random Forests.
 #' # The remaining arguments will be the defaults.
@@ -309,7 +319,7 @@
 #'     vcf.metadata = TRUE,
 #'     whitelist.markers = "whitelist.loci.txt",
 #'     verbose = TRUE) %>%
-#' grur::grur_imputations(
+#' radiator::radiator_imputations_module(
 #'     data = ., imputation.method = "boost", parallel.core = 32)
 #' }
 
@@ -329,7 +339,7 @@
 radiator_imputations_module <- function(
   data,
   imputation.method = NULL,
-  hierarchical.levels = "populations",
+  hierarchical.levels = "strata",
   # markers.linkage = "multivariate",
   num.tree = 50,
   pred.mean.matching = 0,
@@ -339,8 +349,7 @@ radiator_imputations_module <- function(
   filename = NULL,
   ...
 ) {
-  # for timing
-  timing <- proc.time()
+  timing <- proc.time() #for timing
 
   if (verbose) {
     cat("\n\n")
@@ -371,7 +380,7 @@ radiator_imputations_module <- function(
   if (length(unknowned_param) > 0) {
     stop("Unknowned \"...\" parameters ",
          stringi::stri_join(unknowned_param, collapse = " "),
-         " to grur imputation module")
+         " to radiator imputation module")
   }
 
   boost.dots <- dotslist[names(dotslist) %in%
@@ -517,7 +526,7 @@ radiator_imputations_module <- function(
     }
 
     message("Number of CPUs: ", parallel.core)
-    message("Note: If you have speed issues: follow grur's vignette on parallel computing\n")
+    message("Note: If you have speed issues: follow radiator's vignette on parallel computing\n")
     if (!is.null(filename)) message("Filename: ", filename)
   }
   # Checking for missing and/or default arguments ------------------------------
@@ -643,15 +652,17 @@ radiator_imputations_module <- function(
       if (length(locus.multiple.snp) > 100) {
         # parallel
         input <- list()
-        input <- .radiator_parallel(
+        input <- .radiator_parallel_mc(
           X = locus.multiple.snp,
-          FUN = encoding_snp,
+          FUN = radiator::rad_encoding_snp,
           mc.cores = parallel.core,
           data = data.multiple.snp
         ) %>% dplyr::bind_rows(.) %>%
           dplyr::bind_rows(data.one.snp)
       } else {
-        input <- purrr::map(.x = locus.multiple.snp, .f = encoding_snp, data = data.multiple.snp) %>%
+        input <- purrr::map(.x = locus.multiple.snp,
+                            .f = radiator::rad_encoding_snp,
+                            data = data.multiple.snp) %>%
           dplyr::bind_rows(.) %>%
           dplyr::bind_rows(data.one.snp)
       }
@@ -681,16 +692,17 @@ radiator_imputations_module <- function(
 
   # Strawman imputations (max) -------------------------------------------------
   if (imputation.method == "max") {
-    if (hierarchical.levels == "populations") {
-      if (verbose) message("Using the most observed genotype per marker/population for imputations")
+    if (hierarchical.levels == "strata") {
+      if (verbose) message("Using the most observed genotype per marker/strata for imputations")
       if (tibble::has_name(input, "GL")) {
         input.imp <- dplyr::select(input, MARKERS, POP_ID, INDIVIDUALS, GT, GL) %>%
           dplyr::group_by(MARKERS, POP_ID) %>%
-          dplyr::mutate(GT = stringi::stri_replace_na(GT, replacement = max(GT, na.rm = TRUE)),
-                        GT = replace(GT, which(GT == "NA"), NA),
-                        GL = stringi::stri_replace_na(GL, replacement = mean(GL, na.rm = TRUE)),
-                        GL = replace(GL, which(GL == "NA"), NA),
-                        GL = as.numeric(GL)) %>%
+          dplyr::mutate(
+            GT = stringi::stri_replace_na(GT, replacement = max(GT, na.rm = TRUE)),
+            GT = replace(GT, which(GT == "NA"), NA),
+            GL = stringi::stri_replace_na(GL, replacement = mean(GL, na.rm = TRUE)),
+            GL = replace(GL, which(GL == "NA"), NA),
+            GL = as.numeric(GL)) %>%
           dplyr::ungroup(.)
       } else {
         input.imp <- dplyr::select(input, MARKERS, POP_ID, INDIVIDUALS, GT) %>%
@@ -700,6 +712,14 @@ radiator_imputations_module <- function(
           dplyr::ungroup(.)
       }
       input <- NULL
+      # detect remaining NA
+      # e.g. if one strata is missing all GT... when not using common markers
+      if (anyNA(data.one.snp)) {
+        warning("Missing data is still present in the dataset",
+                "\n    2 options:",
+                "\n    run the function again with hierarchical.levels = 'global'",
+                "\n    use common.markers = TRUE when using hierarchical.levels = 'strata'")
+      }
     }# End imputation max populations
 
     # global
@@ -742,7 +762,7 @@ radiator_imputations_module <- function(
     # required to validate this technique. I think that better filtering (MAF, etc.)
     # can remove those problem...
 
-    if (hierarchical.levels == "populations") {
+    if (hierarchical.levels == "strata") {
       # First: dont' waist time imputing, some screening first
       # The small cost in time is worth it,
       # because model in RF and xgboost will benefit having more complete and reliable genotypes
@@ -835,14 +855,16 @@ radiator_imputations_module <- function(
 
           data.imp <- dplyr::filter(input, MARKERS %in% simple.imputation) %>%
             dplyr::group_by(MARKERS) %>%
-            dplyr::mutate(GT = stringi::stri_replace_na(GT, replacement = max(GT, na.rm = TRUE))) %>%
+            dplyr::mutate(
+              GT = stringi::stri_replace_na(GT, replacement = max(GT, na.rm = TRUE))) %>%
             dplyr::ungroup(.)
 
           # if GL is present give the mean value for the imputed genotype
           if (tibble::has_name(data.imp, "GL")) {
             data.imp <- data.imp %>%
               dplyr::group_by(MARKERS) %>%
-              dplyr::mutate(GL = as.numeric(stringi::stri_replace_na(GL, replacement = mean(GL, na.rm = TRUE)))) %>%
+              dplyr::mutate(
+                GL = as.numeric(stringi::stri_replace_na(GL, replacement = mean(GL, na.rm = TRUE)))) %>%
               dplyr::ungroup(.)
           }
 
@@ -882,9 +904,9 @@ radiator_imputations_module <- function(
         nsplit = 10,
         nimpute = 10,
         verbose = FALSE,
-        hierarchical.levels = "populations") {
+        hierarchical.levels = "strata") {
 
-        if (hierarchical.levels == "populations") {
+        if (hierarchical.levels == "strata") {
           message("        Imputations for pop: ", unique(x$POP_ID))
           x <- dplyr::select(x, -POP_ID)
         }
@@ -901,7 +923,7 @@ radiator_imputations_module <- function(
       } # End on-the-fly imputation function
 
       # Random Forest by pop
-      if (hierarchical.levels == "populations") {
+      if (hierarchical.levels == "strata") {
         message("    Imputations computed by populations, take a break...")
 
         input.imp <- dplyr::select(input, MARKERS, POP_ID, INDIVIDUALS, GT) %>%
@@ -914,7 +936,7 @@ radiator_imputations_module <- function(
                      num.tree = num.tree, nodesize = nodesize, nsplit = nsplit,
                      nimpute = nimpute,
                      verbose = FALSE,
-                     hierarchical.levels = "populations") %>%
+                     hierarchical.levels = "strata") %>%
           dplyr::bind_rows(.) %>%
           dplyr::mutate_all(.tbl = ., .funs = as.character) %>%
           tidyr::gather(data = ., key = MARKERS, value = GT, -INDIVIDUALS) %>%
@@ -949,7 +971,7 @@ radiator_imputations_module <- function(
       # separate the haplotypes/snp group
       if (separate.haplo) {
         if (verbose) message("Decoding haplotypes: separating SNPs on the same locus and chromosome, back to original data format")
-        input.imp <- decoding_haplotypes(
+        input.imp <- radiator::rad_decoding_haplotypes(
           data = input.imp, parallel.core = parallel.core)
       }
     }# End RF
@@ -958,9 +980,9 @@ radiator_imputations_module <- function(
     if (imputation.method == "rf_pred") {
       if (verbose) message("Using Random Forests algorith as a prediction problem, take a break...")
 
-      if (hierarchical.levels == "populations") {
+      if (hierarchical.levels == "strata") {
         input.imp <- purrr::map(.x = input,
-                                .f = radiator_imputer,
+                                .f = radiator::radiator_imputer,
                                 hierarchical.levels = hierarchical.levels,
                                 num.tree = num.tree,
                                 pred.mean.matching = pred.mean.matching,
@@ -973,12 +995,12 @@ radiator_imputations_module <- function(
       if (hierarchical.levels == "global") { # Globally/overall
         # if (verbose) message("Imputations computed globally, take a break...")
         input.rf.imp <- list() # to store results
-        input.rf.imp <- radiator_imputer(data = input,
-                                     hierarchical.levels = hierarchical.levels,
-                                     num.tree = num.tree,
-                                     pred.mean.matching = pred.mean.matching,
-                                     random.seed = random.seed,
-                                     parallel.core = parallel.core)
+        input.rf.imp <- radiator::radiator_imputer(data = input,
+                                           hierarchical.levels = hierarchical.levels,
+                                           num.tree = num.tree,
+                                           pred.mean.matching = pred.mean.matching,
+                                           random.seed = random.seed,
+                                           parallel.core = parallel.core)
       } # End imputation RF global
 
 
@@ -988,7 +1010,7 @@ radiator_imputations_module <- function(
     if (imputation.method == "boost") {
       if (verbose) message("Using extreme gradient tree boosting algorith, take a break...")
 
-      if (hierarchical.levels == "populations") {
+      if (hierarchical.levels == "strata") {
         input <- dplyr::ungroup(input) %>%
           dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS) %>%
           dplyr::mutate(
@@ -997,7 +1019,7 @@ radiator_imputations_module <- function(
             INDIVIDUALS_N = as.numeric(factor(INDIVIDUALS))
           ) %>%
           dplyr::group_by(MARKERS) %>%
-          dplyr::mutate(GT_N = factorize_gt(GT)) %>%
+          dplyr::mutate(GT_N = radiator::rad_factorize_gt(GT)) %>%
           dplyr::ungroup(.)
 
         input.wide <- dplyr::select(
@@ -1015,7 +1037,7 @@ radiator_imputations_module <- function(
           dplyr::select(-POP_ID) %>%
           dplyr::mutate(INDIVIDUALS_N = as.numeric(factor(INDIVIDUALS))) %>%
           dplyr::group_by(MARKERS) %>%
-          dplyr::mutate(GT_N = factorize_gt(GT)) %>%
+          dplyr::mutate(GT_N = radiator::rad_factorize_gt(GT)) %>%
           dplyr::ungroup(.)
 
         input.wide <- dplyr::select(
@@ -1044,7 +1066,7 @@ radiator_imputations_module <- function(
 
       # with map # serial test
       # input.imp <- purrr::map(.x = marker.list,
-      #                         .f = radiator_boost_imputer,
+      #                         .f = radiator::radiator_boost_imputer,
       #                         input.wide = input.wide,
       #                         gl.wide = gl.wide,
       #                         eta = eta,
@@ -1064,10 +1086,9 @@ radiator_imputations_module <- function(
 
       # parallel
       input.imp <- list()
-      # input.imp <- parallel::mclapply(
-      input.imp <- .radiator_parallel(
+      input.imp <- .radiator_parallel_mc(
         X = marker.list,
-        FUN = radiator_boost_imputer,
+        FUN = radiator::radiator_boost_imputer,
         mc.cores = parallel.core,
         input.wide = input.wide,
         gl.wide = gl.wide,
@@ -1087,7 +1108,7 @@ radiator_imputations_module <- function(
       input.wide <- NULL# remove unused objects
 
       # Remove factor/integer type genotype (revert back to original)
-      input.imp <- defactorize_gt(data.to.change = input.imp, data.with.info = input)
+      input.imp <- radiator::rad_defactorize_gt(data.to.change = input.imp, data.with.info = input)
 
       # Reintroduce the stratification (check if required)
       input.imp <- dplyr::left_join(strata.before, input.imp, by = "INDIVIDUALS") %>%
@@ -1097,14 +1118,14 @@ radiator_imputations_module <- function(
       if (separate.haplo) {
         # separate the haplotypes/snp group
         if (verbose) message("Decoding haplotypes: separating SNPs on the same locus and chromosome, back to original data format")
-        input.imp <- decoding_haplotypes(
+        input.imp <- radiator::rad_decoding_haplotypes(
           data = input.imp, parallel.core = parallel.core)
       }
 
       input <- NULL# remove unused objects
 
       # Impute GL
-      if (tibble::has_name(input.imp, "GL") && hierarchical.levels == "populations") {
+      if (tibble::has_name(input.imp, "GL") && hierarchical.levels == "strata") {
         message("Imputing GL with mean value per populations")
         input.imp <- dplyr::group_by(.data = input.imp, MARKERS, POP_ID, GT) %>%
           dplyr::mutate(
@@ -1148,12 +1169,12 @@ radiator_imputations_module <- function(
 
 
       # Random Forest by pop
-      if (hierarchical.levels == "populations") {
+      if (hierarchical.levels == "strata") {
         message("    Imputations computed by populations, take a break...")
 
         input.split <- split(x = input, f = input$POP_ID)
         input.imp <- list()
-        input.imp <- parallel::mclapply(
+        input.imp <- .radiator_parallel_mc(
           X = input.split,
           FUN = impute_mca,
           mc.cores = parallel.core,
@@ -1193,7 +1214,7 @@ radiator_imputations_module <- function(
       # separate the haplotypes/snp group
       if (separate.haplo) {
         if (verbose) message("Decoding haplotypes: separating SNPs on the same locus and chromosome, back to original data format")
-        input.imp <- decoding_haplotypes(
+        input.imp <- radiator::rad_decoding_haplotypes(
           data = input.imp, parallel.core = parallel.core)
       }
 
@@ -1205,6 +1226,10 @@ radiator_imputations_module <- function(
 
   # Replace NA by 000000 in GT column if found
   if (anyNA(input.imp)) {
+    warning("Missing data is still present in the dataset",
+            "\n    2 options:",
+            "\n    run the function again with hierarchical.levels = 'global'",
+            "\n    use common.markers = TRUE when using hierarchical.levels = 'strata'")
     if (!biallelic && ref.column) {
       input.imp$GT <- stringi::stri_replace_na(str = input.imp$GT, replacement = "./.")
     } else {
@@ -1217,13 +1242,16 @@ radiator_imputations_module <- function(
   }
 
   # Compute REF/ALT allele... might have change depending on prop of missing values
-  if (ref.column) {
-    if (verbose) message("Adjusting REF/ALT alleles to account for imputations...")
-    input.imp <- radiator::change_alleles(
-      data = input.imp, biallelic = biallelic,
-      parallel.core = parallel.core,
-      verbose = verbose)$input
-  } # end computing REF/ALT
+  if (verbose) message("Adjusting REF/ALT alleles to account for imputations...")
+  input.imp <- radiator::change_alleles(
+    data = input.imp,
+    biallelic = biallelic,
+    parallel.core = parallel.core,
+    verbose = verbose)$input
+
+  if (tibble::has_name(input.imp, "POLYMORPHIC.x")) input.imp <- dplyr::select(input.imp, -POLYMORPHIC.x)
+  if (tibble::has_name(input.imp, "POLYMORPHIC.y")) input.imp <- dplyr::select(input.imp, -POLYMORPHIC.y)
+
 
   # Integrate marker.meta columns and sort
   if (!is.null(marker.meta)) {
@@ -1248,8 +1276,10 @@ radiator_imputations_module <- function(
 
   # Write to working directory
   if (!is.null(filename)) {
-    if (verbose) message("Writing the imputed tidy data to the working directory: \n", filename)
-    readr::write_tsv(x = input.imp, path = filename, col_names = TRUE)
+    tidy.name <- stringi::stri_join(filename, ".rad")
+    if (verbose) message("Writing the imputed tidy data: \n", tidy.name)
+    fst::write.fst(x = input.imp, path = tidy.name, compress = 85)
+    # readr::write_tsv(x = input.imp, path = filename, col_names = TRUE)
   }
 
   # Missing after imputation:
@@ -1258,10 +1288,10 @@ radiator_imputations_module <- function(
   message("\nProportion of missing genotypes after imputations: ", na.after)
 
   # Error notices
-  if (imputation.method == "boost" && file.exists("grur_imputations_error.txt")) {
+  if (imputation.method == "boost" && file.exists("radiator_imputations_error.txt")) {
     message("Error notice: Tree boosting imputations encountered error(s),
             please look in the working directory for a file:
-            grur_imputations_error.txt
+            radiator_imputations_error.txt
             email the problem to the author: thierrygosselin@icloud.com")
   }
 }
@@ -1269,10 +1299,10 @@ radiator_imputations_module <- function(
     # output the proportion of missing genotypes after imputations
     timing <- proc.time() - timing
     message("\nComputation time: ", round(timing[[3]]), " sec")
-    cat("############################## completed ##############################\n")
+    cat("####################### grur::grur_imputations completed ######################\n")
   }
   return(input.imp)
-} # End imputations
+  } # End imputations
 
 # Internal nested Function -----------------------------------------------------
 # radiator_imputer ---------------------------------------------------------------
@@ -1280,6 +1310,7 @@ radiator_imputations_module <- function(
 #' @description imputations using Ranger package and predictive mean matching
 #' @rdname radiator_imputer
 #' @keywords internal
+#' @export
 
 radiator_imputer <- function(
   data,
@@ -1288,7 +1319,7 @@ radiator_imputer <- function(
   random.seed = NULL,
   parallel.core = parallel::detectCores() - 1,
   # markers.linkage = "multivariate",
-  hierarchical.levels = "populations",
+  hierarchical.levels = "strata",
   marker.list = marker.list,
   verbose = verbose
 ) {
@@ -1334,9 +1365,9 @@ radiator_imputer <- function(
     pred.error.last <- pred.error
 
     data.rf <- list()
-    data.rf <- .radiator_parallel(
+    data.rf <- .radiator_parallel_mc(
       X = marker.list,
-      FUN = impute_genotypes,
+      FUN = radiator::rad_impute_genotypes,
       mc.cores = parallel.core,
       data = data,
       data.na = data.na,
@@ -1352,7 +1383,7 @@ radiator_imputer <- function(
     # dplyr::bind_rows(.)
 
     system.time(test <- purrr::map(
-      .x = marker.list, .f = impute_genotypes,
+      .x = marker.list, .f = radiator::rad_impute_genotypes,
       data = data,
       data.na = data.na,
       data.gl = data.gl,
@@ -1389,13 +1420,15 @@ radiator_imputer <- function(
   return(data.imp)
 } #End radiator_imputer
 
-# impute_genotypes -------------------------------------------------------------
-#' @title impute_genotypes
+# rad_impute_genotypes -------------------------------------------------------------
+#' @title rad_impute_genotypes
 #' @description imputations using Ranger package and predictive mean matching of missRanger
-#' @rdname impute_genotypes
+#' @rdname rad_impute_genotypes
 #' @keywords internal
+#' @export
+#' @export
 
-impute_genotypes <- function(
+rad_impute_genotypes <- function(
   marker.list,
   data,
   data.na,
@@ -1405,7 +1438,7 @@ impute_genotypes <- function(
   pred.mean.matching = 0,
   random.seed = NULL,
   parallel.core = parallel::detectCores() - 1,
-  hierarchical.levels = "populations",
+  hierarchical.levels = "strata",
   # markers.linkage = "multivariate",
   pred.error = pred.error
 ) {
@@ -1458,7 +1491,7 @@ impute_genotypes <- function(
 
   # Formula ------------------------------------------------------------------
   # if (markers.linkage == "multivariate") {
-  # if (hierarchical.levels == "populations") {
+  # if (hierarchical.levels == "strata") {
   # discard.columns <- c(m, "POP_ID", "INDIVIDUALS")
   # discard.columns <- c(m, "POP_ID")
   # model.columns <- setdiff(colnames(data.complete), discard.columns)
@@ -1479,7 +1512,7 @@ impute_genotypes <- function(
   #   always.split.variables <- c("POP_ID")
   # }
   # } else {#univariate (one marker at a time)
-  #   if (hierarchical.levels == "populations") {
+  #   if (hierarchical.levels == "strata") {
   #     rf.formula <- stats::reformulate(termlabels = ".", response = m)
   #     always.split.variables <- NULL
   #   } else {
@@ -1541,8 +1574,8 @@ impute_genotypes <- function(
 
 
   # imp <- dplyr::select(.data = data2, dplyr::one_of(c("POP_ID", "INDIVIDUALS", m))) %>%
-  #   decoding_haplotypes(parallel.core = parallel.core)
-  # imp[[m]] <- decoding_haplotypes(data = data.imp, parallel.core = parallel.core)
+  #   radiator::rad_decoding_haplotypes(parallel.core = parallel.core)
+  # imp[[m]] <- radiator::rad_decoding_haplotypes(data = data.imp, parallel.core = parallel.core)
 
   data.imp <- dplyr::select(.data = data.missing, INDIVIDUALS) %>%
     dplyr::mutate(
@@ -1575,13 +1608,14 @@ impute_genotypes <- function(
   # }
   return(res)
   message("results: ok")# for diagnostic
-} #End impute_genotypes
+} #End rad_impute_genotypes
 
 # radiator_boost_imputer ---------------------------------------------------------------
 #' @title radiator_boost_imputer
 #' @description imputations using Ranger package and predictive mean matching
 #' @rdname radiator_boost_imputer
 #' @keywords internal
+#' @export
 radiator_boost_imputer <- function(
   marker.list = NULL,
   input.wide = NULL,
@@ -1597,27 +1631,23 @@ radiator_boost_imputer <- function(
   nrounds = 200,
   early_stopping_rounds = 20,
   save_name = "imputation.model.temp",
-  hierarchical.levels = "populations"
+  hierarchical.levels = "strata"
 ) {
-  m <- marker.list
-  # m <- "M998" #"BINDED_M1_M2_M3_M4_M5" # test
-  # m <- "BINDED_M84_M85" # no NA
-  # m <- "BINDED_M214_M215"
-  # m <- "BINDED_M711_M712"
-
+  # marker.list <- "BINDED_M1003_M1004_M1005_M1006_M1007"
+  m <- rlang::sym(marker.list)
   message("Imputation of marker: ", m)
-  data.complete <- dplyr::filter(.data = input.wide, !is.na(rlang::.data[[m]]))
-  data.label <- dplyr::select(.data = data.complete, dplyr::one_of(m)) %>% purrr::flatten_dbl(.)
-  data.complete <- dplyr::select(.data = data.complete, -dplyr::one_of(m)) %>% as.matrix(.)
+  data.complete <- dplyr::filter(.data = input.wide, !is.na(rlang::UQ(m)))
+  data.label <- dplyr::select(.data = data.complete, rlang::UQ(m)) %>% purrr::flatten_dbl(.)
+  data.complete <- dplyr::select(.data = data.complete, -rlang::UQ(m)) %>% as.matrix(.)
   data.complete <- xgboost::xgb.DMatrix(data = data.complete, label = data.label, missing = NA)
-  data.missing <- dplyr::filter(.data = input.wide, is.na(rlang::.data[[m]]))
+  data.missing <- dplyr::filter(.data = input.wide, is.na(rlang::UQ(m)))
 
   if (nrow(data.missing) == 0) stop("code error: email author")
 
   res <- dplyr::select(.data = data.missing, INDIVIDUALS) %>%
-    dplyr::mutate(MARKERS = rep(m, nrow(data.missing)))
-  missing.label <- dplyr::select(.data = data.missing, dplyr::one_of(m)) %>% purrr::flatten_dbl(.)
-  data.missing <- dplyr::select(.data = data.missing, -dplyr::one_of(m)) %>% as.matrix(.)
+    dplyr::mutate(MARKERS = rep(rlang::quo_text(m), nrow(data.missing)))
+  missing.label <- dplyr::select(.data = data.missing, rlang::UQ(m)) %>% purrr::flatten_dbl(.)
+  data.missing <- dplyr::select(.data = data.missing, -rlang::UQ(m)) %>% as.matrix(.)
   data.missing <- xgboost::xgb.DMatrix(data = data.missing, label = missing.label, missing = NA)
 
   params <- list(
@@ -1655,7 +1685,7 @@ radiator_boost_imputer <- function(
                              ntreelimit = boost.res$best_ntreelimit,
                              missing = NA)
   } else {
-    readr::write_lines(x = boost.res$error, path = "grur_imputations_error.txt", append = TRUE)
+    readr::write_lines(x = boost.res$error, path = "radiator_imputations_error.txt", append = TRUE)
     res$GT <- as.numeric(rep(NA, nrow(res)))
   }
 
@@ -1690,13 +1720,13 @@ radiator_boost_imputer <- function(
   return(res)
 }#End boost
 
-# encoding_snp --------------------------------------------------------------------
-#' @title encoding_snp
+# rad_encoding_snp --------------------------------------------------------------------
+#' @title rad_encoding_snp
 #' @description bind snp found on the same locus
-#' @rdname encoding_snp
+#' @rdname rad_encoding_snp
 #' @keywords internal
-
-encoding_snp <- function(locus.list = NULL, data = NULL) {
+#' @export
+rad_encoding_snp <- function(locus.list = NULL, data = NULL) {
   # locus.list <- "1_135"
   res <- dplyr::filter(.data = data, CHROM_LOCUS %in% locus.list)
   binded.markers <- dplyr::distinct(.data = res, MARKERS) %>%
@@ -1717,15 +1747,16 @@ encoding_snp <- function(locus.list = NULL, data = NULL) {
     dplyr::select(MARKERS, CHROM_LOCUS, POP_ID, INDIVIDUALS, GT)
 
   return(res)
-}#End encoding_snp
+}#End rad_encoding_snp
 
-# decoding_haplotypes------------------------------------------------------------
-#' @title decoding_haplotypes
-#' @description separate snp group merged with encoding_snp
-#' @rdname decoding_haplotypes
+# rad_decoding_haplotypes------------------------------------------------------------
+#' @title rad_decoding_haplotypes
+#' @description separate snp group merged with rad_encoding_snp
+#' @rdname rad_decoding_haplotypes
 #' @keywords internal
+#' @export
 
-decoding_haplotypes <- function(data = NULL, parallel.core = parallel::detectCores() - 1) {
+rad_decoding_haplotypes <- function(data = NULL, parallel.core = parallel::detectCores() - 1) {
   # data <- data.imp.bk#test
   # data <- input.imp#test
 
@@ -1742,7 +1773,7 @@ decoding_haplotypes <- function(data = NULL, parallel.core = parallel::detectCor
     col.names.data <- NULL
   }
   # nested function required ---------------------------------------------------
-  separate_locus <- function(binded.markers = NULL, data = NULL) {
+  rad_separate_locus <- function(binded.markers = NULL, data = NULL) {
     # binded.markers <- markers.sep[[1]]
 
     col.replace <- stringi::stri_replace_all_fixed(
@@ -1778,19 +1809,19 @@ decoding_haplotypes <- function(data = NULL, parallel.core = parallel::detectCor
     }
 
     return(data.sep)
-  }#End separate_locus
+  }#End rad_separate_locus
 
   if (length(markers.sep) > 0) {
     if (length(markers.sep) > 100) {
       data.sep <- list()
-      data.sep <- .radiator_parallel(
+      data.sep <- .radiator_parallel_mc(
         X = markers.sep,
-        FUN = separate_locus,
+        FUN = rad_separate_locus,
         mc.cores = parallel.core,
         data = data
       ) %>% dplyr::bind_rows(.)
     } else {
-      data.sep <- purrr::map(.x = markers.sep, .f = separate_locus, data = data) %>%
+      data.sep <- purrr::map(.x = markers.sep, .f = rad_separate_locus, data = data) %>%
         dplyr::bind_rows(.)
     }
 
@@ -1837,27 +1868,29 @@ decoding_haplotypes <- function(data = NULL, parallel.core = parallel::detectCor
     data.sep <- data
   }
   return(data.sep)
-}#End decoding_haplotypes
+}#End rad_decoding_haplotypes
 
-# factorize_gt------------------------------------------------------------
-#' @title factorize_gt
+# rad_factorize_gt------------------------------------------------------------
+#' @title rad_factorize_gt
 #' @description Necessary to factorize by markers in tidy format.
 #' XGBoost needs numbering to start at , hence the codes below.
-#' @rdname factorize_gt
+#' @rdname rad_factorize_gt
 #' @keywords internal
+#' @export
 
-factorize_gt <- function(x) {
+rad_factorize_gt <- function(x) {
   x <- as.numeric(factor(x)) - 1
-}#End factorize_gt
+}#End rad_factorize_gt
 
 
-# defactorize_gt------------------------------------------------------------
-#' @title defactorize_gt
+# rad_defactorize_gt------------------------------------------------------------
+#' @title rad_defactorize_gt
 #' @description Function to "defactorize/decode" the imputed data back to original.
-#' @rdname defactorize_gt
+#' @rdname rad_defactorize_gt
 #' @keywords internal
+#' @export
 
-defactorize_gt <- function(data.to.change, data.with.info) {
+rad_defactorize_gt <- function(data.to.change, data.with.info) {
   clean.id <- dplyr::distinct(.data = data.with.info, INDIVIDUALS, INDIVIDUALS_N)
   clean.gt <- dplyr::distinct(.data = data.with.info, MARKERS, GT, GT_N) %>%
     tidyr::drop_na(.)
@@ -1894,4 +1927,4 @@ defactorize_gt <- function(data.to.change, data.with.info) {
                                   ))))
   }
   return(res)
-}#End defactorize_gt
+}#End rad_defactorize_gt

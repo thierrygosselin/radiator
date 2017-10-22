@@ -9,7 +9,7 @@ radiator_boost_imputer(marker.list = NULL, input.wide = NULL,
   min_child_weight = 1, subsample = 0.8, colsample_bytree = 1,
   num_parallel_tree = 1, parallel.core = 1, nrounds = 200,
   early_stopping_rounds = 20, save_name = "imputation.model.temp",
-  hierarchical.levels = "populations")
+  hierarchical.levels = "strata")
 }
 \description{
 imputations using Ranger package and predictive mean matching

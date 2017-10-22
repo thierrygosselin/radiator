@@ -5,40 +5,50 @@
 \title{Map-independent imputations of missing genotypes}
 \usage{
 radiator_imputations_module(data, imputation.method = NULL,
-  hierarchical.levels = "populations", num.tree = 50,
-  pred.mean.matching = 0, verbose = TRUE,
-  parallel.core = parallel::detectCores() - 1, random.seed = NULL,
-  filename = NULL, ...)
+  hierarchical.levels = "strata", num.tree = 50, pred.mean.matching = 0,
+  verbose = TRUE, parallel.core = parallel::detectCores() - 1,
+  random.seed = NULL, filename = NULL, ...)
 }
 \arguments{
-\item{data}{A file in the working directory or object in the global environment
-in wide or long (tidy) formats. To import, the function uses
+\item{data}{A tidy genomic dataset.
+It can be file in the working directory or
+an object in the global environment.
+To get a tidy dataset from various genomic format, see
 \href{https://github.com/thierrygosselin/radiator}{radiator}
-\code{\link[radiator]{tidy_wide}}.
+\code{\link[radiator]{tidy_genomic_data}}.
 \emph{See details of this function for more info}.}
 
 \item{imputation.method}{(character, optional)
-Methods available for map-independent imputations of missing genotype:
+Methods available for map-independent imputations of missing genotype
+(see details for more info):
 
-(1) \code{imputation.method = "max"} Strawman imputation,
+\enumerate{
+\item \code{imputation.method = "max"} Strawman imputation,
 the most frequently observed genotypes (ties are broken at random).
 
-(2) \code{imputation.method = "rf"} On-the-fly-imputations using
+\item \code{imputation.method = "rf"} On-the-fly-imputations using
 Random Forests algorithm.
 
-(3) \code{imputation.method = "boost"} extreme gradient boosting trees.
+\item \code{imputation.method = "rf_pred"} Random Forests algorith is used
+as a prediction problem.
 
-(4) \code{imputation.method = "mca"} Multiple Correspondence Analysis.
+\item \code{imputation.method = "boost"} extreme gradient boosting trees.
+
+\item \code{imputation.method = "mca"} Multiple Correspondence Analysis (in devel).
 
 \code{imputation.method = NULL} the function will stop.
-Default: \code{imputation.method = NULL}.}
+Default: \code{imputation.method = NULL}.
+}}
 
-\item{hierarchical.levels}{(character, optional) \code{c("global", "populations")}.
-Should the imputations be computed globally or by populations. Note that
-imputing genotype globally in conjunction with \code{imputation.method = "max"}
-can create huge bias for example by
-introducing foreign genotypes in some populations (see note for more info).
-Default: \code{hierarchical.levels = "populations"}.}
+\item{hierarchical.levels}{(character, optional) \code{c("global", "strata")}.
+Should the imputations be computed by markers globally or by strata.
+Historically, this was \code{"populations"}.
+
+Note that imputing genotype globally in conjunction with
+\code{imputation.method = "max"} can potentially create huge bias.
+e.g. by introducing foreign genotypes/haplotypes in some populations
+(see note for more info).
+Default: \code{hierarchical.levels = "strata"}.}
 
 \item{num.tree}{(integer, optional) The number of trees to grow
 when \code{imputation.method = "rf"} or \code{imputation.method = "rf_pred"}.
@@ -49,7 +59,7 @@ random Forests (\code{imputation.method = "rf_pred"}).
 Number of candidate non-missing
 value to sample from during the predictive mean matching step.
 A fast k-nearest neighbor searching algorithms is used with this approach.
-\code{pred.mean.matching = 3} will use 3 nighbors.
+\code{pred.mean.matching = 3} will use 3 neighbors.
 Default: \code{pred.mean.matching = 0}, avoids this step.}
 
 \item{verbose}{(optional, logical) When \code{verbose = TRUE}
@@ -66,11 +76,12 @@ that will be used to initialize the random generator. With default,
 a random number is generated.
 Default: \code{random.seed = NULL}.}
 
-\item{filename}{(optional) The file name for the \strong{imputed}
-tidy data frame written to the working directory.
-With missing argument or default: \code{filename = NULL}, the imputed
-tidy data is in the global environment only
-(i.e. not written in the working directory).}
+\item{filename}{(optional) The function uses \code{\link[fst]{write.fst}},
+to write the tidy data frame in
+the working directory. The file extension appended to
+the \code{filename} provided is \code{.rad}.
+With default: \code{filename = NULL}, the imputed tidy data frame is
+in the global environment only (i.e. not written in the working directory...).}
 
 \item{...}{(optional) To pass further argument for fine-tuning your
 imputations. See details below.}
@@ -267,7 +278,7 @@ is now set to 10 iterations.
 \dontrun{
 # The simplest way to run when you have a tidy dataset:
 
-wolf.imputed <- grur::grur_imputations(data = "wolf.tidy.dataset.tsv")
+wolf.imputed <- radiator::radiator_imputations_module(data = "wolf.tidy.dataset.tsv")
 
 # This will impute the missing genotypes by population using random Forests.
 # The remaining arguments will be the defaults.
@@ -281,7 +292,7 @@ wolf.imp <- radiator::tidy_genomic_data(
     vcf.metadata = TRUE,
     whitelist.markers = "whitelist.loci.txt",
     verbose = TRUE) \%>\%
-grur::grur_imputations(
+radiator::radiator_imputations_module(
     data = ., imputation.method = "boost", parallel.core = 32)
 }
 }
@@ -314,4 +325,3 @@ arXiorg: 1–24.
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}
 }
-\keyword{internal}
