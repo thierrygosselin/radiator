@@ -470,7 +470,13 @@ tidy_genomic_data <- function(
     blacklist.id$INDIVIDUALS <- radiator::clean_ind_names(blacklist.id$INDIVIDUALS)
 
     # remove potential duplicate id
-    blacklist.id <- dplyr::distinct(.data = blacklist.id, INDIVIDUALS)
+    dup <- dplyr::distinct(.data = blacklist.id, INDIVIDUALS)
+    blacklist.id.dup <- nrow(blacklist.id) - nrow(dup)
+    if (blacklist.id.dup >1) {
+      message("Duplicate id's in blacklist: ", blacklist.id.dup)
+      blacklist.id <- dup
+    }
+    dup <- blacklist.id.dup <- NULL
     message("Number of individuals in blacklist: ", nrow(blacklist.id))
   }
 
@@ -500,13 +506,17 @@ tidy_genomic_data <- function(
       strata.df <- strata
     }
 
+    # Remove potential whitespace in pop_id
+    strata.df$POP_ID <- radiator::clean_pop_names(strata.df$POP_ID)
+    colnames.strata <- colnames(strata.df)
+
+    # clean ids
+    strata.df$INDIVIDUALS <- radiator::clean_ind_names(strata.df$INDIVIDUALS)
+
     # filtering the strata if blacklist id available
     if (!is.null(blacklist.id)) {
       strata.df <- dplyr::anti_join(x = strata.df, y = blacklist.id, by = "INDIVIDUALS")
     }
-    # Remove potential whitespace in pop_id
-    strata.df$POP_ID <- radiator::clean_pop_names(strata.df$POP_ID)
-    colnames.strata <- colnames(strata.df)
   }
 
   # Import VCF------------------------------------------------------------------

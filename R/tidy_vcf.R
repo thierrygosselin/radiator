@@ -328,6 +328,29 @@ tidy_vcf <- function(
     vcf.data <- NULL
   }#End vcfR GT and metadata import
 
+  # Import blacklist id --------------------------------------------------------
+  if (!is.null(blacklist.id)) {# With blacklist of ID
+    if (is.vector(blacklist.id)) {
+      suppressMessages(blacklist.id <- readr::read_tsv(blacklist.id, col_names = TRUE))
+    } else {
+      if (!tibble::has_name(blacklist.id, "INDIVIDUALS")) {
+        stop("Blacklist of individuals should have 1 column named: INDIVIDUALS")
+      }
+    }
+    blacklist.id$INDIVIDUALS <- radiator::clean_ind_names(blacklist.id$INDIVIDUALS)
+
+    # remove potential duplicate id
+    dup <- dplyr::distinct(.data = blacklist.id, INDIVIDUALS)
+    blacklist.id.dup <- nrow(blacklist.id) - nrow(dup)
+    if (blacklist.id.dup >1) {
+      message("Duplicate id's in blacklist: ", blacklist.id.dup)
+      blacklist.id <- dup
+    }
+    dup <- blacklist.id.dup <- NULL
+    message("Number of individuals in blacklist: ", nrow(blacklist.id))
+
+    input <- dplyr::anti_join(input, blacklist.id, by = "INDIVIDUALS")
+  }
 
   # Population levels and strata------------------------------------------------
   if (verbose) message("Making the vcf population-wise...")
@@ -337,31 +360,28 @@ tidy_vcf <- function(
         file = strata, col_names = TRUE,
         # col_types = col.types
         col_types = readr::cols(.default = readr::col_character())
-      ) %>%
-        dplyr::rename(POP_ID = STRATA))
+      ))
   } else {
-    # message("strata object: yes")
-    colnames(strata) <- stringi::stri_replace_all_fixed(
-      str = colnames(strata),
-      pattern = "STRATA",
-      replacement = "POP_ID",
-      vectorize_all = FALSE
-    )
     strata.df <- strata
   }
-  # filtering the strata if blacklist id available
-  if (!is.null(blacklist.id)) {
-    strata.df <- dplyr::anti_join(x = strata.df, y = blacklist.id, by = "INDIVIDUALS")
-  }
+  colnames(strata.df) <- stringi::stri_replace_all_fixed(
+    str = colnames(strata.df),
+    pattern = "STRATA",
+    replacement = "POP_ID",
+    vectorize_all = FALSE
+  )
   # Remove potential whitespace in pop_id
   strata.df$POP_ID <- radiator::clean_pop_names(strata.df$POP_ID)
   colnames.strata <- colnames(strata.df)
 
-# Filter blacklisted individuals----------------------------------------------
-if (!is.null(blacklist.id)) {
-  input <- dplyr::anti_join(input, blacklist.id, by = "INDIVIDUALS")
-  strata.df <- dplyr::anti_join(strata.df, blacklist.id, by = "INDIVIDUALS")
-}
+  # clean ids
+  strata.df$INDIVIDUALS <- radiator::clean_ind_names(strata.df$INDIVIDUALS)
+
+  # filtering the strata if blacklist id available
+  if (!is.null(blacklist.id)) {
+    strata.df <- dplyr::anti_join(x = strata.df, y = blacklist.id, by = "INDIVIDUALS")
+  }
+
 
 # check that names match between strata and input before going further
 if (!identical(sort(unique(input$INDIVIDUALS)), sort(unique(strata.df$INDIVIDUALS)))) {
@@ -376,6 +396,8 @@ input <- radiator::change_pop_names(
 
 # Pop select--------------------------------------------------------------------
 if (!is.null(pop.select)) {
+  pop.select <- clean_pop_names(pop.select)
+
   if (verbose) message(stringi::stri_join(length(pop.select), "population(s) selected", sep = " "))
   input <- suppressWarnings(input %>% dplyr::filter(POP_ID %in% pop.select))
   input$POP_ID <- droplevels(input$POP_ID)

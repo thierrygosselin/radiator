@@ -213,8 +213,8 @@ filter_dart <- function(
   if (!is.null(filename)) {
     tidy.name <- stringi::stri_join(path.folder, "/", filename, ".rad")
     fst::write.fst(
-    x = input,
-    path = tidy.name)
+      x = input,
+      path = tidy.name)
     message("Tidy DArT data, unfiltered, written to folder: \n", tidy.name)
   }
 
@@ -227,7 +227,7 @@ filter_dart <- function(
   # Blacklist id ---------------------------------------------------------------
   if (is.null(blacklist.id)) { # No blacklist of ID
     if (verbose) message("Blacklisted individuals: no")
-    res$blacklist.id <- NULL
+    res$blacklist.id <- tibble::data_frame(INDIVIDUALS = character(0))
   } else {# With blacklist of ID
     res$blacklist.id <- suppressMessages(readr::read_tsv(blacklist.id, col_names = TRUE))
     n.ind.blacklisted <- length(res$blacklist.id$INDIVIDUALS)
@@ -1128,11 +1128,7 @@ filter_dart <- function(
         path = stringi::stri_join(mixed.genome.folder, "/blacklist.ind.het.tsv"),
         col_names = TRUE)
 
-      if (!is.null(res$blacklist.id)) {
-        res$blacklist.id <- res$blacklist.id %>% dplyr::bind_rows(blacklist.ind.het)
-      } else {
-        res$blacklist.id <- blacklist.ind.het
-      }
+      res$blacklist.id <- res$blacklist.id %>% dplyr::bind_rows(blacklist.ind.het)
 
       input <- dplyr::anti_join(
         input,
@@ -1185,7 +1181,7 @@ filter_dart <- function(
           genome = TRUE,
           parallel.core = parallel.core)
       }
-      message("    Open the tables in Excel or open another R session to decide which individual(s) to blacklist(s)")
+      message("    Inspect tables and decide which individual(s) to blacklist(s)")
       message("    Do you want to remove individuals ? (y/n): ")
       remove.id <- as.character(readLines(n = 1))
       if (remove.id == "y") {
@@ -1213,11 +1209,7 @@ filter_dart <- function(
           if (verbose) message("    Filtering with blacklist of individuals")
           input <- suppressWarnings(dplyr::anti_join(input, blacklist.id.similar, by = "INDIVIDUALS"))
 
-          if (!is.null(res$blacklist.id)) {
-            res$blacklist.id <- res$blacklist.id %>% dplyr::bind_rows(blacklist.id.similar)
-          } else {
-            res$blacklist.id <- blacklist.id.similar
-          }
+          res$blacklist.id <- res$blacklist.id %>% dplyr::bind_rows(blacklist.id.similar)
           blacklist.id.similar <- NULL
 
           # updating parameters
@@ -1269,7 +1261,6 @@ filter_dart <- function(
           }
         }
       }
-
     }
     duplicate.genomes <- blacklist.monomorphic.markers <- NULL
   }#End duplicate.genomes.analysis
@@ -1286,14 +1277,17 @@ filter_dart <- function(
   readr::write_tsv(x = res$whitelist.markers, path = "whitelist.markers.tsv", col_names = TRUE)
   if (verbose) message("Writing the whitelist of markers: whitelist.markers.tsv")
 
-  res$blacklist.markers <- blacklist.markers
-  readr::write_tsv(x = res$blacklist.markers, path = "blacklist.markers.tsv", col_names = TRUE)
-  if (verbose) message("Writing the blacklist of markers: blacklist.markers.tsv")
+  if (nrow(blacklist.markers) > 0) {
+    res$blacklist.markers <- blacklist.markers
+    readr::write_tsv(x = res$blacklist.markers, path = "blacklist.markers.tsv", col_names = TRUE)
+    if (verbose) message("Writing the blacklist of markers: blacklist.markers.tsv")
+  }
 
   # writing the blacklist of id
-  readr::write_tsv(x = res$blacklist.id, path = "blacklist.id.tsv", col_names = TRUE)
-  if (verbose) message("Writing the blacklist of ids: blacklist.id.tsv")
-
+  if (nrow(res$blacklist.id) > 0) {
+    readr::write_tsv(x = res$blacklist.id, path = "blacklist.id.tsv", col_names = TRUE)
+    if (verbose) message("Writing the blacklist of ids: blacklist.id.tsv")
+  }
   # tidy data
   want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS", "POP_ID", "REF", "ALT", "GT", "GT_VCF", "GT_VCF_NUC", "GT_BIN")
   res$tidy.data <- dplyr::select(input, dplyr::one_of(want)) %>%
