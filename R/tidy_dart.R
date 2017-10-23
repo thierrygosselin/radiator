@@ -210,21 +210,37 @@ tidy_dart <- function(
       dplyr::select(MARKERS, CHROM, LOCUS, POS, REF, ALT, CALL_RATE, AVG_COUNT_REF,
                     AVG_COUNT_SNP, REP_AVG, dplyr::everything()) %>%
       dplyr::mutate_at(.tbl = ., .vars = c("MARKERS", "CHROM", "LOCUS", "POS"), .funs = as.character)
-  )
+  ) %>%
+    dplyr::arrange(CHROM, LOCUS, POS, REF)
 
+  # DArT Type-------------------------------------------------------------------
   # Determine the type of DArT file: 1 or 2-row format (binary)
-  binary <- anyDuplicated(input$LOCUS) == 2
+
+  # before:
+  # binary <- anyDuplicated(input$LOCUS) == 2
+  # not good for all data
+  # some have duplicated locus because more than 1 SNPs on the same locus
+
+  binary.check <- dplyr::ungroup(input) %>% dplyr::select(MARKERS)
+  binary.check <- nrow(binary.check) / nrow(dplyr::distinct(binary.check, MARKERS)) == 2
+  ref.na <- anyNA(input$REF)
+  if (binary.check && ref.na) {
+    binary <- binary.check && ref.na
+  } else if (!binary.check && !ref.na) {
+    binary <- FALSE
+  } else {
+    stop("Contact author to show your DArT data, problem duting import")
+  }
+  binary.check <- NULL
 
   if (!binary) {
     if (verbose) message("Tidying DArT data...")
 
     # input <- dplyr::filter(input, !is.na(MARKERS))
-
+    grouping.col <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT",
+                      "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")
     input <- input %>%
-      dplyr::group_by(MARKERS, CHROM, LOCUS, POS, REF, ALT, CALL_RATE,
-                      AVG_COUNT_REF, AVG_COUNT_SNP, REP_AVG) %>%
-      tidyr::spread(data = ., key = INDIVIDUALS, value = GT) %>%
-      dplyr::ungroup(.)
+      tidyr::gather(data = ., key = INDIVIDUALS, value = GT, -dplyr::one_of(grouping.col))
 
     # generate the split vector
     split.vec <- split_vec_row(x = input, cpu.rounds = 3, parallel.core = parallel.core)
@@ -398,7 +414,7 @@ tidy_dart <- function(
                       "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")
 
     if (!count.data) {#Genotypes coded 0, 1, 2
-      # necessary to deal with the duplication of lines because of the GT in 2 lines
+      # necessary to deal with the duplication of lines because of the GT in >= 2 lines
       grouping.column <- dplyr::ungroup(input) %>%
         dplyr::select(dplyr::one_of(grouping.col)) %>%
         dplyr::filter(!is.na(REF) | !is.na(ALT)) %>%
@@ -415,7 +431,7 @@ tidy_dart <- function(
             cpu.rounds = 100,
             parallel.core = parallel.core))
 
-      system.time(input2 <- dplyr::select(
+      input <- dplyr::select(
         input,
         -c(CHROM, LOCUS, POS, CALL_RATE, AVG_COUNT_REF, AVG_COUNT_SNP,
            REP_AVG, REF, ALT)) %>%
@@ -433,7 +449,7 @@ tidy_dart <- function(
         dplyr::left_join(grouping.column, by = "MARKERS") %>%
         dplyr::select(MARKERS, CHROM, LOCUS, POS, REF, ALT, INDIVIDUALS, GT,
                       GT_VCF, GT_VCF_NUC, GT_BIN, CALL_RATE, AVG_COUNT_REF,
-                      AVG_COUNT_SNP, REP_AVG))
+                      AVG_COUNT_SNP, REP_AVG)
 
       grouping.column <- ref.info <- markers.split <- NULL # remove unused object
 

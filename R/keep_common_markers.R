@@ -111,7 +111,7 @@ keep_common_markers <- function(data, plot = FALSE, verbose = FALSE) {
     }
 
   } else {
-    blacklist <- "markers all in common"
+    blacklist <- tibble::data_frame(INDIVIDUALS = character(0))
   }
   want <- c("MARKERS", "CHROM", "LOCUS", "POS")
   whitelist <- suppressWarnings(dplyr::select(input, dplyr::one_of(want)) %>%
