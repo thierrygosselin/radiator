@@ -16,6 +16,9 @@
 
 #' @export
 #' @rdname tidy_vcf
+#' @importFrom rlang UQ
+
+
 
 #' @return The output in your global environment is a tidy data frame.
 
@@ -537,7 +540,7 @@ parse_genomic <- function(
 
   if (verbose) message("Parsing and tidying: ", format.name)
   x <- tibble::as_data_frame(vcfR::extract.gt(
-    x = data, element = x, mask = mask, return.alleles = return.alleles,
+    x = data, element = format.name, mask = mask, return.alleles = return.alleles,
     IDtoRowNames = FALSE, convertNA = FALSE))
 
   if (format.name == "GT") {
@@ -551,7 +554,7 @@ parse_genomic <- function(
 
   if (gather.data) {
     x <- dplyr::mutate(x, ID = seq(1, n()))
-    x <- tidyr::gather(data = x, key = INDIVIDUALS, value = format.name, -ID) %>%
+    x <- tidyr::gather(data = x, key = INDIVIDUALS, value = rlang::UQ(format.name), -ID) %>%
       dplyr::select(-ID, -INDIVIDUALS)
   }
   return(x)
