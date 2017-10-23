@@ -6,6 +6,11 @@ warnings_are_errors: false
 sudo: required
 dist: trusty
 
+matrix:
+  include:
+  - os: osx
+  - os: linux
+
 notifications:
   email:
     on_success: change
