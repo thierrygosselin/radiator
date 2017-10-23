@@ -217,6 +217,9 @@ tidy_dart <- function(
 
   if (!binary) {
     if (verbose) message("Tidying DArT data...")
+
+    # input <- dplyr::filter(input, !is.na(MARKERS))
+
     input <- input %>%
       dplyr::group_by(MARKERS, CHROM, LOCUS, POS, REF, ALT, CALL_RATE,
                       AVG_COUNT_REF, AVG_COUNT_SNP, REP_AVG) %>%

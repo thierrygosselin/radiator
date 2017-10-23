@@ -360,15 +360,15 @@ tidy_vcf <- function(
 # Filter blacklisted individuals----------------------------------------------
 if (!is.null(blacklist.id)) {
   input <- dplyr::anti_join(input, blacklist.id, by = "INDIVIDUALS")
-  strata <- dplyr::anti_join(strata, blacklist.id, by = "INDIVIDUALS")
+  strata.df <- dplyr::anti_join(strata.df, blacklist.id, by = "INDIVIDUALS")
 }
 
 # check that names match between strata and input before going further
-if (!identical(sort(unique(input$INDIVIDUALS)), sort(unique(strata$INDIVIDUALS)))) {
+if (!identical(sort(unique(input$INDIVIDUALS)), sort(unique(strata.df$INDIVIDUALS)))) {
   stop("The individuals in the strata file don't match the individuals in the vcf file")
 }
 
-input <- dplyr::left_join(x = input, y = strata, by = "INDIVIDUALS")
+input <- dplyr::left_join(x = input, y = strata.df, by = "INDIVIDUALS")
 
 # Using pop.levels and pop.labels info if present-------------------------------
 input <- radiator::change_pop_names(
