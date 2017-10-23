@@ -87,17 +87,20 @@ keep_common_markers <- function(data, plot = FALSE, verbose = FALSE) {
   if (plot) {
     pops <- unique(input$POP_ID)
 
-    plot.data <- dplyr::filter(input, GT != "000000") %>%
-      dplyr::distinct(MARKERS, POP_ID) %>%
-      dplyr::mutate(
-        n = rep(1, n()),
-        POP_ID = stringi::stri_join("POP_", POP_ID)
-      ) %>%
-      tidyr::spread(data = ., key = POP_ID, value = n, fill = 0) %>%
-      data.frame(.)
+    if (length(pops) > 1) {
 
-    UpSetR::upset(plot.data, nsets = length(pops), order.by = "freq", empty.intersections = "on")
-    message("    UpSet plot generated to visualize common markers")
+      plot.data <- dplyr::filter(input, GT != "000000") %>%
+        dplyr::distinct(MARKERS, POP_ID) %>%
+        dplyr::mutate(
+          n = rep(1, n()),
+          POP_ID = stringi::stri_join("POP_", POP_ID)
+        ) %>%
+        tidyr::spread(data = ., key = POP_ID, value = n, fill = 0) %>%
+        data.frame(.)
+
+      UpSetR::upset(plot.data, nsets = length(pops), order.by = "freq", empty.intersections = "on")
+      message("    UpSet plot generated to visualize common markers")
+    }
   }
 
   if (blacklist.markers > 0) {
