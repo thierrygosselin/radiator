@@ -115,7 +115,6 @@ filter_maf <- function(
   pop.select = NULL,
   parallel.core = parallel::detectCores() - 1
 ) {
-
   cat("#######################################################################\n")
   cat("######################## radiator::filter_maf #########################\n")
   cat("#######################################################################\n")
@@ -236,7 +235,9 @@ filter_maf <- function(
   if (!summarize.data) {
     message("Calculating global and local MAF on large data set may take some time...")
 
-    if (tibble::has_name(input, "GT_VCF")) {
+    biallelic <- radiator::detect_biallelic_markers(input, verbose = TRUE)
+
+    if (tibble::has_name(input, "GT_VCF") && biallelic) {
       maf.local <- input %>%
         dplyr::filter(GT_VCF != "./.") %>%
         dplyr::group_by(MARKERS, POP_ID, REF, ALT) %>%
@@ -259,34 +260,74 @@ filter_maf <- function(
         dplyr::select(MARKERS, POP_ID, MAF_LOCAL, MAF_GLOBAL)
 
       maf.local <- maf.global <- NULL
-    } else {# not vcf file
-      # We split the alleles here to prep for MAF
-      maf.data <- input %>%
-        dplyr::filter(GT != "000000") %>%
-        dplyr::select(MARKERS,POP_ID, INDIVIDUALS, GT) %>%
-        dplyr::mutate(
-          A1 = stringi::stri_sub(GT, 1, 3),
-          A2 = stringi::stri_sub(GT, 4,6)
-        ) %>%
-        dplyr::select(MARKERS, POP_ID, INDIVIDUALS, A1, A2) %>%
-        tidyr::gather(data = ., key = ALLELES, value = GT, -c(MARKERS, INDIVIDUALS, POP_ID)) %>%
-        dplyr::group_by(MARKERS, GT, POP_ID) %>%
-        dplyr::tally(.) %>%
-        dplyr::ungroup() %>%
-        tidyr::complete(data = ., POP_ID, tidyr::nesting(MARKERS, GT), fill = list(n = 0)) %>%
-        dplyr::rename(n.al.pop = n) %>%
-        dplyr::arrange(MARKERS, GT) %>%
-        dplyr::group_by(MARKERS, GT) %>%
-        dplyr::mutate(n.al.tot = sum(n.al.pop)) %>%
-        dplyr::group_by(MARKERS) %>%
-        dplyr::mutate(MAF_GLOBAL = min(n.al.tot)/sum(n.al.pop)) %>%
-        dplyr::group_by(MARKERS, POP_ID) %>%
-        dplyr::mutate(MAF_LOCAL = n.al.pop/sum(n.al.pop)) %>%
-        dplyr::arrange(MARKERS, POP_ID, GT) %>%
-        dplyr::group_by(MARKERS, POP_ID) %>%
-        dplyr::filter(n.al.pop == min(n.al.pop)) %>%
-        dplyr::distinct(MARKERS, POP_ID, .keep_all = TRUE) %>%
-        dplyr::select(MARKERS, POP_ID, MAF_LOCAL, MAF_GLOBAL)
+    } else  {# not vcf file
+      if (!tibble::has_name(input, "GT_VCF_NUC")) {
+        # We split the alleles here to prep for MAF
+        maf.data <- input %>%
+          dplyr::filter(GT != "000000") %>%
+          dplyr::select(MARKERS,POP_ID, INDIVIDUALS, GT) %>%
+          dplyr::mutate(
+            A1 = stringi::stri_sub(GT, 1, 3),
+            A2 = stringi::stri_sub(GT, 4,6)
+          ) %>%
+          dplyr::select(MARKERS, POP_ID, INDIVIDUALS, A1, A2) %>%
+          tidyr::gather(data = ., key = ALLELES, value = GT, -c(MARKERS, INDIVIDUALS, POP_ID)) %>%
+          dplyr::group_by(MARKERS, GT, POP_ID) %>%
+          dplyr::tally(.) %>%
+          dplyr::ungroup(.) %>%
+          tidyr::complete(data = ., POP_ID, tidyr::nesting(MARKERS, GT), fill = list(n = 0)) %>%
+          dplyr::rename(n.al.pop = n) %>%
+          dplyr::arrange(MARKERS, GT) %>%
+          dplyr::group_by(MARKERS, GT) %>%
+          dplyr::mutate(n.al.tot = sum(n.al.pop)) %>%
+          dplyr::group_by(MARKERS) %>%
+          dplyr::mutate(MAF_GLOBAL = min(n.al.tot)/sum(n.al.pop)) %>%
+          dplyr::group_by(MARKERS, POP_ID) %>%
+          dplyr::mutate(MAF_LOCAL = n.al.pop/sum(n.al.pop)) %>%
+          dplyr::arrange(MARKERS, POP_ID, GT) %>%
+          dplyr::group_by(MARKERS, POP_ID) %>%
+          dplyr::filter(n.al.pop == min(n.al.pop)) %>%
+          dplyr::distinct(MARKERS, POP_ID, .keep_all = TRUE) %>%
+          dplyr::select(MARKERS, POP_ID, MAF_LOCAL, MAF_GLOBAL)
+      } else {
+        # Experimental, for haplotypes file
+        ref.allele <- dplyr::distinct(input, MARKERS, REF)
+        maf.prep <- input %>%
+          dplyr::filter(GT_VCF_NUC != "./.") %>%
+          dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT_VCF_NUC) %>%
+          separate_gt(
+            x = ., sep = "/",
+            gt = "GT_VCF_NUC",
+            exclude = c("MARKERS", "POP_ID", "INDIVIDUALS"),
+            cpu.rounds = 10) %>%
+          dplyr::select(-ALLELE_GROUP) %>%
+          dplyr::rename(HAPLOTYPES = ALLELES) %>%
+          dplyr::group_by(MARKERS, HAPLOTYPES, POP_ID) %>%
+          dplyr::tally(.) %>%
+          dplyr::ungroup(.) %>%
+          tidyr::complete(data = ., POP_ID, tidyr::nesting(MARKERS, HAPLOTYPES), fill = list(n = 0)) %>%
+          dplyr::rename(n.al.pop = n) %>%
+          dplyr::arrange(MARKERS, HAPLOTYPES) %>%
+          dplyr::group_by(MARKERS, HAPLOTYPES) %>%
+          dplyr::mutate(n.al.tot = sum(n.al.pop)) %>%
+          dplyr::left_join(ref.allele, by = "MARKERS") %>%
+          dplyr::mutate(REF = dplyr::if_else(HAPLOTYPES == REF, "REF", "ALT")) %>%
+          dplyr::group_by(MARKERS) %>%
+          dplyr::mutate(N = sum(n.al.pop)) %>%
+          dplyr::group_by(MARKERS, POP_ID) %>%
+          dplyr::mutate(N_POP = sum(n.al.pop)) %>%
+          dplyr::filter(REF == "ALT") %>%
+          dplyr::group_by(MARKERS, HAPLOTYPES) %>%
+          dplyr::mutate(MAF_GLOBAL = n.al.tot/N) %>%
+          dplyr::group_by(MARKERS, HAPLOTYPES, POP_ID) %>%
+          dplyr::mutate(MAF_LOCAL = n.al.pop/N_POP) %>%
+          dplyr::arrange(MARKERS, POP_ID, HAPLOTYPES) %>%
+          dplyr::ungroup(.)
+
+        maf.data <- dplyr::select(
+          maf.prep,
+          MARKERS, POP_ID, HAPLOTYPES, MAF_LOCAL, MAF_GLOBAL)
+      }
     }# end maf calculations
   } # end summarize data
 
@@ -436,34 +477,44 @@ filter_maf <- function(
     dplyr::distinct(POP_ID, INDIVIDUALS, .keep_all = TRUE) %>%
     dplyr::ungroup(.) %>%
     dplyr::group_by(POP_ID) %>%
-    dplyr::tally(.)
-
-  # Global
-  n.ind <- dplyr::n_distinct(input$INDIVIDUALS)
-  TOTAL <- tibble::data_frame(POP_ID = "TOTAL/GLOBAL", n = n.ind)
-
-  # bind pop and global + MAF local and global for different ALT allele
-  maf.helper.table <- suppressWarnings(
-    dplyr::bind_rows(maf.helper.table, TOTAL) %>%
-      dplyr::mutate(
-        ALT_1 = 1/(2*n), ALT_2 = 2/(2*n), ALT_3 = 3/(2*n), ALT_4 = 4/(2*n),
-        ALT_5 = 5/(2*n), ALT_6 = 6/(2*n), ALT_7 = 7/(2*n), ALT_8 = 8/(2*n),
-        ALT_9 = 9/(2*n), ALT_10 = 10/(2*n), ALT_11 = 11/(2*n), ALT_12 = 12/(2*n),
-        ALT_13 = 13/(2*n), ALT_14 = 14/(2*n), ALT_15 = 15/(2*n), ALT_16 = 16/(2*n),
-        ALT_17 = 17/(2*n), ALT_18 = 18/(2*n), ALT_19 = 19/(2*n), ALT_20 = 20/(2*n)
-      )
+    dplyr::tally(.) %>%
+    tibble::add_row(.data = ., POP_ID = "TOTAL/GLOBAL",
+                    n = dplyr::n_distinct(input$INDIVIDUALS)) %>%
+    dplyr::mutate(
+      POP_ID = as.character(POP_ID),
+      ALT_1 = 1/(2*n), ALT_2 = 2/(2*n), ALT_3 = 3/(2*n), ALT_4 = 4/(2*n),
+      ALT_5 = 5/(2*n), ALT_6 = 6/(2*n), ALT_7 = 7/(2*n), ALT_8 = 8/(2*n),
+      ALT_9 = 9/(2*n), ALT_10 = 10/(2*n), ALT_11 = 11/(2*n), ALT_12 = 12/(2*n),
+      ALT_13 = 13/(2*n), ALT_14 = 14/(2*n), ALT_15 = 15/(2*n), ALT_16 = 16/(2*n),
+      ALT_17 = 17/(2*n), ALT_18 = 18/(2*n), ALT_19 = 19/(2*n), ALT_20 = 20/(2*n)
   )
-  # remove unused objects
-  TOTAL <- n.ind <- NULL
 
-  readr::write_tsv(x = maf.helper.table, path = paste0(path.folder, "/maf.helper.table.tsv"))
+  new <- dplyr::select(maf.helper.table, -n) %>%
+    dplyr::filter(POP_ID != "TOTAL/GLOBAL") %>%
+    dplyr::summarise_if(.tbl = ., .predicate = is.numeric, .funs = min ) %>%
+    dplyr::mutate(POP_ID = "MIN_LOCAL", n = NA) %>%
+    dplyr::select(POP_ID, n, dplyr::everything())
+
+  sort.pop <- c(levels(input$POP_ID), "MIN_LOCAL", "TOTAL/GLOBAL")
+
+  maf.helper.table <- dplyr::bind_rows(maf.helper.table, new) %>%
+    dplyr::mutate(POP_ID = factor(POP_ID, levels = sort.pop, ordered = TRUE)) %>%
+    dplyr::arrange(POP_ID)
+
+
+  # remove unused objects
+  new <- NULL
+
+  readr::write_tsv(
+    x = maf.helper.table,
+    path = stringi::stri_join(path.folder, "/maf.helper.table.tsv"))
 
   message("\nA table of local and global MAF (maf.helper.table.tsv) was written in the directory")
   if (interactive.filter) {
-    message("\nFirst and second variable columns: POP_ID and sample size.
-The last row is the TOTAL/GLOBAL observations.
-The remaining columns are the variable corresponding to the number of alternative (ALT) allele (ranging from 1 to 20).
-The observations in the ALT allele variable columns are the local (for the pop)
+    message("\nFirst and second variable columns represents POP_ID and sample size (n).
+\nThe last 2 rows are the local MAF (suggested based on the lowest pop value) and\nthe TOTAL/GLOBAL observations.
+\nColumns starting with ALT are the variable corresponding\nto the number of alternative (ALT) allele (ranging from 1 to 20).
+\nThe observations in the ALT allele variable columns are the local (for the pop)
 and global (last row) MAF of your dataset.\n
 e.g. ALT_3 can potentially represent 3 heterozygote individuals with the ALT allele or
 1 homozygote individuals for the ALT allele and 1 heterozygote individual. And so on...\n")
@@ -475,7 +526,7 @@ e.g. ALT_3 can potentially represent 3 heterozygote individuals with the ALT all
   if (interactive.filter) {
     message("\nStep 3. Filtering markers based on the different MAF arguments\n")
     message("The maf.approach:\n
-maf.approach = \"haplotype\" : looks at the minimum MAF found on the read/haplotype.\n
+maf.approach = \"haplotype\" : looks at the frequency of all ALTernative allele on the locus.\n
 maf.approach = \"SNP\" : SNPs on the same haplotype/read are considered independent.")
     message("Choose the maf.approach (SNP/haplotype):")
     maf.approach <- as.character(readLines(n = 1))
@@ -486,6 +537,8 @@ maf.approach = \"SNP\" : SNPs on the same haplotype/read are considered independ
   if (interactive.filter) {
     message("Choose the maf local threshold (usually a value between 0 and 0.3):")
     maf.local.threshold <- as.character(readLines(n = 1))
+  }
+  if (interactive.filter) {
     message("Choose the maf global threshold (usually a value between 0 and 0.3):")
     maf.global.threshold <- as.character(readLines(n = 1))
   }
@@ -493,8 +546,8 @@ maf.approach = \"SNP\" : SNPs on the same haplotype/read are considered independ
   # maf.operator
   if (interactive.filter) {
     message("The maf.operator:
-Option 1: AND = to consider both the local \"AND\" the global MAF threshold.
-Option 2: OR = to consider EITHER the local \"OR\" the global MAF threshold.")
+Option 1: AND = to consider both the local \"AND\" the global MAF threshold (more severe).
+Option 2: OR = to consider EITHER the local \"OR\" the global MAF threshold (more tolerant).")
     message("Choose the maf.operator (AND/OR):")
     maf.operator <- as.character(readLines(n = 1))
     if (!maf.operator %in% c("OR", "AND")) stop("maf.operator: either OR/AND")
@@ -503,7 +556,7 @@ Option 2: OR = to consider EITHER the local \"OR\" the global MAF threshold.")
   # maf.pop.num.threshold
   if (interactive.filter) {
     message("Last threshold... maf.pop.num.threshold:\n
-How many populations are required to pass all the thresholds and keep the locus?\n
+How many populations are required to pass all the thresholds and keep the locus/SNP?\n
 Example: if you have 10 populations and choose maf.pop.num.threshold = 3,
 3 populations out of 10 are required to pass previous thresholds")
     message("Choose the value for the maf.pop.num.threshold:")
@@ -517,20 +570,33 @@ Example: if you have 10 populations and choose maf.pop.num.threshold = 3,
 
 
   # Update the maf.data with pass or not filter based on threshold -------------
-  maf.data.thresholds <- maf.data %>%
-    dplyr::mutate(
-      OR = dplyr::if_else((MAF_LOCAL >= maf.local.threshold | MAF_GLOBAL >= maf.global.threshold), "pass", "pruned"),
-      AND = dplyr::if_else((MAF_LOCAL >= maf.local.threshold & MAF_GLOBAL >= maf.global.threshold), "pass", "pruned")
-    ) %>%
-    dplyr::group_by(MARKERS) %>%
-    dplyr::mutate(
-      OR_POP_THRESHOLD = dplyr::if_else(length(POP_ID[OR == "pass"]) >= maf.pop.num.threshold, "pass", "pruned"),
-      AND_POP_THRESHOLD  = dplyr::if_else(length(POP_ID[AND == "pass"]) >= maf.pop.num.threshold, "pass", "pruned")
-    )
+  if (tibble::has_name(maf.data, "HAPLOTYPES")) {
+    maf.data.thresholds <- maf.data %>%
+      dplyr::mutate(
+        OR = dplyr::if_else((MAF_LOCAL >= maf.local.threshold | MAF_GLOBAL >= maf.global.threshold), "pass", "pruned"),
+        AND = dplyr::if_else((MAF_LOCAL >= maf.local.threshold & MAF_GLOBAL >= maf.global.threshold), "pass", "pruned")
+      ) %>%
+      dplyr::group_by(MARKERS, HAPLOTYPES) %>%
+      dplyr::mutate(
+        OR_POP_THRESHOLD = dplyr::if_else(length(POP_ID[OR == "pass"]) >= maf.pop.num.threshold, "pass", "pruned"),
+        AND_POP_THRESHOLD  = dplyr::if_else(length(POP_ID[AND == "pass"]) >= maf.pop.num.threshold, "pass", "pruned")
+      )
+  } else {
+    maf.data.thresholds <- maf.data %>%
+      dplyr::mutate(
+        OR = dplyr::if_else((MAF_LOCAL >= maf.local.threshold | MAF_GLOBAL >= maf.global.threshold), "pass", "pruned"),
+        AND = dplyr::if_else((MAF_LOCAL >= maf.local.threshold & MAF_GLOBAL >= maf.global.threshold), "pass", "pruned")
+      ) %>%
+      dplyr::group_by(MARKERS) %>%
+      dplyr::mutate(
+        OR_POP_THRESHOLD = dplyr::if_else(length(POP_ID[OR == "pass"]) >= maf.pop.num.threshold, "pass", "pruned"),
+        AND_POP_THRESHOLD  = dplyr::if_else(length(POP_ID[AND == "pass"]) >= maf.pop.num.threshold, "pass", "pruned")
+      )
+  }
 
   readr::write_tsv(
     x = maf.data.thresholds,
-    path = paste0(path.folder, "/maf.data.tsv"),
+    path = stringi::stri_join(path.folder, "/maf.data.tsv"),
     col_names = TRUE,
     append = FALSE
   )
@@ -538,34 +604,94 @@ Example: if you have 10 populations and choose maf.pop.num.threshold = 3,
 
   # Filtering ------------------------------------------------------------------
   if (maf.approach == "haplotype") {
-    filter <- tidyr::separate(
-      data = maf.data,
-      col = MARKERS,
-      into = c("CHROM", "LOCUS", "POS"),
-      sep = "__",
-      remove = FALSE,
-      extra = "warn"
-    )
+    need.split <- dplyr::distinct(maf.data, MARKERS) %>%
+      dplyr::sample_frac(tbl = ., size = 0.3) %>%
+      stringi::stri_detect_fixed(str = ., pattern = "__") %>%
+      unique
 
+    if (need.split) {
+      maf.data <- tidyr::separate(
+        data = maf.data,
+        col = MARKERS,
+        into = c("CHROM", "LOCUS", "POS"),
+        sep = "__",
+        remove = FALSE,
+        extra = "warn"
+      )
+
+      maf.data.thresholds <- tidyr::separate(
+        data = maf.data.thresholds,
+        col = MARKERS,
+        into = c("CHROM", "LOCUS", "POS"),
+        sep = "__",
+        remove = FALSE,
+        extra = "warn"
+      )
+    } else {
+      if (tibble::has_name(maf.data, "MARKERS") && !tibble::has_name(maf.data, "LOCUS")) {
+        maf.data <- dplyr::rename(maf.data, LOCUS = MARKERS)
+        maf.data.thresholds <- dplyr::rename(maf.data.thresholds, LOCUS = MARKERS)
+      }
+    }
+    need.split <- NULL
     if (maf.operator == "OR") {
-      filter <- filter %>%
-        dplyr::group_by(LOCUS, POP_ID) %>%
-        dplyr::summarise(
-          MAF_GLOBAL = mean(MAF_GLOBAL, na.rm = TRUE),
-          MAF_LOCAL = min(MAF_LOCAL, na.rm = TRUE)
-        ) %>%
-        dplyr::filter(MAF_LOCAL >= maf.local.threshold | MAF_GLOBAL >= maf.global.threshold) %>%
-        dplyr::group_by(LOCUS) %>%
-        dplyr::tally(.) %>%
-        dplyr::filter(n >= maf.pop.num.threshold) %>%
-        dplyr::select(LOCUS) %>%
-        dplyr::left_join(input, by = "LOCUS") %>%
-        dplyr::arrange(LOCUS, POP_ID)
-    } else {# AND operator between local and global maf
-      filter <- filter %>%
-        dplyr::group_by(LOCUS, POP_ID) %>%
-        dplyr::summarise(
-          MAF_GLOBAL = mean(MAF_GLOBAL, na.rm = TRUE),
+      if (tibble::has_name(maf.data, "HAPLOTYPES")) {
+        ref.allele <- dplyr::rename(ref.allele, LOCUS = MARKERS, HAPLOTYPES = REF)
+
+        test <- maf.data.thresholds %>%
+          dplyr::select(LOCUS, POP_ID, HAPLOTYPES, OR_POP_THRESHOLD) %>%
+          dplyr::filter(OR_POP_THRESHOLD == "pass")
+
+        test <- test %>%
+          dplyr::distinct(LOCUS, HAPLOTYPES) %>%
+          dplyr::bind_rows(ref.allele)
+
+        polymorphism.haplo <- test %>%
+          dplyr::group_by(LOCUS) %>%
+          dplyr::summarise(HAPLOTYPES = stringi::stri_join(unique(HAPLOTYPES), collapse = ",")) %>%
+          dplyr::mutate(POLYMORPHISM = stringi::stri_count_fixed(HAPLOTYPES, ","))
+
+        blacklist.monomorphic.markers <- polymorphism.haplo %>%
+          dplyr::filter(POLYMORPHISM == 0) %>%
+          dplyr::distinct(LOCUS)
+
+
+        haplo.reconstruction <- test %>% dplyr::arrange(LOCUS, HAPLOTYPES) %>%
+          dplyr::anti_join(blacklist.monomorphic.markers, by = "LOCUS") %>%
+          dplyr::mutate(SNP_N = stringi::stri_length(str = HAPLOTYPES))
+
+
+        no.reconstruction <- dplyr::filter(haplo.reconstruction, SNP_N == 1)
+        # dplyr::n_distinct(no.reconstruction$LOCUS)
+
+        haplo.reconstruction2 <- dplyr::filter(haplo.reconstruction, SNP_N > 1)
+        # dplyr::n_distinct(haplo.reconstruction2$LOCUS)
+
+
+
+
+
+
+      } else{
+        maf.data <- maf.data %>%
+          dplyr::group_by(LOCUS, POP_ID) %>%
+          dplyr::summarise(
+            MAF_GLOBAL = mean(MAF_GLOBAL, na.rm = TRUE),
+            MAF_LOCAL = min(MAF_LOCAL, na.rm = TRUE)
+          ) %>%
+          dplyr::filter(MAF_LOCAL >= maf.local.threshold | MAF_GLOBAL >= maf.global.threshold) %>%
+          dplyr::group_by(LOCUS) %>%
+          dplyr::tally(.) %>%
+          dplyr::filter(n >= maf.pop.num.threshold) %>%
+          dplyr::select(LOCUS) %>%
+          dplyr::left_join(input, by = "LOCUS") %>%
+          dplyr::arrange(LOCUS, POP_ID)
+      }
+      } else {# AND operator between local and global maf
+        filter <- filter %>%
+          dplyr::group_by(LOCUS, POP_ID) %>%
+          dplyr::summarise(
+            MAF_GLOBAL = mean(MAF_GLOBAL, na.rm = TRUE),
           MAF_LOCAL = min(MAF_LOCAL, na.rm = TRUE)
         ) %>%
         dplyr::filter(MAF_LOCAL >= maf.local.threshold & MAF_GLOBAL >= maf.global.threshold) %>%
@@ -715,3 +841,5 @@ Example: if you have 10 populations and choose maf.pop.num.threshold = 3,
   res$maf.global.summary <- maf.global.summary
   return(res)
 }
+
+

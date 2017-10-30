@@ -73,7 +73,7 @@
 #' \item \code{imputation.method = "rf"} On-the-fly-imputations using
 #' Random Forests algorithm.
 #'
-#' \item \code{imputation.method = "rf_pred"} Random Forests algorith is used
+#' \item \code{imputation.method = "rf_pred"} Random Forests algorithm is used
 #' as a prediction problem.
 #'
 #' \item \code{imputation.method = "boost"} extreme gradient boosting trees.
@@ -353,9 +353,9 @@ radiator_imputations_module <- function(
 
   if (verbose) {
     cat("\n\n")
-    cat("###############################################################################\n")
-    cat("########################### grur::grur_imputations ############################\n")
-    cat("###############################################################################\n")
+    cat("#######################################################################\n")
+    cat("####################### grur::grur_imputations ########################\n")
+    cat("#######################################################################\n")
   }
   if (is.null(imputation.method)) {
     message("Imputation method: NULL")
@@ -714,12 +714,12 @@ radiator_imputations_module <- function(
       input <- NULL
       # detect remaining NA
       # e.g. if one strata is missing all GT... when not using common markers
-      if (anyNA(data.one.snp)) {
-        warning("Missing data is still present in the dataset",
-                "\n    2 options:",
-                "\n    run the function again with hierarchical.levels = 'global'",
-                "\n    use common.markers = TRUE when using hierarchical.levels = 'strata'")
-      }
+      # if (anyNA(data.one.snp)) {
+      #   warning("Missing data is still present in the dataset",
+      #           "\n    2 options:",
+      #           "\n    run the function again with hierarchical.levels = 'global'",
+      #           "\n    use common.markers = TRUE when using hierarchical.levels = 'strata'")
+      # }
     }# End imputation max populations
 
     # global
@@ -891,7 +891,7 @@ radiator_imputations_module <- function(
 
     # On-the-fly-imputations using Random Forests ------------------------------
     if (imputation.method == "rf") {
-      if (verbose) message("On-the-fly-imputations using Random Forests algorith")
+      if (verbose) message("On-the-fly-imputations using Random Forests algorithm")
       # Parallel computations options
       options(rf.cores = parallel.core, mc.cores = parallel.core)
 
@@ -924,7 +924,7 @@ radiator_imputations_module <- function(
 
       # Random Forest by pop
       if (hierarchical.levels == "strata") {
-        message("    Imputations computed by populations, take a break...")
+        message("    Imputations computed by strata, take a break...")
 
         input.imp <- dplyr::select(input, MARKERS, POP_ID, INDIVIDUALS, GT) %>%
           dplyr::group_by(POP_ID, INDIVIDUALS) %>%
@@ -978,7 +978,7 @@ radiator_imputations_module <- function(
 
     # Random Forest imputation as a prediction problem -------------------------
     if (imputation.method == "rf_pred") {
-      if (verbose) message("Using Random Forests algorith as a prediction problem, take a break...")
+      if (verbose) message("Using Random Forests algorithm as a prediction problem, take a break...")
 
       if (hierarchical.levels == "strata") {
         input.imp <- purrr::map(.x = input,
@@ -1008,7 +1008,7 @@ radiator_imputations_module <- function(
 
     # Extreme Gradient Boosting Tree Imputations -------------------------------
     if (imputation.method == "boost") {
-      if (verbose) message("Using extreme gradient tree boosting algorith, take a break...")
+      if (verbose) message("Using extreme gradient tree boosting algorithm, take a break...")
 
       if (hierarchical.levels == "strata") {
         input <- dplyr::ungroup(input) %>%
@@ -1150,7 +1150,7 @@ radiator_imputations_module <- function(
 
     # Multiple Correspondence Analysis Imputations -----------------------------
     if (imputation.method == "mca") {
-      if (verbose) message("Using Multiple Correspondence Analysis algorith...")
+      if (verbose) message("Using Multiple Correspondence Analysis algorithm...")
 
       impute_mca <- function(x, ncp = 2) {
         # res <- missMDA::imputeMCA(data.frame(x), ncp = ncp)$completeObs
@@ -1170,7 +1170,7 @@ radiator_imputations_module <- function(
 
       # Random Forest by pop
       if (hierarchical.levels == "strata") {
-        message("    Imputations computed by populations, take a break...")
+        message("    Imputations computed by strata, take a break...")
 
         input.split <- split(x = input, f = input$POP_ID)
         input.imp <- list()
@@ -1299,7 +1299,7 @@ radiator_imputations_module <- function(
     # output the proportion of missing genotypes after imputations
     timing <- proc.time() - timing
     message("\nComputation time: ", round(timing[[3]]), " sec")
-    cat("####################### grur::grur_imputations completed ######################\n")
+    cat("################## grur::grur_imputations completed ###################\n")
   }
   return(input.imp)
   } # End imputations

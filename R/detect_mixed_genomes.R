@@ -173,19 +173,10 @@ detect_mixed_genomes <- function(
 
   # folder ---------------------------------------------------------------------
   # Get date and time to have unique filenaming
-  file.date <- stringi::stri_replace_all_fixed(
-    Sys.time(),
-    pattern = " EDT", replacement = "") %>%
-    stringi::stri_replace_all_fixed(
-      str = .,
-      pattern = c("-", " ", ":"), replacement = c("", "@", ""),
-      vectorize_all = FALSE) %>%
-    stringi::stri_sub(str = ., from = 1, to = 13)
-
+  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
   folder.extension <- stringi::stri_join("detect_mixed_genomes_", file.date, sep = "")
   path.folder <- stringi::stri_join(getwd(),"/", folder.extension, sep = "")
   dir.create(file.path(path.folder))
-
   message(stringi::stri_join("Folder created: \n", folder.extension))
   file.date <- NULL #unused object
 
