@@ -57,31 +57,50 @@ write_genind <- function(data) {
     input <- dplyr::rename(.data = input, MARKERS = LOCUS)
   }
 
-  strata.genind <- dplyr::distinct(.data = input, INDIVIDUALS, POP_ID)
+  input <- dplyr::arrange(input, POP_ID, INDIVIDUALS)
+
+  if (is.factor(input$POP_ID)) {
+    pop.levels <- levels(input$POP_ID)
+  } else {
+    pop.levels <- unique(input$POP_ID)
+  }
+  # Make sure that POP_ID and INDIVIDUALS are character
+  input <- dplyr::mutate_at(.tbl = input, .vars = c("POP_ID", "INDIVIDUALS"), .funs = as.character)
+
+  # Isolate the strata
+  # we convert pop_id to factor because adegenet does it automatically...
+  pop.num <- unique(stringi::stri_detect_regex(str = pop.levels, pattern = "^[0-9]+$"))
+  if (length(pop.num) == 1 && pop.num) pop.levels <- as.character(sort(as.numeric(pop.levels)))
+  strata.genind <- dplyr::distinct(.data = input, INDIVIDUALS, POP_ID) %>%
+    dplyr::mutate(POP_ID = factor(POP_ID, levels = pop.levels, ordered = FALSE),
+                  INDIVIDUALS = factor(INDIVIDUALS))
+
 
   # When VCF data available
   if (tibble::has_name(input, "GT_VCF")) {
-    input <- dplyr::select(.data = input, MARKERS, POP_ID, INDIVIDUALS, GT_VCF) %>%
-      dplyr::mutate(
-        A1_A2 = stringi::stri_replace_all_fixed(
-          str = GT_VCF,
-          pattern = c("0/0", "1/1", "0/1", "1/0", "./."),
-          replacement = c("2_0", "0_2", "1_1", "1_1", NA),
-          vectorize_all = FALSE
-        )
-      ) %>%
-      dplyr::mutate(POP_ID = factor(as.character(POP_ID))) %>%# xvalDapc doesn't accept pop as ordered factor
-      dplyr::mutate(
-        A1 = stringi::stri_sub(str = A1_A2, from = 1, to = 1),
-        A2 = stringi::stri_sub(str = A1_A2, from = 3, to = 3)
-      ) %>%
-      dplyr::select(-GT_VCF, -A1_A2) %>%
-      tidyr::gather(data = ., key = ALLELES, value = n, -c(INDIVIDUALS, POP_ID, MARKERS)) %>%
-      dplyr::mutate(MARKERS_ALLELES = stringi::stri_join(MARKERS, ALLELES, sep = ".")) %>%
-      dplyr::select(-MARKERS, -ALLELES) %>%
-      dplyr::group_by(POP_ID, INDIVIDUALS) %>%
-      tidyr::spread(data =., key = MARKERS_ALLELES, value = n) %>%
-      dplyr::ungroup(.)
+    input <- suppressWarnings(
+      dplyr::select(.data = input, MARKERS, POP_ID, INDIVIDUALS, GT_VCF) %>%
+        dplyr::mutate(
+          A1_A2 = stringi::stri_replace_all_fixed(
+            str = GT_VCF,
+            pattern = c("0/0", "1/1", "0/1", "1/0", "./."),
+            replacement = c("2_0", "0_2", "1_1", "1_1", NA),
+            vectorize_all = FALSE
+          )
+        ) %>%
+        dplyr::mutate(POP_ID = factor(as.character(POP_ID))) %>%# xvalDapc doesn't accept pop as ordered factor
+        dplyr::mutate(
+          A1 = stringi::stri_sub(str = A1_A2, from = 1, to = 1),
+          A2 = stringi::stri_sub(str = A1_A2, from = 3, to = 3)
+        ) %>%
+        dplyr::select(-GT_VCF, -A1_A2) %>%
+        tidyr::gather(data = ., key = ALLELES, value = n, -c(INDIVIDUALS, POP_ID, MARKERS)) %>%
+        dplyr::mutate(MARKERS_ALLELES = stringi::stri_join(MARKERS, ALLELES, sep = ".")) %>%
+        dplyr::select(-MARKERS, -ALLELES) %>%
+        dplyr::group_by(POP_ID, INDIVIDUALS) %>%
+        tidyr::spread(data =., key = MARKERS_ALLELES, value = n) %>%
+        dplyr::ungroup(.) %>%
+        dplyr::arrange(POP_ID, INDIVIDUALS))
   } else {
 
     missing.geno <- dplyr::ungroup(input) %>%
@@ -90,39 +109,42 @@ write_genind <- function(data) {
       dplyr::select(MARKERS, INDIVIDUALS) %>%
       dplyr::mutate(MISSING = rep("blacklist", n()))
 
-    input <- dplyr::ungroup(input) %>%
-      dplyr::select(MARKERS, INDIVIDUALS, GT) %>%
-      dplyr::filter(GT != "000000") %>%
-      dplyr::mutate(
-        A1 = stringi::stri_sub(str = GT, from = 1, to = 3),
-        A2 = stringi::stri_sub(str = GT, from = 4, to = 6)
-      ) %>%
-      dplyr::select(-GT) %>%
-      tidyr::gather(
-        data = .,
-        key = ALLELES,
-        value = GT,
-        -c(MARKERS, INDIVIDUALS)
-      ) %>%
-      dplyr::arrange(MARKERS, INDIVIDUALS, GT) %>%
-      dplyr::count(x = ., INDIVIDUALS, MARKERS, GT) %>%
-      dplyr::ungroup(.) %>%
-      tidyr::complete(data = ., INDIVIDUALS, tidyr::nesting(MARKERS, GT), fill = list(n = 0)) %>%
-      dplyr::anti_join(missing.geno, by = c("MARKERS", "INDIVIDUALS")) %>%
-      dplyr::mutate(MARKERS_ALLELES = stringi::stri_join(MARKERS, GT, sep = ".")) %>%
-      dplyr::select(-MARKERS, -GT) %>%
-      dplyr::right_join(strata.genind, by = "INDIVIDUALS") %>%#include strata
-      dplyr::mutate(POP_ID = factor(as.character(POP_ID))) %>%# xvalDapc doesn't accept pop as ordered factor
-      dplyr::arrange(MARKERS_ALLELES, INDIVIDUALS) %>%
-      dplyr::group_by(POP_ID, INDIVIDUALS) %>%
-      tidyr::spread(data =., key = MARKERS_ALLELES, value = n) %>%
-      dplyr::ungroup(.)
-   }
+    input <- suppressWarnings(
+      dplyr::ungroup(input) %>%
+        dplyr::select(MARKERS, INDIVIDUALS, GT) %>%
+        dplyr::filter(GT != "000000") %>%
+        dplyr::mutate(
+          A1 = stringi::stri_sub(str = GT, from = 1, to = 3),
+          A2 = stringi::stri_sub(str = GT, from = 4, to = 6)
+        ) %>%
+        dplyr::select(-GT) %>%
+        tidyr::gather(
+          data = .,
+          key = ALLELES,
+          value = GT,
+          -c(MARKERS, INDIVIDUALS)
+        ) %>%
+        dplyr::arrange(MARKERS, INDIVIDUALS, GT) %>%
+        dplyr::count(x = ., INDIVIDUALS, MARKERS, GT) %>%
+        dplyr::ungroup(.) %>%
+        tidyr::complete(data = ., INDIVIDUALS, tidyr::nesting(MARKERS, GT), fill = list(n = 0)) %>%
+        dplyr::anti_join(missing.geno, by = c("MARKERS", "INDIVIDUALS")) %>%
+        dplyr::mutate(MARKERS_ALLELES = stringi::stri_join(MARKERS, GT, sep = ".")) %>%
+        dplyr::select(-MARKERS, -GT) %>%
+        dplyr::right_join(strata.genind, by = "INDIVIDUALS") %>%#include strata
+        dplyr::mutate(POP_ID = factor(as.character(POP_ID))) %>%# xvalDapc doesn't accept pop as ordered factor
+        dplyr::arrange(MARKERS_ALLELES, INDIVIDUALS) %>%
+        dplyr::group_by(POP_ID, INDIVIDUALS) %>%
+        tidyr::spread(data =., key = MARKERS_ALLELES, value = n) %>%
+        dplyr::ungroup(.) %>%
+        dplyr::arrange(POP_ID, INDIVIDUALS))
+  }
 
   # genind arguments common to all data.type
   ind <- input$INDIVIDUALS
   pop <- input$POP_ID
-  input <-  dplyr::ungroup(input) %>% dplyr::select(-c(INDIVIDUALS, POP_ID))
+  input <-  dplyr::ungroup(input) %>%
+    dplyr::select(-c(INDIVIDUALS, POP_ID))
   suppressWarnings(rownames(input) <- ind)
 
   # genind constructor

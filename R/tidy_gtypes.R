@@ -35,7 +35,7 @@ tidy_gtypes <- function(data) {
   input <- suppressWarnings(
     tibble::as_data_frame(data@data) %>%
       dplyr::rename(INDIVIDUALS = ids, POP_ID = strata) %>%
-      dplyr::mutate(ALLELES = rep(c("A1", "A2"), nrow(.)/2)) %>%
+      dplyr::mutate(ALLELES = rep(c("A1", "A2"), n() / 2)) %>%
       tidyr::gather(data = ., key = MARKERS, value = GT, -c(POP_ID, INDIVIDUALS, ALLELES)))
 
   # detect stratg genotype coding ----------------------------------------------
@@ -62,7 +62,9 @@ tidy_gtypes <- function(data) {
 
   # prep tidy ------------------------------------------------------------------
   input <- input %>%
-    dplyr::mutate(GT = replace(GT, which(is.na(GT)), "000")) %>%
+    dplyr::mutate(
+      GT = replace(GT, which(is.na(GT)), "000"),
+      POP_ID = as.character(POP_ID)) %>%
     dplyr::group_by(POP_ID, INDIVIDUALS, MARKERS) %>%
     tidyr::spread(data = ., key = ALLELES, value = GT) %>%
     dplyr::ungroup(.) %>%
