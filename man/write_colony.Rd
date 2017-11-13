@@ -228,7 +228,7 @@ the most frequently observed genotypes (ties are broken at random).
 \item \code{imputation.method = "rf"} On-the-fly-imputations using
 Random Forests algorithm.
 
-\item \code{imputation.method = "rf_pred"} Random Forests algorith is used
+\item \code{imputation.method = "rf_pred"} Random Forests algorithm is used
 as a prediction problem.
 
 \item \code{imputation.method = "boost"} extreme gradient boosting trees.

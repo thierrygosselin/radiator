@@ -4,8 +4,8 @@
 \alias{tidy_vcf}
 \title{Tidy a vcf file (bi/multi-allelic).}
 \usage{
-tidy_vcf(data, strata, vcf.metadata, parallel.core = parallel::detectCores() -
-  1, verbose = FALSE, ...)
+tidy_vcf(data, strata, vcf.metadata = FALSE,
+  parallel.core = parallel::detectCores() - 1, verbose = FALSE, ...)
 }
 \arguments{
 \item{data}{12 options: VCF (SNPs or Haplotypes,

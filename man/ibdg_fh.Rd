@@ -185,8 +185,8 @@ overall level.
 }
 
 The FH measure is also computed in
-[stackr](https://github.com/thierrygosselin/stackr) \emph{summary_haplotypes}
-function and [grur](https://github.com/thierrygosselin/grur)
+\href{https://github.com/thierrygosselin/stackr}{stackr} \emph{summary_haplotypes}
+function and \href{https://github.com/thierrygosselin/grur}{grur}
 \emph{missing_visualization} functions.
 See \strong{note} below for the equations.
 }
@@ -199,7 +199,7 @@ See \strong{note} below for the equations.
 
 \strong{Population expected Heterozygosity (under Hardy-Weinberg) and
 tailored by averaging for each individual using his genotyped markers:}
-#\deqn{\overline{Het}_{exp_j} = \frac{\sum_jHet_{exp_j}}{\sum_j{snp_j}}}
+\deqn{\overline{Het}_{exp_j} = \frac{\sum_jHet_{exp_j}}{\sum_j{snp_j}}}
 }
 \examples{
 \dontrun{

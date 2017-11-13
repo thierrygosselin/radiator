@@ -162,20 +162,11 @@ detect_duplicate_genomes <- function(
 
   # folder ---------------------------------------------------------------------
   # Get date and time to have unique filenaming
-  file.date <- stringi::stri_replace_all_fixed(
-    Sys.time(),
-    pattern = " EDT", replacement = "") %>%
-    stringi::stri_replace_all_fixed(
-      str = .,
-      pattern = c("-", " ", ":"), replacement = c("", "@", ""),
-      vectorize_all = FALSE) %>%
-    stringi::stri_sub(str = ., from = 1, to = 13)
-
+  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
   folder.extension <- stringi::stri_join("detect_duplicate_genomes_", file.date, sep = "")
   path.folder <- stringi::stri_join(getwd(),"/", folder.extension, sep = "")
   dir.create(file.path(path.folder))
-
-  message(stringi::stri_join("Folder created: \n", folder.extension))
+  message("Folder created: \n", folder.extension)
   file.date <- NULL #unused object
 
   # Import data ---------------------------------------------------------------
@@ -243,20 +234,6 @@ detect_duplicate_genomes <- function(
       ) %>%
       dplyr::bind_rows(.)
 
-    # input.prep <- dplyr::ungroup(input) %>%
-    #    dplyr::select(MARKERS, INDIVIDUALS, GT) %>%
-    #    dplyr::filter(GT != "000000") %>%
-    #    dplyr::mutate(
-    #      A1 = stringi::stri_sub(str = GT, from = 1, to = 3),
-    #      A2 = stringi::stri_sub(str = GT, from = 4, to = 6)
-    #    ) %>%
-    #    dplyr::select(-GT) %>%
-    #    tidyr::gather(data = ., key = ALLELES, value = GT, -c(MARKERS, INDIVIDUALS)) %>%
-    #    dplyr::arrange(MARKERS, INDIVIDUALS, GT) %>%
-    #    dplyr::count(x = ., INDIVIDUALS, MARKERS, GT) %>%
-    #    dplyr::ungroup(.) %>%
-    #    tidyr::complete(data = ., INDIVIDUALS, tidyr::nesting(MARKERS, GT), fill = list(n = 0))
-
     if (nrow(missing.geno) > 0) {
       input.prep <- dplyr::anti_join(input.prep, missing.geno, by = c("MARKERS", "INDIVIDUALS"))
     }
@@ -285,7 +262,7 @@ detect_duplicate_genomes <- function(
 
     readr::write_tsv(
       x = res$distance,
-      path = stringi::stri_join(path.folder, "/individuals.pairwise.dist.tsv"),
+      path = file.path(path.folder, "individuals.pairwise.dist.tsv"),
       col_names = TRUE
     )
 
@@ -332,7 +309,7 @@ detect_duplicate_genomes <- function(
         axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
       )
     ggplot2::ggsave(
-      filename = stringi::stri_join(path.folder, "/violin.plot.distance.pdf"),
+      filename = file.path(path.folder, "violin.plot.distance.pdf"),
       plot = res$violin.plot.distance,
       width = 20, height = 15, dpi = 600, units = "cm", useDingbats = FALSE)
 
@@ -359,7 +336,7 @@ detect_duplicate_genomes <- function(
         axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
       )
     ggplot2::ggsave(
-      filename = stringi::stri_join(path.folder, "/manhattan.plot.distance.pdf"),
+      filename = file.path(path.folder, "manhattan.plot.distance.pdf"),
       plot = res$manhattan.plot.distance,
       width = 20, height = 15, dpi = 600, units = "cm", useDingbats = FALSE)
   } # end distance method
@@ -438,7 +415,7 @@ detect_duplicate_genomes <- function(
 
     readr::write_tsv(
       x = res$pairwise.genome.similarity,
-      path = stringi::stri_join(path.folder, "/individuals.pairwise.genome.similarity.tsv"),
+      path = file.path(path.folder, "individuals.pairwise.genome.similarity.tsv"),
       col_names = TRUE
     )
 
@@ -458,7 +435,7 @@ detect_duplicate_genomes <- function(
       )
     readr::write_tsv(
       x = res$genome.stats,
-      path = stringi::stri_join(path.folder, "/individuals.pairwise.genome.stats.tsv"),
+      path = file.path(path.folder, "individuals.pairwise.genome.stats.tsv"),
       col_names = TRUE
     )
 
@@ -486,7 +463,7 @@ detect_duplicate_genomes <- function(
         axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
       )
     ggplot2::ggsave(
-      filename = stringi::stri_join(path.folder, "/violin.plot.genome.pdf"),
+      filename = file.path(path.folder, "violin.plot.genome.pdf"),
       plot = res$violin.plot.genome,
       width = 20, height = 15, dpi = 600, units = "cm", useDingbats = FALSE)
 
@@ -514,7 +491,7 @@ detect_duplicate_genomes <- function(
       )
 
     ggplot2::ggsave(
-      filename = stringi::stri_join(path.folder, "/manhattan.plot.genome.pdf"),
+      filename = file.path(path.folder, "manhattan.plot.genome.pdf"),
       plot = res$manhattan.plot.genome,
       width = 20, height = 15, dpi = 600, units = "cm", useDingbats = FALSE)
   } # end genome method

@@ -2,9 +2,9 @@
 % Please edit documentation in R/tidy_wide.R
 \name{tidy_wide}
 \alias{tidy_wide}
-\title{Read/Import and tidy genomic data frames long or wide format}
+\title{Read/Import a tidy genomic data frames.}
 \usage{
-tidy_wide(data, import.metadata = FALSE, ...)
+tidy_wide(data, import.metadata = FALSE)
 }
 \arguments{
 \item{data}{A file in the working directory or object in the global environment
@@ -12,20 +12,18 @@ in wide or long (tidy) formats. See details for more info.
 
 \emph{How to get a tidy data frame ?}
 \href{https://github.com/thierrygosselin/radiator}{radiator}
-\code{\link{tidy_genomic_data}} can transform 6 genomic data formats
-in a tidy data frame.}
+\code{\link{tidy_genomic_data}}.}
 
 \item{import.metadata}{(optional, logical) With \code{import.metadata = TRUE}
 the metadata (anything else than the genotype) will be imported for the long
 format exclusively. Default: \code{import.metadata = FALSE}, no metadata.}
-
-\item{...}{other parameters passed to the function.}
 }
 \value{
 A tidy data frame in the global environment.
 }
 \description{
-Read/Import and tidy genomic data frames long or wide format.
+Read/Import and tidy genomic data frames. If data is in
+wide format, the functions will gather the data.
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and \href{https://github.com/thierrygosselin/assigner}{assigner}
 and might be of interest for users.
@@ -45,14 +43,20 @@ the remaining columns are the markers in separate columns storing genotypes.
 
 \strong{Long/Tidy format:}
 The long format is considered to be a tidy data frame and can store metadata info.
-(e.g. from a VCF see \pkg{radiator} \code{\link{tidy_genomic_data}}). A minimum of 4 columns
+(e.g. from a VCF see \pkg{radiator} \code{\link{tidy_genomic_data}}).
+A minimum of 4 columns
 are required in the long format: \code{INDIVIDUALS}, \code{POP_ID},
-\code{MARKERS or LOCUS} and \code{GENOTYPE or GT}. The rest are considered metata info.
+\code{MARKERS or LOCUS} and \code{GT} for the genotypes.
+The remaining columns are considered metadata info.
 
-\strong{2 genotypes formats are available:}
-6 characters no separator: e.g. \code{001002 or 111333} (for heterozygote individual).
-6 characters WITH separator: e.g. \code{001/002 or 111/333} (for heterozygote individual).
-The separator can be any of these: \code{"/", ":", "_", "-", "."}.
+\strong{Genotypes with separators:}
+ALL separators will be removed.
+Genotypes should be coded with 3 integers for each alleles.
+6 integers in total for the genotypes.
+e.g. \code{001002 or 111333} (for heterozygote individual).
+6 integers WITH separator: e.g. \code{001/002 or 111/333} (for heterozygote individual).
+The separator can be any of these: \code{"/", ":", "_", "-", "."}, and will
+be removed.
 
 \emph{How to get a tidy data frame ?}
 \pkg{radiator} \code{\link{tidy_genomic_data}} can transform 6 genomic data formats

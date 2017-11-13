@@ -203,9 +203,8 @@ with 7 objects:
 
 With \code{interactive.filter = TRUE}, a list with 5 additionnal objects is created.
 \enumerate{
-\item $violinplot.maf.global <- violinplot.maf.global
-\item $violinplot.maf.local
-\item $plot.distribution.maf.locall
+\item $distribution.maf.global
+\item $distribution.maf.local
 \item $maf.global.summary
 \item $maf.helper.table
 }

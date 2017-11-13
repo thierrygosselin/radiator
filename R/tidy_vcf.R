@@ -43,7 +43,7 @@
 tidy_vcf <- function(
   data,
   strata,
-  vcf.metadata,
+  vcf.metadata = FALSE,
   parallel.core = parallel::detectCores() - 1,
   verbose = FALSE,
   ...) {
@@ -777,4 +777,3 @@ clean_nv <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) 
       dplyr::bind_rows(.))
   return(x)
 }#End clean_nv
-

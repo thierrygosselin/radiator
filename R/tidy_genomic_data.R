@@ -400,10 +400,8 @@ tidy_genomic_data <- function(
     pop.select <- stringi::stri_replace_all_fixed(pop.select, pattern = " ", replacement = "_", vectorize_all = FALSE)
   }
 
-  skip.tidy.wide <- NULL
-
   # File type detection----------------------------------------------------------
-
+  skip.tidy.wide <- FALSE # initiate for data frame below
   data.type <- radiator::detect_genomic_format(data)
 
   if (data.type == "haplo.file") {
@@ -433,7 +431,7 @@ tidy_genomic_data <- function(
   if (!is.null(whitelist.markers)) {# with Whitelist of markers
     if (is.vector(whitelist.markers)) {
       whitelist.markers <- suppressMessages(readr::read_tsv(whitelist.markers, col_names = TRUE) %>%
-        dplyr::mutate_all(.tbl = ., .funs = as.character))
+                                              dplyr::mutate_all(.tbl = ., .funs = as.character))
     }
     columns.names.whitelist <- colnames(whitelist.markers)
 
@@ -493,7 +491,7 @@ tidy_genomic_data <- function(
           file = strata, col_names = TRUE,
           # col_types = col.types
           col_types = readr::cols(.default = readr::col_character())
-          ) %>%
+        ) %>%
           dplyr::rename(POP_ID = STRATA))
     } else {
       # message("strata object: yes")
@@ -533,7 +531,7 @@ tidy_genomic_data <- function(
       pop.select = pop.select,
       pop.levels = pop.levels,
       pop.labels = pop.labels
-      )
+    )
     biallelic <- radiator::detect_biallelic_markers(input)
   } # End import VCF
 
@@ -720,101 +718,6 @@ tidy_genomic_data <- function(
     biallelic <- input.temp$biallelic
   } # End import PLINK
 
-  # Import genepop--------------------------------------------------------------
-  if (data.type == "genepop.file") {
-    if (verbose) message("Tidying the genepop file ...")
-    input <- radiator::tidy_genepop(data = data, tidy = TRUE)
-    data.type <- "tbl_df"
-    skip.tidy.wide <- TRUE
-  }
-
-  # Import DArT ----------------------------------------------------------------
-  if (data.type == "dart") {
-    if (verbose) message("Tidying DArT data...")
-    input <- radiator::tidy_dart(
-      data = data,
-      strata = strata,
-      verbose = FALSE,
-      parallel.core = parallel.core)
-    data.type <- "tbl_df"
-
-    if (tibble::has_name(strata.df, "NEW_ID")) {
-      strata.df <- strata.df %>%
-        dplyr::select(-INDIVIDUALS) %>%
-        dplyr::rename(INDIVIDUALS = NEW_ID)
-    }
-    skip.tidy.wide <- TRUE
-  }
-
-  # Import fst.file ------------------------------------------------------------
-  if (data.type == "fst.file") {
-    if (verbose) message("Importing the fst.file as a data frame...")
-    input <- fst::read.fst(path = data)
-    skip.tidy.wide <- TRUE
-    data.type <- "tbl_df"
-  }
-
-  # Import DF-------------------------------------------------------------------
-  if (data.type == "tbl_df") { # DATA FRAME OF GENOTYPES
-    if (verbose) message("Importing the data frame ...")
-    if (is.null(skip.tidy.wide)) skip.tidy.wide <- FALSE
-    if (!skip.tidy.wide) {
-      input <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-    }
-
-    # For long tidy format, switch LOCUS to MARKERS column name, if found MARKERS not found
-    if (tibble::has_name(input, "LOCUS") && !tibble::has_name(input, "MARKERS")) {
-      input <- dplyr::rename(.data = input, MARKERS = LOCUS)
-    }
-
-    # Change individuals names containing special character
-    input$INDIVIDUALS <- radiator::clean_ind_names(input$INDIVIDUALS)
-
-    # Filter with whitelist of markers
-    if (!is.null(whitelist.markers)) {
-      if (verbose) message("Filtering with whitelist of markers")
-      input <- suppressWarnings(dplyr::semi_join(input, whitelist.markers, by = columns.names.whitelist))
-    }
-
-    # Filter with blacklist of individuals
-    if (!is.null(blacklist.id)) {
-      if (verbose) message("Filtering with blacklist of individuals")
-      input <- suppressWarnings(dplyr::anti_join(input, blacklist.id, by = "INDIVIDUALS"))
-    }
-
-    # population levels and strata
-    if (!is.null(strata)) {
-      strata.df$INDIVIDUALS <- radiator::clean_ind_names(strata.df$INDIVIDUALS)
-
-      if (tibble::has_name(input, "POP_ID")) input <- dplyr::select(input, -POP_ID)
-      input <- input %>%
-        dplyr::left_join(strata.df, by = "INDIVIDUALS")
-    }
-
-    # Change potential problematic POP_ID space
-    input$POP_ID <- radiator::clean_pop_names(input$POP_ID)
-
-    # Check with strata and pop.levels/pop.labels
-    if (!is.null(pop.levels)) {
-      if (length(levels(factor(input$POP_ID))) != length(pop.levels)) {
-        stop("The number of groups in your POP_ID column file must match the number of groups in pop.levels")
-      }
-    }
-
-    # using pop.levels and pop.labels info if present
-    input <- change_pop_names(data = input, pop.levels = pop.levels, pop.labels = pop.labels)
-
-    # Pop select
-    if (!is.null(pop.select)) {
-      if (verbose) message(stringi::stri_join(length(pop.select), "population(s) selected", sep = " "))
-      input <- suppressWarnings(input %>% dplyr::filter(POP_ID %in% pop.select))
-    }
-
-    input.temp <- radiator::change_alleles(data = input)
-    input <- input.temp$input
-    biallelic <- input.temp$biallelic
-  } # End import data frame of genotypes
-
   # Import stacks haplotypes----------------------------------------------------
   if (data.type == "haplo.file") { # Haplotype file
     if (verbose) message("Importing STACKS haplotype file")
@@ -843,10 +746,11 @@ tidy_genomic_data <- function(
 
     message("\nNumber of loci in catalog: ", n.catalog.locus)
     message("Number of individuals: ", n.individuals)
-    input <- tidyr::gather(data = input,
-                           key = "INDIVIDUALS",
-                           value = "GT_VCF_NUC", # previously using "GT_HAPLO"
-                           -LOCUS)
+    input <- tidyr::gather(
+      data = input,
+      key = "INDIVIDUALS",
+      value = "GT_VCF_NUC", # previously using "GT_HAPLO"
+      -LOCUS)
 
 
     input$INDIVIDUALS <- radiator::clean_ind_names(input$INDIVIDUALS)
@@ -933,144 +837,63 @@ tidy_genomic_data <- function(
     input <- dplyr::rename(input, LOCUS = MARKERS)
   } # End import haplotypes file
 
+  # Import genepop--------------------------------------------------------------
+  if (data.type == "genepop.file") {
+    if (verbose) message("Tidying the genepop file ...")
+    input <- radiator::tidy_genepop(data = data, tidy = TRUE)
+    skip.tidy.wide <- TRUE
+  }
+
+  # Import DArT ----------------------------------------------------------------
+  if (data.type == "dart") {
+    if (verbose) message("Tidying DArT data...")
+    input <- radiator::tidy_dart(
+      data = data,
+      strata = strata,
+      verbose = FALSE,
+      parallel.core = parallel.core)
+    skip.tidy.wide <- TRUE
+
+    if (tibble::has_name(strata.df, "NEW_ID")) {
+      strata.df <- strata.df %>%
+        dplyr::select(-INDIVIDUALS) %>%
+        dplyr::rename(INDIVIDUALS = NEW_ID)
+    }
+  }
+
+  # Import fst.file ------------------------------------------------------------
+  if (data.type == "fst.file") {
+    if (verbose) message("Importing the fst.file as a data frame...")
+    input <- read_rad(data = data)
+    skip.tidy.wide <- TRUE
+  }
   # Import GENIND--------------------------------------------------------------
   if (data.type == "genind") { # DATA FRAME OF GENOTYPES
     if (verbose) message("Tidying the genind object ...")
-    input <- adegenet::genind2df(data) %>%
-      tibble::rownames_to_column("INDIVIDUALS") %>%
-      dplyr::rename(POP_ID = pop)
-
-    # scan for the number of character coding the allele
-    allele.sep <- input %>% dplyr::select(-INDIVIDUALS, -POP_ID)
-    allele.sep <- unique(nchar(allele.sep[!is.na(allele.sep)]))
-
-    if (length(allele.sep) > 1) {
-      stop("The number of character/integer string coding the allele is not identical accross markers")
-    }
-
-    input <- input %>%
-      tidyr::gather(key = LOCUS, value = GT, -c(INDIVIDUALS, POP_ID)) %>%
-      tidyr::separate(
-        data = ., col = GT, into = c("A1", "A2"),
-        sep = allele.sep/2, remove = TRUE, extra = "drop"
-      ) %>%
-      dplyr::mutate(
-        A1 = stringi::stri_pad_left(str = A1, pad = "0", width = 3),
-        A2 = stringi::stri_pad_left(str = A2, pad = "0", width = 3)
-      ) %>%
-      tidyr::unite(data = ., col = GT, A1, A2, sep = "") %>%
-      dplyr::mutate(GT = replace(GT, which(GT == "NANA"), "000000"))
-
+    input <- radiator::tidy_genind(data = data)
+    data <- NULL
     # remove unwanted sep in id and pop.id names
     input <- input %>%
       dplyr::mutate_at(.tbl = ., .vars = "INDIVIDUALS",
                        .funs = clean_ind_names) %>%
       dplyr::mutate_at(.tbl = ., .vars = "POP_ID",
                        .funs = clean_pop_names)
-
-    # Filter with whitelist of markers
-    if (!is.null(whitelist.markers)) {
-      if (verbose) message("Filtering with whitelist of markers")
-      input <- suppressWarnings(dplyr::semi_join(input, whitelist.markers, by = columns.names.whitelist))
-    }
-
-    # Filter with blacklist of individuals
-    if (!is.null(blacklist.id)) {
-      if (verbose) message("Filtering with blacklist of individuals")
-      input <- suppressWarnings(dplyr::anti_join(input, blacklist.id, by = "INDIVIDUALS"))
-    }
-
-    # population levels and strata
-    if (!is.null(strata)) {
-      input <- input %>%
-        dplyr::select(-POP_ID) %>%
-        dplyr::mutate(INDIVIDUALS =  as.character(INDIVIDUALS)) %>%
-        dplyr::left_join(strata.df, by = "INDIVIDUALS")
-    }
-
-    # Change potential problematic POP_ID space
-    input$POP_ID <- radiator::clean_pop_names(input$POP_ID)
-
-    # Check with strata and pop.levels/pop.labels
-    if (!is.null(pop.levels)) {
-      if (length(levels(factor(input$POP_ID))) != length(pop.levels)) {
-        stop("The number of groups in your POP_ID column must match the number of groups in pop.levels")
-      }
-    }
-
-    # using pop.levels and pop.labels info if present
-    input <- change_pop_names(data = input, pop.levels = pop.levels, pop.labels = pop.labels)
-
-    # Pop select
-    if (!is.null(pop.select)) {
-      if (verbose) message(stringi::stri_join(length(pop.select), "population(s) selected", sep = " "))
-      input <- suppressWarnings(input %>% dplyr::filter(POP_ID %in% pop.select))
-    }
-
-    # detect if biallelic give vcf style genotypes
-    input.temp <- radiator::change_alleles(data = input, verbose = verbose)
-    input <- input.temp$input
-    biallelic <- input.temp$biallelic
-
-    # Now the genind and genepop are like ordinary data frames
-    data.type <- "tbl_df" # for subsequent steps
-
+    skip.tidy.wide <- TRUE
   } # End tidy genind
 
   # Import GENLIGHT ------------------------------------------------------------
   if (data.type == "genlight") { # DATA FRAME OF GENOTYPES
     if (verbose) message("Tidying the genlight object ...")
     input <- radiator::tidy_genlight(data = data)
-
+    data <- NULL
     # remove unwanted sep in id and pop.id names
     input <- input %>%
       dplyr::mutate_at(.tbl = ., .vars = "INDIVIDUALS",
                        .funs = clean_ind_names) %>%
       dplyr::mutate_at(.tbl = ., .vars = "POP_ID",
                        .funs = clean_pop_names)
-
-    # Filter with whitelist of markers
-    if (!is.null(whitelist.markers)) {
-      if (verbose) message("Filtering with whitelist of markers")
-      input <- suppressWarnings(dplyr::semi_join(input, whitelist.markers, by = columns.names.whitelist))
-    }
-
-    # Filter with blacklist of individuals
-    if (!is.null(blacklist.id)) {
-      if (verbose) message("Filtering with blacklist of individuals")
-      input <- suppressWarnings(dplyr::anti_join(input, blacklist.id, by = "INDIVIDUALS"))
-    }
-
-    # population levels and strata
-    if (!is.null(strata)) {
-      input <- input %>%
-        dplyr::select(-POP_ID) %>%
-        dplyr::mutate(INDIVIDUALS =  as.character(INDIVIDUALS)) %>%
-        dplyr::left_join(strata.df, by = "INDIVIDUALS")
-    }
-
-    # Change potential problematic POP_ID space
-    input$POP_ID <- radiator::clean_pop_names(input$POP_ID)
-
-    # Check with strata and pop.levels/pop.labels
-    if (!is.null(pop.levels)) {
-      if (length(levels(factor(input$POP_ID))) != length(pop.levels)) {
-        stop("The number of groups in your POP_ID column must match the number of groups in pop.levels")
-      }
-    }
-
-    # using pop.levels and pop.labels info if present
-    input <- change_pop_names(data = input, pop.levels = pop.levels, pop.labels = pop.labels)
-
-    # Pop select
-    if (!is.null(pop.select)) {
-      if (verbose) message(stringi::stri_join(length(pop.select), "population(s) selected", sep = " "))
-      input <- suppressWarnings(input %>% dplyr::filter(POP_ID %in% pop.select))
-    }
-
-    # Now the genind and genepop are like ordinary data frames
-    data.type <- "tbl_df" # for subsequent steps
     biallelic <- TRUE
+    skip.tidy.wide <- TRUE
   } # End tidy genlight
 
   # Import STRATAG gtypes ------------------------------------------------------
@@ -1081,6 +904,32 @@ tidy_genomic_data <- function(
                        .funs = clean_ind_names) %>%
       dplyr::mutate_at(.tbl = ., .vars = "POP_ID",
                        .funs = clean_pop_names)
+    data <- NULL
+    skip.tidy.wide <- TRUE
+  } # End tidy gtypes
+
+  # Import DF-------------------------------------------------------------------
+  if (data.type == "tbl_df" || skip.tidy.wide) { # DATA FRAME OF GENOTYPES
+    if (verbose) message("Importing the data frame ...")
+    if (!skip.tidy.wide) {
+      input <- radiator::tidy_wide(data = data, import.metadata = TRUE)
+      data <- NULL
+    }
+
+    # For long tidy format, switch LOCUS to MARKERS column name, if found MARKERS not found
+    if (tibble::has_name(input, "LOCUS") && !tibble::has_name(input, "MARKERS")) {
+      input <- dplyr::rename(.data = input, MARKERS = LOCUS)
+    }
+
+    # Change individuals names containing special character
+    input$INDIVIDUALS <- radiator::clean_ind_names(input$INDIVIDUALS)
+
+    # initiate ref check
+    if (tibble::has_name(input, "REF")) {
+      check.ref <- FALSE
+    } else {
+      check.ref <- TRUE
+    }
 
     # Filter with whitelist of markers
     if (!is.null(whitelist.markers)) {
@@ -1092,13 +941,16 @@ tidy_genomic_data <- function(
     if (!is.null(blacklist.id)) {
       if (verbose) message("Filtering with blacklist of individuals")
       input <- suppressWarnings(dplyr::anti_join(input, blacklist.id, by = "INDIVIDUALS"))
+      check.ref <- TRUE
     }
+
 
     # population levels and strata
     if (!is.null(strata)) {
+      strata.df$INDIVIDUALS <- radiator::clean_ind_names(strata.df$INDIVIDUALS)
+
+      if (tibble::has_name(input, "POP_ID")) input <- dplyr::select(input, -POP_ID)
       input <- input %>%
-        dplyr::select(-POP_ID) %>%
-        dplyr::mutate(INDIVIDUALS =  as.character(INDIVIDUALS)) %>%
         dplyr::left_join(strata.df, by = "INDIVIDUALS")
     }
 
@@ -1108,30 +960,31 @@ tidy_genomic_data <- function(
     # Check with strata and pop.levels/pop.labels
     if (!is.null(pop.levels)) {
       if (length(levels(factor(input$POP_ID))) != length(pop.levels)) {
-        stop("The number of groups in your POP_ID column must match the number of groups in pop.levels")
+        stop("The number of groups in your POP_ID column file must match the number of groups in pop.levels")
       }
     }
 
     # using pop.levels and pop.labels info if present
     input <- change_pop_names(data = input, pop.levels = pop.levels, pop.labels = pop.labels)
+    if (!identical(pop.levels, pop.labels)) check.ref <- TRUE
 
     # Pop select
     if (!is.null(pop.select)) {
       if (verbose) message(stringi::stri_join(length(pop.select), "population(s) selected", sep = " "))
       input <- suppressWarnings(input %>% dplyr::filter(POP_ID %in% pop.select))
+      check.ref <- TRUE
     }
 
-    # detect if biallelic give vcf style genotypes
-    # biallelic <- radiator::detect_biallelic_markers(input)
-    input.temp <- radiator::change_alleles(data = input, verbose = verbose)
-    input <- input.temp$input
-    biallelic <- input.temp$biallelic
+    if (check.ref) {
+      input.temp <- radiator::change_alleles(data = input)
+      input <- input.temp$input
+      biallelic <- input.temp$biallelic
+      input.temp <- NULL
+    } else {
+      biallelic <- radiator::detect_biallelic_markers(data = input)
+    }
 
-    # Now the gtypes are like ordinary data frames
-    data.type <- "tbl_df" # for subsequent steps
-
-  } # End tidy gtypes
-
+  } # End import data frame of genotypes
 
   # END IMPORT DATA-------------------------------------------------------------
 
@@ -1215,7 +1068,8 @@ tidy_genomic_data <- function(
       message("There are no genotype left in the blacklist: input file left intact")
     }
 
-
+    # required because REF/ALT might change after deleting genotypes...
+    input <- radiator::change_alleles(data = input)$input
   } # End erase genotypes
 
   # dump unused object
@@ -1281,38 +1135,24 @@ tidy_genomic_data <- function(
   # Minor Allele Frequency filter ----------------------------------------------
   # maf.thresholds <- c(0.05, 0.1) # test
   if (!is.null(maf.thresholds)) { # with MAF
-    maf.info <- radiator_maf_module(
+    input <- radiator_maf_module(
       data = input,
       maf.thresholds = maf.thresholds,
       maf.pop.num.threshold = maf.pop.num.threshold,
       maf.approach = maf.approach,
       maf.operator = maf.operator
-    )
-
-    input <- maf.info$input
-    # maf.data <- maf.info$maf.data
-    maf.info <- NULL
+    )$input
   } # End of MAF filters
 
 
   # Write to working directory -------------------------------------------------
-  # if (!is.null(filename)) {
-  #   if (verbose) message("Writing the tidy data to the working directory: \n", filename)
-  #   readr::write_tsv(x = input, path = filename, col_names = TRUE)
-  # }
-
   if (!is.null(filename)) {
     tidy.name <- stringi::stri_join(filename, ".rad")
     message("Writing tidy data set: ", tidy.name)
-    # if (!is.null(save.feather)) {
-    # feather::write_feather(filter, stri_replace_all_fixed(filename, pattern = ".tsv", replacement = "_feather.tsv", vectorize_all = TRUE))
-    # } else {
     fst::write.fst(x = input, path = tidy.name, compress = 85)
-    # }
   }
 
   # Results --------------------------------------------------------------------
-  # messages
   n.markers <- dplyr::n_distinct(input$MARKERS)
   if (tibble::has_name(input, "CHROM")) {
     n.chromosome <- dplyr::n_distinct(input$CHROM)
@@ -1352,5 +1192,3 @@ tidy_genomic_data <- function(
   options(width = opt.change)
   return(res)
 } # tidy genomic data
-
-

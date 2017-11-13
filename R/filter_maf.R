@@ -59,9 +59,8 @@
 #'
 #' With \code{interactive.filter = TRUE}, a list with 5 additionnal objects is created.
 #' \enumerate{
-#' \item $violinplot.maf.global <- violinplot.maf.global
-#' \item $violinplot.maf.local
-#' \item $plot.distribution.maf.locall
+#' \item $distribution.maf.global
+#' \item $distribution.maf.local
 #' \item $maf.global.summary
 #' \item $maf.helper.table
 #' }
@@ -151,14 +150,7 @@ filter_maf <- function(
   }
   # Folder -------------------------------------------------------------------
   # Date and time
-  file.date <- stringi::stri_replace_all_fixed(
-    Sys.time(),
-    pattern = " EDT", replacement = "") %>%
-    stringi::stri_replace_all_fixed(
-      str = .,
-      pattern = c("-", " ", ":"), replacement = c("", "@", ""),
-      vectorize_all = FALSE) %>%
-    stringi::stri_sub(str = ., from = 1, to = 13)
+  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
   folder.extension <- stringi::stri_join("filter_maf_", file.date, sep = "")
   path.folder <- stringi::stri_join(getwd(),"/", folder.extension, sep = "")
   dir.create(file.path(path.folder))
@@ -180,7 +172,7 @@ filter_maf <- function(
   data.type <- radiator::detect_genomic_format(data)
 
   if (data.type == "haplo.file") {
-    message("With stacks haplotype file the maf.approach is automatically set to: haplotype")
+    # message("With stacks haplotype file the maf.approach is automatically set to: haplotype")
     maf.approach <- "SNP"
     # confusing, but because the haplotpe file doesn't have snp info, only locus info
     # it's treated as markers/snp info and filtered the same way as the approach by SNP.
@@ -189,23 +181,37 @@ filter_maf <- function(
 
   # import data ----------------------------------------------------------------
   message("Importing data ...")
-  input <- radiator::tidy_genomic_data(
-    data = data,
-    vcf.metadata = vcf.metadata,
-    blacklist.id = blacklist.id,
-    blacklist.genotype = blacklist.genotype,
-    whitelist.markers = whitelist.markers,
-    monomorphic.out = monomorphic.out,
-    max.marker = max.marker,
-    snp.ld = snp.ld,
-    common.markers = common.markers,
-    strata = strata,
-    pop.levels = pop.levels,
-    pop.labels = pop.labels,
-    pop.select = pop.select,
-    filename = NULL,
-    parallel.core = parallel.core
-  )
+  if (data.type %in% c("tbl.df", "fst.file")) {
+    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS", "POP_ID", "REF", "ALT", "GT", "GT_VCF", "GT_VCF_NUC", "GT_BIN")
+    if (data.type == "tbl_df") {
+      input <- suppressWarnings(dplyr::select(data, dplyr::one_of(want)))
+      data <- NULL
+    }
+    if (data.type == "fst.file") {
+      import.col <- colnames(fst::read.fst(path = data, from = 1, to = 1))
+      import.col <- purrr::discard(.x = import.col, .p = !import.col %in% want)
+      input <- fst::read.fst(path = data, columns = import.col)
+      import.col <- want <- NULL
+    }
+  } else {
+    input <- radiator::tidy_genomic_data(
+      data = data,
+      vcf.metadata = vcf.metadata,
+      blacklist.id = blacklist.id,
+      blacklist.genotype = blacklist.genotype,
+      whitelist.markers = whitelist.markers,
+      monomorphic.out = monomorphic.out,
+      max.marker = max.marker,
+      snp.ld = snp.ld,
+      common.markers = common.markers,
+      strata = strata,
+      pop.levels = pop.levels,
+      pop.labels = pop.labels,
+      pop.select = pop.select,
+      filename = NULL,
+      parallel.core = parallel.core
+    )
+  }
 
   # create a strata.df
   strata.df <- input %>%
@@ -216,7 +222,6 @@ filter_maf <- function(
   pop.labels <- pop.levels
 
   if (maf.approach == "haplotype") {
-    # if (data.type != "vcf.file" & data.type != "haplo.file") {
     if (!tibble::has_name(input, "LOCUS") || !tibble::has_name(input, "POS")) {
       stop("The haplotype approach during MAF filtering is for VCF and
          stacks haplotypes file, only. Use the snp approach for the other file types")
@@ -237,28 +242,70 @@ filter_maf <- function(
 
     biallelic <- radiator::detect_biallelic_markers(input, verbose = TRUE)
 
-    if (tibble::has_name(input, "GT_VCF") && biallelic) {
-      maf.local <- input %>%
-        dplyr::filter(GT_VCF != "./.") %>%
-        dplyr::group_by(MARKERS, POP_ID, REF, ALT) %>%
-        dplyr::summarise(
-          N = as.numeric(n()),
-          PQ = as.numeric(length(GT_VCF[GT_VCF == "1/0" | GT_VCF == "0/1"])),
-          QQ = as.numeric(length(GT_VCF[GT_VCF == "1/1"]))
-        ) %>%
-        dplyr::mutate(MAF_LOCAL = ((QQ * 2) + PQ) / (2 * N))
+    if (tibble::has_name(input, "GT_BIN") && biallelic) {
+      markers.df <- dplyr::distinct(input, MARKERS)
+      n.markers <- nrow(markers.df)
 
-      maf.global <- maf.local %>%
-        dplyr::group_by(MARKERS) %>%
-        dplyr::summarise_at(.tbl = ., .vars = c("N", "PQ", "QQ"), .funs = sum) %>%
-        dplyr::mutate(MAF_GLOBAL = ((QQ * 2) + PQ) / (2 * N)) %>%
-        dplyr::select(MARKERS, MAF_GLOBAL)
+      if (n.markers > 10000) {
+        compute_maf <- function(x) {
+          maf.local <- x %>%
+            dplyr::group_by(MARKERS, POP_ID) %>%
+            dplyr::summarise(
+              N = as.numeric(n()),
+              PQ = as.numeric(length(GT_BIN[GT_BIN == 1])),
+              QQ = as.numeric(length(GT_BIN[GT_BIN == 2]))
+            ) %>%
+            dplyr::mutate(MAF_LOCAL = ((QQ * 2) + PQ) / (2 * N))
+
+          maf.global <- maf.local %>%
+            dplyr::group_by(MARKERS) %>%
+            dplyr::summarise_at(.tbl = ., .vars = c("N", "PQ", "QQ"), .funs = sum) %>%
+            dplyr::mutate(MAF_GLOBAL = ((QQ * 2) + PQ) / (2 * N)) %>%
+            dplyr::select(MARKERS, MAF_GLOBAL)
 
 
-      maf.data <- maf.global %>%
-        dplyr::left_join(maf.local, by = c("MARKERS")) %>%
-        dplyr::select(MARKERS, POP_ID, MAF_LOCAL, MAF_GLOBAL)
+          maf.data <- maf.global %>%
+            dplyr::left_join(maf.local, by = c("MARKERS")) %>%
+            dplyr::select(MARKERS, POP_ID, MAF_LOCAL, MAF_GLOBAL)
+          return(maf.data)
+        }#End maf_local
+        split.vec <- markers.df %>%
+          dplyr::mutate(SPLIT_VEC = split_vec_row(
+            markers.df,
+            cpu.rounds = ceiling(n.markers/10000),
+            parallel.core = parallel.core))
 
+        maf.data <- input %>%
+          dplyr::filter(!is.na(GT_BIN)) %>%
+          dplyr::left_join(split.vec, by = "MARKERS") %>%
+          split(x = ., f = .$SPLIT_VEC) %>%
+          .radiator_parallel_mc(
+            X = .,
+            FUN = compute_maf,
+            mc.cores = parallel.core
+            # mc.cores = ceiling(parallel.core / 2)
+          ) %>%
+          dplyr::bind_rows(.)
+        markers.df <- split.vec <- NULL
+      } else {
+        maf.local <- input %>%
+          dplyr::filter(!is.na(GT_BIN)) %>%
+          dplyr::group_by(MARKERS, POP_ID) %>%
+          dplyr::summarise(
+            N = as.numeric(n()),
+            PQ = as.numeric(length(GT_BIN[GT_BIN == 1])),
+            QQ = as.numeric(length(GT_BIN[GT_BIN == 2]))
+          ) %>%
+          dplyr::mutate(MAF_LOCAL = ((QQ * 2) + PQ) / (2 * N))
+        maf.global <- maf.local %>%
+          dplyr::group_by(MARKERS) %>%
+          dplyr::summarise_at(.tbl = ., .vars = c("N", "PQ", "QQ"), .funs = sum) %>%
+          dplyr::mutate(MAF_GLOBAL = ((QQ * 2) + PQ) / (2 * N)) %>%
+          dplyr::select(MARKERS, MAF_GLOBAL)
+        maf.data <- maf.global %>%
+          dplyr::left_join(maf.local, by = c("MARKERS")) %>%
+          dplyr::select(MARKERS, POP_ID, MAF_LOCAL, MAF_GLOBAL)
+      }
       maf.local <- maf.global <- NULL
     } else  {# not vcf file
       if (!tibble::has_name(input, "GT_VCF_NUC")) {
@@ -353,36 +400,29 @@ filter_maf <- function(
       RANGE = stringi::stri_join(round(min(MAF_GLOBAL, na.rm = TRUE), 4), " - ", round(max(MAF_GLOBAL, na.rm = TRUE), 4))
     )
 
-  violinplot.maf.global <- ggplot2::ggplot(data = global.data, ggplot2::aes(x = OVERALL, y = MAF_GLOBAL, na.rm = TRUE)) +
-    ggplot2::geom_violin(trim = TRUE) +
-    ggplot2::geom_boxplot(width = 0.1, fill = "black", outlier.colour = NA) +
-    ggplot2::stat_summary(fun.y = "mean", geom = "point", shape = 21, size = 2.5, fill = "white") +
-    # scale_y_continuous(name = "Global MAF", breaks = c(0, 0.01, 0.02, 0.))
-    ggplot2::labs(x = "Overall") +
-    ggplot2::labs(y = "Global MAF") +
+  histo.maf.global <- ggplot2::ggplot(global.data, ggplot2::aes(x = MAF_GLOBAL)) +
+    ggplot2::geom_histogram(bins = 30) +
+    ggplot2::labs(y = "Number of markers", x = "Global MAF") +
+    ggplot2::theme_minimal() +
     ggplot2::theme(
       legend.position = "none",
       axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
       axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      axis.text.x = ggplot2::element_blank(),
-      # axis.text.x = element_text(size = 8, family = "Helvetica"),
-      legend.title = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      legend.text = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      strip.text.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold")
     )
   if (interactive.filter) {
-    message("    Showing the violin plot for the global MAF")
-    print(violinplot.maf.global)
+    message("    Showing the distribution of the global MAF")
+    print(histo.maf.global)
   }
   # save
-  ggplot2::ggsave(filename = stringi::stri_join(path.folder, "/maf.global.pdf"), plot = violinplot.maf.global, width = 10, height = 10, dpi = 600, units = "cm", useDingbats = FALSE)
-  ggplot2::ggsave(filename = stringi::stri_join(path.folder, "/maf.global.png"), plot = violinplot.maf.global, width = 10, height = 10, dpi = 300, units = "cm")
-  message("2 versions (pdf and png) of the violin plot for the global MAF were written in the folder")
+  ggplot2::ggsave(
+    filename = file.path(path.folder, "distribution.maf.global.pdf"),
+    plot = histo.maf.global, width = 10, height = 10, dpi = 600, units = "cm", useDingbats = FALSE)
+  message("Distribution of global MAF written in the folder")
 
   global.data <- NULL # unused object
 
-  readr::write_tsv(x = maf.global.summary, path = paste0(path.folder, "/maf.global.summary.tsv"))
-  message("maf.global.summary.tsv was saved in the folder")
+  readr::write_tsv(x = maf.global.summary, path = file.path(path.folder, "maf.global.summary.tsv"))
+  message("maf.global.summary.tsv table saved in the folder")
 
   if (interactive.filter) {
     message("The global MAF mean: ", round(maf.global.summary$MEAN, 4))
@@ -391,57 +431,12 @@ filter_maf <- function(
   }
 
   # Step 2. Local MAF: Inspecting the MAF at the populations level--------------
-  # plot_2: Violin plot local MAF
   if (interactive.filter) {
     message("\nStep 2. Local MAF visualization (population level)\n")
   }
-  # plot_2: Violin plot local MAF
-  # violinplot <- as.character(readLines(n = 1))
-  # if (violinplot == "y") {
+  # plot_2: Distribution of local MAF
   pop.number <- length(levels(maf.data$POP_ID))
-
-  # message("Generating violin plot may take some time...")
-  # plot
-  # maf.local.summary <- maf.data %>%
-  #   ungroup %>%
-  #   summarise(
-  #     MEAN = mean(MAF_LOCAL, na.rm = TRUE),
-  #     MEDIAN = stats::median(MAF_LOCAL, na.rm = TRUE),
-  #     RANGE = stringi::stri_join(round(min(MAF_LOCAL, na.rm = TRUE), 4), " - ", round(max(MAF_GLOBAL, na.rm = TRUE), 4))
-  #   )
-
-  violinplot.maf.local <- ggplot2::ggplot(data = maf.data, ggplot2::aes(x = POP_ID, y = MAF_LOCAL, na.rm = TRUE)) +
-    ggplot2::geom_violin(trim = TRUE) +
-    ggplot2::geom_boxplot(width = 0.1, fill = "black", outlier.colour = NA) +
-    ggplot2::stat_summary(fun.y = "mean", geom = "point", shape = 21, size = 2.5, fill = "white") +
-    ggplot2::labs(x = "Populations/Groupings") +
-    ggplot2::labs(y = "Local/populations MAF") +
-    ggplot2::theme(
-      legend.position = "none",
-      axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      # axis.text.x = element_blank(),
-      axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica"),
-      legend.title = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      legend.text = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      strip.text.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold")
-    )
-  if (interactive.filter) {
-    message("Showing the violin plot for the local MAF")
-    print(violinplot.maf.local)
-  }
-
-  # save
-  ggplot2::ggsave(filename = stringi::stri_join(path.folder, "/maf.local.violinplot.pdf"), plot = violinplot.maf.local, width = pop.number, height = 10, dpi = 600, units = "cm", useDingbats = FALSE)
-  ggplot2::ggsave(filename = stringi::stri_join(path.folder, "/maf.local.violinplot.png"), plot = violinplot.maf.local, width = pop.number, height = 10, dpi = 300, units = "cm")
-  message("2 versions (pdf and png) of the violin plot for the global MAF were saved in the folder")
-
-  # plot_3: Distribution of local MAF
-
-  # spectrum <- as.character(readLines(n = 1))
-  # if (spectrum == "y") {
-  pop.number <- length(levels(maf.data$POP_ID))
-  plot.distribution.maf.local <- ggplot2::ggplot(data = maf.data, ggplot2::aes(x = MAF_LOCAL, na.rm = FALSE)) +
+  histo.maf.local <- ggplot2::ggplot(data = maf.data, ggplot2::aes(x = MAF_LOCAL, na.rm = FALSE)) +
     ggplot2::geom_line(ggplot2::aes(y = ..scaled.., color = POP_ID), stat = "density", adjust = 1) + # pop colored
     #   scale_colour_manual(name ="Sampling sites", values = colour_palette_sites.pink) +
     ggplot2::scale_x_continuous(breaks = seq(0,1, by = 0.1)) +
@@ -463,11 +458,13 @@ filter_maf <- function(
     ggplot2::facet_grid(~POP_ID)
   if (interactive.filter) {
     message("Showing site frequency spectrum")
-    print(plot.distribution.maf.local)
+    print(histo.maf.local)
   }
-  ggplot2::ggsave(filename = stringi::stri_join(path.folder, "/maf.local.spectrum.pdf"), plot = plot.distribution.maf.local, width = pop.number * 5, height = 15, dpi = 600, units = "cm", useDingbats = FALSE)
-  ggplot2::ggsave(filename = stringi::stri_join(path.folder, "/maf.local.spectrum.png"), plot.distribution.maf.local, width = pop.number * 5, height = 10, dpi = 300, units = "cm")
-  message("2 versions (pdf and png) of the local maf spectrum plot were saved in the folder")
+  ggplot2::ggsave(
+    filename = file.path(path.folder, "maf.local.spectrums.pdf"),
+    plot = histo.maf.local, width = pop.number * 5, height = 15,
+    dpi = 600, units = "cm", useDingbats = FALSE, limitsize = FALSE)
+  message("Local maf spectrums saved in the folder")
 
   # Helper table for global and local MAF --------------------------------------
   # number of individuals / pop
@@ -487,7 +484,7 @@ filter_maf <- function(
       ALT_9 = 9/(2*n), ALT_10 = 10/(2*n), ALT_11 = 11/(2*n), ALT_12 = 12/(2*n),
       ALT_13 = 13/(2*n), ALT_14 = 14/(2*n), ALT_15 = 15/(2*n), ALT_16 = 16/(2*n),
       ALT_17 = 17/(2*n), ALT_18 = 18/(2*n), ALT_19 = 19/(2*n), ALT_20 = 20/(2*n)
-  )
+    )
 
   new <- dplyr::select(maf.helper.table, -n) %>%
     dplyr::filter(POP_ID != "TOTAL/GLOBAL") %>%
@@ -501,13 +498,11 @@ filter_maf <- function(
     dplyr::mutate(POP_ID = factor(POP_ID, levels = sort.pop, ordered = TRUE)) %>%
     dplyr::arrange(POP_ID)
 
-
-  # remove unused objects
-  new <- NULL
+  new <- NULL# remove unused objects
 
   readr::write_tsv(
     x = maf.helper.table,
-    path = stringi::stri_join(path.folder, "/maf.helper.table.tsv"))
+    path = file.path(path.folder, "maf.helper.table.tsv"))
 
   message("\nA table of local and global MAF (maf.helper.table.tsv) was written in the directory")
   if (interactive.filter) {
@@ -538,6 +533,7 @@ maf.approach = \"SNP\" : SNPs on the same haplotype/read are considered independ
     message("Choose the maf local threshold (usually a value between 0 and 0.3):")
     maf.local.threshold <- as.character(readLines(n = 1))
   }
+
   if (interactive.filter) {
     message("Choose the maf global threshold (usually a value between 0 and 0.3):")
     maf.global.threshold <- as.character(readLines(n = 1))
@@ -596,7 +592,7 @@ Example: if you have 10 populations and choose maf.pop.num.threshold = 3,
 
   readr::write_tsv(
     x = maf.data.thresholds,
-    path = stringi::stri_join(path.folder, "/maf.data.tsv"),
+    path = file.path(path.folder, "maf.data.tsv"),
     col_names = TRUE,
     append = FALSE
   )
@@ -687,11 +683,11 @@ Example: if you have 10 populations and choose maf.pop.num.threshold = 3,
           dplyr::left_join(input, by = "LOCUS") %>%
           dplyr::arrange(LOCUS, POP_ID)
       }
-      } else {# AND operator between local and global maf
-        filter <- filter %>%
-          dplyr::group_by(LOCUS, POP_ID) %>%
-          dplyr::summarise(
-            MAF_GLOBAL = mean(MAF_GLOBAL, na.rm = TRUE),
+    } else {# AND operator between local and global maf
+      filter <- filter %>%
+        dplyr::group_by(LOCUS, POP_ID) %>%
+        dplyr::summarise(
+          MAF_GLOBAL = mean(MAF_GLOBAL, na.rm = TRUE),
           MAF_LOCAL = min(MAF_LOCAL, na.rm = TRUE)
         ) %>%
         dplyr::filter(MAF_LOCAL >= maf.local.threshold & MAF_GLOBAL >= maf.global.threshold) %>%
@@ -777,7 +773,7 @@ Example: if you have 10 populations and choose maf.pop.num.threshold = 3,
   if (!is.null(filename)) {
     tidy.name <- stringi::stri_join(filename, ".rad")
     message("Writing the filtered tidy data set: ", tidy.name)
-    fst::write.fst(x = filter, path = stringi::stri_join(path.folder, "/", tidy.name), compress = 85)
+    fst::write.fst(x = filter, path = file.path(path.folder, tidy.name), compress = 85)
   }
 
 
@@ -791,7 +787,7 @@ Example: if you have 10 populations and choose maf.pop.num.threshold = 3,
     whitelist.markers <- dplyr::ungroup(filter) %>%
       dplyr::distinct(MARKERS)
   }
-  readr::write_tsv(whitelist.markers, paste0(path.folder, "/whitelist.markers.maf.tsv"), append = FALSE, col_names = TRUE)
+  readr::write_tsv(whitelist.markers, file.path(path.folder, "whitelist.markers.maf.tsv"), append = FALSE, col_names = TRUE)
 
 
   # saving blacklist
@@ -805,7 +801,7 @@ Example: if you have 10 populations and choose maf.pop.num.threshold = 3,
       dplyr::distinct(MARKERS) %>%
       dplyr::anti_join(whitelist.markers, by = "MARKERS")
   }
-  readr::write_tsv(blacklist.markers, paste0(path.folder, "/blacklist.markers.maf.tsv"), append = FALSE, col_names = TRUE)
+  readr::write_tsv(blacklist.markers, file.path(path.folder, "blacklist.markers.maf.tsv"), append = FALSE, col_names = TRUE)
 
   # results --------------------------------------------------------------------
   cat("############################### RESULTS ###############################\n")
@@ -835,9 +831,8 @@ Example: if you have 10 populations and choose maf.pop.num.threshold = 3,
   res$maf.helper.table <- maf.helper.table
   res$strata <- strata
   res$filters.parameters <- filters.parameters
-  res$violinplot.maf.global <- violinplot.maf.global
-  res$violinplot.maf.local <- violinplot.maf.local
-  res$plot.distribution.maf.local <- plot.distribution.maf.local
+  res$distribution.maf.global <- histo.maf.global
+  res$distribution.maf.local <- histo.maf.local
   res$maf.global.summary <- maf.global.summary
   return(res)
 }

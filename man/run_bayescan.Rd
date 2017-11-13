@@ -94,7 +94,9 @@ radiator::run_bayescan outputs WITH subsampling:
 \item \code{whitelist.markers.neutral.selection}: Whitelist of neutral markers and common in all iterations.
 \item \code{whitelist.markers.neutral.positive.selection}: Whitelist of neutral markers and markers under diversifying selection and common in all iterations.
 \item \code{blacklist.markers.balancing.selection}: Blacklist of markers under balancing selection and common in all iterations.
-\item \code{whitelist.markers.without.balancing}: Whitelist of all original markers with markers under balancing selection removed. The markers that remain were tagged neutral and/or under diversifying selection and some didn't have accurate results in BayeScan.
+\item \code{whitelist.markers.without.balancing.positive}:
+Whitelist of all original markers with markers under balancing selection and directional selection removed.
+The markers that remains are the ones to use in population structure analysis.
 }
 
 Other files are present in the folder and subsampling folder.

@@ -182,45 +182,43 @@ detect_mixed_genomes <- function(
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {
-    input <- radiator::tidy_wide(data = data, import.metadata = FALSE)
-  } else {
-    input <- data
+    data <- radiator::tidy_wide(data = data, import.metadata = FALSE)
   }
 
   # check genotype column naming
-  colnames(input) <- stringi::stri_replace_all_fixed(
-    str = colnames(input),
+  colnames(data) <- stringi::stri_replace_all_fixed(
+    str = colnames(data),
     pattern = "GENOTYPE",
     replacement = "GT",
     vectorize_all = FALSE
   )
 
   # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-  if (tibble::has_name(input, "LOCUS") && !tibble::has_name(input, "MARKERS")) {
-    input <- dplyr::rename(.data = input, MARKERS = LOCUS)
+  if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
+    data <- dplyr::rename(.data = data, MARKERS = LOCUS)
   }
 
-  # highlight heterozygote and missing (optimized for speed depending on input)
+  # highlight heterozygote and missing (optimized for speed depending on data)
   # you see the difference with > 30K SNP
 
-  n.markers.pop <- dplyr::filter(input, GT != "000000") %>%
+  n.markers.pop <- dplyr::filter(data, GT != "000000") %>%
     dplyr::distinct(MARKERS, POP_ID) %>%
     dplyr::count(x = ., POP_ID)
 
-  n.markers.overall <- dplyr::n_distinct(input$MARKERS[input$GT != "000000"])
+  n.markers.overall <- dplyr::n_distinct(data$MARKERS[data$GT != "000000"])
 
-  if (tibble::has_name(input, "GT_BIN")) {
+  if (tibble::has_name(data, "GT_BIN")) {
     het.summary <- dplyr::mutate(
-      .data = input,
+      .data = data,
       HET = dplyr::if_else(GT_BIN == 1, 1, 0, missing = 0)
     ) %>%
       dplyr::group_by(INDIVIDUALS) %>%
       dplyr::mutate(GENOTYPED = length(GT_BIN[!is.na(GT_BIN)])) %>%
       dplyr::ungroup(.)
 
-  } else if (tibble::has_name(input, "GT_VCF")) {
+  } else if (tibble::has_name(data, "GT_VCF")) {
     het.summary <- dplyr::mutate(
-      .data = input,
+      .data = data,
       HET = dplyr::if_else(GT_VCF %in% c("1/0", "0/1"), 1, 0)
     ) %>%
       dplyr::group_by(INDIVIDUALS) %>%
@@ -228,7 +226,7 @@ detect_mixed_genomes <- function(
       dplyr::ungroup(.)
   } else {
     het.summary <- dplyr::mutate(
-      .data = input,
+      .data = data,
       HET = dplyr::if_else(
         stringi::stri_sub(GT, 1, 3) != stringi::stri_sub(GT, 4, 6), 1, 0
       )
@@ -265,7 +263,7 @@ detect_mixed_genomes <- function(
 
   readr::write_tsv(
     x = het.ind,
-    path = stringi::stri_join(path.folder, "/individual.heterozygosity.tsv"),
+    path = file.path(path.folder, "individual.heterozygosity.tsv"),
     col_names = TRUE)
 
   het.ind.overall <- dplyr::mutate(.data = het.ind, POP_ID = as.character(POP_ID)) %>%
@@ -292,13 +290,13 @@ detect_mixed_genomes <- function(
 
   readr::write_tsv(
     x = het.ind.stats,
-    path = stringi::stri_join(path.folder, "/heterozygosity.statistics.tsv"),
+    path = file.path(path.folder, "heterozygosity.statistics.tsv"),
     col_names = TRUE)
 
 
   # Plots ----------------------------------------------------------------------
   message("Generating plots")
-
+  n.pop <- dplyr::n_distinct(data$POP_ID)
   rounder <- function(x, accuracy, f = round) {
     f(x / accuracy) * accuracy
   }
@@ -340,12 +338,12 @@ detect_mixed_genomes <- function(
     # geom_hline(mapping = aes(yintercept = HET_sig_minus), het.ind.stats.pop, linetype = "dashed") + #3 sigma -
     # geom_hline(mapping = aes(yintercept = HET_sig_plus), het.ind.stats.pop, linetype = "dashed") + #3 sigma +
     ggplot2::facet_grid(MISSING_GROUP ~ POP_ID, switch = "x", scales = "free", labeller = ggplot2::labeller(MISSING_GROUP = facet_names))
-  individual.heterozygosity.manhattan.plot
+  # individual.heterozygosity.manhattan.plot
 
   ggplot2::ggsave(
-    filename = stringi::stri_join(path.folder, "/individual.heterozygosity.manhattan.plot.pdf"),
+    filename = file.path(path.folder, "individual.heterozygosity.manhattan.plot.pdf"),
     plot = individual.heterozygosity.manhattan.plot,
-    width = 20, height = 15, dpi = 600, units = "cm", useDingbats = FALSE)
+    width = 2 * n.pop, height = 15, dpi = 600, units = "cm", useDingbats = FALSE, limitsize = FALSE)
 
 
 
@@ -368,9 +366,9 @@ detect_mixed_genomes <- function(
     )
   # individual.heterozygosity.boxplot
   ggplot2::ggsave(
-    filename = stringi::stri_join(path.folder, "/individual.heterozygosity.boxplot.pdf"),
+    filename = file.path(path.folder, "individual.heterozygosity.boxplot.pdf"),
     plot = individual.heterozygosity.boxplot,
-    width = 20, height = 15, dpi = 600, units = "cm", useDingbats = FALSE)
+    width = 2 * n.pop, height = 15, dpi = 600, units = "cm", useDingbats = FALSE, limitsize = FALSE)
 
   ## Step 2: Blacklist outlier individuals -------------------------------------
   # Blacklist individuals based a threshold of mean heterozygosity
@@ -387,7 +385,7 @@ detect_mixed_genomes <- function(
     message("Filter individual's heterozygosity: ", length(blacklist.ind.het$INDIVIDUALS), " individual(s) blacklisted")
     readr::write_tsv(
       x = blacklist.ind.het,
-      path = stringi::stri_join(path.folder, "/blacklist.ind.het.tsv"),
+      path = file.path(path.folder, "blacklist.ind.het.tsv"),
       col_names = TRUE)
   } else {
     blacklist.ind.het <- "ind.heterozygosity.threshold is necessary to get a blacklist of individuals"

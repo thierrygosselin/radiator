@@ -225,8 +225,6 @@ genomic_converter <- function(
     cat("#######################################################################\n")
     cat("##################### radiator::genomic_converter #####################\n")
     cat("#######################################################################\n")
-    timing <- proc.time()
-
     # Check that strataG is installed
     if ("gtypes" %in% output) {
       if (!"strataG" %in% utils::installed.packages()[,"Package"]) {
@@ -348,17 +346,13 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
     message("\nparallel.core: ", parallel.core, "\n")
     cat("#######################################################################\n")
   }
+  timing <- proc.time()
+  opt.change <- getOption("width")
+  options(width = 70)
 
   # Filename -------------------------------------------------------------------
   # Get date and time to have unique filenaming
-  file.date <- stringi::stri_replace_all_fixed(
-    Sys.time(),
-    pattern = " EDT", replacement = "") %>%
-    stringi::stri_replace_all_fixed(
-      str = .,
-      pattern = c("-", " ", ":"), replacement = c("", "@", ""),
-      vectorize_all = FALSE) %>%
-    stringi::stri_sub(str = ., from = 1, to = 13)
+  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
 
   if (is.null(filename)) {
     filename <- stringi::stri_join("radiator_data_", file.date)

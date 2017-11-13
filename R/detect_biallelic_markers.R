@@ -37,38 +37,36 @@ detect_biallelic_markers <- function(data, verbose = FALSE) {
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {
-    input <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-  } else {
-    input <- data
+    data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
   }
 
   # check genotype column naming
-  if (tibble::has_name(input, "GENOTYPE")) {
-    colnames(input) <- stringi::stri_replace_all_fixed(
-      str = colnames(input),
+  if (tibble::has_name(data, "GENOTYPE")) {
+    colnames(data) <- stringi::stri_replace_all_fixed(
+      str = colnames(data),
       pattern = "GENOTYPE",
       replacement = "GT",
       vectorize_all = FALSE)
   }
 
   # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-  if (tibble::has_name(input, "LOCUS") && !tibble::has_name(input, "MARKERS")) {
-    input <- dplyr::rename(.data = input, MARKERS = LOCUS)
+  if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
+    data <- dplyr::rename(.data = data, MARKERS = LOCUS)
   }
 
   # markers with all missing... yes I've seen it... breaks code...
-  # input <- detect_all_missing(data = input)
-  marker.problem <- radiator::detect_all_missing(data = input)
+  # data <- detect_all_missing(data = data)
+  marker.problem <- radiator::detect_all_missing(data = data)
   if (marker.problem$marker.problem) {
-    input <- marker.problem$data
+    data <- marker.problem$data
   }
   marker.problem <- NULL
 
   # Detecting biallelic markers-------------------------------------------------
   if (verbose) message("Scanning for number of alleles per marker...")
-  if (tibble::has_name(input, "ALT")) {
+  if (tibble::has_name(data, "ALT")) {
     alt.num <- max(unique(
-      stringi::stri_count_fixed(str = unique(input$ALT), pattern = ","))) + 1
+      stringi::stri_count_fixed(str = unique(data$ALT), pattern = ","))) + 1
 
     if (alt.num > 1) {
       biallelic <- FALSE
@@ -80,7 +78,7 @@ detect_biallelic_markers <- function(data, verbose = FALSE) {
     alt.num <- NULL
   } else {
     # If there are less than 100 markers, sample all of them
-    sampled.markers <- unique(input$MARKERS)
+    sampled.markers <- unique(data$MARKERS)
     n.markers <- length(sampled.markers)
     if (n.markers < 100) {
       small.panel <- TRUE
@@ -92,7 +90,7 @@ detect_biallelic_markers <- function(data, verbose = FALSE) {
                                 replace = FALSE)
     }
 
-    biallelic <- dplyr::select(.data = input, MARKERS, GT) %>%
+    biallelic <- dplyr::select(.data = data, MARKERS, GT) %>%
       dplyr::filter(GT != "000000") %>%
       dplyr::filter(MARKERS %in% sampled.markers) %>%
       dplyr::distinct(MARKERS, GT) %>%
