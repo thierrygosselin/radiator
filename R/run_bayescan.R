@@ -9,7 +9,7 @@
 #' \item \strong{SNP linkage: } detect automatically the presence of multiple SNPs on the same locus and
 #' measure/verify accuracy of genome scan within locus.
 #' \item \strong{summary tables and visualization: } the function generate summary tables and plots of genome scan.
-#' \item \strong{whitelists and blacklists} of markers under different selection types are automatically generated !
+#' \item \strong{whitelists and blacklists} of markers under different selection identity are automatically generated !
 #' }
 #'
 #' This function requires a working
@@ -212,15 +212,7 @@ run_bayescan <- function(
                              No shortcut with default here, sorry.
                              Please read the BayeScan manual...")
   # logs files and folder ----------------------------------------------------
-  file.date <- stringi::stri_replace_all_fixed(
-    Sys.time(),
-    pattern = " EDT", replacement = "") %>%
-    stringi::stri_replace_all_fixed(
-      str = .,
-      pattern = c("-", " ", ":"), replacement = c("", "@", ""),
-      vectorize_all = FALSE) %>%
-    stringi::stri_sub(str = ., from = 1, to = 13)
-
+  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
   if ((!is.null(subsample))) {
     folder.message <- stringi::stri_join("radiator_bayescan_subsampling_", file.date, sep = "")
   } else {

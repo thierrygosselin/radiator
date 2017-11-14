@@ -265,14 +265,7 @@ filter_het <- function(
   }
   # Folder -------------------------------------------------------------------
   # Date and time
-  file.date <- stringi::stri_replace_all_fixed(
-    Sys.time(),
-    pattern = " EDT", replacement = "") %>%
-    stringi::stri_replace_all_fixed(
-      str = .,
-      pattern = c("-", " ", ":"), replacement = c("", "@", ""),
-      vectorize_all = FALSE) %>%
-    stringi::stri_sub(str = ., from = 1, to = 13)
+  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
   folder.extension <- stringi::stri_join("filter_het_", file.date, sep = "")
   path.folder <- stringi::stri_join(getwd(),"/", folder.extension, sep = "")
   dir.create(file.path(path.folder))

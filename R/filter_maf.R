@@ -92,6 +92,8 @@
 #' # the user to apply some filtering or selection before doing the MAF filtering.
 #' }
 
+#' @author Thierry Gosselin \email{thierrygosselin@@icloud.com} and Eric Archer \email{eric.archer@@noaa.gov}
+
 filter_maf <- function(
   data,
   vcf.metadata = FALSE,
@@ -152,8 +154,8 @@ filter_maf <- function(
   # Date and time
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
   folder.extension <- stringi::stri_join("filter_maf_", file.date, sep = "")
-  path.folder <- stringi::stri_join(getwd(),"/", folder.extension, sep = "")
-  dir.create(file.path(path.folder))
+  path.folder <- file.path(getwd(), folder.extension)
+  dir.create(path.folder)
   message("\nFolder created: ", folder.extension)
   file.date <- NULL #unused object
 

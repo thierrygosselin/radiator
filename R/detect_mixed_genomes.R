@@ -84,7 +84,7 @@
 #' @rdname detect_mixed_genomes
 #' @export
 
-#' @import ggplot2
+#' @importFrom ggplot2 as_labeller ggplot theme_classic theme aes geom_jitter scale_y_continuous scale_y_continuous scale_color_discrete scale_size_continuous theme element_blank element_text geom_hline labeller facet_grid ggsave geom_boxplot labs
 #' @importFrom stringi stri_join stri_replace_all_fixed stri_sub
 #' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join funs
 #' @importFrom readr write_tsv
@@ -161,9 +161,9 @@ detect_mixed_genomes <- function(
   data,
   ind.heterozygosity.threshold = NULL
 ) {
-  cat("#######################################################################\n")
-  cat("#################### radiator::detect_mixed_genomes #####################\n")
-  cat("#######################################################################\n")
+  cat("###############################################################################\n")
+  cat("######################## radiator::detect_mixed_genomes #######################\n")
+  cat("###############################################################################\n")
   timing <- proc.time()
   opt.change <- getOption("width")
   options(width = 70)
@@ -175,8 +175,8 @@ detect_mixed_genomes <- function(
   # Get date and time to have unique filenaming
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
   folder.extension <- stringi::stri_join("detect_mixed_genomes_", file.date, sep = "")
-  path.folder <- stringi::stri_join(getwd(),"/", folder.extension, sep = "")
-  dir.create(file.path(path.folder))
+  path.folder <- file.path(getwd(), folder.extension)
+  dir.create(path.folder)
   message(stringi::stri_join("Folder created: \n", folder.extension))
   file.date <- NULL #unused object
 
@@ -343,7 +343,7 @@ detect_mixed_genomes <- function(
   ggplot2::ggsave(
     filename = file.path(path.folder, "individual.heterozygosity.manhattan.plot.pdf"),
     plot = individual.heterozygosity.manhattan.plot,
-    width = 2 * n.pop, height = 15, dpi = 600, units = "cm", useDingbats = FALSE, limitsize = FALSE)
+    width = 4 * n.pop, height = 15, dpi = 600, units = "cm", useDingbats = FALSE, limitsize = FALSE)
 
 
 
@@ -368,7 +368,7 @@ detect_mixed_genomes <- function(
   ggplot2::ggsave(
     filename = file.path(path.folder, "individual.heterozygosity.boxplot.pdf"),
     plot = individual.heterozygosity.boxplot,
-    width = 2 * n.pop, height = 15, dpi = 600, units = "cm", useDingbats = FALSE, limitsize = FALSE)
+    width = 2.5 * n.pop, height = 10, dpi = 600, units = "cm", useDingbats = FALSE, limitsize = FALSE)
 
   ## Step 2: Blacklist outlier individuals -------------------------------------
   # Blacklist individuals based a threshold of mean heterozygosity
@@ -391,8 +391,8 @@ detect_mixed_genomes <- function(
     blacklist.ind.het <- "ind.heterozygosity.threshold is necessary to get a blacklist of individuals"
   }
 
-  message(stringi::stri_join("Computation time: ", round((proc.time() - timing)[[3]]), " sec"))
-  cat("############################## completed ##############################\n")
+  message("Computation time: ", round((proc.time() - timing)[[3]]), " sec")
+  cat("################################## completed ##################################\n")
   res <- list(
     individual.heterozygosity = het.ind,
     heterozygosity.statistics = het.ind.stats,
