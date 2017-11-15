@@ -24,13 +24,21 @@
 detect_all_missing <- function(data) {
   res <- list()
   # markers with all missing... yes I've seen it... breaks code...
+  if (tibble::has_name(data, "GT_BIN")) {
+    blacklist.markers <- data %>%
+      dplyr::group_by(MARKERS) %>%
+      dplyr::distinct(GT_BIN) %>%
+      dplyr::summarise(GENOTYPED = length(GT_BIN[!is.na(GT_BIN)])) %>%
+      dplyr::filter(GENOTYPED == 0) %>%
+      dplyr::ungroup(.)
+  } else {
   blacklist.markers <- data %>%
     dplyr::group_by(MARKERS) %>%
     dplyr::distinct(GT) %>%
     dplyr::summarise(GENOTYPED = length(GT[GT != "000000"])) %>%
     dplyr::filter(GENOTYPED == 0) %>%
     dplyr::ungroup(.)
-
+}
   problem <- nrow(blacklist.markers)
   if (problem > 0) {
     message("Data set contains ", problem," marker(s) with no genotypes (all missing)...")
