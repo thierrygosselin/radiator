@@ -256,3 +256,6 @@ bg <- turtle.maf$blacklist.genotypes
 # the user to apply some filtering or selection before doing the MAF filtering.
 }
 }
+\author{
+Thierry Gosselin \email{thierrygosselin@icloud.com} and Eric Archer \email{eric.archer@noaa.gov}
+}

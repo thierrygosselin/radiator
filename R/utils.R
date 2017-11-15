@@ -10,9 +10,9 @@ NULL
 
 
 
-.onUnload <- function(libpath) {
-  library.dynam.unload("grur", libpath)
-}
+# .onUnload <- function(libpath) {
+#   library.dynam.unload("radiator", libpath)
+# }
 
 
 #' @title split_vec_row

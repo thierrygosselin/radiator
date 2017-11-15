@@ -111,7 +111,7 @@ files within radiator and run \href{http://cmpg.unibe.ch/software/BayeScan/}{Bay
 \item \strong{SNP linkage: } detect automatically the presence of multiple SNPs on the same locus and
 measure/verify accuracy of genome scan within locus.
 \item \strong{summary tables and visualization: } the function generate summary tables and plots of genome scan.
-\item \strong{whitelists and blacklists} of markers under different selection types are automatically generated !
+\item \strong{whitelists and blacklists} of markers under different selection identity are automatically generated !
 }
 
 This function requires a working

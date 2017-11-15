@@ -5,9 +5,9 @@
 #' @description Detect file format of genomic data set.
 #' @param data A genomic data set in the global environment
 
-#' @return On of these file format:
+#' @return One of these file format:
 #' \itemize{
-#' \item tbl.df: for a data frame
+#' \item tbl_df: for a data frame
 #' \item genind: for a genind object
 #' \item genlight: for a genlight object
 #' \item gtypes: for a gtypes object
