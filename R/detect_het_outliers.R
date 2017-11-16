@@ -31,12 +31,13 @@
 #'
 
 #' @details
+#'
 #' \strong{Before using the function:}
 #'
 #' \enumerate{
 #' \item Don't use raw RADseq data, this function will work best with filtered data
-#' \item Remove duplicate \code{\link{detect_duplicate_genomes}}.
-#' \item Remove mixed samples \code{\link{detect_mixed_genomes}}.
+#' \item Remove duplicate \code{\link[radiator]{detect_duplicate_genomes}}.
+#' \item Remove mixed samples \code{\link[radiator]{detect_mixed_genomes}}.
 #' \item Look at other filters in radiator package...
 #' }
 #'
@@ -52,7 +53,7 @@
 #'Use the argument filename to write the imported (and maybe further filtered)
 #'tidy genomic data set inside the folder. The filename will be automatically
 #'appended \code{.rad} to it. This file can be used again directly inside this
-#'function and other radiator functions. See \code{\link\{read_rad}}.
+#'function and other radiator functions. See \code{\link[radiator]{read_rad}}.
 #'
 
 #' @rdname detect_het_outliers

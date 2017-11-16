@@ -2,13 +2,13 @@
 % Please edit documentation in R/detect_het_outliers.R
 \name{detect_het_outliers}
 \alias{detect_het_outliers}
-\title{Detect heterozygote outliers and estimate miscall rate}
+\title{Detect heterozygotes outliers and estimate miscall rate}
 \usage{
 detect_het_outliers(data, nreps = 200, blacklist.id = NULL,
   whitelist.markers = NULL, monomorphic.out = TRUE, max.marker = NULL,
   snp.ld = NULL, common.markers = TRUE, strata = NULL,
   pop.levels = NULL, pop.labels = NULL, pop.select = NULL,
-  parallel.core = parallel::detectCores() - 1)
+  filename = NULL, parallel.core = parallel::detectCores() - 1)
 }
 \arguments{
 \item{data}{12 options: VCF (SNPs or Haplotypes,
@@ -115,6 +115,13 @@ the analysis. e.g. \code{pop.select = c("QUE", "ONT")} to select \code{QUE}
 and \code{ONT} population samples (out of 20 pops).
 Default: \code{pop.select = NULL}}
 
+\item{filename}{(optional) The function uses \code{\link[fst]{write.fst}},
+to write the tidy data frame in
+the working directory. The file extension appended to
+the \code{filename} provided is \code{.rad}.
+With default: \code{filename = NULL}, the tidy data frame is
+in the global environment only (i.e. not written in the working directory...).}
+
 \item{parallel.core}{(optional) The number of core used for parallel
 execution during vcf import.
 Default: \code{parallel::detectCores() - 1}.}
@@ -150,15 +157,24 @@ incorrectly called as homozygotes. See details below for more info.
 
 \enumerate{
 \item Don't use raw RADseq data, this function will work best with filtered data
-\item Remove duplicate \code{\link{detect_duplicate_genomes}}.
-\item Remove mixed samples \code{\link{detect_mixed_genomes}}.
+\item Remove duplicate \code{\link[radiator]{detect_duplicate_genomes}}.
+\item Remove mixed samples \code{\link[radiator]{detect_mixed_genomes}}.
 \item Look at other filters in radiator package...
 }
 
 \strong{During import:}
 
 By default the function will keep only polymorphic markers and markers common
-between all populations.
+between all populations. If you supply a tidy data frame or a \code{.rad} file,
+the function skip all the filters, pop selection, etc. It will however scan and
+remove monomorphic markers automatically.
+
+\strong{Keep track of the data:}
+
+Use the argument filename to write the imported (and maybe further filtered)
+tidy genomic data set inside the folder. The filename will be automatically
+appended \code{.rad} to it. This file can be used again directly inside this
+function and other radiator functions. See \code{\link[radiator]{read_rad}}.
 }
 \author{
 Eric Anderson \email{eric.anderson@noaa.gov} and

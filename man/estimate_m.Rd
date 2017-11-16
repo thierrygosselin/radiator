@@ -2,7 +2,7 @@
 % Please edit documentation in R/detect_het_outliers.R
 \name{estimate_m}
 \alias{estimate_m}
-\title{heterozygote miscall rate}
+\title{heterozygotes miscall rate}
 \usage{
 estimate_m(data, nreps = 200, m_init = stats::runif(1), a0 = 0.5,
   a1 = 0.5, sm = 0.005)
@@ -22,7 +22,7 @@ Default: \code{nreps = 200}.}
 \item{sm}{standard devation of proposal distribution for m}
 }
 \description{
-estimate the heterozygote miscall rate from a simple model
+estimate the heterozygotes miscall rate from a simple model
 }
 \author{
 Eric Anderson \email{eric.anderson@noaa.gov}
