@@ -10,9 +10,9 @@ detect_genomic_format(data)
 \item{data}{A genomic data set in the global environment}
 }
 \value{
-On of these file format:
+One of these file format:
 \itemize{
-\item tbl.df: for a data frame
+\item tbl_df: for a data frame
 \item genind: for a genind object
 \item genlight: for a genlight object
 \item gtypes: for a gtypes object

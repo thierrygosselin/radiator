@@ -183,7 +183,7 @@ filter_maf <- function(
 
   # import data ----------------------------------------------------------------
   message("Importing data ...")
-  if (data.type %in% c("tbl_df", "fst.file")) {
+  if (data.type %in% c("tbl.df", "fst.file")) {
     want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS", "POP_ID", "REF", "ALT", "GT", "GT_VCF", "GT_VCF_NUC", "GT_BIN")
     if (data.type == "tbl_df") {
       input <- suppressWarnings(dplyr::select(data, dplyr::one_of(want)))

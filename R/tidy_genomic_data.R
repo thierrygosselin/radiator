@@ -1101,9 +1101,8 @@ tidy_genomic_data <- function(
 
   # Removing monomorphic markers------------------------------------------------
   if (monomorphic.out) {
-    if (verbose) message("Removing monomorphic markers: yes")
+    message("Scanning for monomorphic markers...")
     if (tibble::has_name(input, "POLYMORPHIC")) {
-      if (verbose) message("Scanning for monomorphic markers...")
       if (verbose) message("    Number of markers before = ", dplyr::n_distinct(input$MARKERS))
       if (tibble::has_name(input, "POS")) {
         mono.markers <- dplyr::filter(input, !POLYMORPHIC) %>%
@@ -1114,10 +1113,10 @@ tidy_genomic_data <- function(
       }
 
       if (nrow(mono.markers) > 0) {
-        if (verbose) message("    Number of monomorphic markers removed = ", nrow(mono.markers))
+        message("    Number of monomorphic markers removed = ", nrow(mono.markers))
         input <- dplyr::filter(input, !MARKERS %in% mono.markers$MARKERS)
         readr::write_tsv(mono.markers, "blacklist.monomorphic.markers.tsv")
-        if (verbose) message("    Number of markers after = ", dplyr::n_distinct(input$MARKERS))
+        message("    Number of markers after = ", dplyr::n_distinct(input$MARKERS))
       }
       input <- dplyr::select(input, -POLYMORPHIC)
     } else {
@@ -1148,7 +1147,7 @@ tidy_genomic_data <- function(
   # Write to working directory -------------------------------------------------
   if (!is.null(filename)) {
     tidy.name <- stringi::stri_join(filename, ".rad")
-    message("Writing tidy data set: ", tidy.name)
+    message("\nWriting tidy data set:\n", tidy.name)
     fst::write.fst(x = input, path = tidy.name, compress = 85)
   }
 
@@ -1164,7 +1163,8 @@ tidy_genomic_data <- function(
 
   if (verbose) {
     cat("############################### RESULTS ###############################\n")
-
+  }
+  if (verbose) {
     if (!is.null(filename)) {
       message("Tidy data written in global environment and working directory")
     } else {
@@ -1176,19 +1176,22 @@ tidy_genomic_data <- function(
     } else{
       message("Multiallelic data")
     }
-    if (common.markers) {
-      message("Number of common markers: ", n.markers)
-    } else {
-      message("Number of markers: ", n.markers)
-    }
-    message("Number of chromosome/contig/scaffold: ", n.chromosome)
-    message("Number of individuals: ", n.individuals)
-    message("Number of populations: ", n.pop)
-    timing <- proc.time() - timing
-    message("Computation time: ", round(timing[[3]]), " sec")
+  }
+  message("\nTidy genomic data:")
+  if (common.markers) {
+    message("    Number of common markers: ", n.markers)
+  } else {
+    message("    Number of markers: ", n.markers)
+  }
+  message("    Number of chromosome/contig/scaffold: ", n.chromosome)
+  message("    Number of individuals: ", n.individuals)
+  message("    Number of populations: ", n.pop)
+  if (verbose) timing <- proc.time() - timing
+  if (verbose) message("Computation time: ", round(timing[[3]]), " sec")
+  if (verbose) {
     cat("################ radiator::tidy_genomic_data completed ################\n")
   }
-  res <- input
-  options(width = opt.change)
-  return(res)
+res <- input
+options(width = opt.change)
+return(res)
 } # tidy genomic data

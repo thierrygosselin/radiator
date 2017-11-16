@@ -82,7 +82,7 @@ keep_common_markers <- function(data, plot = FALSE, verbose = FALSE) {
 
   if (verbose) message("    Number of markers before = ", markers.input)
   if (verbose) message("    Number of markers removed = ", blacklist.markers)
-  if (verbose) message("    Number of markers after (common between populations) = ", markers.in.common)
+  if (verbose) message("    Number of common markers between populations) = ", markers.in.common)
 
   if (plot) {
     pops <- unique(input$POP_ID)
