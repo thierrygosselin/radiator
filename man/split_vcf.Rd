@@ -46,7 +46,7 @@ into a new pop called \code{"NEW"}:
 (1) First, define the levels for your pop with \code{pop.levels} argument:
 \code{pop.levels = c("QUE", "ONT", "ALB")}.
 (2) then, use \code{pop.labels} argument:
-\code{pop.levels = c("NEW", "NEW", "ALB")}.
+\code{pop.labels = c("NEW", "NEW", "ALB")}.
 To rename \code{"QUE"} to \code{"TAS"}:
 \code{pop.labels = c("TAS", "ONT", "ALB")}.
 Default: \code{pop.labels = NULL}. If you find this too complicated,

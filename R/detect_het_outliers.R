@@ -11,6 +11,29 @@
 
 #' @inheritParams tidy_genomic_data
 
+#' @details
+#' \strong{Before using the function:}
+#' \enumerate{
+#' \item Don't use raw RADseq data, this function will work best with filtered data
+#' \item Remove duplicate \code{\link[radiator]{detect_duplicate_genomes}}.
+#' \item Remove mixed samples \code{\link[radiator]{detect_mixed_genomes}}.
+#' \item Look at other filters in radiator package...
+#' }
+#'
+#' \strong{During import:}
+#'
+#' By default the function will keep only polymorphic markers and markers common
+#' between all populations. If you supply a tidy data frame or a \code{.rad} file,
+#' the function skip all the filters, pop selection, etc. It will however scan and
+#' remove monomorphic markers automatically.
+#'
+#' \strong{Keep track of the data:}
+#'
+#' Use the argument filename to write the imported (and maybe further filtered)
+#' tidy genomic data set inside the folder. The filename will be automatically
+#' appended \code{.rad} to it. This file can be used again directly inside this
+#' function and other radiator functions. See \code{\link[radiator]{read_rad}}.
+
 #' @return A folder generated automatically with date and time,
 #' the file \code{het.summary.tsv} contains the summary statistics. The file
 #' \code{markers.genotypes.boudaries.pdf} is the plot with boundaries.
@@ -30,31 +53,7 @@
 #' the grouping is found in the last column called \code{POP_ID}.
 #'
 
-#' @details
-#'
-#' \strong{Before using the function:}
-#'
-#' \enumerate{
-#' \item Don't use raw RADseq data, this function will work best with filtered data
-#' \item Remove duplicate \code{\link[radiator]{detect_duplicate_genomes}}.
-#' \item Remove mixed samples \code{\link[radiator]{detect_mixed_genomes}}.
-#' \item Look at other filters in radiator package...
-#' }
-#'
-#' \strong{During import:}
-#'
-#' By default the function will keep only polymorphic markers and markers common
-#' between all populations. If you supply a tidy data frame or a \code{.rad} file,
-#' the function skip all the filters, pop selection, etc. It will however scan and
-#' remove monomorphic markers automatically.
-#'
-#'\strong{Keep track of the data:}
-#'
-#'Use the argument filename to write the imported (and maybe further filtered)
-#'tidy genomic data set inside the folder. The filename will be automatically
-#'appended \code{.rad} to it. This file can be used again directly inside this
-#'function and other radiator functions. See \code{\link[radiator]{read_rad}}.
-#'
+
 
 #' @rdname detect_het_outliers
 #' @export
