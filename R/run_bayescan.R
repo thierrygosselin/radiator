@@ -20,13 +20,15 @@
 #' @param data (character, path) Read carefully because there's 2 ways.
 #' \enumerate{
 #' \item Path to BayeScan input file.
-#' To get this input rapidly: \pkg{radiator} \code{\link{write_bayescan}}
+#' To get this input rapidly: \code{\link[radiator]{write_bayescan}} if
+#' you already have a tidy data, or use \code{\link[radiator]{genomic_converter}}
 #' \item Path to a tidy data file or object.
-#' This type of input is generated with \pkg{radiator} \code{\link{tidy_genomic_data}}.
+#' This type of input is generated with \code{\link[radiator]{genomic_converter}} or
+#' \code{\link[radiator]{tidy_genomic_data}}.
 #' Use this format if you intend to do subsampling with the
 #' arguments described below \code{subsample} and \code{iteration.subsample}.
-#' \item You can do both the BayeScan file and tidy data with
-#' \pkg{radiator} \code{\link{genomic_converter}}.
+#' \item Remember: you can do both the BayeScan file and tidy data with
+#' \code{\link[radiator]{genomic_converter}}.
 #' }
 #' @param n (integer) Number of outputted iterations. Default: \code{n = 5000}.
 #' @param thin (integer) Thinning interval size. Default: \code{thin = 10}
@@ -164,6 +166,9 @@
 #' and change it's name to \code{bayescan}. Too complicated ? and you've just
 #' downloaded the last BayeScan version, I would try this :
 #' \code{bayescan.path = "/Users/thierry/Downloads/BayeScan2.1/binaries/BayeScan2.1_macos64bits"}
+#'
+#' Make sure to give permission: \code{sudo chmod 777 /usr/local/bin/bayescan}
+
 
 #' @seealso
 #' \href{http://cmpg.unibe.ch/software/BayeScan/}{BayeScan}
@@ -224,9 +229,9 @@ run_bayescan <- function(
 
   # Subsampling ----------------------------------------------------------------
   if (!is.null(subsample)) {
+    message("Subsampling: selected")
+    data.type <- radiator::detect_genomic_format(data = data)
     if (is.vector(data)) {
-      data.type <- radiator::detect_genomic_format(data = data)
-
       if (data.type != "fst.file") {
         stop("Using subsample argument requires a tidy data frame saved by
              radiator::tidy_genomic_data function")
@@ -245,14 +250,24 @@ run_bayescan <- function(
       want.more <- c("MARKERS", "INDIVIDUALS", "POP_ID")
       want.more.check <- isTRUE(unique(want.more %in% columns.tidy))
       is.tidy <- isTRUE(unique(c(want.check, want.more.check)))
-
-      if (is.tidy) {
-        data <- data
-      } else {
-        stop("Using subsample argument requires a tidy data frame object")
-      }
+      if (!is.tidy) stop("A tidy data frame object required")
     }
+
     ind.pop.df <- dplyr::distinct(.data = data, POP_ID, INDIVIDUALS)
+
+    # Print some statistics ----------------------------------------------------
+    strata.stats <- ind.pop.df %>%
+      dplyr::group_by(POP_ID) %>%
+      dplyr::tally(.) %>%
+      dplyr::mutate(STRATA = stringi::stri_join(POP_ID, n, sep = " = "))
+
+    n.pop <- dplyr::n_distinct(ind.pop.df$POP_ID)
+    n.ind <- dplyr::n_distinct(ind.pop.df$INDIVIDUALS)
+    message("Number of populations: ", n.pop)
+    message("Number of individuals: ", n.ind)
+    message("Number of ind/pop:\n", stringi::stri_join(strata.stats$STRATA, collapse = "\n"))
+    message("Number of markers: ", dplyr::n_distinct(data$MARKERS))
+
 
     if (subsample == "min") {
       subsample <- ind.pop.df %>%
@@ -262,6 +277,7 @@ run_bayescan <- function(
         dplyr::ungroup(.) %>%
         dplyr::select(n) %>%
         purrr::flatten_int(.)
+      message("\nSubsample used: ", subsample)
     }
     subsample.list <- purrr::map(
       .x = 1:iteration.subsample,
@@ -270,11 +286,10 @@ run_bayescan <- function(
       subsample = subsample
     )
     # keep track of subsampling individuals and write to directory
-    message("Subsampling: selected")
     subsampling.individuals <- dplyr::bind_rows(subsample.list)
     readr::write_tsv(
       x = subsampling.individuals,
-      path = path.folder(path.folder, "radiator_bayescan_subsampling_individuals.tsv"),
+      path = file.path(path.folder, "radiator_bayescan_subsampling_individuals.tsv"),
       col_names = TRUE,
       append = FALSE
     )
@@ -321,7 +336,7 @@ run_bayescan <- function(
       dplyr::select(-BAYESCAN_MARKERS)
     readr::write_tsv(
       x = res$bayescan.all.subsamples,
-      path = path.folder(path.folder, "bayescan.all.subsamples.tsv"),
+      path = file.path(path.folder, "bayescan.all.subsamples.tsv"),
       col_names = TRUE,
       append = FALSE
     )
