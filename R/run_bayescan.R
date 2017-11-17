@@ -101,8 +101,8 @@
 #' \item \code{selection.summary}: dataframe showing the number of markers in the different group of selections and model choice.
 #' \item \code{whitelist.markers.positive.selection}: Whitelist of markers under diversifying selection and common in all iterations.
 #' \item \code{whitelist.markers.neutral.selection}: Whitelist of neutral markers and common in all iterations.
-#' \item \code{whitelist.markers.neutral.positive.selection}: Whitelist of neutral markers and markers under diversifying selection and common in all iterations.
 #' \item \code{blacklist.markers.balancing.selection}: Blacklist of markers under balancing selection and common in all iterations.
+#' \item \code{whitelist.markers.neutral.positive.selection}: Whitelist of neutral markers and markers under diversifying selection and common in all iterations.
 #' \item \code{whitelist.markers.without.balancing.positive}:
 #' Whitelist of all original markers with markers under balancing selection and directional selection removed.
 #' The markers that remains are the ones to use in population structure analysis.
@@ -332,6 +332,8 @@ run_bayescan <- function(
       bayescan.path = bayescan.path
     )
     # Manage subsampling results -----------------------------------------------
+    cat("\n\n#######################################################################\n")
+    message("Summarizing subsampling results...")
     res$bayescan.all.subsamples <- purrr::map_df(subsample.bayescan, "bayescan") %>%
       dplyr::select(-BAYESCAN_MARKERS)
     readr::write_tsv(
@@ -464,48 +466,96 @@ run_bayescan <- function(
     )
 
     # Generating blacklists and whitelists of all iterations -------------------
+    message("Generating blacklist and whitelists for all iterations")
     all.markers <- dplyr::distinct(markers.summary, MARKERS)
 
+    # positive  ----------------------------------------------------------------
     res$whitelist.markers.positive.selection <- res$bayescan.summary %>%
       dplyr::filter(SELECTION == "diversifying" & PO_GROUP != "no evidence") %>%
       dplyr::distinct(MARKERS) %>%
       dplyr::arrange (MARKERS)
-    readr::write_tsv(
-      x = res$whitelist.markers.positive.selection,
-      path = file.path(path.folder, "whitelist.markers.positive.selection.tsv"))
 
+    if (nrow(res$whitelist.markers.positive.selection) > 0) {
+      readr::write_tsv(
+        x = res$whitelist.markers.positive.selection,
+        path = file.path(path.folder, "whitelist.markers.positive.selection.tsv"))
+      positive <- TRUE
+      message("    whitelist positive/directional selection: generated")
+    } else {
+      message("    whitelist positive/directional selection: not generated")
+      positive <- FALSE
+    }
+
+    # neutral ------------------------------------------------------------------
     res$whitelist.markers.neutral.selection <- res$bayescan.summary %>%
       dplyr::filter(SELECTION == "neutral") %>%
       dplyr::distinct(MARKERS) %>%
       dplyr::arrange (MARKERS)
-    readr::write_tsv(
-      x = res$whitelist.markers.neutral.selection,
-      path = file.path(path.folder, "whitelist.markers.neutral.selection.tsv"))
+    if (nrow(res$whitelist.markers.neutral.selection) > 0) {
+      readr::write_tsv(
+        x = res$whitelist.markers.neutral.selection,
+        path = file.path(path.folder, "whitelist.markers.neutral.selection.tsv"))
+      neutral <- TRUE
+      message("    whitelist neutral selection: generated")
+    } else {
+      message("    whitelist neutral selection: not generated")
+      neutral <- FALSE
+    }
 
-    # neutral and positive
-    res$whitelist.markers.neutral.positive.selection <- res$bayescan.summary %>%
-      dplyr::filter(SELECTION == "neutral" | (SELECTION == "diversifying" & PO_GROUP != "no evidence")) %>%
-      dplyr::distinct(MARKERS) %>%
-      dplyr::arrange (MARKERS)
-    readr::write_tsv(
-      x = res$whitelist.markers.neutral.positive.selection,
-      path = file.path(path.folder, "whitelist.markers.neutral.positive.selection.stv"))
+    # Whitelist neutral and positive -------------------------------------------
+    if (neutral && positive) {
+      res$whitelist.markers.neutral.positive.selection <- res$bayescan.summary %>%
+        dplyr::filter(SELECTION == "neutral" | (SELECTION == "diversifying" & PO_GROUP != "no evidence")) %>%
+        dplyr::distinct(MARKERS) %>%
+        dplyr::arrange (MARKERS)
+      readr::write_tsv(
+        x = res$whitelist.markers.neutral.positive.selection,
+        path = file.path(path.folder, "whitelist.markers.neutral.positive.selection.stv"))
+      message("    whitelist neutral and positive/directional selections: generated")
+    } else {
+      message("    whitelist neutral and positive/directional selections: not generated")
+    }
 
+    # blacklist of balancing selected markers-----------------------------------
     res$blacklist.markers.balancing.selection <- res$bayescan.summary %>%
       dplyr::filter(SELECTION == "balancing") %>%
       dplyr::distinct(MARKERS) %>%
       dplyr::arrange (MARKERS)
-    readr::write_tsv(
-      x = res$blacklist.markers.balancing.selection,
-      path = file.path(path.folder, "blacklist.markers.balancing.selection.tsv"))
 
-    res$whitelist.markers.without.balancing <- dplyr::anti_join(
-      all.markers, res$blacklist.markers.balancing.selection, by = "MARKERS") %>%
-      dplyr::anti_join(res$whitelist.markers.positive.selection, by = "MARKERS") %>%
-    readr::write_tsv(
-      x = res$whitelist.markers.without.balancing.positive,
-      path = file.path(path.folder, "whitelist.markers.without.balancing.positive.tsv"))
-  }
+    if (nrow(res$blacklist.markers.balancing.selection) > 0) {
+      readr::write_tsv(
+        x = res$blacklist.markers.balancing.selection,
+        path = file.path(path.folder, "blacklist.markers.balancing.selection.tsv"))
+      balancing <- TRUE
+      message("    blacklist balancing selection: generated")
+    } else {
+      message("    blacklist balancing selection: not generated")
+      balancing <- FALSE
+    }
+
+
+    # whitelist without balancing and positive ---------------------------------
+    if (neutral && positive && balancing) {
+      res$whitelist.markers.without.balancing.positive <- dplyr::anti_join(
+        all.markers, res$blacklist.markers.balancing.selection, by = "MARKERS") %>%
+        dplyr::anti_join(res$whitelist.markers.positive.selection, by = "MARKERS") %>%
+        readr::write_tsv(
+          x = res$whitelist.markers.without.balancing.positive,
+          path = file.path(path.folder, "whitelist.markers.without.balancing.positive.tsv"))
+      message("    whitelist without balancing and positive selection: generated")
+    }
+
+    # if no positive
+
+    if (neutral && balancing && !positive) {
+      res$whitelist.markers.without.balancing.positive <- dplyr::anti_join(
+        all.markers, res$blacklist.markers.balancing.selection, by = "MARKERS")
+      readr::write_tsv(
+        x = res$whitelist.markers.without.balancing.positive,
+        path = file.path(path.folder, "whitelist.markers.without.balancing.positive.tsv"))
+      message("    whitelist without balancing and positive selection: generated")
+    }
+  }# End
 
   timing <- proc.time() - timing
   message("\nComputation time: ", round(timing[[3]]), " sec")
@@ -675,7 +725,7 @@ bayescan_one <- function(
   system2(
     command = bayescan.path,
     args = command.arguments,
-    stderr = log.file
+    stderr = log.file, stdout = log.file
   )
 
 
@@ -898,18 +948,20 @@ bayescan_one <- function(
 
 
   # Generating plot ------------------------------------------------------------
+  message("Generating plot")
   res$bayescan.plot <- plot_bayescan(res$bayescan)
 
   if (!is.null(subsample)) {
+    temp.name <-  stringi::stri_join("bayescan_plot_", subsample.id, ".pdf")
     ggplot2::ggsave(
-      filename = path.folder(path.folder.subsample, "bayescan_plot_", subsample.id, ".pdf"),
+      filename = file.path(path.folder.subsample, temp.name),
       plot = res$bayescan.plot,
       width = 30, height = 15,
       dpi = 600, units = "cm",
       useDingbats = FALSE)
   } else {
     ggplot2::ggsave(
-      filename = path.folder(path.folder.subsample, "bayescan_plot.pdf"),
+      filename = file.path(path.folder.subsample, "bayescan_plot.pdf"),
       plot = res$bayescan.plot,
       width = 30, height = 15,
       dpi = 600, units = "cm",
@@ -918,9 +970,10 @@ bayescan_one <- function(
 
   # Saving bayescan data frame--------------------------------------------------
   if (!is.null(subsample)) {
+    temp.name <-  stringi::stri_join("bayescan_", subsample.id, ".tsv")
     readr::write_tsv(
       x = res$bayescan,
-      path = file.path(path.folder.subsample, "bayescan_", subsample.id, ".tsv"))
+      path = file.path(path.folder.subsample, temp.name))
   } else {
     readr::write_tsv(
       x = res$bayescan,
