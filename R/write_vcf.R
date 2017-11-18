@@ -50,55 +50,48 @@ write_vcf <- function(data, pop.info = FALSE, filename = NULL) {
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {
-    input <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-  } else {
-    input <- data
+    data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
   }
 
-  # check genotype column naming
-  colnames(input) <- stringi::stri_replace_all_fixed(
-    str = colnames(input),
-    pattern = "GENOTYPE",
-    replacement = "GT",
-    vectorize_all = FALSE
-  )
-
   # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-  if (tibble::has_name(input, "LOCUS") && !tibble::has_name(input, "MARKERS")) {
-    input <- dplyr::rename(.data = input, MARKERS = LOCUS)
+  if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
+    data <- dplyr::rename(.data = data, MARKERS = LOCUS)
   }
 
   # REF/ALT Alleles and VCF genotype format ------------------------------------
-  if (!tibble::has_name(input, "GT_VCF")) {
-    ref.change <- radiator::change_alleles(data = input)$input
-    input <- dplyr::left_join(input, ref.change, by = c("MARKERS", "INDIVIDUALS"))
+  if (!tibble::has_name(data, "GT_VCF")) {
+    ref.change <- radiator::change_alleles(data = data)$input
+    data <- dplyr::left_join(data, ref.change, by = c("MARKERS", "INDIVIDUALS"))
   }
 
   # remove duplicate REF/ALT column
-  if (tibble::has_name(input, "REF.x")) {
-    input <- dplyr::select(.data = input, -c(REF.x, ALT.x)) %>%
+  if (tibble::has_name(data, "REF.x")) {
+    data <- dplyr::select(.data = data, -c(REF.x, ALT.x)) %>%
       dplyr::rename(REF = REF.y, ALT = ALT.y)
   }
 
 
   # Include CHROM, LOCUS, POS --------------------------------------------------
-  if (!tibble::has_name(input, "CHROM")) {
-    input <- dplyr::mutate(
-      .data = input,
+  if (!tibble::has_name(data, "CHROM")) {
+    data <- dplyr::mutate(
+      .data = data,
       CHROM = rep("1", n()),
       LOCUS = MARKERS,
       POS = MARKERS
     )
   }
 
+  # Order/sort by pop and ind --------------------------------------------------
+  data <- dplyr::arrange(data, POP_ID, INDIVIDUALS)
+
   # Remove the POP_ID column ---------------------------------------------------
-  if (tibble::has_name(input, "POP_ID") || (!pop.info)) {
-    input <- dplyr::select(.data = input, -POP_ID)
+  if (tibble::has_name(data, "POP_ID") || (!pop.info)) {
+    data <- dplyr::select(.data = data, -POP_ID)
   }
 
   # Info field -----------------------------------------------------------------
   info.field <- suppressWarnings(
-    dplyr::select(.data = input, MARKERS, GT_VCF) %>%
+    dplyr::select(.data = data, MARKERS, GT_VCF) %>%
       dplyr::filter(GT_VCF != "./.") %>%
       dplyr::count(x = ., MARKERS) %>%
       dplyr::mutate(INFO = stringi::stri_join("NS=", n, sep = "")) %>%
@@ -109,7 +102,7 @@ write_vcf <- function(data, pop.info = FALSE, filename = NULL) {
   GT_VCF_POP_ID <- NULL
   if (pop.info) {
     output <- suppressWarnings(
-      dplyr::left_join(input, info.field, by = "MARKERS") %>%
+      dplyr::left_join(data, info.field, by = "MARKERS") %>%
         dplyr::select(MARKERS, CHROM, LOCUS, POS, REF, ALT, INFO, INDIVIDUALS, GT_VCF, POP_ID) %>%
         dplyr::mutate(GT_VCF_POP_ID = stringi::stri_join(GT_VCF, POP_ID, sep = ":")) %>%
         dplyr::select(-c(GT_VCF, POP_ID)) %>%
@@ -125,7 +118,7 @@ write_vcf <- function(data, pop.info = FALSE, filename = NULL) {
 
   } else {
     output <- suppressWarnings(
-      dplyr::left_join(input, info.field, by = "MARKERS") %>%
+      dplyr::left_join(data, info.field, by = "MARKERS") %>%
         dplyr::select(MARKERS, CHROM, LOCUS, POS, REF, ALT, INDIVIDUALS, GT_VCF, INFO) %>%
         dplyr::group_by(MARKERS, CHROM, LOCUS, POS, INFO, REF, ALT) %>%
         tidyr::spread(data = ., key = INDIVIDUALS, value = GT_VCF) %>%
@@ -138,20 +131,24 @@ write_vcf <- function(data, pop.info = FALSE, filename = NULL) {
     )
   }
 
-  # Transform the REF/ALT format back to A/C/G/T
-  output <- output %>%
-    dplyr::mutate(
-      REF = stringi::stri_replace_all_fixed(
-        str = REF,
-        pattern = c("001", "002", "003", "004"),
-        replacement = c("A", "C", "G", "T"),
-        vectorize_all = FALSE),
-      ALT = stringi::stri_replace_all_fixed(
-        str = ALT,
-        pattern = c("001", "002", "003", "004"),
-        replacement = c("A", "C", "G", "T"),
-        vectorize_all = FALSE)
-    )
+  # Transform the REF/ALT format back to A/C/G/T if 001, 002, etc is found
+  ref.change <- TRUE %in% unique(c("001", "002", "003", "004") %in% unique(output$REF))
+
+  if (ref.change) {
+    output <- output %>%
+      dplyr::mutate(
+        REF = stringi::stri_replace_all_fixed(
+          str = REF,
+          pattern = c("001", "002", "003", "004"),
+          replacement = c("A", "C", "G", "T"),
+          vectorize_all = FALSE),
+        ALT = stringi::stri_replace_all_fixed(
+          str = ALT,
+          pattern = c("001", "002", "003", "004"),
+          replacement = c("A", "C", "G", "T"),
+          vectorize_all = FALSE)
+      )
+  }
 
   # Keep the required columns
   output <- dplyr::ungroup(output) %>%
@@ -163,9 +160,7 @@ write_vcf <- function(data, pop.info = FALSE, filename = NULL) {
   # Filename ------------------------------------------------------------------
   if (is.null(filename)) {
     # Get date and time to have unique filenaming
-    file.date <- stringi::stri_replace_all_fixed(Sys.time(), pattern = " EDT", replacement = "", vectorize_all = FALSE)
-    file.date <- stringi::stri_replace_all_fixed(file.date, pattern = c("-", " ", ":"), replacement = c("", "@", ""), vectorize_all = FALSE)
-    file.date <- stringi::stri_sub(file.date, from = 1, to = 13)
+    file.date <- format(Sys.time(), "%Y%m%d@%H%M")
     filename <- stringi::stri_join("radiator_vcf_file_", file.date, ".vcf")
   } else {
     filename <- stringi::stri_join(filename, ".vcf")
