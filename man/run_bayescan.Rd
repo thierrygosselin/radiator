@@ -13,13 +13,15 @@ run_bayescan(data, n = 5000, thin = 10, nbp = 20, pilot = 5000,
 \item{data}{(character, path) Read carefully because there's 2 ways.
 \enumerate{
 \item Path to BayeScan input file.
-To get this input rapidly: \pkg{radiator} \code{\link{write_bayescan}}
+To get this input rapidly: \code{\link[radiator]{write_bayescan}} if
+you already have a tidy data, or use \code{\link[radiator]{genomic_converter}}
 \item Path to a tidy data file or object.
-This type of input is generated with \pkg{radiator} \code{\link{tidy_genomic_data}}.
+This type of input is generated with \code{\link[radiator]{genomic_converter}} or
+\code{\link[radiator]{tidy_genomic_data}}.
 Use this format if you intend to do subsampling with the
 arguments described below \code{subsample} and \code{iteration.subsample}.
-\item You can do both the BayeScan file and tidy data with
-\pkg{radiator} \code{\link{genomic_converter}}.
+\item Remember: you can do both the BayeScan file and tidy data with
+\code{\link[radiator]{genomic_converter}}.
 }}
 
 \item{n}{(integer) Number of outputted iterations. Default: \code{n = 5000}.}
@@ -92,8 +94,8 @@ radiator::run_bayescan outputs WITH subsampling:
 \item \code{selection.summary}: dataframe showing the number of markers in the different group of selections and model choice.
 \item \code{whitelist.markers.positive.selection}: Whitelist of markers under diversifying selection and common in all iterations.
 \item \code{whitelist.markers.neutral.selection}: Whitelist of neutral markers and common in all iterations.
-\item \code{whitelist.markers.neutral.positive.selection}: Whitelist of neutral markers and markers under diversifying selection and common in all iterations.
 \item \code{blacklist.markers.balancing.selection}: Blacklist of markers under balancing selection and common in all iterations.
+\item \code{whitelist.markers.neutral.positive.selection}: Whitelist of neutral markers and markers under diversifying selection and common in all iterations.
 \item \code{whitelist.markers.without.balancing.positive}:
 Whitelist of all original markers with markers under balancing selection and directional selection removed.
 The markers that remains are the ones to use in population structure analysis.
@@ -140,6 +142,8 @@ the same locus, accuracy will be measured automatically.
 and change it's name to \code{bayescan}. Too complicated ? and you've just
 downloaded the last BayeScan version, I would try this :
 \code{bayescan.path = "/Users/thierry/Downloads/BayeScan2.1/binaries/BayeScan2.1_macos64bits"}
+
+Make sure to give permission: \code{sudo chmod 777 /usr/local/bin/bayescan}
 }
 \examples{
 \dontrun{

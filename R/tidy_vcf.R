@@ -421,9 +421,7 @@ input <- radiator::change_alleles(
   data = input,
   biallelic = biallelic,
   parallel.core = parallel.core,
-  verbose = verbose)
-
-input <- input$input
+  verbose = verbose)$input
 
 # Re ordering columns
 want <- c("MARKERS", "CHROM", "LOCUS", "POS", "ID", "COL", "INDIVIDUALS", "POP_ID",
@@ -523,6 +521,10 @@ if (vcf.metadata) {
     dplyr::select(input, dplyr::one_of(want), dplyr::everything()))
 
 }# end cleaning columns
+
+# Sort id
+input <- dplyr::arrange(input, POP_ID, INDIVIDUALS)
+
 return(input)
 }#End tidy_vcf
 
