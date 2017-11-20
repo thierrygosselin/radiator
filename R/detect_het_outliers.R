@@ -6,8 +6,16 @@
 #' incorrectly called as homozygotes. See details below for more info.
 #'
 #' @param nreps (integer, optional) The number of MCMC sweeps to do.
-#' Default: \code{nreps = 200}.
+#' Default: \code{nreps = 2000}.
 
+#' @param burn.in (integer, optional) The number of MCMC burn-in reps.
+#' With default, during execution, you will be asked to enter the nuber of burn-in.
+#' For this, a plot showing the heterozygote miscall rate for all
+#' the MCMC sweeps will be printed. This plot will help pinpoint the
+#' number of burn-in. The remaining MCMC sweeps will be used
+#' to average the heterozygote miscall rate.
+#' e.g. of common value \code{burn.in = 500}.
+#' With default: \code{burn.in = NULL}.
 
 #' @inheritParams tidy_genomic_data
 
@@ -33,15 +41,6 @@
 #' tidy genomic data set inside the folder. The filename will be automatically
 #' appended \code{.rad} to it. This file can be used again directly inside this
 #' function and other radiator functions. See \code{\link[radiator]{read_rad}}.
-#'
-#'
-#' \strong{MCMC burn-in:}
-#'
-#' During execution, you will be asked to enter the nuber of burn-in.
-#' For this, a plot showing the heterozygote miscall rate for all
-#' the MCMC sweeps will be printed. This plot will help pinpoint the
-#' number of burn-in. The remaining MCMC sweeps will be used
-#' to average the heterozygote miscall rate.
 
 
 #' @return A folder generated automatically with date and time,
@@ -90,7 +89,9 @@
 #' Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 detect_het_outliers <- function (
-  data, nreps = 200,
+  data,
+  nreps = 2000,
+  burn.in = NULL,
   blacklist.id = NULL,
   whitelist.markers = NULL,
   monomorphic.out = TRUE,
@@ -216,18 +217,21 @@ detect_het_outliers <- function (
   }
 
   print(res$trace.mcmc.plot)
-  message("    The plot shows the heterozygote miscall rate for all the MCMC sweeps")
-  message("    after the burn-in, the remaining MCMC sweeps will be used
-    to average the heterozygote miscall rate")
-  message("\n    enter the max number of burn-in reps:")
 
-  burn.in <- as.integer(readLines(n = 1))
+  if (is.null(burn.in)) {
+    message("    The plot shows the heterozygote miscall rate for all the MCMC sweeps")
+    message("    after the burn-in, the remaining MCMC sweeps will be used
+    to average the heterozygote miscall rate")
+    message("\n    enter the max number of burn-in reps:")
+
+    burn.in <- as.integer(readLines(n = 1))
+  }
 
   res$m.post.means <- dplyr::filter(res$m.nreps, iter > burn.in) %>%
     dplyr::summarise(POSTERIOR_MEAN = mean(m))
 
-  message("\n    Overall genotyping error rate= ", round(res$overall.genotyping.error.rate, 2))
-  message("    Overall heterozygotes miscall rate = ", round(res$m.post.means, 2))
+  message("\n    Overall genotyping error rate = ", round(res$overall.genotyping.error.rate, 6))
+  message("    Overall heterozygotes miscall rate = ", round(res$m.post.means, 6))
   message("\nComputation time: ", round((proc.time() - timing)[[3]]), " sec")
   cat("################################## completed ##################################\n")
   options(width = opt.change)
