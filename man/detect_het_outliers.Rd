@@ -131,14 +131,15 @@ A folder generated automatically with date and time,
 the file \code{het.summary.tsv} contains the summary statistics. The file
 \code{markers.genotypes.boudaries.pdf} is the plot with boundaries.
 The function also returns a list inside the global environment with
-5 objects:
+7 objects:
 
 \enumerate{
 \item input the input data, cleaned if filters were used during import.
 \item outlier.summary a list with a tibble and plot of genotypes frequencies
 and boundaries (also written in the folder).
-\item m.nreps A tibble with the miscall rate for each MCMC replicate
-\item overall.m The overall miscall rate
+\item m.nreps A tibble with the heterozygote miscall rate for each MCMC replicate
+\item overall.genotyping.error.rate The overall genotyping error rate
+\item overall.m The overall heterozygote miscall rate
 \item simmed_genos The simulated genotypes
 }
 
@@ -148,7 +149,7 @@ the grouping is found in the last column called \code{POP_ID}.
 \description{
 Explore departure from H-W equilibrium in bi-allelic RADseq data.
 Highlight excess of homozygotes present in numeros RADseq studies.
-The function also estimate the genotyping error rates.
+The function estimate the genotyping error rate and heterozygote miscall rate.
 The model focus on heterozygotes being
 incorrectly called as homozygotes. See details below for more info.
 }
@@ -174,6 +175,15 @@ Use the argument filename to write the imported (and maybe further filtered)
 tidy genomic data set inside the folder. The filename will be automatically
 appended \code{.rad} to it. This file can be used again directly inside this
 function and other radiator functions. See \code{\link[radiator]{read_rad}}.
+
+
+\strong{MCMC burn-in:}
+
+During execution, you will be asked to enter the nuber of burn-in.
+For this, a plot showing the heterozygote miscall rate for all
+the MCMC sweeps will be printed. This plot will help pinpoint the
+number of burn-in. The remaining MCMC sweeps will be used
+to average the heterozygote miscall rate.
 }
 \author{
 Eric Anderson \email{eric.anderson@noaa.gov} and

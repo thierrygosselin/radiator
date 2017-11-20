@@ -42,13 +42,13 @@
 
 tidy_vcf <- function(
   data,
-  strata,
+  strata = NULL,
   vcf.metadata = FALSE,
   parallel.core = parallel::detectCores() - 1,
   verbose = FALSE,
   ...) {
 
-  if (is.null(strata)) stop("strata argument is required")
+  if (is.null(strata)) message("A strata with 1 grouping will be generated...")
 
   # dotslist -------------------------------------------------------------------
   dotslist <- list(...)
@@ -357,6 +357,12 @@ tidy_vcf <- function(
 
   # Population levels and strata------------------------------------------------
   if (verbose) message("Making the vcf population-wise...")
+
+  if (is.null(strata)) {
+    strata <- dplyr::distinct(input, INDIVIDUALS) %>%
+      dplyr::mutate(STRATA = rep("pop1", n()))
+  }
+
   if (is.vector(strata)) {
     suppressMessages(
       strata.df <- readr::read_tsv(

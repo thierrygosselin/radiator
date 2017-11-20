@@ -70,7 +70,6 @@ write_vcf <- function(data, pop.info = FALSE, filename = NULL) {
       dplyr::rename(REF = REF.y, ALT = ALT.y)
   }
 
-
   # Include CHROM, LOCUS, POS --------------------------------------------------
   if (!tibble::has_name(data, "CHROM")) {
     data <- dplyr::mutate(
@@ -84,6 +83,7 @@ write_vcf <- function(data, pop.info = FALSE, filename = NULL) {
   # Order/sort by pop and ind --------------------------------------------------
   data <- dplyr::arrange(data, POP_ID, INDIVIDUALS)
 
+  id.string <- unique(data$INDIVIDUALS)# keep to sort vcf columns
   # Remove the POP_ID column ---------------------------------------------------
   if (tibble::has_name(data, "POP_ID") || (!pop.info)) {
     data <- dplyr::select(.data = data, -POP_ID)
@@ -154,7 +154,8 @@ write_vcf <- function(data, pop.info = FALSE, filename = NULL) {
   output <- dplyr::ungroup(output) %>%
     dplyr::arrange(CHROM, LOCUS, POS) %>%
     dplyr::select(-MARKERS) %>%
-    dplyr::select('#CHROM' = CHROM, POS, ID = LOCUS, REF, ALT, QUAL, FILTER, INFO, FORMAT, dplyr::everything())
+    dplyr::select('#CHROM' = CHROM, POS, ID = LOCUS, REF, ALT, QUAL, FILTER, INFO, FORMAT, id.string)
+  # dplyr::select('#CHROM' = CHROM, POS, ID = LOCUS, REF, ALT, QUAL, FILTER, INFO, FORMAT, dplyr::everything())
 
 
   # Filename ------------------------------------------------------------------

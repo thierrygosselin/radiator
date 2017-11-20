@@ -4,7 +4,7 @@
 \alias{tidy_vcf}
 \title{Tidy a vcf file (bi/multi-allelic).}
 \usage{
-tidy_vcf(data, strata, vcf.metadata = FALSE,
+tidy_vcf(data, strata = NULL, vcf.metadata = FALSE,
   parallel.core = parallel::detectCores() - 1, verbose = FALSE, ...)
 }
 \arguments{
