@@ -1,12 +1,12 @@
 #' @title Detect heterozygotes outliers and estimate miscall rate
 #' @description Explore departure from H-W equilibrium in bi-allelic RADseq data.
 #' Highlight excess of homozygotes present in numeros RADseq studies.
-#' The function also estimate the genotyping error rates.
+#' The function estimate the genotyping error rate and heterozygote miscall rate.
 #' The model focus on heterozygotes being
 #' incorrectly called as homozygotes. See details below for more info.
 #'
-#'@param nreps (integer, optional) The number of MCMC sweeps to do.
-#'Default: \code{nreps = 200}.
+#' @param nreps (integer, optional) The number of MCMC sweeps to do.
+#' Default: \code{nreps = 200}.
 
 
 #' @inheritParams tidy_genomic_data
@@ -33,19 +33,30 @@
 #' tidy genomic data set inside the folder. The filename will be automatically
 #' appended \code{.rad} to it. This file can be used again directly inside this
 #' function and other radiator functions. See \code{\link[radiator]{read_rad}}.
+#'
+#'
+#' \strong{MCMC burn-in:}
+#'
+#' During execution, you will be asked to enter the nuber of burn-in.
+#' For this, a plot showing the heterozygote miscall rate for all
+#' the MCMC sweeps will be printed. This plot will help pinpoint the
+#' number of burn-in. The remaining MCMC sweeps will be used
+#' to average the heterozygote miscall rate.
+
 
 #' @return A folder generated automatically with date and time,
 #' the file \code{het.summary.tsv} contains the summary statistics. The file
 #' \code{markers.genotypes.boudaries.pdf} is the plot with boundaries.
 #' The function also returns a list inside the global environment with
-#' 5 objects:
+#' 7 objects:
 #'
 #' \enumerate{
 #' \item input the input data, cleaned if filters were used during import.
 #' \item outlier.summary a list with a tibble and plot of genotypes frequencies
 #' and boundaries (also written in the folder).
-#' \item m.nreps A tibble with the miscall rate for each MCMC replicate
-#' \item overall.m The overall miscall rate
+#' \item m.nreps A tibble with the heterozygote miscall rate for each MCMC replicate
+#' \item overall.genotyping.error.rate The overall genotyping error rate
+#' \item overall.m The overall heterozygote miscall rate
 #' \item simmed_genos The simulated genotypes
 #' }
 #'
@@ -174,10 +185,44 @@ detect_het_outliers <- function (
 
   mest <- estimate_m(data = res$input, nreps = nreps, m_init = 0.1)
   res$m.nreps <- tibble::tibble(iter = 1:nreps, m = mest$m)
-  res$overall.m <- tibble::tibble(overall_error_rate = mest$overall_geno_err_est)
   res$simmed_genos <- mest$simmed_genos
+  res$overall.genotyping.error.rate <- tibble::tibble(overall.genotyping.error.rate = mest$overall_geno_err_est)
   mest <- NULL
-  message("    Overall heterozygotes miscall rate = ", round(res$overall.m, 2))
+
+
+  res$trace.mcmc.plot <- ggplot2::ggplot(res$m.nreps, ggplot2::aes(x = iter, y = m)) +
+    ggplot2::geom_line() +
+    ggplot2::labs(y= "Heterozygote miscall rate", x = "Number of MCMC sweeps") +
+    ggplot2::theme_bw() +
+    ggplot2::theme(
+      legend.position = "none",
+      axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+      axis.text.x = ggplot2::element_text(size = 10, family = "Helvetica"),
+      axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+      axis.text.y = ggplot2::element_text(size = 10, family = "Helvetica")
+    )
+  if (!is.null(path.folder)) {
+    ggplot2::ggsave(
+      filename = file.path(path.folder, "trace.mcmc.plot.pdf"),
+      plot = res$trace.mcmc.plot,
+      width = 20, height = 10,
+      dpi = 600, units = "cm",
+      useDingbats = FALSE, limitsize = FALSE)
+  }
+
+  print(res$trace.mcmc.plot)
+  message("    The plot shows the heterozygote miscall rate for all the MCMC sweeps")
+  message("    after the burn-in, the remaining MCMC sweeps will be used
+    to average the heterozygote miscall rate")
+  message("\n    enter the max number of burn-in reps:")
+
+  burn.in <- as.integer(readLines(n = 1))
+
+  res$m.post.means <- dplyr::filter(res$m.nreps, iter > burn.in) %>%
+    dplyr::summarise(POSTERIOR_MEAN = mean(m))
+
+  message("\n    Overall genotyping error rate= ", round(res$overall.genotyping.error.rate, 2))
+  message("    Overall heterozygotes miscall rate = ", round(res$m.post.means, 2))
   message("\nComputation time: ", round((proc.time() - timing)[[3]]), " sec")
   cat("################################## completed ##################################\n")
   options(width = opt.change)
