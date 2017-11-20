@@ -45,14 +45,24 @@
 
 #' @return A folder generated automatically with date and time,
 #' the file \code{het.summary.tsv} contains the summary statistics. The file
-#' \code{markers.genotypes.boudaries.pdf} is the plot with boundaries.
+#' \code{markers.genotypes.boundaries.pdf} is the plot with boundaries.
 #' The function also returns a list inside the global environment with
-#' 7 objects:
+#' 8 objects:
 #'
 #' \enumerate{
 #' \item input the input data, cleaned if filters were used during import.
 #' \item outlier.summary a list with a tibble and plot of genotypes frequencies
 #' and boundaries (also written in the folder).
+#' \item summary.alt.allele a tibble summarizing the number of markers with:
+#' \itemize{
+#' \item no alternate allele (NO_HOM_ALT)
+#' \item no heterozygote genotype (NO_HET)
+#' \item one alternate allele(ONE_HOM_ALT)
+#' \item one heterozygote genotype (ONE_HET)
+#' \item one alternate allele only (ONE_HOM_ALT_ONLY)
+#' \item one heterozygote genotype only (ONE_HET_ONLY)
+#' \item one alternate allele and one heterozygote genotype only (ONE_HOM_ALT_ONE_HET_ONLY)
+#' }
 #' \item m.nreps A tibble with the heterozygote miscall rate for each MCMC replicate
 #' \item overall.genotyping.error.rate The overall genotyping error rate
 #' \item overall.m The overall heterozygote miscall rate
@@ -63,7 +73,7 @@
 #' the grouping is found in the last column called \code{POP_ID}.
 #'
 
-#' @example
+#' @examples
 #' \dontrun{
 #' het.prob <- radiator::detect_het_outliers(
 #' data = "tuna.vcf", strata = "tuna.strata.tsv", nreps = 2000)
@@ -183,8 +193,23 @@ detect_het_outliers <- function (
   if (!biallelic) stop("Analysis requires a biallelic dataset")
 
   # Generate the summary statistics and plot -----------------------------------
-  message("\nGenerating genotypes summary statistics and plot with boudaries...")
+  message("\nGenerating genotypes summary statistics and plot with boundaries...")
   res$outlier.summary <- plot_het_outliers(data = res$input, path.folder = path.folder)
+
+  res$summary.alt.allele <-  dplyr::ungroup(res$outlier.summary$het.summary) %>%
+    dplyr::filter(POP_ID == "OVERALL") %>%
+    dplyr::summarise(
+      TOTAL = n(),
+      NO_HOM_ALT = length(MARKERS[HOM_ALT == 0]),
+      NO_HET = length(MARKERS[HET == 0]),
+      ONE_HOM_ALT = length(MARKERS[HOM_ALT == 1]),
+      ONE_HET = length(MARKERS[HET == 1]),
+      ONE_HOM_ALT_ONLY = length(MARKERS[HOM_ALT == 1 & HET == 0]),
+      ONE_HET_ONLY = length(MARKERS[HOM_ALT == 0 & HET == 1]),
+      ONE_HOM_ALT_ONE_HET_ONLY = length(MARKERS[HOM_ALT == 1 & HET == 1])
+    ) %>%
+    tidyr::gather(data = ., key = MARKERS, value = NUMBERS) %>%
+    dplyr::mutate(PROPORTION = NUMBERS / (NUMBERS[MARKERS == "TOTAL"]))
 
   # Estimate heterozygotes miscall rate -------------------------------------------
   message("\nCalculating heterozygotes miscall rate...")
@@ -230,8 +255,8 @@ detect_het_outliers <- function (
   res$m.post.means <- dplyr::filter(res$m.nreps, iter > burn.in) %>%
     dplyr::summarise(POSTERIOR_MEAN = mean(m))
 
-  message("\n    Overall genotyping error rate = ", round(res$overall.genotyping.error.rate, 6))
-  message("    Overall heterozygotes miscall rate = ", round(res$m.post.means, 6))
+  message("\n    Overall genotyping error rate = ", round(res$overall.genotyping.error.rate, digits = 4))
+  message("    Overall heterozygotes miscall rate = ", round(res$m.post.means, digits = 4))
   message("\nComputation time: ", round((proc.time() - timing)[[3]]), " sec")
   cat("################################## completed ##################################\n")
   options(width = opt.change)
@@ -350,8 +375,8 @@ plot_het_outliers <- function(data, path.folder = NULL) {
       labels = c("Homozygote REF allele", "Heterozygote", "Homozygote ALT allele"),
       ordered = TRUE))
 
-  # generate boudaries
-  boudaries <- generate_geno_freq_boundaries() %>%
+  # generate boundaries
+  boundaries <- generate_geno_freq_boundaries() %>%
     dplyr::mutate(
       GENOTYPES = factor(
         GENOTYPES,
@@ -359,7 +384,7 @@ plot_het_outliers <- function(data, path.folder = NULL) {
 
   res$gt.boundaries.plot <- ggplot2::ggplot(freq.summary , ggplot2::aes(x = EXPECTED, y = OBSERVED, colour = GENOTYPES)) +
     ggplot2::geom_jitter(alpha = 0.1, width = 0.01, height = 0.01) +
-    ggplot2::geom_polygon(data = boudaries, fill = NA, linetype = "dashed", colour = "black") +
+    ggplot2::geom_polygon(data = boundaries, fill = NA, linetype = "dashed", colour = "black") +
     ggplot2::geom_abline(slope = 1, intercept = 0, linetype = "solid") +
     ggplot2::labs(x = "Genotypes (expected frequency) ", y = "Genotypes (observed frequency)") +
     ggplot2::theme_bw() +
@@ -374,7 +399,7 @@ plot_het_outliers <- function(data, path.folder = NULL) {
 
   if (!is.null(path.folder)) {
     ggplot2::ggsave(
-      filename = file.path(path.folder, "markers.genotypes.boudaries.pdf"),
+      filename = file.path(path.folder, "markers.genotypes.boundaries.pdf"),
       plot = res$gt.boundaries.plot,
       width = 20, height = (n.pop + 1) * 5,# + 1 for overall always present
       dpi = 300, units = "cm",

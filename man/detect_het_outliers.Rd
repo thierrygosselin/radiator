@@ -4,11 +4,12 @@
 \alias{detect_het_outliers}
 \title{Detect heterozygotes outliers and estimate miscall rate}
 \usage{
-detect_het_outliers(data, nreps = 200, blacklist.id = NULL,
-  whitelist.markers = NULL, monomorphic.out = TRUE, max.marker = NULL,
-  snp.ld = NULL, common.markers = TRUE, strata = NULL,
-  pop.levels = NULL, pop.labels = NULL, pop.select = NULL,
-  filename = NULL, parallel.core = parallel::detectCores() - 1)
+detect_het_outliers(data, nreps = 2000, burn.in = NULL,
+  blacklist.id = NULL, whitelist.markers = NULL, monomorphic.out = TRUE,
+  max.marker = NULL, snp.ld = NULL, common.markers = TRUE,
+  strata = NULL, pop.levels = NULL, pop.labels = NULL,
+  pop.select = NULL, filename = NULL,
+  parallel.core = parallel::detectCores() - 1)
 }
 \arguments{
 \item{data}{12 options: VCF (SNPs or Haplotypes,
@@ -19,7 +20,16 @@ and a data frame in long/tidy or wide format.
 \emph{See details} of \code{\link[radiator]{tidy_genomic_data}}.}
 
 \item{nreps}{(integer, optional) The number of MCMC sweeps to do.
-Default: \code{nreps = 200}.}
+Default: \code{nreps = 2000}.}
+
+\item{burn.in}{(integer, optional) The number of MCMC burn-in reps.
+With default, during execution, you will be asked to enter the nuber of burn-in.
+For this, a plot showing the heterozygote miscall rate for all
+the MCMC sweeps will be printed. This plot will help pinpoint the
+number of burn-in. The remaining MCMC sweeps will be used
+to average the heterozygote miscall rate.
+e.g. of common value \code{burn.in = 500}.
+With default: \code{burn.in = NULL}.}
 
 \item{blacklist.id}{(optional) A blacklist with individual ID and
 a column header 'INDIVIDUALS'. The blacklist is an object in your
@@ -131,12 +141,22 @@ A folder generated automatically with date and time,
 the file \code{het.summary.tsv} contains the summary statistics. The file
 \code{markers.genotypes.boudaries.pdf} is the plot with boundaries.
 The function also returns a list inside the global environment with
-7 objects:
+8 objects:
 
 \enumerate{
 \item input the input data, cleaned if filters were used during import.
 \item outlier.summary a list with a tibble and plot of genotypes frequencies
 and boundaries (also written in the folder).
+\item summary.alt.allele a tibble summarizing the number of markers with:
+\itemize{
+\item no alternate allele (NO_HOM_ALT)
+\item no heterozygote genotype (NO_HET)
+\item one alternate allele(ONE_HOM_ALT)
+\item one heterozygote genotype (ONE_HET)
+\item one alternate allele only (ONE_HOM_ALT_ONLY)
+\item one heterozygote genotype only (ONE_HET_ONLY)
+\item one alternate allele and one heterozygote genotype only (ONE_HOM_ALT_ONE_HET_ONLY)
+}
 \item m.nreps A tibble with the heterozygote miscall rate for each MCMC replicate
 \item overall.genotyping.error.rate The overall genotyping error rate
 \item overall.m The overall heterozygote miscall rate
@@ -175,15 +195,12 @@ Use the argument filename to write the imported (and maybe further filtered)
 tidy genomic data set inside the folder. The filename will be automatically
 appended \code{.rad} to it. This file can be used again directly inside this
 function and other radiator functions. See \code{\link[radiator]{read_rad}}.
-
-
-\strong{MCMC burn-in:}
-
-During execution, you will be asked to enter the nuber of burn-in.
-For this, a plot showing the heterozygote miscall rate for all
-the MCMC sweeps will be printed. This plot will help pinpoint the
-number of burn-in. The remaining MCMC sweeps will be used
-to average the heterozygote miscall rate.
+}
+\examples{
+\dontrun{
+het.prob <- radiator::detect_het_outliers(
+data = "tuna.vcf", strata = "tuna.strata.tsv", nreps = 2000)
+}
 }
 \author{
 Eric Anderson \email{eric.anderson@noaa.gov} and
