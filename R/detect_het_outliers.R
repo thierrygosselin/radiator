@@ -64,6 +64,11 @@
 #' the grouping is found in the last column called \code{POP_ID}.
 #'
 
+#' @example
+#' \dontrun{
+#' het.prob <- radiator::detect_het_outliers(
+#' data = "tuna.vcf", strata = "tuna.strata.tsv", nreps = 2000)
+#' }
 
 
 #' @rdname detect_het_outliers
