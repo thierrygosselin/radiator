@@ -231,16 +231,16 @@ tidy_vcf <- function(
 
   # import genotypes
   want <- c("MARKERS", "CHROM", "LOCUS", "POS", "ID", "COL", "REF", "ALT", "INDIVIDUALS", "GT")
-  # bk <- input
+
   if (import.pegas) {
     if (verbose) message("Working on the vcf...")
     input.gt <- suppressWarnings(
       pegas::read.vcf(
         file = data,
         which.loci = keep.markers,
-        quiet = verbose) %>%
-        `colnames<-`(input$MARKERS
-        ) %>%
+        quiet = verbose
+      ) %>%
+        `colnames<-`(input$MARKERS) %>%
         tibble::as_data_frame(.) %>%
         tibble::rownames_to_column(., var = "INDIVIDUALS") %>%
         # dplyr::mutate_all(.tbl = ., .funs = as.character) %>% # very long
@@ -251,8 +251,10 @@ tidy_vcf <- function(
         dplyr::select(dplyr::one_of(want)) %>%
         dplyr::mutate_at(.tbl = ., .vars = "INDIVIDUALS",
                          .funs = clean_ind_names) %>%
-        dplyr::mutate(GT = stringi::stri_replace_na(
-          str = GT, replacement = "./."))
+        dplyr::mutate(
+          # for stacks v.2 beta4 missing genotype are coded wrong
+          GT = stringi::stri_replace_all_fixed(str = GT, pattern = ".", replacement = "./.", vectorize_all = FALSE),
+          GT = stringi::stri_replace_na(str = GT, replacement = "./."))
     )
 
     input.gt <- NULL
@@ -392,146 +394,149 @@ tidy_vcf <- function(
   }
 
 
-# check that names match between strata and input before going further
-if (!identical(sort(unique(input$INDIVIDUALS)), sort(unique(strata.df$INDIVIDUALS)))) {
-  stop("The individuals in the strata file don't match the individuals in the vcf file")
-}
+  # check that names match between strata and input before going further
+  if (!identical(sort(unique(input$INDIVIDUALS)), sort(unique(strata.df$INDIVIDUALS)))) {
+    stop("The individuals in the strata file don't match the individuals in the vcf file")
+  }
 
-input <- dplyr::left_join(x = input, y = strata.df, by = "INDIVIDUALS")
+  input <- dplyr::left_join(x = input, y = strata.df, by = "INDIVIDUALS")
 
-# Using pop.levels and pop.labels info if present-------------------------------
-input <- radiator::change_pop_names(
-  data = input, pop.levels = pop.levels, pop.labels = pop.labels)
+  # Using pop.levels and pop.labels info if present-------------------------------
+  input <- radiator::change_pop_names(
+    data = input, pop.levels = pop.levels, pop.labels = pop.labels)
 
-# Pop select--------------------------------------------------------------------
-if (!is.null(pop.select)) {
-  pop.select <- clean_pop_names(pop.select)
+  # Pop select--------------------------------------------------------------------
+  if (!is.null(pop.select)) {
+    pop.select <- clean_pop_names(pop.select)
 
-  if (verbose) message(stringi::stri_join(length(pop.select), "population(s) selected", sep = " "))
-  input <- suppressWarnings(input %>% dplyr::filter(POP_ID %in% pop.select))
-  input$POP_ID <- droplevels(input$POP_ID)
-}
+    if (verbose) message(stringi::stri_join(length(pop.select), "population(s) selected", sep = " "))
+    input <- suppressWarnings(input %>% dplyr::filter(POP_ID %in% pop.select))
+    input$POP_ID <- droplevels(input$POP_ID)
+  }
 
-# Haplotypes or biallelic VCF---------------------------------------------------
-# recoding genotype
-if (biallelic) {# biallelic VCF
-  if (verbose) message("Recoding bi-allelic VCF...")
-  input <- dplyr::rename(input, GT_VCF_NUC = GT)
-} else {#multi-allelic vcf
-  if (verbose) message("Recoding VCF haplotype...")
-  input <- dplyr::rename(input, GT_HAPLO = GT)
-}
+  # Haplotypes or biallelic VCF---------------------------------------------------
+  # recoding genotype
+  if (biallelic) {# biallelic VCF
+    if (verbose) message("Recoding bi-allelic VCF...")
+    input <- dplyr::rename(input, GT_VCF_NUC = GT)
+  } else {#multi-allelic vcf
+    if (verbose) message("Recoding VCF haplotype...")
+    input <- dplyr::rename(input, GT_HAPLO = GT)
+  }
 
-if (verbose) message("Calculating REF/ALT alleles...")
-input <- radiator::change_alleles(
-  data = input,
-  biallelic = biallelic,
-  parallel.core = parallel.core,
-  verbose = verbose)$input
-
-# Re ordering columns
-want <- c("MARKERS", "CHROM", "LOCUS", "POS", "ID", "COL", "INDIVIDUALS", "POP_ID",
-          "REF", "ALT", "GT_VCF", "GT_VCF_NUC", "GT", "GT_BIN",
-          "POLYMORPHIC")
-
-input <- suppressWarnings(
-  dplyr::select(input, dplyr::one_of(want), dplyr::everything()))
-
-# More VCF cleaning here -----------------------------------------------------
-# check, parse and clean FORMAT columns
-# Some software that produce vcf do strange thing and don't follow convention
-# You need the GT field to clean correctly the remaining fields...
-if (vcf.metadata) {
-
-  input <-  dplyr::mutate_at(
-    .tbl = input, .vars = parse.format.list, .funs =  replace_by_na)
-
-  split.vec <- split_vec_row(input, 3, parallel.core = parallel.core)
-
-  # Cleaning AD (ALLELES_DEPTH)
-  if (tibble::has_name(input, "AD")) {
-    if (verbose) message("AD column: splitting coverage info into ALLELE_REF_DEPTH and ALLELE_ALT_DEPTH")
-    input <- clean_ad(x = input, split.vec = split.vec,
-                      parallel.core = parallel.core)
-  }#End cleaning AD column
-
-  # Cleaning DP and changing name to READ_DEPTH
-  if (tibble::has_name(input, "DP")) {
-    if (verbose) message("DP column: cleaning and renaming to READ_DEPTH")
-    input <- dplyr::rename(.data = input, READ_DEPTH = DP) %>%
-      dplyr::mutate(
-        READ_DEPTH = dplyr::if_else(GT_VCF == "./.", as.numeric(NA_character_),
-                                    as.numeric(READ_DEPTH))
-      )
-  }#End cleaning DP column
-
-  # PL for biallelic as 3 values:
-  if (tibble::has_name(input, "PL")) {
-    if (verbose) message("PL column (normalized, phred-scaled likelihoods for genotypes): separating into PROB_HOM_REF, PROB_HET and PROB_HOM_ALT")
-    # Value 1: probability that the site is homozgyous REF
-    # Value 2: probability that the sample is heterzygous
-    # Value 2: probability that it is homozygous ALT
-    input <- clean_pl(x = input, split.vec = split.vec,
-                      parallel.core = parallel.core)
-  }#End cleaning PL column
-
-  # GL cleaning
-  if (tibble::has_name(input, "GL")) {
-    if (verbose) message("GL column: cleaning Genotype Likelihood column")
-    input <- clean_gl(x = input,
-                      split.vec = split.vec,
-                      parallel.core = parallel.core)
-  }#End cleaning GL column
-
-  # Cleaning GQ: Genotype quality as phred score
-  if (tibble::has_name(input, "GQ")) {
-    if (verbose) message("GQ column: Genotype Quality")
-    input <- dplyr::mutate(
-      input,
-      GQ = dplyr::if_else(GT_VCF == "./.", as.numeric(NA_character_), as.numeric(GQ))
-    )
-  }#End cleaning GQ column
-
-  # Cleaning GOF: Goodness of fit value
-  if (tibble::has_name(input, "GOF")) {
-    if (verbose) message("GOF column: Goodness of fit value")
-    input <- dplyr::mutate(
-      input,
-      GOF = dplyr::if_else(GT_VCF == "./.", as.numeric(NA_character_), as.numeric(GOF))
-    )
-  }#End cleaning GOF column
-
-  # Cleaning NR: Number of reads covering variant location in this sample
-  if (tibble::has_name(input, "NR")) {
-    if (verbose) message("NR column: splitting column into the number of variant")
-    input <- clean_nr(x = input,
-                      split.vec = split.vec,
-                      parallel.core = parallel.core)
-  }#End cleaning NR column
-
-  # Cleaning NV: Number of reads containing variant in this sample
-  if (tibble::has_name(input, "NV")) {
-    if (verbose) message("NV column: splitting column into the number of variant")
-    input <- clean_nv(x = input,
-                      split.vec = split.vec,
-                      parallel.core = parallel.core)
-  }#End cleaning NV column
-
-  split.vec <- NULL
+  if (verbose) message("Calculating REF/ALT alleles...")
+  input <- radiator::change_alleles(
+    data = input,
+    biallelic = biallelic,
+    parallel.core = parallel.core,
+    verbose = verbose)$input
 
   # Re ordering columns
-  want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS", "POP_ID",
-            "REF", "ALT", "GT_VCF", "GT_VCF_NUC", "GT", "GT_BIN")
+  want <- c("MARKERS", "CHROM", "LOCUS", "POS", "ID", "COL", "INDIVIDUALS", "POP_ID",
+            "REF", "ALT", "GT_VCF", "GT_VCF_NUC", "GT", "GT_BIN",
+            "POLYMORPHIC")
+
+  # want <- c("MARKERS", "CHROM", "LOCUS", "POS", "ID", "COL", "INDIVIDUALS", "POP_ID",
+  #           "REF", "ALT", "GT_VCF", "GT_VCF_NUC", "GT", "GT_BIN")
 
   input <- suppressWarnings(
     dplyr::select(input, dplyr::one_of(want), dplyr::everything()))
 
-}# end cleaning columns
+  # More VCF cleaning here -----------------------------------------------------
+  # check, parse and clean FORMAT columns
+  # Some software that produce vcf do strange thing and don't follow convention
+  # You need the GT field to clean correctly the remaining fields...
+  if (vcf.metadata) {
 
-# Sort id
-input <- dplyr::arrange(input, POP_ID, INDIVIDUALS)
+    input <-  dplyr::mutate_at(
+      .tbl = input, .vars = parse.format.list, .funs =  replace_by_na)
 
-return(input)
+    split.vec <- split_vec_row(input, 3, parallel.core = parallel.core)
+
+    # Cleaning AD (ALLELES_DEPTH)
+    if (tibble::has_name(input, "AD")) {
+      if (verbose) message("AD column: splitting coverage info into ALLELE_REF_DEPTH and ALLELE_ALT_DEPTH")
+      input <- clean_ad(x = input, split.vec = split.vec,
+                        parallel.core = parallel.core)
+    }#End cleaning AD column
+
+    # Cleaning DP and changing name to READ_DEPTH
+    if (tibble::has_name(input, "DP")) {
+      if (verbose) message("DP column: cleaning and renaming to READ_DEPTH")
+      input <- dplyr::rename(.data = input, READ_DEPTH = DP) %>%
+        dplyr::mutate(
+          READ_DEPTH = dplyr::if_else(GT_VCF == "./.", as.numeric(NA_character_),
+                                      as.numeric(READ_DEPTH))
+        )
+    }#End cleaning DP column
+
+    # PL for biallelic as 3 values:
+    if (tibble::has_name(input, "PL")) {
+      if (verbose) message("PL column (normalized, phred-scaled likelihoods for genotypes): separating into PROB_HOM_REF, PROB_HET and PROB_HOM_ALT")
+      # Value 1: probability that the site is homozgyous REF
+      # Value 2: probability that the sample is heterzygous
+      # Value 2: probability that it is homozygous ALT
+      input <- clean_pl(x = input, split.vec = split.vec,
+                        parallel.core = parallel.core)
+    }#End cleaning PL column
+
+    # GL cleaning
+    if (tibble::has_name(input, "GL")) {
+      if (verbose) message("GL column: cleaning Genotype Likelihood column")
+      input <- clean_gl(x = input,
+                        split.vec = split.vec,
+                        parallel.core = parallel.core)
+    }#End cleaning GL column
+
+    # Cleaning GQ: Genotype quality as phred score
+    if (tibble::has_name(input, "GQ")) {
+      if (verbose) message("GQ column: Genotype Quality")
+      input <- dplyr::mutate(
+        input,
+        GQ = dplyr::if_else(GT_VCF == "./.", as.numeric(NA_character_), as.numeric(GQ))
+      )
+    }#End cleaning GQ column
+
+    # Cleaning GOF: Goodness of fit value
+    if (tibble::has_name(input, "GOF")) {
+      if (verbose) message("GOF column: Goodness of fit value")
+      input <- dplyr::mutate(
+        input,
+        GOF = dplyr::if_else(GT_VCF == "./.", as.numeric(NA_character_), as.numeric(GOF))
+      )
+    }#End cleaning GOF column
+
+    # Cleaning NR: Number of reads covering variant location in this sample
+    if (tibble::has_name(input, "NR")) {
+      if (verbose) message("NR column: splitting column into the number of variant")
+      input <- clean_nr(x = input,
+                        split.vec = split.vec,
+                        parallel.core = parallel.core)
+    }#End cleaning NR column
+
+    # Cleaning NV: Number of reads containing variant in this sample
+    if (tibble::has_name(input, "NV")) {
+      if (verbose) message("NV column: splitting column into the number of variant")
+      input <- clean_nv(x = input,
+                        split.vec = split.vec,
+                        parallel.core = parallel.core)
+    }#End cleaning NV column
+
+    split.vec <- NULL
+
+    # Re ordering columns
+    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS", "POP_ID",
+              "REF", "ALT", "GT_VCF", "GT_VCF_NUC", "GT", "GT_BIN")
+
+    input <- suppressWarnings(
+      dplyr::select(input, dplyr::one_of(want), dplyr::everything()))
+
+  }# end cleaning columns
+
+  # Sort id
+  input <- dplyr::arrange(input, POP_ID, INDIVIDUALS)
+
+  return(input)
 }#End tidy_vcf
 
 

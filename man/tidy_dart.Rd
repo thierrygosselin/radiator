@@ -8,19 +8,18 @@ tidy_dart(data, strata, verbose = FALSE,
   parallel.core = parallel::detectCores() - 1)
 }
 \arguments{
-\item{data}{DArT output file. Note that most popular format used by DArT are
-recognised (1- and 2- row format,also called binary, and count data.).
+\item{data}{DArT output file. Note that most popular formats used by DArT are
+recognised (1- and 2- row format, also called binary, and count data.).
 If you encounter a problem, sent me your data so that I can update
-the function. The data is a tab delimited file ending with \code{.tsv}.}
+the function. The function can import \code{.csv} or \code{.tsv} files.}
 
-\item{strata}{A tab delimited file with columns header:
-\code{INDIVIDUALS} and \code{STRATA}.
+\item{strata}{A tab delimited file with 3 columns.
+Columns header is:
+\code{TARGET_ID}, \code{INDIVIDUALS} and \code{STRATA}.
 Note: the column \code{STRATA} refers to any grouping of individuals.
 You need to make sure that
-the column \code{INDIVIDUALS} match the id used by DArT. Sometimes it's a
-DArT DB integer name.
-Use a third column in the strata, named \code{NEW_ID}, to replace the
-\code{INDIVIDUALS} column in the main data file.}
+the column \code{TARGET_ID} match the id used by DArT.
+The column \code{INDIVIDUALS} and \code{STRATA} will be kept in the tidy data.}
 
 \item{verbose}{(optional, logical) When \code{verbose = TRUE}
 the function is a little more chatty during execution.

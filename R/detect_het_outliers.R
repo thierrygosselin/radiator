@@ -55,13 +55,13 @@
 #' and boundaries (also written in the folder).
 #' \item summary.alt.allele a tibble summarizing the number of markers with:
 #' \itemize{
-#' \item no alternate allele (NO_HOM_ALT)
+#' \item no homozygote for the alternate allele (NO_HOM_ALT)
 #' \item no heterozygote genotype (NO_HET)
-#' \item one alternate allele(ONE_HOM_ALT)
+#' \item one homozygote for the alternate allele(ONE_HOM_ALT)
 #' \item one heterozygote genotype (ONE_HET)
-#' \item one alternate allele only (ONE_HOM_ALT_ONLY)
+#' \item one homozygote for the alternate allele only (ONE_HOM_ALT_ONLY)
 #' \item one heterozygote genotype only (ONE_HET_ONLY)
-#' \item one alternate allele and one heterozygote genotype only (ONE_HOM_ALT_ONE_HET_ONLY)
+#' \item one homozygote for the alternate allele and one heterozygote genotype only (ONE_HOM_ALT_ONE_HET_ONLY)
 #' }
 #' \item m.nreps A tibble with the heterozygote miscall rate for each MCMC replicate
 #' \item overall.genotyping.error.rate The overall genotyping error rate

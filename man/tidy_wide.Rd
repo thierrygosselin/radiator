@@ -33,7 +33,7 @@ and might be of interest for users.
 
 To discriminate the long from the wide format,
 the function \pkg{radiator} \code{\link[radiator]{tidy_wide}} searches
-for \code{MARKERS or LOCUS} in column names (TRUE = long format).
+for \code{MARKERS} in column names (TRUE = long format).
 The data frame is tab delimitted.
 \strong{Wide format:}
 The wide format cannot store metadata info.
@@ -46,7 +46,7 @@ The long format is considered to be a tidy data frame and can store metadata inf
 (e.g. from a VCF see \pkg{radiator} \code{\link{tidy_genomic_data}}).
 A minimum of 4 columns
 are required in the long format: \code{INDIVIDUALS}, \code{POP_ID},
-\code{MARKERS or LOCUS} and \code{GT} for the genotypes.
+\code{MARKERS} and \code{GT} for the genotypes.
 The remaining columns are considered metadata info.
 
 \strong{Genotypes with separators:}
@@ -57,6 +57,17 @@ e.g. \code{001002 or 111333} (for heterozygote individual).
 6 integers WITH separator: e.g. \code{001/002 or 111/333} (for heterozygote individual).
 The separator can be any of these: \code{"/", ":", "_", "-", "."}, and will
 be removed.
+
+
+\strong{separators in POP_ID, INDIVIDUALS and MARKERS:}
+Some separators can interfere with packages or codes and are cleaned by radiator.
+\itemize{
+\item MARKERS: \code{/}, \code{:}, \code{-} and \code{.} are changed to an
+underscore
+\code{_}.
+\item POP_ID: white spaces in population names are replaced by underscore.
+\item INDIVIDUALS: \code{_} and \code{:} are changed to a dash \code{-}
+}
 
 \emph{How to get a tidy data frame ?}
 \pkg{radiator} \code{\link{tidy_genomic_data}} can transform 6 genomic data formats

@@ -128,8 +128,7 @@ change_alleles <- function(
     old.ref <- NULL
   }
 
-  conversion.df <- ref_dictionary(
-    x = data, parallel.core = parallel.core)
+  conversion.df <- ref_dictionary(x = data, parallel.core = parallel.core)
 
   # if monomorphic markers, ALT column will have NA: check and tag
   if (anyNA(conversion.df)) {

@@ -27,10 +27,10 @@ be interactive. The user is asked to see figures of distribution before
 making decisions for filtering.
 Default: \code{interactive.filter = TRUE}.}
 
-\item{data}{DArT output file. Note that most popular format used by DArT are
-recognised (1- and 2- row format,also called binary, and count data.).
+\item{data}{DArT output file. Note that most popular formats used by DArT are
+recognised (1- and 2- row format, also called binary, and count data.).
 If you encounter a problem, sent me your data so that I can update
-the function. The data is a tab delimited file ending with \code{.tsv}.}
+the function. The function can import \code{.csv} or \code{.tsv} files.}
 
 \item{strata}{A tab delimited file with columns header:
 \code{INDIVIDUALS} and \code{STRATA}.
@@ -58,7 +58,8 @@ Default: \code{pop.levels = NULL}.}
 \item{blacklist.id}{(optional) A blacklist with individual ID and
 a column header 'INDIVIDUALS'. The blacklist is an object in your
 global environment or a file in the working directory
-(e.g. "blacklist.txt").
+(e.g. "blacklist.txt"). \code{_} and \code{:} in individual's names
+are changed to a dash \code{-}.
 Default: \code{blacklist.id = NULL}.}
 
 \item{pop.select}{(string, optional) Selected list of populations for

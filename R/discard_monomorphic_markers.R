@@ -35,32 +35,30 @@ discard_monomorphic_markers <- function(data, verbose = FALSE) {
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {
-    input <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-  } else {
-    input <- data
+    data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
   }
 
   # check genotype column naming
-  if (tibble::has_name(input, "GENOTYPE")) {
-    colnames(input) <- stringi::stri_replace_all_fixed(
-      str = colnames(input),
+  if (tibble::has_name(data, "GENOTYPE")) {
+    colnames(data) <- stringi::stri_replace_all_fixed(
+      str = colnames(data),
       pattern = "GENOTYPE",
       replacement = "GT",
       vectorize_all = FALSE)
   }
 
   # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-  if (tibble::has_name(input, "LOCUS") && !tibble::has_name(input, "MARKERS")) {
-    input <- dplyr::rename(.data = input, MARKERS = LOCUS)
+  if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
+    data <- dplyr::rename(.data = data, MARKERS = LOCUS)
   }
 
-  if (tibble::has_name(input, "CHROM")) {
-  markers.df <- dplyr::distinct(.data = input, MARKERS, CHROM, LOCUS, POS)
+  if (tibble::has_name(data, "CHROM")) {
+  markers.df <- dplyr::distinct(.data = data, MARKERS, CHROM, LOCUS, POS)
   }
   if (verbose) message("Scanning for monomorphic markers...")
-  if (verbose) message("    Number of markers before = ", dplyr::n_distinct(input$MARKERS))
+  if (verbose) message("    Number of markers before = ", dplyr::n_distinct(data$MARKERS))
 
-  mono.markers <- dplyr::select(.data = input, MARKERS, GT) %>%
+  mono.markers <- dplyr::select(.data = data, MARKERS, GT) %>%
     dplyr::filter(GT != "000000") %>%
     dplyr::distinct(MARKERS, GT) %>%
     dplyr::mutate(
@@ -78,9 +76,9 @@ discard_monomorphic_markers <- function(data, verbose = FALSE) {
   if (verbose) message("    Number of monomorphic markers removed = ", nrow(mono.markers))
 
   if (length(mono.markers$MARKERS) > 0) {
-    input <- dplyr::anti_join(input, mono.markers, by = "MARKERS")
-    if (verbose) message("    Number of markers after = ", dplyr::n_distinct(input$MARKERS))
-    if (tibble::has_name(input, "CHROM")) {
+    data <- dplyr::anti_join(data, mono.markers, by = "MARKERS")
+    if (verbose) message("    Number of markers after = ", dplyr::n_distinct(data$MARKERS))
+    if (tibble::has_name(data, "CHROM")) {
       mono.markers <- dplyr::left_join(mono.markers, markers.df, by = "MARKERS")
     }
   } else {
@@ -89,9 +87,9 @@ discard_monomorphic_markers <- function(data, verbose = FALSE) {
 
   want <- c("MARKERS", "CHROM", "LOCUS", "POS")
   whitelist.polymorphic.markers <- suppressWarnings(
-    dplyr::select(input, dplyr::one_of(want)) %>%
+    dplyr::select(data, dplyr::one_of(want)) %>%
     dplyr::distinct(MARKERS, .keep_all = TRUE))
-  res <- list(input = input,
+  res <- list(input = data,
               blacklist.monomorphic.markers = mono.markers,
               whitelist.polymorphic.markers = whitelist.polymorphic.markers
               )

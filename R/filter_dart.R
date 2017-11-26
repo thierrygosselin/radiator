@@ -214,7 +214,7 @@ filter_dart <- function(
     tidy.name <- stringi::stri_join(path.folder, "/", filename, ".rad")
     fst::write.fst(
       x = input,
-      path = tidy.name)
+      path = tidy.name, compress = 85)
     message("Tidy DArT data, unfiltered, written to folder: \n", tidy.name)
   }
 
@@ -1296,10 +1296,11 @@ filter_dart <- function(
 
   # write tidy to working directory
   if (!is.null(filename)) {
-    tidy.name <- stringi::stri_join(filename, ".rad")
-    message("Tidy DArT data, filtered, written to folder: \ntidy.name")
+    tidy.name <- stringi::stri_join(path.folder, "/", filename, ".filtered.rad")
     fst::write.fst(x = res$tidy.data, path = tidy.name, compress = 85)
+    message("Tidy DArT data, filtered, written to folder: \n", tidy.name)
   }
+
 
   # Import back the filter parameter file
   res$filters.parameters <- readr::read_tsv(file = filters.parameters.path, col_types = "cccccccc")

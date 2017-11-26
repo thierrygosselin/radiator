@@ -118,7 +118,7 @@ measure/verify accuracy of genome scan within locus.
 
 This function requires a working
 \href{http://cmpg.unibe.ch/software/BayeScan/}{BayeScan} program installed
-on the computer (\href{http://cmpg.unibe.ch/software/BayeScan/download.html}{intall instructions}).
+on the computer (\href{http://cmpg.unibe.ch/software/BayeScan/download.html}{install instructions}).
 For UNIX machines, please install the 64bits version.
 }
 \details{

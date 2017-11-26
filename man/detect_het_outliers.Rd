@@ -34,7 +34,8 @@ With default: \code{burn.in = NULL}.}
 \item{blacklist.id}{(optional) A blacklist with individual ID and
 a column header 'INDIVIDUALS'. The blacklist is an object in your
 global environment or a file in the working directory
-(e.g. "blacklist.txt").
+(e.g. "blacklist.txt"). \code{_} and \code{:} in individual's names
+are changed to a dash \code{-}.
 Default: \code{blacklist.id = NULL}.}
 
 \item{whitelist.markers}{(optional) A whitelist containing CHROM (character
@@ -139,7 +140,7 @@ Default: \code{parallel::detectCores() - 1}.}
 \value{
 A folder generated automatically with date and time,
 the file \code{het.summary.tsv} contains the summary statistics. The file
-\code{markers.genotypes.boudaries.pdf} is the plot with boundaries.
+\code{markers.genotypes.boundaries.pdf} is the plot with boundaries.
 The function also returns a list inside the global environment with
 8 objects:
 
@@ -149,13 +150,13 @@ The function also returns a list inside the global environment with
 and boundaries (also written in the folder).
 \item summary.alt.allele a tibble summarizing the number of markers with:
 \itemize{
-\item no alternate allele (NO_HOM_ALT)
+\item no homozygote for the alternate allele (NO_HOM_ALT)
 \item no heterozygote genotype (NO_HET)
-\item one alternate allele(ONE_HOM_ALT)
+\item one homozygote for the alternate allele(ONE_HOM_ALT)
 \item one heterozygote genotype (ONE_HET)
-\item one alternate allele only (ONE_HOM_ALT_ONLY)
+\item one homozygote for the alternate allele only (ONE_HOM_ALT_ONLY)
 \item one heterozygote genotype only (ONE_HET_ONLY)
-\item one alternate allele and one heterozygote genotype only (ONE_HOM_ALT_ONE_HET_ONLY)
+\item one homozygote for the alternate allele and one heterozygote genotype only (ONE_HOM_ALT_ONE_HET_ONLY)
 }
 \item m.nreps A tibble with the heterozygote miscall rate for each MCMC replicate
 \item overall.genotyping.error.rate The overall genotyping error rate

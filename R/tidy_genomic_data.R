@@ -125,7 +125,8 @@
 #' @param blacklist.id (optional) A blacklist with individual ID and
 #' a column header 'INDIVIDUALS'. The blacklist is an object in your
 #' global environment or a file in the working directory
-#' (e.g. "blacklist.txt").
+#' (e.g. "blacklist.txt"). \code{_} and \code{:} in individual's names
+#' are changed to a dash \code{-}.
 #' Default: \code{blacklist.id = NULL}.
 
 #' @param pop.levels (optional, string) This refers to the levels in a factor. In this
@@ -168,7 +169,7 @@
 #' make sure you
 #' have the required column names (\code{INDIVIDUALS} and \code{STRATA}).
 #' The strata column is cleaned of a white spaces that interfere with some
-#' packages or codes: space is changed to an underscore \code{_}
+#' packages or codes: space is changed to an underscore \code{_}.
 #' Default: \code{strata = NULL}.
 
 #' @param pop.select (string, optional) Selected list of populations for
@@ -932,8 +933,18 @@ tidy_genomic_data <- function(
     }
 
     # Filter with whitelist of markers
+    input$MARKERS <- clean_markers_names(input$MARKERS)
+
     if (!is.null(whitelist.markers)) {
       if (verbose) message("Filtering with whitelist of markers")
+
+      if (tibble::has_name(input, "MARKERS") && !tibble::has_name(input, "LOCUS")) {
+        if (ncol(whitelist.markers) == 1 && colnames(whitelist.markers) == "LOCUS") {
+          colnames(whitelist.markers) <- "MARKERS"
+          columns.names.whitelist <- "MARKERS"
+        }
+      }
+
       input <- suppressWarnings(dplyr::semi_join(input, whitelist.markers, by = columns.names.whitelist))
     }
 

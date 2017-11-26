@@ -398,7 +398,7 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
     pop.labels = pop.labels,
     pop.select = pop.select,
     filename = NULL,
-    verbose = verbose
+    verbose = FALSE
   )
 
   if(verbose) message("\nPreparing data for output\n")
