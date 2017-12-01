@@ -146,14 +146,16 @@ subsampled randomly from the 200000 markers. If you need specific markers,
 use \code{whitelist.markers} argument.
 Default: \code{max.marker = NULL}.}
 
-\item{strata}{(optional/required) Required for VCF and haplotypes files,
-optional for the other formats supported.
-
+\item{strata}{(optional)
 The strata file is a tab delimited file with a minimum of 2 columns headers:
 \code{INDIVIDUALS} and \code{STRATA}.
 If a \code{strata} file is specified with all file formats that don't
 require it, the strata argument will have precedence on the population
-groupings used internally in those file formats.
+groupings used internally in those file formats. For file formats without
+population/strata groupings (e.g. vcf, haplotype files) if no strata file is
+provided, 1 pop/strata grouping will automatically be created.
+For vcf and haplotypes file, the strata can also be used as a whitelist of id.
+Samples not in the strata file will be discarded from the data set.
 The \code{STRATA} column can be any hierarchical grouping.
 To create a strata file see \code{\link[radiator]{individuals2strata}}.
 If you have already run
@@ -162,7 +164,7 @@ the strata file is similar to a stacks \emph{population map file},
 make sure you
 have the required column names (\code{INDIVIDUALS} and \code{STRATA}).
 The strata column is cleaned of a white spaces that interfere with some
-packages or codes: space is changed to an underscore \code{_}
+packages or codes: space is changed to an underscore \code{_}.
 Default: \code{strata = NULL}.}
 
 \item{pop.levels}{(optional, string) This refers to the levels in a factor. In this

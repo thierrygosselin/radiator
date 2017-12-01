@@ -211,7 +211,8 @@ filter_maf <- function(
       pop.labels = pop.labels,
       pop.select = pop.select,
       filename = NULL,
-      parallel.core = parallel.core
+      parallel.core = parallel.core,
+      verbose = FALSE
     )
   }
 

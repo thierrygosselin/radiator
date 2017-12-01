@@ -4,7 +4,7 @@
 \alias{tidy_dart}
 \title{Tidy \href{http://www.diversityarrays.com}{DArT} output file.}
 \usage{
-tidy_dart(data, strata, verbose = FALSE,
+tidy_dart(data, strata, filename = NULL, verbose = FALSE,
   parallel.core = parallel::detectCores() - 1)
 }
 \arguments{
@@ -19,7 +19,16 @@ Columns header is:
 Note: the column \code{STRATA} refers to any grouping of individuals.
 You need to make sure that
 the column \code{TARGET_ID} match the id used by DArT.
-The column \code{INDIVIDUALS} and \code{STRATA} will be kept in the tidy data.}
+The column \code{INDIVIDUALS} and \code{STRATA} will be kept in the tidy data.
+Only individuals in the strata file are kept in the tidy, i.e. that the strata
+is also used as a whitelist of individuals/strata.}
+
+\item{filename}{(optional) The function uses \code{\link[fst]{write.fst}},
+to write the tidy data frame in
+the working directory. The file extension appended to
+the \code{filename} provided is \code{.rad}.
+With default: \code{filename = NULL}, the tidy data frame is
+in the global environment only (i.e. not written in the working directory...).}
 
 \item{verbose}{(optional, logical) When \code{verbose = TRUE}
 the function is a little more chatty during execution.

@@ -153,14 +153,16 @@
 #' White spaces in population names are replaced by underscore.
 
 
-#' @param strata (optional/required) Required for VCF and haplotypes files,
-#' optional for the other formats supported.
-#'
+#' @param strata (optional)
 #' The strata file is a tab delimited file with a minimum of 2 columns headers:
 #' \code{INDIVIDUALS} and \code{STRATA}.
 #' If a \code{strata} file is specified with all file formats that don't
 #' require it, the strata argument will have precedence on the population
-#' groupings used internally in those file formats.
+#' groupings used internally in those file formats. For file formats without
+#' population/strata groupings (e.g. vcf, haplotype files) if no strata file is
+#' provided, 1 pop/strata grouping will automatically be created.
+#' For vcf and haplotypes file, the strata can also be used as a whitelist of id.
+#' Samples not in the strata file will be discarded from the data set.
 #' The \code{STRATA} column can be any hierarchical grouping.
 #' To create a strata file see \code{\link[radiator]{individuals2strata}}.
 #' If you have already run
@@ -425,7 +427,7 @@ tidy_genomic_data <- function(
 
   # STRATA argument required for VCF and haplotypes files-----------------------
   if (data.type == "haplo.file" | data.type == "vcf.file") {
-    if (is.null(strata)) stop("strata argument is required")
+    if (is.null(strata)) message("A strata file will be generated based on IDs in the dataset and 1 population will be attributed")
   }
 
   # Import whitelist of markers-------------------------------------------------
@@ -722,11 +724,35 @@ tidy_genomic_data <- function(
   # Import stacks haplotypes----------------------------------------------------
   if (data.type == "haplo.file") { # Haplotype file
     if (verbose) message("Importing STACKS haplotype file")
+    # import header row
+    want <- tibble::data_frame(
+      INFO = "Catalog ID",
+      COL_TYPE = "c") %>%
+      dplyr::bind_rows(
+        dplyr::select(strata.df, INFO = INDIVIDUALS) %>%
+          dplyr::mutate(COL_TYPE = rep("c", n())))
+
+    haplo.col.type <- readr::read_tsv(
+      file = data,
+      n_max = 1,
+      na = "-",
+      col_names = FALSE,
+      col_types = readr::cols(.default = readr::col_character())) %>%
+      tidyr::gather(data = .,key = DELETE, value = INFO) %>%
+      dplyr::mutate(INFO = clean_ind_names(INFO)) %>%
+      dplyr::select(-DELETE) %>%
+      dplyr::left_join(want, by = "INFO") %>%
+      dplyr::mutate(COL_TYPE = stringi::stri_replace_na(str = COL_TYPE, replacement = "_")) %>%
+      dplyr::select(COL_TYPE) %>%
+      purrr::flatten_chr(.) %>% stringi::stri_join(collapse = "")
+
+
+
+
     # readr now faster/easier than fread...
     input <- readr::read_tsv(
       file = data, col_names = TRUE, na = "-",
-      col_types = readr::cols(.default = readr::col_character())) %>%
-      dplyr::select(-Cnt)
+      col_types = haplo.col.type)
 
     if (tibble::has_name(input, "# Catalog ID") ||
         tibble::has_name(input, "Catalog ID") ||
@@ -753,19 +779,12 @@ tidy_genomic_data <- function(
       value = "GT_VCF_NUC", # previously using "GT_HAPLO"
       -LOCUS)
 
-
     input$INDIVIDUALS <- radiator::clean_ind_names(input$INDIVIDUALS)
 
     # Filter with whitelist of markers
     if (!is.null(whitelist.markers)) {
       if (verbose) message("Filtering with whitelist of markers")
       input <- suppressWarnings(dplyr::semi_join(input, whitelist.markers, by = columns.names.whitelist))
-    }
-
-    # Filter with blacklist of individuals
-    if (!is.null(blacklist.id)) {
-      if (verbose) message("Filtering with blacklist of individuals")
-      input <- suppressWarnings(dplyr::anti_join(input, blacklist.id, by = "INDIVIDUALS"))
     }
 
     # remove consensus markers
