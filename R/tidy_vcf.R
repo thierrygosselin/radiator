@@ -281,10 +281,7 @@ tidy_vcf <- function(
         dplyr::select(dplyr::one_of(want)) %>%
         dplyr::mutate_at(.tbl = ., .vars = "INDIVIDUALS",
                          .funs = clean_ind_names) %>%
-        dplyr::mutate(
-          # for stacks v.2 beta4 missing genotype are coded wrong
-          GT = stringi::stri_replace_all_fixed(str = GT, pattern = ".", replacement = "./.", vectorize_all = FALSE),
-          GT = stringi::stri_replace_na(str = GT, replacement = "./."))
+        dplyr::mutate(GT = stringi::stri_replace_na(str = GT, replacement = "./."))
     )
 
     input.gt <- NULL

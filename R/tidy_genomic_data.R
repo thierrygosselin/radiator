@@ -518,6 +518,8 @@ tidy_genomic_data <- function(
     if (!is.null(blacklist.id)) {
       strata.df <- dplyr::anti_join(x = strata.df, y = blacklist.id, by = "INDIVIDUALS")
     }
+  } else {
+    strata.df <- NULL
   }
 
   # Import VCF------------------------------------------------------------------
@@ -1221,7 +1223,7 @@ tidy_genomic_data <- function(
   if (verbose) {
     cat("################ radiator::tidy_genomic_data completed ################\n")
   }
-res <- input
-options(width = opt.change)
-return(res)
+  res <- input
+  options(width = opt.change)
+  return(res)
 } # tidy genomic data
