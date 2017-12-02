@@ -71,7 +71,7 @@ if (getRversion() >= "2.15.1") {
       "POLYMORPHIC.y", "EXPECTED", "FREQ_HET_E", "FREQ_HET_O", "FREQ_HOM_ALT_E",
       "FREQ_HOM_ALT_O", "FREQ_HOM_REF_E", "FREQ_HOM_REF_O", "GENOTYPES",
       "N_HET_EXP", "N_HOM_ALT_EXP", "N_HOM_REF_EXP", "OBSERVED",
-      "DISCARD", "NUMBERS", "TARGET_ID", "iter", "m"
+      "DISCARD", "NUMBERS", "TARGET_ID", "iter", "m", "PRIVATE_ALLELES"
     )
   )
 }

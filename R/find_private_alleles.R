@@ -81,6 +81,7 @@ find_private_alleles <- function(data, strata) {
       dplyr::select(-GROUP) %>%
       dplyr::distinct(MARKERS, STRATA, ALLELE)
   }
+  data <- NULL
   private.search <- private %>%
     dplyr::group_by(MARKERS, ALLELE) %>%
     dplyr::tally(.) %>%
@@ -97,9 +98,19 @@ find_private_alleles <- function(data, strata) {
     dplyr::tally(.) %>%
     dplyr::rename(PRIVATE_ALLELES = n) %>%
     readr::write_tsv(x = ., path = "private.alleles.summary.tsv")
-  res <- list(private.alleles = private.search, private.alleles.summary = private.summary)
-  message("Computation time: ", round((proc.time() - timing)[[3]]), " sec")
-  cat("################################## completed ##################################\n")
+
+ if(nrow(private.summary) > 0) {
+   message("Number of private alleles per strata:")
+   priv.message <- dplyr::mutate(private.summary, PRIVATE = stringi::stri_join(STRATA, PRIVATE_ALLELES, sep = " = "))
+   message(stringi::stri_join(priv.message$PRIVATE, collapse = "\n"))
+   res <- list(private.alleles = private.search, private.alleles.summary = private.summary)
+ } else {
+   message("Private allele(s) found: 0")
+   res <- "0 private allele"
+ }
+
+  message("\nComputation time: ", round((proc.time() - timing)[[3]]), " sec")
+  cat("############################## completed ##############################\n")
   options(width = opt.change)
   return(res)
 }#End find_private_alleles
