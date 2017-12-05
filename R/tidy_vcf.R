@@ -48,8 +48,6 @@ tidy_vcf <- function(
   verbose = FALSE,
   ...) {
 
-  if (is.null(strata)) message("A strata with 1 grouping will be generated...")
-
   # dotslist -------------------------------------------------------------------
   dotslist <- list(...)
   want <- c("whitelist.markers", "blacklist.id", "pop.select", "pop.levels", "pop.labels")
@@ -272,8 +270,9 @@ tidy_vcf <- function(
 
     # filter vcf id based on id in strata
     input.gt <- suppressWarnings(
-      dplyr::filter(input.gt,
-                    INDIVIDUALS %in% strata.df$INDIVIDUALS) %>%
+      input.gt %>%
+        dplyr::mutate(INDIVIDUALS = clean_ind_names(INDIVIDUALS)) %>%
+        dplyr::filter(INDIVIDUALS %in% strata.df$INDIVIDUALS) %>%
         tidyr::gather(data = ., key = MARKERS, value = GT, -INDIVIDUALS))
 
     input <- suppressWarnings(
@@ -771,32 +770,36 @@ clean_nv <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) 
 strata_vcf <- function(strata, input, blacklist.id) {
 
   if (is.null(strata)) {
-    strata <- dplyr::distinct(input, INDIVIDUALS) %>%
+    message("No strata file provided")
+    message("    generating a strata with 1 grouping")
+    strata.df <- dplyr::distinct(input, INDIVIDUALS) %>%
       dplyr::mutate(STRATA = rep("pop1", n()))
+  } else {
+    if (is.vector(strata)) {
+      suppressMessages(
+        strata.df <- readr::read_tsv(
+          file = strata, col_names = TRUE,
+          # col_types = col.types
+          col_types = readr::cols(.default = readr::col_character())
+        ))
+    } else {
+      strata.df <- strata
+    }
   }
 
-  if (is.vector(strata)) {
-    suppressMessages(
-      strata.df <- readr::read_tsv(
-        file = strata, col_names = TRUE,
-        # col_types = col.types
-        col_types = readr::cols(.default = readr::col_character())
-      ))
-  } else {
-    strata.df <- strata
-  }
   colnames(strata.df) <- stringi::stri_replace_all_fixed(
     str = colnames(strata.df),
     pattern = "STRATA",
     replacement = "POP_ID",
     vectorize_all = FALSE
   )
+
   # Remove potential whitespace in pop_id
-  strata.df$POP_ID <- radiator::clean_pop_names(strata.df$POP_ID)
+  strata.df$POP_ID <- clean_pop_names(strata.df$POP_ID)
   colnames.strata <- colnames(strata.df)
 
   # clean ids
-  strata.df$INDIVIDUALS <- radiator::clean_ind_names(strata.df$INDIVIDUALS)
+  strata.df$INDIVIDUALS <- clean_ind_names(strata.df$INDIVIDUALS)
 
   # filtering the strata if blacklist id available
   if (!is.null(blacklist.id)) {

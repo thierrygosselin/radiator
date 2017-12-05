@@ -385,23 +385,12 @@ tidy_genomic_data <- function(
   # Checking for missing and/or default arguments-------------------------------
   if (missing(data)) stop("Input file missing")
 
-  # POP_ID in gsi_sim does not like spaces, we need to remove space in everything touching POP_ID...
-  # pop.levels, pop.labels, pop.select, strata, etc
-  if (!is.null(pop.levels) & is.null(pop.labels)) {
-    pop.levels <- stringi::stri_replace_all_fixed(pop.levels, pattern = " ", replacement = "_", vectorize_all = FALSE)
-    pop.labels <- pop.levels
-  }
+  # Check pop.levels, pop.labels and pop.select---------------------------------
+  check.levels <- check_pop_levels(pop.levels = pop.levels, pop.labels = pop.labels)
+  pop.levels <- check.levels$pop.levels
+  pop.labels <- check.levels$pop.labels
+  pop.select <- check.levels$pop.select
 
-  if (!is.null(pop.labels) & is.null(pop.levels)) stop("pop.levels is required if you use pop.labels")
-
-  if (!is.null(pop.labels)) {
-    if (length(pop.labels) != length(pop.levels)) stop("pop.labels and pop.levels must have the same length (number of groups)")
-    pop.labels <- stringi::stri_replace_all_fixed(pop.labels, pattern = " ", replacement = "_", vectorize_all = FALSE)
-  }
-
-  if (!is.null(pop.select)) {
-    pop.select <- stringi::stri_replace_all_fixed(pop.select, pattern = " ", replacement = "_", vectorize_all = FALSE)
-  }
 
   # File type detection----------------------------------------------------------
   skip.tidy.wide <- FALSE # initiate for data frame below
@@ -422,12 +411,6 @@ tidy_genomic_data <- function(
       stop("The haplotype approach during MAF filtering is for VCF and
            stacks haplotypes file, only. Use the snp approach for the other file types")
     }
-  }
-
-
-  # STRATA argument required for VCF and haplotypes files-----------------------
-  if (data.type == "haplo.file" | data.type == "vcf.file") {
-    if (is.null(strata)) message("A strata file will be generated based on IDs in the dataset and 1 population will be attributed")
   }
 
   # Import whitelist of markers-------------------------------------------------
@@ -457,6 +440,7 @@ tidy_genomic_data <- function(
     whitelist.markers <- dplyr::mutate_all(
       .tbl = whitelist.markers, .funs = clean_markers_names)
   }
+
   # Import blacklist id --------------------------------------------------------
   if (!is.null(blacklist.id)) {# With blacklist of ID
     if (is.vector(blacklist.id)) {
@@ -726,6 +710,10 @@ tidy_genomic_data <- function(
   # Import stacks haplotypes----------------------------------------------------
   if (data.type == "haplo.file") { # Haplotype file
     if (verbose) message("Importing STACKS haplotype file")
+
+    strata.df <- strata_haplo(strata = strata.df,
+                              data = data, blacklist.id = blacklist.id)
+
     # import header row
     want <- tibble::data_frame(
       INFO = "Catalog ID",
@@ -747,9 +735,6 @@ tidy_genomic_data <- function(
       dplyr::mutate(COL_TYPE = stringi::stri_replace_na(str = COL_TYPE, replacement = "_")) %>%
       dplyr::select(COL_TYPE) %>%
       purrr::flatten_chr(.) %>% stringi::stri_join(collapse = "")
-
-
-
 
     # readr now faster/easier than fread...
     input <- readr::read_tsv(
@@ -1227,3 +1212,64 @@ tidy_genomic_data <- function(
   options(width = opt.change)
   return(res)
 } # tidy genomic data
+
+
+# Internal nested Function -----------------------------------------------------
+
+#' @title strata_haplo
+#' @description Manage strata
+#' @rdname strata_haplo
+#' @keywords internal
+#' @export
+strata_haplo <- function(strata = NULL, data = NULL, blacklist.id = NULL) {
+
+  if (is.null(strata)) {
+    message("No strata file provided")
+    message("    generating a strata with 1 grouping")
+    if (is.null(data)) stop("data required to generate strata")
+    strata.df <- readr::read_tsv(
+      file = data,
+      n_max = 1,
+      na = "-",
+      col_names = FALSE,
+      col_types = readr::cols(.default = readr::col_character())) %>%
+      tidyr::gather(data = .,key = DELETE, value = INDIVIDUALS) %>%
+      dplyr::mutate(INDIVIDUALS = clean_ind_names(INDIVIDUALS)) %>%
+      dplyr::select(-DELETE) %>%
+      dplyr::filter(!INDIVIDUALS %in% c("Catalog ID", "Cnt")) %>%
+      dplyr::distinct(INDIVIDUALS) %>%
+      dplyr::mutate(STRATA = rep("pop1", n()))
+  } else {
+    if (is.vector(strata)) {
+      suppressMessages(
+        strata.df <- readr::read_tsv(
+          file = strata, col_names = TRUE,
+          # col_types = col.types
+          col_types = readr::cols(.default = readr::col_character())
+        ))
+    } else {
+      strata.df <- strata
+    }
+  }
+
+  colnames(strata.df) <- stringi::stri_replace_all_fixed(
+    str = colnames(strata.df),
+    pattern = "STRATA",
+    replacement = "POP_ID",
+    vectorize_all = FALSE
+  )
+  # Remove potential whitespace in pop_id
+  strata.df$POP_ID <- clean_pop_names(strata.df$POP_ID)
+  colnames.strata <- colnames(strata.df)
+
+  # clean ids
+  strata.df$INDIVIDUALS <- clean_ind_names(strata.df$INDIVIDUALS)
+
+  # filtering the strata if blacklist id available
+  if (!is.null(blacklist.id)) {
+    strata.df <- dplyr::anti_join(x = strata.df, y = blacklist.id, by = "INDIVIDUALS")
+  }
+
+  strata.df <- dplyr::distinct(strata.df, POP_ID, INDIVIDUALS)
+  return(strata.df)
+}#End strata_haplo

@@ -70,6 +70,7 @@
 tidy_dart <- function(
   data,
   strata,
+  whitelist.markers = NULL,
   filename = NULL,
   verbose = FALSE,
   parallel.core = parallel::detectCores() - 1
@@ -90,7 +91,6 @@ tidy_dart <- function(
   } else {
     meta.filename <- stringi::stri_join(filename, "_metadata", ".rad")
     filename <- stringi::stri_join(filename, ".rad")
-
   }
 
   # Check DArT format file -----------------------------------------------------
@@ -130,11 +130,12 @@ tidy_dart <- function(
   }
 
   # Import data ---------------------------------------------------------------
-
   if (stringi::stri_detect_fixed(
     str = stringi::stri_sub(str = data, from = -4, to = -1),
     pattern = ".csv")) {
     csv <- TRUE
+  } else {
+    csv <- FALSE
   }
 
   if (csv) {
@@ -244,6 +245,38 @@ tidy_dart <- function(
   ) %>%
     dplyr::arrange(CHROM, LOCUS, POS, REF)
 
+  # Whitelist ------------------------------------------------------------------
+  if (!is.null(whitelist.markers)) {
+    if (is.vector(whitelist.markers)) {
+      whitelist.markers <- readr::read_tsv(
+        file = whitelist.markers,
+        col_names = TRUE,
+        col_types = readr::cols(.default = readr::col_character()))
+    }
+    columns.names.whitelist <- colnames(whitelist.markers)
+    nrow.before <- nrow(whitelist.markers)
+    whitelist.markers <- dplyr::distinct(whitelist.markers)
+    nrow.after <- nrow(whitelist.markers)
+    duplicate.whitelist.markers <- nrow.before - nrow.after
+    if (duplicate.whitelist.markers > 0) {
+      message("Whitelist of markers with ", duplicate.whitelist.markers, " duplicated identifiers...")
+      message("    Creating unique whitelist")
+      message("    Warning: downstream results might be impacted by this, check how you made your VCF file...")
+    }
+    nrow.before <- duplicate.whitelist.markers <- NULL
+
+    whitelist.markers <- dplyr::mutate_all(
+      .tbl = whitelist.markers, .funs = clean_markers_names)
+
+    if (verbose) message("Filtering with whitelist of markers")
+    if (verbose) message("    Whitelisted markers: ", nrow.after)
+    nrow.after <- NULL
+    input <- suppressWarnings(
+      dplyr::semi_join(input, whitelist.markers, by = columns.names.whitelist)
+    )
+  }
+
+
   # DArT Type-------------------------------------------------------------------
   # Determine the type of DArT file: 1 or 2-row format (binary)
   binary <- anyNA(input$REF)
@@ -338,6 +371,7 @@ tidy_dart <- function(
       return(res)
     }#End dart_binary
     dart_count <- function(x) {
+      # split.id <- unique(x$SPLIT_VEC)
       x <- dplyr::select(x, -SPLIT_VEC) %>%
         dplyr::arrange(MARKERS, REF) %>%
         dplyr::mutate(TEMP = rep(1:2, n()/2)) %>%
@@ -405,6 +439,9 @@ tidy_dart <- function(
               pattern = c("0/0", "1/1", "0/1", "1/0", "./."),
               replacement = c("0", "2", "1", "1", NA),
               vectorize_all = FALSE)))
+      # split.name <- stringi::stri_join("temp", split.id, sep = "_")
+      # fst::write.fst(x = x, path = split.name, compress = 85)
+      # x <- NULL
       return(x)
     }#End dart_count
 
@@ -483,8 +520,12 @@ tidy_dart <- function(
             "AVG_COUNT_SNP", "REP_AVG"))) %>%
         dplyr::arrange(MARKERS, REF)
 
-      fst::write.fst(x = grouping.column, path = meta.filename, compress = 85)
-      message("Marker's metadata file written to the directory:\n    ", meta.filename)
+
+      if (!file.exists(meta.filename)) {
+        fst::write.fst(x = grouping.column, path = meta.filename, compress = 85)
+        message("Marker's metadata file written to the directory:\n    ", meta.filename)
+      }
+
       grouping.column <- grouping.col <- NULL
 
       # markers.split <- dplyr::distinct(input, MARKERS) %>%
@@ -499,13 +540,11 @@ tidy_dart <- function(
           , by = "MARKERS")
 
       input <- split(x = input, f = input$SPLIT_VEC) %>%
-        .radiator_parallel_mc(X = ., FUN = dart_count, mc.cores = parallel.core) %>%
+        # purrr::map_df(.x = ., .f = dart_count) # for serial test
+      .radiator_parallel_mc(X = ., FUN = dart_count, mc.preschedule = FALSE, mc.cores = parallel.core, mc.cleanup = FALSE) %>%
+        # parallel::mclapply(X = ., FUN = dart_count, mc.preschedule = FALSE, mc.cores = parallel.core, mc.cleanup = FALSE) %>% # works!
+        # .radiator_parallel(X = ., FUN = dart_count, mc.preschedule = FALSE, mc.cores = parallel.core, mc.cleanup = FALSE) %>% # not working = no progress bar possible
         dplyr::bind_rows(.)
-
-      # when metadata was included..
-      # input <- dplyr::bind_rows(replicate(n.individuals, grouping.column, simplify = FALSE)) %>%
-      #   dplyr::arrange(MARKERS) %>%
-      #   dplyr::bind_cols(input)
 
       input <- suppressWarnings(dplyr::select(input,
           dplyr::one_of(
@@ -534,7 +573,12 @@ tidy_dart <- function(
     dplyr::everything()))
 
   fst::write.fst(x = input, path = filename, compress = 85)
-  message("Unfiltered tidy DArT data written to folder")
+
+  if(is.null(whitelist.markers)) {
+    message("Unfiltered tidy DArT data written to folder")
+  } else {
+    message("Whitelist filtered tidy DArT data written to folder")
+  }
 
   # Results --------------------------------------------------------------------
   if (verbose) {

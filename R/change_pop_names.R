@@ -23,28 +23,24 @@ change_pop_names <- function(data, pop.levels = NULL, pop.labels = NULL) {
   # POP_ID in gsi_sim does not like spaces, we need to remove space in everything touching POP_ID...
 
   # removing spaces in data$POP_ID, pop.levels and pop.labels
-  if (!is.null(pop.levels) & is.null(pop.labels)) {
-    pop.levels <- stringi::stri_replace_all_fixed(pop.levels, pattern = " ", replacement = "_", vectorize_all = FALSE)
-    pop.labels <- pop.levels
+  if (!is.null(pop.levels)) {
+    if (is.null(pop.labels)) {
+      pop.labels <-pop.levels <- clean_pop_names(pop.levels)
+    }
+    if (dplyr::n_distinct(data$POP_ID) != length(pop.levels)) {
+      stop("The number of strata/POP_ID in the data is different than the number of pop.levels: check argument and data")
+    }
   }
 
-  if (!is.null(pop.labels) & is.null(pop.levels)) stop("pop.levels is required if you use pop.labels")
-
   if (!is.null(pop.labels)) {
-    if (length(pop.labels) != length(pop.levels)) stop("pop.labels and pop.levels must have the same length (number of groups)")
-    pop.labels <- stringi::stri_replace_all_fixed(pop.labels, pattern = " ", replacement = "_", vectorize_all = FALSE)
+    if (is.null(pop.levels)) stop("pop.levels is required if you use pop.labels")
+    if (length(pop.labels) != length(pop.levels)) stop("pop.levels and pop.labels with different length: check arguments")
+    pop.labels <- clean_pop_names(pop.labels)
   }
 
   # in the data
-  data$POP_ID <- stringi::stri_replace_all_fixed(data$POP_ID, pattern = " ", replacement = "_", vectorize_all = FALSE)
+  data$POP_ID <- clean_pop_names(data$POP_ID)
 
-
-  # the number of pop in data == pop.levels
-  if (!is.null(pop.levels)) {
-    if (dplyr::n_distinct(data$POP_ID) != length(pop.levels)) {
-      stop("The number of groups in your input file doesn't match the number of groups in pop.levels")
-    }
-  }
   # convert POP_ID to factor and change names-----------------------------------
 
   if (is.null(pop.levels)) { # no pop.levels

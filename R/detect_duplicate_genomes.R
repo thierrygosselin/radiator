@@ -15,6 +15,15 @@
 #' \emph{How to get a tidy data frame ?}
 #' Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
 
+#' @param subsample.markers (optional, integer) To speed up computation and rapidly
+#' test the function, use this argument to subsampl the number of markers.
+#' Default: \code{subsample.markers = NULL}.
+
+#' @param random.seed (integer, optional) For reproducibility, set an integer
+#' for randomness when argument \code{subsample.markers} is used.
+#' By default, a random number is generated and printed.
+#' Default: \code{random.seed = NULL}.
+
 #' @param distance.method (character) The distance measure used inside \code{stats::dist}
 #' (<= 30000 markers) or \code{amap::Dist} (> 30000 markers).
 #' This must be one of "euclidean", "maximum", "manhattan", "canberra", "binary".
@@ -146,6 +155,8 @@
 
 detect_duplicate_genomes <- function(
   data,
+  subsample.markers = NULL,
+  random.seed = NULL,
   distance.method = "manhattan",
   genome = FALSE,
   parallel.core = parallel::detectCores() - 1
@@ -171,27 +182,36 @@ detect_duplicate_genomes <- function(
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {
-    input <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-  } else {
-    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "POP_ID", "INDIVIDUALS", "GT", "GT_BIN", "REF", "ALT")
-    input <- suppressWarnings(dplyr::select(data, dplyr::one_of(want)))
+    data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
   }
-
-  # check genotype column naming
-  colnames(input) <- stringi::stri_replace_all_fixed(
-    str = colnames(input),
-    pattern = "GENOTYPE",
-    replacement = "GT",
-    vectorize_all = FALSE
-  )
+  want <- c("MARKERS", "CHROM", "LOCUS", "POS", "POP_ID", "INDIVIDUALS", "GT", "GT_BIN", "REF", "ALT")
+  data <- suppressWarnings(dplyr::select(data, dplyr::one_of(want)))
 
   # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-  if (tibble::has_name(input, "LOCUS") && !tibble::has_name(input, "MARKERS")) {
-    input <- dplyr::rename(.data = input, MARKERS = LOCUS)
+  if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
+    data <- dplyr::rename(.data = data, MARKERS = LOCUS)
+  }
+
+  # Subsampling ----------------------------------------------------------------
+  if (!is.null(subsample.markers)) {
+    # Set seed for random sampling
+    if (is.null(random.seed)) {
+      random.seed <- sample(x = 1:1000000, size = 1)
+      set.seed(random.seed)
+      message("Random seed used: ", random.seed)
+    } else {
+      set.seed(random.seed)
+    }
+    sample.markers <- dplyr::distinct(data, MARKERS) %>%
+      dplyr::sample_n(tbl = ., size = subsample.markers) %>%
+      readr::write_tsv(x = ., path = file.path(path.folder, stringi::stri_join("subsampled.markers_random.seed_", random.seed, ".tsv"))) %>%
+      purrr::flatten_chr(.)
+    data <- dplyr::filter(data, MARKERS %in% sample.markers)
+    sample.markers <- NULL
   }
 
   # strata
-  strata <- dplyr::ungroup(input) %>%
+  strata <- dplyr::ungroup(data) %>%
     dplyr::distinct(POP_ID, INDIVIDUALS)
 
   # New list to prepare for results
@@ -200,9 +220,19 @@ detect_duplicate_genomes <- function(
   # Preparing data for comparisons ---------------------------------------------
   message("Preparing data for analysis")
 
+  #Genotyped stats -------------------------------------------------------------
+  n.markers <- dplyr::n_distinct(data$MARKERS)
+  geno.stats <- data %>%
+    dplyr::filter(GT != "000000") %>%
+    dplyr::group_by(INDIVIDUALS) %>%
+    dplyr::summarise(GENOTYPED_PROP = length(GT) / n.markers) %>%
+    readr::write_tsv(
+      x = .,
+      path = file.path(path.folder, "genotyped.statistics.tsv"))
+
   # GT_BIN available
-  if (!is.null(distance.method) & tibble::has_name(input, "GT_BIN")) {
-    input.prep <- dplyr::ungroup(input) %>%
+  if (!is.null(distance.method) & tibble::has_name(data, "GT_BIN")) {
+    input.prep <- dplyr::ungroup(data) %>%
       dplyr::select(MARKERS, INDIVIDUALS, ALT = GT_BIN) %>%
       dplyr::mutate(REF = 2 - ALT) %>%
       tidyr::gather(data = ., key = ALLELES, value = n, -c(MARKERS,INDIVIDUALS)) %>%
@@ -212,17 +242,17 @@ detect_duplicate_genomes <- function(
   }
 
   # GT_BIN NOT available
-  if (!tibble::has_name(input, "GT_BIN")) {
+  if (!tibble::has_name(data, "GT_BIN")) {
     # Allele count
-    missing.geno <- dplyr::select(.data = input, MARKERS, INDIVIDUALS, GT) %>%
+    missing.geno <- dplyr::select(.data = data, MARKERS, INDIVIDUALS, GT) %>%
       dplyr::filter(GT == "000000") %>%
       dplyr::select(-GT) %>%
       dplyr::mutate(MISSING = rep("blacklist", n()))
 
     message("Preparing data: calculating allele count")
-    input.prep <- dplyr::select(input, MARKERS, INDIVIDUALS, GT) %>%
+    input.prep <- dplyr::select(data, MARKERS, INDIVIDUALS, GT) %>%
       dplyr::left_join(
-        dplyr::distinct(input, MARKERS) %>%
+        dplyr::distinct(data, MARKERS) %>%
           dplyr::mutate(
             SPLIT_VEC = dplyr::ntile(x = 1:nrow(.), n = parallel.core * 3))
         , by = "MARKERS") %>%
@@ -247,9 +277,6 @@ detect_duplicate_genomes <- function(
   }#end preparing data
 
   # Computing distance ---------------------------------------------------------
-  # distance.method <- "euclidean"
-  # parallel.core <- 8
-
   if (!is.null(distance.method)) {
     message("Calculating ", distance.method, " distances between individuals...")
 
@@ -258,7 +285,27 @@ detect_duplicate_genomes <- function(
       strata = strata,
       distance.method = distance.method,
       parallel.core = parallel.core
-    )
+    ) %>%
+      dplyr::mutate(PAIRS = seq(from = 1, to = n(), by = 1)) %>%
+      dplyr::arrange(PAIRS)
+
+
+    geno <- dplyr::select(res$distance, ID1, ID2, PAIRS) %>%
+      dplyr::left_join(dplyr::rename(geno.stats, ID1 = INDIVIDUALS, ID1_G = GENOTYPED_PROP), by = "ID1") %>%
+      dplyr::left_join(dplyr::rename(geno.stats, ID2 = INDIVIDUALS, ID2_G = GENOTYPED_PROP), by = "ID2") %>%
+      tidyr::gather(data = ., key = GENOTYPED_MAX, value = GENOTYPED_PROP, -c(ID1, ID2, PAIRS)) %>%
+      dplyr::group_by(PAIRS) %>%
+      dplyr::filter(GENOTYPED_PROP == max(GENOTYPED_PROP)) %>%
+      dplyr::ungroup(.) %>%
+      dplyr::distinct(PAIRS, .keep_all = TRUE) %>%
+      dplyr::select(-GENOTYPED_PROP) %>%
+      dplyr::mutate(GENOTYPED_MAX = dplyr::if_else(GENOTYPED_MAX == "ID1_G", ID1, ID2)) %>%
+      dplyr::arrange(PAIRS) %>%
+      dplyr::select(-ID1, -ID2, -PAIRS)
+
+    res$distance <- dplyr::bind_cols(res$distance, geno)
+    geno <- NULL
+    # test <- res$distance
 
     readr::write_tsv(
       x = res$distance,
@@ -279,9 +326,9 @@ detect_duplicate_genomes <- function(
         QUANTILE75 = stats::quantile(DISTANCE_RELATIVE, 0.75)#, # quantile75
         # OUTLIERS_LOW = QUANTILE25 - (1.5 * (QUANTILE75 - QUANTILE25)), # outliers : below the outlier boxplot
         # OUTLIERS_HIGH = QUANTILE75 + (1.5 * (QUANTILE75 - QUANTILE25)) # outliers : higher the outlier boxplot
-      )
-    readr::write_tsv(
-      x = res$distance.stats,
+      ) %>%
+      readr::write_tsv(
+      x = .,
       path = stringi::stri_join(path.folder, "/individuals.pairwise.distance.stats.tsv"),
       col_names = TRUE
     )
@@ -345,11 +392,11 @@ detect_duplicate_genomes <- function(
   if (genome) {
 
     # If GT_BIN available, we need a new input.prep (not the same as dist method)
-    if (tibble::has_name(input, "GT_BIN")) {
-      input.prep <- dplyr::filter(.data = input, !is.na(GT_BIN))
+    if (tibble::has_name(data, "GT_BIN")) {
+      input.prep <- dplyr::filter(.data = data, !is.na(GT_BIN))
     }
 
-    input <- NULL
+    data <- NULL
 
     # all combination of individual pair
     id.pairwise <- utils::combn(unique(input.prep$INDIVIDUALS), 2, simplify = FALSE)
@@ -410,8 +457,26 @@ detect_duplicate_genomes <- function(
       )
     ID1.pop <- ID2.pop <- NULL
     res$pairwise.genome.similarity <- pairwise.genome.similarity %>%
-      dplyr::arrange(dplyr::desc(PROP_IDENTICAL))
+      dplyr::arrange(dplyr::desc(PROP_IDENTICAL)) %>%
+      dplyr::mutate(PAIRS = seq(from = 1, to = n(), by = 1)) %>%
+      dplyr::arrange(PAIRS)
     pairwise.genome.similarity <- NULL
+
+    geno <- dplyr::select(res$pairwise.genome.similarity, ID1, ID2, PAIRS) %>%
+      dplyr::left_join(dplyr::rename(geno.stats, ID1 = INDIVIDUALS, ID1_G = GENOTYPED_PROP), by = "ID1") %>%
+      dplyr::left_join(dplyr::rename(geno.stats, ID2 = INDIVIDUALS, ID2_G = GENOTYPED_PROP), by = "ID2") %>%
+      tidyr::gather(data = ., key = GENOTYPED_MAX, value = GENOTYPED_PROP, -c(ID1, ID2, PAIRS)) %>%
+      dplyr::group_by(PAIRS) %>%
+      dplyr::filter(GENOTYPED_PROP == max(GENOTYPED_PROP)) %>%
+      dplyr::ungroup(.) %>%
+      dplyr::distinct(PAIRS, .keep_all = TRUE) %>%
+      dplyr::select(-GENOTYPED_PROP) %>%
+      dplyr::mutate(GENOTYPED_MAX = dplyr::if_else(GENOTYPED_MAX == "ID1_G", ID1, ID2)) %>%
+      dplyr::arrange(PAIRS) %>%
+      dplyr::select(-ID1, -ID2, -PAIRS)
+
+    res$pairwise.genome.similarity <- dplyr::bind_cols(res$pairwise.genome.similarity, geno)
+    geno <- NULL
 
     readr::write_tsv(
       x = res$pairwise.genome.similarity,

@@ -4,8 +4,8 @@
 \alias{tidy_dart}
 \title{Tidy \href{http://www.diversityarrays.com}{DArT} output file.}
 \usage{
-tidy_dart(data, strata, filename = NULL, verbose = FALSE,
-  parallel.core = parallel::detectCores() - 1)
+tidy_dart(data, strata, whitelist.markers = NULL, filename = NULL,
+  verbose = FALSE, parallel.core = parallel::detectCores() - 1)
 }
 \arguments{
 \item{data}{DArT output file. Note that most popular formats used by DArT are
@@ -22,6 +22,20 @@ the column \code{TARGET_ID} match the id used by DArT.
 The column \code{INDIVIDUALS} and \code{STRATA} will be kept in the tidy data.
 Only individuals in the strata file are kept in the tidy, i.e. that the strata
 is also used as a whitelist of individuals/strata.}
+
+\item{whitelist.markers}{(optional) A whitelist containing CHROM (character
+or integer) and/or LOCUS (integer) and/or
+POS (integer) columns header. To filter by chromosome and/or locus and/or by snp.
+The whitelist is an object in your
+global environment or a file in the working directory (e.g. "whitelist.txt").
+Note that \emph{de novo} CHROM column with 'un' need to be changed to 1.
+In the VCF, the column ID is the LOCUS identification (VCF generated from
+stacks have the SNP position on the read embedded in the ID,
+so the ID = no longer represent the LOCUS). Marker names are cleaned of
+separators that interfere with some packages or codes:
+\code{/}, \code{:}, \code{-} and \code{.} are changed to an underscore
+\code{_}.
+Default \code{whitelist.markers = NULL} for no whitelist of markers.}
 
 \item{filename}{(optional) The function uses \code{\link[fst]{write.fst}},
 to write the tidy data frame in

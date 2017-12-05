@@ -5,14 +5,24 @@
 \title{Compute pairwise genome similarity or distance between individuals
 to highligh potential duplicate individuals}
 \usage{
-detect_duplicate_genomes(data, distance.method = "manhattan",
-  genome = FALSE, parallel.core = parallel::detectCores() - 1)
+detect_duplicate_genomes(data, subsample.markers = NULL, random.seed = NULL,
+  distance.method = "manhattan", genome = FALSE,
+  parallel.core = parallel::detectCores() - 1)
 }
 \arguments{
 \item{data}{A tidy data frame object in the global environment or
 a tidy data frame in wide or long format in the working directory.
 \emph{How to get a tidy data frame ?}
 Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.}
+
+\item{subsample.markers}{(optional, integer) To speed up computation and rapidly
+test the function, use this argument to subsampl the number of markers.
+Default: \code{subsample.markers = NULL}.}
+
+\item{random.seed}{(integer, optional) For reproducibility, set an integer
+for randomness when argument \code{subsample.markers} is used.
+By default, a random number is generated and printed.
+Default: \code{random.seed = NULL}.}
 
 \item{distance.method}{(character) The distance measure used inside \code{stats::dist}
 (<= 30000 markers) or \code{amap::Dist} (> 30000 markers).
