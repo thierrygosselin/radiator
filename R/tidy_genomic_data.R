@@ -1118,8 +1118,8 @@ tidy_genomic_data <- function(
 
   # Removing monomorphic markers------------------------------------------------
   if (monomorphic.out) {
-    message("Scanning for monomorphic markers...")
     if (tibble::has_name(input, "POLYMORPHIC")) {
+      message("Scanning for monomorphic markers...")
       if (verbose) message("    Number of markers before = ", dplyr::n_distinct(input$MARKERS))
       if (tibble::has_name(input, "POS")) {
         mono.markers <- dplyr::filter(input, !POLYMORPHIC) %>%
