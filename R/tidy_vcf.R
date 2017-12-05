@@ -806,6 +806,6 @@ strata_vcf <- function(strata, input, blacklist.id) {
     strata.df <- dplyr::anti_join(x = strata.df, y = blacklist.id, by = "INDIVIDUALS")
   }
 
-  strata.df <- dplyr::distinct(strata.df, POP_ID, INDIVIDUALS)
+  strata.df <- dplyr::distinct(strata.df, POP_ID, INDIVIDUALS, .keep_all = TRUE)
   return(strata.df)
 }#End strata_vcf
