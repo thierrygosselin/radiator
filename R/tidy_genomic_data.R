@@ -386,7 +386,7 @@ tidy_genomic_data <- function(
   if (missing(data)) stop("Input file missing")
 
   # Check pop.levels, pop.labels and pop.select---------------------------------
-  check.levels <- check_pop_levels(pop.levels = pop.levels, pop.labels = pop.labels)
+  check.levels <- check_pop_levels(pop.levels = pop.levels, pop.labels = pop.labels, pop.select = pop.select)
   pop.levels <- check.levels$pop.levels
   pop.labels <- check.levels$pop.labels
   pop.select <- check.levels$pop.select
