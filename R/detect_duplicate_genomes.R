@@ -16,7 +16,7 @@
 #' Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
 
 #' @param subsample.markers (optional, integer) To speed up computation and rapidly
-#' test the function, use this argument to subsampl the number of markers.
+#' test the function's arguments (e.g. using 200 markers).
 #' Default: \code{subsample.markers = NULL}.
 
 #' @param random.seed (integer, optional) For reproducibility, set an integer

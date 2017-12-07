@@ -468,28 +468,19 @@ tidy_genomic_data <- function(
   # population levels and strata------------------------------------------------
   if (!is.null(strata)) {
     if (is.vector(strata)) {
-      # message("strata file: yes")
-      # number.columns.strata <- max(
-      #   utils::count.fields(strata, sep = "\t"), na.rm = TRUE)
-      # col.types <- stringi::stri_join(
-      #   rep("c", number.columns.strata), collapse = "")
-      suppressMessages(
-        strata.df <- readr::read_tsv(
-          file = strata, col_names = TRUE,
-          # col_types = col.types
-          col_types = readr::cols(.default = readr::col_character())
-        ) %>%
-          dplyr::rename(POP_ID = STRATA))
+      strata.df <- readr::read_tsv(
+        file = strata, col_names = TRUE,
+        col_types = readr::cols(.default = readr::col_character()))
     } else {
-      # message("strata object: yes")
-      colnames(strata) <- stringi::stri_replace_all_fixed(
-        str = colnames(strata),
-        pattern = "STRATA",
-        replacement = "POP_ID",
-        vectorize_all = FALSE
-      )
       strata.df <- strata
     }
+
+    colnames(strata.df) <- stringi::stri_replace_all_fixed(
+      str = colnames(strata.df),
+      pattern = "STRATA",
+      replacement = "POP_ID",
+      vectorize_all = FALSE)
+
 
     # Remove potential whitespace in pop_id
     strata.df$POP_ID <- radiator::clean_pop_names(strata.df$POP_ID)
@@ -967,8 +958,7 @@ tidy_genomic_data <- function(
       strata.df$INDIVIDUALS <- radiator::clean_ind_names(strata.df$INDIVIDUALS)
 
       if (tibble::has_name(input, "POP_ID")) input <- dplyr::select(input, -POP_ID)
-      input <- input %>%
-        dplyr::left_join(strata.df, by = "INDIVIDUALS")
+      input <- dplyr::left_join(input, strata.df, by = "INDIVIDUALS")
     }
 
     # Change potential problematic POP_ID space

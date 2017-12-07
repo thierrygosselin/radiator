@@ -221,6 +221,8 @@ filter_dart <- function(
   data.info <- first.data.info <- data_info(metadata, print.info = FALSE)
 
 
+  # message("interactive.filter: ", interactive.filter)
+  # message("filter.reproducibility: ", filter.reproducibility)
   # Filtering reproducibility  -------------------------------------------------
   if (interactive.filter || !is.null(filter.reproducibility)) {
     message("Filtering reproducibility")
