@@ -707,11 +707,14 @@ tidy_genomic_data <- function(
 
     # import header row
     want <- tibble::data_frame(
-      INFO = "Catalog ID",
+      INFO = "CATALOG",
       COL_TYPE = "c") %>%
       dplyr::bind_rows(
         dplyr::select(strata.df, INFO = INDIVIDUALS) %>%
-          dplyr::mutate(COL_TYPE = rep("c", n())))
+          dplyr::mutate(
+            COL_TYPE = rep("c", n()),
+            INFO = clean_ind_names(INFO)
+          ))
 
     haplo.col.type <- readr::read_tsv(
       file = data,
@@ -722,25 +725,24 @@ tidy_genomic_data <- function(
       tidyr::gather(data = .,key = DELETE, value = INFO) %>%
       dplyr::mutate(INFO = clean_ind_names(INFO)) %>%
       dplyr::select(-DELETE) %>%
+      dplyr::mutate(INFO = clean_ind_names(INFO)) %>%
       dplyr::left_join(want, by = "INFO") %>%
       dplyr::mutate(COL_TYPE = stringi::stri_replace_na(str = COL_TYPE, replacement = "_")) %>%
-      dplyr::select(COL_TYPE) %>%
-      purrr::flatten_chr(.) %>% stringi::stri_join(collapse = "")
+      dplyr::select(COL_TYPE)
+
+    haplo.col.type[1,1] <- "c"
+
+    haplo.col.type <- purrr::flatten_chr(haplo.col.type) %>% stringi::stri_join(collapse = "")
 
     # readr now faster/easier than fread...
     input <- readr::read_tsv(
       file = data, col_names = TRUE, na = "-",
       col_types = haplo.col.type)
 
-    if (tibble::has_name(input, "# Catalog ID") ||
-        tibble::has_name(input, "Catalog ID") ||
-        tibble::has_name(input, "# Catalog Locus ID")) {
-      colnames(input) <- stringi::stri_replace_all_fixed(
-        str = colnames(input),
-        pattern = c("# Catalog ID", "Catalog ID", "# Catalog Locus ID"),
-        replacement = c("LOCUS", "LOCUS", "LOCUS"), vectorize_all = FALSE
-      )
-    }
+    colnames(input) <- stringi::stri_replace_all_fixed(
+      str = colnames(input),
+      pattern = c("# Catalog ID", "Catalog ID", "# Catalog Locus ID"),
+      replacement = c("LOCUS", "LOCUS", "LOCUS"), vectorize_all = FALSE)
 
     if (tibble::has_name(input, "Seg Dist")) {
       input <- dplyr::select(.data = input, -`Seg Dist`)

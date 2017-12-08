@@ -185,29 +185,28 @@ snp_ld <- function(
           dplyr::filter(!MARKERS %in% snp.select.no.maf$MARKERS)
         n.markers <- nrow(markers.df)
 
+        global_maf <- function(x) {
+          maf.data <- dplyr::group_by(x, MARKERS) %>%
+            dplyr::summarise(
+              N = as.numeric(2 * n()),
+              PP = as.numeric(2 * length(GT_BIN[GT_BIN == 0])),
+              PQ = as.numeric(length(GT_BIN[GT_BIN == 1])),
+              QQ = as.numeric(2 * length(GT_BIN[GT_BIN == 2]))
+            ) %>%
+            # need this step because seen cases where 2 is not the minor allele...
+            dplyr::mutate(
+              PP = PP + PQ,
+              QQ = QQ + PQ,
+              ALT = dplyr::if_else(PP < QQ, PP, QQ)) %>%
+            dplyr::mutate(
+              MAF_GLOBAL = (ALT / N),
+              N = NULL, PP = NULL, QQ = NULL, PQ = NULL, ALT = NULL) %>%
+            dplyr::ungroup(.)
+
+          return(maf.data)
+        }#End global_maf
+
         if (n.markers > 10000) {
-          global_maf <- function(x) {
-            maf.data <- x %>%
-              dplyr::group_by(MARKERS) %>%
-              dplyr::summarise(
-                N = as.numeric(2 * n()),
-                PP = as.numeric(2 * length(GT_BIN[GT_BIN == 0])),
-                PQ = as.numeric(length(GT_BIN[GT_BIN == 1])),
-                QQ = as.numeric(2 * length(GT_BIN[GT_BIN == 2]))
-              ) %>%
-              # need this step because seen cases where 2 is not the minor allele...
-              dplyr::mutate(
-                PP = PP + PQ,
-                QQ = QQ + PQ,
-                ALT = dplyr::if_else(PP < QQ, PP, QQ)) %>%
-              dplyr::mutate(
-                MAF_GLOBAL = (ALT / N),
-                N = NULL, PP = NULL, QQ = NULL, PQ = NULL, ALT = NULL) %>%
-              dplyr::ungroup(.)
-
-            return(maf.data)
-          }#End compute_maf
-
           split.vec <- markers.df %>%
             dplyr::mutate(SPLIT_VEC = split_vec_row(
               markers.df,
@@ -227,25 +226,29 @@ snp_ld <- function(
             dplyr::bind_rows(.)
           markers.df <- split.vec <- NULL
         } else {
-          maf.data <- data %>%
-            dplyr::filter(!is.na(GT_BIN)) %>%
-            dplyr::filter(!MARKERS %in% snp.select.no.maf$MARKERS) %>%
-            dplyr::group_by(MARKERS) %>%
-            dplyr::summarise(
-              N = as.numeric(2 * n()),
-              PP = as.numeric(2 * length(GT_BIN[GT_BIN == 0])),
-              PQ = as.numeric(length(GT_BIN[GT_BIN == 1])),
-              QQ = as.numeric(2 * length(GT_BIN[GT_BIN == 2]))
-            ) %>%
-            # need this step because seen cases where 2 is not the minor allele...
-            dplyr::mutate(
-              PP = PP + PQ,
-              QQ = QQ + PQ,
-              ALT = dplyr::if_else(PP < QQ, PP, QQ)) %>%
-            dplyr::mutate(
-              MAF_GLOBAL = (ALT / N),
-              N = NULL, PP = NULL, QQ = NULL, PQ = NULL, ALT = NULL) %>%
-            dplyr::ungroup(.)
+          maf.data <- global_maf(
+            x = dplyr::filter(data, !is.na(GT_BIN)) %>%
+              dplyr::filter(!MARKERS %in% snp.select.no.maf$MARKERS)
+          )
+          # maf.data <- data %>%
+          #   dplyr::filter(!is.na(GT_BIN)) %>%
+          #   dplyr::filter(!MARKERS %in% snp.select.no.maf$MARKERS) %>%
+          #   dplyr::group_by(MARKERS) %>%
+          #   dplyr::summarise(
+          #     N = as.numeric(2 * n()),
+          #     PP = as.numeric(2 * length(GT_BIN[GT_BIN == 0])),
+          #     PQ = as.numeric(length(GT_BIN[GT_BIN == 1])),
+          #     QQ = as.numeric(2 * length(GT_BIN[GT_BIN == 2]))
+          #   ) %>%
+          #   # need this step because seen cases where 2 is not the minor allele...
+          #   dplyr::mutate(
+          #     PP = PP + PQ,
+          #     QQ = QQ + PQ,
+          #     ALT = dplyr::if_else(PP < QQ, PP, QQ)) %>%
+          #   dplyr::mutate(
+          #     MAF_GLOBAL = (ALT / N),
+          #     N = NULL, PP = NULL, QQ = NULL, PQ = NULL, ALT = NULL) %>%
+          #   dplyr::ungroup(.)
         }
       } else {
         maf.data <- data %>%
@@ -263,8 +266,9 @@ snp_ld <- function(
           dplyr::group_by(MARKERS) %>%
           dplyr::mutate(n.al.tot = sum(n)) %>%
           dplyr::filter(n == min(n)) %>%
-          dplyr::distinct(n, .keep_all = TRUE) %>%
+          dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
           dplyr::summarise(MAF_GLOBAL = n / n.al.tot) %>%
+          dplyr::ungroup(.) %>%
           dplyr::select(MARKERS, MAF_GLOBAL)
       }
 
