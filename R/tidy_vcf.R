@@ -280,7 +280,10 @@ tidy_vcf <- function(
         dplyr::select(dplyr::one_of(want)) %>%
         dplyr::mutate_at(.tbl = ., .vars = "INDIVIDUALS",
                          .funs = clean_ind_names) %>%
-        dplyr::mutate(GT = stringi::stri_replace_na(str = GT, replacement = "./."))
+        dplyr::mutate(
+          # for stacks v.2 beta4 missing genotype are coded wrong
+          GT = stringi::stri_replace_all_fixed(str = GT, pattern = ".", replacement = "./.", vectorize_all = FALSE),
+          GT = stringi::stri_replace_na(str = GT, replacement = "./."))
     )
 
     input.gt <- NULL
@@ -801,11 +804,21 @@ strata_vcf <- function(strata, input, blacklist.id) {
   # clean ids
   strata.df$INDIVIDUALS <- clean_ind_names(strata.df$INDIVIDUALS)
 
+  strata.df <- dplyr::distinct(strata.df, POP_ID, INDIVIDUALS, .keep_all = TRUE)
+
+  if (!is.null(strata)) {
+    id.vcf <- dplyr::distinct(input, INDIVIDUALS) %>%
+      dplyr::mutate(INDIVIDUALS = clean_ind_names(INDIVIDUALS)) %>%
+      purrr::flatten_chr(.)
+
+    strata.df <- dplyr::filter(strata.df, INDIVIDUALS %in% id.vcf)
+  }
+
+
   # filtering the strata if blacklist id available
   if (!is.null(blacklist.id)) {
     strata.df <- dplyr::anti_join(x = strata.df, y = blacklist.id, by = "INDIVIDUALS")
   }
 
-  strata.df <- dplyr::distinct(strata.df, POP_ID, INDIVIDUALS, .keep_all = TRUE)
   return(strata.df)
 }#End strata_vcf
