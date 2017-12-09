@@ -41,7 +41,14 @@ replace_by_na <- function(data, what = ".") {
 #' @rdname separate_gt
 #' @keywords internal
 #' @export
-separate_gt <- function(x, sep = "/", gt = "GT_VCF_NUC", exclude = c("LOCUS", "INDIVIDUALS", "POP_ID"), cpu.rounds = 10, parallel.core = parallel::detectCores() - 1) {
+separate_gt <- function(
+  x,
+  sep = "/",
+  gt = "GT_VCF_NUC",
+  exclude = c("LOCUS", "INDIVIDUALS", "POP_ID"),
+  cpu.rounds = 10,
+  parallel.core = parallel::detectCores() - 1
+) {
   # sep <-  "/"
   # x <- input2
   n.row <- nrow(x)

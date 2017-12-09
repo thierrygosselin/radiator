@@ -35,7 +35,7 @@ Default: \code{vcf.metadata = FALSE}.}
 
 \item{interactive.filter}{(optional, logical) Do you want the filtering session to
 be interactive. With default: \code{interactive.filter == TRUE}, the user is
-asked to see figures of distribution before making decisions for filtering.}
+shown figures and helper tables before making decisions for filtering.}
 
 \item{maf.approach}{(character, optional).
 \code{maf.approach = "haplotype"} : looks at the minimum MAF found on the
@@ -64,9 +64,12 @@ global MAF to pass the thresholds, to keep the marker?}
 this argument is for the number of pop required to pass the maf thresholds
 to keep the locus. Default: \code{maf.pop.num.threshold = 1}}
 
-\item{filename}{(optional) Name of the filtered tidy data frame file
-written to the working directory (ending with \code{.tsv})
-Default: \code{filename = NULL}.}
+\item{filename}{(optional) The function uses \code{\link[fst]{write.fst}},
+to write the tidy data frame in
+the working directory. The file extension appended to
+the \code{filename} provided is \code{.rad}.
+With default: \code{filename = NULL}, the tidy data frame is
+in the global environment only (i.e. not written in the working directory...).}
 
 \item{blacklist.id}{(optional) A blacklist with individual ID and
 a column header 'INDIVIDUALS'. The blacklist is an object in your
@@ -198,13 +201,11 @@ with 7 objects:
 \item $tidy.filtered.maf
 \item $whitelist.markers
 \item $blacklist.markers
-\item $blacklist.markers
 \item $maf.data.thresholds
-\item $strata
 \item $filters.parameters
 }
 
-With \code{interactive.filter = TRUE}, a list with 5 additionnal objects is created.
+With \code{interactive.filter = TRUE}, a list with 4 additionnal objects are generated.
 \enumerate{
 \item $distribution.maf.global
 \item $distribution.maf.local
@@ -212,28 +213,33 @@ With \code{interactive.filter = TRUE}, a list with 5 additionnal objects is crea
 \item $maf.helper.table
 }
 
-The object can be isolated in separate object outside the list by
-following the example below.
+\strong{maf.helper.table:}
+
+First and second variables (in columns) represents POP_ID and sample size (n).
+
+The last 2 rows are the local MAF (suggested based on the lowest pop value)
+and the TOTAL/GLOBAL observations.
+
+Columns starting with ALT are the variable corresponding
+to the number of alternative (ALT) allele (ranging from 1 to 20).
+The observations in the ALT allele variable columns are the local (for the pop)
+and global (last row) MAF of your dataset.
+e.g. ALT_3 can potentially represent 3 heterozygote individuals with
+the ALT allele or 1 homozygote individuals for the ALT allele and
+1 heterozygote individual. And so on...
 }
 \description{
-Minor Allele Frequency filter from a tidy data set (long format)
-of any of these file format:
-vcf, plink (tped/tfam), stacks haplotype file, genind,
-genepop, data frame in wide format. The function uses
-\code{\link[radiator]{tidy_genomic_data}} and
-\code{\link[radiator]{tidy_wide}} to load the file.
+Minor Allele Frequency filter.
 }
 \details{
-To help choose a threshold for the local and global MAF, look
-at the function \link{diagnostic_maf}, or use the interactive version.
+To help choose a threshold for the local and global MAF
+use the interactive version.
 
-There is 3 steps in the interactive version:
+2 steps in the interactive version:
 
-Step 1. Global MAF: Inspecting the MAF globally
+Step 1. Global and Local MAF visualization and helper table.
 
-Step 2. Local MAF: Inspecting the MAF at the populations level
-
-Step 3. Filtering markers based on the different MAF arguments
+Step 2. Filtering markers based on the different MAF arguments
 }
 \examples{
 \dontrun{
@@ -260,5 +266,5 @@ bg <- turtle.maf$blacklist.genotypes
 }
 }
 \author{
-Thierry Gosselin \email{thierrygosselin@icloud.com} and Eric Archer \email{eric.archer@noaa.gov}
+Thierry Gosselin \email{thierrygosselin@icloud.com}
 }

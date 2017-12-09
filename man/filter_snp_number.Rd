@@ -36,7 +36,7 @@ Default: \code{vcf.metadata = FALSE}.}
 be interactive. With default: \code{interactive.filter == TRUE}, the user is
 asked to see figures of distribution before making filtering decisions.}
 
-\item{max.snp.number}{(integer) This is best decide after viewing the figures.
+\item{max.snp.number}{(integer) This is best decided after viewing the figures.
 If the argument is set to 2, locus with 3 and more SNPs will be blacklisted.}
 
 \item{filename}{(optional) Name of the filtered tidy data frame file
