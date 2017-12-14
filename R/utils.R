@@ -83,7 +83,7 @@ separate_gt <- function(
 #' @export
 compute_maf <- function(x, biallelic) {
   if (tibble::has_name(x, "GT_BIN") && biallelic) {
-    maf.data <- x %>%
+    x <- x %>%
       dplyr::group_by(MARKERS, POP_ID) %>%
       dplyr::summarise(
         NN = as.numeric(2 * n()),
@@ -106,7 +106,7 @@ compute_maf <- function(x, biallelic) {
         ALT = dplyr::if_else(PP_G < QQ_G, PP, QQ),
         MAF_LOCAL = (ALT / NN),
         PP = NULL,
-        QQ = NULL,
+        # QQ = NULL,
         NN = NULL) %>%
       dplyr::group_by(MARKERS) %>%
       dplyr::mutate(
@@ -114,12 +114,13 @@ compute_maf <- function(x, biallelic) {
         MAF_GLOBAL = (ALT / NN_G),
         ALT = NULL,
         PP_G = NULL,
-        QQ_G = NULL,
+        # QQ_G = NULL,
         NN_G = NULL) %>%
-      dplyr::ungroup(.)
+      dplyr::ungroup(.) %>%
+      dplyr::rename(ALT_LOCAL = QQ, ALT_GLOBAL = QQ_G)
   } else {
     if (!tibble::has_name(x, "GT_VCF_NUC")) {
-      maf.data <- x %>%
+      x <- x %>%
         dplyr::select(MARKERS,POP_ID, INDIVIDUALS, GT) %>%
         dplyr::mutate(
           A1 = stringi::stri_sub(GT, 1, 3),
@@ -128,7 +129,7 @@ compute_maf <- function(x, biallelic) {
         dplyr::select(MARKERS, POP_ID, INDIVIDUALS, A1, A2) %>%
         tidyr::gather(data = ., key = ALLELES, value = GT, -c(MARKERS, INDIVIDUALS, POP_ID))
 
-      maf.local <- maf.data %>%
+      maf.local <- x %>%
         dplyr::group_by(MARKERS, POP_ID, GT) %>%
         dplyr::tally(.) %>%
         dplyr::ungroup(.) %>%
@@ -137,24 +138,25 @@ compute_maf <- function(x, biallelic) {
         dplyr::mutate(n.al.tot = sum(n)) %>%
         dplyr::filter(n == min(n)) %>%
         dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-        dplyr::summarise(MAF_LOCAL = n / n.al.tot) %>%
+        dplyr::summarise(MAF_LOCAL = n / n.al.tot, ALT_LOCAL = n) %>%
         dplyr::ungroup(.) %>%
-        dplyr::select(MARKERS, POP_ID, MAF_LOCAL)
+        dplyr::select(MARKERS, POP_ID, MAF_LOCAL, ALT_LOCAL)
 
-      maf.data <- maf.data %>%
+      x <- x %>%
         dplyr::group_by(MARKERS, GT) %>%
         dplyr::tally(.) %>%
         dplyr::group_by(MARKERS) %>%
         dplyr::mutate(n.al.tot = sum(n)) %>%
         dplyr::filter(n == min(n)) %>%
         dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-        dplyr::summarise(MAF_GLOBAL = n / n.al.tot) %>%
+        dplyr::summarise(MAF_GLOBAL = n / n.al.tot, ALT_GLOBAL = n) %>%
         dplyr::ungroup(.) %>%
-        dplyr::select(MARKERS, MAF_GLOBAL) %>%
+        dplyr::select(MARKERS, MAF_GLOBAL, ALT_GLOBAL) %>%
         dplyr::left_join(maf.local, by = c("MARKERS")) %>%
-        dplyr::select(MARKERS, POP_ID, MAF_LOCAL, MAF_GLOBAL)
+        dplyr::select(MARKERS, POP_ID, MAF_LOCAL, ALT_LOCAL, MAF_GLOBAL, ALT_GLOBAL)
+      maf.local <- NULL
     } else {
-      maf.data <- x %>%
+      x <- x %>%
         dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT_VCF_NUC) %>%
         tidyr::separate(
           data = .,
@@ -179,21 +181,22 @@ compute_maf <- function(x, biallelic) {
         dplyr::mutate(MAF_LOCAL = n / N_LOCAL) %>%
         dplyr::group_by(MARKERS, HAPLOTYPES) %>%
         dplyr::mutate(
-          MAF_GLOBAL = sum(n) / N_GLOBAL,
-          n = NULL,
+          ALT_GLOBAL = sum(n),
+          MAF_GLOBAL = ALT_GLOBAL / N_GLOBAL,
           N_LOCAL = NULL,
           N_GLOBAL = NULL
         ) %>%
+        dplyr::rename(ALT_LOCAL = n) %>%
         dplyr::ungroup(.)
 
-      ref.info <- dplyr::distinct(maf.data, MARKERS, HAPLOTYPES, MAF_GLOBAL) %>%
+      ref.info <- dplyr::distinct(x, MARKERS, HAPLOTYPES, MAF_GLOBAL) %>%
         dplyr::group_by(MARKERS) %>%
         dplyr::filter(MAF_GLOBAL == max(MAF_GLOBAL)) %>%
         dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
         dplyr::ungroup(.) %>%
         dplyr::mutate(REF = rep("REF", n()), MAF_GLOBAL = NULL) %>%
         dplyr::bind_rows(
-          dplyr::distinct(maf.data, MARKERS, HAPLOTYPES, MAF_GLOBAL) %>%
+          dplyr::distinct(x, MARKERS, HAPLOTYPES, MAF_GLOBAL) %>%
             dplyr::group_by(MARKERS) %>%
             dplyr::filter(MAF_GLOBAL == min(MAF_GLOBAL)) %>%
             dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
@@ -201,11 +204,10 @@ compute_maf <- function(x, biallelic) {
             dplyr::mutate(REF = rep("MAF", n()), MAF_GLOBAL = NULL)
         )
 
-      maf.data <- dplyr::left_join(maf.data, ref.info, by = c("MARKERS", "HAPLOTYPES")) %>%
+      x <- dplyr::left_join(x, ref.info, by = c("MARKERS", "HAPLOTYPES")) %>%
         dplyr::mutate(REF = stringi::stri_replace_na(REF, replacement = "ALT"))
       ref.info <- NULL
     }
   }
-  maf.local <- NULL
-  return(maf.data)
+  return(x)
 }#End compute_maf

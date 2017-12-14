@@ -74,30 +74,36 @@ separators that interfere with some packages or codes:
 \code{_}.
 Default \code{whitelist.markers = NULL} for no whitelist of markers.}
 
-\item{maf.thresholds}{(optional) Default: \code{maf.thresholds = NULL}. For no
-MAF filtering.
+\item{maf.thresholds}{(optional) Use for minor allele frequency (maf) or count (mac)
+filter. Default: \code{maf.thresholds = NULL}, for no filtering.
 
-String with 5 values
-(e.g. \code{maf.thresholds = c("maf approach", local maf, "OR", global maf, number pop threshold)},
-\code{maf.thresholds = c("SNP", 0.001, "OR", 0.001, 1)}):
+String with 5 values.
+For example using SNP and frequency approach: \code{maf.thresholds = c("SNP", 0.001, "OR", 0.001, 1)}.
+For example using locus and count approach: \code{maf.thresholds = c("locus", 3, "OR", 6, 1)}.
 \enumerate{
 \item maf approach (character: "SNP"/"locus"):
 MAF filtering is conducted by SNPs or locus.
-\code{"SNP"}: will consider all the SNPs on the same locus/read as independent.
+\code{"SNP"}: will consider all the SNPs on the same locus/read as independent
+and will be filtered independently of their locus id.
 \code{"locus"}: looks at the minimum MAF found on the
 read/locus. Using this option will discard all the markers/snp on
 that read based on the thresholds chosen. For the locus approach to work, your dataset
 requires SNP and Locus info (e.g. from a VCF file).
 
-\item local maf (double): The maf threshold at the population level.
+\item local threshold (double or integer): For a frequency threshold use
+a double (e.g. 0.05). For a count threshold, use an integer
+(e.g. 3 for the number of alternate allele required in a population). This
+threshold is applied by population.
 Not sure about the threshold to use, choose the interactive mode argument.
 
-\item maf operator (character: "OR" / "AND"):
-When filtering over LOCUS or SNP, 2 options available to consider the local/global MAF:
-The local \code{"AND"} the global MAF. The local \code{"OR"}
-global MAF.
+\item operator (character: "OR" / "AND"):
+To consider both the local \code{"AND"} the global thresholds, use \code{"AND"}.
+To consider the local \code{"OR"} the global thresholds, use \code{"OR"}.
 
-\item global maf (double): The maf threshold taken at the dataset level.
+\item global threshold (double or integer): For a frequency threshold
+use a double (e.g. 0.02). For a count threshold, use an integer
+(e.g. 6 for the number of alternate allele required). This threshold is
+applied at the dataset level (no population).
 Not sure about the threshold to use, choose the interactive mode argument.
 
 \item maf pop num threshold (integer)

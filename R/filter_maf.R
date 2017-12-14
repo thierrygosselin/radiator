@@ -1,13 +1,16 @@
 # Minor Allele Frequency
 #' @name filter_maf
 #' @title MAF filter
-#' @description Minor Allele Frequency filter. Most arguments are inherited from
+#' @description Minor Allele Filter.
+#' Remove markers based on Minor/Alternate Allele Frequency (MAF) or Count (MAC).
+#'
+#' Most arguments are inherited from
 #' \code{\link[radiator]{tidy_genomic_data}}.
 #' @inheritParams tidy_genomic_data
 
 #' @param interactive.filter (optional, logical) Do you want the filtering session to
-#' be interactive. With default: \code{interactive.filter == TRUE}, the user is
-#' shown figures and helper tables before making decisions for filtering.
+#' be interactive. With default: \code{interactive.filter == TRUE}, figures and
+#' tables are shown before making decisions for filtering.
 
 #' @param filename (optional, character) Write to folder the MAF filtered
 #' tidy dataset. The name will be appended \code{.rad}. With default, the filtered
@@ -82,7 +85,8 @@
 #' @examples
 #' \dontrun{
 #' # The minumum
-#' turtle.maf <- filter_maf(
+#' library(radiator)
+#' turtle.maf <- radiator::filter_maf(
 #' data = "turtle.vcf",
 #' strata = "turtle.strata.tsv")
 #' #This will use the default: interactive version,
@@ -93,6 +97,22 @@
 #'
 #' # The remaining argument are used in tidy_genomic_data during import and allow
 #' # the user to apply some filtering or selection before doing the MAF filtering.
+#'
+#' # If I want to filter Alternate alleles based on count.
+#' library(radiator)
+#' turtle.maf <- radiator::filter_maf(
+#' data = "turtle.vcf",
+#' strata = "turtle.strata.tsv",
+#' maf.thresholds = c("SNP", 3, "OR", "5", 1),
+#' filename = "turtle.maf")
+#' # This will remove monomorphic markers (by default monomorphic.out = TRUE)
+#' # it will use the SNP approache (SNPs are considered independent and
+#' # filtered independent)
+#' # I keep markers if: they have a local count of 3 alternate allele OR global
+#' # count of 5 alternate allele.
+#' # I keep the marker if at leat 1 pop pass that.
+#' # finally the filtered data will be written in the directory under the name:
+#' # turtle.maf.rad
 #' }
 
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
@@ -211,7 +231,7 @@ filter_maf <- function(
     } else {
       if (verbose) message("    Using the filters parameters file: filters_parameters.tsv")
     }
-    # File type detection----------------------------------------------------------
+    # File type detection-------------------------------------------------------
     data.type <- radiator::detect_genomic_format(data)
 
     if (data.type == "haplo.file") {
@@ -220,18 +240,41 @@ filter_maf <- function(
       # the data is filtered the same way as the approach by SNP.
     }
 
-    # Interactive mode details ---------------------------------------------------
+    # Interactive mode details for MAF arguments -------------------------------
     if (!interactive.filter) {
       maf.approach <- as.character(maf.thresholds[1])
-      maf.local.threshold <- as.numeric(maf.thresholds[2])
+      maf.local.threshold <- maf.thresholds[2]
+      if (maf.local.threshold >= 1) {
+        maf.local.threshold <- as.integer(maf.local.threshold)
+        maf.count <- TRUE
+      } else {
+        maf.local.threshold <- as.numeric(maf.local.threshold)
+        maf.count <- FALSE
+      }
       maf.operator <- as.character(maf.thresholds[3])
-      maf.global.threshold <- as.numeric(maf.thresholds[4])
+      maf.global.threshold <- maf.thresholds[4]
+      if (maf.global.threshold >= 1) {
+        maf.global.threshold <- as.integer(maf.global.threshold)
+      } else {
+        maf.global.threshold <- as.numeric(maf.global.threshold)
+      }
       maf.pop.num.threshold <- as.numeric(maf.thresholds[5])
     }
 
-    # import data ----------------------------------------------------------------
+    # import data --------------------------------------------------------------
     if (verbose) message("Importing data ...")
-    if (data.type %in% c("tbl_df", "fst.file")) {
+    if (is.null(blacklist.id) && is.null(blacklist.genotype) && is.null(whitelist.markers) &&
+        !monomorphic.out && is.null(snp.ld) && !common.markers && is.null(pop.select)) {
+      if (data.type %in% c("tbl_df", "fst.file")) {
+        skip.import <- TRUE
+      } else {
+        skip.import <- FALSE
+      }
+    } else {
+      skip.import <- FALSE
+    }
+
+    if (skip.import) {
       want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS", "POP_ID", "REF", "ALT", "GT", "GT_VCF", "GT_VCF_NUC", "GT_BIN")
       if (data.type == "tbl_df") {
         input <- suppressWarnings(dplyr::select(data, dplyr::one_of(want)))
@@ -322,12 +365,12 @@ filter_maf <- function(
       if (tibble::has_name(maf.data, "HAPLOTYPES")) {
         global.data <- dplyr::ungroup(maf.data) %>%
           dplyr::filter(REF == "MAF") %>%
-          dplyr::select(MARKERS, MAF_GLOBAL) %>%
+          dplyr::select(MARKERS, MAF_GLOBAL, ALT_GLOBAL) %>%
           dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
           dplyr::mutate(OVERALL = rep("overall", n()))
       } else {
         global.data <- dplyr::ungroup(maf.data) %>%
-          dplyr::distinct(MARKERS, MAF_GLOBAL) %>%
+          dplyr::distinct(MARKERS, MAF_GLOBAL, ALT_GLOBAL) %>%
           dplyr::mutate(OVERALL = rep("overall", n()))
       }
 
@@ -338,16 +381,21 @@ filter_maf <- function(
           RANGE = stringi::stri_join(round(min(MAF_GLOBAL, na.rm = TRUE), 4), " - ", round(max(MAF_GLOBAL, na.rm = TRUE), 4))
         )
 
-      histo.maf.global <- ggplot2::ggplot(global.data, ggplot2::aes(x = MAF_GLOBAL)) +
+      global.data <- tidyr::gather(data = global.data, key = "GROUP", value = "GLOBAL", -c(MARKERS, OVERALL)) %>%
+        dplyr::mutate(GROUP = stringi::stri_replace_all_fixed(str = GROUP, pattern = c("ALT_GLOBAL", "MAF_GLOBAL"), replacement = c("ALT count", "ALT frequency (MAF)"), vectorize_all = FALSE))
+
+      histo.maf.global <- ggplot2::ggplot(global.data, ggplot2::aes(x = GLOBAL)) +
         ggplot2::geom_histogram(bins = 30) +
-        ggplot2::labs(y = "Number of markers", x = "Global MAF") +
+        ggplot2::labs(y = "Number of markers", x = "Global Minor Allele (count and frequency)") +
         ggplot2::theme_minimal() +
         ggplot2::theme(
           legend.position = "none",
           axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
           axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold")
-        )
+        ) +
+        ggplot2::facet_grid(~GROUP, scales = "free")
       print(histo.maf.global)
+
       # save
       ggplot2::ggsave(
         filename = file.path(path.folder, "distribution.maf.global.pdf"),
@@ -369,16 +417,20 @@ filter_maf <- function(
       if (tibble::has_name(maf.data, "HAPLOTYPES")) {
         histo.maf.local <- maf.data %>%
           dplyr::filter(REF == "ALT") %>%
-          dplyr::select(MARKERS, POP_ID, MAF_LOCAL) %>%
+          dplyr::select(MARKERS, POP_ID, MAF_LOCAL, ALT_LOCAL) %>%
           dplyr::distinct(MARKERS, POP_ID, .keep_all = TRUE)
       } else {
         histo.maf.local <- maf.data
       }
 
-      histo.maf.local <- ggplot2::ggplot(data = histo.maf.local, ggplot2::aes(x = MAF_LOCAL, na.rm = FALSE)) +
+      histo.maf.local <- histo.maf.local %>%
+        dplyr::select(MARKERS, POP_ID, `ALT count` = ALT_LOCAL, `ALT frequency` = MAF_LOCAL) %>%
+        tidyr::gather(data = ., key = "GROUP", value = "LOCAL", -c(MARKERS, POP_ID))
+
+      histo.maf.local <- ggplot2::ggplot(data = histo.maf.local, ggplot2::aes(x = LOCAL, na.rm = FALSE)) +
         # ggplot2::geom_line(ggplot2::aes(y = ..scaled.., color = POP_ID), stat = "density", adjust = 1) + # pop colored
         ggplot2::geom_histogram(bins = 30) +
-        ggplot2::scale_x_continuous(breaks = seq(0,1, by = 0.1)) +
+        # ggplot2::scale_x_continuous(breaks = seq(0,1, by = 0.1)) +
         ggplot2::labs(x = "Minor Allele Frequency (MAF)", y = "Number of markers") +
         # ggplot2::labs(y = "Density of MARKERS (scaled)") +
         ggplot2::expand_limits(y = 0) +
@@ -390,11 +442,11 @@ filter_maf <- function(
           strip.text.y = ggplot2::element_text(angle = 0, size = 12, family = "Helvetica", face = "bold"),
           strip.text.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold")
         ) +
-        ggplot2::facet_grid(~POP_ID)
+        ggplot2::facet_grid(POP_ID~GROUP, scales = "free_x")
       print(histo.maf.local)
       ggplot2::ggsave(
         filename = file.path(path.folder, "maf.local.spectrums.pdf"),
-        plot = histo.maf.local, width = pop.number * 5, height = 15,
+        plot = histo.maf.local, width = 15, height = pop.number * 5,
         dpi = 600, units = "cm", useDingbats = FALSE, limitsize = FALSE)
       message("Local maf spectrums written in the folder")
     }
@@ -466,13 +518,30 @@ because LOCUS and POS (SNP) info is not available")
 
     # maf.thresholds
     if (interactive.filter) {
-      message("Choose the maf local threshold (usually a value between 0 and 0.3):")
+      message("Choose the local minor allele threshold")
+      message("   Using a frequency: choose a value between 0 and 0.9")
+      message("   Using count of alternate allele: choose an integer >= 1")
       maf.local.threshold <- as.character(readLines(n = 1))
+      if (maf.local.threshold >= 1) {
+        maf.local.threshold <- as.integer(maf.local.threshold)
+        maf.count <- TRUE
+      } else {
+        maf.local.threshold <- as.numeric(maf.local.threshold)
+        maf.count <- FALSE
+      }
     }
 
     if (interactive.filter) {
-      message("Choose the maf global threshold (usually a value between 0 and 0.3):")
+      message("Choose the global minor allele threshold")
+      message("   Using a frequency: choose a value between 0 and 0.9")
+      message("   Using count of alternate allele: choose an integer >= 1")
+      message("   Note: please use the same method count/freqency as the local threshold")
       maf.global.threshold <- as.character(readLines(n = 1))
+      if (maf.global.threshold >= 1) {
+        maf.global.threshold <- as.integer(maf.global.threshold)
+      } else {
+        maf.global.threshold <- as.numeric(maf.global.threshold)
+      }
     }
 
     # maf.operator
@@ -491,46 +560,79 @@ Option 2: OR: local \"OR\" global MAF thresholds are required to pass (more tole
 How many populations are required to pass all the thresholds to keep the marker?\n
 Example: if you have 10 populations and choose maf.pop.num.threshold = 3,
 3 populations out of 10 are required to pass previous thresholds")
+      message("Note: not sure? use 1")
       message("Choose the value (integer) for the maf.pop.num.threshold:")
-      maf.pop.num.threshold <- as.numeric(readLines(n = 1))
+      maf.pop.num.threshold <- as.integer(readLines(n = 1))
     }
 
 
     # Update the maf.data with pass or not filter based on threshold -------------
     if (interactive.filter) {
       message("Compiling all the statistics and thresholds")
-      if (tibble::has_name(maf.data, "HAPLOTYPES")) {
-        maf.data <- maf.data %>%
-          dplyr::filter(REF == "MAF" ) %>%
-          dplyr::mutate(
-            OR = dplyr::if_else((MAF_LOCAL >= maf.local.threshold | MAF_GLOBAL >= maf.global.threshold), "pass", "pruned"),
-            AND = dplyr::if_else((MAF_LOCAL >= maf.local.threshold & MAF_GLOBAL >= maf.global.threshold), "pass", "pruned")
-          ) %>%
-          dplyr::group_by(MARKERS, HAPLOTYPES) %>%
-          dplyr::mutate(
-            OR = dplyr::if_else(length(POP_ID[OR == "pass"]) >= maf.pop.num.threshold, "pass", "pruned"),
-            AND  = dplyr::if_else(length(POP_ID[AND == "pass"]) >= maf.pop.num.threshold, "pass", "pruned")
-          ) %>%
-          dplyr::select(POP_ID, MARKERS, HAPLOTYPES, OR, AND) %>%
-          dplyr::right_join(maf.data, by = c("MARKERS", "POP_ID", "HAPLOTYPES")) %>%
-          dplyr::mutate(
-            OR = stringi::stri_replace_na(OR, "pass"),
-            AND = stringi::stri_replace_na(AND, "pass")
-          ) %>%
-          dplyr::select(MARKERS, POP_ID, HAPLOTYPES, REF, MAF_LOCAL, OR, AND, MAF_GLOBAL)
+      if (maf.count) {
+        if (tibble::has_name(maf.data, "HAPLOTYPES")) {
+          maf.data <- maf.data %>%
+            dplyr::filter(REF == "MAF" ) %>%
+            dplyr::mutate(
+              OR = dplyr::if_else((ALT_LOCAL >= maf.local.threshold | ALT_GLOBAL >= maf.global.threshold), "pass", "pruned"),
+              AND = dplyr::if_else((ALT_LOCAL >= maf.local.threshold & ALT_GLOBAL >= maf.global.threshold), "pass", "pruned")
+            ) %>%
+            dplyr::group_by(MARKERS, HAPLOTYPES) %>%
+            dplyr::mutate(
+              OR = dplyr::if_else(length(POP_ID[OR == "pass"]) >= maf.pop.num.threshold, "pass", "pruned"),
+              AND  = dplyr::if_else(length(POP_ID[AND == "pass"]) >= maf.pop.num.threshold, "pass", "pruned")
+            ) %>%
+            dplyr::select(POP_ID, MARKERS, HAPLOTYPES, OR, AND) %>%
+            dplyr::right_join(maf.data, by = c("MARKERS", "POP_ID", "HAPLOTYPES")) %>%
+            dplyr::mutate(
+              OR = stringi::stri_replace_na(OR, "pass"),
+              AND = stringi::stri_replace_na(AND, "pass")
+            )
 
+        } else {
+          maf.data <- maf.data %>%
+            dplyr::mutate(
+              OR = dplyr::if_else((ALT_LOCAL >= maf.local.threshold | ALT_GLOBAL >= maf.global.threshold), "pass", "pruned"),
+              AND = dplyr::if_else((ALT_LOCAL >= maf.local.threshold & ALT_GLOBAL >= maf.global.threshold), "pass", "pruned")
+            ) %>%
+            dplyr::group_by(MARKERS) %>%
+            dplyr::mutate(
+              OR = dplyr::if_else(length(POP_ID[OR == "pass"]) >= maf.pop.num.threshold, "pass", "pruned"),
+              AND = dplyr::if_else(length(POP_ID[AND == "pass"]) >= maf.pop.num.threshold, "pass", "pruned")
+            )
+        }
       } else {
-        maf.data <- maf.data %>%
-          dplyr::mutate(
-            OR = dplyr::if_else((MAF_LOCAL >= maf.local.threshold | MAF_GLOBAL >= maf.global.threshold), "pass", "pruned"),
-            AND = dplyr::if_else((MAF_LOCAL >= maf.local.threshold & MAF_GLOBAL >= maf.global.threshold), "pass", "pruned")
-          ) %>%
-          dplyr::group_by(MARKERS) %>%
-          dplyr::mutate(
-            OR = dplyr::if_else(length(POP_ID[OR == "pass"]) >= maf.pop.num.threshold, "pass", "pruned"),
-            AND = dplyr::if_else(length(POP_ID[AND == "pass"]) >= maf.pop.num.threshold, "pass", "pruned")
-          ) %>%
-          dplyr::select(MARKERS, POP_ID, MAF_LOCAL, OR, AND, MAF_GLOBAL)
+        if (tibble::has_name(maf.data, "HAPLOTYPES")) {
+          maf.data <- maf.data %>%
+            dplyr::filter(REF == "MAF" ) %>%
+            dplyr::mutate(
+              OR = dplyr::if_else((MAF_LOCAL >= maf.local.threshold | MAF_GLOBAL >= maf.global.threshold), "pass", "pruned"),
+              AND = dplyr::if_else((MAF_LOCAL >= maf.local.threshold & MAF_GLOBAL >= maf.global.threshold), "pass", "pruned")
+            ) %>%
+            dplyr::group_by(MARKERS, HAPLOTYPES) %>%
+            dplyr::mutate(
+              OR = dplyr::if_else(length(POP_ID[OR == "pass"]) >= maf.pop.num.threshold, "pass", "pruned"),
+              AND  = dplyr::if_else(length(POP_ID[AND == "pass"]) >= maf.pop.num.threshold, "pass", "pruned")
+            ) %>%
+            dplyr::select(POP_ID, MARKERS, HAPLOTYPES, OR, AND) %>%
+            dplyr::right_join(maf.data, by = c("MARKERS", "POP_ID", "HAPLOTYPES")) %>%
+            dplyr::mutate(
+              OR = stringi::stri_replace_na(OR, "pass"),
+              AND = stringi::stri_replace_na(AND, "pass")
+            )
+
+        } else {
+          maf.data <- maf.data %>%
+            dplyr::mutate(
+              OR = dplyr::if_else((MAF_LOCAL >= maf.local.threshold | MAF_GLOBAL >= maf.global.threshold), "pass", "pruned"),
+              AND = dplyr::if_else((MAF_LOCAL >= maf.local.threshold & MAF_GLOBAL >= maf.global.threshold), "pass", "pruned")
+            ) %>%
+            dplyr::group_by(MARKERS) %>%
+            dplyr::mutate(
+              OR = dplyr::if_else(length(POP_ID[OR == "pass"]) >= maf.pop.num.threshold, "pass", "pruned"),
+              AND = dplyr::if_else(length(POP_ID[AND == "pass"]) >= maf.pop.num.threshold, "pass", "pruned")
+            )
+        }
       }
 
       if (ncol(markers.meta) > 1) {
@@ -556,6 +658,15 @@ Example: if you have 10 populations and choose maf.pop.num.threshold = 3,
     }
 
     # Filtering ------------------------------------------------------------------
+    # To avoid changing or duplicating code depending on user choosing count or frequency:
+    if (maf.count) {
+      maf.data <- dplyr::select(maf.data, -MAF_LOCAL, -MAF_GLOBAL) %>%
+        dplyr::rename(MAF_LOCAL = ALT_LOCAL, MAF_GLOBAL = ALT_GLOBAL)
+    } else {
+      maf.data <- dplyr::select(maf.data, -ALT_LOCAL, -ALT_GLOBAL)
+    }
+
+
     if (maf.approach == "locus") {
 
       # Needed switched for haplotype file (e.g. stacks haplotype)

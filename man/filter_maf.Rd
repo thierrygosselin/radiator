@@ -39,33 +39,39 @@ packages or codes: space is changed to an underscore \code{_}.
 Default: \code{strata = NULL}.}
 
 \item{interactive.filter}{(optional, logical) Do you want the filtering session to
-be interactive. With default: \code{interactive.filter == TRUE}, the user is
-shown figures and helper tables before making decisions for filtering.}
+be interactive. With default: \code{interactive.filter == TRUE}, figures and
+tables are shown before making decisions for filtering.}
 
-\item{maf.thresholds}{(optional) Default: \code{maf.thresholds = NULL}. For no
-MAF filtering.
+\item{maf.thresholds}{(optional) Use for minor allele frequency (maf) or count (mac)
+filter. Default: \code{maf.thresholds = NULL}, for no filtering.
 
-String with 5 values
-(e.g. \code{maf.thresholds = c("maf approach", local maf, "OR", global maf, number pop threshold)},
-\code{maf.thresholds = c("SNP", 0.001, "OR", 0.001, 1)}):
+String with 5 values.
+For example using SNP and frequency approach: \code{maf.thresholds = c("SNP", 0.001, "OR", 0.001, 1)}.
+For example using locus and count approach: \code{maf.thresholds = c("locus", 3, "OR", 6, 1)}.
 \enumerate{
 \item maf approach (character: "SNP"/"locus"):
 MAF filtering is conducted by SNPs or locus.
-\code{"SNP"}: will consider all the SNPs on the same locus/read as independent.
+\code{"SNP"}: will consider all the SNPs on the same locus/read as independent
+and will be filtered independently of their locus id.
 \code{"locus"}: looks at the minimum MAF found on the
 read/locus. Using this option will discard all the markers/snp on
 that read based on the thresholds chosen. For the locus approach to work, your dataset
 requires SNP and Locus info (e.g. from a VCF file).
 
-\item local maf (double): The maf threshold at the population level.
+\item local threshold (double or integer): For a frequency threshold use
+a double (e.g. 0.05). For a count threshold, use an integer
+(e.g. 3 for the number of alternate allele required in a population). This
+threshold is applied by population.
 Not sure about the threshold to use, choose the interactive mode argument.
 
-\item maf operator (character: "OR" / "AND"):
-When filtering over LOCUS or SNP, 2 options available to consider the local/global MAF:
-The local \code{"AND"} the global MAF. The local \code{"OR"}
-global MAF.
+\item operator (character: "OR" / "AND"):
+To consider both the local \code{"AND"} the global thresholds, use \code{"AND"}.
+To consider the local \code{"OR"} the global thresholds, use \code{"OR"}.
 
-\item global maf (double): The maf threshold taken at the dataset level.
+\item global threshold (double or integer): For a frequency threshold
+use a double (e.g. 0.02). For a count threshold, use an integer
+(e.g. 6 for the number of alternate allele required). This threshold is
+applied at the dataset level (no population).
 Not sure about the threshold to use, choose the interactive mode argument.
 
 \item maf pop num threshold (integer)
@@ -151,7 +157,10 @@ the ALT allele or 1 homozygote individuals for the ALT allele and
 1 heterozygote individual. And so on...
 }
 \description{
-Minor Allele Frequency filter. Most arguments are inherited from
+Minor Allele Filter.
+Remove markers based on Minor/Alternate Allele Frequency (MAF) or Count (MAC).
+
+Most arguments are inherited from
 \code{\link[radiator]{tidy_genomic_data}}.
 }
 \details{
@@ -175,7 +184,8 @@ blacklist.id, blacklist.genotype, pop.levels, pop.labels, vcf.metadata, module}.
 \examples{
 \dontrun{
 # The minumum
-turtle.maf <- filter_maf(
+library(radiator)
+turtle.maf <- radiator::filter_maf(
 data = "turtle.vcf",
 strata = "turtle.strata.tsv")
 #This will use the default: interactive version,
@@ -186,6 +196,22 @@ tidy.data <- turtle.maf$tidy.filtered.maf
 
 # The remaining argument are used in tidy_genomic_data during import and allow
 # the user to apply some filtering or selection before doing the MAF filtering.
+
+# If I want to filter Alternate alleles based on count.
+library(radiator)
+turtle.maf <- radiator::filter_maf(
+data = "turtle.vcf",
+strata = "turtle.strata.tsv",
+maf.thresholds = c("SNP", 3, "OR", "5", 1),
+filename = "turtle.maf")
+# This will remove monomorphic markers (by default monomorphic.out = TRUE)
+# it will use the SNP approache (SNPs are considered independent and
+# filtered independent)
+# I keep markers if: they have a local count of 3 alternate allele OR global
+# count of 5 alternate allele.
+# I keep the marker if at leat 1 pop pass that.
+# finally the filtered data will be written in the directory under the name:
+# turtle.maf.rad
 }
 }
 \author{
