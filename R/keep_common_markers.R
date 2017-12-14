@@ -107,7 +107,8 @@ keep_common_markers <- function(data, plot = FALSE, verbose = FALSE) {
     input <- dplyr::anti_join(input, blacklist, by = "MARKERS")
 
     if (ncol(markers.meta) > 1) {
-      blacklist <- dplyr::left_join(blacklist, markers.meta, by = "MARKERS")
+      blacklist <- dplyr::left_join(blacklist, markers.meta, by = "MARKERS") %>%
+        readr::write_tsv(x = ., path = "blacklist.not.in.common.markers.tsv")
     }
 
   } else {
@@ -116,6 +117,11 @@ keep_common_markers <- function(data, plot = FALSE, verbose = FALSE) {
   want <- c("MARKERS", "CHROM", "LOCUS", "POS")
   whitelist <- suppressWarnings(dplyr::select(input, dplyr::one_of(want)) %>%
     dplyr::distinct(MARKERS, .keep_all = TRUE))
+
+
+  if (blacklist.markers > 0) {
+    readr::write_tsv(x = whitelist, path = "whitelist.common.markers.tsv")
+  }
 
   return(res = list(input = input,
                     whitelist.common.markers = whitelist,
