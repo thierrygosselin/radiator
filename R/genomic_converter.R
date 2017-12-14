@@ -205,9 +205,6 @@ genomic_converter <- function(
   snp.ld = NULL,
   common.markers = TRUE,
   maf.thresholds = NULL,
-  maf.pop.num.threshold = 1,
-  maf.approach = "SNP",
-  maf.operator = "OR",
   max.marker = NULL,
   strata = NULL,
   pop.levels = NULL,
@@ -330,10 +327,9 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
     if (is.null(maf.thresholds)) {
       message("maf.thresholds: no")
     } else {
-      message(stringi::stri_join("maf.thresholds: ", stringi::stri_join(maf.thresholds, collapse = ", ")))
-      message("maf.pop.num.threshold: ", maf.pop.num.threshold)
-      message("maf.approach: ", maf.approach)
-      message("maf.operator: ", maf.operator)
+      message("maf approach: ", maf.thresholds[1])
+      message("maf local and/or global: ", maf.thresholds[2], " ", maf.thresholds[3], " ", maf.thresholds[4])
+      message("maf.pop.num.threshold: ", maf.thresholds[5])
     }
 
     message(stringi::stri_join("\n", "Imputations options:"))
@@ -390,9 +386,6 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
     snp.ld = snp.ld,
     common.markers = common.markers,
     maf.thresholds = maf.thresholds,
-    maf.pop.num.threshold = maf.pop.num.threshold,
-    maf.approach = maf.approach,
-    maf.operator = maf.operator,
     strata = strata,
     pop.levels = pop.levels,
     pop.labels = pop.labels,
@@ -666,7 +659,7 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
         data = input.imp,
         pop.select = pop.select,
         snp.ld = snp.ld,
-        filename = filename)
+        filename = filename.imp)
     }
   }
 
@@ -678,9 +671,6 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
       pop.select = pop.select,
       snp.ld = snp.ld,
       maf.thresholds = maf.thresholds,
-      maf.pop.num.threshold = maf.pop.num.threshold,
-      maf.approach = maf.approach,
-      maf.operator = maf.operator,
       filename = filename,
       parallel.core = parallel.core
     )
@@ -692,10 +682,7 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
         pop.select = pop.select,
         snp.ld = snp.ld,
         maf.thresholds = maf.thresholds,
-        maf.pop.num.threshold = maf.pop.num.threshold,
-        maf.approach = maf.approach,
-        maf.operator = maf.operator,
-        filename = filename,
+        filename = filename.imp,
         parallel.core = parallel.core
       )
     }
@@ -717,7 +704,7 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
       res$hzar.imputed <- radiator::write_hzar(
         data = input.imp,
         distance = NULL,
-        filename = filename,
+        filename = filename.imp,
         parallel.core = parallel.core
       )
     }
@@ -726,6 +713,16 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
   # dadi -----------------------------------------------------------------------
   # not yet implemented, use vcf2dadi
 
+  # Writing tidy on disk -------------------------------------------------------
+  tidy.name <- stringi::stri_join(filename, ".rad")
+  message("\nWriting tidy data set:\n", tidy.name)
+  fst::write.fst(x = input, path = tidy.name, compress = 85)
+
+  if (!is.null(imputation.method)) {
+    tidy.name.imp <- stringi::stri_join(filename.imp, ".rad")
+    message("\nWriting tidy data set:\n", tidy.name)
+    fst::write.fst(x = input.imp, path = tidy.name.imp, compress = 85)
+  }
   # outout results -------------------------------------------------------------
   n.markers <- dplyr::n_distinct(input$MARKERS)
   if (tibble::has_name(input, "CHROM")) {

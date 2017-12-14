@@ -12,7 +12,7 @@ a tidy data frame in wide or long format in the working directory.
 \emph{How to get a tidy data frame ?}
 Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.}
 
-\item{verbose}{(optional, logical) \code{verbose = TRUE} to be chatty 
+\item{verbose}{(optional, logical) \code{verbose = TRUE} to be chatty
 during execution.
 Default: \code{verbose = TRUE}.}
 }
@@ -21,9 +21,8 @@ A list with allele frequencies in a data frame in long and wide format,
 and a matrix. Local (pop) and global minor allele frequency (MAF) is also computed.
 }
 \description{
-Compute allele frequencies per markers and populations. Also
-compute minor 
-Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator} 
+Compute allele frequencies per markers and populations.
+Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and might be of interest for users.
 }
 \author{

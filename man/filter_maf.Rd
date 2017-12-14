@@ -4,14 +4,10 @@
 \alias{filter_maf}
 \title{MAF filter}
 \usage{
-filter_maf(data, vcf.metadata = FALSE, interactive.filter = TRUE,
-  maf.approach = "SNP", maf.thresholds = NULL, maf.operator = "OR",
-  maf.pop.num.threshold = 1, filename = NULL, blacklist.id = NULL,
-  blacklist.genotype = NULL, whitelist.markers = NULL,
-  monomorphic.out = TRUE, max.marker = NULL, snp.ld = NULL,
-  common.markers = FALSE, strata = NULL, pop.levels = NULL,
-  pop.labels = NULL, pop.select = NULL,
-  parallel.core = parallel::detectCores() - 1)
+filter_maf(data, strata = NULL, interactive.filter = TRUE,
+  maf.thresholds = NULL, monomorphic.out = TRUE, common.markers = FALSE,
+  snp.ld = NULL, pop.select = NULL, filename = NULL,
+  parallel.core = parallel::detectCores() - 1, verbose = TRUE, ...)
 }
 \arguments{
 \item{data}{12 options: VCF (SNPs or Haplotypes,
@@ -20,127 +16,6 @@ plink, stacks haplotype file, genind (library(adegenet)),
 genlight (library(adegenet)), gtypes (library(strataG)), genepop, DArT,
 and a data frame in long/tidy or wide format.
 \emph{See details} of \code{\link[radiator]{tidy_genomic_data}}.}
-
-\item{vcf.metadata}{(optional, logical or string) For VCF files only.
-With \code{logical, TRUE/FALSE}, \code{vcf.metadata = FALSE}, only the genotype
-information is kept (GT field). With \code{vcf.metadata = TRUE},
-all the metadata contained in the \code{FORMAT} field will be kept in
-the tidy data file. radiator is currently keeping/cleaning only these metadata:
-\code{"DP", "AD", "GL", "PL", "GQ", "GOF", "NR", "NV"}.
-If you need different one, submit a request.
-With \code{string}, explicitely ask for a particular FORMAT field you want
-to keep (except the GT field that is always imported).
-e.g. \code{vcf.metadata = "PL"} or \code{vcf.metadata = c("DP", "GL")}.
-Default: \code{vcf.metadata = FALSE}.}
-
-\item{interactive.filter}{(optional, logical) Do you want the filtering session to
-be interactive. With default: \code{interactive.filter == TRUE}, the user is
-shown figures and helper tables before making decisions for filtering.}
-
-\item{maf.approach}{(character, optional).
-\code{maf.approach = "haplotype"} : looks at the minimum MAF found on the
-read/haplotype. Using this option will discard all the markers/snp on
-that read based on the thresholds chosen. This method is only available
-for VCF and haplotype files, or tidy data frame from those file types.
-\code{maf.approach = "SNP"} : treats all the SNP on the same
-haplotype/read as independent. Doesn't work with haplotype file,
-but does work for all other file type.
-Default is \code{maf.approach = "SNP"}.}
-
-\item{maf.thresholds}{(string, double, optional) String with
-local/populations and global/overall maf thresholds, respectively.
-e.g. \code{maf.thresholds = c(0.05, 0.1)} for a local maf threshold
-of 0.05 and a global threshold of 0.1. Available for VCF, PLINK and data frame
-files.
-Default: \code{maf.thresholds = NULL}.}
-
-\item{maf.operator}{(character, optional) \code{maf.operator = "AND"} or
-default \code{maf.operator = "OR"}.
-When filtering over LOCUS or SNP, do you want the local \code{"AND"}
-global MAF to pass the thresholds, or ... you want the local \code{"OR"}
-global MAF to pass the thresholds, to keep the marker?}
-
-\item{maf.pop.num.threshold}{(integer, optional) When maf thresholds are used,
-this argument is for the number of pop required to pass the maf thresholds
-to keep the locus. Default: \code{maf.pop.num.threshold = 1}}
-
-\item{filename}{(optional) The function uses \code{\link[fst]{write.fst}},
-to write the tidy data frame in
-the working directory. The file extension appended to
-the \code{filename} provided is \code{.rad}.
-With default: \code{filename = NULL}, the tidy data frame is
-in the global environment only (i.e. not written in the working directory...).}
-
-\item{blacklist.id}{(optional) A blacklist with individual ID and
-a column header 'INDIVIDUALS'. The blacklist is an object in your
-global environment or a file in the working directory
-(e.g. "blacklist.txt"). \code{_} and \code{:} in individual's names
-are changed to a dash \code{-}.
-Default: \code{blacklist.id = NULL}.}
-
-\item{blacklist.genotype}{(optional) Useful to erase genotype with below
-average quality, e.g. genotype with more than 2 alleles in diploid likely
-sequencing errors or genotypes with poor genotype likelihood or coverage.
-The blacklist has a minimum of 2 column headers (markers and individuals).
-Markers can be 1 column (CHROM or LOCUS or POS),
-a combination of 2 (e.g. CHROM and POS or CHROM and LOCUS or LOCUS and POS) or
-all 3 (CHROM, LOCUS, POS). The markers columns must be designated: CHROM (character
-or integer) and/or LOCUS (integer) and/or POS (integer). The id column designated
-INDIVIDUALS (character) columns header.
-The blacklist is an object in your global environment or
-a file in the working directory (e.g. "blacklist.genotype.txt").
-For de novo VCF, CHROM column
-with 'un' need to be changed to 1.
-Marker names are cleaned of
-separators that interfere with some packages or codes:
-\code{/}, \code{:}, \code{-} and \code{.} are changed to an underscore
-\code{_}.
-Ids are also cleaned of separators that interfere with some packages or codes:
-\code{_} and \code{:} are changed to a dash \code{-}.
-Default: \code{blacklist.genotype = NULL} for no blacklist of
-genotypes to erase.}
-
-\item{whitelist.markers}{(optional) A whitelist containing CHROM (character
-or integer) and/or LOCUS (integer) and/or
-POS (integer) columns header. To filter by chromosome and/or locus and/or by snp.
-The whitelist is an object in your
-global environment or a file in the working directory (e.g. "whitelist.txt").
-Note that \emph{de novo} CHROM column with 'un' need to be changed to 1.
-In the VCF, the column ID is the LOCUS identification (VCF generated from
-stacks have the SNP position on the read embedded in the ID,
-so the ID = no longer represent the LOCUS). Marker names are cleaned of
-separators that interfere with some packages or codes:
-\code{/}, \code{:}, \code{-} and \code{.} are changed to an underscore
-\code{_}.
-Default \code{whitelist.markers = NULL} for no whitelist of markers.}
-
-\item{monomorphic.out}{(optional) Should the monomorphic
-markers present in the dataset be filtered out ?
-Default: \code{monomorphic.out = TRUE}.}
-
-\item{max.marker}{(integer, optional) For large PLINK files,
-useful to subsample marker number. e.g. if the data set
-contains 200 000 markers and \code{max.marker = 10000}, 10000 markers are
-subsampled randomly from the 200000 markers. If you need specific markers,
-use \code{whitelist.markers} argument.
-Default: \code{max.marker = NULL}.}
-
-\item{snp.ld}{(optional) \strong{For data with locus and SNP info, like VCF and DArT file}.
-SNP short distance linkage disequilibrium pruning. With anonymous markers from
-RADseq/GBS de novo discovery, you can minimize linkage disequilibrium (LD) by
-choosing among these 4 options:
-\code{snp.ld = "random"} for a random selection of 1 SNP on the read,
-\code{snp.ld = "first"} for the first one on the read...,
-\code{snp.ld = "last"} for the last SNP on the read and
-\code{snp.ld = "middle"} for locus with > 2 SNPs/read the option to select at random
-one SNP between the first and the last SNP on the read. If the locus as <= 2
-SNPs on the read, the first one is selected. Note that for that last option,
-the numbers are reported. For long distance linkage
-disequilibrium pruning, see details below.
-Default: \code{snp.ld = NULL}.}
-
-\item{common.markers}{(optional) Logical. Default: \code{common.markers = TRUE},
-will only keep markers in common (genotyped) between all the populations.}
 
 \item{strata}{(optional)
 The strata file is a tab delimited file with a minimum of 2 columns headers:
@@ -163,36 +38,83 @@ The strata column is cleaned of a white spaces that interfere with some
 packages or codes: space is changed to an underscore \code{_}.
 Default: \code{strata = NULL}.}
 
-\item{pop.levels}{(optional, string) This refers to the levels in a factor. In this
-case, the id of the pop.
-Use this argument to have the pop ordered your way instead of the default
-alphabetical or numerical order. e.g. \code{pop.levels = c("QUE", "ONT", "ALB")}
-instead of the default \code{pop.levels = c("ALB", "ONT", "QUE")}.
-White spaces in population names are replaced by underscore.
-Default: \code{pop.levels = NULL}.}
+\item{interactive.filter}{(optional, logical) Do you want the filtering session to
+be interactive. With default: \code{interactive.filter == TRUE}, the user is
+shown figures and helper tables before making decisions for filtering.}
 
-\item{pop.labels}{(optional, string) Use this argument to rename/relabel
-your pop or combine your pop. e.g. To combine \code{"QUE"} and \code{"ONT"}
-into a new pop called \code{"NEW"}:
-(1) First, define the levels for your pop with \code{pop.levels} argument:
-\code{pop.levels = c("QUE", "ONT", "ALB")}.
-(2) then, use \code{pop.labels} argument:
-\code{pop.labels = c("NEW", "NEW", "ALB")}.
-To rename \code{"QUE"} to \code{"TAS"}:
-\code{pop.labels = c("TAS", "ONT", "ALB")}.
-Default: \code{pop.labels = NULL}. If you find this too complicated,
-there is also the \code{strata} argument that can do the same thing,
-see below.
-White spaces in population names are replaced by underscore.}
+\item{maf.thresholds}{(optional) Default: \code{maf.thresholds = NULL}. For no
+MAF filtering.
+
+String with 5 values
+(e.g. \code{maf.thresholds = c("maf approach", local maf, "OR", global maf, number pop threshold)},
+\code{maf.thresholds = c("SNP", 0.001, "OR", 0.001, 1)}):
+\enumerate{
+\item maf approach (character: "SNP"/"locus"):
+MAF filtering is conducted by SNPs or locus.
+\code{"SNP"}: will consider all the SNPs on the same locus/read as independent.
+\code{"locus"}: looks at the minimum MAF found on the
+read/locus. Using this option will discard all the markers/snp on
+that read based on the thresholds chosen. For the locus approach to work, your dataset
+requires SNP and Locus info (e.g. from a VCF file).
+
+\item local maf (double): The maf threshold at the population level.
+Not sure about the threshold to use, choose the interactive mode argument.
+
+\item maf operator (character: "OR" / "AND"):
+When filtering over LOCUS or SNP, 2 options available to consider the local/global MAF:
+The local \code{"AND"} the global MAF. The local \code{"OR"}
+global MAF.
+
+\item global maf (double): The maf threshold taken at the dataset level.
+Not sure about the threshold to use, choose the interactive mode argument.
+
+\item maf pop num threshold (integer)
+The number of pop required to pass the thresholds
+to keep the marker. Usually, I always use \code{1}, for 1 pop is required to
+pass thresholds and keep the marker.
+}}
+
+\item{monomorphic.out}{(optional) Should the monomorphic
+markers present in the dataset be filtered out ?
+Default: \code{monomorphic.out = TRUE}.}
+
+\item{common.markers}{(optional) Logical. Default: \code{common.markers = TRUE},
+will only keep markers in common (genotyped) between all the populations.}
+
+\item{snp.ld}{(optional) \strong{For data with locus and SNP info, like VCF and DArT file}.
+SNP short distance linkage disequilibrium pruning. With anonymous markers from
+RADseq/GBS de novo discovery, you can minimize linkage disequilibrium (LD) by
+choosing among these 4 options:
+\code{snp.ld = "random"} for a random selection of 1 SNP on the read,
+\code{snp.ld = "first"} for the first one on the read...,
+\code{snp.ld = "last"} for the last SNP on the read and
+\code{snp.ld = "middle"} for locus with > 2 SNPs/read the option to select at random
+one SNP between the first and the last SNP on the read. If the locus as <= 2
+SNPs on the read, the first one is selected. Note that for that last option,
+the numbers are reported. For long distance linkage
+disequilibrium pruning, see details below.
+Default: \code{snp.ld = NULL}.}
 
 \item{pop.select}{(string, optional) Selected list of populations for
 the analysis. e.g. \code{pop.select = c("QUE", "ONT")} to select \code{QUE}
 and \code{ONT} population samples (out of 20 pops).
 Default: \code{pop.select = NULL}}
 
+\item{filename}{(optional, character) Write to folder the MAF filtered
+tidy dataset. The name will be appended \code{.rad}. With default, the filtered
+data is only in the global environment.
+Default: \code{filename = NULL}.}
+
 \item{parallel.core}{(optional) The number of core used for parallel
 execution during vcf import.
 Default: \code{parallel::detectCores() - 1}.}
+
+\item{verbose}{(optional, logical) When \code{verbose = TRUE}
+the function is a little more chatty during execution.
+Default: \code{verbose = TRUE}.}
+
+\item{...}{(optional) To pass further arguments for fine-tuning the filter with
+whitelist and blacklists (see details below).}
 }
 \value{
 With \code{interactive.filter = FALSE}, a list in the global environment,
@@ -201,7 +123,7 @@ with 7 objects:
 \item $tidy.filtered.maf
 \item $whitelist.markers
 \item $blacklist.markers
-\item $maf.data.thresholds
+\item $maf.data
 \item $filters.parameters
 }
 
@@ -229,7 +151,8 @@ the ALT allele or 1 homozygote individuals for the ALT allele and
 1 heterozygote individual. And so on...
 }
 \description{
-Minor Allele Frequency filter.
+Minor Allele Frequency filter. Most arguments are inherited from
+\code{\link[radiator]{tidy_genomic_data}}.
 }
 \details{
 To help choose a threshold for the local and global MAF
@@ -240,26 +163,26 @@ use the interactive version.
 Step 1. Global and Local MAF visualization and helper table.
 
 Step 2. Filtering markers based on the different MAF arguments
+
+
+\strong{... :dot dot dot arguments}
+
+The arguments listed here are available to tailor your dataset prior to MAF filtering.
+The description of these arguments are found in
+\code{\link[radiator]{tidy_genomic_data}}: \code{whitelist.markers,
+blacklist.id, blacklist.genotype, pop.levels, pop.labels, vcf.metadata, module}.
 }
 \examples{
 \dontrun{
 # The minumum
 turtle.maf <- filter_maf(
 data = "turtle.vcf",
-strata = "turtle.strata.tsv",
-maf.thresholds = c(0.04, 0.02)
-)
+strata = "turtle.strata.tsv")
 #This will use the default: interactive version,
-maf.approach = "SNP",
-maf.operator = "OR",
-maf.pop.num.threshold = 1
 
 
-#If interactive.filter = TRUE, a list is created and to view the filtered tidy data:
+#With default interactive.filter = TRUE, a list is created and to view the filtered tidy data:
 tidy.data <- turtle.maf$tidy.filtered.maf
-
-#Inside the same list, to isolate the blacklist.genotypes:
-bg <- turtle.maf$blacklist.genotypes
 
 # The remaining argument are used in tidy_genomic_data during import and allow
 # the user to apply some filtering or selection before doing the MAF filtering.

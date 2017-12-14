@@ -14,7 +14,6 @@ filter_dart(interactive.filter = TRUE, data, strata, output = NULL,
   filter.reproducibility = NULL, filter.coverage = NULL,
   filter.call.rate = NULL, filter.ind.missing.geno = NULL,
   number.snp.reads = NULL, maf.thresholds = NULL,
-  maf.pop.num.threshold = 1, maf.approach = "SNP", maf.operator = "OR",
   mixed.genomes.analysis = TRUE, ind.heterozygosity.threshold = NULL,
   duplicate.genomes.analysis = c(TRUE, FALSE), snp.ld = NULL,
   imputation.method = NULL, hierarchical.levels = "populations",
@@ -115,32 +114,37 @@ If the argument is set to \code{number.snp.reads = 2},
 locus with 3 and more SNPs will be blacklisted.
 Default: \code{number.snp.reads = NULL}.}
 
-\item{maf.thresholds}{(string, double, optional) String with
-local/populations and global/overall maf thresholds, respectively.
-e.g. \code{maf.thresholds = c(0.05, 0.1)} for a local maf threshold
-of 0.05 and a global threshold of 0.1. Available for VCF, PLINK and data frame
-files.
-Default: \code{maf.thresholds = NULL}.}
+\item{maf.thresholds}{(optional) Default: \code{maf.thresholds = NULL}. For no
+MAF filtering.
 
-\item{maf.pop.num.threshold}{(integer, optional) When maf thresholds are used,
-this argument is for the number of pop required to pass the maf thresholds
-to keep the locus. Default: \code{maf.pop.num.threshold = 1}}
+String with 5 values
+(e.g. \code{maf.thresholds = c("maf approach", local maf, "OR", global maf, number pop threshold)},
+\code{maf.thresholds = c("SNP", 0.001, "OR", 0.001, 1)}):
+\enumerate{
+\item maf approach (character: "SNP"/"locus"):
+MAF filtering is conducted by SNPs or locus.
+\code{"SNP"}: will consider all the SNPs on the same locus/read as independent.
+\code{"locus"}: looks at the minimum MAF found on the
+read/locus. Using this option will discard all the markers/snp on
+that read based on the thresholds chosen. For the locus approach to work, your dataset
+requires SNP and Locus info (e.g. from a VCF file).
 
-\item{maf.approach}{(character, optional).
-\code{maf.approach = "haplotype"} : looks at the minimum MAF found on the
-read/haplotype. Using this option will discard all the markers/snp on
-that read based on the thresholds chosen. This method is only available
-for VCF and haplotype files, or tidy data frame from those file types.
-\code{maf.approach = "SNP"} : treats all the SNP on the same
-haplotype/read as independent. Doesn't work with haplotype file,
-but does work for all other file type.
-Default is \code{maf.approach = "SNP"}.}
+\item local maf (double): The maf threshold at the population level.
+Not sure about the threshold to use, choose the interactive mode argument.
 
-\item{maf.operator}{(character, optional) \code{maf.operator = "AND"} or
-default \code{maf.operator = "OR"}.
-When filtering over LOCUS or SNP, do you want the local \code{"AND"}
-global MAF to pass the thresholds, or ... you want the local \code{"OR"}
-global MAF to pass the thresholds, to keep the marker?}
+\item maf operator (character: "OR" / "AND"):
+When filtering over LOCUS or SNP, 2 options available to consider the local/global MAF:
+The local \code{"AND"} the global MAF. The local \code{"OR"}
+global MAF.
+
+\item global maf (double): The maf threshold taken at the dataset level.
+Not sure about the threshold to use, choose the interactive mode argument.
+
+\item maf pop num threshold (integer)
+The number of pop required to pass the thresholds
+to keep the marker. Usually, I always use \code{1}, for 1 pop is required to
+pass thresholds and keep the marker.
+}}
 
 \item{mixed.genomes.analysis}{(optional, logical) Highlight outliers individual's
 observed heterozygosity for a quick

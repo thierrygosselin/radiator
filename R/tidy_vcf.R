@@ -79,7 +79,7 @@ tidy_vcf <- function(
   # import vcf with pegas (fastest, but only GT no metadata)
   if (import.pegas) {
     # change names of columns and CHROM column modif
-    input <- pegas::VCFloci(file = data, quiet = verbose) %>%
+    input <- pegas::VCFloci(file = data, quiet = TRUE) %>%
       dplyr::select(-QUAL, -INFO, -FORMAT) %>%
       dplyr::rename(LOCUS = ID) %>%
       dplyr::mutate(

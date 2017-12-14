@@ -137,9 +137,6 @@ filter_dart <- function(
   filter.ind.missing.geno = NULL,
   number.snp.reads = NULL,
   maf.thresholds = NULL,
-  maf.pop.num.threshold = 1,
-  maf.approach = "SNP",
-  maf.operator = "OR",
   mixed.genomes.analysis = TRUE,
   ind.heterozygosity.threshold = NULL,
   duplicate.genomes.analysis = c(TRUE, FALSE),
@@ -1029,18 +1026,12 @@ on the number of genotyped individuals per pop ? (overall or pop):")
       maf.info <- radiator::filter_maf(
         data = input,
         maf.thresholds = maf.thresholds,
-        maf.pop.num.threshold = maf.pop.num.threshold,
-        maf.approach = maf.approach,
-        maf.operator = maf.operator,
         parallel.core = parallel.core,
         interactive.filter = TRUE)
     } else {
       maf.info <- radiator::filter_maf(
         data = input,
         maf.thresholds = maf.thresholds,
-        maf.pop.num.threshold = maf.pop.num.threshold,
-        maf.approach = maf.approach,
-        maf.operator = maf.operator,
         parallel.core = parallel.core,
         interactive.filter = FALSE)
     }

@@ -7,8 +7,7 @@
 write_colony(data, strata = NULL, pop.levels = NULL, pop.labels = NULL,
   blacklist.id = NULL, blacklist.genotype = NULL,
   whitelist.markers = NULL, monomorphic.out = TRUE, snp.ld = NULL,
-  common.markers = TRUE, maf.thresholds = NULL, maf.pop.num.threshold = 1,
-  maf.approach = "SNP", maf.operator = "OR", max.marker = NULL,
+  common.markers = TRUE, maf.thresholds = NULL, max.marker = NULL,
   sample.markers = NULL, pop.select = NULL, allele.freq = NULL,
   inbreeding = 0, mating.sys.males = 0, mating.sys.females = 0,
   clone = 0, run.length = 2, analysis = 1, allelic.dropout = 0,
@@ -133,32 +132,37 @@ Default: \code{snp.ld = NULL}.}
 \item{common.markers}{(optional) Logical. Default: \code{common.markers = TRUE},
 will only keep markers in common (genotyped) between all the populations.}
 
-\item{maf.thresholds}{(string, double, optional) String with
-local/populations and global/overall maf thresholds, respectively.
-e.g. \code{maf.thresholds = c(0.05, 0.1)} for a local maf threshold
-of 0.05 and a global threshold of 0.1. Available for VCF, PLINK and data frame
-files.
-Default: \code{maf.thresholds = NULL}.}
+\item{maf.thresholds}{(optional) Default: \code{maf.thresholds = NULL}. For no
+MAF filtering.
 
-\item{maf.pop.num.threshold}{(integer, optional) When maf thresholds are used,
-this argument is for the number of pop required to pass the maf thresholds
-to keep the locus. Default: \code{maf.pop.num.threshold = 1}}
+String with 5 values
+(e.g. \code{maf.thresholds = c("maf approach", local maf, "OR", global maf, number pop threshold)},
+\code{maf.thresholds = c("SNP", 0.001, "OR", 0.001, 1)}):
+\enumerate{
+\item maf approach (character: "SNP"/"locus"):
+MAF filtering is conducted by SNPs or locus.
+\code{"SNP"}: will consider all the SNPs on the same locus/read as independent.
+\code{"locus"}: looks at the minimum MAF found on the
+read/locus. Using this option will discard all the markers/snp on
+that read based on the thresholds chosen. For the locus approach to work, your dataset
+requires SNP and Locus info (e.g. from a VCF file).
 
-\item{maf.approach}{(character, optional).
-\code{maf.approach = "haplotype"} : looks at the minimum MAF found on the
-read/haplotype. Using this option will discard all the markers/snp on
-that read based on the thresholds chosen. This method is only available
-for VCF and haplotype files, or tidy data frame from those file types.
-\code{maf.approach = "SNP"} : treats all the SNP on the same
-haplotype/read as independent. Doesn't work with haplotype file,
-but does work for all other file type.
-Default is \code{maf.approach = "SNP"}.}
+\item local maf (double): The maf threshold at the population level.
+Not sure about the threshold to use, choose the interactive mode argument.
 
-\item{maf.operator}{(character, optional) \code{maf.operator = "AND"} or
-default \code{maf.operator = "OR"}.
-When filtering over LOCUS or SNP, do you want the local \code{"AND"}
-global MAF to pass the thresholds, or ... you want the local \code{"OR"}
-global MAF to pass the thresholds, to keep the marker?}
+\item maf operator (character: "OR" / "AND"):
+When filtering over LOCUS or SNP, 2 options available to consider the local/global MAF:
+The local \code{"AND"} the global MAF. The local \code{"OR"}
+global MAF.
+
+\item global maf (double): The maf threshold taken at the dataset level.
+Not sure about the threshold to use, choose the interactive mode argument.
+
+\item maf pop num threshold (integer)
+The number of pop required to pass the thresholds
+to keep the marker. Usually, I always use \code{1}, for 1 pop is required to
+pass thresholds and keep the marker.
+}}
 
 \item{max.marker}{(integer, optional) For large PLINK files,
 useful to subsample marker number. e.g. if the data set
@@ -181,7 +185,7 @@ Default: \code{pop.select = NULL}}
 a select group.
 e.g. \code{allele.freq = "QUE"} or \code{allele.freq = c("QUE", "ONT")}.
 Using \code{allele.freq = "overall"} will use all the samples to compute the
-allele frequency. 
+allele frequency.
 Default: \code{allele.freq = NULL}, will not compute allele frequency.}
 
 \item{inbreeding}{(boolean) 0/1 no inbreeding/inbreeding.
@@ -203,7 +207,7 @@ Default: \code{mating.sys.females = 0}.}
 estimates probability are not stable or really good.
 Default: \code{run.length = 2}.}
 
-\item{analysis}{(integer) Analysis method. 
+\item{analysis}{(integer) Analysis method.
 0 (Pairwise-Likelihood Score), 1 (Full Likelihood),
 2 (combined Pairwise-Likelihood Score and Full Likelihood).
 Default: \code{analysis = 1}.}
@@ -217,7 +221,7 @@ Default:\code{error.rate = 0.02}.}
 \item{print.all.colony.opt}{(logical) Should all \code{COLONY} options be printed in the file.
 
 
-\strong{This require manual curation, for the file to work directly with \code{COLONY}}. 
+\strong{This require manual curation, for the file to work directly with \code{COLONY}}.
 Default = \code{print.all.colony.opt = FALSE}.}
 
 \item{imputation.method}{(character, optional)
@@ -283,26 +287,26 @@ Default: \code{parallel::detectCores() - 1}.}
 A \code{COLONY} file in your working directory (2 if you selected imputations arguments...)
 }
 \description{
-Write a \code{COLONY} input file from several genomic formats, 
+Write a \code{COLONY} input file from several genomic formats,
 look into \pkg{radiator} \code{\link{tidy_genomic_data}} for supported input
 files.
 }
 \details{
 \strong{It is highly recommended to read (twice!) the user guide distributed with
 \code{COLONY} to find out the details for input and output of the software.}
- 
-Not all options are provided here. 
+
+Not all options are provided here.
 
 But to ease the process, all the required options to properly run \code{COLONY}
-will be printed in the file written in your working directory. 
+will be printed in the file written in your working directory.
 Change the values accordingly and wisely.
 
 
 \strong{Imputations}
-The imputations using Random Forest requires more time to compute 
-and can take several minutes and hours depending on the size of 
-the dataset and polymorphism of the species used. e.g. with a 
-low polymorphic taxa, and a data set containing 30\% missing data, 
+The imputations using Random Forest requires more time to compute
+and can take several minutes and hours depending on the size of
+the dataset and polymorphism of the species used. e.g. with a
+low polymorphic taxa, and a data set containing 30\% missing data,
 5 000 haplotypes loci and 500 individuals will require 15 min.
 For details about imputations, look into \pkg{radiator} \code{\link{radiator_imputations_module}}
 }
@@ -345,12 +349,12 @@ monomorphic.out = TRUE # this is also a default...
 }
 }
 \references{
-Catchen JM, Amores A, Hohenlohe PA et al. (2011) 
-Stacks: Building and Genotyping Loci De Novo From Short-Read Sequences. 
+Catchen JM, Amores A, Hohenlohe PA et al. (2011)
+Stacks: Building and Genotyping Loci De Novo From Short-Read Sequences.
 G3, 1, 171-182.
 
-Catchen JM, Hohenlohe PA, Bassham S, Amores A, Cresko WA (2013) 
-Stacks: an analysis tool set for population genomics. 
+Catchen JM, Hohenlohe PA, Bassham S, Amores A, Cresko WA (2013)
+Stacks: an analysis tool set for population genomics.
 Molecular Ecology, 22, 3124-3140.
 
 Ishwaran H. and Kogalur U.B. (2015). Random Forests for Survival,
@@ -362,19 +366,19 @@ for R. R News 7(2), 25-31.
 Ishwaran H., Kogalur U.B., Blackstone E.H. and Lauer M.S. (2008).
 Random survival forests. Ann. Appl. Statist. 2(3), 841--860.
 
-Jones OR, Wang J (2010) COLONY: a program for parentage and 
-sibship inference from multilocus genotype data. 
+Jones OR, Wang J (2010) COLONY: a program for parentage and
+sibship inference from multilocus genotype data.
 Molecular Ecology Resources, 10, 551–555.
 
-Wang J (2012) Computationally Efficient Sibship and 
+Wang J (2012) Computationally Efficient Sibship and
 Parentage Assignment from Multilocus Marker Data. Genetics, 191, 183–194.
 }
 \seealso{
-\code{COLONY} is available on Jinliang Wang web site 
+\code{COLONY} is available on Jinliang Wang web site
 \url{http://www.zsl.org/science/software/colony}
 
-\code{randomForestSRC} is available on 
-CRAN \url{http://cran.r-project.org/web/packages/randomForestSRC/} 
+\code{randomForestSRC} is available on
+CRAN \url{http://cran.r-project.org/web/packages/randomForestSRC/}
 and github \url{https://github.com/ehrlinger/randomForestSRC}
 }
 \author{

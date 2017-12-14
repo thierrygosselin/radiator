@@ -3,25 +3,25 @@
 #' @name vcf2hierfstat
 #' @title VCF to \code{hierfstat} with filters and data imputation
 
-#' @description For full details of the function, please use 
+#' @description For full details of the function, please use
 #' \pkg{radiator} \code{\link[radiator]{genomic_converter}}. This function is a shorcut
 #' to output only hierfstat object and file.
-#' @inheritParams genomic_converter 
-#' @inheritParams tidy_genomic_data 
+#' @inheritParams genomic_converter
+#' @inheritParams tidy_genomic_data
 #' @inheritParams write_genepop
-#' @inheritParams write_genind 
-#' @inheritParams write_genlight 
+#' @inheritParams write_genind
+#' @inheritParams write_genlight
 #' @inheritParams write_structure
 #' @inheritParams write_plink
 #' @inheritParams write_vcf
 #' @inheritParams write_gtypes
 #' @inheritParams write_hierfstat
-#' @inheritParams radiator_imputations_module 
+#' @inheritParams radiator_imputations_module
 
 #' @export
 #' @rdname vcf2hierfstat
 #' @import dplyr
-#' @references Goudet, J. (1995) FSTAT (Version 1.2): A computer program to 
+#' @references Goudet, J. (1995) FSTAT (Version 1.2): A computer program to
 #' calculate F- statistics. Journal of Heredity, 86, 485-486.
 #' @references Goudet, J. (2005) hierfstat, a package for r to compute and test hierarchical F-statistics. Molecular Ecology Notes, 5, 184-186.
 
@@ -41,9 +41,6 @@ vcf2hierfstat <- function(
   snp.ld = NULL,
   common.markers = TRUE,
   maf.thresholds = NULL,
-  maf.pop.num.threshold = 1,
-  maf.approach = "SNP",
-  maf.operator = "OR",
   max.marker = NULL,
   strata = NULL,
   pop.levels = NULL,
@@ -57,7 +54,7 @@ vcf2hierfstat <- function(
   verbose = FALSE,
   parallel.core = detectCores() - 1
 ) {
-  
+
   res <- genomic_converter(
     data,
     output = "hierfstat",
@@ -69,9 +66,6 @@ vcf2hierfstat <- function(
     snp.ld = snp.ld,
     common.markers = common.markers,
     maf.thresholds = maf.thresholds,
-    maf.pop.num.threshold = maf.pop.num.threshold,
-    maf.approach = maf.approach,
-    maf.operator = maf.operator,
     max.marker = max.marker,
     strata = strata,
     pop.levels = pop.levels,

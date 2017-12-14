@@ -69,9 +69,6 @@ write_pcadapt <- function(
   pop.select = NULL,
   snp.ld = NULL,
   maf.thresholds = NULL,
-  maf.pop.num.threshold = 1,
-  maf.approach = "SNP",
-  maf.operator = "OR",
   filename = NULL,
   parallel.core = parallel::detectCores() - 1
 ) {
@@ -132,13 +129,12 @@ write_pcadapt <- function(
 
   # MAF ------------------------------------------------------------------------
   if (!is.null(maf.thresholds)) { # with MAF
-    input <- radiator::radiator_maf_module(
+    input <- radiator::filter_maf(
       data = input,
+      interactive.filter = FALSE,
       maf.thresholds = maf.thresholds,
-      maf.pop.num.threshold = maf.pop.num.threshold,
-      maf.approach = maf.approach,
-      maf.operator = maf.operator
-    )$input
+      parallel.core = parallel.core,
+      verbose = FALSE)$tidy.filtered.maf
   } # End of MAF filters
 
   # Biallelic and GT_BIN -------------------------------------------------------
@@ -150,9 +146,9 @@ write_pcadapt <- function(
 
   if (!tibble::has_name(input, "GT_BIN")) {
     input <- radiator::change_alleles(
-        data = dplyr::select(input, MARKERS, INDIVIDUALS, POP_ID, GT),
-        biallelic = TRUE,
-        parallel.core = parallel.core, verbose = TRUE)$input
+      data = dplyr::select(input, MARKERS, INDIVIDUALS, POP_ID, GT),
+      biallelic = TRUE,
+      parallel.core = parallel.core, verbose = TRUE)$input
   }
 
 

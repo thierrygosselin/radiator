@@ -53,9 +53,6 @@ merge_vcf <- function(
   blacklist.id = NULL,
   whitelist.markers = NULL,
   maf.thresholds = NULL,
-  maf.pop.num.threshold = 1,
-  maf.approach = "SNP",
-  maf.operator = "OR",
   filename = NULL,
   parallel.core = parallel::detectCores() - 1
 ) {
@@ -158,13 +155,12 @@ merge_vcf <- function(
   }
 
   if (!is.null(maf.thresholds)) {
-    input <- radiator_maf_module(
-      data = input,
-      maf.thresholds = maf.thresholds,
-      maf.pop.num.threshold = maf.pop.num.threshold,
-      maf.approach = maf.approach,
-      maf.operator = maf.operator,
-      parallel.core = parallel.core)
+  input <- filter_maf(
+  data = input,
+  interactive.filter = FALSE,
+  maf.thresholds = maf.thresholds,
+  parallel.core = parallel.core,
+  verbose = FALSE)$tidy.filtered.maf
   }
 
   # Write VCF in the working directory

@@ -88,32 +88,37 @@
 #' @param common.markers (optional) Logical. Default: \code{common.markers = TRUE},
 #' will only keep markers in common (genotyped) between all the populations.
 
-#' @param maf.thresholds (string, double, optional) String with
-#' local/populations and global/overall maf thresholds, respectively.
-#' e.g. \code{maf.thresholds = c(0.05, 0.1)} for a local maf threshold
-#' of 0.05 and a global threshold of 0.1. Available for VCF, PLINK and data frame
-#' files.
-#' Default: \code{maf.thresholds = NULL}.
-
-#' @param maf.approach (character, optional).
-#' \code{maf.approach = "haplotype"} : looks at the minimum MAF found on the
-#' read/haplotype. Using this option will discard all the markers/snp on
-#' that read based on the thresholds chosen. This method is only available
-#' for VCF and haplotype files, or tidy data frame from those file types.
-#' \code{maf.approach = "SNP"} : treats all the SNP on the same
-#' haplotype/read as independent. Doesn't work with haplotype file,
-#' but does work for all other file type.
-#' Default is \code{maf.approach = "SNP"}.
-
-#' @param maf.operator (character, optional) \code{maf.operator = "AND"} or
-#' default \code{maf.operator = "OR"}.
-#' When filtering over LOCUS or SNP, do you want the local \code{"AND"}
-#' global MAF to pass the thresholds, or ... you want the local \code{"OR"}
-#' global MAF to pass the thresholds, to keep the marker?
-
-#' @param maf.pop.num.threshold (integer, optional) When maf thresholds are used,
-#' this argument is for the number of pop required to pass the maf thresholds
-#' to keep the locus. Default: \code{maf.pop.num.threshold = 1}
+#' @param maf.thresholds (optional) Default: \code{maf.thresholds = NULL}. For no
+#' MAF filtering.
+#'
+#' String with 5 values
+#' (e.g. \code{maf.thresholds = c("maf approach", local maf, "OR", global maf, number pop threshold)},
+#' \code{maf.thresholds = c("SNP", 0.001, "OR", 0.001, 1)}):
+#' \enumerate{
+#' \item maf approach (character: "SNP"/"locus"):
+#' MAF filtering is conducted by SNPs or locus.
+#' \code{"SNP"}: will consider all the SNPs on the same locus/read as independent.
+#' \code{"locus"}: looks at the minimum MAF found on the
+#' read/locus. Using this option will discard all the markers/snp on
+#' that read based on the thresholds chosen. For the locus approach to work, your dataset
+#' requires SNP and Locus info (e.g. from a VCF file).
+#'
+#' \item local maf (double): The maf threshold at the population level.
+#' Not sure about the threshold to use, choose the interactive mode argument.
+#'
+#' \item maf operator (character: "OR" / "AND"):
+#' When filtering over LOCUS or SNP, 2 options available to consider the local/global MAF:
+#' The local \code{"AND"} the global MAF. The local \code{"OR"}
+#' global MAF.
+#'
+#' \item global maf (double): The maf threshold taken at the dataset level.
+#' Not sure about the threshold to use, choose the interactive mode argument.
+#'
+#'\item maf pop num threshold (integer)
+#'The number of pop required to pass the thresholds
+#' to keep the marker. Usually, I always use \code{1}, for 1 pop is required to
+#' pass thresholds and keep the marker.
+#' }
 
 #' @param max.marker (integer, optional) For large PLINK files,
 #' useful to subsample marker number. e.g. if the data set
@@ -360,9 +365,6 @@ tidy_genomic_data <- function(
   snp.ld = NULL,
   common.markers = TRUE,
   maf.thresholds = NULL,
-  maf.pop.num.threshold = 1,
-  maf.approach = "SNP",
-  maf.operator = "OR",
   max.marker = NULL,
   blacklist.id = NULL,
   pop.levels = NULL,
@@ -1141,15 +1143,13 @@ tidy_genomic_data <- function(
   } # End monomorphic out
 
   # Minor Allele Frequency filter ----------------------------------------------
-  # maf.thresholds <- c(0.05, 0.1) # test
   if (!is.null(maf.thresholds)) { # with MAF
-    input <- radiator_maf_module(
-      data = input,
-      maf.thresholds = maf.thresholds,
-      maf.pop.num.threshold = maf.pop.num.threshold,
-      maf.approach = maf.approach,
-      maf.operator = maf.operator
-    )$input
+  input <- radiator::filter_maf(
+    data = input,
+    interactive.filter = FALSE,
+    maf.thresholds = maf.thresholds,
+    parallel.core = parallel.core,
+    verbose = FALSE)$tidy.filtered.maf
   } # End of MAF filters
 
 

@@ -6,8 +6,7 @@
 \usage{
 detect_allele_problems(data, allele.threshold = 3, whitelist.markers = NULL,
   monomorphic.out = TRUE, blacklist.genotype = NULL, snp.ld = NULL,
-  common.markers = TRUE, maf.thresholds = NULL, maf.pop.num.threshold = 1,
-  maf.approach = "SNP", maf.operator = "OR", max.marker = NULL,
+  common.markers = TRUE, maf.thresholds = NULL, max.marker = NULL,
   blacklist.id = NULL, pop.levels = NULL, pop.labels = NULL,
   strata = NULL, pop.select = NULL, filename = NULL, verbose = FALSE)
 }
@@ -21,7 +20,7 @@ and a data frame in long/tidy or wide format.
 
 \item{allele.threshold}{(integer) Threshold of alternate allele copies.
 Below this threshold markers are blacklisted. Choose this threshold based
-on your tolerance for uninformative or unreliable information and 
+on your tolerance for uninformative or unreliable information and
 minor allele frequency. Summary statistics for this blacklist will be calculated.
 See details for more info.}
 
@@ -82,32 +81,37 @@ Default: \code{snp.ld = NULL}.}
 \item{common.markers}{(optional) Logical. Default: \code{common.markers = TRUE},
 will only keep markers in common (genotyped) between all the populations.}
 
-\item{maf.thresholds}{(string, double, optional) String with
-local/populations and global/overall maf thresholds, respectively.
-e.g. \code{maf.thresholds = c(0.05, 0.1)} for a local maf threshold
-of 0.05 and a global threshold of 0.1. Available for VCF, PLINK and data frame
-files.
-Default: \code{maf.thresholds = NULL}.}
+\item{maf.thresholds}{(optional) Default: \code{maf.thresholds = NULL}. For no
+MAF filtering.
 
-\item{maf.pop.num.threshold}{(integer, optional) When maf thresholds are used,
-this argument is for the number of pop required to pass the maf thresholds
-to keep the locus. Default: \code{maf.pop.num.threshold = 1}}
+String with 5 values
+(e.g. \code{maf.thresholds = c("maf approach", local maf, "OR", global maf, number pop threshold)},
+\code{maf.thresholds = c("SNP", 0.001, "OR", 0.001, 1)}):
+\enumerate{
+\item maf approach (character: "SNP"/"locus"):
+MAF filtering is conducted by SNPs or locus.
+\code{"SNP"}: will consider all the SNPs on the same locus/read as independent.
+\code{"locus"}: looks at the minimum MAF found on the
+read/locus. Using this option will discard all the markers/snp on
+that read based on the thresholds chosen. For the locus approach to work, your dataset
+requires SNP and Locus info (e.g. from a VCF file).
 
-\item{maf.approach}{(character, optional).
-\code{maf.approach = "haplotype"} : looks at the minimum MAF found on the
-read/haplotype. Using this option will discard all the markers/snp on
-that read based on the thresholds chosen. This method is only available
-for VCF and haplotype files, or tidy data frame from those file types.
-\code{maf.approach = "SNP"} : treats all the SNP on the same
-haplotype/read as independent. Doesn't work with haplotype file,
-but does work for all other file type.
-Default is \code{maf.approach = "SNP"}.}
+\item local maf (double): The maf threshold at the population level.
+Not sure about the threshold to use, choose the interactive mode argument.
 
-\item{maf.operator}{(character, optional) \code{maf.operator = "AND"} or
-default \code{maf.operator = "OR"}.
-When filtering over LOCUS or SNP, do you want the local \code{"AND"}
-global MAF to pass the thresholds, or ... you want the local \code{"OR"}
-global MAF to pass the thresholds, to keep the marker?}
+\item maf operator (character: "OR" / "AND"):
+When filtering over LOCUS or SNP, 2 options available to consider the local/global MAF:
+The local \code{"AND"} the global MAF. The local \code{"OR"}
+global MAF.
+
+\item global maf (double): The maf threshold taken at the dataset level.
+Not sure about the threshold to use, choose the interactive mode argument.
+
+\item maf pop num threshold (integer)
+The number of pop required to pass the thresholds
+to keep the marker. Usually, I always use \code{1}, for 1 pop is required to
+pass thresholds and keep the marker.
+}}
 
 \item{max.marker}{(integer, optional) For large PLINK files,
 useful to subsample marker number. e.g. if the data set
@@ -184,7 +188,7 @@ Default: \code{verbose = TRUE}.}
 }
 \value{
 A list with summary, plot and blacklist.
-Summary statistics for the blacklisted markers are generated and include 
+Summary statistics for the blacklisted markers are generated and include
 coverage and genotype likelihood information.
 
 \code{$alt.allele.count.plot}: Distribution of marker's alternate allele number.
@@ -192,24 +196,24 @@ The shape is usually skewed right.
 
 \code{$alt.depth.count.distribution.plot}: Distribution of markers alternate
 allele depth (in number of read). The range showed on the plot is
-between 1 and 10, and you decide your tolerance for low coverage 
+between 1 and 10, and you decide your tolerance for low coverage
 and good genotype calls.
 
 This plot is associated with \code{$number.markers}, a table that shows the
-number of markers <= \code{allele.threshold }. Also in the table, the 
+number of markers <= \code{allele.threshold }. Also in the table, the
 range of alternate allele read depth (1 to 10), same as plot but showing here
 the the cumulative number of markers. Again, would you trust a marker with only
 1 alternate allele (an heterozygote individual) with a read depth of 1 or 2 ?
 }
 \description{
 Detect alternate allele problems.
-Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator} 
+Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and might be of interest for users. The function computes alternate allele
-counts and looks for alternate alleles bellow a certain threshold. 
+counts and looks for alternate alleles bellow a certain threshold.
 The summary statistics for the
 markers with problematic allele is computed based on coverage and
 genotype likelihood. This function is very fast to highlight: i) bias in
-representation of allelic copies and unequal coverage and ii) type I error 
+representation of allelic copies and unequal coverage and ii) type I error
 during genotyping of heterozygote with low coverage data.
 }
 \details{
@@ -222,7 +226,7 @@ for detailed information about supported file format.
 
 \strong{allele.threshold}:
 
-An \code{allele.threshold = 1}, says that you want to check the statistics 
+An \code{allele.threshold = 1}, says that you want to check the statistics
 for markers with only 1 copy of the alternate allele. Said differently,
 \code{allele.threshold = 1} = only 1 heterozygote individual is making this
 marker polymorphic, very thin line if this allele is backed by less than 3 reads.
@@ -248,7 +252,7 @@ alt.no.depth <- dplyr::filter(your.object$allele.summary, is.na(ALLELE_ALT_DEPTH
 Use the summary statistics of the blacklisted markers to refine update
 the blacklist of markers. You can decide to discard the markers or
 blacklist the problematic genotypes.
-\pkg{radiator} \code{\link[radiator]{tidy_genomic_data}} and 
+\pkg{radiator} \code{\link[radiator]{tidy_genomic_data}} and
 \code{\link[radiator]{genomic_converter}} allows to erase problematic genotypes
 using a blacklist of genotypes...
 }
