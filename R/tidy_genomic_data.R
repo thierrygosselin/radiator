@@ -74,16 +74,20 @@
 #' @param snp.ld (optional) \strong{For data with locus and SNP info, like VCF and DArT file}.
 #' SNP short distance linkage disequilibrium pruning. With anonymous markers from
 #' RADseq/GBS de novo discovery, you can minimize linkage disequilibrium (LD) by
-#' choosing among these 4 options:
-#' \code{snp.ld = "random"} for a random selection of 1 SNP on the read,
-#' \code{snp.ld = "first"} for the first one on the read...,
-#' \code{snp.ld = "last"} for the last SNP on the read and
-#' \code{snp.ld = "middle"} for locus with > 2 SNPs/read the option to select at random
+#' choosing among these 5 options:
+#' \enumerate{
+#' \item \code{snp.ld = "random"} for a random selection of 1 SNP on the read,
+#' \item \code{snp.ld = "first"} for the first one on the read...,
+#' \item \code{snp.ld = "last"} for the last SNP on the read and
+#' \item \code{snp.ld = "middle"} for locus with > 2 SNPs/read the option to select at random
 #' one SNP between the first and the last SNP on the read. If the locus as <= 2
 #' SNPs on the read, the first one is selected. Note that for that last option,
-#' the numbers are reported. For long distance linkage
-#' disequilibrium pruning, see details below.
-#' Default: \code{snp.ld = NULL}.
+#' the numbers are reported.
+#' \item \code{snp.ld = "maf"} will select the SNP on the locus with the maximum global
+#' Minor Allele Frequency (MAF).
+#' }
+#' For long distance linkage disequilibrium pruning, see details below.
+#' Default: \code{snp.ld = NULL}, for no pruning.
 
 #' @param common.markers (optional) Logical. Default: \code{common.markers = TRUE},
 #' will only keep markers in common (genotyped) between all the populations.

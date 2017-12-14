@@ -15,15 +15,17 @@
 #' Usually the LOCUS and POS info is taken from a VCF file.
 
 #' @param snp.ld (character) 5 options:
-#' \code{snp.ld = "random"} for a random selection of 1 SNP on the read,
-#' \code{snp.ld = "first"} for the first one on the read...,
-#' \code{snp.ld = "last"} for the last SNP on the read and
-#' \code{snp.ld = "middle"} for locus with > 2 SNPs/read the option to select at random
+#' \enumerate{
+#' \item \code{snp.ld = "random"} for a random selection of 1 SNP on the read,
+#' \item \code{snp.ld = "first"} for the first one on the read...,
+#' \item \code{snp.ld = "last"} for the last SNP on the read and
+#' \item \code{snp.ld = "middle"} for locus with > 2 SNPs/read the option to select at random
 #' one SNP between the first and the last SNP on the read. If the locus as <= 2
 #' SNPs on the read, the first one is selected. Note that for that last option,
 #' the numbers are reported.
-#' \code{snp.ld = "maf"} will select the SNP on the locus with the maximum global
+#' \item \code{snp.ld = "maf"} will select the SNP on the locus with the maximum global
 #' Minor Allele Frequency (MAF).
+#' }
 #' Default: \code{snp.ld = "maf"}.
 
 #' @param maf.data (path) When \code{snp.ld = "maf"} is selected,
