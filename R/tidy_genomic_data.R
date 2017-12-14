@@ -398,23 +398,6 @@ tidy_genomic_data <- function(
   skip.tidy.wide <- FALSE # initiate for data frame below
   data.type <- radiator::detect_genomic_format(data)
 
-  if (data.type == "haplo.file") {
-    if (verbose && !is.null(maf.thresholds)) {
-      message("With stacks haplotype file the maf.approach is automatically set to: haplotype")
-    }
-    maf.approach <- "SNP"
-    # confusing, but because the haplotpe file doesn't have snp info, only locus info
-    # it's treated as markers/snp info and filtered the same way as the approach by SNP.
-    # but it's really by haplotype
-  }
-
-  if (maf.approach == "haplotype") {
-    if (data.type != "vcf.file" | data.type != "haplo.file") {
-      stop("The haplotype approach during MAF filtering is for VCF and
-           stacks haplotypes file, only. Use the snp approach for the other file types")
-    }
-  }
-
   # Import whitelist of markers-------------------------------------------------
   if (!is.null(whitelist.markers)) {# with Whitelist of markers
     if (is.vector(whitelist.markers)) {
