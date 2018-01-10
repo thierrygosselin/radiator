@@ -200,7 +200,7 @@ tidy_vcf <- function(
       if (ncol(whitelist.markers) >= 3) {
         message("Note: whitelist with CHROM LOCUS POS columns and VCF haplotype:
                 If the whitelist was not created from this VCF,
-                the filtering could result in loosing all the markers.
+                the filtering could result in losing all the markers.
                 The POS column is different in biallelic and multiallelic file...\n")
 
         message("Discarding the POS column in the whitelist")
@@ -210,7 +210,7 @@ tidy_vcf <- function(
       if (ncol(whitelist.markers) == 1 && tibble::has_name(whitelist.markers, "MARKERS")) {
         message("Note: whitelist MARKERS column and VCF haplotype:
                 If the whitelist was not created from this VCF,
-                the filtering could result in loosing all the markers.
+                the filtering could result in losing all the markers.
                 The POS column used in the MARKERS column is different in biallelic and multiallelic file...\n")
       }
     }
