@@ -157,10 +157,12 @@ tidy_vcf <- function(
   # Unique MARKERS column --------------------------------------------------------
 
   # Since stacks v.1.44 ID as LOCUS + COL (from sumstats) the position of the SNP on the locus.
-  # Choose the first 100 markers to scan
-  detect.snp.col <- sample(x = unique(input$LOCUS), size = 100, replace = FALSE) %>%
+  # Choose the first 100 (or less) markers to scan
+  sample_size <- min(length(unique(input$LOCUS)), 100)
+  detect.snp.col <- sample(x = unique(input$LOCUS), size = sample_size, replace = FALSE) %>%
     stringi::stri_detect_fixed(str = ., pattern = "_") %>%
     unique
+  sample_size <- NULL
 
   if (detect.snp.col && stacks.vcf) {
     if (nrow(input) > 30000) {
