@@ -14,13 +14,13 @@
 #' @return A tidy data frame in the global environment.
 #' @export
 #' @rdname read_rad
-#' @importFrom fst read.fst
+# @importFrom fst read.fst
 #'
 #'
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 read_rad <- function(data) {
-  data <- fst::read.fst(path = data)
+  #data <- fst::read.fst(path = data)
 }#End read_rad
 
 
@@ -41,11 +41,11 @@ read_rad <- function(data) {
 #' @return A tidy data frame in the global environment.
 #' @export
 #' @rdname write_rad
-#' @importFrom fst write.fst
+# @importFrom fst write.fst
 #'
 #'
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 write_rad <- function(data, path) {
-  fst::write.fst(x = data, path = path, compress = 85)
+  #fst::write.fst(x = data, path = path, compress = 85)
 }#End write_rad

@@ -39,7 +39,7 @@
 #' @importFrom readr read_tsv write_tsv read_lines read_table
 #' @importFrom tibble as_data_frame data_frame
 #' @importFrom tidyr spread gather unite separate
-#' @importFrom fst write.fst
+# @importFrom fst write.fst
 
 #' @examples
 #' \dontrun{
@@ -195,7 +195,7 @@ tidy_dart_metadata <- function(
       dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
       dplyr::arrange(MARKERS))
 
-fst::write.fst(x = input, path = meta.filename, compress = 85)
+#fst::write.fst(x = input, path = meta.filename, compress = 85)
 message("Marker's metadata file written to the directory:\n    ", meta.filename)
 
 # Results --------------------------------------------------------------------

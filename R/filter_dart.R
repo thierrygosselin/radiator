@@ -112,7 +112,7 @@
 #' @importFrom readr read_tsv write_tsv
 #' @importFrom tibble as_data_frame data_frame
 #' @importFrom tidyr spread gather unite separate
-#' @importFrom fst write.fst read.fst
+# @importFrom fst write.fst read.fst
 
 #' @examples
 #' \dontrun{
@@ -576,10 +576,15 @@ filter_dart <- function(
   }#End filter.coverage
 
   # update metadata file -------------------------------------------------------
-  fst::write.fst(
+  #fst::write.fst(
+   # x = metadata,
+    #path = file.path(path.folder, stringi::stri_replace_all_fixed(metadata.file, ".rad", "_filtered.rad", vectorize_all = FALSE)),
+    #compress =85)
+    
+    readr::write_tsv(
     x = metadata,
     path = file.path(path.folder, stringi::stri_replace_all_fixed(metadata.file, ".rad", "_filtered.rad", vectorize_all = FALSE)),
-    compress =85)
+    )
 
   # Tidy DArT ------------------------------------------------------------------
   message("\nNext step requires the genotypes")
@@ -1144,10 +1149,15 @@ on the number of genotyped individuals per pop ? (overall or pop):")
 
   # update metadata info
   metadata <- dplyr::filter(metadata, !MARKERS %in% blacklist.markers$MARKERS)
-  fst::write.fst(
+  #fst::write.fst(
+   # x = metadata,
+    #path = file.path(path.folder, stringi::stri_replace_all_fixed(metadata.file, ".rad", "_filtered.rad", vectorize_all = FALSE)),
+    #compress =85)
+    
+    readr::write_tsv(
     x = metadata,
     path = file.path(path.folder, stringi::stri_replace_all_fixed(metadata.file, ".rad", "_filtered.rad", vectorize_all = FALSE)),
-    compress =85)
+    )
 
   # Data quality AFTER filters --------------------------------------------------
   setwd(path.folder)
@@ -1372,7 +1382,7 @@ on the number of genotyped individuals per pop ? (overall or pop):")
   # write tidy to working directory
   if (!is.null(filename)) {
     tidy.name <- stringi::stri_join(filename, ".filtered.rad")
-    fst::write.fst(x = res$tidy.data, path = tidy.name, compress = 85)
+    #fst::write.fst(x = res$tidy.data, path = tidy.name, compress = 85)
     message("Tidy DArT data, filtered, written to folder: \n", tidy.name)
   }
 

@@ -6,8 +6,8 @@ Date: 2017-10-02
 Encoding: UTF-8
 Authors@R: c(
   person("Thierry", "Gosselin", email = "thierrygosselin@icloud.com", role = c("aut", "cre")),
-  person("Anne-Laure", "Ferchaud", role = "ctb"),
   person("Manuel", "Lamothe", role = "ctb"),
+  person("Anne-Laure", "Ferchaud", role = "ctb"),
   person("Laura", "Benestan", role = "ctb"))
 Maintainer: Thierry Gosselin <thierrygosselin@icloud.com>
 Description: radiator: an R package for RADseq Data Exploration, Manipulation and Visualization.
@@ -42,8 +42,7 @@ Imports:
     rlang
 Suggests:
     knitr,
-    rmarkdown,
-    fst
+    rmarkdown
 Remotes:
   github::kvnkuang/pbmcapply,
   github::Rdatatable/data.table@9d1f3e2

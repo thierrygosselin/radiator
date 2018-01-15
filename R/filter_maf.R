@@ -279,12 +279,12 @@ filter_maf <- function(
       if (data.type == "tbl_df") {
         input <- suppressWarnings(dplyr::select(data, dplyr::one_of(want)))
       }
-      if (data.type == "fst.file") {
-        import.col <- colnames(fst::read.fst(path = data, from = 1, to = 1))
-        import.col <- purrr::discard(.x = import.col, .p = !import.col %in% want)
-        input <- fst::read.fst(path = data, columns = import.col)
-        import.col <- want <- NULL
-      }
+      #if (data.type == "fst.file") {
+       # import.col <- colnames(fst::read.fst(path = data, from = 1, to = 1))
+        #import.col <- purrr::discard(.x = import.col, .p = !import.col %in% want)
+        #input <- fst::read.fst(path = data, columns = import.col)
+        #import.col <- want <- NULL
+      #}
     } else {
       input <- radiator::tidy_genomic_data(
         data = data,
@@ -334,7 +334,7 @@ filter_maf <- function(
     n.markers <- nrow(markers.df)
     maf.data <- dplyr::filter(input, GT != "000000")
 
-    fst::write.fst(x = input, path = "maf.temp.rad", compress = 85)
+    #fst::write.fst(x = input, path = "maf.temp.rad", compress = 85)
     input <- NULL
 
     if (n.markers > 10000) {
@@ -744,8 +744,8 @@ Example: if you have 10 populations and choose maf.pop.num.threshold = 3,
           message("Number of markers requiring reconstruction: ", n.reconstruction)
           # no.reconstruction (written to disk to save mem)
           filter %>%
-            dplyr::filter(!MARKERS %in% haplo.reconstruction$MARKERS) %>%
-            fst::write.fst(x = ., path = file.path(path.folder, "temp.rad"), compress = 85)
+            dplyr::filter(!MARKERS %in% haplo.reconstruction$MARKERS) #%>%
+            #fst::write.fst(x = ., path = file.path(path.folder, "temp.rad"), compress = 85)
           filter <- dplyr::select(filter, MARKERS, POP_ID, INDIVIDUALS, GT_VCF_NUC) %>%
             dplyr::filter(MARKERS %in% haplo.reconstruction$MARKERS) %>%
             separate_gt(
@@ -763,9 +763,9 @@ Example: if you have 10 populations and choose maf.pop.num.threshold = 3,
             dplyr::ungroup(.) %>%
             change_alleles(data = ., biallelic = FALSE, parallel.core = parallel.core)
 
-          filter <- filter$input %>%
-            dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT_VCF_NUC, REF, ALT, GT, GT_VCF) %>%
-            dplyr::bind_rows(fst::read.fst(path = file.path(path.folder, "temp.rad")))
+          #filter <- filter$input %>%
+            #dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT_VCF_NUC, REF, ALT, GT, GT_VCF) %>%
+            #dplyr::bind_rows(fst::read.fst(path = file.path(path.folder, "temp.rad")))
           file.remove(file.path(path.folder, "temp.rad"))
         } else {
           haplo.reconstruction <- NULL
@@ -815,7 +815,7 @@ Example: if you have 10 populations and choose maf.pop.num.threshold = 3,
     if (!is.null(filename)) {
       tidy.name <- stringi::stri_join(filename, ".rad")
       if (verbose) message("Writing the MAF filtered tidy data set: ", tidy.name)
-      fst::write.fst(x = filter, path = file.path(path.folder, tidy.name), compress = 85)
+      #fst::write.fst(x = filter, path = file.path(path.folder, tidy.name), compress = 85)
     }
 
     # saving whitelist

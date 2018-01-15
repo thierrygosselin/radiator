@@ -559,7 +559,7 @@ Enter the number of problematic population that you allow to deviate from the th
     # if (!is.null(save.feather)) {
     # feather::write_feather(filter, stri_replace_all_fixed(filename, pattern = ".tsv", replacement = "_feather.tsv", vectorize_all = TRUE))
     # } else {
-    fst::write.fst(x = filter, path = stringi::stri_join(path.folder, "/", tidy.name), compress = 85)
+    #fst::write.fst(x = filter, path = stringi::stri_join(path.folder, "/", tidy.name), compress = 85)
     # }
   }
 
