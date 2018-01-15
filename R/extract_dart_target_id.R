@@ -91,11 +91,19 @@ extract_dart_target_id <- function(data) {
     "AVGCOUNTSNP", "RATIOAVGCOUNTREFAVGCOUNTSNP", "FREQHETSMINUSFREQMINHOM",
     "ALLELECOUNTSCORRELATION", "AGGREGATETAGSTOTAL", "DERIVEDCORRMINUSSEEDCORR",
     "REPREF", "REPSNP", "REPAVG", "PICREPREF", "PICREPSNP", "TOTALPICREPREFTEST",
-    "TOTALPICREPSNPTEST")
-  dart.target.id <- tidyr::gather(data = dart.target.id, key = DISCARD, value = TARGET_ID) %>%
+    "TOTALPICREPSNPTEST", "BINID", "BIN.SIZE", "ALLELESEQUENCEREF",
+    "ALLELESEQUENCESNP", "TRIMMEDSEQUENCEREF")
+
+  discard.genome <- c("CHROM_|CHROMPOS_|ALNCNT_|ALNEVALUE_")
+
+  dart.target.id <- tidyr::gather(data = dart.target.id, key = DISCARD,
+                                   value = TARGET_ID) %>%
     dplyr::select(-DISCARD) %>%
     dplyr::mutate(TARGET_ID = stringi::stri_trans_toupper(TARGET_ID)) %>%
-    dplyr::filter(!TARGET_ID %in% discard)
+    dplyr::filter(!TARGET_ID %in% discard) %>%
+    dplyr::filter(stringi::stri_detect_regex(str = TARGET_ID,
+                                             pattern = discard.genome, negate = TRUE))
+
 
   readr::write_tsv(x = dart.target.id, path = "dart.target.id.tsv")
   return(dart.target.id)

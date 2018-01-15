@@ -1,9 +1,9 @@
 #' @name tidy_dart_metadata
 
-#' @title Import and  tidy \href{http://www.diversityarrays.com}{DArT} metadata.
+#' @title Import andtidy \href{http://www.diversityarrays.com}{DArT} metadata.
 
 #' @description Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
-#' and might be of interest for users. The function generate a tidy dataset of
+#' \code{\link{filter_dart}} and might be of interest for users. The function generate a tidy dataset of
 #' \href{http://www.diversityarrays.com}{DArT} markers and associated metadata.
 #' Usefull to filter before importing the actual dataset.
 

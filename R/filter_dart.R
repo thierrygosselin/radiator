@@ -1302,6 +1302,7 @@ on the number of genotyped individuals per pop ? (overall or pop):")
           # update data.info
           data.info$n.ind <- data.info$n.ind - n.ind.blacklisted
 
+          # After removing individuals => check for monomorphic markers
           message("\nScan and remove monomorphic markers...")
           input <- discard_monomorphic_markers(data = input, verbose = verbose)
           blacklist.monomorphic.markers <- input$blacklist.monomorphic.markers

@@ -39,11 +39,11 @@ Imports:
     randomForestSRC,
     pegas,
     purrrlyr,
-    rlang,
-    fst
+    rlang
 Suggests:
     knitr,
-    rmarkdown
+    rmarkdown,
+    fst
 Remotes:
   github::kvnkuang/pbmcapply,
   github::Rdatatable/data.table@9d1f3e2
