@@ -39,14 +39,15 @@ Imports:
     randomForestSRC,
     pegas,
     purrrlyr,
-    rlang
+    rlang,
+    fst
 Suggests:
     knitr,
     rmarkdown
 Remotes:
   github::kvnkuang/pbmcapply,
-  github::Rdatatable/data.table@9d1f3e2
-License: GPL (>=2)
+  github::Rdatatable/data.table@9d1f3e2,
+  github::fstPackage/fst@b6eadb4
 LazyLoad: yes
 VignetteBuilder: knitr
 RoxygenNote: 6.0.1

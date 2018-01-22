@@ -29,6 +29,7 @@
 #' @importFrom readr write_tsv
 #' @importFrom tibble data_frame has_name
 #' @importFrom tidyr complete gather unite spread nesting
+#' @importFrom fst read.fst write.fst
 
 #' @details To help choose a threshold for the local and global MAF
 #' use the interactive version.
@@ -335,6 +336,7 @@ filter_maf <- function(
     maf.data <- dplyr::filter(input, GT != "000000")
 
     #fst::write.fst(x = input, path = "maf.temp.rad", compress = 85)
+    readr::write_tsv(x = input, path = "maf.temp.rad")
     input <- NULL
 
     if (n.markers > 10000) {
@@ -452,7 +454,8 @@ filter_maf <- function(
     }
 
     # import back data ---------------------------------------------------------
-    input <- read_rad("maf.temp.rad")
+    # input <- read_rad("maf.temp.rad")
+    input <- readr::read_tsv("maf.temp.rad")
     file.remove("maf.temp.rad")
 
     # Helper table for global and local MAF -------------------------------------
@@ -744,8 +747,10 @@ Example: if you have 10 populations and choose maf.pop.num.threshold = 3,
           message("Number of markers requiring reconstruction: ", n.reconstruction)
           # no.reconstruction (written to disk to save mem)
           filter %>%
-            dplyr::filter(!MARKERS %in% haplo.reconstruction$MARKERS) #%>%
+            dplyr::filter(!MARKERS %in% haplo.reconstruction$MARKERS) %>%
             #fst::write.fst(x = ., path = file.path(path.folder, "temp.rad"), compress = 85)
+          readr::write_tsv(x = ., path = file.path(path.folder, "temp.rad"))
+
           filter <- dplyr::select(filter, MARKERS, POP_ID, INDIVIDUALS, GT_VCF_NUC) %>%
             dplyr::filter(MARKERS %in% haplo.reconstruction$MARKERS) %>%
             separate_gt(
@@ -763,9 +768,10 @@ Example: if you have 10 populations and choose maf.pop.num.threshold = 3,
             dplyr::ungroup(.) %>%
             change_alleles(data = ., biallelic = FALSE, parallel.core = parallel.core)
 
-          #filter <- filter$input %>%
-            #dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT_VCF_NUC, REF, ALT, GT, GT_VCF) %>%
-            #dplyr::bind_rows(fst::read.fst(path = file.path(path.folder, "temp.rad")))
+          filter <- filter$input %>%
+            dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT_VCF_NUC, REF, ALT, GT, GT_VCF) %>%
+            dplyr::bind_rows(readr::read_tsv(path = file.path(path.folder, "temp.rad")))
+          # dplyr::bind_rows(fst::read.fst(path = file.path(path.folder, "temp.rad")))
           file.remove(file.path(path.folder, "temp.rad"))
         } else {
           haplo.reconstruction <- NULL
@@ -816,6 +822,7 @@ Example: if you have 10 populations and choose maf.pop.num.threshold = 3,
       tidy.name <- stringi::stri_join(filename, ".rad")
       if (verbose) message("Writing the MAF filtered tidy data set: ", tidy.name)
       #fst::write.fst(x = filter, path = file.path(path.folder, tidy.name), compress = 85)
+      readr::write_tsv(x = filter, path = tidy.name)
     }
 
     # saving whitelist
@@ -835,7 +842,7 @@ Example: if you have 10 populations and choose maf.pop.num.threshold = 3,
     if (verbose) message("\nWriting the blacklist of markers: blacklist.markers.maf.tsv")
     if (tibble::has_name(filter, "CHROM")) {
       blacklist.markers <- dplyr::setdiff(
-        dplyr::select(markers.meta, CHROM, LOCUS, POS), whitelist.markers)
+        dplyr::select(markers.meta, CHROM, LOCUS, POS), dplyr::mutate_all(.tbl = whitelist.markers, .funs = as.character))
 
     } else {
       blacklist.markers <- dplyr::setdiff(

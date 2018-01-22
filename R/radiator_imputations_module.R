@@ -464,7 +464,7 @@ radiator_imputations_module <- function(
   }
 
 
-  # randomForestSRC arguments:
+  # randomForestSRC arguments--------------------------------------------------
   if (!is.null(boost.dots[["nodesize"]])) {
     nodesize <- boost.dots[["nodesize"]]
   } else {
@@ -599,7 +599,7 @@ radiator_imputations_module <- function(
   have <- colnames(input)
 
   # For haplotype VCF
-  if (!biallelic && ref.column) {
+  if (!biallelic && ref.column && tibble::has_name(input, "GT_VCF_NUC")) {
     want <- c("MARKERS", "CHROM", "LOCUS", "POS", "POP_ID", "INDIVIDUALS", "GT_VCF_NUC", "GL")
     selected.columns <- purrr::keep(.x = have, .p = have %in% want)
 
@@ -615,6 +615,7 @@ radiator_imputations_module <- function(
                            dplyr::one_of(selected.columns)) %>%
       dplyr::mutate(GT = replace(GT, which(GT == "000000"), NA))
   }
+
   have <- want <- selected.columns <- NULL
   # keep stratification
   strata.before <- dplyr::distinct(.data = input, INDIVIDUALS, POP_ID)

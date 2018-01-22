@@ -196,6 +196,7 @@ tidy_dart_metadata <- function(
       dplyr::arrange(MARKERS))
 
 #fst::write.fst(x = input, path = meta.filename, compress = 85)
+readr::write_tsv(x = input, path = meta.filename)
 message("Marker's metadata file written to the directory:\n    ", meta.filename)
 
 # Results --------------------------------------------------------------------

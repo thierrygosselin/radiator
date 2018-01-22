@@ -355,7 +355,7 @@ filter_dart <- function(
         legend.position = "none",
         # axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
         axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-        axis.text.x = ggplot2::element_blank(),
+        axis.text.x = ggplot2::element_blank()
         # axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica", angle = 90, hjust = 1, vjust = 0.5),
         # legend.title = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
         # legend.text = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold")
@@ -514,6 +514,9 @@ filter_dart <- function(
       message("    Inspect plots in folder created to help choose coverage thresholds (min and max)...")
       message("    Enter the minimum coverage allowed to keep a marker (e.g. 7): ")
       filter.coverage[1] <- as.numeric(readLines(n = 1))
+    }
+
+    if (interactive.filter) {
       message("    Enter the maximum coverage allowed to keep a marker (e.g. 150): ")
       filter.coverage[2] <- as.numeric(readLines(n = 1))
       filter.coverage <- as.numeric(filter.coverage)
@@ -580,10 +583,10 @@ filter_dart <- function(
    # x = metadata,
     #path = file.path(path.folder, stringi::stri_replace_all_fixed(metadata.file, ".rad", "_filtered.rad", vectorize_all = FALSE)),
     #compress =85)
-    
+
     readr::write_tsv(
     x = metadata,
-    path = file.path(path.folder, stringi::stri_replace_all_fixed(metadata.file, ".rad", "_filtered.rad", vectorize_all = FALSE)),
+    path = file.path(path.folder, stringi::stri_replace_all_fixed(metadata.file, ".rad", "_filtered.rad", vectorize_all = FALSE))
     )
 
   # Tidy DArT ------------------------------------------------------------------
@@ -1030,7 +1033,7 @@ on the number of genotyped individuals per pop ? (overall or pop):")
     if (interactive.filter) {
       maf.info <- radiator::filter_maf(
         data = input,
-        maf.thresholds = maf.thresholds,
+        maf.thresholds = c("SNP", 1, "OR", 1, 1),
         parallel.core = parallel.core,
         interactive.filter = TRUE)
     } else {
@@ -1065,6 +1068,9 @@ on the number of genotyped individuals per pop ? (overall or pop):")
       }
     }
     blacklist.markers.maf <- param <- NULL
+    # change to the new directory
+    old.dir <- getwd()
+    setwd(path.folder)
   }# End maf.thresholds
 
   # Filter snp number  ---------------------------------------------------------
@@ -1153,7 +1159,7 @@ on the number of genotyped individuals per pop ? (overall or pop):")
    # x = metadata,
     #path = file.path(path.folder, stringi::stri_replace_all_fixed(metadata.file, ".rad", "_filtered.rad", vectorize_all = FALSE)),
     #compress =85)
-    
+
     readr::write_tsv(
     x = metadata,
     path = file.path(path.folder, stringi::stri_replace_all_fixed(metadata.file, ".rad", "_filtered.rad", vectorize_all = FALSE)),
