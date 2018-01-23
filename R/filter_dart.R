@@ -579,15 +579,15 @@ filter_dart <- function(
   }#End filter.coverage
 
   # update metadata file -------------------------------------------------------
-  #fst::write.fst(
-   # x = metadata,
-    #path = file.path(path.folder, stringi::stri_replace_all_fixed(metadata.file, ".rad", "_filtered.rad", vectorize_all = FALSE)),
-    #compress =85)
-
-    readr::write_tsv(
+  fst::write.fst(
     x = metadata,
-    path = file.path(path.folder, stringi::stri_replace_all_fixed(metadata.file, ".rad", "_filtered.rad", vectorize_all = FALSE))
-    )
+    path = file.path(path.folder, stringi::stri_replace_all_fixed(metadata.file, ".rad", "_filtered.rad", vectorize_all = FALSE)),
+    compress =85)
+
+  # readr::write_tsv(
+  # x = metadata,
+  # path = file.path(path.folder, stringi::stri_replace_all_fixed(metadata.file, ".rad", "_filtered.rad", vectorize_all = FALSE))
+  # )
 
   # Tidy DArT ------------------------------------------------------------------
   message("\nNext step requires the genotypes")
@@ -596,8 +596,6 @@ filter_dart <- function(
                                whitelist.markers = whitelist.markers,
                                filename = filename, verbose = TRUE,
                                parallel.core = parallel.core)
-
-  # input <- fst::read.fst("filter_dart_yft_20171203@1247/yft_20171203@1247.rad")
 
   # Change populations names or order/levels -----------------------------------
   input <- change_pop_names(data = input, pop.levels = pop.levels)
@@ -1155,15 +1153,15 @@ on the number of genotyped individuals per pop ? (overall or pop):")
 
   # update metadata info
   metadata <- dplyr::filter(metadata, !MARKERS %in% blacklist.markers$MARKERS)
-  #fst::write.fst(
-   # x = metadata,
-    #path = file.path(path.folder, stringi::stri_replace_all_fixed(metadata.file, ".rad", "_filtered.rad", vectorize_all = FALSE)),
-    #compress =85)
-
-    readr::write_tsv(
+  fst::write.fst(
     x = metadata,
     path = file.path(path.folder, stringi::stri_replace_all_fixed(metadata.file, ".rad", "_filtered.rad", vectorize_all = FALSE)),
-    )
+    compress =85)
+
+  # readr::write_tsv(
+  # x = metadata,
+  # path = file.path(path.folder, stringi::stri_replace_all_fixed(metadata.file, ".rad", "_filtered.rad", vectorize_all = FALSE)),
+  # )
 
   # Data quality AFTER filters --------------------------------------------------
   setwd(path.folder)
@@ -1236,11 +1234,6 @@ on the number of genotyped individuals per pop ? (overall or pop):")
     }
     mixed.genomes.analysis <- NULL
   }# End mixed genomes
-
-  # fst::write.fst(
-  #   x = input,
-  #   path = file.path(path.folder, "yft.mix.rad"),
-  #   compress = 85)
 
   # Detect duplicate genomes ---------------------------------------------------
   genome <- duplicate.genomes.analysis[2]
@@ -1388,7 +1381,7 @@ on the number of genotyped individuals per pop ? (overall or pop):")
   # write tidy to working directory
   if (!is.null(filename)) {
     tidy.name <- stringi::stri_join(filename, ".filtered.rad")
-    #fst::write.fst(x = res$tidy.data, path = tidy.name, compress = 85)
+    fst::write.fst(x = res$tidy.data, path = tidy.name, compress = 85)
     message("Tidy DArT data, filtered, written to folder: \n", tidy.name)
   }
 
