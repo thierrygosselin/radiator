@@ -48,6 +48,7 @@ Remotes:
   github::kvnkuang/pbmcapply,
   github::Rdatatable/data.table@9d1f3e2,
   github::fstPackage/fst@b6eadb4
+License: GPL (>=2)
 LazyLoad: yes
 VignetteBuilder: knitr
 RoxygenNote: 6.0.1

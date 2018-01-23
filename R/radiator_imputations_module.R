@@ -362,940 +362,944 @@ radiator_imputations_module <- function(
     message("Returning the tidy dataset")
     input.imp <- data
   } else {
-  message("Imputation method: ", imputation.method)
-  message("Hierarchical levels: ", hierarchical.levels)
-  # message("Markers linkage: ", markers.linkage, "\n")
+    message("Imputation method: ", imputation.method)
+    message("Hierarchical levels: ", hierarchical.levels)
+    # message("Markers linkage: ", markers.linkage, "\n")
 
-  # Capture unevaluated ...
-  # Inspired by Eric Anderson and Hadley Wickham codes
-  # could also importFrom pryr::named_dots
+    # Capture unevaluated ...
+    # Inspired by Eric Anderson and Hadley Wickham codes
+    # could also importFrom pryr::named_dots
 
-  dotslist <- list(...)
-  unknowned_param <- setdiff(
-    names(dotslist),
-    c("eta", "gamma", "max_depth", "min_child_weight", "subsample", "colsample_bytree",
-      "num_parallel_tree", "nrounds", "save_name", "early_stopping_rounds",
-      "nodesize", "nsplit", "nimpute", "ncp"))
+    dotslist <- list(...)
+    unknowned_param <- setdiff(
+      names(dotslist),
+      c("eta", "gamma", "max_depth", "min_child_weight", "subsample", "colsample_bytree",
+        "num_parallel_tree", "nrounds", "save_name", "early_stopping_rounds",
+        "nodesize", "nsplit", "nimpute", "ncp"))
 
-  if (length(unknowned_param) > 0) {
-    stop("Unknowned \"...\" parameters ",
-         stringi::stri_join(unknowned_param, collapse = " "),
-         " to radiator imputation module")
-  }
-
-  boost.dots <- dotslist[names(dotslist) %in%
-                           c("eta", "gamma", "max_depth", "min_child_weight",
-                             "subsample", "colsample_bytree",
-                             "num_parallel_tree", "nrounds", "save_name",
-                             "early_stopping_rounds", "nodesize", "nsplit",
-                             "nimpute", "ncp")]
-
-  # learning rate
-  if (!is.null(boost.dots[["eta"]])) {
-    eta <- boost.dots[["eta"]]
-  } else {
-    eta = 0.1
-  }
-
-  # gamma for minimum loss reduction (larger the number, more conservative the algorithm)
-  # prevent overfitting through regularization
-  if (!is.null(boost.dots[["gamma"]])) {
-    gamma <- boost.dots[["gamma"]]
-  } else {
-    gamma = 0
-  }
-
-  # max_depth
-  if (!is.null(boost.dots[["max_depth"]])) {
-    max_depth <- boost.dots[["max_depth"]]
-  } else {
-    max_depth = 6
-  }
-
-  # min_child_weight: minimum sum of instance weight (hessian) needed in a child.
-  if (!is.null(boost.dots[["min_child_weight"]])) {
-    min_child_weight <- boost.dots[["min_child_weight"]]
-  } else {
-    min_child_weight = 1
-  }
-
-  # subsample: subsample ratio of the training instance for growing tree and prevent overfitting
-  if (!is.null(boost.dots[["subsample"]])) {
-    subsample <- boost.dots[["subsample"]]
-  } else {
-    subsample = 0.5
-  }
-
-  # colsample_bytree: subsample ratio of columns when growing each tree
-  if (!is.null(boost.dots[["colsample_bytree"]])) {
-    colsample_bytree <- boost.dots[["colsample_bytree"]]
-  } else {
-    colsample_bytree = 1
-  }
-
-  # num_parallel_tree: Experimental parameter.
-  # number of trees to grow per round.
-  if (!is.null(boost.dots[["num_parallel_tree"]])) {
-    num_parallel_tree <- boost.dots[["num_parallel_tree"]]
-  } else {
-    num_parallel_tree = 1
-  }
-
-  # nrounds: the max number of iterations
-  if (!is.null(boost.dots[["nrounds"]])) {
-    nrounds <- boost.dots[["nrounds"]]
-  } else {
-    nrounds = 2000
-  }
-  # save_name: the name or path for periodically saved model file
-  if (!is.null(boost.dots[["save_name"]])) {
-    save_name <- boost.dots[["save_name"]]
-  } else {
-    save_name = "imputation.model.temp"
-  }
-
-  # early_stopping_rounds: If NULL, the early stopping function is not triggered.
-  # If set to an integer k, training with a validation set will stop
-  # if the performance doesn't improve for k rounds.
-  if (!is.null(boost.dots[["early_stopping_rounds"]])) {
-    early_stopping_rounds <- boost.dots[["early_stopping_rounds"]]
-  } else {
-    early_stopping_rounds = 20
-  }
-
-
-  # randomForestSRC arguments--------------------------------------------------
-  if (!is.null(boost.dots[["nodesize"]])) {
-    nodesize <- boost.dots[["nodesize"]]
-  } else {
-    nodesize = 1
-  }
-  if (!is.null(boost.dots[["nsplit"]])) {
-    nsplit <- boost.dots[["nsplit"]]
-  } else {
-    nsplit = 10
-  }
-  if (!is.null(boost.dots[["nimpute"]])) {
-    nimpute <- boost.dots[["nimpute"]]
-  } else {
-    nimpute = 10
-  }
-
-  if (!is.null(boost.dots[["ncp"]])) {
-    ncp <- boost.dots[["ncp"]]
-  } else {
-    ncp = 2
-  }
-
-  if (verbose) {
-    if (imputation.method == "boost") {
-      message("Extreme gradient tree boosting options:")
-      message("    learning rate: ", eta)
-      message("    regularization, minimum loss reduction (gamma): ", gamma)
-      message("    maximum depth of tree: ", max_depth)
-      message("    minimum sum of instance weight: ", min_child_weight)
-      message("    subsample ratio for training when growing trees (prevent overfitting): ", subsample)
-      message("    subsample ratio of columns when growing trees: ", colsample_bytree)
-      message("    number of trees to grow per round: ", num_parallel_tree)
-      message("    max number of iterations: ", nrounds)
-      message("    filename for the model for periodical saving: ", save_name)
-      message("    early stopping round integer: ", early_stopping_rounds, "\n")
+    if (length(unknowned_param) > 0) {
+      stop("Unknowned \"...\" parameters ",
+           stringi::stri_join(unknowned_param, collapse = " "),
+           " to radiator imputation module")
     }
 
-    if (imputation.method == "rf") {
-      message("On-the-fly-imputations options:")
-      message("    number of trees to grow: ", num.tree)
-      message("    minimum terminal node size: ", nodesize)
-      message("    non-negative integer value used to specify random splitting: ", nsplit)
-      message("    number of iterations: ", nimpute)
-    }
+    boost.dots <- dotslist[names(dotslist) %in%
+                             c("eta", "gamma", "max_depth", "min_child_weight",
+                               "subsample", "colsample_bytree",
+                               "num_parallel_tree", "nrounds", "save_name",
+                               "early_stopping_rounds", "nodesize", "nsplit",
+                               "nimpute", "ncp")]
 
-    if (imputation.method == "rf_pred") {
-      message("Random Forests options:")
-      message("    number of trees: ", num.tree)
-      message("    minimum terminal node size: ", nodesize)
-      message("    non-negative integer value used to specify random splitting: ", nsplit)
-      message("    number of iterations: ", nimpute)
-      message("    predictive mean matching: ", pred.mean.matching, "\n")
-    }
-
-    if (imputation.method == "mca") {
-      message("Multiple Correspondence Analysis options:")
-      message("    number of dimentions used to predict the missing values: ", ncp)
-      message("    MCA algorithm: Regularized")
-    }
-
-    message("Number of CPUs: ", parallel.core)
-    message("Note: If you have speed issues: follow radiator's vignette on parallel computing\n")
-    if (!is.null(filename)) message("Filename: ", filename)
-  }
-  # Checking for missing and/or default arguments ------------------------------
-  if (missing(data)) stop("Input file missing")
-
-  # Set seed for sampling reproducibility
-  if (is.null(random.seed)) {
-    random.seed <- sample(x = 1:1000000, size = 1)
-    set.seed(random.seed)
-  } else {
-    set.seed(random.seed)
-  }
-
-  # Import data ---------------------------------------------------------------
-  if (is.vector(data)) {
-    input <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-  } else {
-    input <- data
-  }
-  data <- NULL #unused object
-
-  message("\nNumber of populations: ", dplyr::n_distinct(input$POP_ID))
-  message("Number of individuals: ", dplyr::n_distinct(input$INDIVIDUALS))
-  message("Number of markers: ", dplyr::n_distinct(input$MARKERS))
-
-  # output the proportion of missing genotypes BEFORE imputations
-  na.before <- dplyr::summarise(.data = input, MISSING = round(length(GT[GT == "000000"])/length(GT), 6)) %>%
-    purrr::flatten_dbl(.) %>% format(., scientific = FALSE)
-  message("\nProportion of missing genotypes before imputations: ", na.before)
-
-  # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-  if (!tibble::has_name(input, "MARKERS") && tibble::has_name(input, "LOCUS")) {
-    input <- dplyr::rename(.data = input, MARKERS = LOCUS)
-  }
-
-  # New simple id for markers, because
-  # formula in RF difficult with markers containing separators and numbers
-  if (imputation.method %in% c("rf", "boost")) {
-    marker.meta <- dplyr::distinct(.data = input, MARKERS) %>%
-      dplyr::mutate(NEW_MARKERS = stringi::stri_join("M", seq(1, nrow(.))))
-    input <- dplyr::full_join(marker.meta, input, by = "MARKERS")
-    if (tibble::has_name(input, "CHROM") && tibble::has_name(input, "LOCUS") && tibble::has_name(input, "POS")) {
-      marker.meta <- dplyr::distinct(.data = input, NEW_MARKERS, MARKERS, CHROM, LOCUS, POS)
-    }
-    input <- dplyr::select(.data = input, -MARKERS) %>%
-      dplyr::rename(MARKERS = NEW_MARKERS)
-  } else {
-    # not sure necessary for max, need checking
-    # scan for the columnn CHROM and keep the info to include back after imputations
-    if (tibble::has_name(input, "CHROM") && tibble::has_name(input, "LOCUS") && tibble::has_name(input, "POS")) {
-      marker.meta <- dplyr::distinct(.data = input, MARKERS, CHROM, LOCUS, POS)
+    # learning rate
+    if (!is.null(boost.dots[["eta"]])) {
+      eta <- boost.dots[["eta"]]
     } else {
-      marker.meta <- dplyr::distinct(.data = input, MARKERS)
+      eta = 0.1
     }
-  }
 
-  # scan for REF allele column
-  if (tibble::has_name(input, "REF")) {
-    ref.column <- TRUE
-  } else {
-    ref.column <- FALSE
-  }
-  biallelic <- radiator::detect_biallelic_markers(data = input)
+    # gamma for minimum loss reduction (larger the number, more conservative the algorithm)
+    # prevent overfitting through regularization
+    if (!is.null(boost.dots[["gamma"]])) {
+      gamma <- boost.dots[["gamma"]]
+    } else {
+      gamma = 0
+    }
+
+    # max_depth
+    if (!is.null(boost.dots[["max_depth"]])) {
+      max_depth <- boost.dots[["max_depth"]]
+    } else {
+      max_depth = 6
+    }
+
+    # min_child_weight: minimum sum of instance weight (hessian) needed in a child.
+    if (!is.null(boost.dots[["min_child_weight"]])) {
+      min_child_weight <- boost.dots[["min_child_weight"]]
+    } else {
+      min_child_weight = 1
+    }
+
+    # subsample: subsample ratio of the training instance for growing tree and prevent overfitting
+    if (!is.null(boost.dots[["subsample"]])) {
+      subsample <- boost.dots[["subsample"]]
+    } else {
+      subsample = 0.5
+    }
+
+    # colsample_bytree: subsample ratio of columns when growing each tree
+    if (!is.null(boost.dots[["colsample_bytree"]])) {
+      colsample_bytree <- boost.dots[["colsample_bytree"]]
+    } else {
+      colsample_bytree = 1
+    }
+
+    # num_parallel_tree: Experimental parameter.
+    # number of trees to grow per round.
+    if (!is.null(boost.dots[["num_parallel_tree"]])) {
+      num_parallel_tree <- boost.dots[["num_parallel_tree"]]
+    } else {
+      num_parallel_tree = 1
+    }
+
+    # nrounds: the max number of iterations
+    if (!is.null(boost.dots[["nrounds"]])) {
+      nrounds <- boost.dots[["nrounds"]]
+    } else {
+      nrounds = 2000
+    }
+    # save_name: the name or path for periodically saved model file
+    if (!is.null(boost.dots[["save_name"]])) {
+      save_name <- boost.dots[["save_name"]]
+    } else {
+      save_name = "imputation.model.temp"
+    }
+
+    # early_stopping_rounds: If NULL, the early stopping function is not triggered.
+    # If set to an integer k, training with a validation set will stop
+    # if the performance doesn't improve for k rounds.
+    if (!is.null(boost.dots[["early_stopping_rounds"]])) {
+      early_stopping_rounds <- boost.dots[["early_stopping_rounds"]]
+    } else {
+      early_stopping_rounds = 20
+    }
 
 
-  # Manage Genotype Likelihood -------------------------------------------------
-  if (tibble::has_name(input, "GL")) {
-    if (verbose) message("\nGenotype likelihood (GL) column detected")
-  }
-  have <- colnames(input)
+    # randomForestSRC arguments--------------------------------------------------
+    if (!is.null(boost.dots[["nodesize"]])) {
+      nodesize <- boost.dots[["nodesize"]]
+    } else {
+      nodesize = 1
+    }
+    if (!is.null(boost.dots[["nsplit"]])) {
+      nsplit <- boost.dots[["nsplit"]]
+    } else {
+      nsplit = 10
+    }
+    if (!is.null(boost.dots[["nimpute"]])) {
+      nimpute <- boost.dots[["nimpute"]]
+    } else {
+      nimpute = 10
+    }
 
-  # For haplotype VCF
-  if (!biallelic && ref.column && tibble::has_name(input, "GT_VCF_NUC")) {
-    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "POP_ID", "INDIVIDUALS", "GT_VCF_NUC", "GL")
-    selected.columns <- purrr::keep(.x = have, .p = have %in% want)
+    if (!is.null(boost.dots[["ncp"]])) {
+      ncp <- boost.dots[["ncp"]]
+    } else {
+      ncp = 2
+    }
 
-    input <- dplyr::select(.data = input,
-                           dplyr::one_of(selected.columns)) %>%
-      dplyr::mutate(GT = replace(GT_VCF_NUC, which(GT_VCF_NUC == "./."), NA)) %>%
-      dplyr::select(-GT_VCF_NUC)
-  } else {
-    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "POP_ID", "INDIVIDUALS", "GT", "GL")
-    selected.columns <- purrr::keep(.x = have, .p = have %in% want)
 
-    input <- dplyr::select(.data = input,
-                           dplyr::one_of(selected.columns)) %>%
-      dplyr::mutate(GT = replace(GT, which(GT == "000000"), NA))
-  }
+    # message arguments --------------------------------------------------------
+    if (verbose) {
+      if (imputation.method == "boost") {
+        message("Extreme gradient tree boosting options:")
+        message("    learning rate: ", eta)
+        message("    regularization, minimum loss reduction (gamma): ", gamma)
+        message("    maximum depth of tree: ", max_depth)
+        message("    minimum sum of instance weight: ", min_child_weight)
+        message("    subsample ratio for training when growing trees (prevent overfitting): ", subsample)
+        message("    subsample ratio of columns when growing trees: ", colsample_bytree)
+        message("    number of trees to grow per round: ", num_parallel_tree)
+        message("    max number of iterations: ", nrounds)
+        message("    filename for the model for periodical saving: ", save_name)
+        message("    early stopping round integer: ", early_stopping_rounds, "\n")
+      }
 
-  have <- want <- selected.columns <- NULL
-  # keep stratification
-  strata.before <- dplyr::distinct(.data = input, INDIVIDUALS, POP_ID)
+      if (imputation.method == "rf") {
+        message("On-the-fly-imputations options:")
+        message("    number of trees to grow: ", num.tree)
+        message("    minimum terminal node size: ", nodesize)
+        message("    non-negative integer value used to specify random splitting: ", nsplit)
+        message("    number of iterations: ", nimpute)
+      }
 
-  # SNP/haplotype approach -----------------------------------------------------
-  # detect the presence of SNP/LOCUS info and combine SNPs on the same RADseq locus together
+      if (imputation.method == "rf_pred") {
+        message("Random Forests options:")
+        message("    number of trees: ", num.tree)
+        message("    minimum terminal node size: ", nodesize)
+        message("    non-negative integer value used to specify random splitting: ", nsplit)
+        message("    number of iterations: ", nimpute)
+        message("    predictive mean matching: ", pred.mean.matching, "\n")
+      }
 
-  if (tibble::has_name(input, "CHROM") && tibble::has_name(input, "LOCUS") && imputation.method != "max") {
-    input <- tidyr::unite(data = input, col = CHROM_LOCUS, CHROM, LOCUS) %>%
-      dplyr::select(-POS) # no longer necessary info in MARKERS
+      if (imputation.method == "mca") {
+        message("Multiple Correspondence Analysis options:")
+        message("    number of dimentions used to predict the missing values: ", ncp)
+        message("    MCA algorithm: Regularized")
+      }
 
-    # Locus with > 1 SNP
-    snp.number <- dplyr::distinct(.data = input, MARKERS, CHROM_LOCUS) %>%
-      dplyr::count(CHROM_LOCUS)
+      message("Number of CPUs: ", parallel.core)
+      message("Note: If you have speed issues: follow radiator's vignette on parallel computing\n")
+      if (!is.null(filename)) message("Filename: ", filename)
+    }
+    # Checking for missing and/or default arguments ------------------------------
+    if (missing(data)) stop("Input file missing")
 
-    if (max(snp.number$n) > 1) {
-      if (verbose) message("Encoding SNPs into haplotypes: combining SNPs into groups defined by chromosomes and locus info")
+    # Set seed for sampling reproducibility
+    if (is.null(random.seed)) {
+      random.seed <- sample(x = 1:1000000, size = 1)
+      set.seed(random.seed)
+    } else {
+      set.seed(random.seed)
+    }
 
-      if (tibble::has_name(input, "GL")) {
-        keep.gl <- dplyr::ungroup(input) %>%
-          dplyr::filter(!is.na(GL)) %>%
-          dplyr::distinct(CHROM_LOCUS, POP_ID, INDIVIDUALS, GL) %>%
-          dplyr::group_by(CHROM_LOCUS, POP_ID, INDIVIDUALS) %>%
-          dplyr::summarise(GL = mean(GL))
-        input <- dplyr::select(.data = input, -GL)
+    # Import data ---------------------------------------------------------------
+    if (is.vector(data)) {
+      input <- radiator::tidy_wide(data = data, import.metadata = TRUE)
+    } else {
+      input <- data
+    }
+    data <- NULL #unused object
+
+    message("\nNumber of populations: ", dplyr::n_distinct(input$POP_ID))
+    message("Number of individuals: ", dplyr::n_distinct(input$INDIVIDUALS))
+    message("Number of markers: ", dplyr::n_distinct(input$MARKERS))
+
+    # output the proportion of missing genotypes BEFORE imputations
+    na.before <- dplyr::summarise(.data = input, MISSING = round(length(GT[GT == "000000"])/length(GT), 6)) %>%
+      purrr::flatten_dbl(.) %>% format(., scientific = FALSE)
+    message("\nProportion of missing genotypes before imputations: ", na.before)
+
+    # necessary steps to make sure we work with unique markers and not duplicated LOCUS
+    if (!tibble::has_name(input, "MARKERS") && tibble::has_name(input, "LOCUS")) {
+      input <- dplyr::rename(.data = input, MARKERS = LOCUS)
+    }
+
+    # New simple id for markers, because
+    # formula in RF difficult with markers containing separators and numbers
+    if (imputation.method %in% c("rf", "boost")) {
+      marker.meta <- dplyr::distinct(.data = input, MARKERS) %>%
+        dplyr::mutate(NEW_MARKERS = stringi::stri_join("M", seq(1, nrow(.))))
+      input <- dplyr::full_join(marker.meta, input, by = "MARKERS")
+      if (tibble::has_name(input, "CHROM") && tibble::has_name(input, "LOCUS") && tibble::has_name(input, "POS")) {
+        marker.meta <- dplyr::distinct(.data = input, NEW_MARKERS, MARKERS, CHROM, LOCUS, POS)
+      }
+      input <- dplyr::select(.data = input, -MARKERS) %>%
+        dplyr::rename(MARKERS = NEW_MARKERS)
+    } else {
+      # not sure necessary for max, need checking
+      # scan for the columnn CHROM and keep the info to include back after imputations
+      if (tibble::has_name(input, "CHROM") && tibble::has_name(input, "LOCUS") && tibble::has_name(input, "POS")) {
+        marker.meta <- dplyr::distinct(.data = input, MARKERS, CHROM, LOCUS, POS)
       } else {
-        keep.gl <- NULL
+        marker.meta <- dplyr::distinct(.data = input, MARKERS)
       }
+    }
 
-      locus.multiple.snp <- dplyr::filter(.data = snp.number, n > 1) %>%
-        dplyr::select(CHROM_LOCUS) %>%
-        purrr::flatten_chr(.)
-      data.multiple.snp <- dplyr::filter(.data = input, CHROM_LOCUS %in% locus.multiple.snp)
-      data.one.snp <- dplyr::filter(.data = input, !CHROM_LOCUS %in% locus.multiple.snp)
-      if (length(locus.multiple.snp) > 100) {
-        # parallel
-        input <- list()
-        input <- .radiator_parallel_mc(
-          X = locus.multiple.snp,
-          FUN = radiator::rad_encoding_snp,
-          mc.cores = parallel.core,
-          data = data.multiple.snp
-        ) %>% dplyr::bind_rows(.) %>%
-          dplyr::bind_rows(data.one.snp)
+    # scan for REF allele column
+    if (tibble::has_name(input, "REF")) {
+      ref.column <- TRUE
+    } else {
+      ref.column <- FALSE
+    }
+    biallelic <- radiator::detect_biallelic_markers(data = input)
+
+
+    # Manage Genotype Likelihood -------------------------------------------------
+    if (tibble::has_name(input, "GL")) {
+      if (verbose) message("\nGenotype likelihood (GL) column detected")
+    }
+    have <- colnames(input)
+
+    # For haplotype VCF
+    if (!biallelic && ref.column && tibble::has_name(input, "GT_VCF_NUC")) {
+      haplo.vcf.check <- TRUE
+      want <- c("MARKERS", "CHROM", "LOCUS", "POS", "POP_ID", "INDIVIDUALS", "GT_VCF_NUC", "GL")
+      selected.columns <- purrr::keep(.x = have, .p = have %in% want)
+
+      input <- dplyr::select(.data = input,
+                             dplyr::one_of(selected.columns)) %>%
+        dplyr::mutate(GT = replace(GT_VCF_NUC, which(GT_VCF_NUC == "./."), NA)) %>%
+        dplyr::select(-GT_VCF_NUC)
+    } else {
+      haplo.vcf.check <- FALSE
+      want <- c("MARKERS", "CHROM", "LOCUS", "POS", "POP_ID", "INDIVIDUALS", "GT", "GL")
+      selected.columns <- purrr::keep(.x = have, .p = have %in% want)
+
+      input <- dplyr::select(.data = input,
+                             dplyr::one_of(selected.columns)) %>%
+        dplyr::mutate(GT = replace(GT, which(GT == "000000"), NA))
+    }
+
+    have <- want <- selected.columns <- NULL
+    # keep stratification
+    strata.before <- dplyr::distinct(.data = input, INDIVIDUALS, POP_ID)
+
+    # SNP/haplotype approach -----------------------------------------------------
+    # detect the presence of SNP/LOCUS info and combine SNPs on the same RADseq locus together
+
+    if (tibble::has_name(input, "CHROM") && tibble::has_name(input, "LOCUS") && imputation.method != "max") {
+      input <- tidyr::unite(data = input, col = CHROM_LOCUS, CHROM, LOCUS) %>%
+        dplyr::select(-POS) # no longer necessary info in MARKERS
+
+      # Locus with > 1 SNP
+      snp.number <- dplyr::distinct(.data = input, MARKERS, CHROM_LOCUS) %>%
+        dplyr::count(CHROM_LOCUS)
+
+      if (max(snp.number$n) > 1) {
+        if (verbose) message("Encoding SNPs into haplotypes: combining SNPs into groups defined by chromosomes and locus info")
+
+        if (tibble::has_name(input, "GL")) {
+          keep.gl <- dplyr::ungroup(input) %>%
+            dplyr::filter(!is.na(GL)) %>%
+            dplyr::distinct(CHROM_LOCUS, POP_ID, INDIVIDUALS, GL) %>%
+            dplyr::group_by(CHROM_LOCUS, POP_ID, INDIVIDUALS) %>%
+            dplyr::summarise(GL = mean(GL))
+          input <- dplyr::select(.data = input, -GL)
+        } else {
+          keep.gl <- NULL
+        }
+
+        locus.multiple.snp <- dplyr::filter(.data = snp.number, n > 1) %>%
+          dplyr::select(CHROM_LOCUS) %>%
+          purrr::flatten_chr(.)
+        data.multiple.snp <- dplyr::filter(.data = input, CHROM_LOCUS %in% locus.multiple.snp)
+        data.one.snp <- dplyr::filter(.data = input, !CHROM_LOCUS %in% locus.multiple.snp)
+        if (length(locus.multiple.snp) > 100) {
+          # parallel
+          input <- list()
+          input <- .radiator_parallel_mc(
+            X = locus.multiple.snp,
+            FUN = radiator::rad_encoding_snp,
+            mc.cores = parallel.core,
+            data = data.multiple.snp
+          ) %>% dplyr::bind_rows(.) %>%
+            dplyr::bind_rows(data.one.snp)
+        } else {
+          input <- purrr::map(.x = locus.multiple.snp,
+                              .f = radiator::rad_encoding_snp,
+                              data = data.multiple.snp) %>%
+            dplyr::bind_rows(.) %>%
+            dplyr::bind_rows(data.one.snp)
+        }
+
+        # include GL back and use relative measure group_by locus
+        if (!is.null(keep.gl)) {
+          input <- dplyr::filter(.data = input, !is.na(GT)) %>%
+            dplyr::select(CHROM_LOCUS, POP_ID, INDIVIDUALS) %>%
+            dplyr::left_join(keep.gl, by = c("CHROM_LOCUS", "POP_ID", "INDIVIDUALS")) %>%
+            dplyr::right_join(input, by = c("CHROM_LOCUS", "POP_ID", "INDIVIDUALS")) %>%
+            dplyr::select(MARKERS, CHROM_LOCUS, POP_ID, INDIVIDUALS, GT, GL) %>%
+            dplyr::group_by(CHROM_LOCUS) %>%
+            dplyr::mutate(GL = GL/max(GL, na.rm = TRUE)) %>%
+            dplyr::ungroup(.)
+        }
+        separate.haplo <- TRUE
+        data.multiple.snp <- data.one.snp <- snp.number <- keep.gl <- NULL
       } else {
-        input <- purrr::map(.x = locus.multiple.snp,
-                            .f = radiator::rad_encoding_snp,
-                            data = data.multiple.snp) %>%
-          dplyr::bind_rows(.) %>%
-          dplyr::bind_rows(data.one.snp)
+        separate.haplo <- FALSE
       }
+      # End of grouping SNPs
 
-      # include GL back and use relative measure group_by locus
-      if (!is.null(keep.gl)) {
-        input <- dplyr::filter(.data = input, !is.na(GT)) %>%
-          dplyr::select(CHROM_LOCUS, POP_ID, INDIVIDUALS) %>%
-          dplyr::left_join(keep.gl, by = c("CHROM_LOCUS", "POP_ID", "INDIVIDUALS")) %>%
-          dplyr::right_join(input, by = c("CHROM_LOCUS", "POP_ID", "INDIVIDUALS")) %>%
-          dplyr::select(MARKERS, CHROM_LOCUS, POP_ID, INDIVIDUALS, GT, GL) %>%
-          dplyr::group_by(CHROM_LOCUS) %>%
-          dplyr::mutate(GL = GL/max(GL, na.rm = TRUE)) %>%
-          dplyr::ungroup(.)
-      }
-      separate.haplo <- TRUE
-      data.multiple.snp <- data.one.snp <- snp.number <- keep.gl <- NULL
+      input <- dplyr::select(.data = input, -CHROM_LOCUS)
     } else {
       separate.haplo <- FALSE
-    }
-    # End of grouping SNPs
+    }#End preparing SNP/haplo approach
 
-    input <- dplyr::select(.data = input, -CHROM_LOCUS)
-  } else {
-    separate.haplo <- FALSE
-  }#End preparing SNP/haplo approach
-
-  # Strawman imputations (max) -------------------------------------------------
-  if (imputation.method == "max") {
-    if (hierarchical.levels == "strata") {
-      if (verbose) message("Using the most observed genotype per marker/strata for imputations")
-      if (tibble::has_name(input, "GL")) {
-        input.imp <- dplyr::select(input, MARKERS, POP_ID, INDIVIDUALS, GT, GL) %>%
-          dplyr::group_by(MARKERS, POP_ID) %>%
-          dplyr::mutate(
-            GT = stringi::stri_replace_na(GT, replacement = max(GT, na.rm = TRUE)),
-            GT = replace(GT, which(GT == "NA"), NA),
-            GL = stringi::stri_replace_na(GL, replacement = mean(GL, na.rm = TRUE)),
-            GL = replace(GL, which(GL == "NA"), NA),
-            GL = as.numeric(GL)) %>%
-          dplyr::ungroup(.)
-      } else {
-        input.imp <- dplyr::select(input, MARKERS, POP_ID, INDIVIDUALS, GT) %>%
-          dplyr::group_by(MARKERS, POP_ID) %>%
-          dplyr::mutate(GT = stringi::stri_replace_na(GT, replacement = max(GT, na.rm = TRUE)),
-                        GT = replace(GT, which(GT == "NA"), NA)) %>%
-          dplyr::ungroup(.)
-      }
-      input <- NULL
-      # detect remaining NA
-      # e.g. if one strata is missing all GT... when not using common markers
-      # if (anyNA(data.one.snp)) {
-      #   warning("Missing data is still present in the dataset",
-      #           "\n    2 options:",
-      #           "\n    run the function again with hierarchical.levels = 'global'",
-      #           "\n    use common.markers = TRUE when using hierarchical.levels = 'strata'")
-      # }
-    }# End imputation max populations
-
-    # global
-    if (hierarchical.levels == "global") {
-      if (verbose) message("Using the most observed genotype per marker for imputations")
-      if (tibble::has_name(input, "GL")) {
-        input.imp <- dplyr::select(input, MARKERS, POP_ID, INDIVIDUALS, GT, GL) %>%
-          dplyr::group_by(MARKERS) %>%
-          dplyr::mutate(
-            GT = stringi::stri_replace_na(str = GT, replacement = max(GT, na.rm = TRUE)),
-            GL = as.numeric(stringi::stri_replace_na(str = GL, replacement = mean(GL, na.rm = TRUE)))
-          ) %>%
-          dplyr::ungroup(.)
-      } else {
-        input.imp <- dplyr::select(input, MARKERS, POP_ID, INDIVIDUALS, GT) %>%
-          dplyr::group_by(MARKERS) %>%
-          dplyr::mutate(GT = stringi::stri_replace_na(str = GT, replacement = max(GT, na.rm = TRUE))) %>%
-          dplyr::ungroup(.)
-      }
-      input <- NULL
-    } # End imputation max global
-  }#End imputation max
-
-  # Imputation with Random Forests and tree boosting ---------------------------
-  ### Note to myself: Need to add CHROM hierarchy (by markers inside CHROM, one at a time)
-
-  if (imputation.method %in% c("rf", "boost", "mca")) {
-    # Vector of markers
-    marker.list <- dplyr::distinct(input, MARKERS) %>% purrr::flatten_chr(.)
-
-    # Simple imputation with monomorphic markers -------------------------------
-
-    # Problem encountered:
-    # Merged SNPs might end up be missing if one of the SNP on the read is missing
-    # It's usually safer to delete the whole genotype and impute it back,
-    # instead of creating weird chimeras
-
-    # In some dataset I've seen markers becomming monomorphic after this change
-    # These markers have very very very low polymorphism and further test are
-    # required to validate this technique. I think that better filtering (MAF, etc.)
-    # can remove those problem...
-
-    if (hierarchical.levels == "strata") {
-      # First: dont' waist time imputing, some screening first
-      # The small cost in time is worth it,
-      # because model in RF and xgboost will benefit having more complete and reliable genotypes
-      if (verbose) message("Scanning dataset for population(s) with monomorphic marker(s)...")
-      # scanning for populations with one genotype group
-      scan.pop <- dplyr::group_by(.data = input, MARKERS, POP_ID, GT) %>%
-        dplyr::tally(.)
-
-      markers.pop.na <- dplyr::filter(.data = scan.pop, is.na(GT)) %>%
-        dplyr::select(MARKERS, POP_ID)
-
-      if (nrow(markers.pop.na) > 1) {
-        simple.imputation <- dplyr::filter(.data = scan.pop, !is.na(GT)) %>%
-          dplyr::select(-n) %>%
-          dplyr::group_by(MARKERS, POP_ID) %>%
-          dplyr::tally(.) %>%
-          dplyr::filter(n == 1) %>%
-          dplyr::select(MARKERS, POP_ID) %>%
-          dplyr::semi_join(markers.pop.na, by = c("MARKERS", "POP_ID"))
-
-        simple.imputation.number <- nrow(simple.imputation)
-
-        if (simple.imputation.number > 1) {
-          if (verbose) message("    Simple strawman imputations conducted on ", simple.imputation.number, " markers/pops combo")
-          # update marker.list
-          marker.list <- dplyr::anti_join(markers.pop.na, simple.imputation, by = c("MARKERS", "POP_ID")) %>%
-            dplyr::ungroup(.) %>%
-            dplyr::distinct(MARKERS) %>%
-            purrr::flatten_chr(.)
-
-          data.imp <- dplyr::inner_join(
-            input, simple.imputation, by = c("MARKERS", "POP_ID")) %>%
+    # Strawman imputations (max) -------------------------------------------------
+    if (imputation.method == "max") {
+      if (hierarchical.levels == "strata") {
+        if (verbose) message("Using the most observed genotype per marker/strata for imputations")
+        if (tibble::has_name(input, "GL")) {
+          input.imp <- dplyr::select(input, MARKERS, POP_ID, INDIVIDUALS, GT, GL) %>%
             dplyr::group_by(MARKERS, POP_ID) %>%
             dplyr::mutate(
-              GT = stringi::stri_replace_na(
-                GT, replacement = max(GT, na.rm = TRUE))) %>%
+              GT = stringi::stri_replace_na(GT, replacement = max(GT, na.rm = TRUE)),
+              GT = replace(GT, which(GT == "NA"), NA),
+              GL = stringi::stri_replace_na(GL, replacement = mean(GL, na.rm = TRUE)),
+              GL = replace(GL, which(GL == "NA"), NA),
+              GL = as.numeric(GL)) %>%
             dplyr::ungroup(.)
+        } else {
+          input.imp <- dplyr::select(input, MARKERS, POP_ID, INDIVIDUALS, GT) %>%
+            dplyr::group_by(MARKERS, POP_ID) %>%
+            dplyr::mutate(GT = stringi::stri_replace_na(GT, replacement = max(GT, na.rm = TRUE)),
+                          GT = replace(GT, which(GT == "NA"), NA)) %>%
+            dplyr::ungroup(.)
+        }
+        input <- NULL
+        # detect remaining NA
+        # e.g. if one strata is missing all GT... when not using common markers
+        # if (anyNA(data.one.snp)) {
+        #   warning("Missing data is still present in the dataset",
+        #           "\n    2 options:",
+        #           "\n    run the function again with hierarchical.levels = 'global'",
+        #           "\n    use common.markers = TRUE when using hierarchical.levels = 'strata'")
+        # }
+      }# End imputation max populations
 
-          # if GL is present give the mean value for the imputed genotype
-          # note to myself: update doc to say what you're doing here...
-          if (tibble::has_name(data.imp, "GL")) {
-            data.imp <- data.imp %>%
+      # global
+      if (hierarchical.levels == "global") {
+        if (verbose) message("Using the most observed genotype per marker for imputations")
+        if (tibble::has_name(input, "GL")) {
+          input.imp <- dplyr::select(input, MARKERS, POP_ID, INDIVIDUALS, GT, GL) %>%
+            dplyr::group_by(MARKERS) %>%
+            dplyr::mutate(
+              GT = stringi::stri_replace_na(str = GT, replacement = max(GT, na.rm = TRUE)),
+              GL = as.numeric(stringi::stri_replace_na(str = GL, replacement = mean(GL, na.rm = TRUE)))
+            ) %>%
+            dplyr::ungroup(.)
+        } else {
+          input.imp <- dplyr::select(input, MARKERS, POP_ID, INDIVIDUALS, GT) %>%
+            dplyr::group_by(MARKERS) %>%
+            dplyr::mutate(GT = stringi::stri_replace_na(str = GT, replacement = max(GT, na.rm = TRUE))) %>%
+            dplyr::ungroup(.)
+        }
+        input <- NULL
+      } # End imputation max global
+    }#End imputation max
+
+    # Imputation with Random Forests and tree boosting ---------------------------
+    ### Note to myself: Need to add CHROM hierarchy (by markers inside CHROM, one at a time)
+
+    if (imputation.method %in% c("rf", "boost", "mca")) {
+      # Vector of markers
+      marker.list <- dplyr::distinct(input, MARKERS) %>% purrr::flatten_chr(.)
+
+      # Simple imputation with monomorphic markers -------------------------------
+
+      # Problem encountered:
+      # Merged SNPs might end up be missing if one of the SNP on the read is missing
+      # It's usually safer to delete the whole genotype and impute it back,
+      # instead of creating weird chimeras
+
+      # In some dataset I've seen markers becomming monomorphic after this change
+      # These markers have very very very low polymorphism and further test are
+      # required to validate this technique. I think that better filtering (MAF, etc.)
+      # can remove those problem...
+
+      if (hierarchical.levels == "strata") {
+        # First: dont' waist time imputing, some screening first
+        # The small cost in time is worth it,
+        # because model in RF and xgboost will benefit having more complete and reliable genotypes
+        if (verbose) message("Scanning dataset for population(s) with monomorphic marker(s)...")
+        # scanning for populations with one genotype group
+        scan.pop <- dplyr::group_by(.data = input, MARKERS, POP_ID, GT) %>%
+          dplyr::tally(.)
+
+        markers.pop.na <- dplyr::filter(.data = scan.pop, is.na(GT)) %>%
+          dplyr::select(MARKERS, POP_ID)
+
+        if (nrow(markers.pop.na) > 1) {
+          simple.imputation <- dplyr::filter(.data = scan.pop, !is.na(GT)) %>%
+            dplyr::select(-n) %>%
+            dplyr::group_by(MARKERS, POP_ID) %>%
+            dplyr::tally(.) %>%
+            dplyr::filter(n == 1) %>%
+            dplyr::select(MARKERS, POP_ID) %>%
+            dplyr::semi_join(markers.pop.na, by = c("MARKERS", "POP_ID"))
+
+          simple.imputation.number <- nrow(simple.imputation)
+
+          if (simple.imputation.number > 1) {
+            if (verbose) message("    Simple strawman imputations conducted on ", simple.imputation.number, " markers/pops combo")
+            # update marker.list
+            marker.list <- dplyr::anti_join(markers.pop.na, simple.imputation, by = c("MARKERS", "POP_ID")) %>%
+              dplyr::ungroup(.) %>%
+              dplyr::distinct(MARKERS) %>%
+              purrr::flatten_chr(.)
+
+            data.imp <- dplyr::inner_join(
+              input, simple.imputation, by = c("MARKERS", "POP_ID")) %>%
               dplyr::group_by(MARKERS, POP_ID) %>%
-              dplyr::mutate(GL = as.numeric(stringi::stri_replace_na(GL, replacement = mean(GL, na.rm = TRUE)))) %>%
+              dplyr::mutate(
+                GT = stringi::stri_replace_na(
+                  GT, replacement = max(GT, na.rm = TRUE))) %>%
               dplyr::ungroup(.)
+
+            # if GL is present give the mean value for the imputed genotype
+            # note to myself: update doc to say what you're doing here...
+            if (tibble::has_name(data.imp, "GL")) {
+              data.imp <- data.imp %>%
+                dplyr::group_by(MARKERS, POP_ID) %>%
+                dplyr::mutate(GL = as.numeric(stringi::stri_replace_na(GL, replacement = mean(GL, na.rm = TRUE)))) %>%
+                dplyr::ungroup(.)
+            }
+            # update dataframe
+            input <- dplyr::anti_join(
+              input, simple.imputation, by = c("MARKERS", "POP_ID")) %>%
+              dplyr::bind_rows(data.imp) %>%
+              dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
+
+            # data.imp.bk <- dplyr::filter(input, !MARKERS %in% marker.list)
+
+            # if (nrow(data.imp.bk) <= 0) {
+            #   data.imp.bk <- NULL
+            # }
           }
-          # update dataframe
-          input <- dplyr::anti_join(
-            input, simple.imputation, by = c("MARKERS", "POP_ID")) %>%
-            dplyr::bind_rows(data.imp) %>%
-            dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
-
-          # data.imp.bk <- dplyr::filter(input, !MARKERS %in% marker.list)
-
-          # if (nrow(data.imp.bk) <= 0) {
+          # else {
           #   data.imp.bk <- NULL
           # }
         }
         # else {
         #   data.imp.bk <- NULL
         # }
-      }
-      # else {
-      #   data.imp.bk <- NULL
-      # }
-      # removed unused object
-      data.imp <- simple.imputation <- simple.imputation.number <- scan.pop <- markers.pop.na <- NULL
-    }# End imputation prep by pop
-
-    if (hierarchical.levels == "global") {
-      scan.markers.na <- dplyr::filter(input, is.na(GT)) %>%
-        dplyr::distinct(MARKERS) %>%
-        purrr::flatten_chr(.)
-
-      if (length(scan.markers.na) < length(marker.list)) {
-
-        simple.imputation <- dplyr::group_by(.data = input, MARKERS, GT) %>%
-          dplyr::tally(.) %>%
-          dplyr::filter(!is.na(GT)) %>%
-          dplyr::select(-n) %>%
-          dplyr::group_by(MARKERS) %>%
-          dplyr::tally(.) %>%
-          dplyr::filter(n == 1) %>%
-          dplyr::select(MARKERS) %>%
-          purrr::flatten_chr(.)
-
-        simple.imputation.number <- length(simple.imputation)
-        if (simple.imputation.number >= 1) {
-          if (verbose) message("Simple imputations conducted on ", simple.imputation.number, " markers")
-
-          data.imp <- dplyr::filter(input, MARKERS %in% simple.imputation) %>%
-            dplyr::group_by(MARKERS) %>%
-            dplyr::mutate(
-              GT = stringi::stri_replace_na(GT, replacement = max(GT, na.rm = TRUE))) %>%
-            dplyr::ungroup(.)
-
-          # if GL is present give the mean value for the imputed genotype
-          if (tibble::has_name(data.imp, "GL")) {
-            data.imp <- data.imp %>%
-              dplyr::group_by(MARKERS) %>%
-              dplyr::mutate(
-                GL = as.numeric(stringi::stri_replace_na(GL, replacement = mean(GL, na.rm = TRUE)))) %>%
-              dplyr::ungroup(.)
-          }
-
-          input <- dplyr::filter(input, !MARKERS %in% simple.imputation) %>%
-            dplyr::bind_rows(data.imp)
-
-          data.imp <- NULL
-
-          marker.list <- dplyr::filter(input, is.na(GT)) %>%
-            dplyr::distinct(MARKERS) %>%
-            purrr::flatten_chr(.)
-
-          # data.imp.bk <- dplyr::filter(input, !MARKERS %in% marker.list)
-        } else {
-          marker.list <- scan.markers.na
-          # data.imp.bk <- dplyr::filter(input, !MARKERS %in% marker.list)
-        }
-      }
-      # else {
-      # data.imp.bk <- NULL
-      # }
-      scan.markers.na <- NULL
-    }
-
-    # On-the-fly-imputations using Random Forests ------------------------------
-    if (imputation.method == "rf") {
-      if (verbose) message("On-the-fly-imputations using Random Forests algorithm")
-      # Parallel computations options
-      options(rf.cores = parallel.core, mc.cores = parallel.core)
-
-      # on-the-fly-imputations with randomForestSRC package
-      impute_rf <- function(
-        x,
-        num.tree = 10,
-        nodesize = 1,
-        # splitrule = "random",
-        nsplit = 10,
-        nimpute = 10,
-        verbose = FALSE,
-        hierarchical.levels = "strata") {
-
-        if (hierarchical.levels == "strata") {
-          message("        Imputations for pop: ", unique(x$POP_ID))
-          x <- dplyr::select(x, -POP_ID)
-        }
-
-        res <- randomForestSRC::impute.rfsrc(
-          data = data.frame(x),
-          ntree = num.tree,
-          nodesize = nodesize,
-          # splitrule = "random",
-          nsplit = nsplit, #split.number,
-          nimpute = nimpute, #iteration.rf,
-          do.trace = verbose)
-        return(res)
-      } # End on-the-fly imputation function
-
-      # Random Forest by pop
-      if (hierarchical.levels == "strata") {
-        message("    Imputations computed by strata, take a break...")
-
-        input.imp <- dplyr::select(input, MARKERS, POP_ID, INDIVIDUALS, GT) %>%
-          dplyr::group_by(POP_ID, INDIVIDUALS) %>%
-          tidyr::spread(data = ., key = MARKERS, value = GT) %>%
-          dplyr::ungroup(.) %>%
-          dplyr::mutate_all(.tbl = ., .funs = factor) %>%
-          split(x = ., f = .$POP_ID) %>%
-          purrr::map(.x = ., .f = impute_rf,
-                     num.tree = num.tree, nodesize = nodesize, nsplit = nsplit,
-                     nimpute = nimpute,
-                     verbose = FALSE,
-                     hierarchical.levels = "strata") %>%
-          dplyr::bind_rows(.) %>%
-          dplyr::mutate_all(.tbl = ., .funs = as.character) %>%
-          tidyr::gather(data = ., key = MARKERS, value = GT, -INDIVIDUALS) %>%
-          # Reintroduce the stratification (check if required)
-          dplyr::right_join(strata.before, by = "INDIVIDUALS") %>%
-          dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
-      }#End RF by pop
-
-      # Random Forests global
-      if (hierarchical.levels == "global") { # Globally/overall
-        if (verbose) message("Imputations computed globally, take a break...")
-
-        input.imp <- dplyr::select(input, MARKERS, INDIVIDUALS, GT) %>%
-          dplyr::group_by(INDIVIDUALS) %>%
-          tidyr::spread(data = ., key = MARKERS, value = GT) %>%
-          dplyr::ungroup(.) %>%
-          dplyr::mutate_all(.tbl = ., .funs = factor)
-
-        input.imp <- impute_rf(
-          x = input.imp,
-          num.tree = num.tree, nodesize = nodesize, nsplit = nsplit,
-          nimpute = nimpute, verbose = FALSE,
-          hierarchical.levels = "global") %>%
-          dplyr::mutate_all(.tbl = ., .funs = as.character) %>%
-          tidyr::gather(data = ., key = MARKERS, value = GT, -INDIVIDUALS) %>%
-          # Reintroduce the stratification (check if required)
-          dplyr::right_join(strata.before, by = "INDIVIDUALS") %>%
-          dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
-      } #End RF global
-
-
-      # separate the haplotypes/snp group
-      if (separate.haplo) {
-        if (verbose) message("Decoding haplotypes: separating SNPs on the same locus and chromosome, back to original data format")
-        input.imp <- radiator::rad_decoding_haplotypes(
-          data = input.imp, parallel.core = parallel.core)
-      }
-    }# End RF
-
-    # Random Forest imputation as a prediction problem -------------------------
-    if (imputation.method == "rf_pred") {
-      if (verbose) message("Using Random Forests algorithm as a prediction problem, take a break...")
-
-      if (hierarchical.levels == "strata") {
-        input.imp <- purrr::map(.x = input,
-                                .f = radiator::radiator_imputer,
-                                hierarchical.levels = hierarchical.levels,
-                                num.tree = num.tree,
-                                pred.mean.matching = pred.mean.matching,
-                                random.seed = random.seed,
-                                parallel.core = parallel.core) %>%
-          dplyr::bind_rows(.)
-      }
-
-      # Random Forests global
-      if (hierarchical.levels == "global") { # Globally/overall
-        # if (verbose) message("Imputations computed globally, take a break...")
-        input.rf.imp <- list() # to store results
-        input.rf.imp <- radiator::radiator_imputer(data = input,
-                                           hierarchical.levels = hierarchical.levels,
-                                           num.tree = num.tree,
-                                           pred.mean.matching = pred.mean.matching,
-                                           random.seed = random.seed,
-                                           parallel.core = parallel.core)
-      } # End imputation RF global
-
-
-    }# End rf_pred
-
-    # Extreme Gradient Boosting Tree Imputations -------------------------------
-    if (imputation.method == "boost") {
-      if (verbose) message("Using extreme gradient tree boosting algorithm, take a break...")
-
-      if (hierarchical.levels == "strata") {
-        input <- dplyr::ungroup(input) %>%
-          dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS) %>%
-          dplyr::mutate(
-            # GT_N = as.numeric(factor(replace(GT, which(is.na(GT)), 0))),
-            POP_ID_N = as.numeric(factor(POP_ID)),
-            INDIVIDUALS_N = as.numeric(factor(INDIVIDUALS))
-          ) %>%
-          dplyr::group_by(MARKERS) %>%
-          dplyr::mutate(GT_N = radiator::rad_factorize_gt(GT)) %>%
-          dplyr::ungroup(.)
-
-        input.wide <- dplyr::select(
-          .data = input,
-          MARKERS, POP_ID = POP_ID_N, INDIVIDUALS = INDIVIDUALS_N, GT = GT_N) %>%
-          dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS) %>%
-          dplyr::group_by(POP_ID, INDIVIDUALS) %>%
-          tidyr::spread(data = ., key = MARKERS, value = GT) %>%
-          dplyr::ungroup(.)
-      }
+        # removed unused object
+        data.imp <- simple.imputation <- simple.imputation.number <- scan.pop <- markers.pop.na <- NULL
+      }# End imputation prep by pop
 
       if (hierarchical.levels == "global") {
-        input <- dplyr::ungroup(input) %>%
-          dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS) %>%
-          dplyr::select(-POP_ID) %>%
-          dplyr::mutate(INDIVIDUALS_N = as.numeric(factor(INDIVIDUALS))) %>%
-          dplyr::group_by(MARKERS) %>%
-          dplyr::mutate(GT_N = radiator::rad_factorize_gt(GT)) %>%
-          dplyr::ungroup(.)
+        scan.markers.na <- dplyr::filter(input, is.na(GT)) %>%
+          dplyr::distinct(MARKERS) %>%
+          purrr::flatten_chr(.)
 
-        input.wide <- dplyr::select(
-          .data = input,
-          MARKERS, INDIVIDUALS = INDIVIDUALS_N, GT = GT_N) %>%
-          dplyr::arrange(MARKERS, INDIVIDUALS) %>%
-          dplyr::group_by(INDIVIDUALS) %>%
-          tidyr::spread(data = ., key = MARKERS, value = GT) %>%
-          dplyr::ungroup(.)
+        if (length(scan.markers.na) < length(marker.list)) {
+
+          simple.imputation <- dplyr::group_by(.data = input, MARKERS, GT) %>%
+            dplyr::tally(.) %>%
+            dplyr::filter(!is.na(GT)) %>%
+            dplyr::select(-n) %>%
+            dplyr::group_by(MARKERS) %>%
+            dplyr::tally(.) %>%
+            dplyr::filter(n == 1) %>%
+            dplyr::select(MARKERS) %>%
+            purrr::flatten_chr(.)
+
+          simple.imputation.number <- length(simple.imputation)
+          if (simple.imputation.number >= 1) {
+            if (verbose) message("Simple imputations conducted on ", simple.imputation.number, " markers")
+
+            data.imp <- dplyr::filter(input, MARKERS %in% simple.imputation) %>%
+              dplyr::group_by(MARKERS) %>%
+              dplyr::mutate(
+                GT = stringi::stri_replace_na(GT, replacement = max(GT, na.rm = TRUE))) %>%
+              dplyr::ungroup(.)
+
+            # if GL is present give the mean value for the imputed genotype
+            if (tibble::has_name(data.imp, "GL")) {
+              data.imp <- data.imp %>%
+                dplyr::group_by(MARKERS) %>%
+                dplyr::mutate(
+                  GL = as.numeric(stringi::stri_replace_na(GL, replacement = mean(GL, na.rm = TRUE)))) %>%
+                dplyr::ungroup(.)
+            }
+
+            input <- dplyr::filter(input, !MARKERS %in% simple.imputation) %>%
+              dplyr::bind_rows(data.imp)
+
+            data.imp <- NULL
+
+            marker.list <- dplyr::filter(input, is.na(GT)) %>%
+              dplyr::distinct(MARKERS) %>%
+              purrr::flatten_chr(.)
+
+            # data.imp.bk <- dplyr::filter(input, !MARKERS %in% marker.list)
+          } else {
+            marker.list <- scan.markers.na
+            # data.imp.bk <- dplyr::filter(input, !MARKERS %in% marker.list)
+          }
+        }
+        # else {
+        # data.imp.bk <- NULL
+        # }
+        scan.markers.na <- NULL
       }
 
+      # On-the-fly-imputations using Random Forests ------------------------------
+      if (imputation.method == "rf") {
+        if (verbose) message("On-the-fly-imputations using Random Forests algorithm")
+        # Parallel computations options
+        options(rf.cores = parallel.core, mc.cores = parallel.core)
+
+        # on-the-fly-imputations with randomForestSRC package
+        impute_rf <- function(
+          x,
+          num.tree = 10,
+          nodesize = 1,
+          # splitrule = "random",
+          nsplit = 10,
+          nimpute = 10,
+          verbose = FALSE,
+          hierarchical.levels = "strata") {
+
+          if (hierarchical.levels == "strata") {
+            message("        Imputations for pop: ", unique(x$POP_ID))
+            x <- dplyr::select(x, -POP_ID)
+          }
+
+          res <- randomForestSRC::impute.rfsrc(
+            data = data.frame(x),
+            ntree = num.tree,
+            nodesize = nodesize,
+            # splitrule = "random",
+            nsplit = nsplit, #split.number,
+            nimpute = nimpute, #iteration.rf,
+            do.trace = verbose)
+          return(res)
+        } # End on-the-fly imputation function
+
+        # Random Forest by pop
+        if (hierarchical.levels == "strata") {
+          message("    Imputations computed by strata, take a break...")
+
+          input.imp <- dplyr::select(input, MARKERS, POP_ID, INDIVIDUALS, GT) %>%
+            dplyr::group_by(POP_ID, INDIVIDUALS) %>%
+            tidyr::spread(data = ., key = MARKERS, value = GT) %>%
+            dplyr::ungroup(.) %>%
+            dplyr::mutate_all(.tbl = ., .funs = factor) %>%
+            split(x = ., f = .$POP_ID) %>%
+            purrr::map(.x = ., .f = impute_rf,
+                       num.tree = num.tree, nodesize = nodesize, nsplit = nsplit,
+                       nimpute = nimpute,
+                       verbose = FALSE,
+                       hierarchical.levels = "strata") %>%
+            dplyr::bind_rows(.) %>%
+            dplyr::mutate_all(.tbl = ., .funs = as.character) %>%
+            tidyr::gather(data = ., key = MARKERS, value = GT, -INDIVIDUALS) %>%
+            # Reintroduce the stratification (check if required)
+            dplyr::right_join(strata.before, by = "INDIVIDUALS") %>%
+            dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
+        }#End RF by pop
+
+        # Random Forests global
+        if (hierarchical.levels == "global") { # Globally/overall
+          if (verbose) message("Imputations computed globally, take a break...")
+
+          input.imp <- dplyr::select(input, MARKERS, INDIVIDUALS, GT) %>%
+            dplyr::group_by(INDIVIDUALS) %>%
+            tidyr::spread(data = ., key = MARKERS, value = GT) %>%
+            dplyr::ungroup(.) %>%
+            dplyr::mutate_all(.tbl = ., .funs = factor)
+
+          input.imp <- impute_rf(
+            x = input.imp,
+            num.tree = num.tree, nodesize = nodesize, nsplit = nsplit,
+            nimpute = nimpute, verbose = FALSE,
+            hierarchical.levels = "global") %>%
+            dplyr::mutate_all(.tbl = ., .funs = as.character) %>%
+            tidyr::gather(data = ., key = MARKERS, value = GT, -INDIVIDUALS) %>%
+            # Reintroduce the stratification (check if required)
+            dplyr::right_join(strata.before, by = "INDIVIDUALS") %>%
+            dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
+        } #End RF global
 
 
-      # XGBoost not adapted yet to weight variable by GL...yet
-      # if (tibble::has_name(input, "GL")) {
-      #   gl.wide <- dplyr::select(
-      #     .data = input,
-      #     MARKERS, POP_ID = POP_ID_N, INDIVIDUALS = INDIVIDUALS_N, GL) %>%
-      #     dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS) %>%
-      #     dplyr::group_by(POP_ID, INDIVIDUALS) %>%
-      #     tidyr::spread(data = ., key = MARKERS, value = GL) %>%
-      #     dplyr::ungroup(.)
-      # } else {
-      gl.wide <- NULL
-      # }
-
-      # with map # serial test
-      # input.imp <- purrr::map(.x = marker.list,
-      #                         .f = radiator::radiator_boost_imputer,
-      #                         input.wide = input.wide,
-      #                         gl.wide = gl.wide,
-      #                         eta = eta,
-      #                         gamma = gamma,
-      #                         max_depth = max_depth,
-      #                         min_child_weight = min_child_weight,
-      #                         subsample = subsample,
-      #                         colsample_bytree = colsample_bytree,
-      #                         num_parallel_tree = num_parallel_tree,
-      #                         parallel.core = parallel.core,
-      #                         nrounds = nrounds,
-      #                         early_stopping_rounds = early_stopping_rounds,
-      #                         save_name = save_name,
-      #                         hierarchical.levels = hierarchical.levels
-      #  ) %>% dplyr::bind_rows(.))
-
-
-      # parallel
-      input.imp <- list()
-      input.imp <- .radiator_parallel_mc(
-        X = marker.list,
-        FUN = radiator::radiator_boost_imputer,
-        mc.cores = parallel.core,
-        input.wide = input.wide,
-        gl.wide = gl.wide,
-        eta = eta,
-        gamma = gamma,
-        max_depth = max_depth,
-        min_child_weight = min_child_weight,
-        subsample = subsample,
-        colsample_bytree = colsample_bytree,
-        num_parallel_tree = num_parallel_tree,
-        parallel.core = parallel.core,
-        nrounds = nrounds,
-        early_stopping_rounds = early_stopping_rounds,
-        save_name = save_name,
-        hierarchical.levels = hierarchical.levels
-      ) %>% dplyr::bind_rows(.)
-      input.wide <- NULL# remove unused objects
-
-      # Remove factor/integer type genotype (revert back to original)
-      input.imp <- radiator::rad_defactorize_gt(data.to.change = input.imp, data.with.info = input)
-
-      # Reintroduce the stratification (check if required)
-      input.imp <- dplyr::left_join(strata.before, input.imp, by = "INDIVIDUALS") %>%
-        dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
-      strata.before <- NULL# remove unused objects
-
-      if (separate.haplo) {
         # separate the haplotypes/snp group
-        if (verbose) message("Decoding haplotypes: separating SNPs on the same locus and chromosome, back to original data format")
-        input.imp <- radiator::rad_decoding_haplotypes(
-          data = input.imp, parallel.core = parallel.core)
-      }
+        if (separate.haplo) {
+          if (verbose) message("Decoding haplotypes: separating SNPs on the same locus and chromosome, back to original data format")
+          input.imp <- radiator::rad_decoding_haplotypes(
+            data = input.imp, parallel.core = parallel.core)
+        }
+      }# End RF
 
-      input <- NULL# remove unused objects
+      # Random Forest imputation as a prediction problem -------------------------
+      if (imputation.method == "rf_pred") {
+        if (verbose) message("Using Random Forests algorithm as a prediction problem, take a break...")
 
-      # Impute GL
-      if (tibble::has_name(input.imp, "GL") && hierarchical.levels == "strata") {
-        message("Imputing GL with mean value per populations")
-        input.imp <- dplyr::group_by(.data = input.imp, MARKERS, POP_ID, GT) %>%
-          dplyr::mutate(
-            GL = stringi::stri_replace_na(GL, replacement = mean(GL, na.rm = TRUE)),
-            GL = replace(GL, which(GL %in% c("NA", "NaN")), NA),
-            GL = as.numeric(GL)) %>%
-          dplyr::group_by(MARKERS, GT) %>%
-          dplyr::mutate(
-            GL = as.numeric(stringi::stri_replace_na(GL, replacement = mean(GL, na.rm = TRUE)))
-          ) %>%
-          dplyr::ungroup(.)
-      }
-      if (tibble::has_name(input.imp, "GL") && hierarchical.levels == "global") {
-        message("Imputing GL with mean overall value")
-        input.imp <- dplyr::group_by(.data = input.imp, MARKERS, GT) %>%
-          dplyr::mutate(
-            GL = as.numeric(stringi::stri_replace_na(GL, replacement = mean(GL, na.rm = TRUE)))
-          ) %>%
-          dplyr::ungroup(.)
-      }
-    }# End boost
+        if (hierarchical.levels == "strata") {
+          input.imp <- purrr::map(.x = input,
+                                  .f = radiator::radiator_imputer,
+                                  hierarchical.levels = hierarchical.levels,
+                                  num.tree = num.tree,
+                                  pred.mean.matching = pred.mean.matching,
+                                  random.seed = random.seed,
+                                  parallel.core = parallel.core) %>%
+            dplyr::bind_rows(.)
+        }
 
-    # Multiple Correspondence Analysis Imputations -----------------------------
-    if (imputation.method == "mca") {
-      if (verbose) message("Using Multiple Correspondence Analysis algorithm...")
-
-      impute_mca <- function(x, ncp = 2) {
-        # res <- missMDA::imputeMCA(data.frame(x), ncp = ncp)$completeObs
-        res <- rep(1, nrow(x)) #test
-        return(res)
-      } # End impute_mca
-
-      input <- dplyr::select(input, MARKERS, POP_ID, INDIVIDUALS, GT) %>%
-        dplyr::mutate(GT = replace(GT, which(GT == "000000"), NA)) %>%
-        dplyr::group_by(POP_ID, INDIVIDUALS) %>%
-        tidyr::spread(data = ., key = MARKERS, value = GT) %>%
-        dplyr::ungroup(.) %>%
-        dplyr::mutate_all(.tbl = ., .funs = factor)
-
-      # test <- impute_mca(x = input, ncp = 2)
+        # Random Forests global
+        if (hierarchical.levels == "global") { # Globally/overall
+          # if (verbose) message("Imputations computed globally, take a break...")
+          input.rf.imp <- list() # to store results
+          input.rf.imp <- radiator::radiator_imputer(data = input,
+                                                     hierarchical.levels = hierarchical.levels,
+                                                     num.tree = num.tree,
+                                                     pred.mean.matching = pred.mean.matching,
+                                                     random.seed = random.seed,
+                                                     parallel.core = parallel.core)
+        } # End imputation RF global
 
 
-      # Random Forest by pop
-      if (hierarchical.levels == "strata") {
-        message("    Imputations computed by strata, take a break...")
+      }# End rf_pred
 
-        input.split <- split(x = input, f = input$POP_ID)
+      # Extreme Gradient Boosting Tree Imputations -------------------------------
+      if (imputation.method == "boost") {
+        if (verbose) message("Using extreme gradient tree boosting algorithm, take a break...")
+
+        if (hierarchical.levels == "strata") {
+          input <- dplyr::ungroup(input) %>%
+            dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS) %>%
+            dplyr::mutate(
+              # GT_N = as.numeric(factor(replace(GT, which(is.na(GT)), 0))),
+              POP_ID_N = as.numeric(factor(POP_ID)),
+              INDIVIDUALS_N = as.numeric(factor(INDIVIDUALS))
+            ) %>%
+            dplyr::group_by(MARKERS) %>%
+            dplyr::mutate(GT_N = radiator::rad_factorize_gt(GT)) %>%
+            dplyr::ungroup(.)
+
+          input.wide <- dplyr::select(
+            .data = input,
+            MARKERS, POP_ID = POP_ID_N, INDIVIDUALS = INDIVIDUALS_N, GT = GT_N) %>%
+            dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS) %>%
+            dplyr::group_by(POP_ID, INDIVIDUALS) %>%
+            tidyr::spread(data = ., key = MARKERS, value = GT) %>%
+            dplyr::ungroup(.)
+        }
+
+        if (hierarchical.levels == "global") {
+          input <- dplyr::ungroup(input) %>%
+            dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS) %>%
+            dplyr::select(-POP_ID) %>%
+            dplyr::mutate(INDIVIDUALS_N = as.numeric(factor(INDIVIDUALS))) %>%
+            dplyr::group_by(MARKERS) %>%
+            dplyr::mutate(GT_N = radiator::rad_factorize_gt(GT)) %>%
+            dplyr::ungroup(.)
+
+          input.wide <- dplyr::select(
+            .data = input,
+            MARKERS, INDIVIDUALS = INDIVIDUALS_N, GT = GT_N) %>%
+            dplyr::arrange(MARKERS, INDIVIDUALS) %>%
+            dplyr::group_by(INDIVIDUALS) %>%
+            tidyr::spread(data = ., key = MARKERS, value = GT) %>%
+            dplyr::ungroup(.)
+        }
+
+
+
+        # XGBoost not adapted yet to weight variable by GL...yet
+        # if (tibble::has_name(input, "GL")) {
+        #   gl.wide <- dplyr::select(
+        #     .data = input,
+        #     MARKERS, POP_ID = POP_ID_N, INDIVIDUALS = INDIVIDUALS_N, GL) %>%
+        #     dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS) %>%
+        #     dplyr::group_by(POP_ID, INDIVIDUALS) %>%
+        #     tidyr::spread(data = ., key = MARKERS, value = GL) %>%
+        #     dplyr::ungroup(.)
+        # } else {
+        gl.wide <- NULL
+        # }
+
+        # with map # serial test
+        # input.imp <- purrr::map(.x = marker.list,
+        #                         .f = radiator::radiator_boost_imputer,
+        #                         input.wide = input.wide,
+        #                         gl.wide = gl.wide,
+        #                         eta = eta,
+        #                         gamma = gamma,
+        #                         max_depth = max_depth,
+        #                         min_child_weight = min_child_weight,
+        #                         subsample = subsample,
+        #                         colsample_bytree = colsample_bytree,
+        #                         num_parallel_tree = num_parallel_tree,
+        #                         parallel.core = parallel.core,
+        #                         nrounds = nrounds,
+        #                         early_stopping_rounds = early_stopping_rounds,
+        #                         save_name = save_name,
+        #                         hierarchical.levels = hierarchical.levels
+        #  ) %>% dplyr::bind_rows(.))
+
+
+        # parallel
         input.imp <- list()
         input.imp <- .radiator_parallel_mc(
-          X = input.split,
-          FUN = impute_mca,
+          X = marker.list,
+          FUN = radiator::radiator_boost_imputer,
           mc.cores = parallel.core,
-          ncp = ncp
-        ) %>%
-          dplyr::bind_rows(.) %>%
-          dplyr::mutate_all(.tbl = ., .funs = as.character) %>%
-          tidyr::gather(data = ., key = MARKERS, value = GT, -INDIVIDUALS) %>%
-          # Reintroduce the stratification (check if required)
-          dplyr::right_join(strata.before, by = "INDIVIDUALS") %>%
+          input.wide = input.wide,
+          gl.wide = gl.wide,
+          eta = eta,
+          gamma = gamma,
+          max_depth = max_depth,
+          min_child_weight = min_child_weight,
+          subsample = subsample,
+          colsample_bytree = colsample_bytree,
+          num_parallel_tree = num_parallel_tree,
+          parallel.core = parallel.core,
+          nrounds = nrounds,
+          early_stopping_rounds = early_stopping_rounds,
+          save_name = save_name,
+          hierarchical.levels = hierarchical.levels
+        ) %>% dplyr::bind_rows(.)
+        input.wide <- NULL# remove unused objects
+
+        # Remove factor/integer type genotype (revert back to original)
+        input.imp <- radiator::rad_defactorize_gt(data.to.change = input.imp, data.with.info = input)
+
+        # Reintroduce the stratification (check if required)
+        input.imp <- dplyr::left_join(strata.before, input.imp, by = "INDIVIDUALS") %>%
           dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
-      }#End RF by pop
+        strata.before <- NULL# remove unused objects
 
-      # Random Forests global
-      if (hierarchical.levels == "global") { # Globally/overall
-        if (verbose) message("Imputations computed globally, take a break...")
+        if (separate.haplo) {
+          # separate the haplotypes/snp group
+          if (verbose) message("Decoding haplotypes: separating SNPs on the same locus and chromosome, back to original data format")
+          input.imp <- radiator::rad_decoding_haplotypes(
+            data = input.imp, parallel.core = parallel.core)
+        }
 
-        input.imp <- dplyr::select(input, MARKERS, INDIVIDUALS, GT) %>%
-          dplyr::group_by(INDIVIDUALS) %>%
+        input <- NULL# remove unused objects
+
+        # Impute GL
+        if (tibble::has_name(input.imp, "GL") && hierarchical.levels == "strata") {
+          message("Imputing GL with mean value per populations")
+          input.imp <- dplyr::group_by(.data = input.imp, MARKERS, POP_ID, GT) %>%
+            dplyr::mutate(
+              GL = stringi::stri_replace_na(GL, replacement = mean(GL, na.rm = TRUE)),
+              GL = replace(GL, which(GL %in% c("NA", "NaN")), NA),
+              GL = as.numeric(GL)) %>%
+            dplyr::group_by(MARKERS, GT) %>%
+            dplyr::mutate(
+              GL = as.numeric(stringi::stri_replace_na(GL, replacement = mean(GL, na.rm = TRUE)))
+            ) %>%
+            dplyr::ungroup(.)
+        }
+        if (tibble::has_name(input.imp, "GL") && hierarchical.levels == "global") {
+          message("Imputing GL with mean overall value")
+          input.imp <- dplyr::group_by(.data = input.imp, MARKERS, GT) %>%
+            dplyr::mutate(
+              GL = as.numeric(stringi::stri_replace_na(GL, replacement = mean(GL, na.rm = TRUE)))
+            ) %>%
+            dplyr::ungroup(.)
+        }
+      }# End boost
+
+      # Multiple Correspondence Analysis Imputations -----------------------------
+      if (imputation.method == "mca") {
+        if (verbose) message("Using Multiple Correspondence Analysis algorithm...")
+
+        impute_mca <- function(x, ncp = 2) {
+          # res <- missMDA::imputeMCA(data.frame(x), ncp = ncp)$completeObs
+          res <- rep(1, nrow(x)) #test
+          return(res)
+        } # End impute_mca
+
+        input <- dplyr::select(input, MARKERS, POP_ID, INDIVIDUALS, GT) %>%
+          dplyr::mutate(GT = replace(GT, which(GT == "000000"), NA)) %>%
+          dplyr::group_by(POP_ID, INDIVIDUALS) %>%
           tidyr::spread(data = ., key = MARKERS, value = GT) %>%
           dplyr::ungroup(.) %>%
           dplyr::mutate_all(.tbl = ., .funs = factor)
 
-        input.imp <- impute_rf(
-          x = input.imp,
-          num.tree = num.tree, nodesize = nodesize, nsplit = nsplit,
-          nimpute = nimpute,verbose = FALSE,
-          hierarchical.levels = "global") %>%
-          dplyr::mutate_all(.tbl = ., .funs = as.character) %>%
-          tidyr::gather(data = ., key = MARKERS, value = GT, -INDIVIDUALS) %>%
-          # Reintroduce the stratification (check if required)
-          dplyr::right_join(strata.before, by = "INDIVIDUALS") %>%
-          dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
-      } #End RF global
+        # test <- impute_mca(x = input, ncp = 2)
 
 
-      # separate the haplotypes/snp group
-      if (separate.haplo) {
-        if (verbose) message("Decoding haplotypes: separating SNPs on the same locus and chromosome, back to original data format")
-        input.imp <- radiator::rad_decoding_haplotypes(
-          data = input.imp, parallel.core = parallel.core)
+        # Random Forest by pop
+        if (hierarchical.levels == "strata") {
+          message("    Imputations computed by strata, take a break...")
+
+          input.split <- split(x = input, f = input$POP_ID)
+          input.imp <- list()
+          input.imp <- .radiator_parallel_mc(
+            X = input.split,
+            FUN = impute_mca,
+            mc.cores = parallel.core,
+            ncp = ncp
+          ) %>%
+            dplyr::bind_rows(.) %>%
+            dplyr::mutate_all(.tbl = ., .funs = as.character) %>%
+            tidyr::gather(data = ., key = MARKERS, value = GT, -INDIVIDUALS) %>%
+            # Reintroduce the stratification (check if required)
+            dplyr::right_join(strata.before, by = "INDIVIDUALS") %>%
+            dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
+        }#End RF by pop
+
+        # Random Forests global
+        if (hierarchical.levels == "global") { # Globally/overall
+          if (verbose) message("Imputations computed globally, take a break...")
+
+          input.imp <- dplyr::select(input, MARKERS, INDIVIDUALS, GT) %>%
+            dplyr::group_by(INDIVIDUALS) %>%
+            tidyr::spread(data = ., key = MARKERS, value = GT) %>%
+            dplyr::ungroup(.) %>%
+            dplyr::mutate_all(.tbl = ., .funs = factor)
+
+          input.imp <- impute_rf(
+            x = input.imp,
+            num.tree = num.tree, nodesize = nodesize, nsplit = nsplit,
+            nimpute = nimpute,verbose = FALSE,
+            hierarchical.levels = "global") %>%
+            dplyr::mutate_all(.tbl = ., .funs = as.character) %>%
+            tidyr::gather(data = ., key = MARKERS, value = GT, -INDIVIDUALS) %>%
+            # Reintroduce the stratification (check if required)
+            dplyr::right_join(strata.before, by = "INDIVIDUALS") %>%
+            dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
+        } #End RF global
+
+
+        # separate the haplotypes/snp group
+        if (separate.haplo) {
+          if (verbose) message("Decoding haplotypes: separating SNPs on the same locus and chromosome, back to original data format")
+          input.imp <- radiator::rad_decoding_haplotypes(
+            data = input.imp, parallel.core = parallel.core)
+        }
+
+      }# End mca
+
+    } # End imputation RF,  boost and MCA
+
+    # prep results ---------------------------------------------------------------
+
+    # Replace NA by 000000 in GT column if found
+    if (anyNA(input.imp)) {
+      warning("Missing data is still present in the dataset",
+              "\n    2 options:",
+              "\n    run the function again with hierarchical.levels = 'global'",
+              "\n    use common.markers = TRUE when using hierarchical.levels = 'strata'")
+      if (haplo.vcf.check) {
+        input.imp$GT <- stringi::stri_replace_na(str = input.imp$GT, replacement = "./.")
+      } else {
+        input.imp$GT <- stringi::stri_replace_na(str = input.imp$GT, replacement = "000000")
       }
-
-    }# End mca
-
-  } # End imputation RF,  boost and MCA
-
-  # prep results ---------------------------------------------------------------
-
-  # Replace NA by 000000 in GT column if found
-  if (anyNA(input.imp)) {
-    warning("Missing data is still present in the dataset",
-            "\n    2 options:",
-            "\n    run the function again with hierarchical.levels = 'global'",
-            "\n    use common.markers = TRUE when using hierarchical.levels = 'strata'")
-    if (!biallelic && ref.column) {
-      input.imp$GT <- stringi::stri_replace_na(str = input.imp$GT, replacement = "./.")
-    } else {
-      input.imp$GT <- stringi::stri_replace_na(str = input.imp$GT, replacement = "000000")
     }
-  }
 
-  if (!biallelic && ref.column) {
-    input.imp <- dplyr::rename(input.imp, GT_VCF_NUC = GT)
-  }
-
-  # Compute REF/ALT allele... might have change depending on prop of missing values
-  if (verbose) message("Adjusting REF/ALT alleles to account for imputations...")
-  input.imp <- radiator::change_alleles(
-    data = input.imp,
-    biallelic = biallelic,
-    parallel.core = parallel.core,
-    verbose = verbose)$input
-
-  if (tibble::has_name(input.imp, "POLYMORPHIC.x")) input.imp <- dplyr::select(input.imp, -POLYMORPHIC.x)
-  if (tibble::has_name(input.imp, "POLYMORPHIC.y")) input.imp <- dplyr::select(input.imp, -POLYMORPHIC.y)
-
-
-  # Integrate marker.meta columns and sort
-  if (!is.null(marker.meta)) {
-    want <- c( "MARKERS", "CHROM", "LOCUS", "POS", "POP_ID",
-               "INDIVIDUALS", "REF", "ALT", "GT", "GT_VCF",
-               "GT_VCF_NUC", "GT_BIN", "GL")
-
-    if (tibble::has_name(marker.meta, "NEW_MARKERS")) {
-      input.imp <- suppressWarnings(dplyr::left_join(
-        dplyr::rename(input.imp, NEW_MARKERS = MARKERS),
-        marker.meta, by = "NEW_MARKERS") %>%
-          dplyr::select(dplyr::one_of(want)))
-    } else {
-      input.imp <- suppressWarnings(dplyr::left_join(
-        input.imp, marker.meta, by = "MARKERS") %>%
-          dplyr::select(dplyr::one_of(want)))
+    if (haplo.vcf.check) {
+      input.imp <- dplyr::rename(input.imp, GT_VCF_NUC = GT)
     }
-    want <- marker.meta <- NULL
-  } else {
-    input.imp <- dplyr::arrange(.data = input.imp, MARKERS, POP_ID, INDIVIDUALS)
-  }
 
-  # Write to working directory
-  if (!is.null(filename)) {
-    tidy.name <- stringi::stri_join(filename, ".rad")
-    if (verbose) message("Writing the imputed tidy data: \n", tidy.name)
-    #fst::write.fst(x = input.imp, path = tidy.name, compress = 85)
-    # readr::write_tsv(x = input.imp, path = filename, col_names = TRUE)
-  }
+    # Compute REF/ALT allele... might have change depending on prop of missing values
+    if (verbose) message("Adjusting REF/ALT alleles to account for imputations...")
+    input.imp <- radiator::change_alleles(
+      data = input.imp,
+      biallelic = biallelic,
+      parallel.core = parallel.core,
+      verbose = verbose)$input
 
-  # Missing after imputation:
-  na.after <- dplyr::summarise(.data = input.imp, MISSING = round(length(GT[GT == "000000"])/length(GT), 6)) %>%
-    purrr::flatten_dbl(.) %>% format(., scientific = FALSE)
-  message("\nProportion of missing genotypes after imputations: ", na.after)
+    if (tibble::has_name(input.imp, "POLYMORPHIC.x")) input.imp <- dplyr::select(input.imp, -POLYMORPHIC.x)
+    if (tibble::has_name(input.imp, "POLYMORPHIC.y")) input.imp <- dplyr::select(input.imp, -POLYMORPHIC.y)
 
-  # Error notices
-  if (imputation.method == "boost" && file.exists("radiator_imputations_error.txt")) {
-    message("Error notice: Tree boosting imputations encountered error(s),
+
+    # Integrate marker.meta columns and sort
+    if (!is.null(marker.meta)) {
+      want <- c( "MARKERS", "CHROM", "LOCUS", "POS", "POP_ID",
+                 "INDIVIDUALS", "REF", "ALT", "GT", "GT_VCF",
+                 "GT_VCF_NUC", "GT_BIN", "GL")
+
+      if (tibble::has_name(marker.meta, "NEW_MARKERS")) {
+        input.imp <- suppressWarnings(dplyr::left_join(
+          dplyr::rename(input.imp, NEW_MARKERS = MARKERS),
+          marker.meta, by = "NEW_MARKERS") %>%
+            dplyr::select(dplyr::one_of(want)))
+      } else {
+        input.imp <- suppressWarnings(dplyr::left_join(
+          input.imp, marker.meta, by = "MARKERS") %>%
+            dplyr::select(dplyr::one_of(want)))
+      }
+      want <- marker.meta <- NULL
+    } else {
+      input.imp <- dplyr::arrange(.data = input.imp, MARKERS, POP_ID, INDIVIDUALS)
+    }
+
+    # Write to working directory
+    if (!is.null(filename)) {
+      tidy.name <- stringi::stri_join(filename, ".rad")
+      if (verbose) message("Writing the imputed tidy data: \n", tidy.name)
+      #fst::write.fst(x = input.imp, path = tidy.name, compress = 85)
+      # readr::write_tsv(x = input.imp, path = filename, col_names = TRUE)
+    }
+
+    # Missing after imputation:
+    na.after <- dplyr::summarise(.data = input.imp, MISSING = round(length(GT[GT == "000000"])/length(GT), 6)) %>%
+      purrr::flatten_dbl(.) %>% format(., scientific = FALSE)
+    message("\nProportion of missing genotypes after imputations: ", na.after)
+
+    # Error notices
+    if (imputation.method == "boost" && file.exists("radiator_imputations_error.txt")) {
+      message("Error notice: Tree boosting imputations encountered error(s),
             please look in the working directory for a file:
             radiator_imputations_error.txt
             email the problem to the author: thierrygosselin@icloud.com")
+    }
   }
-}
   if (verbose) {
     # output the proportion of missing genotypes after imputations
     timing <- proc.time() - timing
@@ -1303,7 +1307,7 @@ radiator_imputations_module <- function(
     cat("################## grur::grur_imputations completed ###################\n")
   }
   return(input.imp)
-  } # End imputations
+} # End imputations
 
 # Internal nested Function -----------------------------------------------------
 # radiator_imputer ---------------------------------------------------------------
