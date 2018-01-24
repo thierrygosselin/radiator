@@ -4,11 +4,12 @@
 
 #' @title Swiss Army knife tool to prepare \href{http://www.diversityarrays.com}{DArT}
 #' output file for population genetics analysis.
+
+#' @description Import, filter and generate imputed datasets of DArT output file.
 #' The function uses \code{\link[radiator]{tidy_dart}} to import and tidy DArT input file.
 #' Currently 3 formats are recognized: 1- and 2- row format (also called binary),
 #' and count data.
 
-#' @description Import, filter and generate imputed dataset of DArT output file.
 
 #' @param interactive.filter (optional, logical) Do you want the filtering session to
 #' be interactive. The user is asked to see figures of distribution before
@@ -19,11 +20,17 @@
 #' @inheritParams genomic_converter
 #' @inheritParams tidy_genomic_data
 
-#' @param strata A tab delimited file with columns header:
-#' \code{INDIVIDUALS} and \code{STRATA}.
-#' Note: the column \code{STRATA} refers to any grouping of individuals. If a third column
-#' named \code{NEW_ID} is used, this column will be used to replace the
-#' \code{INDIVIDUALS} column in the main data file.
+
+#' @param strata A tab delimited file with 3 columns.
+#' Columns header is:
+#' \code{TARGET_ID}, \code{INDIVIDUALS} and \code{STRATA}.
+#' Note: the column \code{STRATA} refers to any grouping of individuals.
+#' You need to make sure that
+#' the column \code{TARGET_ID} match the id used by DArT.
+#' The column \code{INDIVIDUALS} and \code{STRATA} will be kept in the tidy data.
+#' Only individuals in the strata file are kept in the tidy, i.e. that the strata
+#' is also used as a whitelist of individuals/strata.
+
 
 #' @param filter.reproducibility (optional, numerical) Filter the \code{RepAvg}
 #' column in the data set. Default: \code{filter.reproducibility = NULL}.

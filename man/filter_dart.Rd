@@ -3,10 +3,7 @@
 \name{filter_dart}
 \alias{filter_dart}
 \title{Swiss Army knife tool to prepare \href{http://www.diversityarrays.com}{DArT}
-output file for population genetics analysis.
-The function uses \code{\link[radiator]{tidy_dart}} to import and tidy DArT input file.
-Currently 3 formats are recognized: 1- and 2- row format (also called binary),
-and count data.}
+output file for population genetics analysis.}
 \usage{
 filter_dart(interactive.filter = TRUE, data, strata, output = NULL,
   pop.levels = NULL, blacklist.id = NULL, pop.select = NULL,
@@ -31,11 +28,15 @@ recognised (1- and 2- row format, also called binary, and count data.).
 If you encounter a problem, sent me your data so that I can update
 the function. The function can import \code{.csv} or \code{.tsv} files.}
 
-\item{strata}{A tab delimited file with columns header:
-\code{INDIVIDUALS} and \code{STRATA}.
-Note: the column \code{STRATA} refers to any grouping of individuals. If a third column
-named \code{NEW_ID} is used, this column will be used to replace the
-\code{INDIVIDUALS} column in the main data file.}
+\item{strata}{A tab delimited file with 3 columns.
+Columns header is:
+\code{TARGET_ID}, \code{INDIVIDUALS} and \code{STRATA}.
+Note: the column \code{STRATA} refers to any grouping of individuals.
+You need to make sure that
+the column \code{TARGET_ID} match the id used by DArT.
+The column \code{INDIVIDUALS} and \code{STRATA} will be kept in the tidy data.
+Only individuals in the strata file are kept in the tidy, i.e. that the strata
+is also used as a whitelist of individuals/strata.}
 
 \item{output}{19 genomic data formats can be exported: tidy (by default),
 genind, genlight, vcf (for file format version, see details below), plink, genepop,
@@ -262,7 +263,10 @@ object (see examples). Some output format will write the output file in the
 working directory. The tidy genomic data frame is generated automatically.
 }
 \description{
-Import, filter and generate imputed dataset of DArT output file.
+Import, filter and generate imputed datasets of DArT output file.
+The function uses \code{\link[radiator]{tidy_dart}} to import and tidy DArT input file.
+Currently 3 formats are recognized: 1- and 2- row format (also called binary),
+and count data.
 }
 \examples{
 \dontrun{
