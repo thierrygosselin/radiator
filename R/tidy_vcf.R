@@ -123,9 +123,19 @@ tidy_vcf <- function(
       dplyr::filter(n > 1) %>%
       dplyr::arrange(CHROM, LOCUS, POS)
     readr::write_tsv(x = duplicate.markers, path = "duplicated.markers.tsv")
-    stop("VCF file contains duplicated CHROM, ID and POS\n
-         A file named: duplicated.markers.tsv was written in the directory")
+    message("\n\nWARNING:\nThe VCF file contains duplicated CHROM, ID and POS\n
+See this file for the list and count: duplicated.markers.tsv\n\n")
+    message("To continue the tidying process, duplicate markers will be removed by selecting one randomly.")
+    message("Continue tidying ? (y/n):")
+    remove.dup <- as.character(readLines(n = 1))
+    if (remove.dup == "y") {
+      input <- dplyr::distinct(input, CHROM, LOCUS, POS, .keep_all = TRUE)
+      message("Continuing tidying, but please check why duplicates were found...")
+    } else {
+      stop("Tidying process stopped because duplicate marker info found in the vcf file")
+    }
   }
+  duplicate.markers <- NULL
 
   # Scan and filter with FILTER column
   filter.check <- dplyr::distinct(input, FILTER)
@@ -165,8 +175,6 @@ tidy_vcf <- function(
   } else {
     detect.snp.col <- unique(stringi::stri_detect_fixed(str = input$LOCUS, pattern = "_"))
   }
-
-
 
   if (detect.snp.col && stacks.vcf) {
     if (nrow(input) > 30000) {
@@ -254,7 +262,6 @@ tidy_vcf <- function(
     dup <- blacklist.id.dup <- NULL
     message("Number of individuals in blacklist: ", nrow(blacklist.id))
   }
-
 
   # import genotypes -----------------------------------------------------------
   want <- c("MARKERS", "CHROM", "LOCUS", "POS", "ID", "COL", "REF", "ALT", "INDIVIDUALS", "GT")
