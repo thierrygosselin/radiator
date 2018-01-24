@@ -167,14 +167,13 @@ See this file for the list and count: duplicated.markers.tsv\n\n")
   # Unique MARKERS column --------------------------------------------------------
 
   # Since stacks v.1.44 ID as LOCUS + COL (from sumstats) the position of the SNP on the locus.
-  # Choose the first 100 markers to scan
-  if (nrow(input) > 100) {
-    detect.snp.col <- sample(x = unique(input$LOCUS), size = 100, replace = FALSE) %>%
-      stringi::stri_detect_fixed(str = ., pattern = "_") %>%
-      unique
-  } else {
-    detect.snp.col <- unique(stringi::stri_detect_fixed(str = input$LOCUS, pattern = "_"))
-  }
+  # Choose the first 100 (or less) markers to scan
+  sample.size <- min(length(unique(input$LOCUS)), 100)
+
+  detect.snp.col <- sample(x = unique(input$LOCUS), size = sample.size, replace = FALSE) %>%
+    stringi::stri_detect_fixed(str = ., pattern = "_") %>%
+    unique
+  sample.size <- NULL
 
   if (detect.snp.col && stacks.vcf) {
     if (nrow(input) > 30000) {
@@ -214,7 +213,7 @@ See this file for the list and count: duplicated.markers.tsv\n\n")
       if (ncol(whitelist.markers) >= 3) {
         message("Note: whitelist with CHROM LOCUS POS columns and VCF haplotype:
                 If the whitelist was not created from this VCF,
-                the filtering could result in loosing all the markers.
+                the filtering could result in losing all the markers.
                 The POS column is different in biallelic and multiallelic file...\n")
 
         message("Discarding the POS column in the whitelist")
@@ -224,7 +223,7 @@ See this file for the list and count: duplicated.markers.tsv\n\n")
       if (ncol(whitelist.markers) == 1 && tibble::has_name(whitelist.markers, "MARKERS")) {
         message("Note: whitelist MARKERS column and VCF haplotype:
                 If the whitelist was not created from this VCF,
-                the filtering could result in loosing all the markers.
+                the filtering could result in losing all the markers.
                 The POS column used in the MARKERS column is different in biallelic and multiallelic file...\n")
       }
     }
