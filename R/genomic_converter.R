@@ -716,12 +716,12 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
   # Writing tidy on disk -------------------------------------------------------
   tidy.name <- stringi::stri_join(filename, ".rad")
   message("\nWriting tidy data set:\n", tidy.name)
-  #fst::write.fst(x = input, path = tidy.name, compress = 85)
+  write_rad(data = input, path = tidy.name)
 
   if (!is.null(imputation.method)) {
     tidy.name.imp <- stringi::stri_join(filename.imp, ".rad")
     message("\nWriting tidy data set:\n", tidy.name)
-    #fst::write.fst(x = input.imp, path = tidy.name.imp, compress = 85)
+    write_rad(data = input.imp, path = tidy.name.imp)
   }
   # outout results -------------------------------------------------------------
   n.markers <- dplyr::n_distinct(input$MARKERS)

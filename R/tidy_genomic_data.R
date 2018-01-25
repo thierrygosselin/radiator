@@ -318,7 +318,6 @@
 #' @importFrom tibble as_data_frame has_name
 #' @importFrom parallel detectCores
 #' @importFrom pegas VCFloci read.vcf
-# @importFrom fst write.fst
 
 #' @examples
 #' \dontrun{
@@ -1150,7 +1149,7 @@ tidy_genomic_data <- function(
   if (!is.null(filename)) {
     tidy.name <- stringi::stri_join(filename, ".rad")
     message("\nWriting tidy data set:\n", tidy.name)
-    #fst::write.fst(x = input, path = tidy.name, compress = 85)
+    write_rad(data = input, path = tidy.name)
   }
 
   # Results --------------------------------------------------------------------

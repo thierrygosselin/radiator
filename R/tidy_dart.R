@@ -55,7 +55,6 @@
 #' @importFrom readr read_tsv write_tsv read_lines read_table
 #' @importFrom tibble as_data_frame data_frame
 #' @importFrom tidyr spread gather unite separate
-#' @importFrom fst write.fst
 
 #' @examples
 #' \dontrun{
@@ -439,9 +438,6 @@ tidy_dart <- function(
               pattern = c("0/0", "1/1", "0/1", "1/0", "./."),
               replacement = c("0", "2", "1", "1", NA),
               vectorize_all = FALSE)))
-      # split.name <- stringi::stri_join("temp", split.id, sep = "_")
-      ## fst::write.fst(x = x, path = split.name, compress = 85)
-      # x <- NULL
       return(x)
     }#End dart_count
 
@@ -522,7 +518,7 @@ tidy_dart <- function(
 
 
       if (!file.exists(meta.filename)) {
-        fst::write.fst(x = grouping.column, path = meta.filename, compress = 85)
+        write_rad(data = grouping.column, path = meta.filename)
         message("Marker's metadata file written to the directory:\n    ", meta.filename)
       }
 
@@ -572,7 +568,7 @@ tidy_dart <- function(
     "AVG_COUNT_SNP", "REP_AVG"),
     dplyr::everything()))
 
-  fst::write.fst(x = input, path = filename, compress = 85)
+  write_rad(data = input, path = filename)
 
   if(is.null(whitelist.markers)) {
     message("Unfiltered tidy DArT data written to folder")

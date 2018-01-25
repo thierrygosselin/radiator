@@ -299,7 +299,6 @@
 #' @importFrom xgboost xgb.DMatrix cb.early.stop xgb.train
 #' @importFrom randomForestSRC impute.rfsrc
 #' @importFrom readr write_lines write_tsv
-# @importFrom fst write.fst
 
 #' @examples
 #' \dontrun{
@@ -1283,7 +1282,7 @@ radiator_imputations_module <- function(
     if (!is.null(filename)) {
       tidy.name <- stringi::stri_join(filename, ".rad")
       if (verbose) message("Writing the imputed tidy data: \n", tidy.name)
-      #fst::write.fst(x = input.imp, path = tidy.name, compress = 85)
+      write_rad(data = input.imp, path = tidy.name)
       # readr::write_tsv(x = input.imp, path = filename, col_names = TRUE)
     }
 

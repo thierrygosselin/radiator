@@ -93,6 +93,7 @@
 #' @importFrom tidyr complete gather unite spread nesting
 #' @importFrom parallel detectCores
 #' @importFrom stats rnorm rbeta runif rbinom
+#' @importFrom fst read.fst
 
 
 #' @author Eric Anderson \email{eric.anderson@noaa.gov} and
@@ -152,10 +153,10 @@ detect_het_outliers <- function (
       res$input <- suppressWarnings(dplyr::select(data, dplyr::one_of(want)))
     }
     if (data.type == "fst.file") {
-      #import.col <- colnames(fst::read.fst(path = data, from = 1, to = 1))
-      #import.col <- purrr::discard(.x = import.col, .p = !import.col %in% want)
-      #res$input <- fst::read.fst(path = data, columns = import.col)
-      #import.col <- want <- NULL
+      import.col <- colnames(fst::read.fst(path = data, from = 1, to = 1))
+      import.col <- purrr::discard(.x = import.col, .p = !import.col %in% want)
+      res$input <- fst::read.fst(path = data, columns = import.col)
+      import.col <- want <- NULL
     }
 
     # because this step skip the import and filter process we include monomorphic filter

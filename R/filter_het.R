@@ -1523,7 +1523,7 @@ number of populations in the dataset turns off the filter.\n")
   if (!is.null(filename)) {
     tidy.name <- stringi::stri_join(filename, ".rad")
     message("Writing the filtered tidy data set: ", tidy.name)
-    #fst::write.fst(x = filter, path = stringi::stri_join(path.folder, "/", tidy.name), compress = 85)
+    write_rad(data = filter, path = file.path(path.folder, tidy.name))
   }
 
   # saving whitelist -----------------------------------------------------------
