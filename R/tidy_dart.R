@@ -175,7 +175,7 @@ tidy_dart <- function(
       readr::read_csv(
         file = data,
         skip = skip.number,
-        na = "-",
+        na = c("-", " ", "", "NA"),
         col_names = TRUE,
         col_types = dart.col.type)
     ))
@@ -184,7 +184,7 @@ tidy_dart <- function(
       readr::read_tsv(
         file = data,
         skip = skip.number,
-        na = "-",
+        na = c("-", " ", "", "NA"),
         col_names = TRUE,
         col_types = dart.col.type)
     ))
@@ -197,6 +197,13 @@ tidy_dart <- function(
     replacement = c("AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG", "LOCUS", "POS", "CALL_RATE"),
     vectorize_all = FALSE)
 
+
+  # necessary steps...observed with DArT file using ref genome -----------------
+  # test <- dplyr::mutate(input, TEST = seq(from = 1, to = n(), by = 1)) %>%
+  #   dplyr::select(TEST, SNP, LOCUS, CALL_RATE) %>%
+  #   dplyr::filter(is.na(LOCUS))
+  # remove lanes with lots of NA or locus with NA or call.rate with NA
+  input <- dplyr::filter(input, !is.na(LOCUS))
   input <- dplyr::arrange(input, LOCUS, POS)
 
   # Check for duplicate rows (sometimes people combine DArT data...)----------
@@ -279,6 +286,11 @@ tidy_dart <- function(
   # DArT Type-------------------------------------------------------------------
   # Determine the type of DArT file: 1 or 2-row format (binary)
   binary <- anyNA(input$REF)
+
+  # ref.test <- dplyr::select(input, REF) %>% readr::write_tsv(x = ., path = "test.tsv")
+  # na.ref.problem <- dplyr::filter(input, is.na(REF))
+
+
 
   # 1-row format----------------------------------------------------------------
   if (!binary) {
