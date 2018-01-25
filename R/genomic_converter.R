@@ -370,7 +370,7 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
   data.type <- detect_genomic_format(data = data)
 
   # Strata argument required for VCF and haplotypes files-----------------------
-  if (data.type == "vcf.file" & is.null(strata)) stop("strata argument is required")
+  # if (data.type == "vcf.file" & is.null(strata)) stop("strata argument is required")
   if (data.type == "haplo.file" & is.null(strata)) stop("strata argument is required")
 
   # Import----------------------------------------------------------------------

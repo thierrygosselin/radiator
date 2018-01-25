@@ -294,9 +294,8 @@ See this file for the list and count: duplicated.markers.tsv\n\n")
                          .funs = clean_ind_names) %>%
         dplyr::mutate(
           # for stacks v.2 beta4 missing genotype are coded wrong
-          GT = stringi::stri_replace_all_fixed(str = GT, pattern = ".", replacement = "./.", vectorize_all = FALSE),
-          GT = stringi::stri_replace_na(str = GT, replacement = "./."))
-    )
+          GT = stringi::stri_replace_all_regex(str = GT, pattern = "^.$", replacement = "./.", vectorize_all = FALSE),
+          GT = stringi::stri_replace_na(str = GT, replacement = "./.")))
 
     input.gt <- NULL
   } else {
