@@ -349,7 +349,6 @@ radiator_imputations_module <- function(
   ...
 ) {
   timing <- proc.time() #for timing
-
   if (verbose) {
     cat("\n\n")
     cat("#######################################################################\n")
@@ -485,7 +484,6 @@ radiator_imputations_module <- function(
     } else {
       ncp = 2
     }
-
 
     # message arguments --------------------------------------------------------
     if (verbose) {
@@ -887,9 +885,6 @@ radiator_imputations_module <- function(
             # data.imp.bk <- dplyr::filter(input, !MARKERS %in% marker.list)
           }
         }
-        # else {
-        # data.imp.bk <- NULL
-        # }
         scan.markers.na <- NULL
       }
 

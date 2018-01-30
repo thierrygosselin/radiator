@@ -190,8 +190,7 @@
 #' \code{randomForestSRC} is available on CRAN \url{http://cran.r-project.org/web/packages/randomForestSRC/}
 #' and github \url{https://github.com/ehrlinger/randomForestSRC}
 
-#' @author Thierry Gosselin \email{thierrygosselin@@icloud.com} and
-#' Laura Benestan \email{laura.benestan@@icloud.com} (for betadiv)
+#' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 genomic_converter <- function(
   data,
@@ -211,7 +210,7 @@ genomic_converter <- function(
   pop.labels = NULL,
   pop.select = NULL,
   imputation.method = NULL,
-  hierarchical.levels = "populations",
+  hierarchical.levels = "strata",
   num.tree = 50,
   pred.mean.matching = 0,
   random.seed = NULL,
@@ -413,7 +412,6 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
 
   # prepare output res list
   res <- list()
-  res$tidy.data <- input
 
   # Biallelic detection --------------------------------------------------------
   biallelic <- radiator::detect_biallelic_markers(data = input, verbose = verbose)
@@ -467,8 +465,6 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
       parallel.core = parallel.core,
       filename = NULL
     )
-
-    res$tidy.data.imp <- input.imp
 
   } # End imputations
 
@@ -755,5 +751,8 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
     message("\nComputation time: ", round(timing[[3]]), " sec")
     cat("################ radiator::genomic_converter completed ################\n")
   }
+  res$tidy.data <- input
+  res$tidy.data.imp <- input.imp
+  input.imp <- input <- NULL
   return(res)
 } # end genomic_converter

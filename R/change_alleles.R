@@ -93,7 +93,6 @@ change_alleles <- function(
   # Check if nucleotide info is available --------------------------------------
   nuc.info <- tibble::has_name(data, "GT_VCF_NUC")
 
-
   if (ref.info) {
     letter.coding <- unique(stringi::stri_detect_regex(
       str = unique(data$REF),
@@ -180,6 +179,29 @@ change_alleles <- function(
     parallel.core = parallel.core)
   conversion.df <- NULL
 
+# For biallelic dataset with REF and ALT not coded with letters ----------------
+  if (biallelic) {
+    letter.coding <- unique(stringi::stri_detect_regex(
+      str = unique(data$REF),
+      pattern = "[A-Za-z]"))
+
+    if (!letter.coding) {
+      data <- data %>%
+        dplyr::mutate(
+          REF = stringi::stri_replace_all_regex(
+            str = REF,
+            pattern = c("001", "002", "003", "004"),
+            replacement = c("A", "C", "G", "T"),
+            vectorize_all = FALSE),
+          ALT = stringi::stri_replace_all_regex(
+            str = ALT,
+            pattern = c("001", "002", "003", "004"),
+            replacement = c("A", "C", "G", "T"),
+            vectorize_all = FALSE))
+    }
+  }
+
+
   # switch ALLELE_REF_DEPTH/ALLELE_ALT_DEPTH
   if (inversion & tibble::has_name(data, "ALLELE_REF_DEPTH")) {
     data <- data %>%
@@ -208,6 +230,7 @@ change_alleles <- function(
       MARKERS, POP_ID, INDIVIDUALS, dplyr::everything())
   }
   res <- list(input = data, biallelic = biallelic)
+  data <- NULL
   return(res)
 }#End change_alleles
 
@@ -222,7 +245,7 @@ ref_dictionary <- function(x, parallel.core = parallel::detectCores() - 1) {
   generate_ref <- function(x) {
     nuc.info <- tibble::has_name(x, "GT_VCF_NUC")
     if (nuc.info) {
-      res <- dplyr::select(x, MARKERS, GT_VCF_NUC) %>%
+      x <- dplyr::select(x, MARKERS, GT_VCF_NUC) %>%
         dplyr::filter(GT_VCF_NUC != "./.") %>%
         tidyr::separate(col = GT_VCF_NUC, into = c("A1", "A2"), sep = "/") %>%
         tidyr::gather(data = ., key = ALLELES_GROUP, value = ALLELES, -MARKERS) %>%
@@ -235,7 +258,7 @@ ref_dictionary <- function(x, parallel.core = parallel::detectCores() - 1) {
         dplyr::arrange(MARKERS, INTEGERS) %>%
         dplyr::ungroup(.)
     } else {
-      res <- suppressWarnings(
+      x <- suppressWarnings(
         dplyr::select(x, MARKERS, GT) %>%
           dplyr::filter(GT != "000000") %>%
           dplyr::mutate(
@@ -256,32 +279,32 @@ ref_dictionary <- function(x, parallel.core = parallel::detectCores() - 1) {
           dplyr::arrange(MARKERS, INTEGERS) %>%
           dplyr::ungroup(.))
     }
-    ref.alleles <- res %>%
+    ref.alleles <- x %>%
       dplyr::filter(INTEGERS == 0) %>%
       dplyr::mutate(REF = ALLELES) %>%
       dplyr::distinct(MARKERS, REF)
 
-    alt.alleles <- res %>%
+    alt.alleles <- x %>%
       dplyr::filter(INTEGERS != 0) %>%
       dplyr::group_by(MARKERS) %>%
       dplyr::mutate(ALT = stringi::stri_join(ALLELES, collapse = ",")) %>%
       dplyr::ungroup(.) %>%
       dplyr::distinct(MARKERS, ALT)
 
-    res <- dplyr::left_join(
-      res,
+    x <- dplyr::left_join(
+      x,
       dplyr::left_join(ref.alleles, alt.alleles, by = "MARKERS")
       , by = "MARKERS"
     ) %>%
       dplyr::arrange(MARKERS, INTEGERS)
-    return(res)
+    return(x)
   }#End generate_ref
 
-  res <- x %>%
-    dplyr::left_join(
-      dplyr::distinct(x, MARKERS) %>%
-        dplyr::mutate(SPLIT_VEC = split_vec_row(x = ., cpu.rounds = 3, parallel.core = parallel.core))
-      , by = "MARKERS") %>%
+  x <- dplyr::left_join(
+    x,
+    dplyr::distinct(x, MARKERS) %>%
+      dplyr::mutate(SPLIT_VEC = split_vec_row(x = ., cpu.rounds = 3, parallel.core = parallel.core))
+    , by = "MARKERS") %>%
     split(x = ., f = .$SPLIT_VEC) %>%
     .radiator_parallel_mc(
       X = .,
@@ -289,7 +312,7 @@ ref_dictionary <- function(x, parallel.core = parallel::detectCores() - 1) {
       mc.cores = parallel.core
     ) %>%
     dplyr::bind_rows(.)
-  return(res)
+  return(x)
 }
 
 #' @title integrate_ref
@@ -310,55 +333,77 @@ integrate_ref <- function(
     biallelic = TRUE,
     parallel.core = parallel::detectCores() - 1
   ) {
+    # x <- new.gt #test
     nuc.info <- tibble::has_name(x, "GT_VCF_NUC")
 
     if (nuc.info) {
-      res <- dplyr::select(x, MARKERS, GT_VCF_NUC) %>%
+      x <- dplyr::select(x, MARKERS, GT_VCF_NUC) %>%
         tidyr::separate(data = ., col = GT_VCF_NUC, into = c("A1", "A2"), sep = "/", remove = FALSE) %>%
         dplyr::left_join(dplyr::rename(conversion.df, A1 = ALLELES), by = c("MARKERS", "A1")) %>%
         dplyr::rename(A1_NUC = INTEGERS)
 
-      if (tibble::has_name(res, "POLYMORPHIC")) res <- dplyr::select(res, -POLYMORPHIC)
+      if (tibble::has_name(x, "POLYMORPHIC")) x <- dplyr::select(x, -POLYMORPHIC)
 
-      res <- dplyr::left_join(
-        res,
+      x <- dplyr::left_join(
+        x,
         dplyr::rename(conversion.df, A2 = ALLELES), by = c("MARKERS", "A2")) %>%
         dplyr::rename(A2_NUC = INTEGERS) %>%
         dplyr::mutate(
           GT_VCF = stringi::stri_join(A1_NUC, A2_NUC, sep = "/"),
-          GT_VCF = stringi::stri_replace_na(str = GT_VCF, replacement = "./."),
-          A1_NUC = as.character(A1_NUC + 1),
-          A2_NUC = as.character(A2_NUC + 1),
-          A1_NUC = stringi::stri_replace_na(str = A1_NUC, replacement = "0"),
-          A2_NUC = stringi::stri_replace_na(str = A2_NUC, replacement = "0"),
-          A1_NUC = stringi::stri_pad_left(str = A1_NUC, pad = "0", width = 3),
-          A2_NUC = stringi::stri_pad_left(str = A2_NUC, pad = "0", width = 3)
-        ) %>%
-        tidyr::unite(data = ., col = GT, A1_NUC, A2_NUC, sep = "") %>%
-        dplyr::select(-A1, -A2)
+          GT_VCF = stringi::stri_replace_na(str = GT_VCF, replacement = "./."))
 
       if (biallelic) {
-        res <- res %>%
+        x <- x %>%
+          dplyr::select(-A1_NUC, -A2_NUC) %>%
           dplyr::mutate(
-            GT_BIN = as.numeric(stringi::stri_replace_all_fixed(
-              str = GT_VCF, pattern = c("0/0", "1/1", "0/1", "1/0", "./."),
-              replacement = c("0", "2", "1", "1", NA), vectorize_all = FALSE)))
-      }
+          A1 = stringi::stri_replace_all_regex(
+            str = A1,
+            pattern = c("^A$", "^C$", "^G$", "^T$", "^.$"),
+            replacement = c("001", "002", "003", "004", "000"),
+            vectorize_all = FALSE
+          ),
+          A2 = stringi::stri_replace_all_regex(
+            str = A2,
+            pattern = c("^A$", "^C$", "^G$", "^T$", "^.$"),
+            replacement = c("001", "002", "003", "004", "000"),
+            vectorize_all = FALSE
+          ),
+          GT_BIN = as.numeric(stringi::stri_replace_all_fixed(
+            str = GT_VCF, pattern = c("0/0", "1/1", "0/1", "1/0", "./."),
+            replacement = c("0", "2", "1", "1", NA), vectorize_all = FALSE))
+        ) %>%
+          tidyr::unite(data = ., col = GT, A1, A2, sep = "")
+
+      } else {
+        x <- x %>%
+          dplyr::select(-A1, -A2) %>%
+          dplyr::mutate(
+            A1_NUC = as.character(A1_NUC + 1),
+            A2_NUC = as.character(A2_NUC + 1),
+            A1_NUC = stringi::stri_replace_na(str = A1_NUC, replacement = "0"),
+            A2_NUC = stringi::stri_replace_na(str = A2_NUC, replacement = "0"),
+            A1_NUC = stringi::stri_pad_left(str = A1_NUC, pad = "0", width = 3),
+            A2_NUC = stringi::stri_pad_left(str = A2_NUC, pad = "0", width = 3)
+          ) %>%
+          tidyr::unite(data = ., col = GT, A1_NUC, A2_NUC, sep = "")
+        }
     } else {
-      res <- dplyr::select(x, MARKERS, GT) %>%
+      x <- dplyr::select(x, MARKERS, GT) %>%
         dplyr::mutate(
           A1 = stringi::stri_sub(str = GT, from = 1, to = 3),
           A2 = stringi::stri_sub(str = GT, from = 4, to = 6)
         ) %>%
         dplyr::select(-GT)
 
-      if (tibble::has_name(res, "POLYMORPHIC")) res <- dplyr::select(res, -POLYMORPHIC)
+      if (tibble::has_name(x, "POLYMORPHIC")) x <- dplyr::select(x, -POLYMORPHIC)
 
-      res <- dplyr::left_join(
-        res,
+      x <- dplyr::left_join(
+        x,
         dplyr::rename(conversion.df, A1 = ALLELES), by = c("MARKERS", "A1")) %>%
+        dplyr::select(-dplyr::one_of("POLYMORPHIC")) %>%
         dplyr::rename(A1_NUC = INTEGERS) %>%
         dplyr::left_join(dplyr::rename(conversion.df, A2 = ALLELES), by = c("MARKERS", "A2")) %>%
+        dplyr::select(-dplyr::one_of("POLYMORPHIC")) %>%
         dplyr::rename(A2_NUC = INTEGERS) %>%
         dplyr::mutate(
           GT_VCF = stringi::stri_join(A1_NUC, A2_NUC, sep = "/"),
@@ -373,14 +418,14 @@ integrate_ref <- function(
         tidyr::unite(data = ., col = GT, A1_NUC, A2_NUC, sep = "") %>%
         tidyr::unite(data = ., col = ORIG_GT, A1, A2, sep = "")
       if (biallelic) {
-        res <- res %>%
+        x <- x %>%
           dplyr::mutate(
             GT_BIN = as.numeric(stringi::stri_replace_all_fixed(
               str = GT_VCF, pattern = c("0/0", "1/1", "0/1", "1/0", "./."),
               replacement = c("0", "2", "1", "1", NA), vectorize_all = FALSE)))
       }
     }
-    return(res)
+    return(x)
   }#End new_gt
 
   nuc.info <- tibble::has_name(x, "GT_VCF_NUC")
@@ -413,6 +458,7 @@ integrate_ref <- function(
       dplyr::select(-GT) %>%
       dplyr::rename(GT = ORIG_GT)
   }
+  new.gt <- NULL
   return(x)
 } #End integrate_ref
 
