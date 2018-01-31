@@ -752,7 +752,7 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
     cat("################ radiator::genomic_converter completed ################\n")
   }
   res$tidy.data <- input
-  res$tidy.data.imp <- input.imp
+  if (!is.null(imputation.method)) res$tidy.data.imp <- input.imp
   input.imp <- input <- NULL
   return(res)
 } # end genomic_converter

@@ -330,9 +330,12 @@ See this file for the list and count: duplicated.markers.tsv\n\n")
           data = .,
           key = INDIVIDUALS,
           value = GT,
-          -dplyr::one_of(c("MARKERS", "CHROM", "LOCUS", "POS", "ID", "COL", "REF", "ALT"))) %>%
-        dplyr::mutate_at(.tbl = ., .vars = "INDIVIDUALS",
-                         .funs = clean_ind_names))
+          -dplyr::one_of(c("MARKERS", "CHROM", "LOCUS", "POS", "ID", "COL", "REF", "ALT"))))
+      # %>%  dplyr::mutate_at(.tbl = ., .vars = "INDIVIDUALS",
+                         # .funs = clean_ind_names)
+
+    # dplyr::n_distinct(input$INDIVIDUALS)
+    # dplyr::n_distinct(strata.df$INDIVIDUALS)
 
     # metadata
     if (is.logical(vcf.metadata)) {
@@ -355,8 +358,9 @@ See this file for the list and count: duplicated.markers.tsv\n\n")
       input <- dplyr::bind_cols(
         input,
         purrr::map(parse.format.list, parse_genomic, data = vcf.data,
-                   gather.data = TRUE, verbose = verbose) %>%
+                   gather.data = TRUE, strata = strata.df, verbose = verbose) %>%
           dplyr::bind_cols(.))
+      # dplyr::n_distinct(input$INDIVIDUALS)
 
       # some VCF are too big to fit in memory multiple times for parallel processing...
       # work in progress
@@ -533,7 +537,7 @@ See this file for the list and count: duplicated.markers.tsv\n\n")
 #' @export
 parse_genomic <- function(
   x, data = NULL, mask = FALSE, gather.data = FALSE, return.alleles = FALSE,
-  verbose = TRUE) {
+  strata = NULL, verbose = TRUE) {
   format.name <- x
 
   if (verbose) message("Parsing and tidying: ", format.name)
@@ -552,6 +556,11 @@ parse_genomic <- function(
 
   if (gather.data) {
     x <- dplyr::mutate(x, ID = seq(1, n()))
+    if (!is.null(strata)){
+      want <- c("ID", strata$INDIVIDUALS)
+      colnames(x) <- radiator::clean_ind_names(colnames(x))
+      x <- suppressWarnings(dplyr::select(x, dplyr::one_of(want)))
+    }
     x <- tidyr::gather(data = x, key = INDIVIDUALS, value = rlang::UQ(format.name), -ID) %>%
       dplyr::select(-ID, -INDIVIDUALS)
   }

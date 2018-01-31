@@ -5,7 +5,7 @@
 \title{parse_genomic}
 \usage{
 parse_genomic(x, data = NULL, mask = FALSE, gather.data = FALSE,
-  return.alleles = FALSE, verbose = TRUE)
+  return.alleles = FALSE, strata = NULL, verbose = TRUE)
 }
 \description{
 function to parse the format field and tidy the results of VCF
