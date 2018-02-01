@@ -46,8 +46,7 @@ Suggests:
     rmarkdown
 Remotes:
   github::kvnkuang/pbmcapply,
-  github::Rdatatable/data.table@9d1f3e2,
-  github::fstPackage/fst@b6eadb4
+  github::Rdatatable/data.table@9d1f3e2
 License: GPL (>=2)
 LazyLoad: yes
 VignetteBuilder: knitr
