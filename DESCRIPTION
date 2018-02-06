@@ -1,8 +1,8 @@
 Package: radiator
 Type: Package
 Title: RADseq Data Exploration, Manipulation and Visualization using R
-Version: 0.0.6
-Date: 2017-10-02
+Version: 0.0.7
+Date: 2019-02-06
 Encoding: UTF-8
 Authors@R: c(
   person("Thierry", "Gosselin", email = "thierrygosselin@icloud.com", role = c("aut", "cre")),
@@ -45,8 +45,7 @@ Suggests:
     knitr,
     rmarkdown
 Remotes:
-  github::kvnkuang/pbmcapply,
-  github::Rdatatable/data.table@9d1f3e2
+  github::kvnkuang/pbmcapply
 License: GPL (>=2)
 LazyLoad: yes
 VignetteBuilder: knitr

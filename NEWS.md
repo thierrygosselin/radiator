@@ -1,3 +1,9 @@
+# radiator v.0.0.7 2019-02-06
+
+* Better VCF parsing
+* `radiator` is ready for stacks v.2 beta8
+* starting to re-introduce `data.table` to increase speed during melting or casting data frames
+
 # radiator v.0.0.6 2017-10-02
 
 * `tidy_genomic_data` and `genomic_converter`: bug fix and improvements.

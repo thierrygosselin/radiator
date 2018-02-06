@@ -17,8 +17,7 @@
 #' @export
 #' @rdname tidy_vcf
 #' @importFrom rlang UQ
-
-
+#' @importFrom data.table melt.data.table as.data.table
 
 #' @return The output in your global environment is a tidy data frame.
 
@@ -47,7 +46,6 @@ tidy_vcf <- function(
   parallel.core = parallel::detectCores() - 1,
   verbose = FALSE,
   ...) {
-
   # dotslist -------------------------------------------------------------------
   dotslist <- list(...)
   want <- c("whitelist.markers", "blacklist.id", "pop.select", "pop.levels", "pop.labels")
@@ -281,61 +279,77 @@ See this file for the list and count: duplicated.markers.tsv\n\n")
     strata.df <- strata_vcf(strata = strata, input = input.gt, blacklist.id = blacklist.id)
 
     # filter vcf id based on id in strata
-    input.gt <- suppressWarnings(
-      input.gt %>%
-        dplyr::mutate(INDIVIDUALS = clean_ind_names(INDIVIDUALS)) %>%
-        dplyr::filter(INDIVIDUALS %in% strata.df$INDIVIDUALS) %>%
-        tidyr::gather(data = ., key = MARKERS, value = GT, -INDIVIDUALS))
+    input.gt$INDIVIDUALS <- clean_ind_names(input.gt$INDIVIDUALS)
 
-    input <- suppressWarnings(
-      dplyr::full_join(input.gt, input, by = "MARKERS") %>%
-        dplyr::select(dplyr::one_of(want)) %>%
-        dplyr::mutate_at(.tbl = ., .vars = "INDIVIDUALS",
-                         .funs = clean_ind_names) %>%
+    if (!identical(sort(input.gt$INDIVIDUALS), sort(strata.df$INDIVIDUALS))) {
+      input.gt <- dplyr::filter(input.gt, INDIVIDUALS %in% strata.df$INDIVIDUALS)
+    }
+
+    input.gt <- data.table::melt.data.table(
+      data = data.table::as.data.table(input.gt),
+      id.vars = "INDIVIDUALS",
+      variable.name = "MARKERS", value.name = "GT", variable.factor = FALSE) %>%
+      tibble::as_data_frame(.)
+
+    input <- suppressWarnings(dplyr::full_join(input.gt, input, by = "MARKERS"))
+    input.gt <- NULL
+    input <- dplyr::select(input, dplyr::one_of(want)) %>%
         dplyr::mutate(
           # for stacks v.2 beta4 missing genotype are coded wrong
-          GT = stringi::stri_replace_all_regex(str = GT, pattern = "^.$", replacement = "./.", vectorize_all = FALSE),
-          GT = stringi::stri_replace_na(str = GT, replacement = "./.")))
+          GT = stringi::stri_replace_all_regex(
+            str = GT, pattern = "^.$",
+            replacement = "./.", vectorize_all = FALSE),
+          GT = stringi::stri_replace_na(str = GT, replacement = "./."))
 
-    input.gt <- NULL
   } else {
     # filter the vcf.data
     vcf.data <- vcf.data[keep.markers,]
     keep.markers <- NULL
-
-    input <- suppressWarnings(dplyr::select(
-      .data = input,
-      dplyr::one_of(want)))#MARKERS, CHROM, LOCUS, POS, REF, ALT)
-
+    input <- suppressWarnings(dplyr::select(.data = input, dplyr::one_of(want)))
     filter.check <- NULL
+
+    # strata
+    # remove <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT")
+    # id.vcfr <- colnames(input)
+    # id.vcfr <- purrr::discard(.x = id.vcfr, .p = id.vcfr %in% remove)
+    # id.vcfr <- tibble::tibble(INDIVIDUALS = id.vcfr)
+
+    strata.df <- strata_vcf(
+      strata = strata, input = extract_vcf_individuals(data),
+      blacklist.id = blacklist.id)
 
     input <- dplyr::bind_cols(
       input,
-      parse_genomic(x = "GT", data = vcf.data, return.alleles = TRUE,
-                    verbose = verbose))
+      parse_genomic(
+        x = "GT", data = vcf.data, return.alleles = TRUE,
+        strata = strata.df, verbose = verbose))
 
-    # strata
-    remove <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT")
-    id.vcfr <- colnames(input)
-    id.vcfr <- purrr::discard(.x = id.vcfr, .p = id.vcfr %in% remove)
-    id.vcfr <- tibble::tibble(INDIVIDUALS = id.vcfr)
-    strata.df <- strata_vcf(strata = strata, input = id.vcfr, blacklist.id = blacklist.id)
-    id.vcfr <- NULL
-    want <- c(remove, strata.df$INDIVIDUALS)
-    colnames(input) <- radiator::clean_ind_names(colnames(input))
-    input <- suppressWarnings(
-      input %>%
-        dplyr::select(dplyr::one_of(want)) %>%
-        tidyr::gather(
-          data = .,
-          key = INDIVIDUALS,
-          value = GT,
-          -dplyr::one_of(c("MARKERS", "CHROM", "LOCUS", "POS", "ID", "COL", "REF", "ALT"))))
-      # %>%  dplyr::mutate_at(.tbl = ., .vars = "INDIVIDUALS",
-                         # .funs = clean_ind_names)
+    # want <- c(remove, strata.df$INDIVIDUALS)
+    # colnames(input) <- radiator::clean_ind_names(colnames(input))
+    # input <- dplyr::select(input, dplyr::one_of(want))
 
-    # dplyr::n_distinct(input$INDIVIDUALS)
-    # dplyr::n_distinct(strata.df$INDIVIDUALS)
+    have <- colnames(input)
+    id.vars.want <- purrr::keep(
+      .x = have,
+      .p = have %in% c("MARKERS", "CHROM", "LOCUS", "POS", "ID", "COL", "REF", "ALT"))
+    have <- NULL
+
+    input <- data.table::melt.data.table(
+      data = data.table::as.data.table(input),
+      id.vars = id.vars.want,
+      variable.name = "INDIVIDUALS",
+      value.name = "GT",
+      variable.factor = FALSE) %>%
+      tibble::as_data_frame(.)
+
+    # input <- suppressWarnings(
+    #   input %>%
+    #     dplyr::select(dplyr::one_of(want)) %>%
+    #     tidyr::gather(
+    #       data = .,
+    #       key = INDIVIDUALS,
+    #       value = GT,
+    #       -dplyr::one_of(c("MARKERS", "CHROM", "LOCUS", "POS", "ID", "COL", "REF", "ALT"))))
 
     # metadata
     if (is.logical(vcf.metadata)) {
@@ -394,8 +408,10 @@ See this file for the list and count: duplicated.markers.tsv\n\n")
   input <- dplyr::left_join(x = input, y = strata.df, by = "INDIVIDUALS")
 
   # Using pop.levels and pop.labels info if present-------------------------------
-  input <- radiator::change_pop_names(
-    data = input, pop.levels = pop.levels, pop.labels = pop.labels)
+  if (!is.null(pop.levels) && !is.null(pop.labels)) {
+    input <- radiator::change_pop_names(
+      data = input, pop.levels = pop.levels, pop.labels = pop.labels)
+  }
 
   # Pop select--------------------------------------------------------------------
   if (!is.null(pop.select)) {
@@ -442,6 +458,7 @@ See this file for the list and count: duplicated.markers.tsv\n\n")
 
     split.vec <- split_vec_row(input, 3, parallel.core = parallel.core)
 
+    # AD -----------------------------------------------------------------------
     # Cleaning AD (ALLELES_DEPTH)
     if (tibble::has_name(input, "AD")) {
       if (verbose) message("AD column: splitting coverage info into ALLELE_REF_DEPTH and ALLELE_ALT_DEPTH")
@@ -449,6 +466,7 @@ See this file for the list and count: duplicated.markers.tsv\n\n")
                         parallel.core = parallel.core)
     }#End cleaning AD column
 
+    # DP -----------------------------------------------------------------------
     # Cleaning DP and changing name to READ_DEPTH
     if (tibble::has_name(input, "DP")) {
       if (verbose) message("DP column: cleaning and renaming to READ_DEPTH")
@@ -459,6 +477,7 @@ See this file for the list and count: duplicated.markers.tsv\n\n")
         )
     }#End cleaning DP column
 
+    # PL -----------------------------------------------------------------------
     # PL for biallelic as 3 values:
     if (tibble::has_name(input, "PL")) {
       if (verbose) message("PL column (normalized, phred-scaled likelihoods for genotypes): separating into PROB_HOM_REF, PROB_HET and PROB_HOM_ALT")
@@ -469,6 +488,7 @@ See this file for the list and count: duplicated.markers.tsv\n\n")
                         parallel.core = parallel.core)
     }#End cleaning PL column
 
+    # GL -----------------------------------------------------------------------
     # GL cleaning
     if (tibble::has_name(input, "GL")) {
       if (verbose) message("GL column: cleaning Genotype Likelihood column")
@@ -477,6 +497,7 @@ See this file for the list and count: duplicated.markers.tsv\n\n")
                         parallel.core = parallel.core)
     }#End cleaning GL column
 
+    # GQ -----------------------------------------------------------------------
     # Cleaning GQ: Genotype quality as phred score
     if (tibble::has_name(input, "GQ")) {
       if (verbose) message("GQ column: Genotype Quality")
@@ -486,6 +507,25 @@ See this file for the list and count: duplicated.markers.tsv\n\n")
       )
     }#End cleaning GQ column
 
+    # HQ -----------------------------------------------------------------------
+    # Cleaning HQ: Haplotype quality as phred score
+    if (tibble::has_name(input, "HQ")) {
+
+      # check HQ and new stacks version with no HQ
+      all.missing <- all(is.na(input$HQ))
+      if (!all.missing) {
+        if (verbose) message("HQ column: Genotype Quality")
+        input <- dplyr::mutate(
+          input,
+          HQ = dplyr::if_else(GT_VCF == "./.", as.numeric(NA_character_), as.numeric(HQ))
+        )
+      } else {
+        message("    HQ values are all missing: removing column")
+        x <- dplyr::select(x, -HQ)
+      }
+    }#End cleaning HQ column
+
+    # GOF ----------------------------------------------------------------------
     # Cleaning GOF: Goodness of fit value
     if (tibble::has_name(input, "GOF")) {
       if (verbose) message("GOF column: Goodness of fit value")
@@ -495,6 +535,8 @@ See this file for the list and count: duplicated.markers.tsv\n\n")
       )
     }#End cleaning GOF column
 
+    # NR -----------------------------------------------------------------------
+
     # Cleaning NR: Number of reads covering variant location in this sample
     if (tibble::has_name(input, "NR")) {
       if (verbose) message("NR column: splitting column into the number of variant")
@@ -503,6 +545,7 @@ See this file for the list and count: duplicated.markers.tsv\n\n")
                         parallel.core = parallel.core)
     }#End cleaning NR column
 
+    # NV -----------------------------------------------------------------------
     # Cleaning NV: Number of reads containing variant in this sample
     if (tibble::has_name(input, "NV")) {
       if (verbose) message("NV column: splitting column into the number of variant")
@@ -554,16 +597,29 @@ parse_genomic <- function(
     )
   }
 
+  if (!is.null(strata)){
+    colnames(x) <- radiator::clean_ind_names(colnames(x))
+    x <- suppressWarnings(dplyr::select(x, dplyr::one_of(strata$INDIVIDUALS)))
+  }
+
   if (gather.data) {
     x <- dplyr::mutate(x, ID = seq(1, n()))
-    if (!is.null(strata)){
-      want <- c("ID", strata$INDIVIDUALS)
-      colnames(x) <- radiator::clean_ind_names(colnames(x))
-      x <- suppressWarnings(dplyr::select(x, dplyr::one_of(want)))
-    }
-    x <- tidyr::gather(data = x, key = INDIVIDUALS, value = rlang::UQ(format.name), -ID) %>%
+    # if (!is.null(strata)){
+    #   want <- c("ID", strata$INDIVIDUALS)
+    #   colnames(x) <- radiator::clean_ind_names(colnames(x))
+    #   x <- suppressWarnings(dplyr::select(x, dplyr::one_of(want)))
+    # }
+    # x <- tidyr::gather(data = x, key = INDIVIDUALS, value = rlang::UQ(format.name), -ID) %>%
+    #   dplyr::select(-ID, -INDIVIDUALS)
+
+    x <- data.table::melt.data.table(
+      data = data.table::as.data.table(x),
+      id.vars = "ID",
+      variable.name = "INDIVIDUALS", value.name = rlang::UQ(format.name),
+      variable.factor = FALSE) %>%
+      tibble::as_data_frame(.) %>%
       dplyr::select(-ID, -INDIVIDUALS)
-  }
+    }
   return(x)
 }#End parse_genomic
 
