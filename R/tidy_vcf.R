@@ -521,7 +521,7 @@ See this file for the list and count: duplicated.markers.tsv\n\n")
         )
       } else {
         message("    HQ values are all missing: removing column")
-        x <- dplyr::select(x, -HQ)
+        input <- dplyr::select(input, -HQ)
       }
     }#End cleaning HQ column
 
