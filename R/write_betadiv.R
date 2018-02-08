@@ -39,34 +39,24 @@ write_betadiv <- function(data) {
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {
-    input <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-  } else {
-    input <- data
+    data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
   }
 
-  # check genotype column naming
-  colnames(input) <- stringi::stri_replace_all_fixed(
-    str = colnames(input),
-    pattern = "GENOTYPE",
-    replacement = "GT",
-    vectorize_all = FALSE
-  )
-
   # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-  if (tibble::has_name(input, "LOCUS") && !tibble::has_name(input, "MARKERS")) {
-    input <- dplyr::rename(.data = input, MARKERS = LOCUS)
+  if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
+    data <- dplyr::rename(.data = data, MARKERS = LOCUS)
   }
 
   # Compute count and Minor Allele Frequency -----------------------------------
   # We split the alleles here to prep for MAF
   # need to compute REF/ALT allele for non VCF file
-  if (!tibble::has_name(input, "GT_VCF")) {
-    ref.change <- radiator::change_alleles(data = input)$input
-    input <- dplyr::left_join(input, ref.change, by = c("MARKERS", "INDIVIDUALS"))
+  if (!tibble::has_name(data, "GT_VCF")) {
+    ref.change <- radiator::change_alleles(data = data)$input
+    data <- dplyr::left_join(data, ref.change, by = c("MARKERS", "INDIVIDUALS"))
   }
 
   # MAF
-  betadiv <- dplyr::select(.data = input, MARKERS, POP_ID, GT_VCF) %>%
+  betadiv <- dplyr::select(.data = data, MARKERS, POP_ID, GT_VCF) %>%
     dplyr::filter(GT_VCF != "./.") %>%
     dplyr::group_by(MARKERS, POP_ID) %>%
     dplyr::summarise(

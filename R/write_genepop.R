@@ -67,14 +67,6 @@ write_genepop <- function(
     input <- data
   }
 
-  # check genotype column naming
-  colnames(input) <- stringi::stri_replace_all_fixed(
-    str = colnames(input),
-    pattern = "GENOTYPE",
-    replacement = "GT",
-    vectorize_all = FALSE
-  )
-
   # necessary steps to make sure we work with unique markers and not duplicated LOCUS
   if (tibble::has_name(input, "LOCUS") && !tibble::has_name(input, "MARKERS")) {
     input <- dplyr::rename(.data = input, MARKERS = LOCUS)
@@ -121,14 +113,7 @@ write_genepop <- function(
 
   # Write the file in genepop format -------------------------------------------
   # Date and time
-  file.date <- stringi::stri_replace_all_fixed(
-    Sys.time(),
-    pattern = " EDT", replacement = "") %>%
-    stringi::stri_replace_all_fixed(
-      str = .,
-      pattern = c("-", " ", ":"), replacement = c("", "@", ""),
-      vectorize_all = FALSE) %>%
-    stringi::stri_sub(str = ., from = 1, to = 13)
+  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
 
   # Filename -------------------------------------------------------------------
   if (is.null(filename)) {

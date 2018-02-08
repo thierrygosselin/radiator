@@ -49,25 +49,15 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {
-    input <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-  } else {
-    input <- data
+    data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
   }
-
-  # check genotype column naming
-  colnames(input) <- stringi::stri_replace_all_fixed(
-    str = colnames(input),
-    pattern = "GENOTYPE",
-    replacement = "GT",
-    vectorize_all = FALSE
-  )
 
   # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-  if (tibble::has_name(input, "LOCUS") && !tibble::has_name(input, "MARKERS")) {
-    input <- dplyr::rename(.data = input, MARKERS = LOCUS)
+  if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
+    data <- dplyr::rename(.data = data, MARKERS = LOCUS)
   }
 
-  input <- dplyr::select(.data = input, POP_ID, INDIVIDUALS, MARKERS, GT) %>%
+  data <- dplyr::select(.data = data, POP_ID, INDIVIDUALS, MARKERS, GT) %>%
     dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS) %>%
     dplyr::mutate(
       GT = replace(GT, which(GT == "000000"), NA),
@@ -100,10 +90,10 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
   res <- suppressWarnings(
     safe_gtypes(
       "gtypes",
-      gen.data = input[, -(1:2)],
+      gen.data = data[, -(1:2)],
       ploidy = 2,
-      ind.names = input$INDIVIDUALS,
-      strata = input$POP_ID,
+      ind.names = data$INDIVIDUALS,
+      strata = data$POP_ID,
       schemes = NULL,
       sequences = NULL,
       description = NULL,

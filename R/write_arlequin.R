@@ -49,48 +49,38 @@ write_arlequin <- function(
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {
-    input <- radiator::tidy_wide(data = data, import.metadata = FALSE)
-  } else {
-    input <- data
+    data <- radiator::tidy_wide(data = data, import.metadata = FALSE)
   }
-
-  # check genotype column naming
-  colnames(input) <- stringi::stri_replace_all_fixed(
-    str = colnames(input),
-    pattern = "GENOTYPE",
-    replacement = "GT",
-    vectorize_all = FALSE
-  )
 
   # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-  if (tibble::has_name(input, "LOCUS") && !tibble::has_name(input, "MARKERS")) {
-    input <- dplyr::rename(.data = input, MARKERS = LOCUS)
+  if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
+    data <- dplyr::rename(.data = data, MARKERS = LOCUS)
   }
 
-  input <- dplyr::select(.data = input, POP_ID, INDIVIDUALS, MARKERS, GT)
+  data <- dplyr::select(.data = data, POP_ID, INDIVIDUALS, MARKERS, GT)
 
 
   # pop.levels -----------------------------------------------------------------
   if (!is.null(pop.levels)) {
-    input <- dplyr::mutate(
-      .data = input,
+    data <- dplyr::mutate(
+      .data = data,
       POP_ID = factor(POP_ID, levels = pop.levels, ordered = TRUE),
       POP_ID = droplevels(POP_ID)
     ) %>%
       dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS)
   } else {
-    input <- dplyr::mutate(.data = input, POP_ID = factor(POP_ID)) %>%
+    data <- dplyr::mutate(.data = data, POP_ID = factor(POP_ID)) %>%
       dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS)
   }
 
   # Create a marker vector  ------------------------------------------------
-  markers <- dplyr::distinct(.data = input, MARKERS) %>%
+  markers <- dplyr::distinct(.data = data, MARKERS) %>%
     dplyr::arrange(MARKERS) %>%
     purrr::flatten_chr(.)
-  npop <- length(unique(input$POP_ID))
+  npop <- length(unique(data$POP_ID))
 
   # arlequin format ----------------------------------------------------------------
-  input <- input %>%
+  data <- data %>%
     tidyr::separate(col = GT, into = c("A1", "A2"), sep = 3, extra = "drop", remove = TRUE) %>%
     tidyr::gather(data = ., key = ALLELES, value = GT, -c(POP_ID, INDIVIDUALS, MARKERS)) %>%
     dplyr::mutate(
@@ -137,18 +127,18 @@ write_arlequin <- function(
   write(paste("[Data]"), file = filename.connection, append = TRUE)
   write(paste("[[Samples]]"), file = filename.connection, append = TRUE)
 
-  pop <- input$POP_ID # Create a population vector
-  input.split <- split(input, pop) # split genepop by populations
-  for (i in 1:length(input.split)) {
+  pop <- data$POP_ID # Create a population vector
+  data.split <- split(data, pop) # split genepop by populations
+  for (i in 1:length(data.split)) {
     # i <- 1
-    pop.data <- input.split[[i]]
+    pop.data <- data.split[[i]]
     pop.name <- unique(pop.data$POP_ID)
     n.ind <- dplyr::n_distinct(pop.data$INDIVIDUALS)
     write(paste("SampleName = ", pop.name), file = filename.connection, append = TRUE)
     write(paste("SampleSize = ", n.ind), file = filename.connection, append = TRUE)
     write(paste("SampleData = {"), file = filename.connection, append = TRUE)
     pop.data$INDIVIDUALS[seq(from = 2, to = n.ind * 2, by = 2)] <- ""
-    # test <- data.frame(input.split[[i]])
+    # test <- data.frame(data.split[[i]])
     # close(filename.connection) # close the connection
     pop.data <- dplyr::select(.data = pop.data, -POP_ID)
     ncol.data <- ncol(pop.data)
@@ -161,8 +151,8 @@ write_arlequin <- function(
   write(paste("StructureName = ", "\"", "One cluster", "\""), file = filename.connection, append = TRUE)
   write(paste("NbGroups = 1"), file = filename.connection, append = TRUE)
   write(paste("Group = {"), file = filename.connection, append = TRUE)
-  for (i in 1:length(input.split)) {
-    pop.data <- input.split[[i]]
+  for (i in 1:length(data.split)) {
+    pop.data <- data.split[[i]]
     pop.name <- unique(pop.data$POP_ID)
     write(paste("\"", pop.name, "\"", sep = ""), file = filename.connection, append = TRUE)
   }

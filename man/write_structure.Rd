@@ -17,15 +17,15 @@ Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.}
 Default: \code{pop.levels = NULL}.}
 
 \item{markers.line}{(optional, logical) In the structure
-file, you can write the markers on a single line separated by 
-commas \code{markers.line = TRUE}, 
+file, you can write the markers on a single line separated by
+commas \code{markers.line = TRUE},
 or have markers on a separate line, i.e. in one column, for the structure file
 (not very useful with thousands of markers) and not printed at all for the
 structure file.
 Default: \code{markers.line = TRUE}.}
 
-\item{filename}{(optional) The file name prefix for the structure file 
-written to the working directory. With default: \code{filename = NULL}, 
+\item{filename}{(optional) The file name prefix for the structure file
+written to the working directory. With default: \code{filename = NULL},
 the date and time is appended to \code{radiator_structure_}.}
 
 \item{...}{other parameters passed to the function.}
@@ -35,7 +35,7 @@ A structure file is saved to the working directory.
 }
 \description{
 Write a structure file from a tidy data frame
-Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator} 
+Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and \href{https://github.com/thierrygosselin/assigner}{assigner}
 and might be of interest for users.
 }

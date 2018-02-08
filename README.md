@@ -1,6 +1,6 @@
 [![Travis-CI Build Status](https://travis-ci.org/thierrygosselin/radiator.svg?branch=master)](https://travis-ci.org/thierrygosselin/radiator) [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/thierrygosselin/radiator?branch=master&svg=true)](https://ci.appveyor.com/project/thierrygosselin/radiator) [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/radiator)](http://cran.r-project.org/package=radiator) [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active) [![DOI](https://zenodo.org/badge/14548/thierrygosselin/radiator.svg)](https://zenodo.org/badge/latestdoi/14548/thierrygosselin/radiator)
 
-[![packageversion](https://img.shields.io/badge/Package%20version-0.0.7-orange.svg)](commits/master) [![Last-changedate](https://img.shields.io/badge/last%20change-2018--02--07-brightgreen.svg)](/commits/master)
+[![packageversion](https://img.shields.io/badge/Package%20version-0.0.8-orange.svg)](commits/master) [![Last-changedate](https://img.shields.io/badge/last%20change-2018--02--08-brightgreen.svg)](/commits/master)
 
 ------------------------------------------------------------------------
 
@@ -51,7 +51,7 @@ devtools::install_version("data.table", version = "1.10.4", repos = "http://cran
 </tr>
 <tr class="even">
 <td align="left"><strong>Output</strong></td>
-<td align="left">19 genomic data formats can be exported out of <strong>radiator</strong> using <code>genomic_converter</code> or these separate modules:<br><code>write_vcf</code>: <a href="https://samtools.github.io/hts-specs/">VCF</a> (Danecek et al., 2011)<br><code>write_plink</code>: <a href="http://pngu.mgh.harvard.edu/~purcell/plink/data.shtml#tr">PLINK tped/tfam</a> (Purcell et al., 2007)<br><code>write_genind</code>: <a href="https://github.com/thibautjombart/adegenet">adegenet genind and genlight</a> (Jombart et al., 2010; Jombart and Ahmed, 2011)<br><code>write_genlight</code>: <a href="https://github.com/thibautjombart/adegenet">genlight</a> (Jombart et al., 2010; Jombart and Ahmed, 2011)<br><code>write_gtypes</code>: <a href="https://github.com/EricArcher/strataG">strataG gtypes</a> (Archer et al. 2016)<br><code>write_colony</code>: <a href="https://www.zsl.org/science/software/colony">COLONY</a> (Jones and Wang, 2010; Wang, 2012)<br><code>write_genepop</code>: <a href="http://genepop.curtin.edu.au">Genepop</a> (Raymond and Rousset, 1995; Rousset, 2008)<br><a href="http://catchenlab.life.illinois.edu/stacks/">STACKS haplotype file</a> (Catchen et al., 2011, 2013)<br><code>write_betadiv</code>: <a href="http://adn.biol.umontreal.ca/~numericalecology/Rcode/">betadiv</a> (Lamy, 2015)<br> <code>vcf2dadi</code>: <a href="http://gutengroup.mcb.arizona.edu/software/">δaδi</a> (Gutenkunst et al., 2009)<br> <code>write_structure</code>: <a href="http://pritchardlab.stanford.edu/structure.html">structure</a> (Pritchard et al., 2000)<br> <code>write_arlequin</code>: <a href="http://cmpg.unibe.ch/software/arlequin35/">Arlequin</a> (Excoffier et al. 2005)<br> <code>write_hierfstat</code>: <a href="https://github.com/jgx65/hierfstat">hierfstat</a> (Goudet, 2005)<br> <code>write_snprelate</code>: <a href="https://github.com/zhengxwen/SNPRelate">SNPRelate</a> (Zheng et al. 2012), Note that code is no longer integrated in radiator, but still available <a href="https://www.dropbox.com/s/7xujizkvpi0ddac/write_snprelate.R?dl=0">here</a> <br> <code>write_bayescan</code>: <a href="http://cmpg.unibe.ch/software/BayeScan">BayeScan</a> (Foll and Gaggiotti, 2008)<br><code>write_pcadapt</code>: <a href="https://github.com/bcm-uga/pcadapt">pcadapt</a> (Luu et al. 2017)<br><code>write_hzar</code> (Derryberry et al. 2013) <br>Dataframes of genotypes in wide or long/tidy format</td>
+<td align="left">20 genomic data formats can be exported out of <strong>radiator</strong> using <code>genomic_converter</code> or these separate modules:<br><code>write_vcf</code>: <a href="https://samtools.github.io/hts-specs/">VCF</a> (Danecek et al., 2011)<br><code>write_plink</code>: <a href="http://pngu.mgh.harvard.edu/~purcell/plink/data.shtml#tr">PLINK tped/tfam</a> (Purcell et al., 2007)<br><code>write_genind</code>: <a href="https://github.com/thibautjombart/adegenet">adegenet genind and genlight</a> (Jombart et al., 2010; Jombart and Ahmed, 2011)<br><code>write_genlight</code>: <a href="https://github.com/thibautjombart/adegenet">genlight</a> (Jombart et al., 2010; Jombart and Ahmed, 2011)<br><code>write_gtypes</code>: <a href="https://github.com/EricArcher/strataG">strataG gtypes</a> (Archer et al. 2016)<br><code>write_colony</code>: <a href="https://www.zsl.org/science/software/colony">COLONY</a> (Jones and Wang, 2010; Wang, 2012)<br><code>write_genepop</code>: <a href="http://genepop.curtin.edu.au">Genepop</a> (Raymond and Rousset, 1995; Rousset, 2008)<br><a href="http://catchenlab.life.illinois.edu/stacks/">STACKS haplotype file</a> (Catchen et al., 2011, 2013)<br><code>write_betadiv</code>: <a href="http://adn.biol.umontreal.ca/~numericalecology/Rcode/">betadiv</a> (Lamy, 2015)<br> <code>vcf2dadi</code>: <a href="http://gutengroup.mcb.arizona.edu/software/">δaδi</a> (Gutenkunst et al., 2009)<br> <code>write_structure</code>: <a href="http://pritchardlab.stanford.edu/structure.html">structure</a> (Pritchard et al., 2000)<br> <code>write_arlequin</code>: <a href="http://cmpg.unibe.ch/software/arlequin35/">Arlequin</a> (Excoffier et al. 2005)<br> <code>write_hierfstat</code>: <a href="https://github.com/jgx65/hierfstat">hierfstat</a> (Goudet, 2005)<br> <code>write_snprelate</code>: <a href="https://github.com/zhengxwen/SNPRelate">SNPRelate</a> (Zheng et al. 2012), Note that code is no longer integrated in radiator, but still available <a href="https://www.dropbox.com/s/7xujizkvpi0ddac/write_snprelate.R?dl=0">here</a> <br> <code>write_bayescan</code>: <a href="http://cmpg.unibe.ch/software/BayeScan">BayeScan</a> (Foll and Gaggiotti, 2008)<br><code>write_pcadapt</code>: <a href="https://github.com/bcm-uga/pcadapt">pcadapt</a> (Luu et al. 2017)<br><code>write_hzar</code> (Derryberry et al. 2013) <br><code>write_fineradstructure</code> (Malinsky et al. 2018) <br>Dataframes of genotypes in wide or long/tidy format</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>Conversion function</strong></td>
@@ -121,29 +121,6 @@ New features
 ------------
 
 Change log, version, new features and bug history lives in the [NEWS.md file](https://github.com/thierrygosselin/radiator/blob/master/NEWS.md)
-
-**radiator v.0.0.6 2017-10-02**
-
--   `tidy_genomic_data` and `genomic_converter`: bug fix and improvements.
--   `write_snprelate` and it's associated output from `genomic_converter` is no longer available because of difficulties students are having in installing the package, it's dependencies and/or using the output. The code remains available [here](https://www.dropbox.com/s/7xujizkvpi0ddac/write_snprelate.R?dl=0), without support.
--   `radiator::snp.ld`: the module inside `tidy_genomic_data` and `genomic_converter` to minimize short linkage disequilibrium as a new option `snp.ld = "middle"`. For locus with &gt; 2 SNPs/read the option allows to select at random one SNP between the first and the last SNP on the read. If the locus as &lt;= 2 SNPs on the read, the first one is selected. Note that for that last option, the numbers are reported. Thanks to Ido Bar for the idea.
-
-**radiator v.0.0.5 2017-09-20**
-
--   `tidy_dart` and `filter_dart`:
-    -   big overhaul.
-    -   importing 1 and 2 row genotypes (called sometimes binary format) is easier and no longer require to prep the DArT file (the function parse DArT data with `*` at the beginning of certain lines).
-    -   filtering is easier and now interactive for those who want.
-    -   plots are generated automatically.
--   `tidy_genomic_data` and `genomic_converter` can now accept DArT data directly.
--   several typos where fix. Thanks to @IdoBar for this.
-
-**radiator v.0.0.4 2017-09-07**
-
--   new function: `run_bayescan` to run *BayeScan* ... with *radiator*
--   new separate `write` functions also included in `genomic_converter`: `write_bayescan`, `write_pcadapt` and `write_hzar`.
-
-For previous news: [NEWS.md file](https://github.com/thierrygosselin/radiator/blob/master/NEWS.md)
 
 Roadmap of future developments:
 -------------------------------

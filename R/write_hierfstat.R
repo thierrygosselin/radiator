@@ -43,36 +43,26 @@ write_hierfstat <- function(data, filename = NULL) {
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {
-    input <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-  } else {
-    input <- data
+    data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
   }
-
-  # check genotype column naming
-  colnames(input) <- stringi::stri_replace_all_fixed(
-    str = colnames(input),
-    pattern = "GENOTYPE",
-    replacement = "GT",
-    vectorize_all = FALSE
-  )
 
   # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-  if (tibble::has_name(input, "LOCUS") && !tibble::has_name(input, "MARKERS")) {
-    input <- dplyr::rename(.data = input, MARKERS = LOCUS)
+  if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
+    data <- dplyr::rename(.data = data, MARKERS = LOCUS)
   }
 
-  input <- dplyr::select(.data = input, POP_ID, INDIVIDUALS, MARKERS, GT) %>%
+  data <- dplyr::select(.data = data, POP_ID, INDIVIDUALS, MARKERS, GT) %>%
     dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
 
   # Create a marker vector  ------------------------------------------------
-  markers <- dplyr::distinct(.data = input, MARKERS) %>%
+  markers <- dplyr::distinct(.data = data, MARKERS) %>%
     dplyr::arrange(MARKERS) %>%
     purrr::flatten_chr(.)
 
   # Get the number of sample (pop) for hierfstat -------------------------------
-  if (is.factor(input$POP_ID)) input$POP_ID <- droplevels(input$POP_ID)
+  if (is.factor(data$POP_ID)) data$POP_ID <- droplevels(data$POP_ID)
 
-  np <- nlevels(droplevels(input$POP_ID))
+  np <- nlevels(droplevels(data$POP_ID))
   np.message <- stringi::stri_join("    * Number of sample pop, np = ", np, sep = "")
   message(np.message)
 
@@ -81,7 +71,7 @@ write_hierfstat <- function(data, filename = NULL) {
   nl.message <- stringi::stri_join("    * Number of markers, nl = ", nl, sep = "")
   message(nl.message)
 
-  input <- input %>%
+  data <- data %>%
     dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT) %>%
     dplyr::mutate(
       GT = replace(GT, which(GT == "000000"), NA),
@@ -91,14 +81,14 @@ write_hierfstat <- function(data, filename = NULL) {
     dplyr::select(-GT)
 
   # Get the highest number used to label an allele -----------------------------
-  nu <- max(c(unique(input$A1), unique(input$A2)), na.rm = TRUE)
+  nu <- max(c(unique(data$A1), unique(data$A2)), na.rm = TRUE)
   nu.message <- stringi::stri_join("    * The highest number used to label an allele, nu = ",
                            nu, sep = "")
   message(nu.message)
 
   # prep the data  -------------------------------------------------------------
-  input <- suppressWarnings(
-    tidyr::unite(data = input, GT, A1, A2, sep = "") %>%
+  data <- suppressWarnings(
+    tidyr::unite(data = data, GT, A1, A2, sep = "") %>%
       dplyr::mutate(GT = as.numeric(GT)) %>%
       dplyr::group_by(POP_ID, INDIVIDUALS) %>%
       tidyr::spread(data = ., MARKERS, GT) %>%
@@ -136,8 +126,8 @@ write_hierfstat <- function(data, filename = NULL) {
               col_names = FALSE)
 
   # FSTAT: write the pop and genotypes
-  readr::write_delim(x = input, na = "00", path = filename, delim = "\t", append = TRUE,
+  readr::write_delim(x = data, na = "00", path = filename, delim = "\t", append = TRUE,
               col_names = FALSE)
-  input <- as.data.frame(input) # required by hierfstat...
-  return(input)
+  data <- as.data.frame(data) # required by hierfstat...
+  return(data)
 }# End write_hierfstat

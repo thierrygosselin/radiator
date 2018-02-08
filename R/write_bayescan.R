@@ -63,89 +63,73 @@ write_bayescan <- function(
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {
-    input <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-  } else {
-    input <- data
+    data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
   }
-
-  # check genotype column naming
-  colnames(input) <- stringi::stri_replace_all_fixed(
-    str = colnames(input),
-    pattern = "GENOTYPE",
-    replacement = "GT",
-    vectorize_all = FALSE
-  )
-
   # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-  if (tibble::has_name(input, "LOCUS") && !tibble::has_name(input, "MARKERS")) {
-    input <- dplyr::rename(.data = input, MARKERS = LOCUS)
+  if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
+    data <- dplyr::rename(.data = data, MARKERS = LOCUS)
   }
 
   # pop.select -----------------------------------------------------------------
   if (!is.null(pop.select)) {
     message("pop.select: ")
-    input <- dplyr::filter(input, POP_ID %in% pop.select)
-    if (is.factor(input$POP_ID)) input$POP_ID <- droplevels(input$POP_ID)
+    data <- dplyr::filter(data, POP_ID %in% pop.select)
+    if (is.factor(data$POP_ID)) data$POP_ID <- droplevels(data$POP_ID)
   }
 
   # Keeping common markers -----------------------------------------------------
-  input <- radiator::keep_common_markers(data = input, verbose = TRUE)$input
+  data <- radiator::keep_common_markers(data = data, verbose = TRUE)$input
 
   # Removing monomorphic markers -----------------------------------------------
-  input <- radiator::discard_monomorphic_markers(data = input, verbose = TRUE)$input
+  data <- radiator::discard_monomorphic_markers(data = data, verbose = TRUE)$input
 
   # detect biallelic markers ---------------------------------------------------
-  biallelic <- radiator::detect_biallelic_markers(data = input)
+  biallelic <- radiator::detect_biallelic_markers(data = data)
 
   if (!biallelic) {
     want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS", "POP_ID", "GT_VCF_NUC", "GT")
-    input <- suppressWarnings(dplyr::select(input, dplyr::one_of(want)))
-    if (tibble::has_name(input, "GT_VCF_NUC")) {
+    data <- suppressWarnings(dplyr::select(data, dplyr::one_of(want)))
+    if (tibble::has_name(data, "GT_VCF_NUC")) {
       want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS", "POP_ID", "GT_VCF_NUC")
-      input <- suppressWarnings(dplyr::select(input, dplyr::one_of(want))) %>%
+      data <- suppressWarnings(dplyr::select(data, dplyr::one_of(want))) %>%
         dplyr::rename(GT_HAPLO = GT_VCF_NUC)
     } else {
       want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS", "POP_ID", "GT")
-      input <- suppressWarnings(dplyr::select(input, dplyr::one_of(want))) %>%
+      data <- suppressWarnings(dplyr::select(data, dplyr::one_of(want))) %>%
         dplyr::rename(GT_HAPLO = GT)
     }
 
-    input <- radiator::change_alleles(
+    data <- radiator::change_alleles(
         biallelic = FALSE,
-        data = input,
+        data = data,
         parallel.core = parallel.core, verbose = TRUE)$input
   }
 
   # Linkage disequilibrium -----------------------------------------------------
   if (!is.null(snp.ld)) {
-    if (tibble::has_name(input, "LOCUS") && tibble::has_name(input, "POS")) {
+    if (tibble::has_name(data, "LOCUS") && tibble::has_name(data, "POS")) {
       message("Short distance linkage disequilibrium pruning")
       message("    snp.ld: ", snp.ld)
-      input <- radiator::snp_ld(data = input, snp.ld = snp.ld)
+      data <- radiator::snp_ld(data = data, snp.ld = snp.ld)
     }
   }
 
   # Biallelic and GT_BIN -------------------------------------------------------
   if (biallelic) {
-    input <- dplyr::select(input, MARKERS, INDIVIDUALS, POP_ID, GT)
-    input <- radiator::change_alleles(
-      data = input,
+    data <- dplyr::select(data, MARKERS, INDIVIDUALS, POP_ID, GT)
+    data <- radiator::change_alleles(
+      data = data,
       biallelic = TRUE,
       parallel.core = parallel.core, verbose = TRUE)$input
-    input <- dplyr::select(input, MARKERS, INDIVIDUALS, POP_ID, GT_BIN)
-  } else {
-    input <- input
+    data <- dplyr::select(data, MARKERS, INDIVIDUALS, POP_ID, GT_BIN)
   }
 
   # prep data wide format ------------------------------------------------------
-  n.ind <- dplyr::n_distinct(input$INDIVIDUALS)
-  n.pop <- dplyr::n_distinct(input$POP_ID)
-  n.markers <- dplyr::n_distinct(input$MARKERS)
-  # ind.per.pop <- dplyr::distinct(input, POP_ID, INDIVIDUALS) %>%
-  #   dplyr::group_by(POP_ID) %>%
-  #   dplyr::tally(.)
+  n.ind <- dplyr::n_distinct(data$INDIVIDUALS)
+  n.pop <- dplyr::n_distinct(data$POP_ID)
+  n.markers <- dplyr::n_distinct(data$MARKERS)
 
-  input <- dplyr::ungroup(input) %>%
+  data <- dplyr::ungroup(data) %>%
     dplyr::mutate(
       BAYESCAN_POP = factor(POP_ID),
       BAYESCAN_POP = as.integer(BAYESCAN_POP),
@@ -153,11 +137,11 @@ write_bayescan <- function(
       BAYESCAN_MARKERS = as.integer(BAYESCAN_MARKERS)
     )
 
-  pop.dictionary <- dplyr::distinct(input, POP_ID, BAYESCAN_POP)
-  markers.dictionary <- dplyr::distinct(input, MARKERS, BAYESCAN_MARKERS) %>%
+  pop.dictionary <- dplyr::distinct(data, POP_ID, BAYESCAN_POP)
+  markers.dictionary <- dplyr::distinct(data, MARKERS, BAYESCAN_MARKERS) %>%
     dplyr::arrange(BAYESCAN_MARKERS)
 
-  input <- dplyr::select(input, -POP_ID, -MARKERS)
+  data <- dplyr::select(data, -POP_ID, -MARKERS)
 
   # writing file to directory  ------------------------------------------------
   # Filename: date and time to have unique filenaming
@@ -189,7 +173,7 @@ write_bayescan <- function(
 
   # Number of populations
   readr::write_file(x = stringi::stri_join("[populations]=", n.pop, "\n\n"), path = filename, append = TRUE)
-  pop.string <- unique(input$BAYESCAN_POP)
+  pop.string <- unique(data$BAYESCAN_POP)
   generate_bayescan_biallelic <- function(pop, data) {
     # pop <- "BEA"
     data.pop <- dplyr::filter(data, BAYESCAN_POP %in% pop) %>%
@@ -215,7 +199,7 @@ write_bayescan <- function(
   }
 
   if (!biallelic) {
-    data.prep <- input %>%
+    data.prep <- data %>%
       dplyr::select(GT_VCF, BAYESCAN_MARKERS, BAYESCAN_POP) %>%
       dplyr::filter(GT_VCF != "./.") %>%
       tidyr::separate(data = ., col = GT_VCF, into = c("A1", "A2"), sep = "/") %>%
@@ -249,7 +233,7 @@ write_bayescan <- function(
       dplyr::summarise(ALLELES = stringi::stri_join(n, collapse = " ")) %>%
       dplyr::arrange(BAYESCAN_MARKERS, BAYESCAN_POP)
 
-    input <- dplyr::left_join(
+    data <- dplyr::left_join(
       alleles.markers, data.prep, by = c("BAYESCAN_MARKERS", "BAYESCAN_POP")) %>%
       dplyr::arrange(BAYESCAN_MARKERS, BAYESCAN_POP) %>%
       dplyr::group_by(BAYESCAN_MARKERS, BAYESCAN_POP) %>%
@@ -259,9 +243,9 @@ write_bayescan <- function(
       split(x = ., f = .$BAYESCAN_POP)
     data.prep <- alleles.markers <- allele.count <- NULL
 
-    purrr::walk(.x = input, .f = generate_bayescan_multiallelic)
+    purrr::walk(.x = data, .f = generate_bayescan_multiallelic)
   } else {
-    purrr::walk(.x = pop.string, .f = generate_bayescan_biallelic, data = input)
+    purrr::walk(.x = pop.string, .f = generate_bayescan_biallelic, data = data)
   }
 
 

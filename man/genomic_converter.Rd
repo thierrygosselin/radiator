@@ -22,10 +22,10 @@ genlight (library(adegenet)), gtypes (library(strataG)), genepop, DArT,
 and a data frame in long/tidy or wide format.
 \emph{See details} of \code{\link[radiator]{tidy_genomic_data}}.}
 
-\item{output}{19 genomic data formats can be exported: tidy (by default),
+\item{output}{20 genomic data formats can be exported: tidy (by default),
 genind, genlight, vcf (for file format version, see details below), plink, genepop,
 structure, arlequin, hierfstat, gtypes (strataG), bayescan, betadiv, pcadapt,
-hzar, snprelate (for SNPRelate's GDS, see details).
+hzar, fineradstructure, snprelate (for SNPRelate's GDS, see details).
 Use a character string,
 e.g. \code{output = c("genind", "genepop", "structure")}, to have preferred
 output formats generated. The tidy format is generated automatically.
@@ -408,6 +408,10 @@ Fischer MC, Foll M, Excoffier L and G Heckel (2011) Enhanced AFLP
 genome scans detect
 local adaptation in high-altitude populations of a small rodent (Microtus arvalis).
 Molecular Ecology 20: 1450-1462
+
+Malinsky M, Trucchi E, Lawson D, Falush D (2018)
+RADpainter and fineRADstructure: population inference from RADseq data.
+bioRxiv, 057711.
 }
 \seealso{
 \code{beta.div} is available on Pierre Legendre web site \url{http://adn.biol.umontreal.ca/~numericalecology/Rcode/}

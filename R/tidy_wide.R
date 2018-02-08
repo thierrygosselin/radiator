@@ -79,7 +79,7 @@
 
 tidy_wide <- function(data, import.metadata = FALSE) {
 
-  # Checking for missing and/or default arguments ******************************
+  # Checking for missing and/or default arguments-------------------------------
   if (missing(data)) stop("Input file argument is missing")
 
   if (is.vector(data)) {# for file in the working directory
@@ -91,21 +91,25 @@ tidy_wide <- function(data, import.metadata = FALSE) {
     data <- tidyr::gather(data = data, key = MARKERS, value = GT, -c(POP_ID, INDIVIDUALS))
   }
 
-  if ("GENOTYPE" %in% colnames(data)) {
+  if (tibble::has_name(data, "GENOTYPE")) {
     colnames(data) <- stringi::stri_replace_all_fixed(
       str = colnames(data),
       pattern = "GENOTYPE",
       replacement = "GT",
-      vectorize_all = FALSE)
+      vectorize_all = FALSE
+    )
   }
   if (!import.metadata) {
-    if ("MARKERS" %in% colnames(data) && "LOCUS" %in% colnames(data)) {
-      data <- dplyr::select(.data = data, POP_ID, INDIVIDUALS, LOCUS = MARKERS, GT)
-    } else if ("MARKERS" %in% colnames(data) && !"LOCUS" %in% colnames(data)) {
-      data <- dplyr::select(.data = data, POP_ID, INDIVIDUALS, LOCUS = MARKERS, GT)
-    } else {
-      data <- dplyr::select(.data = data, POP_ID, INDIVIDUALS, LOCUS, GT)
-    }
+    want <- c("POP_ID", "INDIVIDUALS", "MARKERS", "CHROM", "LOCUS", "POS", "GT",
+              "GT_VCF_NUC", "GT_VCF", "GT_BIN")
+    data <- suppressWarnings(dplyr::select(data, dplyr::one_of(want)))
+    # if ("MARKERS" %in% colnames(data) && "LOCUS" %in% colnames(data)) {
+    #   data <- dplyr::select(.data = data, POP_ID, INDIVIDUALS, LOCUS = MARKERS, GT)
+    # } else if ("MARKERS" %in% colnames(data) && !"LOCUS" %in% colnames(data)) {
+    #   data <- dplyr::select(.data = data, POP_ID, INDIVIDUALS, LOCUS = MARKERS, GT)
+    # } else {
+    #   data <- dplyr::select(.data = data, POP_ID, INDIVIDUALS, LOCUS, GT)
+    # }
   }
 
   # Remove unwanted sep in the genotypes (if found)
@@ -127,7 +131,9 @@ tidy_wide <- function(data, import.metadata = FALSE) {
   }
 
   # clean markers names
-  data$MARKERS <- clean_markers_names(data$MARKERS)
+  if (tibble::has_name(data, "MARKERS")) {
+    data$MARKERS <- clean_markers_names(data$MARKERS)
+  }
 
   # clean id names
   data$INDIVIDUALS <- clean_ind_names(data$INDIVIDUALS)

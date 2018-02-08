@@ -260,7 +260,7 @@ the remaining columns are the markers in separate columns storing genotypes.
 The long format is considered to be a tidy data frame and can store metadata info.
 (e.g. from a VCF see \pkg{radiator} \code{\link[radiator]{tidy_genomic_data}}). A minimum of 4 columns
 are required in the long format: \code{INDIVIDUALS}, \code{POP_ID},
-\code{MARKERS or LOCUS} and \code{GENOTYPE or GT}. The rest are considered metata info.
+\code{MARKERS or LOCUS} and \code{GT}. The rest are considered metata info.
 
 \strong{2 genotypes formats are available:}
 6 characters no separator: e.g. \code{001002 of 111333} (for heterozygote individual).

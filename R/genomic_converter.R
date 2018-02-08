@@ -18,10 +18,10 @@
 #'   \item \strong{Output:} 18 output file formats are supported (see \code{output} argument below)
 #' }
 
-#' @param output 19 genomic data formats can be exported: tidy (by default),
+#' @param output 20 genomic data formats can be exported: tidy (by default),
 #' genind, genlight, vcf (for file format version, see details below), plink, genepop,
 #' structure, arlequin, hierfstat, gtypes (strataG), bayescan, betadiv, pcadapt,
-#' hzar, snprelate (for SNPRelate's GDS, see details).
+#' hzar, fineradstructure, snprelate (for SNPRelate's GDS, see details).
 #' Use a character string,
 #' e.g. \code{output = c("genind", "genepop", "structure")}, to have preferred
 #' output formats generated. The tidy format is generated automatically.
@@ -44,6 +44,7 @@
 #' @inheritParams write_bayescan
 #' @inheritParams write_pcadapt
 #' @inheritParams write_hzar
+#' @inheritParams write_fineradstructure
 #' @inheritParams radiator_imputations_module
 # @inheritParams write_snprelate
 
@@ -184,6 +185,11 @@
 #' genome scans detect
 #' local adaptation in high-altitude populations of a small rodent (Microtus arvalis).
 #' Molecular Ecology 20: 1450-1462
+
+#' @references Malinsky M, Trucchi E, Lawson D, Falush D (2018)
+#' RADpainter and fineRADstructure: population inference from RADseq data.
+#' bioRxiv, 057711.
+
 
 
 #' @seealso \code{beta.div} is available on Pierre Legendre web site \url{http://adn.biol.umontreal.ca/~numericalecology/Rcode/}
@@ -703,6 +709,19 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
         filename = filename.imp,
         parallel.core = parallel.core
       )
+    }
+  }
+
+  # fineradstructure -----------------------------------------------------------
+  if ("fineradstructure" %in% output) {
+    if (verbose) message("Generating fineradstructure file without imputation")
+    res$fineradstructure.no.imputation <- radiator::write_fineradstructure(
+      data = input, filename = filename)
+
+    if (!is.null(imputation.method)) {
+      if (verbose) message("Generating fineradstructure file WITH imputations")
+      res$fineradstructure.imputed <- radiator::write_fineradstructure(
+        data = input.imp, filename = filename.imp)
     }
   }
 

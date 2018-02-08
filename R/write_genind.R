@@ -44,14 +44,6 @@ write_genind <- function(data) {
   want <- c("MARKERS", "POP_ID", "INDIVIDUALS", "GT", "GT_BIN")
   data <- suppressWarnings(dplyr::select(data, dplyr::one_of(want)))
 
-  # check genotype column naming
-  colnames(data) <- stringi::stri_replace_all_fixed(
-    str = colnames(data),
-    pattern = "GENOTYPE",
-    replacement = "GT",
-    vectorize_all = FALSE
-  )
-
   # necessary steps to make sure we work with unique markers and not duplicated LOCUS
   if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
     data <- dplyr::rename(.data = data, MARKERS = LOCUS)
