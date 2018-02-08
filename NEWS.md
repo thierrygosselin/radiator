@@ -1,8 +1,8 @@
-# radiator v.0.0.8 2019-02-08
+# radiator v.0.0.8 2018-02-08
 
 * New output file: fineRADstructure
 
-# radiator v.0.0.7 2019-02-06
+# radiator v.0.0.7 2018-02-06
 
 * Better VCF parsing
 * `radiator` is ready for stacks v.2 beta8
