@@ -44,7 +44,6 @@
 #' @inheritParams write_bayescan
 #' @inheritParams write_pcadapt
 #' @inheritParams write_hzar
-#' @inheritParams write_fineradstructure
 #' @inheritParams radiator_imputations_module
 # @inheritParams write_snprelate
 
