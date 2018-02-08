@@ -293,7 +293,7 @@ See this file for the list and count: duplicated.markers.tsv\n\n")
 
     input <- suppressWarnings(dplyr::full_join(input.gt, input, by = "MARKERS"))
     input.gt <- NULL
-    input <- dplyr::select(input, dplyr::one_of(want)) %>%
+    input <- suppressWarnings(dplyr::select(input, dplyr::one_of(want))) %>%
         dplyr::mutate(
           # for stacks v.2 beta4 missing genotype are coded wrong
           GT = stringi::stri_replace_all_regex(
@@ -426,11 +426,12 @@ See this file for the list and count: duplicated.markers.tsv\n\n")
   # recoding genotype
   if (biallelic) {# biallelic VCF
     if (verbose) message("Recoding bi-allelic VCF...")
-    input <- dplyr::rename(input, GT_VCF_NUC = GT)
+    # input <- dplyr::rename(input, GT_VCF_NUC = GT)
   } else {#multi-allelic vcf
     if (verbose) message("Recoding VCF haplotype...")
-    input <- dplyr::rename(input, GT_HAPLO = GT)
+    # input <- dplyr::rename(input, GT_HAPLO = GT)
   }
+  input <- dplyr::rename(input, GT_VCF_NUC = GT)
 
   if (verbose) message("Calculating REF/ALT alleles...")
   input <- radiator::change_alleles(

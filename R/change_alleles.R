@@ -70,15 +70,6 @@ change_alleles <- function(
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) stop("Input file missing")
 
-  # check genotype column naming (to work with old code)
-  if (tibble::has_name(data, "GENOTYPE")) {
-    colnames(data) <- stringi::stri_replace_all_fixed(
-      str = colnames(data),
-      pattern = "GENOTYPE",
-      replacement = "GT",
-      vectorize_all = FALSE)
-  }
-
   # necessary steps to make sure we work with unique markers and not duplicated LOCUS
   if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
     data <- dplyr::rename(.data = data, MARKERS = LOCUS)
@@ -231,6 +222,7 @@ change_alleles <- function(
   }
 
   #Remove markers with REF = NA ------------------------------------------------
+  #note to myself : why not use detect_all_missing ? longer ?
   if (anyNA(data$REF)) {
     all.missing <- dplyr::filter(data, is.na(REF)) %>% dplyr::distinct(MARKERS)
     readr::write_tsv(x = all.missing, path = "markers.missing.all.id.tsv")

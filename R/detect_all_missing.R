@@ -41,7 +41,7 @@ detect_all_missing <- function(data) {
 }
   problem <- nrow(blacklist.markers)
   if (problem > 0) {
-    message("Data set contains ", problem," marker(s) with no genotypes (all missing)...")
+    message("Dataset contains ", problem," marker(s) with no genotypes (all missing)...")
     message("    removing problematic markers...")
     res$data <- dplyr::filter(data, !MARKERS %in% blacklist.markers$MARKERS)
     readr::write_tsv(
