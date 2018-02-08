@@ -85,7 +85,7 @@ write_bayescan <- function(
   if (!is.null(pop.select)) {
     message("pop.select: ")
     input <- dplyr::filter(input, POP_ID %in% pop.select)
-    input$POP_ID <- droplevels(input$POP_ID)
+    if (is.factor(input$POP_ID)) input$POP_ID <- droplevels(input$POP_ID)
   }
 
   # Keeping common markers -----------------------------------------------------
@@ -147,7 +147,7 @@ write_bayescan <- function(
 
   input <- dplyr::ungroup(input) %>%
     dplyr::mutate(
-      BAYESCAN_POP = POP_ID,
+      BAYESCAN_POP = factor(POP_ID),
       BAYESCAN_POP = as.integer(BAYESCAN_POP),
       BAYESCAN_MARKERS = factor(MARKERS),
       BAYESCAN_MARKERS = as.integer(BAYESCAN_MARKERS)
@@ -161,14 +161,7 @@ write_bayescan <- function(
 
   # writing file to directory  ------------------------------------------------
   # Filename: date and time to have unique filenaming
-  file.date <- stringi::stri_replace_all_fixed(
-    Sys.time(),
-    pattern = " EDT", replacement = "") %>%
-    stringi::stri_replace_all_fixed(
-      str = .,
-      pattern = c("-", " ", ":"), replacement = c("", "@", ""),
-      vectorize_all = FALSE) %>%
-    stringi::stri_sub(str = ., from = 1, to = 13)
+  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
 
   if (is.null(filename)) {
     filename <- stringi::stri_join("radiator_bayescan_", file.date, ".txt")

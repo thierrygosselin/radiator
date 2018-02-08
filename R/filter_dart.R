@@ -671,7 +671,7 @@ filter_dart <- function(
     # update data.info
     data.info$n.pop <- n.pop.new
   }
-  input$POP_ID <- droplevels(input$POP_ID)
+  if (is.factor(input$POP_ID)) input$POP_ID <- droplevels(input$POP_ID)
   pop.levels <- levels(input$POP_ID)
 
   # Filter monomorphic markers  ------------------------------------------------

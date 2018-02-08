@@ -510,7 +510,7 @@ run_bayescan <- function(
         dplyr::arrange (MARKERS)
       readr::write_tsv(
         x = res$whitelist.markers.neutral.positive.selection,
-        path = file.path(path.folder, "whitelist.markers.neutral.positive.selection.stv"))
+        path = file.path(path.folder, "whitelist.markers.neutral.positive.selection.tsv"))
       message("    whitelist neutral and positive/directional selections: generated")
     } else {
       message("    whitelist neutral and positive/directional selections: not generated")
@@ -683,7 +683,7 @@ bayescan_one <- function(
   }
 
   # Moving input file in folder
-  message("Moving input BayeScan file in folder")
+  message("Copying input BayeScan file in folder")
   link.problem <- stringi::stri_detect_fixed(str = data, pattern = getwd())
 
   if (link.problem) {
@@ -694,31 +694,38 @@ bayescan_one <- function(
   } else {
     new.data <- stringi::stri_join(path.folder.subsample, "/", data)
   }
-  file.rename(from = data, to = new.data)
+  file.copy(from = data, to = new.data)
 
-  # moving dictionary files --------------------------------------------------
-  pop.dic.file <- list.files(path = getwd(), pattern = "pop_dictionary")
-  markers.dic.file <- list.files(path = getwd(), pattern = "markers_dictionary")
-
+  # moving dictionary files ----------------------------------------------------
   if (!is.null(subsample)) {
     pop.dictionary <- bayescan.sub$pop.dictionary
     markers.dictionary <- bayescan.sub$markers.dictionary
   } else {
-    pop.dictionary <- readr::read_tsv(
-      file = pop.dic.file,
-      col_types = "ci")
-    markers.dictionary <- readr::read_tsv(
-      file = markers.dic.file,
-      col_types = "ci")
+    # pop.dic.file <- list.files(path = getwd(), pattern = "pop_dictionary")
+    # markers.dic.file <- list.files(path = getwd(), pattern = "markers_dictionary")
+    pop.dic.file <- stringi::stri_replace_all_fixed(str = data, pattern = ".txt", "_pop_dictionary")
+    pop.dic.file <- list.files(path = getwd(), pattern = pop.dic.file)
+
+    markers.dic.file <- stringi::stri_replace_all_fixed(str = data, pattern = ".txt", "_markers_dictionary")
+    markers.dic.file <- list.files(path = getwd(), pattern = markers.dic.file)
+
+    if (length(pop.dic.file) > 0) {
+      pop.dictionary <- readr::read_tsv(
+        file = pop.dic.file,
+        col_types = "ci")
+      markers.dictionary <- readr::read_tsv(
+        file = markers.dic.file,
+        col_types = "ci")
+      file.copy(from = pop.dic.file,
+                  to = stringi::stri_join(path.folder.subsample, "/", pop.dic.file))
+
+      file.copy(from = markers.dic.file,
+                  to = stringi::stri_join(path.folder.subsample, "/", markers.dic.file))
+    } else {
+      pop.dictionary <- markers.dictionary <- NULL
+    }
   }
-  file.rename(from = pop.dic.file,
-              to = stringi::stri_join(path.folder.subsample, "/", pop.dic.file))
-
-  file.rename(from = markers.dic.file,
-              to = stringi::stri_join(path.folder.subsample, "/", markers.dic.file))
-
   pop.dic.file <- markers.dic.file <- bayescan.sub <- NULL
-
   # command --------------------------------------------------------------------
   command.arguments <- paste(new.data, output.folder, all.trace, parallel.core, n, thin, nbp, pilot, burn, pr.odds)
 
@@ -728,28 +735,33 @@ bayescan_one <- function(
     stderr = log.file, stdout = log.file
   )
 
-
   # Importing BayeScan file  ---------------------------------------------------
   message("Importing BayeScan results")
-  res$bayescan <- markers.dictionary %>%
-    dplyr::right_join(
-      suppressWarnings(readr::read_table2(
-        file = list.files(path = path.folder.subsample, pattern = "_fst.txt", full.names = TRUE),
-        skip = 1,
-        col_names = c("BAYESCAN_MARKERS", "POST_PROB", "LOG10_PO", "Q_VALUE", "ALPHA", "FST"),
-        col_types = c("iddddd"))) %>%
-        dplyr::mutate(
-          Q_VALUE = dplyr::if_else(Q_VALUE <= 0.0001, 0.0001, Q_VALUE),
-          Q_VALUE = round(Q_VALUE, 4),
-          POST_PROB = round(POST_PROB, 4),
-          LOG10_PO = round(LOG10_PO, 4),
-          ALPHA = round(ALPHA, 4),
-          FST = round(FST, 6),
-          SELECTION = factor(
-            dplyr::if_else(ALPHA >= 0 & Q_VALUE <= 0.05, "diversifying",
-                           dplyr::if_else(ALPHA >= 0 & Q_VALUE > 0.05, "neutral", "balancing"))),
-          LOG10_Q = log10(Q_VALUE)
-        ), by = "BAYESCAN_MARKERS") %>%
+  res$bayescan <- suppressWarnings(readr::read_table2(
+    file = list.files(path = path.folder.subsample, pattern = "_fst.txt", full.names = TRUE),
+    skip = 1,
+    col_names = c("BAYESCAN_MARKERS", "POST_PROB", "LOG10_PO", "Q_VALUE", "ALPHA", "FST"),
+    col_types = c("iddddd"))) %>%
+    dplyr::mutate(
+      Q_VALUE = dplyr::if_else(Q_VALUE <= 0.0001, 0.0001, Q_VALUE),
+      Q_VALUE = round(Q_VALUE, 4),
+      POST_PROB = round(POST_PROB, 4),
+      LOG10_PO = round(LOG10_PO, 4),
+      ALPHA = round(ALPHA, 4),
+      FST = round(FST, 6),
+      SELECTION = factor(
+        dplyr::if_else(ALPHA >= 0 & Q_VALUE <= 0.05, "diversifying",
+                       dplyr::if_else(ALPHA >= 0 & Q_VALUE > 0.05, "neutral", "balancing"))),
+      LOG10_Q = log10(Q_VALUE)
+    )
+
+  if (!is.null(markers.dictionary)) {
+    res$bayescan <- dplyr::right_join(markers.dictionary, res$bayescan, by = "BAYESCAN_MARKERS")
+  } else {
+    res$bayescan <- dplyr::mutate(res$bayescan, MARKERS = BAYESCAN_MARKERS)
+  }
+
+  res$bayescan <- res$bayescan %>%
     dplyr::mutate(# Grouping des groupes LOG10_PO & #Quantile of FST
       PO_GROUP = factor(
         dplyr::if_else(LOG10_PO > 2, "decisive",
@@ -774,6 +786,8 @@ bayescan_one <- function(
   # Accuracy within LOCUS ------------------------------------------------------
   # special concern when > 1 SNP / LOCUS...
   radiator.markers <- dplyr::distinct(res$bayescan, MARKERS)
+  radiator.markers <- dplyr::filter(radiator.markers, !is.na(MARKERS))
+
   radiator.markers <- unique(stringi::stri_detect_fixed(
     str = radiator.markers$MARKERS, pattern = "__"))
   if (radiator.markers) {
@@ -920,7 +934,7 @@ bayescan_one <- function(
   }
   readr::write_tsv(
     x = res$whitelist.markers.neutral.positive.selection,
-    path = file.path(path.folder.subsample, "whitelist.markers.neutral.positive.selection.stv"))
+    path = file.path(path.folder.subsample, "whitelist.markers.neutral.positive.selection.tsv"))
 
   res$blacklist.markers.balancing.selection <- res$bayescan %>%
     dplyr::filter(SELECTION == "balancing") %>%
@@ -981,8 +995,8 @@ bayescan_one <- function(
   }
   # Update results list --------------------------------------------------------
   res$selection.summary <- selection
-  res$markers.dictionary <- markers.dictionary
-  res$pop.dictionary <- pop.dictionary
+  if (!is.null(markers.dictionary)) res$markers.dictionary <- markers.dictionary
+  if (!is.null(pop.dictionary)) res$pop.dictionary <- pop.dictionary
   return(res)
 } #End bayescan_one
 

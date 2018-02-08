@@ -182,7 +182,7 @@ change_alleles <- function(
 # For biallelic dataset with REF and ALT not coded with letters ----------------
   if (biallelic) {
     letter.coding <- unique(stringi::stri_detect_regex(
-      str = unique(data$REF),
+      str = unique(data$REF[!is.na(data$REF)]),
       pattern = "[A-Za-z]"))
 
     if (!letter.coding) {
@@ -229,6 +229,16 @@ change_alleles <- function(
       data,
       MARKERS, POP_ID, INDIVIDUALS, dplyr::everything())
   }
+
+  #Remove markers with REF = NA ------------------------------------------------
+  if (anyNA(data$REF)) {
+    all.missing <- dplyr::filter(data, is.na(REF)) %>% dplyr::distinct(MARKERS)
+    readr::write_tsv(x = all.missing, path = "markers.missing.all.id.tsv")
+    message("Number of markers missing in all individuals and removed: ", nrow(all.missing))
+    data <- dplyr::filter(data, !MARKERS %in% all.missing$MARKERS)
+  }
+
+  # Results --------------------------------------------------------------------
   res <- list(input = data, biallelic = biallelic)
   data <- NULL
   return(res)

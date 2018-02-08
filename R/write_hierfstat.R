@@ -70,6 +70,8 @@ write_hierfstat <- function(data, filename = NULL) {
     purrr::flatten_chr(.)
 
   # Get the number of sample (pop) for hierfstat -------------------------------
+  if (is.factor(input$POP_ID)) input$POP_ID <- droplevels(input$POP_ID)
+
   np <- nlevels(droplevels(input$POP_ID))
   np.message <- stringi::stri_join("    * Number of sample pop, np = ", np, sep = "")
   message(np.message)

@@ -101,7 +101,7 @@ write_pcadapt <- function(
   if (!is.null(pop.select)) {
     message("pop.select: ")
     input <- dplyr::filter(input, POP_ID %in% pop.select)
-    input$POP_ID <- droplevels(input$POP_ID)
+    if (is.factor(input$POP_ID)) input$POP_ID <- droplevels(input$POP_ID)
   }
 
   # Keeping common markers -----------------------------------------------------

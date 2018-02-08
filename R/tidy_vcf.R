@@ -419,7 +419,7 @@ See this file for the list and count: duplicated.markers.tsv\n\n")
 
     if (verbose) message(stringi::stri_join(length(pop.select), "population(s) selected", sep = " "))
     input <- suppressWarnings(input %>% dplyr::filter(POP_ID %in% pop.select))
-    input$POP_ID <- droplevels(input$POP_ID)
+    if (is.factor(input$POP_ID)) input$POP_ID <- droplevels(input$POP_ID)
   }
 
   # Haplotypes or biallelic VCF---------------------------------------------------

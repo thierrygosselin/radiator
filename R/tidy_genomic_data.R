@@ -662,7 +662,7 @@ tidy_genomic_data <- function(
     if (!is.null(pop.select)) {
       if (verbose) message(stringi::stri_join(length(pop.select), "population(s) selected", sep = " "))
       input <- suppressWarnings(input %>% dplyr::filter(POP_ID %in% pop.select))
-      input$POP_ID <- droplevels(input$POP_ID)
+      if (is.factor(input$POP_ID)) input$POP_ID <- droplevels(input$POP_ID)
     }
 
     # removing untyped markers across all-pop
