@@ -63,6 +63,8 @@ extract_dart_target_id <- function(data) {
     str = stringi::stri_sub(str = data, from = -4, to = -1),
     pattern = ".csv")) {
     csv <- TRUE
+  } else {
+    csv <- FALSE
   }
 
   if (csv) {
@@ -92,7 +94,7 @@ extract_dart_target_id <- function(data) {
     "ALLELECOUNTSCORRELATION", "AGGREGATETAGSTOTAL", "DERIVEDCORRMINUSSEEDCORR",
     "REPREF", "REPSNP", "REPAVG", "PICREPREF", "PICREPSNP", "TOTALPICREPREFTEST",
     "TOTALPICREPSNPTEST", "BINID", "BIN.SIZE", "ALLELESEQUENCEREF",
-    "ALLELESEQUENCESNP", "TRIMMEDSEQUENCEREF")
+    "ALLELESEQUENCESNP", "TRIMMEDSEQUENCEREF", "TRIMMEDSEQUENCE")
 
   discard.genome <- c("CHROM_|CHROMPOS_|ALNCNT_|ALNEVALUE_")
 
