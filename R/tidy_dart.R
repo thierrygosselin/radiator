@@ -243,6 +243,9 @@ tidy_dart <- function(
       tidyr::separate(col = SNP, into = c("NOT_USEFUL", "KEEPER"), sep = ":", extra = "drop") %>%
       dplyr::select(-NOT_USEFUL) %>%
       tidyr::separate(col = KEEPER, into = c("REF", "ALT"), sep = ">") %>%
+      # dplyr::mutate(
+      #   REF = stringi::stri_match_first_regex(str = SNP, pattern = "[A-Z]"),
+      #   ALT = stringi::stri_match_last_regex(str = SNP, pattern = "[A-Z]"))
       dplyr::mutate(
         CHROM = rep("CHROM_1", n()),
         MARKERS = stringi::stri_join(CHROM, LOCUS, POS, sep = "__")) %>%
@@ -289,8 +292,6 @@ tidy_dart <- function(
 
   # ref.test <- dplyr::select(input, REF) %>% readr::write_tsv(x = ., path = "test.tsv")
   # na.ref.problem <- dplyr::filter(input, is.na(REF))
-
-
 
   # 1-row format----------------------------------------------------------------
   if (!binary) {
@@ -352,10 +353,22 @@ tidy_dart <- function(
 
     # To do: merge these 2 functions and simplify codes
     dart_binary <- function(x) {
+      # x <- input2
       res <- dplyr::select(x, -SPLIT_VEC) %>%
-        dplyr::group_by(MARKERS, CHROM, LOCUS, POS, TARGET_ID, REF, ALT) %>%
-        dplyr::summarise(GT = stringi::stri_join(GT, collapse = "_")) %>%
-        dplyr::ungroup(.) %>%
+        # dplyr::group_by(MARKERS, CHROM, LOCUS, POS, TARGET_ID, REF, ALT) %>%
+        # dplyr::group_by(MARKERS, TARGET_ID, REF, ALT) %>%
+        # dplyr::summarise(GT = stringi::stri_join(GT, collapse = "_")) %>%
+        # dplyr::ungroup(.) %>%
+        data.table::as.data.table(.) %>%
+        data.table::dcast.data.table(
+          data = .,
+          formula = MARKERS + TARGET_ID + REF + ALT ~ ALLELES,
+          # fun.aggregate = function(y) paste(y, collapse = "_"),
+          value.var = "GT"
+        ) %>%
+        tibble::as_data_frame(.) %>%
+        dplyr::mutate(GT = stringi::stri_join(A1, A2, sep = "_")) %>%
+        dplyr::select(-A1, -A2) %>%
         dplyr::mutate(
           R = REF,
           A = ALT,
@@ -378,7 +391,8 @@ tidy_dart <- function(
                               dplyr::if_else(GT == "AA", stringi::stri_join(A, A, sep = ""),
                                              stringi::stri_join(R, A, sep = "")), missing = "000000")
         ) %>%
-        dplyr::select(MARKERS, CHROM, LOCUS, POS, TARGET_ID, GT, GT_VCF, GT_VCF_NUC, GT_BIN)
+        dplyr::select(MARKERS, TARGET_ID, GT, GT_VCF, GT_VCF_NUC, GT_BIN)
+      # dplyr::select(MARKERS, CHROM, LOCUS, POS, TARGET_ID, GT, GT_VCF, GT_VCF_NUC, GT_BIN)
       return(res)
     }#End dart_binary
     dart_count <- function(x) {
@@ -472,6 +486,15 @@ tidy_dart <- function(
                       "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")
 
     if (!count.data) {#Genotypes coded 0, 1, 2
+
+      input <- input %>%
+        dplyr::mutate(
+          ALLELES = stringi::stri_replace_all_regex(
+            str = REF, pattern = "[A-Z]",
+            replacement = "A2", vectorize_all = FALSE),
+          ALLELES = stringi::stri_replace_na(str = ALLELES, replacement = "A1")
+        )
+
       # necessary to deal with the duplication of lines because of the GT in >= 2 lines
       grouping.column <- dplyr::ungroup(input) %>%
         dplyr::select(dplyr::one_of(grouping.col)) %>%
@@ -493,11 +516,19 @@ tidy_dart <- function(
         input,
         -dplyr::one_of(c("CHROM", "LOCUS", "POS", "CALL_RATE", "AVG_COUNT_REF",
                          "AVG_COUNT_SNP", "REP_AVG", "REF", "ALT"))) %>%
-        tidyr::gather(INDIVIDUALS, GT, -MARKERS) %>%
-        dplyr::mutate(
-          GT = as.character(GT),
-          ALLELES = rep("GT", n())
-        ) %>%
+        data.table::as.data.table(.) %>%
+        data.table::melt.data.table(
+          data = .,
+          id.vars = c("MARKERS", "ALLELES"),
+          variable.name = "TARGET_ID",
+          value.name = "GT",
+          variable.factor = FALSE) %>%
+        tibble::as_data_frame(.) %>%
+        # tidyr::gather(TARGET_ID, GT, -MARKERS) %>%
+        # dplyr::mutate(
+        #   GT = as.character(GT),
+        #   # ALLELES = rep("GT", n())
+        # ) %>%
         dplyr::left_join(ref.info, by = "MARKERS") %>%
         dplyr::left_join(markers.split, by = "MARKERS") %>%
         split(x = ., f = .$SPLIT_VEC) %>%
@@ -507,7 +538,7 @@ tidy_dart <- function(
         dplyr::left_join(grouping.column, by = "MARKERS") %>%
         dplyr::select(
           dplyr::one_of(
-          "MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "INDIVIDUALS", "GT",
+          "MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "TARGET_ID", "GT",
           "GT_VCF", "GT_VCF_NUC", "GT_BIN", "CALL_RATE", "AVG_COUNT_REF",
           "AVG_COUNT_SNP", "REP_AVG"))
 
@@ -578,7 +609,8 @@ tidy_dart <- function(
     "MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "INDIVIDUALS", "POP_ID",
     "GT", "GT_VCF", "GT_VCF_NUC", "GT_BIN", "CALL_RATE", "AVG_COUNT_REF",
     "AVG_COUNT_SNP", "REP_AVG"),
-    dplyr::everything()))
+    dplyr::everything())) %>%
+    dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
 
   write_rad(data = input, path = filename)
 
