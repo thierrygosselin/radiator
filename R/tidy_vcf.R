@@ -413,6 +413,9 @@ See this file for the list and count: duplicated.markers.tsv\n\n")
       data = input, pop.levels = pop.levels, pop.labels = pop.labels)
   }
 
+  if (!is.factor(input$POP_ID)) input$POP_ID <- factor(input$POP_ID)
+
+
   # Pop select--------------------------------------------------------------------
   if (!is.null(pop.select)) {
     pop.select <- clean_pop_names(pop.select)
@@ -568,7 +571,6 @@ See this file for the list and count: duplicated.markers.tsv\n\n")
 
   # Sort id
   input <- dplyr::arrange(input, POP_ID, INDIVIDUALS)
-
   return(input)
 }#End tidy_vcf
 
