@@ -215,7 +215,7 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
   data <- tidyr::separate(
     data = data,
     col = data,
-    into = c("INDIVIDUALS", "GENOTYPE"),
+    into = c("INDIVIDUALS", "GT"),
     sep = ","
   )
 
@@ -258,24 +258,24 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
 
 
   # isolate the genotypes
-  data <- dplyr::select(.data = data, GENOTYPE) %>%
+  data <- dplyr::select(.data = data, GT) %>%
     dplyr::mutate(
-      GENOTYPE = stringi::stri_replace_all_fixed(
-        str = GENOTYPE,
+      GT = stringi::stri_replace_all_fixed(
+        str = GT,
         pattern = c("\t", ","), # remove potential comma and tab
         replacement = c(" ", ""),
         vectorize_all = FALSE
       ),
       # replace white space character: [\t\n\f\r\p{Z}]
-      GENOTYPE = stringi::stri_replace_all_regex(
-        str = GENOTYPE,
+      GT = stringi::stri_replace_all_regex(
+        str = GT,
         pattern = "\\s+",
         replacement = " ",
         vectorize_all = FALSE
       ),
       # trim unnecessary whitespaces at start and end of string
-      GENOTYPE = stringi::stri_trim_both(
-        str = GENOTYPE,
+      GT = stringi::stri_trim_both(
+        str = GT,
         pattern = "\\P{Wspace}"
       )
     )
@@ -284,7 +284,7 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
   # separate the dataset by space
   data <- tibble::as_data_frame(
     purrr::invoke(#similar to do.call
-      rbind, stringi::stri_split_fixed(str = data$GENOTYPE, pattern = " ")
+      rbind, stringi::stri_split_fixed(str = data$GT, pattern = " ")
     )
   )
 
@@ -362,48 +362,48 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
   if (gt.coding == 6) {
     if (tidy) {
       data <- tidyr::gather(
-        data = data, key = MARKERS, value = GENOTYPE, -c(POP_ID, INDIVIDUALS))
+        data = data, key = MARKERS, value = GT, -c(POP_ID, INDIVIDUALS))
     }
   }
 
   if (gt.coding == 4) {
     data <- tidyr::gather(
-      data = data, key = MARKERS, value = GENOTYPE, -c(POP_ID, INDIVIDUALS)) %>%
+      data = data, key = MARKERS, value = GT, -c(POP_ID, INDIVIDUALS)) %>%
       tidyr::separate(
-        data = ., col = GENOTYPE, into = c("A1", "A2"),
+        data = ., col = GT, into = c("A1", "A2"),
         sep = 2, remove = TRUE, extra = "drop"
       ) %>%
       dplyr::mutate(
         A1 = stringi::stri_pad_left(str = A1, pad = "0", width = 3),
         A2 = stringi::stri_pad_left(str = A2, pad = "0", width = 3)
       ) %>%
-      tidyr::unite(data = ., col = GENOTYPE, A1, A2, sep = "") %>%
+      tidyr::unite(data = ., col = GT, A1, A2, sep = "") %>%
       dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
 
     if (!tidy) {
       data <- data %>%
         dplyr::group_by(POP_ID, INDIVIDUALS) %>%
-        tidyr::spread(data = ., key = MARKERS, value = GENOTYPE)
+        tidyr::spread(data = ., key = MARKERS, value = GT)
     }
   }
 
   if (gt.coding == 2) {
-    data <- tidyr::gather(data = data, key = MARKERS, value = GENOTYPE, -c(POP_ID, INDIVIDUALS)) %>%
+    data <- tidyr::gather(data = data, key = MARKERS, value = GT, -c(POP_ID, INDIVIDUALS)) %>%
       tidyr::separate(
-        data = ., col = GENOTYPE, into = c("A1", "A2"),
+        data = ., col = GT, into = c("A1", "A2"),
         sep = 1, remove = TRUE, extra = "drop"
       ) %>%
       dplyr::mutate(
         A1 = stringi::stri_pad_left(str = A1, pad = "0", width = 3),
         A2 = stringi::stri_pad_left(str = A2, pad = "0", width = 3)
       ) %>%
-      tidyr::unite(data = ., col = GENOTYPE, A1, A2, sep = "") %>%
+      tidyr::unite(data = ., col = GT, A1, A2, sep = "") %>%
       dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
 
     if (!tidy) {
       data <- data %>%
         dplyr::group_by(POP_ID, INDIVIDUALS) %>%
-        tidyr::spread(data = ., key = MARKERS, value = GENOTYPE)
+        tidyr::spread(data = ., key = MARKERS, value = GT)
     }
   }
 
