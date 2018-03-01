@@ -18,10 +18,10 @@
 #'   \item \strong{Output:} 18 output file formats are supported (see \code{output} argument below)
 #' }
 
-#' @param output 20 genomic data formats can be exported: tidy (by default),
+#' @param output 21 genomic data formats can be exported: tidy (by default),
 #' genind, genlight, vcf (for file format version, see details below), plink, genepop,
 #' structure, arlequin, hierfstat, gtypes (strataG), bayescan, betadiv, pcadapt,
-#' hzar, fineradstructure, snprelate (for SNPRelate's GDS, see details).
+#' hzar, fineradstructure, related, snprelate (for SNPRelate's GDS, see details).
 #' Use a character string,
 #' e.g. \code{output = c("genind", "genepop", "structure")}, to have preferred
 #' output formats generated. The tidy format is generated automatically.
@@ -44,6 +44,8 @@
 #' @inheritParams write_bayescan
 #' @inheritParams write_pcadapt
 #' @inheritParams write_hzar
+#' @inheritParams write_fineradstructure
+#' @inheritParams write_related
 #' @inheritParams radiator_imputations_module
 # @inheritParams write_snprelate
 
@@ -189,6 +191,10 @@
 #' RADpainter and fineRADstructure: population inference from RADseq data.
 #' bioRxiv, 057711.
 
+#' @references Pew J, Muir PH, Wang J, Frasier TR (2015)
+#' related: an R package for analysing pairwise relatedness from codominant
+#' molecular markers.
+#' Molecular Ecology Resources, 15, 557-561.
 
 
 #' @seealso \code{beta.div} is available on Pierre Legendre web site \url{http://adn.biol.umontreal.ca/~numericalecology/Rcode/}
@@ -723,6 +729,20 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
         data = input.imp, filename = filename.imp)
     }
   }
+
+  # related --------------------------------------------------------------------
+  if ("related" %in% output) {
+    if (verbose) message("Generating related file without imputation")
+    res$related.no.imputation <- radiator::write_related(
+      data = input, filename = filename, parallel.core = parallel.core)
+
+    if (!is.null(imputation.method)) {
+      if (verbose) message("Generating related file WITH imputations")
+      res$related.imputed <- radiator::write_related(
+        data = input.imp, filename = filename.imp, parallel.core = parallel.core)
+    }
+  }
+
 
   # dadi -----------------------------------------------------------------------
   # not yet implemented, use vcf2dadi

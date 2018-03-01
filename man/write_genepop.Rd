@@ -42,6 +42,19 @@ Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and \href{https://github.com/thierrygosselin/assigner}{assigner}
 and might be of interest for users.
 }
+\references{
+Raymond M. & Rousset F, (1995).
+GENEPOP (version 1.2): population genetics software for exact tests
+and ecumenicism.
+J. Heredity, 86:248-249
+
+Rousset F.
+genepop'007: a complete re-implementation of the genepop software
+for Windows and Linux.
+Molecular Ecology Resources.
+2008, 8: 103-106.
+doi:10.1111/j.1471-8286.2007.01931.x
+}
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}
 }

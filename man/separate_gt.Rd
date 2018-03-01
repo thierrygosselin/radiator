@@ -4,8 +4,8 @@
 \alias{separate_gt}
 \title{separate_gt}
 \usage{
-separate_gt(x, sep = "/", gt = "GT_VCF_NUC", exclude = c("LOCUS",
-  "INDIVIDUALS", "POP_ID"), cpu.rounds = 10,
+separate_gt(x, sep = "/", gt = "GT_VCF_NUC", gather = TRUE,
+  exclude = c("LOCUS", "INDIVIDUALS", "POP_ID"), cpu.rounds = 10,
   parallel.core = parallel::detectCores() - 1)
 }
 \description{

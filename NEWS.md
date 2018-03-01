@@ -1,3 +1,10 @@
+# radiator v.0.0.9 2018-03-01
+
+* New output file: related 
+  This output file format enables to run the data in the related R package, which is
+  essantially the R version of *COANCESTRY* fortran program developed by Jinliang Wang.
+
+
 # radiator v.0.0.8 2018-02-08
 
 * New output file: fineRADstructure

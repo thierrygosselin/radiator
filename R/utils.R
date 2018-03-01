@@ -45,6 +45,7 @@ separate_gt <- function(
   x,
   sep = "/",
   gt = "GT_VCF_NUC",
+  gather = TRUE,
   exclude = c("LOCUS", "INDIVIDUALS", "POP_ID"),
   cpu.rounds = 10,
   parallel.core = parallel::detectCores() - 1
@@ -60,8 +61,12 @@ separate_gt <- function(
       col = gt, into = c("ALLELE1", "ALLELE2"),
       sep = sep,
       extra = "drop", remove = TRUE
-    ) %>%
-      tidyr::gather(data = ., key = ALLELE_GROUP, value = HAPLOTYPES, -dplyr::one_of(exclude))
+    )
+
+    if (gather) {
+      res <- tidyr::gather(data = res, key = ALLELE_GROUP,
+                           value = HAPLOTYPES, -dplyr::one_of(exclude))
+    }
     return(res)
   }
 
