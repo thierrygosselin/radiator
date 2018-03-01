@@ -74,7 +74,7 @@ if (getRversion() >= "2.15.1") {
       "DISCARD", "NUMBERS", "TARGET_ID", "iter", "m", "PRIVATE_ALLELES",
       "GENOTYPED_MAX", "PAIRS", "NN_G", "N_GLOBAL", "N_LOCAL", "PP_G", "QQ_G",
       "DIFF", "HAPLOTYPES_NEW", "NUC", "ALT_GLOBAL", "ALT_LOCAL", "GLOBAL",
-      "LOCAL", "OVERALL", "HQ"
+      "LOCAL", "OVERALL", "HQ", "CHROM", "POS"
     )
   )
 }
