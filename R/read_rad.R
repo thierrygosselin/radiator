@@ -15,12 +15,25 @@
 #' @export
 #' @rdname read_rad
 #' @importFrom fst read.fst
+#' @importFrom purrr safely
 #'
 #'
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 read_rad <- function(data) {
-  data <- fst::read.fst(path = data)
+  # since version 0.8.4 there is a distinction between old and new format...
+  # Catch error while reading
+  safe_fst <- purrr::safely(.f = fst::read.fst)
+  data.safe <- safe_fst(data)
+  if (is.null(data.safe$error)) {
+    return(data.safe$result)
+  } else {
+    data <- suppressWarnings(fst::read.fst(path = data, old_format = TRUE))
+    message("This .rad file was created with an earlier version of the fst package")
+    message("Please re-write this tidy data with: radiator::write_rad")
+    message("    as this format will not be supported in future releases.")
+    return(data)
+  }
 }#End read_rad
 
 
