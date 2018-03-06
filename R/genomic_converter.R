@@ -18,7 +18,7 @@
 #'   \item \strong{Output:} 18 output file formats are supported (see \code{output} argument below)
 #' }
 
-#' @param output 21 genomic data formats can be exported: tidy (by default),
+#' @param output 22 genomic data formats can be exported: tidy (by default),
 #' genind, genlight, vcf (for file format version, see details below), plink, genepop,
 #' structure, arlequin, hierfstat, gtypes (strataG), bayescan, betadiv, pcadapt,
 #' hzar, fineradstructure, related, snprelate (for SNPRelate's GDS, see details).
@@ -46,6 +46,7 @@
 #' @inheritParams write_hzar
 #' @inheritParams write_fineradstructure
 #' @inheritParams write_related
+#' @inheritParams write_stockr
 #' @inheritParams radiator_imputations_module
 # @inheritParams write_snprelate
 
@@ -743,6 +744,16 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
     }
   }
 
+  # stockr --------------------------------------------------------------------
+  if ("stockr" %in% output) {
+    if (verbose) message("Generating stockR file without imputation")
+    res$stockr.no.imputation <- radiator::write_stockr(data = input)
+
+    if (!is.null(imputation.method)) {
+      if (verbose) message("Generating stockR file WITH imputations")
+      res$stockr.imputed <- radiator::write_stockr(data = input.imp)
+    }
+  }
 
   # dadi -----------------------------------------------------------------------
   # not yet implemented, use vcf2dadi

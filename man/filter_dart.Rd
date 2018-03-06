@@ -38,7 +38,7 @@ The column \code{INDIVIDUALS} and \code{STRATA} will be kept in the tidy data.
 Only individuals in the strata file are kept in the tidy, i.e. that the strata
 is also used as a whitelist of individuals/strata.}
 
-\item{output}{21 genomic data formats can be exported: tidy (by default),
+\item{output}{22 genomic data formats can be exported: tidy (by default),
 genind, genlight, vcf (for file format version, see details below), plink, genepop,
 structure, arlequin, hierfstat, gtypes (strataG), bayescan, betadiv, pcadapt,
 hzar, fineradstructure, related, snprelate (for SNPRelate's GDS, see details).

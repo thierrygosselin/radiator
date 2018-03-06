@@ -1,3 +1,9 @@
+# radiator v.0.0.10 2018-03-06
+
+* New output file: stockr 
+  This output file format enables to run the data in the stockR package from Scott Fisher at CSIRO in Hobart.
+
+
 # radiator v.0.0.9 2018-03-01
 
 * New output file: related 

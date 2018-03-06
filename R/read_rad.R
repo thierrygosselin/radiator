@@ -29,9 +29,9 @@ read_rad <- function(data) {
     return(data.safe$result)
   } else {
     data <- suppressWarnings(fst::read.fst(path = data, old_format = TRUE))
-    message("This .rad file was created with an earlier version of the fst package")
+    message("\nThis .rad file was created with an earlier version of the fst package")
     message("Please re-write this tidy data with: radiator::write_rad")
-    message("    as this format will not be supported in future releases.")
+    message("    as this format will not be supported in future releases.\n")
     return(data)
   }
 }#End read_rad
