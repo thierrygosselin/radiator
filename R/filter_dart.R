@@ -328,7 +328,7 @@ filter_dart <- function(
         readr::write_tsv(x = whitelist.markers, path = file.path(path.folder.reproducibility, "whitelist.reproducibility.markers.tsv"))
 
       }
-      blacklist.reproducibility.markers <- NULL
+      blacklist.markers <- blacklist.reproducibility.markers <- NULL
       whitelist.markers <- dplyr::select(metadata, MARKERS, CHROM, LOCUS, POS)
     } else {
       stop("A filter.reproducibility threshold value is required...")
@@ -592,8 +592,8 @@ filter_dart <- function(
       stringi::stri_replace_all_fixed(metadata.file,
                                       ".rad", "_filtered.rad",
                                       vectorize_all = FALSE)
-      )
     )
+  )
   # Tidy DArT ------------------------------------------------------------------
   message("\nNext step requires the genotypes")
 
@@ -601,6 +601,8 @@ filter_dart <- function(
                                whitelist.markers = whitelist.markers,
                                filename = filename, verbose = TRUE,
                                parallel.core = parallel.core)
+
+  # test <- dplyr::distinct(input, INDIVIDUALS, POP_ID)
 
   # Change populations names or order/levels -----------------------------------
   input <- change_pop_names(data = input, pop.levels = pop.levels)
