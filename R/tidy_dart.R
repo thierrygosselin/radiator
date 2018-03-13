@@ -82,6 +82,17 @@ tidy_dart <- function(
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) stop("Input file missing")
   if (missing(strata)) stop("strata file missing")
+
+  # Check that DArT file as good target id written -----------------------------
+  target.id <- extract_dart_target_id(data, write = FALSE)
+  if (nrow(target.id) != length(unique(target.id$TARGET_ID))) {
+    stop("non unique target id are used in the DArT file...
+What you want are different target ids at the end of the row that contains AlleleID, AlleleSequence, etc
+Edit manually before trying again
+If you're still encountering problem, email author for help")
+  }
+  target.id <- NULL
+
   # Date and Time --------------------------------------------------------------
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
   if (is.null(filename)) {
@@ -538,9 +549,9 @@ tidy_dart <- function(
         dplyr::left_join(grouping.column, by = "MARKERS") %>%
         dplyr::select(
           dplyr::one_of(
-          "MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "TARGET_ID", "GT",
-          "GT_VCF", "GT_VCF_NUC", "GT_BIN", "CALL_RATE", "AVG_COUNT_REF",
-          "AVG_COUNT_SNP", "REP_AVG"))
+            "MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "TARGET_ID", "GT",
+            "GT_VCF", "GT_VCF_NUC", "GT_BIN", "CALL_RATE", "AVG_COUNT_REF",
+            "AVG_COUNT_SNP", "REP_AVG"))
 
       grouping.column <- ref.info <- markers.split <- NULL # remove unused object
 
@@ -580,16 +591,16 @@ tidy_dart <- function(
 
       input <- split(x = input, f = input$SPLIT_VEC) %>%
         # purrr::map_df(.x = ., .f = dart_count) # for serial test
-      .radiator_parallel_mc(X = ., FUN = dart_count, mc.preschedule = FALSE, mc.cores = parallel.core, mc.cleanup = FALSE) %>%
+        .radiator_parallel_mc(X = ., FUN = dart_count, mc.preschedule = FALSE, mc.cores = parallel.core, mc.cleanup = FALSE) %>%
         # parallel::mclapply(X = ., FUN = dart_count, mc.preschedule = FALSE, mc.cores = parallel.core, mc.cleanup = FALSE) %>% # works!
         # .radiator_parallel(X = ., FUN = dart_count, mc.preschedule = FALSE, mc.cores = parallel.core, mc.cleanup = FALSE) %>% # not working = no progress bar possible
         dplyr::bind_rows(.)
 
       input <- suppressWarnings(dplyr::select(input,
-          dplyr::one_of(
-            "MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "TARGET_ID", "GT",
-            "GT_VCF", "GT_VCF_NUC", "GT_BIN", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH",
-            "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")))
+                                              dplyr::one_of(
+                                                "MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "TARGET_ID", "GT",
+                                                "GT_VCF", "GT_VCF_NUC", "GT_BIN", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH",
+                                                "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")))
     }
   }#End binary (2-row format) DArT file
 
@@ -606,9 +617,9 @@ tidy_dart <- function(
   input <- suppressWarnings(dplyr::select(
     input,
     dplyr::one_of(
-    "MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "INDIVIDUALS", "POP_ID",
-    "GT", "GT_VCF", "GT_VCF_NUC", "GT_BIN", "CALL_RATE", "AVG_COUNT_REF",
-    "AVG_COUNT_SNP", "REP_AVG"),
+      "MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "INDIVIDUALS", "POP_ID",
+      "GT", "GT_VCF", "GT_VCF_NUC", "GT_BIN", "CALL_RATE", "AVG_COUNT_REF",
+      "AVG_COUNT_SNP", "REP_AVG"),
     dplyr::everything())) %>%
     dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
 

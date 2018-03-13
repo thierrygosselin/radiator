@@ -11,8 +11,10 @@
 #' If you encounter a problem, sent me your data so that I can update
 #' the function. The function can import \code{.csv} or \code{.tsv} files.
 
+#' @param write With default \code{write = TRUE}, the dart target id column is
+#' written in a file in the working directory.
 
-#' @return A tidy dataframe with a \code{TARGET_ID} column:
+#' @return A tidy dataframe with a \code{TARGET_ID} column
 
 #' @export
 #' @rdname extract_dart_target_id
@@ -33,7 +35,7 @@
 
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com} and Peter Grewe \email{peter.grewe@csiro.au}
 
-extract_dart_target_id <- function(data) {
+extract_dart_target_id <- function(data, write = TRUE) {
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) stop("Input file missing")
 
@@ -99,14 +101,21 @@ extract_dart_target_id <- function(data) {
   discard.genome <- c("CHROM_|CHROMPOS_|ALNCNT_|ALNEVALUE_")
 
   dart.target.id <- tidyr::gather(data = dart.target.id, key = DISCARD,
-                                   value = TARGET_ID) %>%
+                                  value = TARGET_ID) %>%
     dplyr::select(-DISCARD) %>%
     dplyr::mutate(TARGET_ID = stringi::stri_trans_toupper(TARGET_ID)) %>%
     dplyr::filter(!TARGET_ID %in% discard) %>%
     dplyr::filter(stringi::stri_detect_regex(str = TARGET_ID,
                                              pattern = discard.genome, negate = TRUE))
 
+  if (write) readr::write_tsv(x = dart.target.id, path = "dart.target.id.tsv")
 
-  readr::write_tsv(x = dart.target.id, path = "dart.target.id.tsv")
+  # Check that DArT file as good target id written -----------------------------
+  if (nrow(dart.target.id) != length(unique(dart.target.id$TARGET_ID))) {
+    message("non unique target id are used in the DArT file...
+What you want are different target ids at the end of the row that contains AlleleID, AlleleSequence, etc
+Edit manually the DArT file before trying the functions: tidy_dart and filter_dart
+If you're still encountering problem, email author for help")
+  }
   return(dart.target.id)
 }#End extract_dart_target_id

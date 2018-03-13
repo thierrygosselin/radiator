@@ -168,6 +168,16 @@ filter_dart <- function(
   if (missing(data)) stop("Input file missing")
   if (missing(output)) stop("At least 1 output format is required")
 
+  # Check that DArT file as good target id written -----------------------------
+  target.id <- extract_dart_target_id(data, write = FALSE)
+  if (nrow(target.id) != length(unique(target.id$TARGET_ID))) {
+    stop("non unique target id are used in the DArT file...
+         What you want are different target ids at the end of the row that contains AlleleID, AlleleSequence, etc
+         Edit manually before trying again
+         If you're still encountering problem, email author for help")
+  }
+  target.id <- NULL
+
   # Filename -------------------------------------------------------------------
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
 
