@@ -33,12 +33,15 @@
 
 
 #' @param filter.reproducibility (optional, numerical) Filter the \code{RepAvg}
-#' column in the data set. Default: \code{filter.reproducibility = NULL}.
+#' column in the data set. For DArT this is the proportion of technical
+#' replicate assay pairs for which the marker score is consistent.
+#' Default: \code{filter.reproducibility = NULL}.
 #' e.g to keep markers with reproducibility >= 99%,
 #' use: \code{filter.reproducibility = 0.99}.
 
 #' @param filter.call.rate (optional, numerical) Filter the \code{CallRate}
-#' column in the data set. Default: \code{filter.call.rate = NULL}. e.g to keep
+#' column in the data set. For DArT this is the proportion of samples for
+#' which the genotype was callde. Default: \code{filter.call.rate = NULL}. e.g to keep
 #' markers genotyped in more than 95% of the individuals use :
 #' \code{filter.call.rate = 0.95}
 

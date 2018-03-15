@@ -91,7 +91,6 @@ What you want are different target ids at the end of the row that contains Allel
 Edit manually before trying again
 If you're still encountering problem, email author for help")
   }
-  target.id <- NULL
 
   # Date and Time --------------------------------------------------------------
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
@@ -130,6 +129,13 @@ If you're still encountering problem, email author for help")
   strata.df <- readr::read_tsv(
     file = strata, col_names = TRUE,
     col_types = readr::cols(.default = readr::col_character()))
+
+
+  # Check that TARGET_ID in strata match TARGET_ID in the DArT file ------------
+  if (!identical(target.id$TARGET_ID, strata.df$TARGET_ID)) {
+    stop("The DArT and strata files don't have the same TARGET_IDs: check case mapping")
+  }
+  target.id <- NULL
 
   # need to check for duplicate names... yes happening all the time
   duplicate.id.strata <- length(strata.df$INDIVIDUALS) - dplyr::n_distinct(strata.df$INDIVIDUALS)
@@ -311,8 +317,8 @@ If you're still encountering problem, email author for help")
     # input <- dplyr::filter(input, !is.na(MARKERS))
     grouping.col <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT",
                       "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")
-    input <- input %>%
-      tidyr::gather(data = ., key = TARGET_ID, value = GT, -dplyr::one_of(grouping.col))
+    input <- tidyr::gather(
+      data = input, key = TARGET_ID, value = GT, -dplyr::one_of(grouping.col))
 
     # generate the split vector
     split.vec <- split_vec_row(x = input, cpu.rounds = 3, parallel.core = parallel.core)
