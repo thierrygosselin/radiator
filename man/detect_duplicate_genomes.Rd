@@ -52,10 +52,12 @@ A list with potentially 8 objects:
 \code{$manhattan.plot.distance}: same info different visual with manhattan plot
 \code{$violin.plot.genome}: violin plot showing the distribution of pairwise genome similarities
 \code{$manhattan.plot.genome}: same info different visual with manhattan plot
+\code{$blacklist.id.similar}: blacklisted duplicates
 
 Saved in the working directory:
 individuals.pairwise.dist.tsv, individuals.pairwise.distance.stats.tsv,
-individuals.pairwise.genome.similarity.tsv, individuals.pairwise.genome.stats.tsv
+individuals.pairwise.genome.similarity.tsv, individuals.pairwise.genome.stats.tsv,
+blackliste.id.similar.tsv
 }
 \description{
 The function can compute two methods
@@ -121,8 +123,7 @@ dup.data.stats <- dup$distance.stats
 dup.data <- dup$distance
 
 # Based on the look of the distribution using both manhattan and boxplot,
-# I can filter the dataset to highlight potential duplicates:
-dup.filtered <- dplyr::filter(.data = dup.data, DISTANCE_RELATIVE < 0.2)
+# I can filter the dataset to highlight potential duplicates.
 
 # To run the distance (with euclidean distance instead of the default manhattan,
 # and also carry the second analysis (with the genome method):
