@@ -51,10 +51,12 @@
 #' \code{$manhattan.plot.distance}: same info different visual with manhattan plot
 #' \code{$violin.plot.genome}: violin plot showing the distribution of pairwise genome similarities
 #' \code{$manhattan.plot.genome}: same info different visual with manhattan plot
+#' \code{$blacklist.id.similar}: blacklisted duplicates
 #'
 #' Saved in the working directory:
 #' individuals.pairwise.dist.tsv, individuals.pairwise.distance.stats.tsv,
-#' individuals.pairwise.genome.similarity.tsv, individuals.pairwise.genome.stats.tsv
+#' individuals.pairwise.genome.similarity.tsv, individuals.pairwise.genome.stats.tsv,
+#' blackliste.id.similar.tsv
 
 #' @details
 #' Strategically, run the default first (\code{distance.method},
@@ -127,8 +129,7 @@
 #' dup.data <- dup$distance
 #'
 #' # Based on the look of the distribution using both manhattan and boxplot,
-#' # I can filter the dataset to highlight potential duplicates:
-#' dup.filtered <- dplyr::filter(.data = dup.data, DISTANCE_RELATIVE < 0.2)
+#' # I can filter the dataset to highlight potential duplicates.
 #'
 #' # To run the distance (with euclidean distance instead of the default manhattan,
 #' # and also carry the second analysis (with the genome method):
@@ -328,10 +329,10 @@ detect_duplicate_genomes <- function(
         # OUTLIERS_HIGH = QUANTILE75 + (1.5 * (QUANTILE75 - QUANTILE25)) # outliers : higher the outlier boxplot
       ) %>%
       readr::write_tsv(
-      x = .,
-      path = stringi::stri_join(path.folder, "/individuals.pairwise.distance.stats.tsv"),
-      col_names = TRUE
-    )
+        x = .,
+        path = stringi::stri_join(path.folder, "/individuals.pairwise.distance.stats.tsv"),
+        col_names = TRUE
+      )
 
     message("Generating plots")
     # violin plot
@@ -561,19 +562,73 @@ detect_duplicate_genomes <- function(
       width = 20, height = 15, dpi = 600, units = "cm", useDingbats = FALSE)
   } # end genome method
 
+  # Removing duplicates
+  message("\nInspect tables and figures to decide if some individual(s) need to be blacklisted")
+  message("blacklist individual(s) (y/n): ")
+  remove.id <- as.character(readLines(n = 1))
+  if (remove.id == "y") {
+    message("2 options to blacklist individuals: manually or with a threshold")
+    message("    manually: the function generate a blacklist that you populate manually")
+    message("    threshold: more powerful to fully remove duplicates")
+    message("\n    remove (manually/threshold): ")
+    remove.dup <- as.character(readLines(n = 1))
+    if (remove.dup == "manually") {
+      readr::write_tsv(
+        x = tibble::data_frame(INDIVIDUALS = as.character()),
+        path = file.path(path.folder, "blacklist.id.similar.tsv"),
+        append = FALSE, col_names = TRUE)
+      message("    An empty blacklist file was generated: blacklist.id.similar.tsv")
+      message("    Keep column name, just add the individual(s) to blacklist(s)")
+      res$blacklist.id.similar <- "check blacklist.id.similar.tsv file"
+    } else {
+      message("Use the distance or genome analysis to blacklist duplicates ? (distance/genome): ")
+      analysis <- as.character(readLines(n = 1))
+      if (analysis == "distance") {
+        data <-  "individuals.pairwise.dist.tsv"
+      } else {
+        data <-  "individuals.pairwise.genome.similarity.tsv"
+      }
+      message("\n    Enter threshold to remove duplicates: ")
+      dup.threshold <- as.numeric(readLines(n = 1))
+
+      message("\n    Remove all duplicates involved in pairs from different pop/group?")
+      message("\n    y: remove both samples in the pair")
+      message("\n    n: removes one sample in the pair, with more missing genotypes: (y/n)")
+      diff.pop.remove <- as.character(readLines(n = 1))
+      if (diff.pop.remove == "n") {
+        diff.pop.remove <- FALSE
+      } else {
+        diff.pop.remove <- TRUE
+      }
+      old.dir <- getwd()
+      setwd(path.folder)
+      duplicates <- remove_duplicates(
+        data = data,
+        stats = "genotyped.statistics.tsv",
+        dup.threshold = dup.threshold,
+        diff.pop.remove = diff.pop.remove)
+      setwd(old.dir)
+      res$blacklist.id.similar <- duplicates$blacklist.id
+    }
+  }
+
+
+
   # RESULTS --------------------------------------------------------------------
   cat("################################### RESULTS ###################################\n")
   message("Object in the list (if all arguments are selected):\n
 $distance                         # Distance method results
 $distance.stats                   # Summary statistics of the distance method
 $pairwise.genome.similarity       # Genome method results
-$genome.stats                     # Summary statistics of the genome method\n\n
+$genome.stats                     # Summary statistics of the genome method
+$blacklist.id.similar             # Blacklisted duplicates\n\n
 Visualization:
     $violin.plot.distance
     $manhattan.plot.distance
     $violin.plot.genome
     $manhattan.plot.genome\n
 Saved in the working directory:
+    blacklist.id.similar.tsv
     individuals.pairwise.dist.tsv
     individuals.pairwise.distance.stats.tsv
     individuals.pairwise.genome.similarity.tsv
@@ -793,3 +848,125 @@ distance2df <- function(x) {
     dplyr::arrange(DISTANCE)
   return(res)
 }#End distance2df
+
+
+# remove_duplicates  -----------------------------------------------------------
+
+#' @name remove_duplicates
+#' @title Read tidy genomic data file ending .rad
+#' @description Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
+#' To remove duplicate individuals based on threshold established from the
+#' visualization figures.
+
+#' @param data (path) The individual's pairwise data.
+#' Default: \code{data = "individuals.pairwise.dist.tsv"}.
+#' @param stats (path) The genotype statistics
+#' Default: \code{stats = "genotyped.statistics.tsv"}.
+#' @param dup.threshold (double) The threshold to filter out duplicates
+#' Default: \code{dup.threshold = 0.25}.
+#' @param diff.pop.remove Remove all individuals in pairs from different pop.
+#' Both samples are potentially problems. With defautl, the function will not keep
+#' one sample in the duplicate pair.
+#' Default: \code{diff.pop.remove = TRUE}.
+
+#' @return A list with blacklisted duplicates. Write the blacklist in the working
+#' directory.
+#' @export
+#' @keywords internal
+#' @rdname remove_duplicates
+#' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
+
+remove_duplicates <- function(
+  data = "individuals.pairwise.dist.tsv",
+  stats = "genotyped.statistics.tsv",
+  dup.threshold = 0.25,
+  diff.pop.remove = TRUE
+) {
+  dup.filtered <- suppressWarnings(suppressMessages(readr::read_tsv(data)))
+
+  if (tibble::has_name(dup.filtered, "DISTANCE_RELATIVE")) {
+    dup.filtered <- dup.filtered %>%
+      dplyr::filter(DISTANCE_RELATIVE < dup.threshold)
+  } else {
+    dup.filtered <- dup.filtered %>%
+      dplyr::filter(PROP_IDENTICAL > dup.threshold)
+  }
+
+
+  if (nrow(dup.filtered) > 0) {
+    dup.list.names <- tibble::data_frame(INDIVIDUALS = c(dup.filtered$ID1, dup.filtered$ID2)) %>%
+      dplyr::group_by(INDIVIDUALS) %>%
+      dplyr::tally(.) %>%
+      dplyr::ungroup(.) %>%
+      dplyr::arrange(dplyr::desc(n)) %>%
+      dplyr::distinct(INDIVIDUALS) %>%
+      purrr::flatten_chr(.)
+
+    geno.stats <- readr::read_tsv(stats, col_types = "cd")
+
+    res <- list(blacklist.id = tibble::tibble(INDIVIDUALS = character(0)),
+                whitelist.id = tibble::tibble(INDIVIDUALS = character(0)))
+
+    for (i in dup.list.names) {
+      # i <- dup.list.names[1]
+      dups <- dplyr::filter(dup.filtered, ID1 %in% i | ID2 %in% i)
+      dups <- sort(unique(c(dups$ID1, dups$ID2)))
+
+      # find all duplicates associated with the network
+      new.dups <- 0L
+      while(length(new.dups) > 0) {
+        new.dups <- dplyr::filter(dup.filtered, ID1 %in% dups | ID2 %in% dups)
+        new.dups <- sort(unique(c(new.dups$ID1, new.dups$ID2)))
+        new.dups <- purrr::keep(.x = new.dups, .p = !new.dups %in% dups)
+        if (length(new.dups) > 0) {
+          dups <- c(dups, new.dups)
+        }
+      }
+      dups <- tibble::data_frame(INDIVIDUALS = dups)
+
+      if (nrow(res$blacklist.id) > 0) {
+        dups <- dplyr::filter(dups, !INDIVIDUALS %in% res$blacklist.id$INDIVIDUALS)
+      }
+
+      if (nrow(dups) > 0) {
+        if (diff.pop.remove) {
+          blacklist.diff.pop <- dup.filtered %>%
+            dplyr::filter(ID1 %in% dups$INDIVIDUALS | ID2 %in% dups$INDIVIDUALS) %>%
+            dplyr::distinct(POP_COMP) %>%
+            dplyr::filter(POP_COMP == "different pop")
+
+          if (nrow(blacklist.diff.pop) > 0) {
+            res$blacklist.id <- dplyr::bind_rows(res$blacklist.id, dups)
+          }
+          blacklist.diff.pop <- NULL
+        } else {
+          whitelist.id <- dups %>%
+            dplyr::left_join(geno.stats, by = "INDIVIDUALS") %>%
+            dplyr::filter(GENOTYPED_PROP == max(GENOTYPED_PROP)) %>%
+            dplyr::sample_n(tbl = ., size = 1) %>% # make sure only 1 is selected
+            dplyr::select(INDIVIDUALS)
+
+          if (nrow(whitelist.id) > 0) res$whitelist.id <- dplyr::bind_rows(res$whitelist.id, whitelist.id)
+
+          blacklist.id <- dplyr::filter(dups, !INDIVIDUALS %in% whitelist.id$INDIVIDUALS) %>%
+            dplyr::select(INDIVIDUALS)
+
+          if (nrow(blacklist.id) > 0) res$blacklist.id <- dplyr::bind_rows(res$blacklist.id, blacklist.id)
+        }
+      }
+    }
+    dups <- blacklist.id <- whitelist.id <- i <- new.dups <- NULL
+
+    res$blacklist.id <- dplyr::distinct(res$blacklist.id, INDIVIDUALS)
+    res$whitelist.id <- dplyr::distinct(res$whitelist.id, INDIVIDUALS)
+    message("With threshold selected, ", nrow(res$blacklist.id) ," individual(s) blacklisted")
+    readr::write_tsv(x = res$blacklist.id, path = "blacklist.id.similar.tsv")
+    message("Written in the directory: blacklist.id.similar.tsv")
+
+  } else {
+    message("With threshold selected, the blacklist of duplicate individuals is empty")
+    res <- list(blacklist.id = tibble::tibble(INDIVIDUALS = character(0)),
+                whitelist.id = tibble::tibble(INDIVIDUALS = character(0)))
+  }
+  return(res)
+} # End remove_duplicates
