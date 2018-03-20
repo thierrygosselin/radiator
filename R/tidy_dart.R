@@ -64,7 +64,7 @@
 #' verbose = TRUE)
 #' }
 
-#' @author Thierry Gosselin \email{thierrygosselin@@icloud.com} and Peter Grewe \email{peter.grewe@csiro.au}
+#' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 tidy_dart <- function(
   data,

@@ -49,7 +49,7 @@
 #' verbose = TRUE)
 #' }
 
-#' @author Thierry Gosselin \email{thierrygosselin@@icloud.com} and Peter Grewe \email{peter.grewe@csiro.au}
+#' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 tidy_dart_metadata <- function(
   data,
@@ -72,145 +72,154 @@ tidy_dart_metadata <- function(
     meta.filename <- stringi::stri_join(filename, "_metadata", ".rad")
   }
 
-  # Check DArT format file -----------------------------------------------------
-  data.type <- readChar(con = data, nchars = 16L, useBytes = TRUE)
-  dart.with.header <- TRUE %in% (stringi::stri_detect_fixed(str = data.type, pattern = c("*\t", "*,")))
-  if (dart.with.header) {
-    temp.file <- suppressWarnings(suppressMessages(readr::read_table(file = data, n_max = 20, col_names = "HEADER")))
-    skip.number <- which(stringi::stri_detect_fixed(str = temp.file$HEADER,
-                                                    pattern = "AlleleID")) - 1
-    data.type <- readr::read_lines(file = data, skip = skip.number, n_max = skip.number + 1)[1] %>%
-      stringi::stri_sub(str = ., from = 1, to = 16)
-  } else {
-    skip.number <- 0
-  }
-  temp.file <- NULL
-  dart.clone.id <- stringi::stri_detect_fixed(str = data.type, pattern = "CloneID")
-  dart.allele.id <- stringi::stri_detect_fixed(str = data.type, pattern = "AlleleID")
+  data.type <- radiator::detect_genomic_format(data)
 
-  if (dart.clone.id || dart.allele.id) {
-    data.type <- "dart"
-  } else {
+  if (!data.type %in% c("dart", "fst.file")) {
     stop("Contact author to show your DArT data, problem duting import")
   }
+
   if (verbose) message("Importing DArT markers metadata")
 
   # Import metadata-------------------------------------------------------------
+  if (data.type == "dart") {
+    if (stringi::stri_detect_fixed(
+      str = stringi::stri_sub(str = data, from = -4, to = -1),
+      pattern = ".csv")) {
+      csv <- TRUE
+    } else {
+      csv <- FALSE
+    }
 
-  if (stringi::stri_detect_fixed(
-    str = stringi::stri_sub(str = data, from = -4, to = -1),
-    pattern = ".csv")) {
-    csv <- TRUE
-  } else {
-    csv <- FALSE
-  }
+    dart.with.header <- TRUE %in%
+      (stringi::stri_detect_fixed(
+        str = readChar(con = data, nchars = 16L, useBytes = TRUE),
+        pattern = c("*\t", "*,")))
+    if (dart.with.header) {
+      temp.file <- suppressWarnings(suppressMessages(
+        readr::read_table(file = data, n_max = 20, col_names = "HEADER")))
+      skip.number <- which(stringi::stri_detect_fixed(str = temp.file$HEADER,
+                                                      pattern = "AlleleID")) - 1
+    } else {
+      skip.number <- 0
+    }
+    temp.file <- NULL
 
-  if (csv) {
-    dart.col.type <- readr::read_csv(
-      file = data,
-      skip = skip.number, n_max = 1,
-      na = "-",
-      col_names = FALSE,
-      col_types = readr::cols(.default = readr::col_character()))
-  } else {
-    dart.col.type <- readr::read_tsv(
-      file = data,
-      skip = skip.number, n_max = 1,
-      na = "-",
-      col_names = FALSE,
-      col_types = readr::cols(.default = readr::col_character()))
-  }
-
-  want <- tibble::data_frame(
-    INFO = c("ALLELEID", "SNP", "SNPPOSITION", "CALLRATE",
-             "AVGCOUNTREF", "AVGCOUNTSNP", "REPAVG"),
-    COL_TYPE = c("c", "c", "i", "d", "d", "d", "d"))
-
-  dart.col.type <- dart.col.type %>%
-    tidyr::gather(data = .,key = DELETE, value = INFO) %>%
-    dplyr::select(-DELETE) %>%
-    dplyr::mutate(INFO = stringi::stri_trans_toupper(INFO)) %>%
-    dplyr::left_join(want, by = "INFO") %>%
-    dplyr::mutate(COL_TYPE = stringi::stri_replace_na(str = COL_TYPE, replacement = "_")) %>%
-    dplyr::select(COL_TYPE) %>%
-    purrr::flatten_chr(.) %>% stringi::stri_join(collapse = "")
-
-  if (csv) {
-    input <- suppressMessages(suppressWarnings(
-      readr::read_csv(
+    if (csv) {
+      dart.col.type <- readr::read_csv(
         file = data,
-        skip = skip.number,
+        skip = skip.number, n_max = 1,
         na = "-",
-        col_names = TRUE,
-        col_types = dart.col.type)
-    ))
-  } else {
-    input <- suppressMessages(suppressWarnings(
-      readr::read_tsv(
+        col_names = FALSE,
+        col_types = readr::cols(.default = readr::col_character()))
+    } else {
+      dart.col.type <- readr::read_tsv(
         file = data,
-        skip = skip.number,
+        skip = skip.number, n_max = 1,
         na = "-",
-        col_names = TRUE,
-        col_types = dart.col.type)
-    ))
-  }
+        col_names = FALSE,
+        col_types = readr::cols(.default = readr::col_character()))
+    }
 
-  colnames(input) <- stringi::stri_trans_toupper(colnames(input))
-  colnames(input) <- stringi::stri_replace_all_fixed(
-    str = colnames(input),
-    pattern = c("AVGCOUNTREF", "AVGCOUNTSNP", "REPAVG", "ALLELEID", "SNPPOSITION", "CALLRATE"),
-    replacement = c("AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG", "LOCUS", "POS", "CALL_RATE"),
-    vectorize_all = FALSE)
+    want <- tibble::data_frame(
+      INFO = c("ALLELEID", "SNP", "SNPPOSITION", "CALLRATE",
+               "AVGCOUNTREF", "AVGCOUNTSNP", "REPAVG"),
+      COL_TYPE = c("c", "c", "i", "d", "d", "d", "d"))
 
-  # Check for duplicate rows (sometimes people combine DArT data...)----------
-  input.dup <- dplyr::distinct(input, LOCUS, SNP, POS, CALL_RATE, .keep_all = FALSE)
+    dart.col.type <- dart.col.type %>%
+      tidyr::gather(data = .,key = DELETE, value = INFO) %>%
+      dplyr::select(-DELETE) %>%
+      dplyr::mutate(INFO = stringi::stri_trans_toupper(INFO)) %>%
+      dplyr::left_join(want, by = "INFO") %>%
+      dplyr::mutate(COL_TYPE = stringi::stri_replace_na(str = COL_TYPE, replacement = "_")) %>%
+      dplyr::select(COL_TYPE) %>%
+      purrr::flatten_chr(.) %>% stringi::stri_join(collapse = "")
 
-  # make sure no duplicates
-  if (nrow(input) != nrow(input.dup)) {
+    if (csv) {
+      input <- suppressMessages(suppressWarnings(
+        readr::read_csv(
+          file = data,
+          skip = skip.number,
+          na = "-",
+          col_names = TRUE,
+          col_types = dart.col.type)
+      ))
+    } else {
+      input <- suppressMessages(suppressWarnings(
+        readr::read_tsv(
+          file = data,
+          skip = skip.number,
+          na = "-",
+          col_names = TRUE,
+          col_types = dart.col.type)
+      ))
+    }
+
+    colnames(input) <- stringi::stri_trans_toupper(colnames(input))
+    colnames(input) <- stringi::stri_replace_all_fixed(
+      str = colnames(input),
+      pattern = c("AVGCOUNTREF", "AVGCOUNTSNP", "REPAVG", "ALLELEID", "SNPPOSITION", "CALLRATE"),
+      replacement = c("AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG", "LOCUS", "POS", "CALL_RATE"),
+      vectorize_all = FALSE)
+
+    # Check for duplicate rows (sometimes people combine DArT data...)----------
+    input.dup <- dplyr::distinct(input, LOCUS, SNP, POS, CALL_RATE, .keep_all = FALSE)
+
+    # make sure no duplicates
+    if (nrow(input) != nrow(input.dup)) {
+      input.dup <- NULL
+      message("Duplicate rows were identified")
+      message("    using distinct rows")
+      message("    check input data if downstream problems")
+      input <- dplyr::distinct(input, LOCUS, SNP, POS, CALL_RATE, .keep_all = TRUE)
+    }
     input.dup <- NULL
-    message("Duplicate rows were identified")
-    message("    using distinct rows")
-    message("    check input data if downstream problems")
-    input <- dplyr::distinct(input, LOCUS, SNP, POS, CALL_RATE, .keep_all = TRUE)
+
+    # Tidying data ---------------------------------------------------------------
+    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "CALL_RATE",
+              "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")
+
+    input <- suppressWarnings(
+      input %>%
+        tidyr::separate(col = LOCUS, into = c("LOCUS", "NOT_USEFUL"), sep = "\\|", extra = "drop") %>%
+        dplyr::select(-NOT_USEFUL) %>%
+        tidyr::separate(col = SNP, into = c("NOT_USEFUL", "KEEPER"), sep = ":", extra = "drop") %>%
+        dplyr::select(-NOT_USEFUL) %>%
+        tidyr::separate(col = KEEPER, into = c("REF", "ALT"), sep = ">") %>%
+        dplyr::mutate(
+          CHROM = rep("CHROM_1", n()),
+          MARKERS = stringi::stri_join(CHROM, LOCUS, POS, sep = "__")) %>%
+        dplyr::select(dplyr::one_of(want), dplyr::everything()) %>%
+        dplyr::mutate_at(.tbl = ., .vars = c("MARKERS", "CHROM", "LOCUS", "POS"), .funs = as.character) %>%
+        dplyr::arrange(CHROM, LOCUS, POS, REF) %>%
+        dplyr::filter(!is.na(REF) | !is.na(ALT)) %>%
+        dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
+        dplyr::arrange(MARKERS))
   }
-  input.dup <- NULL
 
-  # Tidying data ---------------------------------------------------------------
-  want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "CALL_RATE",
-            "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")
+  if (data.type == "fst.file") {
+    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "CALL_RATE",
+              "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")
+    input <- suppressWarnings(
+      radiator::read_rad(data) %>%
+        dplyr::select(dplyr::one_of(want)) %>%
+        dplyr::distinct(MARKERS, .keep_all = TRUE))
+  }
 
-  input <- suppressWarnings(
-    input %>%
-      tidyr::separate(col = LOCUS, into = c("LOCUS", "NOT_USEFUL"), sep = "\\|", extra = "drop") %>%
-      dplyr::select(-NOT_USEFUL) %>%
-      tidyr::separate(col = SNP, into = c("NOT_USEFUL", "KEEPER"), sep = ":", extra = "drop") %>%
-      dplyr::select(-NOT_USEFUL) %>%
-      tidyr::separate(col = KEEPER, into = c("REF", "ALT"), sep = ">") %>%
-      dplyr::mutate(
-        CHROM = rep("CHROM_1", n()),
-        MARKERS = stringi::stri_join(CHROM, LOCUS, POS, sep = "__")) %>%
-      dplyr::select(dplyr::one_of(want), dplyr::everything()) %>%
-      dplyr::mutate_at(.tbl = ., .vars = c("MARKERS", "CHROM", "LOCUS", "POS"), .funs = as.character) %>%
-      dplyr::arrange(CHROM, LOCUS, POS, REF) %>%
-      dplyr::filter(!is.na(REF) | !is.na(ALT)) %>%
-      dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-      dplyr::arrange(MARKERS))
+  radiator::write_rad(data = input, path = meta.filename)
+  # readr::write_tsv(x = input, path = meta.filename)
+  message("Marker's metadata file written to the directory:\n    ", meta.filename)
 
-write_rad(data = input, path = meta.filename)
-# readr::write_tsv(x = input, path = meta.filename)
-message("Marker's metadata file written to the directory:\n    ", meta.filename)
-
-# Results --------------------------------------------------------------------
-if (verbose) {
-  n.chrom <- dplyr::n_distinct(input$CHROM)
-  n.locus <- dplyr::n_distinct(input$LOCUS)
-  n.snp <- dplyr::n_distinct(input$MARKERS)
-  message("Number of chrom: ", n.chrom)
-  message("Number of locus: ", n.locus)
-  message("Number of SNPs: ", n.snp)
-  timing <- proc.time() - timing
-  message("\nComputation time: ", round(timing[[3]]), " sec")
-}
-options(width = opt.change)
-return(input)
+  # Results --------------------------------------------------------------------
+  if (verbose) {
+    n.chrom <- dplyr::n_distinct(input$CHROM)
+    n.locus <- dplyr::n_distinct(input$LOCUS)
+    n.snp <- dplyr::n_distinct(input$MARKERS)
+    message("Number of chrom: ", n.chrom)
+    message("Number of locus: ", n.locus)
+    message("Number of SNPs: ", n.snp)
+    timing <- proc.time() - timing
+    message("\nComputation time: ", round(timing[[3]]), " sec")
+  }
+  options(width = opt.change)
+  return(input)
 }#End dart_markers_metadata

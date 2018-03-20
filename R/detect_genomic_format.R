@@ -87,12 +87,12 @@ detect_genomic_format <- function(data){
     }
 
     # DArT data
-    dart.with.header <- stringi::stri_detect_fixed(str = data.type, pattern = "*\t")
+    dart.with.header <- TRUE %in% (stringi::stri_detect_fixed(str = data.type, pattern = c("*\t", "*,")))
     if (dart.with.header) {
       temp.file <- suppressWarnings(suppressMessages(readr::read_table(file = data, n_max = 20, col_names = "HEADER")))
       skip.number <- which(stringi::stri_detect_fixed(str = temp.file$HEADER,
-                                                      pattern = "AlleleID"))
-      data.type <- readr::read_lines(file = data, skip = 5, n_max = 6)[1] %>%
+                                                      pattern = "AlleleID")) -1
+      data.type <- readr::read_lines(file = data, skip = skip.number, n_max = skip.number + 1)[1] %>%
         stringi::stri_sub(str = ., from = 1, to = 16)
     }
     dart.clone.id <- stringi::stri_detect_fixed(str = data.type, pattern = "CloneID")

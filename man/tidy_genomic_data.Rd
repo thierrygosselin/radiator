@@ -24,7 +24,7 @@ With \code{logical, TRUE/FALSE}, \code{vcf.metadata = FALSE}, only the genotype
 information is kept (GT field). With \code{vcf.metadata = TRUE},
 all the metadata contained in the \code{FORMAT} field will be kept in
 the tidy data file. radiator is currently keeping/cleaning only these metadata:
-\code{"DP", "AD", "GL", "PL", "GQ", "GOF", "NR", "NV"}.
+\code{"DP", "AD", "GL", "PL", "GQ", "HQ", "GOF", "NR", "NV"}.
 If you need different one, submit a request.
 With \code{string}, explicitely ask for a particular FORMAT field you want
 to keep (except the GT field that is always imported).

@@ -1,6 +1,6 @@
 [![Travis-CI Build Status](https://travis-ci.org/thierrygosselin/radiator.svg?branch=master)](https://travis-ci.org/thierrygosselin/radiator) [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/thierrygosselin/radiator?branch=master&svg=true)](https://ci.appveyor.com/project/thierrygosselin/radiator) [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/radiator)](http://cran.r-project.org/package=radiator) [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active) [![DOI](https://zenodo.org/badge/14548/thierrygosselin/radiator.svg)](https://zenodo.org/badge/latestdoi/14548/thierrygosselin/radiator)
 
-[![packageversion](https://img.shields.io/badge/Package%20version-0.0.10-orange.svg)](commits/master) [![Last-changedate](https://img.shields.io/badge/last%20change-2018--03--15-brightgreen.svg)](/commits/master)
+[![packageversion](https://img.shields.io/badge/Package%20version-0.0.10-orange.svg)](commits/master) [![Last-changedate](https://img.shields.io/badge/last%20change-2018--03--20-brightgreen.svg)](/commits/master)
 
 ------------------------------------------------------------------------
 
@@ -59,7 +59,7 @@ devtools::install_version("data.table", version = "1.10.4", repos = "http://cran
 </tr>
 <tr class="even">
 <td align="left"><strong>Outliers detection</strong></td>
-<td align="left"><code>detect_duplicate_genomes</code>: Detect and remove duplicate individuals from your dataset <br><code>detect_mixed_genomes</code>: Detect and remove potentially mixed individuals<br><code>summary_haplotype</code> and <code>filter_snp_number</code>: Discard of outlier markers with <em>de novo</em> assembly artifact (e.g. markers with an extreme number of SNP per haplotype or with irregular number of alleles)</td>
+<td align="left"><code>detect_duplicate_genomes</code>: Detect and remove duplicate individuals from your dataset <br><code>detect_mixed_genomes</code>: Detect and remove potentially mixed individuals<br><code>stackr::summary_haplotype</code> and <code>filter_snp_number</code>: Discard of outlier markers with <em>de novo</em> assembly artifact (e.g. markers with an extreme number of SNP per haplotype or with irregular number of alleles)</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>Pattern of missingness</strong></td>
@@ -318,8 +318,8 @@ The **radiator** package fits currently at the end of the GBS workflow (e.g. aft
 
 -   Remove replicates (I hope you have some).
 -   Remove *de novo* assembly artifact:
-    -   run `summary_haplotypes` to automatically generate blacklist of genotypes and whitelist of markers. The function will highlight individuals and locus with more than 2 alleles (outlier individuals and markers).
-    -   run `filter_snp_number`, function will highlight outlier locus/reads with extreme number of SNP/read or haplotypethe
+    -   run `stackr::summary_haplotypes` to automatically generate blacklist of genotypes and whitelist of markers. The function will highlight individuals and locus with more than 2 alleles (outlier individuals and markers).
+    -   run `filter_snp_number`, function will highlight outlier locus/reads with extreme number of SNP/read or haplotypes
 -   Remove potential duplicated samples that went off your radar with `detect_duplicate_genomes`.
 -   Remove mixed samples or pooled samples that creates outliers individual's heterozygosity with the function `detect_mixed_individuals`.
 

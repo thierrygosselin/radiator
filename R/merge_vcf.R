@@ -82,21 +82,7 @@ merge_vcf <- function(
   # Filename -------------------------------------------------------------------
   # Get date and time to have unique filenaming
   if (is.null(filename)) {
-    file.date <- stringi::stri_replace_all_fixed(
-      Sys.time(),
-      pattern = " EDT",
-      replacement = "",
-      vectorize_all = FALSE
-    )
-    file.date <- stringi::stri_replace_all_fixed(
-      file.date,
-      pattern = c("-", " ", ":"),
-      replacement = c("", "@", ""),
-      vectorize_all = FALSE
-    )
-    file.date <- stringi::stri_sub(file.date, from = 1, to = 13)
-
-    filename <- stringi::stri_join("radiator_merged_vcf_", file.date)
+    file.date <- format(Sys.time(), "%Y%m%d@%H%M")
   }
 
   # import data ----------------------------------------------------------------

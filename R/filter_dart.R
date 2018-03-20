@@ -41,7 +41,7 @@
 
 #' @param filter.call.rate (optional, numerical) Filter the \code{CallRate}
 #' column in the data set. For DArT this is the proportion of samples for
-#' which the genotype was callde. Default: \code{filter.call.rate = NULL}. e.g to keep
+#' which the genotype was called. Default: \code{filter.call.rate = NULL}. e.g to keep
 #' markers genotyped in more than 95% of the individuals use :
 #' \code{filter.call.rate = 0.95}
 
@@ -171,16 +171,6 @@ filter_dart <- function(
   if (missing(data)) stop("Input file missing")
   if (missing(output)) stop("At least 1 output format is required")
 
-  # Check that DArT file as good target id written -----------------------------
-  target.id <- extract_dart_target_id(data, write = FALSE)
-  if (nrow(target.id) != length(unique(target.id$TARGET_ID))) {
-    stop("non unique target id are used in the DArT file...
-         What you want are different target ids at the end of the row that contains AlleleID, AlleleSequence, etc
-         Edit manually before trying again
-         If you're still encountering problem, email author for help")
-  }
-  target.id <- NULL
-
   # Filename -------------------------------------------------------------------
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
 
@@ -204,6 +194,26 @@ filter_dart <- function(
 
   message("\nFolder created: \n", folder.extension)
   filename <- file.path(path.folder, filename)
+
+  # File type ------------------------------------------------------------------
+  data.type <- radiator::detect_genomic_format(data)
+
+  if (data.type == "dart") {
+    # Check that DArT file as good target id written
+    target.id <- extract_dart_target_id(data, write = FALSE)
+    if (nrow(target.id) != length(unique(target.id$TARGET_ID))) {
+      stop("non unique target id are used in the DArT file...
+           What you want are different target ids at the end of the row that contains AlleleID, AlleleSequence, etc
+           Edit manually before trying again
+           If you're still encountering problem, email author for help")
+    }
+    target.id <- NULL
+  }
+
+  if (data.type == "fst.file") {
+    message("Importing tidy DArT data...")
+    input <- radiator::read_rad(data)
+  }
 
   # Filter parameter file ------------------------------------------------------
   filters.parameters <- tibble::data_frame(
@@ -235,7 +245,6 @@ filter_dart <- function(
 
   # create 2 data.info
   data.info <- first.data.info <- data_info(metadata, print.info = FALSE)
-
 
   # message("interactive.filter: ", interactive.filter)
   # message("filter.reproducibility: ", filter.reproducibility)
@@ -589,12 +598,10 @@ filter_dart <- function(
         readr::write_tsv(x = blacklist.coverage.markers, path = file.path(path.folder.coverage, "blacklist.coverage.markers.tsv"))
         readr::write_tsv(x = whitelist.markers, path = file.path(path.folder.coverage, "whitelist.coverage.markers.tsv"))
       }
-
-      blacklist.coverage.markers <- NULL
     } else {
       stop("A filter.coverage thresholds values are required...")
     }
-    coverage <- coverage.long <- plot.coverage <- plot.coverage.boxplot <- NULL
+    blacklist.coverage.markers <- coverage <- coverage.long <- plot.coverage <- plot.coverage.boxplot <- NULL
   }#End filter.coverage
 
   # update metadata file -------------------------------------------------------
@@ -609,16 +616,19 @@ filter_dart <- function(
   )
   # Tidy DArT ------------------------------------------------------------------
   message("\nNext step requires the genotypes")
+  if (data.type == "dart") {
+    input <- radiator::tidy_dart(data = data, strata = strata,
+                                 whitelist.markers = whitelist.markers,
+                                 filename = filename, verbose = TRUE,
+                                 parallel.core = parallel.core)
 
-  input <- radiator::tidy_dart(data = data, strata = strata,
-                               whitelist.markers = whitelist.markers,
-                               filename = filename, verbose = TRUE,
-                               parallel.core = parallel.core)
+    # test <- dplyr::distinct(input, INDIVIDUALS, POP_ID)
 
-  # test <- dplyr::distinct(input, INDIVIDUALS, POP_ID)
-
-  # Change populations names or order/levels -----------------------------------
-  input <- change_pop_names(data = input, pop.levels = pop.levels)
+    # Change populations names or order/levels -----------------------------------
+    input <- change_pop_names(data = input, pop.levels = pop.levels)
+  } else {
+    input <- dplyr::filter(input, MARKERS %in% whitelist.markers$MARKERS)
+  }
 
   # Blacklist id ---------------------------------------------------------------
   if (is.null(blacklist.id)) { # No blacklist of ID
@@ -1248,6 +1258,47 @@ on the number of genotyped individuals per pop ? (overall or pop):")
                        append = TRUE, col_names = FALSE)
       # update data.info
       data.info$n.ind <- data.info$n.ind - n.ind.blacklisted
+
+      # Filter monomorphic markers again
+      if (monomorphic.out) {
+        input <- discard_monomorphic_markers(data = input, verbose = verbose)
+        blacklist.monomorphic.markers <- input$blacklist.monomorphic.markers
+        whitelist.markers <- input$whitelist.polymorphic.markers
+        input <- input$input
+
+        # update blacklist.markers
+        if (nrow(blacklist.monomorphic.markers) > 0) {
+          readr::write_tsv(x = blacklist.monomorphic.markers,
+                           path = file.path(path.folder, "blacklist.monomorphic.markers.tsv"))
+          if (verbose) message("    Blacklist of monomorphic markers written in: blacklist.monomorphic.markers.tsv")
+
+          if (is.null(blacklist.markers)) {
+            blacklist.markers<- blacklist.monomorphic.markers
+          } else {
+            blacklist.markers <- dplyr::bind_rows(blacklist.markers, blacklist.monomorphic.markers)
+          }
+
+          new.data.info <- data_info(input)
+
+          # updating parameters
+          filters.parameters <- tibble::data_frame(
+            FILTERS = "removing monomorphic markers",
+            PARAMETERS = "",
+            VALUES = "",
+            BEFORE = stringi::stri_join(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
+            AFTER = stringi::stri_join(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
+            BLACKLIST = stringi::stri_join(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
+            UNITS = "CHROM/LOCUS/SNP",
+            COMMENTS = ""
+          )
+          readr::write_tsv(x = filters.parameters,
+                           path = filters.parameters.path, append = TRUE,
+                           col_names = FALSE)
+          # update data.info
+          data.info <- new.data.info
+        }
+        blacklist.monomorphic.markers <- NULL
+      }# End monomorphic.out
     }
     mixed.genomes.analysis <- NULL
   }# End mixed genomes
@@ -1264,11 +1315,14 @@ on the number of genotyped individuals per pop ? (overall or pop):")
       genome = genome,
       parallel.core = parallel.core)
 
+    # subsample.markers = NULL # test
+    # random.seed = NULL # test
+
     if (interactive.filter) {
       message("\n\n    Inspect plots and tables")
       # filtering by distance or pairwise genome similarity ?
 
-      message("    Suspicious about the data?")
+      message("    Suspicious about the duplicates analysis?")
       message("    Run the full pairwise genome comparisons")
       message("    This approach integrates markers in common & missing data\n")
 
@@ -1281,30 +1335,26 @@ on the number of genotyped individuals per pop ? (overall or pop):")
           genome = TRUE,
           parallel.core = parallel.core)
       }
-      message("    Inspect tables and decide which individual(s) to blacklist(s)")
-      message("    Do you want to remove individuals ? (y/n): ")
-      remove.id <- as.character(readLines(n = 1))
-      if (remove.id == "y") {
-        blacklist.id.similar <- tibble::data_frame(INDIVIDUALS = as.character())
-        dup.genome.folder <- list.files(
-          path = path.folder,
-          pattern = "detect_duplicate_genomes", full.names = TRUE)
+      dup.genome.folder <- list.files(
+        path = path.folder,
+        pattern = "detect_duplicate_genomes", full.names = TRUE)
 
-        if (length(dup.genome.folder) > 1) {
-          dup.genome.folder <- file.info(dup.genome.folder) %>%
-            tibble::rownames_to_column(df = ., var = "FILE") %>%
-            dplyr::filter(mtime == max(mtime))
-          dup.genome.folder <- dup.genome.folder$FILE
-        }
-        blacklist.id.similar.path <- stringi::stri_join(dup.genome.folder, "/blacklist.id.similar.tsv")
-        readr::write_tsv(x = blacklist.id.similar, path = blacklist.id.similar.path, append = FALSE, col_names = TRUE)
-        message("    An empty blacklist file was generated: \n", blacklist.id.similar.path)
-        message("    Keep column name, just add the individual(s) to blacklist(s), save and close the file")
-        message("    Type (y) when ready to import blacklist of id(s): ")
-        import.blacklist <- as.character(readLines(n = 1))
-        if (import.blacklist == "y") {
-          blacklist.id.similar <- suppressMessages(readr::read_tsv(blacklist.id.similar.path, col_names = TRUE))
-          n.ind.blacklisted <- length(blacklist.id.similar$INDIVIDUALS)
+      if (length(dup.genome.folder) > 1) {
+        dup.genome.folder <- file.info(dup.genome.folder) %>%
+          tibble::rownames_to_column(df = ., var = "FILE") %>%
+          dplyr::filter(mtime == max(mtime))
+        dup.genome.folder <- dup.genome.folder$FILE
+      }
+
+      # Check for a blacklist
+      blacklist.id.similar.path <- list.files(
+        path = dup.genome.folder,
+        pattern = "blacklist.id.similar",
+        full.names = TRUE)
+      if (length(blacklist.id.similar.path) > 0) {
+        blacklist.id.similar <- suppressMessages(readr::read_tsv(blacklist.id.similar.path, col_names = TRUE))
+        n.ind.blacklisted <- length(blacklist.id.similar$INDIVIDUALS)
+        if (n.ind.blacklisted > 0) {
           if (verbose) message("Blacklisted individuals: ", n.ind.blacklisted, " ind.")
           if (verbose) message("    Filtering with blacklist of individuals")
           input <- suppressWarnings(dplyr::anti_join(input, blacklist.id.similar, by = "INDIVIDUALS"))
@@ -1329,12 +1379,11 @@ on the number of genotyped individuals per pop ? (overall or pop):")
           data.info$n.ind <- data.info$n.ind - n.ind.blacklisted
 
           # After removing individuals => check for monomorphic markers
-          message("\nScan and remove monomorphic markers...")
+          message("\nScan and remove monomorphic markers, again...")
           input <- discard_monomorphic_markers(data = input, verbose = verbose)
           blacklist.monomorphic.markers <- input$blacklist.monomorphic.markers
           whitelist.markers <- input$whitelist.polymorphic.markers
           input <- input$input
-
           if (nrow(blacklist.monomorphic.markers) > 0) {
             new.data.info <- data_info(input)
 
@@ -1366,80 +1415,80 @@ on the number of genotyped individuals per pop ? (overall or pop):")
     duplicate.genomes <- blacklist.monomorphic.markers <- NULL
   }#End duplicate.genomes.analysis
 
-  # Missing visualization analysis before filters------------------------------
-  # if (missing.analysis) {
-  #   if (verbose) message("Missing data analysis: after filters")
-  #   missing.visualization <- grur::missing_visualization(data = input, write.plot = TRUE)
-  # }
+# Missing visualization analysis before filters------------------------------
+# if (missing.analysis) {
+#   if (verbose) message("Missing data analysis: after filters")
+#   missing.visualization <- grur::missing_visualization(data = input, write.plot = TRUE)
+# }
 
-  # Writing to working directory the filtered data frame -----------------------
-  # Whitelist
-  res$whitelist.markers <- whitelist.markers
-  readr::write_tsv(x = res$whitelist.markers, path = "whitelist.markers.tsv", col_names = TRUE)
-  if (verbose) message("Writing the whitelist of markers: whitelist.markers.tsv")
+# Writing to working directory the filtered data frame -----------------------
+# Whitelist
+res$whitelist.markers <- whitelist.markers
+readr::write_tsv(x = res$whitelist.markers, path = "whitelist.markers.tsv", col_names = TRUE)
+if (verbose) message("Writing the whitelist of markers: whitelist.markers.tsv")
 
-  if (nrow(blacklist.markers) > 0) {
-    res$blacklist.markers <- blacklist.markers
-    readr::write_tsv(x = res$blacklist.markers, path = "blacklist.markers.tsv", col_names = TRUE)
-    if (verbose) message("Writing the blacklist of markers: blacklist.markers.tsv")
-  }
+if (nrow(blacklist.markers) > 0) {
+  res$blacklist.markers <- blacklist.markers
+  readr::write_tsv(x = res$blacklist.markers, path = "blacklist.markers.tsv", col_names = TRUE)
+  if (verbose) message("Writing the blacklist of markers: blacklist.markers.tsv")
+}
 
-  # writing the blacklist of id
-  if (nrow(res$blacklist.id) > 0) {
-    readr::write_tsv(x = res$blacklist.id, path = "blacklist.id.tsv", col_names = TRUE)
-    if (verbose) message("Writing the blacklist of ids: blacklist.id.tsv")
-  }
-  # tidy data
-  want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS", "POP_ID", "REF", "ALT", "GT", "GT_VCF", "GT_VCF_NUC", "GT_BIN")
-  res$tidy.data <- dplyr::select(input, dplyr::one_of(want)) %>%
-    dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
-  input <- NULL
+# writing the blacklist of id
+if (nrow(res$blacklist.id) > 0) {
+  readr::write_tsv(x = res$blacklist.id, path = "blacklist.id.tsv", col_names = TRUE)
+  if (verbose) message("Writing the blacklist of ids: blacklist.id.tsv")
+}
+# tidy data
+want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS", "POP_ID", "REF", "ALT", "GT", "GT_VCF", "GT_VCF_NUC", "GT_BIN")
+res$tidy.data <- dplyr::select(input, dplyr::one_of(want)) %>%
+  dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
+input <- NULL
 
-  # write tidy to working directory
-  if (!is.null(filename)) {
-    tidy.name <- stringi::stri_join(filename, ".filtered.rad")
-    write_rad(data = res$tidy.data, path = tidy.name)
-    message("Tidy DArT data, filtered, written to folder: \n", tidy.name)
-  }
+# write tidy to working directory
+if (!is.null(filename)) {
+  tidy.name <- stringi::stri_join(filename, ".filtered.rad")
+  write_rad(data = res$tidy.data, path = tidy.name)
+  message("Tidy DArT data, filtered, written to folder: \n", tidy.name)
+}
 
 
-  # Import back the filter parameter file
-  res$filters.parameters <- readr::read_tsv(file = filters.parameters.path, col_types = "cccccccc")
+# Import back the filter parameter file
+res$filters.parameters <- readr::read_tsv(file = filters.parameters.path, col_types = "cccccccc")
 
-  # Generate new strata --------------------------------------------------------
-  res$strata <-res$tidy.data %>%
-    dplyr::distinct(INDIVIDUALS, POP_ID) %>%
-    dplyr::rename(STRATA = POP_ID) %>%
-    readr::write_tsv(x = ., path = "new_filtered_strata.tsv")
+# Generate new strata --------------------------------------------------------
+res$strata <-res$tidy.data %>%
+  dplyr::distinct(INDIVIDUALS, POP_ID) %>%
+  dplyr::rename(STRATA = POP_ID) %>%
+  readr::write_tsv(x = ., path = "new_filtered_strata.tsv")
 
-  # genomic_converter & Imputations --------------------------------------------
-  if (!is.null(output)) {
-    res$output <- radiator::genomic_converter(
-      data = res$tidy.data,
-      output = output,
-      snp.ld = snp.ld,
-      imputation.method = imputation.method,
-      hierarchical.levels = hierarchical.levels,
-      num.tree = num.tree,
-      parallel.core = parallel.core,
-      verbose = verbose)
-  }
+# genomic_converter & Imputations --------------------------------------------
+if (!is.null(output)) {
+  res$output <- radiator::genomic_converter(
+    data = res$tidy.data,
+    output = output,
+    snp.ld = snp.ld,
+    imputation.method = imputation.method,
+    hierarchical.levels = hierarchical.levels,
+    num.tree = num.tree,
+    parallel.core = parallel.core,
+    verbose = verbose)
+}
 
-  if (verbose) {
-    last.data.info <- data_info(res$tidy.data)
-    cat("\n\n\n############################### RESULTS ###############################\n")
-    message("DArT data info (before -> after) filters: ")
-    message("Number of populations: ", first.data.info$n.pop, " -> ", last.data.info$n.pop)
-    message("Number of individuals: ", first.data.info$n.ind, " -> ", last.data.info$n.ind)
-    message("Number of chrom: ", first.data.info$n.chrom, " -> ", last.data.info$n.chrom)
-    message("Number of locus: ", first.data.info$n.locus, " -> ", last.data.info$n.locus)
-    message("Number of SNPs: ", first.data.info$n.snp, " -> ", last.data.info$n.snp)
-    timing <- proc.time() - timing
-    message("\nComputation time: ", round(timing[[3]]), " sec")
-    cat("############################ completed ################################\n")
-  }
-  setwd(working.dir) #back to the original working directory
-  return(res)
+if (verbose) {
+  last.data.info <- data_info(res$tidy.data)
+  cat("\n\n\n############################### RESULTS ###############################\n")
+  message("DArT data info (before -> after) filters: ")
+  message("Number of populations: ", first.data.info$n.pop, " -> ", last.data.info$n.pop)
+  message("Number of individuals: ", first.data.info$n.ind, " -> ", last.data.info$n.ind)
+  message("Number of chrom: ", first.data.info$n.chrom, " -> ", last.data.info$n.chrom)
+  message("Number of locus: ", first.data.info$n.locus, " -> ", last.data.info$n.locus)
+  message("Number of SNPs: ", first.data.info$n.snp, " -> ", last.data.info$n.snp)
+  timing <- proc.time() - timing
+  message("\nComputation time: ", round(timing[[3]]), " sec")
+  cat("############################ completed ################################\n")
+}
+setwd(working.dir) #back to the original working directory
+return(res)
 }
 
 # update data.info
