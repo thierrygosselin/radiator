@@ -79,7 +79,8 @@ merge_dart <- function(
   cat("########################## radiator::merge_dart #######################\n")
   cat("#######################################################################\n")
   timing <- proc.time()
-
+  opt.change <- getOption("width")
+  options(width = 70)
   # manage missing arguments -----------------------------------------------------
   if (missing(dart1)) stop("dart1 file missing")
   if (missing(dart2)) stop("dart2 file missing")
@@ -105,12 +106,22 @@ merge_dart <- function(
     message(stringi::stri_join(length(pop.select), "population(s) selected", sep = " "))
   }
 
+  # Columns we want
+  want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS", "POP_ID", "GT_VCF_NUC",
+            "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")
+
   # the DArT data
   if (data.type == "dart") {
     message("Importing and tidying dart1...")
-    input <- radiator::tidy_dart(data = dart1, strata = strata1, filename = "temp.tidy.dart1", verbose = FALSE)
+    input <- suppressWarnings(radiator::tidy_dart(
+      data = dart1, strata = strata1,
+      filename = "temp.tidy.dart1", verbose = FALSE) %>%
+      dplyr::select(dplyr::one_of(want)))
     message("Importing and tidying dart2...")
-    dart2 <- radiator::tidy_dart(data = dart2, strata = strata2, filename = "temp.tidy.dart2", verbose = FALSE)
+    dart2 <- suppressWarnings(radiator::tidy_dart(
+      data = dart2, strata = strata2,
+      filename = "temp.tidy.dart2", verbose = FALSE) %>%
+        dplyr::select(dplyr::one_of(want)))
     if (!keep.rad) {
       message("Removing temporary tidy DArT files...")
       file.remove("temp.tidy.dart1.rad")
@@ -118,21 +129,40 @@ merge_dart <- function(
     }
   }
 
-  # The filtered DArT data
+  # Import the filtered DArT data
   if (data.type == "fst.file") {
     message("Importing the filtered dart1...")
-    input <- radiator::read_rad(dart1)
+    input <- suppressWarnings(radiator::read_rad(dart1) %>% dplyr::select(dplyr::one_of(want)))
     message("Importing the filtered dart2...")
-    dart2 <- radiator::read_rad(dart2)
+    dart2 <- suppressWarnings(radiator::read_rad(dart2) %>% dplyr::select(dplyr::one_of(want)))
   }
 
+  # Keeping selected pop -------------------------------------------------------
   if (!is.null(pop.select)) {
     input <- suppressWarnings(dplyr::filter(input, POP_ID %in% pop.select))
     dart2 <- suppressWarnings(dplyr::filter(dart2, POP_ID %in% pop.select))
   }
 
+  # cleaning up non-immortalized markers ---------------------------------------
+  message("Removing markers starting with 1000 (non-immortalized DArT markers)")
+  markers.before <- dplyr::n_distinct(input$MARKERS) + dplyr::n_distinct(dart2$MARKERS)
+
+  input <- suppressWarnings(dplyr::filter(input, !stringi::stri_detect_regex(str = LOCUS, pattern = "^1000")))
+  dart2 <- suppressWarnings(dplyr::filter(dart2, !stringi::stri_detect_regex(str = LOCUS, pattern = "^1000")))
+
+  # input <- input %>%
+  #   dplyr::mutate(DISCARD = stringi::stri_detect_regex(str = LOCUS, pattern = "^1000")) %>%
+  #   dplyr::filter(!DISCARD) %>%
+  #   dplyr::select(-DISCARD)
+
+  markers.after <- dplyr::n_distinct(input$MARKERS) + dplyr::n_distinct(dart2$MARKERS)
+  message("    Markers removed: ", markers.before - markers.after)
 
   # merging DArT tidy data -----------------------------------------------------
+  # check alt alleles
+  # test1 <- dplyr::filter(input, (stringi::stri_count_fixed(str = ALT, pattern = ",") + 1) > 1)
+  # test2 <- dplyr::filter(dart2, (stringi::stri_count_fixed(str = ALT, pattern = ",") + 1) > 1)
+
   # we keep common column
   dart.col <- dplyr::intersect(colnames(input), colnames(dart2))
 
@@ -147,20 +177,11 @@ merge_dart <- function(
     if (is.factor(input$POP_ID)) input$POP_ID <- droplevels(input$POP_ID)
   }
 
-
-  # cleaning up non-immortalized markers
-  message("Removing markers starting with 1000 (non-immortalized DArT markers id")
-  markers.before <- dplyr::n_distinct(input$MARKERS)
-
-  input <- input %>%
-    dplyr::mutate(DISCARD = stringi::stri_detect_regex(str = LOCUS, pattern = "^1000")) %>%
-    dplyr::filter(!DISCARD) %>%
-    dplyr::select(-DISCARD)
-
-  markers.after <- dplyr::n_distinct(input$MARKERS)
-  message("    Markers removed: ", markers.before - markers.after)
+  # Remove weird markers
+  input <- radiator::detect_biallelic_problems(data = input, verbose = FALSE, parallel.core = parallel.core)$biallelic.data
 
   # Averaging across markers the call rate and other DArT markers metadata statistics
+  # Note to myself: Might be easier/faster to use mutate_if
   if (tibble::has_name(input, "CALL_RATE")) {
     message("Averaging across markers the call rate")
     input <- input %>%
@@ -179,7 +200,7 @@ merge_dart <- function(
 
   message("Adjusting REF/ALT alleles...")
   input <- radiator::change_alleles(
-    data = input,
+    data = input, biallelic = NULL,
     parallel.core = parallel.core,
     verbose = TRUE)$input
 
@@ -204,7 +225,7 @@ merge_dart <- function(
   }
 
   if (monomorphic.out) {
-    input <- radiator::discard_monomorphic_markers(data = input, verbose = TRUE)$input
+    test <- radiator::discard_monomorphic_markers(data = input, verbose = TRUE)$input
   }
 
   if (common.markers) {
@@ -226,5 +247,6 @@ merge_dart <- function(
   timing <- proc.time() - timing
   message("\nComputation time: ", round(timing[[3]]), " sec")
   cat("############################## completed ##############################\n")
+  options(width = opt.change)
   return(res = list(merged.dart = input, strata = strata))
 }#End merge_dart

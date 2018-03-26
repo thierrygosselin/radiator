@@ -23,6 +23,10 @@
 #' Only individuals in the strata file are kept in the tidy, i.e. that the strata
 #' is also used as a whitelist of individuals/strata.
 
+#' @param verbose (optional, logical) When verbose = TRUE the function is a
+#' little more chatty during execution.
+#' Default: \code{verbose = FALSE}.
+
 #' @inheritParams tidy_genomic_data
 
 #' @return A tidy dataframe with these columns:
@@ -108,7 +112,9 @@ If you're still encountering problem, email author for help")
   if (dart.with.header) {
     temp.file <- suppressWarnings(suppressMessages(readr::read_table(file = data, n_max = 20, col_names = "HEADER")))
     skip.number <- which(stringi::stri_detect_fixed(str = temp.file$HEADER,
-                                                    pattern = "AlleleID")) - 1
+                                                    pattern = "AlleleID") |
+                           stringi::stri_detect_fixed(str = temp.file$HEADER,
+                                                      pattern = "CloneID")) - 1
     data.type <- readr::read_lines(file = data, skip = skip.number, n_max = skip.number + 1)[1] %>%
       stringi::stri_sub(str = ., from = 1, to = 16)
   } else {
@@ -128,11 +134,15 @@ If you're still encountering problem, email author for help")
   # Strata file ------------------------------------------------------------------
   strata.df <- readr::read_tsv(
     file = strata, col_names = TRUE,
-    col_types = readr::cols(.default = readr::col_character()))
-
+    col_types = readr::cols(.default = readr::col_character())) %>%
+    dplyr::mutate(
+      TARGET_ID = stringi::stri_trans_toupper(TARGET_ID),
+      TARGET_ID = stringi::stri_replace_all_fixed(
+        TARGET_ID, pattern = " ", replacement = "", vectorize_all = FALSE)
+    )
 
   # Check that TARGET_ID in strata match TARGET_ID in the DArT file ------------
-  if (!identical(target.id$TARGET_ID, strata.df$TARGET_ID)) {
+  if (!identical(sort(target.id$TARGET_ID), sort(strata.df$TARGET_ID))) {
     stop("The DArT and strata files don't have the same TARGET_IDs: check case mapping")
   }
   target.id <- NULL
@@ -172,16 +182,23 @@ If you're still encountering problem, email author for help")
 
   want <- tibble::data_frame(
     INFO = c("ALLELEID", "SNP", "SNPPOSITION", "CALLRATE",
-             "AVGCOUNTREF", "AVGCOUNTSNP", "REPAVG"),
-    COL_TYPE = c("c", "c", "i", "d", "d", "d", "d")) %>%
+             "AVGCOUNTREF", "AVGCOUNTSNP", "REPAVG", "CLONEID", "AVGREADDEPTH", "REPRODUCIBILITY"),
+    COL_TYPE = c("c", "c", "i", "d", "d", "d", "d", "c", "d", "d")) %>%
     dplyr::bind_rows(
       dplyr::select(strata.df, INFO = TARGET_ID) %>%
-        dplyr::mutate(COL_TYPE = rep("c", n())))
+        dplyr::mutate(
+          COL_TYPE = rep("c", n()),
+          INFO = stringi::stri_trans_toupper(INFO)))
+
+
 
   dart.col.type <- dart.col.type %>%
     tidyr::gather(data = .,key = DELETE, value = INFO) %>%
     dplyr::select(-DELETE) %>%
-    dplyr::mutate(INFO = stringi::stri_trans_toupper(INFO)) %>%
+    dplyr::mutate(
+      INFO = stringi::stri_trans_toupper(INFO),
+      INFO = stringi::stri_replace_all_fixed(INFO, pattern = " ", replacement = "", vectorize_all = FALSE)
+      ) %>%
     dplyr::left_join(want, by = "INFO") %>%
     dplyr::mutate(COL_TYPE = stringi::stri_replace_na(str = COL_TYPE, replacement = "_")) %>%
     dplyr::select(COL_TYPE) %>%
@@ -206,14 +223,24 @@ If you're still encountering problem, email author for help")
         col_types = dart.col.type)
     ))
   }
-
   colnames(input) <- stringi::stri_trans_toupper(colnames(input))
+  colnames(input) = stringi::stri_replace_all_fixed(
+    str = colnames(input), pattern = " ", replacement = "", vectorize_all = FALSE)
   colnames(input) <- stringi::stri_replace_all_fixed(
     str = colnames(input),
-    pattern = c("AVGCOUNTREF", "AVGCOUNTSNP", "REPAVG", "ALLELEID", "SNPPOSITION", "CALLRATE"),
-    replacement = c("AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG", "LOCUS", "POS", "CALL_RATE"),
+    pattern = c("AVGCOUNTREF", "AVGCOUNTSNP", "REPAVG", "ALLELEID", "SNPPOSITION", "CALLRATE", "REPRODUCIBILITY", "AVGREADDEPTH"),
+    replacement = c("AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG", "LOCUS", "POS", "CALL_RATE", "REP_AVG", "AVG_READ_DEPTH"),
     vectorize_all = FALSE)
 
+  if (!tibble::has_name(input, "LOCUS") && tibble::has_name(input, "CLONEID")) {
+    colnames(input) <- stringi::stri_replace_all_fixed(
+      str = colnames(input),
+      pattern = "CLONEID",
+      replacement = "LOCUS",
+      vectorize_all = FALSE)
+  }
+
+  if (!tibble::has_name(input, "LOCUS")) stop("Problem tidying DArT dataset: contact author")
 
   # necessary steps...observed with DArT file using ref genome -----------------
   # test <- dplyr::mutate(input, TEST = seq(from = 1, to = n(), by = 1)) %>%
@@ -312,7 +339,7 @@ If you're still encountering problem, email author for help")
 
   # 1-row format----------------------------------------------------------------
   if (!binary) {
-    if (verbose) message("Tidying DArT data...")
+    if (verbose) message("Tidying DArT mapping SNP 1 Row format...")
 
     # input <- dplyr::filter(input, !is.na(MARKERS))
     grouping.col <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT",
@@ -366,7 +393,7 @@ If you're still encountering problem, email author for help")
 
   # Binary dart 2-row format----------------------------------------------------
   if (binary) {
-    if (verbose) message("Tidying DArT 2-row-format")
+    if (verbose) message("Tidying DArT SNP 2 Rows format")
 
     # To do: merge these 2 functions and simplify codes
     dart_binary <- function(x) {
@@ -612,6 +639,7 @@ If you're still encountering problem, email author for help")
 
 
   # Strata file ----------------------------------------------------------------
+  # To make sure target ids match
   input <- dplyr::left_join(input, strata.df, by = "TARGET_ID") %>%
     dplyr::select(-TARGET_ID)
   strata.df <- NULL

@@ -7,7 +7,7 @@ to highligh potential duplicate individuals}
 \usage{
 detect_duplicate_genomes(data, subsample.markers = NULL, random.seed = NULL,
   distance.method = "manhattan", genome = FALSE,
-  parallel.core = parallel::detectCores() - 1)
+  blacklist.duplicates = FALSE, parallel.core = parallel::detectCores() - 1)
 }
 \arguments{
 \item{data}{A tidy data frame object in the global environment or
@@ -38,6 +38,12 @@ each pairwise comparison. This method makes filtering easier because the
 threshold is more intuitive with the plots produced, but it's much longer
 to run, even in parallel, so better to run overnight.
 Default: \code{genome = FALSE}.}
+
+\item{blacklist.duplicates}{(optional, logical)
+With \code{blacklist.duplicates = TRUE}, after visualization,
+the user is asked to enter a threshold to filter out duplicates.
+With default, \code{blacklist.duplicates = FALSE}, the function as no
+interaction with user.}
 
 \item{parallel.core}{(optional) The number of core for parallel computation.
 Default: \code{parallel.core = parallel::detectCores() - 1}.}

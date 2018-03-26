@@ -1488,6 +1488,7 @@ if (verbose) {
   cat("############################ completed ################################\n")
 }
 setwd(working.dir) #back to the original working directory
+options(width = opt.change)
 return(res)
 }
 

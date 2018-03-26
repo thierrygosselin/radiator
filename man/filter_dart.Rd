@@ -251,12 +251,12 @@ Default: \code{num.tree = 50}.}
 or the working directory. Default: \code{filename = NULL}. A default name will be used,
 customized with the output file(s) selected.}
 
-\item{verbose}{(optional, logical) When \code{verbose = TRUE}
-the function is a little more chatty during execution.
-Default: \code{verbose = TRUE}.}
+\item{verbose}{(optional, logical) When verbose = TRUE the function is a
+little more chatty during execution.
+Default: \code{verbose = FALSE}.}
 
 \item{parallel.core}{(optional) The number of core used for parallel
-execution during vcf import.
+execution during import.
 Default: \code{parallel::detectCores() - 1}.}
 }
 \value{

@@ -4,7 +4,8 @@
 \alias{detect_biallelic_markers}
 \title{Detect biallelic data}
 \usage{
-detect_biallelic_markers(data, verbose = FALSE)
+detect_biallelic_markers(data, verbose = FALSE,
+  parallel.core = parallel::detectCores() - 1)
 }
 \arguments{
 \item{data}{A tidy data frame object in the global environment or
@@ -15,6 +16,10 @@ Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.}
 \item{verbose}{(optional, logical) \code{verbose = TRUE} to be chatty
 during execution.
 Default: \code{verbose = FALSE}.}
+
+\item{parallel.core}{(optional) The number of core used for parallel
+execution.
+Default: \code{parallel.core = parallel::detectCores() - 1}.}
 }
 \value{
 A logical character string (TRUE/FALSE). That answer the question if

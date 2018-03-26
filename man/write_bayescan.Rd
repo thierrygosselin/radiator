@@ -42,7 +42,7 @@ written to the working directory. With default: \code{filename = NULL},
 the date and time is appended to \code{radiator_bayescan_}.}
 
 \item{parallel.core}{(optional) The number of core used for parallel
-execution during vcf import.
+execution during import.
 Default: \code{parallel::detectCores() - 1}.}
 }
 \value{

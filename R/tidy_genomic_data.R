@@ -202,7 +202,7 @@
 #' in the global environment only (i.e. not written in the working directory...).
 
 #' @param parallel.core (optional) The number of core used for parallel
-#' execution during vcf import.
+#' execution during import.
 #' Default: \code{parallel::detectCores() - 1}.
 
 

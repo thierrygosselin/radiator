@@ -7,14 +7,15 @@
 #' target id from a DArT file. To help prepare the appropriate STRATA file.
 
 #' @param data DArT output file. Note that most popular formats used by DArT are
-#' recognised (1- and 2- row format, also called binary, and count data.).
+#' recognised (1- and 2- rows format, also called binary, and count data.).
 #' If you encounter a problem, sent me your data so that I can update
 #' the function. The function can import \code{.csv} or \code{.tsv} files.
 
 #' @param write With default \code{write = TRUE}, the dart target id column is
 #' written in a file in the working directory.
 
-#' @return A tidy dataframe with a \code{TARGET_ID} column
+#' @return A tidy dataframe with a \code{TARGET_ID} column. Spaces are remove and
+#' UPPER case is used.
 
 #' @export
 #' @rdname extract_dart_target_id
@@ -45,7 +46,9 @@ extract_dart_target_id <- function(data, write = TRUE) {
   if (dart.with.header) {
     temp.file <- suppressWarnings(suppressMessages(readr::read_table(file = data, n_max = 20, col_names = "HEADER")))
     skip.number <- which(stringi::stri_detect_fixed(str = temp.file$HEADER,
-                                                    pattern = "AlleleID")) - 1
+                                                    pattern = "AlleleID") |
+                           stringi::stri_detect_fixed(str = temp.file$HEADER,
+                                                      pattern = "CloneID")) - 1
     data.type <- readr::read_lines(file = data, skip = skip.number, n_max = skip.number + 1)[1] %>%
       stringi::stri_sub(str = ., from = 1, to = 16)
   } else {
@@ -96,7 +99,8 @@ extract_dart_target_id <- function(data, write = TRUE) {
     "ALLELECOUNTSCORRELATION", "AGGREGATETAGSTOTAL", "DERIVEDCORRMINUSSEEDCORR",
     "REPREF", "REPSNP", "REPAVG", "PICREPREF", "PICREPSNP", "TOTALPICREPREFTEST",
     "TOTALPICREPSNPTEST", "BINID", "BIN.SIZE", "ALLELESEQUENCEREF",
-    "ALLELESEQUENCESNP", "TRIMMEDSEQUENCEREF", "TRIMMEDSEQUENCE")
+    "ALLELESEQUENCESNP", "TRIMMEDSEQUENCEREF", "TRIMMEDSEQUENCE", "ONERATIO",
+    "PIC", "AVGREADDEPTH", "STDEVREADDEPTH", "QPMR", "REPRODUCIBILITY")
 
   discard.genome <- c("CHROM_|CHROMPOS_|ALNCNT_|ALNEVALUE_")
 
@@ -105,8 +109,11 @@ extract_dart_target_id <- function(data, write = TRUE) {
     dplyr::select(-DISCARD) %>%
     dplyr::mutate(TARGET_ID = stringi::stri_trans_toupper(TARGET_ID)) %>%
     dplyr::filter(!TARGET_ID %in% discard) %>%
-    dplyr::filter(stringi::stri_detect_regex(str = TARGET_ID,
-                                             pattern = discard.genome, negate = TRUE))
+    dplyr::filter(stringi::stri_detect_regex(
+      str = stringi::stri_trans_toupper(TARGET_ID),
+      pattern = discard.genome, negate = TRUE)) %>%
+    dplyr::mutate(TARGET_ID = stringi::stri_replace_all_fixed(
+      TARGET_ID, pattern = " ", replacement = "", vectorize_all = FALSE))
 
   if (write) readr::write_tsv(x = dart.target.id, path = "dart.target.id.tsv")
 

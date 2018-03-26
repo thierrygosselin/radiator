@@ -40,7 +40,8 @@ Imports:
     pegas,
     purrrlyr,
     rlang,
-    fst (>= 0.8.4)
+    fst (>= 0.8.4),
+    parallelDist
 Suggests:
     knitr,
     rmarkdown

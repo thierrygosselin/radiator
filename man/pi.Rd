@@ -147,7 +147,7 @@ For long distance linkage disequilibrium pruning, see details below.
 Default: \code{snp.ld = NULL}, for no pruning.}
 
 \item{parallel.core}{(optional) The number of core used for parallel
-execution during vcf import.
+execution during import.
 Default: \code{parallel::detectCores() - 1}.}
 }
 \value{

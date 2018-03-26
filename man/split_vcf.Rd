@@ -81,7 +81,7 @@ separators that interfere with some packages or codes:
 Default \code{whitelist.markers = NULL} for no whitelist of markers.}
 
 \item{parallel.core}{(optional) The number of core used for parallel
-execution during vcf import.
+execution during import.
 Default: \code{parallel::detectCores() - 1}.}
 }
 \value{

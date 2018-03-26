@@ -49,7 +49,7 @@ e.g. \code{vcf.metadata = "PL"} or \code{vcf.metadata = c("DP", "GL")}.
 Default: \code{vcf.metadata = FALSE}.}
 
 \item{parallel.core}{(optional) The number of core used for parallel
-execution during vcf import.
+execution during import.
 Default: \code{parallel::detectCores() - 1}.}
 
 \item{verbose}{(optional, logical) When \code{verbose = TRUE}

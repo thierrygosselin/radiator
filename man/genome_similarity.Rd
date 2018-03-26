@@ -4,7 +4,7 @@
 \alias{genome_similarity}
 \title{genome_similarity}
 \usage{
-genome_similarity(list.pair, input.prep = NULL, ...)
+genome_similarity(list.pair, data = NULL)
 }
 \description{
 for the parallel part

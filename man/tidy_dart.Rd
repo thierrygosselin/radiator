@@ -44,12 +44,12 @@ the \code{filename} provided is \code{.rad}.
 With default: \code{filename = NULL}, the tidy data frame is
 in the global environment only (i.e. not written in the working directory...).}
 
-\item{verbose}{(optional, logical) When \code{verbose = TRUE}
-the function is a little more chatty during execution.
-Default: \code{verbose = TRUE}.}
+\item{verbose}{(optional, logical) When verbose = TRUE the function is a
+little more chatty during execution.
+Default: \code{verbose = FALSE}.}
 
 \item{parallel.core}{(optional) The number of core used for parallel
-execution during vcf import.
+execution during import.
 Default: \code{parallel::detectCores() - 1}.}
 }
 \value{
@@ -87,5 +87,5 @@ verbose = TRUE)
 }
 }
 \author{
-Thierry Gosselin \email{thierrygosselin@icloud.com} and Peter Grewe \email{peter.grewe@csiro.au}
+Thierry Gosselin \email{thierrygosselin@icloud.com}
 }

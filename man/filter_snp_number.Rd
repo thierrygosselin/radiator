@@ -167,7 +167,7 @@ and \code{ONT} population samples (out of 20 pops).
 Default: \code{pop.select = NULL}}
 
 \item{parallel.core}{(optional) The number of core used for parallel
-execution during vcf import.
+execution during import.
 Default: \code{parallel::detectCores() - 1}.}
 }
 \value{

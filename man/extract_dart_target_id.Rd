@@ -8,7 +8,7 @@ extract_dart_target_id(data, write = TRUE)
 }
 \arguments{
 \item{data}{DArT output file. Note that most popular formats used by DArT are
-recognised (1- and 2- row format, also called binary, and count data.).
+recognised (1- and 2- rows format, also called binary, and count data.).
 If you encounter a problem, sent me your data so that I can update
 the function. The function can import \code{.csv} or \code{.tsv} files.}
 
@@ -16,7 +16,8 @@ the function. The function can import \code{.csv} or \code{.tsv} files.}
 written in a file in the working directory.}
 }
 \value{
-A tidy dataframe with a \code{TARGET_ID} column
+A tidy dataframe with a \code{TARGET_ID} column. Spaces are remove and
+UPPER case is used.
 }
 \description{
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}

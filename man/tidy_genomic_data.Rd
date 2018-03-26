@@ -200,7 +200,7 @@ With default: \code{filename = NULL}, the tidy data frame is
 in the global environment only (i.e. not written in the working directory...).}
 
 \item{parallel.core}{(optional) The number of core used for parallel
-execution during vcf import.
+execution during import.
 Default: \code{parallel::detectCores() - 1}.}
 
 \item{verbose}{(optional, logical) When \code{verbose = TRUE}

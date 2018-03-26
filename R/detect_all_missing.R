@@ -23,22 +23,51 @@
 
 detect_all_missing <- function(data) {
   res <- list()
+
+  # Allows to have either GT, GT_VCF_NUC, GT_VCF or GT_BIN
+  # If more than 1 is discovered in data, keep 1 randomly.
+  detect.gt <- purrr::keep(.x = colnames(data), .p = colnames(data) %in% c("GT", "GT_VCF_NUC", "GT_VCF","GT_BIN"))
+  if (length(detect.gt) > 1) detect.gt <- sample(x = detect.gt, size = 1)
+  want <- c("MARKERS", detect.gt)
+  blacklist.markers <- suppressWarnings(dplyr::select(data, dplyr::one_of(want)))
+
   # markers with all missing... yes I've seen it... breaks code...
-  if (tibble::has_name(data, "GT_BIN")) {
-    blacklist.markers <- data %>%
+  if (tibble::has_name(blacklist.markers, "GT")) {
+    blacklist.markers <- blacklist.markers %>%
+      dplyr::group_by(MARKERS) %>%
+      dplyr::distinct(GT) %>%
+      dplyr::summarise(GENOTYPED = length(GT[GT != "000000"])) %>%
+      dplyr::filter(GENOTYPED == 0) %>%
+      dplyr::ungroup(.)
+  }
+
+  if (tibble::has_name(blacklist.markers, "GT_BIN")) {
+    blacklist.markers <- blacklist.markers %>%
       dplyr::group_by(MARKERS) %>%
       dplyr::distinct(GT_BIN) %>%
       dplyr::summarise(GENOTYPED = length(GT_BIN[!is.na(GT_BIN)])) %>%
       dplyr::filter(GENOTYPED == 0) %>%
       dplyr::ungroup(.)
-  } else {
-  blacklist.markers <- data %>%
-    dplyr::group_by(MARKERS) %>%
-    dplyr::distinct(GT) %>%
-    dplyr::summarise(GENOTYPED = length(GT[GT != "000000"])) %>%
-    dplyr::filter(GENOTYPED == 0) %>%
-    dplyr::ungroup(.)
-}
+  }
+
+  if (tibble::has_name(blacklist.markers, "GT_VCF_NUC")) {
+    blacklist.markers <- blacklist.markers %>%
+      dplyr::group_by(MARKERS) %>%
+      dplyr::distinct(GT_VCF_NUC) %>%
+      dplyr::summarise(GENOTYPED = length(GT_VCF_NUC[GT_VCF_NUC != "./."])) %>%
+      dplyr::filter(GENOTYPED == 0) %>%
+      dplyr::ungroup(.)
+  }
+
+  if (tibble::has_name(blacklist.markers, "GT_VCF")) {
+    blacklist.markers <- blacklist.markers %>%
+      dplyr::group_by(MARKERS) %>%
+      dplyr::distinct(GT_VCF) %>%
+      dplyr::summarise(GENOTYPED = length(GT_VCF[GT_VCF != "./."])) %>%
+      dplyr::filter(GENOTYPED == 0) %>%
+      dplyr::ungroup(.)
+  }
+
   problem <- nrow(blacklist.markers)
   if (problem > 0) {
     message("Dataset contains ", problem," marker(s) with no genotypes (all missing)...")

@@ -1591,6 +1591,7 @@ number of populations in the dataset turns off the filter.\n")
     snp.per.locus.het.plot = snp.per.locus.het.plot,
     het.cov.plot = het.cov.plot
   )
+  options(width = opt.change)
   return(res)
 }
 

@@ -38,7 +38,7 @@ multiple SNPs.
 Default: \code{maf.data = NULL}.}
 
 \item{parallel.core}{(optional) The number of core used for parallel
-execution during vcf import.
+execution during import.
 Default: \code{parallel::detectCores() - 1}.}
 }
 \description{

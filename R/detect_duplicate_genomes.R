@@ -39,6 +39,12 @@
 #' to run, even in parallel, so better to run overnight.
 #' Default: \code{genome = FALSE}.
 
+#' @param blacklist.duplicates (optional, logical)
+#' With \code{blacklist.duplicates = TRUE}, after visualization,
+#' the user is asked to enter a threshold to filter out duplicates.
+#' With default, \code{blacklist.duplicates = FALSE}, the function as no
+#' interaction with user.
+
 #' @param parallel.core (optional) The number of core for parallel computation.
 #' Default: \code{parallel.core = parallel::detectCores() - 1}.
 
@@ -94,6 +100,7 @@
 #' @importFrom utils combn
 #' @importFrom stats na.omit var median quantile dist
 #' @importFrom amap Dist
+#' @importFrom parallelDist parDist
 #' @importFrom readr write_tsv
 #' @importFrom parallel detectCores
 #' @importFrom purrr flatten map
@@ -160,6 +167,7 @@ detect_duplicate_genomes <- function(
   random.seed = NULL,
   distance.method = "manhattan",
   genome = FALSE,
+  blacklist.duplicates = FALSE,
   parallel.core = parallel::detectCores() - 1
 ) {
   cat("\n")
@@ -240,6 +248,9 @@ detect_duplicate_genomes <- function(
       dplyr::mutate(MARKERS_ALLELES = stringi::stri_join(MARKERS, ALLELES, sep = ".")) %>%
       dplyr::select(-ALLELES) %>%
       dplyr::arrange(MARKERS_ALLELES,INDIVIDUALS)
+
+    # test to remove NA by dummy
+    # input.prep <- dplyr::mutate(input.prep, n = as.numeric(stringi::stri_replace_na(str = n, replacement = 9)))
   }
 
   # GT_BIN NOT available
@@ -287,106 +298,133 @@ detect_duplicate_genomes <- function(
       distance.method = distance.method,
       parallel.core = parallel.core
     ) %>%
+      dplyr::arrange(DISTANCE_RELATIVE) %>%
       dplyr::mutate(PAIRS = seq(from = 1, to = n(), by = 1)) %>%
       dplyr::arrange(PAIRS)
 
-
-    geno <- dplyr::select(res$distance, ID1, ID2, PAIRS) %>%
-      dplyr::left_join(dplyr::rename(geno.stats, ID1 = INDIVIDUALS, ID1_G = GENOTYPED_PROP), by = "ID1") %>%
-      dplyr::left_join(dplyr::rename(geno.stats, ID2 = INDIVIDUALS, ID2_G = GENOTYPED_PROP), by = "ID2") %>%
-      tidyr::gather(data = ., key = GENOTYPED_MAX, value = GENOTYPED_PROP, -c(ID1, ID2, PAIRS)) %>%
-      dplyr::group_by(PAIRS) %>%
-      dplyr::filter(GENOTYPED_PROP == max(GENOTYPED_PROP)) %>%
-      dplyr::ungroup(.) %>%
-      dplyr::distinct(PAIRS, .keep_all = TRUE) %>%
-      dplyr::select(-GENOTYPED_PROP) %>%
-      dplyr::mutate(GENOTYPED_MAX = dplyr::if_else(GENOTYPED_MAX == "ID1_G", ID1, ID2)) %>%
-      dplyr::arrange(PAIRS) %>%
-      dplyr::select(-ID1, -ID2, -PAIRS)
-
-    res$distance <- dplyr::bind_cols(res$distance, geno)
-    geno <- NULL
-    # test <- res$distance
-
-    readr::write_tsv(
-      x = res$distance,
-      path = file.path(path.folder, "individuals.pairwise.dist.tsv"),
-      col_names = TRUE
+    # bk <- res$distance
+    # res$distance <- bk
+    res$distance <- dplyr::bind_cols(
+      res$distance,
+      dplyr::select(res$distance, ID1, ID2, PAIRS) %>%
+        dplyr::left_join(dplyr::rename(geno.stats, ID1 = INDIVIDUALS, ID1_G = GENOTYPED_PROP), by = "ID1") %>%
+        dplyr::left_join(dplyr::rename(geno.stats, ID2 = INDIVIDUALS, ID2_G = GENOTYPED_PROP), by = "ID2") %>%
+        data.table::as.data.table(.) %>%
+        data.table::melt.data.table(
+          data = ., id.vars = c("ID1", "ID2", "PAIRS"), variable.name = "GENOTYPED_MAX", value.name = "GENOTYPED_PROP",
+          variable.factor = FALSE) %>%
+        tibble::as_data_frame(.) %>%
+        # tidyr::gather(data = ., key = GENOTYPED_MAX, value = GENOTYPED_PROP, -c(ID1, ID2, PAIRS)) %>%
+        dplyr::group_by(PAIRS) %>%
+        dplyr::filter(GENOTYPED_PROP == max(GENOTYPED_PROP)) %>%
+        dplyr::ungroup(.) %>%
+        dplyr::distinct(PAIRS, .keep_all = TRUE) %>%
+        dplyr::select(-GENOTYPED_PROP) %>%
+        dplyr::mutate(GENOTYPED_MAX = dplyr::if_else(GENOTYPED_MAX == "ID1_G", ID1, ID2)) %>%
+        dplyr::arrange(PAIRS) %>%
+        dplyr::select(-ID1, -ID2, -PAIRS)
     )
 
-    # Stats
-    message("Generating summary statistics")
-    res$distance.stats <- res$distance %>%
-      dplyr::summarise(
-        MEAN = mean(DISTANCE_RELATIVE, na.rm = TRUE),
-        MEDIAN = stats::median(DISTANCE_RELATIVE, na.rm = TRUE),
-        SE = round(sqrt(stats::var(DISTANCE_RELATIVE, na.rm = TRUE)/length(stats::na.omit(DISTANCE_RELATIVE))), 2),
-        MIN = round(min(DISTANCE_RELATIVE, na.rm = TRUE), 2),
-        MAX = round(max(DISTANCE_RELATIVE, na.rm = TRUE), 2),
-        QUANTILE25 = stats::quantile(DISTANCE_RELATIVE, 0.25), # quantile25
-        QUANTILE75 = stats::quantile(DISTANCE_RELATIVE, 0.75)#, # quantile75
-        # OUTLIERS_LOW = QUANTILE25 - (1.5 * (QUANTILE75 - QUANTILE25)), # outliers : below the outlier boxplot
-        # OUTLIERS_HIGH = QUANTILE75 + (1.5 * (QUANTILE75 - QUANTILE25)) # outliers : higher the outlier boxplot
-      ) %>%
+    # test <- dplyr::select(res$distance, ID1, ID2, PAIRS) %>%
+    #   dplyr::left_join(dplyr::rename(geno.stats, ID1 = INDIVIDUALS, ID1_G = GENOTYPED_PROP), by = "ID1") %>%
+    #   dplyr::left_join(dplyr::rename(geno.stats, ID2 = INDIVIDUALS, ID2_G = GENOTYPED_PROP), by = "ID2") %>%
+    #   data.table::as.data.table(.) %>%
+    #   data.table::melt.data.table(
+    #     data = ., id.vars = c("ID1", "ID2", "PAIRS"), variable.name = "GENOTYPED_MAX", value.name = "GENOTYPED_PROP",
+    #     variable.factor = FALSE) %>%
+    #   tibble::as_data_frame(.) %>%
+    #   # tidyr::gather(data = ., key = GENOTYPED_MAX, value = GENOTYPED_PROP, -c(ID1, ID2, PAIRS)) %>%
+    #   dplyr::group_by(PAIRS) %>%
+    #   dplyr::filter(GENOTYPED_PROP == max(GENOTYPED_PROP)) %>%
+    #   dplyr::ungroup(.) %>%
+    #   dplyr::distinct(PAIRS, .keep_all = TRUE) %>%
+    #   dplyr::select(-GENOTYPED_PROP) %>%
+    #   dplyr::mutate(GENOTYPED_MAX = dplyr::if_else(GENOTYPED_MAX == "ID1_G", ID1, ID2)) %>%
+    #   dplyr::arrange(PAIRS) %>%
+    #   dplyr::select(-ID1, -ID2, -PAIRS)
+
+
+
+      # test <- res$distance
       readr::write_tsv(
-        x = .,
-        path = stringi::stri_join(path.folder, "/individuals.pairwise.distance.stats.tsv"),
+        x = res$distance,
+        path = file.path(path.folder, "individuals.pairwise.dist.tsv"),
         col_names = TRUE
       )
 
-    message("Generating plots")
-    # violin plot
-    res$violin.plot.distance <- ggplot2::ggplot(
-      data = res$distance,
-      ggplot2::aes(x = PAIRWISE, y = DISTANCE_RELATIVE, na.rm = TRUE)
-    ) +
-      ggplot2::geom_violin(trim = TRUE) +
-      ggplot2::geom_boxplot(width = 0.1, fill = "black", outlier.colour = "black") +
-      ggplot2::stat_summary(fun.y = "mean", geom = "point", shape = 21, size = 2.5, fill = "white") +
-      ggplot2::labs(y = "Distance (relative)\n <- distant      close->") +
-      ggplot2::labs(x = "Pairwise comparisons") +
-      ggplot2::scale_y_reverse() +
-      ggplot2::theme(
-        # legend.position = "none",
-        panel.grid.minor.x = ggplot2::element_blank(),
-        panel.grid.major.x = ggplot2::element_blank(),
-        # panel.grid.major.y = element_blank(),
-        axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-        axis.text.x = ggplot2::element_blank(),
-        axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-        axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
-      )
-    ggplot2::ggsave(
-      filename = file.path(path.folder, "violin.plot.distance.pdf"),
-      plot = res$violin.plot.distance,
-      width = 20, height = 15, dpi = 600, units = "cm", useDingbats = FALSE)
+      # Stats
+      message("Generating summary statistics")
+      res$distance.stats <- res$distance %>%
+        dplyr::summarise(
+          MEAN = mean(DISTANCE_RELATIVE, na.rm = TRUE),
+          MEDIAN = stats::median(DISTANCE_RELATIVE, na.rm = TRUE),
+          SE = round(sqrt(stats::var(DISTANCE_RELATIVE, na.rm = TRUE)/length(stats::na.omit(DISTANCE_RELATIVE))), 2),
+          MIN = round(min(DISTANCE_RELATIVE, na.rm = TRUE), 2),
+          MAX = round(max(DISTANCE_RELATIVE, na.rm = TRUE), 2),
+          QUANTILE25 = stats::quantile(DISTANCE_RELATIVE, 0.25), # quantile25
+          QUANTILE75 = stats::quantile(DISTANCE_RELATIVE, 0.75)#, # quantile75
+          # OUTLIERS_LOW = QUANTILE25 - (1.5 * (QUANTILE75 - QUANTILE25)), # outliers : below the outlier boxplot
+          # OUTLIERS_HIGH = QUANTILE75 + (1.5 * (QUANTILE75 - QUANTILE25)) # outliers : higher the outlier boxplot
+        ) %>%
+        readr::write_tsv(
+          x = .,
+          path = file.path(path.folder, "individuals.pairwise.distance.stats.tsv"),
+          col_names = TRUE
+        )
 
-    # Manhattan plot
-    res$manhattan.plot.distance <- ggplot2::ggplot(
-      data = res$distance,
-      ggplot2::aes(x = PAIRWISE, y = DISTANCE_RELATIVE, colour = POP_COMP)
-    ) +
-      ggplot2::geom_jitter(alpha = 0.3) +
-      ggplot2::labs(y = "Distance (relative)\n <- distant      close->") +
-      ggplot2::labs(x = "Pairwise comparisons") +
-      ggplot2::labs(colour = "Population comparisons") +
-      ggplot2::scale_colour_manual(values = c("#0571b0", "black")) +
-      ggplot2::scale_y_reverse() +
-      ggplot2::theme_light() +
-      ggplot2::theme(
-        # legend.position = "none",
-        panel.grid.minor.x = ggplot2::element_blank(),
-        panel.grid.major.x = ggplot2::element_blank(),
-        # panel.grid.major.y = element_blank(),
-        axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-        axis.text.x = ggplot2::element_blank(),
-        axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-        axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
-      )
-    ggplot2::ggsave(
-      filename = file.path(path.folder, "manhattan.plot.distance.pdf"),
-      plot = res$manhattan.plot.distance,
-      width = 20, height = 15, dpi = 600, units = "cm", useDingbats = FALSE)
+      message("Generating plots")
+      # violin plot
+      res$violin.plot.distance <- ggplot2::ggplot(
+        data = res$distance,
+        ggplot2::aes(x = PAIRWISE, y = DISTANCE_RELATIVE, na.rm = TRUE)
+      ) +
+        ggplot2::geom_violin(trim = TRUE) +
+        ggplot2::geom_boxplot(width = 0.1, fill = "black", outlier.colour = "black") +
+        ggplot2::stat_summary(fun.y = "mean", geom = "point", shape = 21, size = 2.5, fill = "white") +
+        ggplot2::labs(y = "Distance (relative)\n <- distant      close->") +
+        ggplot2::labs(x = "Pairwise comparisons") +
+        ggplot2::scale_y_reverse() +
+        ggplot2::theme(
+          # legend.position = "none",
+          panel.grid.minor.x = ggplot2::element_blank(),
+          panel.grid.major.x = ggplot2::element_blank(),
+          # panel.grid.major.y = element_blank(),
+          axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+          axis.text.x = ggplot2::element_blank(),
+          axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+          axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
+        )
+      ggplot2::ggsave(
+        filename = file.path(path.folder, "violin.plot.distance.pdf"),
+        plot = res$violin.plot.distance,
+        width = 20, height = 15, dpi = 300, units = "cm", useDingbats = FALSE)
+
+      # Manhattan plot
+      res$manhattan.plot.distance <- ggplot2::ggplot(
+        data = res$distance,
+        ggplot2::aes(x = PAIRWISE, y = DISTANCE_RELATIVE, colour = POP_COMP)
+      ) +
+        ggplot2::geom_jitter(alpha = 0.3) +
+        ggplot2::labs(y = "Distance (relative)\n <- distant      close->") +
+        ggplot2::labs(x = "Pairwise comparisons") +
+        ggplot2::labs(colour = "Population comparisons") +
+        ggplot2::scale_colour_manual(values = c("#0571b0", "black")) +
+        ggplot2::scale_y_reverse() +
+        ggplot2::theme_light() +
+        ggplot2::theme(
+          # legend.position = "none",
+          panel.grid.minor.x = ggplot2::element_blank(),
+          panel.grid.major.x = ggplot2::element_blank(),
+          # panel.grid.major.y = element_blank(),
+          axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+          axis.text.x = ggplot2::element_blank(),
+          axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+          axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
+        )
+      ggplot2::ggsave(
+        filename = file.path(path.folder, "manhattan.plot.distance.pdf"),
+        plot = res$manhattan.plot.distance,
+        width = 20, height = 15, dpi = 300, units = "cm", useDingbats = FALSE)
   } # end distance method
 
   # Compute genome similarity -------------------------------------------------
@@ -394,28 +432,40 @@ detect_duplicate_genomes <- function(
 
     # If GT_BIN available, we need a new input.prep (not the same as dist method)
     if (tibble::has_name(data, "GT_BIN")) {
-      input.prep <- dplyr::filter(.data = data, !is.na(GT_BIN))
+      data <- dplyr::filter(.data = data, !is.na(GT_BIN))
     }
 
-    data <- NULL
-
     # all combination of individual pair
-    id.pairwise <- utils::combn(unique(input.prep$INDIVIDUALS), 2, simplify = FALSE)
+    id.pairwise <- utils::combn(unique(data$INDIVIDUALS), 2, simplify = FALSE)
 
     # get the number of pairwise comp.
     number.pairwise <- length(id.pairwise)
+    # number.pairwise <- 189920305
+    # number.pairwise <-  10
+    # number.pairwise <-  15
+    # number.pairwise <-  50
+    # number.pairwise <-  1000
+    # number.pairwise <-  2000
+    # number.pairwise <-  5000
+    # number.pairwise <-  20000
+    # parallel.core <- 10
 
     # Optimizing cpu usage
-    if (number.pairwise <= 50) {
-      round.cpu <- floor(number.pairwise / parallel.core)
+    if (number.pairwise > 100 * parallel.core) {
+      round.cpu <- floor(number.pairwise / (100 * parallel.core))
+      round.cpu
     } else {
-      round.cpu <- floor(number.pairwise / (50 * parallel.core))
+      round.cpu <- 1
     }
     # as.integer is usually twice as light as numeric vector...
     split.vec <- as.integer(floor((parallel.core * round.cpu * (1:number.pairwise - 1) / number.pairwise) + 1))
+    # split.vec
+    # length(unique(split.vec))
+
     id.pairwise <- split(x = id.pairwise, f = split.vec)
 
-    message("Starting scan for duplicate genomes")
+
+    message("Starting scan for duplicates")
     message("Pairwise comparisons: ", number.pairwise)
     if (number.pairwise > 5000) message("    Time for coffee...")
     round.cpu <- split.vec <- number.pairwise <- NULL
@@ -428,11 +478,11 @@ detect_duplicate_genomes <- function(
       mc.silent = FALSE,
       mc.cleanup = TRUE,
       mc.cores = parallel.core,
-      input.prep = input.prep
+      data = data
     ) %>%
       dplyr::bind_rows(.)
 
-    input.prep <- id.pairwise <- NULL # no longer needed
+    data <- id.pairwise <- NULL # no longer needed
 
     # Include population info with strata
     ID1.pop <- suppressWarnings(
@@ -505,6 +555,8 @@ detect_duplicate_genomes <- function(
       col_names = TRUE
     )
 
+    # common.markers.threshold -----
+
     # Visualization ------------------------------------------------------------
     message("Generating the plots")
 
@@ -531,7 +583,7 @@ detect_duplicate_genomes <- function(
     ggplot2::ggsave(
       filename = file.path(path.folder, "violin.plot.genome.pdf"),
       plot = res$violin.plot.genome,
-      width = 20, height = 15, dpi = 600, units = "cm", useDingbats = FALSE)
+      width = 20, height = 15, dpi = 300, units = "cm", useDingbats = FALSE)
 
     # Manhattan plot
     res$manhattan.plot.genome <- ggplot2::ggplot(
@@ -559,59 +611,60 @@ detect_duplicate_genomes <- function(
     ggplot2::ggsave(
       filename = file.path(path.folder, "manhattan.plot.genome.pdf"),
       plot = res$manhattan.plot.genome,
-      width = 20, height = 15, dpi = 600, units = "cm", useDingbats = FALSE)
+      width = 20, height = 15, dpi = 300, units = "cm", useDingbats = FALSE)
   } # end genome method
 
   # Removing duplicates
-  message("\nInspect tables and figures to decide if some individual(s) need to be blacklisted")
-  message("blacklist individual(s) (y/n): ")
-  remove.id <- as.character(readLines(n = 1))
-  if (remove.id == "y") {
-    message("2 options to blacklist individuals: manually or with a threshold")
-    message("    manually: the function generate a blacklist that you populate manually")
-    message("    threshold: more powerful to fully remove duplicates")
-    message("\n    remove (manually/threshold): ")
-    remove.dup <- as.character(readLines(n = 1))
-    if (remove.dup == "manually") {
-      readr::write_tsv(
-        x = tibble::data_frame(INDIVIDUALS = as.character()),
-        path = file.path(path.folder, "blacklist.id.similar.tsv"),
-        append = FALSE, col_names = TRUE)
-      message("    An empty blacklist file was generated: blacklist.id.similar.tsv")
-      message("    Keep column name, just add the individual(s) to blacklist(s)")
-      res$blacklist.id.similar <- "check blacklist.id.similar.tsv file"
-    } else {
-      message("Use the distance or genome analysis to blacklist duplicates ? (distance/genome): ")
-      analysis <- as.character(readLines(n = 1))
-      if (analysis == "distance") {
-        data <-  "individuals.pairwise.dist.tsv"
+  if (blacklist.duplicates) {
+    message("\nInspect tables and figures to decide if some individual(s) need to be blacklisted")
+    message("blacklist individual(s) (y/n): ")
+    remove.id <- as.character(readLines(n = 1))
+    if (remove.id == "y") {
+      message("2 options to blacklist individuals: manually or with a threshold")
+      message("    manually: the function generate a blacklist that you populate manually")
+      message("    threshold: more powerful to fully remove duplicates")
+      message("\n    remove (manually/threshold): ")
+      remove.dup <- as.character(readLines(n = 1))
+      if (remove.dup == "manually") {
+        readr::write_tsv(
+          x = tibble::data_frame(INDIVIDUALS = as.character()),
+          path = file.path(path.folder, "blacklist.id.similar.tsv"),
+          append = FALSE, col_names = TRUE)
+        message("    An empty blacklist file was generated: blacklist.id.similar.tsv")
+        message("    Keep column name, just add the individual(s) to blacklist(s)")
+        res$blacklist.id.similar <- "check blacklist.id.similar.tsv file"
       } else {
-        data <-  "individuals.pairwise.genome.similarity.tsv"
-      }
-      message("\n    Enter threshold to remove duplicates: ")
-      dup.threshold <- as.numeric(readLines(n = 1))
+        message("Use the distance or genome analysis to blacklist duplicates ? (distance/genome): ")
+        analysis <- as.character(readLines(n = 1))
+        if (analysis == "distance") {
+          data <-  "individuals.pairwise.dist.tsv"
+        } else {
+          data <-  "individuals.pairwise.genome.similarity.tsv"
+        }
+        message("\n    Enter threshold to remove duplicates: ")
+        dup.threshold <- as.numeric(readLines(n = 1))
 
-      message("\n    Remove all duplicates involved in pairs from different pop/group?")
-      message("\n    y: remove both samples in the pair")
-      message("\n    n: removes one sample in the pair, with more missing genotypes: (y/n)")
-      diff.pop.remove <- as.character(readLines(n = 1))
-      if (diff.pop.remove == "n") {
-        diff.pop.remove <- FALSE
-      } else {
-        diff.pop.remove <- TRUE
+        message("\n    Remove all duplicates involved in pairs from different pop/group?")
+        message("\n    y: remove both samples in the pair")
+        message("\n    n: removes one sample in the pair, with more missing genotypes: (y/n)")
+        diff.pop.remove <- as.character(readLines(n = 1))
+        if (diff.pop.remove == "n") {
+          diff.pop.remove <- FALSE
+        } else {
+          diff.pop.remove <- TRUE
+        }
+        old.dir <- getwd()
+        setwd(path.folder)
+        duplicates <- remove_duplicates(
+          data = data,
+          stats = "genotyped.statistics.tsv",
+          dup.threshold = dup.threshold,
+          diff.pop.remove = diff.pop.remove)
+        setwd(old.dir)
+        res$blacklist.id.similar <- duplicates$blacklist.id
       }
-      old.dir <- getwd()
-      setwd(path.folder)
-      duplicates <- remove_duplicates(
-        data = data,
-        stats = "genotyped.statistics.tsv",
-        dup.threshold = dup.threshold,
-        diff.pop.remove = diff.pop.remove)
-      setwd(old.dir)
-      res$blacklist.id.similar <- duplicates$blacklist.id
     }
-  }
-
+  }# End blacklist.duplicates
 
 
   # RESULTS --------------------------------------------------------------------
@@ -660,146 +713,184 @@ distance_individuals <- function(
   parallel.core = parallel::detectCores() - 1
 ) {
   # Prep data
-  dist.computation <- suppressWarnings(
+
+  # test using tidyr::spread
+  # dist.computation <- suppressWarnings(
+  #   dplyr::ungroup(x) %>%
+  #     dplyr::group_by(INDIVIDUALS) %>%
+  #     tidyr::spread(data = ., key = MARKERS_ALLELES, value = n) %>%
+  #     dplyr::ungroup(.) %>%
+  #     tibble::as_data_frame(.) %>%
+  #     tibble::remove_rownames(.) %>%
+  #     tibble::column_to_rownames(df = ., var = "INDIVIDUALS"))
+
+  # using data.table (better with huge datasets)
+  n.ind <- dplyr::n_distinct(x$INDIVIDUALS)
+  x <- suppressWarnings(
     dplyr::ungroup(x) %>%
-      dplyr::group_by(INDIVIDUALS) %>%
-      tidyr::spread(data = ., key = MARKERS_ALLELES, value = n) %>%
-      dplyr::ungroup(.) %>%
+      dplyr::mutate(
+        n = as.numeric(stringi::stri_replace_na(str = n, replacement = 999))) %>% # missing data dummy variable
+      data.table::as.data.table(.) %>%
+      data.table::dcast.data.table(
+        data = .,
+        formula = INDIVIDUALS ~ MARKERS_ALLELES,
+        value.var = "n"
+      ) %>%
       tibble::as_data_frame(.) %>%
       tibble::remove_rownames(.) %>%
       tibble::column_to_rownames(df = ., var = "INDIVIDUALS")
   )
-  # rownames(dist.computation) <- dist.computation[["INDIVIDUALS"]]
-  # dist.computation[["INDIVIDUALS"]] <- NULL
+
+
 
   # compute distance
-  # gain in speed between the 2 is very small on small data set
-  if (dplyr::n_distinct(x$MARKERS_ALLELES) > 60000) {
-    dist.computation <- suppressWarnings(
-      amap::Dist(
-        x = dist.computation,
-        method = distance.method,
-        nbproc = parallel.core
-      )
-    )
 
-  } else {
-    dist.computation <- stats::dist(
-      x = dist.computation,
-      method = distance.method
-    )
-  }
+  # test between amap::Dist and parallelDist
+  # system.time(test.1 <-suppressWarnings(amap::Dist(x = x, method = distance.method,nbproc = parallel.core)))
+  # test.1 <- distance2df(test.1)
+  # x2 <- as.matrix(x)
+  # system.time(test.2 <-suppressWarnings(parallelDist::parDist(x = x2, method = "euclidean", threads = parallel.core)))
+  # test.2 <- distance2df(test.2)
+
+  # if (n.ind > 400) {
+  ids <- rownames(x)
+  x <-suppressWarnings(
+    parallelDist::parDist(# doesnt allow missing data, hence the dummy category ...
+      x = as.matrix(x),
+      method = distance.method,
+      threads = parallel.core)) %>%
+    as.matrix
+
+  # dim(x)
+  rownames(x) <- colnames(x) <- ids
+  ids <- NULL
+
+  # } else {
+  #   # x <- stats::dist(
+  #   #   x = x,
+  #   #   method = distance.method)
+  #
+  #   x <- suppressWarnings(
+  #     amap::Dist(
+  #       x = x,
+  #       method = distance.method,
+  #       nbproc = parallel.core))
+  # }
 
   # melt the dist matrice into a data frame
-  dist.computation <- distance2df(dist.computation)
+  x <- distance2df(x)
 
   # Include population info with strata
   ID1.pop <- suppressWarnings(
-    dplyr::select(.data = dist.computation, INDIVIDUALS = ID1) %>%
+    dplyr::select(.data = x, INDIVIDUALS = ID1) %>%
       dplyr::inner_join(strata, by = "INDIVIDUALS") %>%
       dplyr::select(ID1_POP = POP_ID))
 
   ID2.pop <- suppressWarnings(
-    dplyr::select(.data = dist.computation, INDIVIDUALS = ID2) %>%
+    dplyr::select(.data = x, INDIVIDUALS = ID2) %>%
       dplyr::inner_join(strata, by = "INDIVIDUALS") %>%
       dplyr::select(ID2_POP = POP_ID))
 
-  dist.computation <- dplyr::bind_cols(dist.computation, ID1.pop, ID2.pop) %>%
+  x <- dplyr::bind_cols(x, ID1.pop, ID2.pop) %>%
     dplyr::mutate(
       POP_COMP = ifelse(ID1.pop == ID2.pop, "same pop", "different pop"),
       POP_COMP = factor(POP_COMP, levels = c("same pop", "different pop"), ordered = TRUE),
       PAIRWISE = rep("pairwise", n()),
       METHOD = rep(distance.method, n())
     )
-  x <- ID1.pop <- ID2.pop <- NULL
-  return(dist.computation)
+  ID1.pop <- ID2.pop <- NULL
+  return(x)
 }#End distance_individuals
 
 
 # pairwise genome similarity method---------------------------------------------
-#' @title Pgenome_similarity_map
-#' @description for purrr::map
-#' @rdname genome_similarity_map
-#' @export
-#' @keywords internal
-genome_similarity_map <- function(list.pair = NULL, input.prep = NULL) {
-
-  id.select <- list.pair
-  id1 <- id.select[1]
-  id2 <- id.select[2]
-
-  if (tibble::has_name(input.prep, "GT_BIN")) {
-    # filtered dataset for the 2 ind.
-    input.select <- dplyr::filter(
-      .data = input.prep,
-      !is.na(GT_BIN) & INDIVIDUALS %in% id.select
-    ) %>%
-      dplyr::select(MARKERS, INDIVIDUALS, GT_BIN)
-
-    # genotypes & markers
-    id1.data <- dplyr::filter(.data = input.select, INDIVIDUALS %in% id1) %>%
-      dplyr::select(-INDIVIDUALS)
-
-    id2.data <- dplyr::filter(.data = input.select, INDIVIDUALS %in% id2) %>%
-      dplyr::select(-INDIVIDUALS)
-
-    # markers
-    id1.markers <- dplyr::select(id1.data, MARKERS)
-
-    id2.markers <- dplyr::select(id2.data, MARKERS)
-
-    # output comparison
-    genome.comparison <- tibble::data_frame(
-      ID1 = id1,
-      ID2 = id2,
-      MARKERS_COMMON = nrow(dplyr::intersect(x = id1.markers, y = id2.markers)),
-      IDENTICAL = nrow(dplyr::intersect(x = id1.data, y = id2.data)),
-      DIFFERENT = MARKERS_COMMON - IDENTICAL,
-      PROP_IDENTICAL = IDENTICAL / MARKERS_COMMON
-    )
-  } else {
-    input.select <- dplyr::filter(
-      .data = input.prep,
-      INDIVIDUALS %in% id.select & n != 0
-    )
-
-    # genotypes & markers
-    id1.data <- dplyr::filter(.data = input.select, INDIVIDUALS %in% id1) %>%
-      dplyr::select(-INDIVIDUALS)
-
-    id2.data <- dplyr::filter(.data = input.select, INDIVIDUALS %in% id2) %>%
-      dplyr::select(-INDIVIDUALS)
-
-    # markers
-    id1.markers <- dplyr::distinct(id1.data, MARKERS)
-    id2.markers <- dplyr::distinct(id2.data, MARKERS)
-
-    # output comparison
-    genome.comparison <- tibble::data_frame(
-      ID1 = id1,
-      ID2 = id2,
-      MARKERS_COMMON = nrow(dplyr::intersect(x = id1.markers, y = id2.markers)),
-      IDENTICAL = nrow(dplyr::intersect(x = id1.data, y = id2.data) %>% dplyr::distinct(MARKERS)),
-      DIFFERENT = MARKERS_COMMON - IDENTICAL,
-      PROP_IDENTICAL = IDENTICAL / MARKERS_COMMON
-    )
-  }
-  #unused objets:
-  id.select <- id1 <- id2 <- input.select <- id1.data <- id2.data <- id1.markers <- id2.markers <- NULL
-  return(genome.comparison)
-}#End genome_similarity_map
-
-
 #' @title genome_similarity
 #' @description for the parallel part
 #' @rdname genome_similarity
 #' @export
 #' @keywords internal
-genome_similarity <- function(list.pair, input.prep = NULL, ...) {
+genome_similarity <- function(list.pair, data = NULL) {
   # small.list.pair <- purrr::flatten(id.pairwise.split[1]) #test
+  genome_similarity_map <- function(list.pair = NULL, data = NULL) {
 
+    id.select <- list.pair
+    id1 <- id.select[1]
+    id2 <- id.select[2]
 
-  genome.comparison <- purrr::map(.x = list.pair, .f = genome_similarity_map, input.prep = input.prep) %>%
+    if (tibble::has_name(data, "GT_BIN")) {
+      # filtered dataset for the 2 ind.
+      data <- dplyr::filter(
+        .data = data,
+        !is.na(GT_BIN) & INDIVIDUALS %in% id.select
+      ) %>%
+        dplyr::select(MARKERS, INDIVIDUALS, GT_BIN)
+
+      # genotypes & markers
+      id1.data <- dplyr::filter(.data = data, INDIVIDUALS %in% id1) %>%
+        dplyr::select(-INDIVIDUALS)
+
+      id2.data <- dplyr::filter(.data = data, INDIVIDUALS %in% id2) %>%
+        dplyr::select(-INDIVIDUALS)
+
+      # markers
+      id1.markers <- dplyr::select(id1.data, MARKERS)
+
+      id2.markers <- dplyr::select(id2.data, MARKERS)
+
+      # Check the number of markers in common
+      # number.common.markers <- nrow(dplyr::intersect(x = id1.markers, y = id2.markers))
+      # if (is.null(common.markers.threshold)) common.markers.threshold <- number.common.markers
+
+      # output comparison
+      genome.comparison <- tibble::data_frame(
+        ID1 = id1,
+        ID2 = id2,
+        MARKERS_COMMON = nrow(dplyr::intersect(x = id1.markers, y = id2.markers)),
+        IDENTICAL = nrow(dplyr::intersect(x = id1.data, y = id2.data)),
+        DIFFERENT = MARKERS_COMMON - IDENTICAL,
+        PROP_IDENTICAL = IDENTICAL / MARKERS_COMMON
+      )
+    } else {
+      data <- dplyr::filter(
+        .data = data,
+        INDIVIDUALS %in% id.select & n != 0
+      )
+
+      # genotypes & markers
+      id1.data <- dplyr::filter(.data = data, INDIVIDUALS %in% id1) %>%
+        dplyr::select(-INDIVIDUALS)
+
+      id2.data <- dplyr::filter(.data = data, INDIVIDUALS %in% id2) %>%
+        dplyr::select(-INDIVIDUALS)
+
+      # markers
+      id1.markers <- dplyr::distinct(id1.data, MARKERS)
+      id2.markers <- dplyr::distinct(id2.data, MARKERS)
+
+      # Check the number of markers in common
+      # number.common.markers <- nrow(dplyr::intersect(x = id1.markers, y = id2.markers))
+
+      # if (is.null(common.markers.threshold)) common.markers.threshold <- number.common.markers
+
+      # output comparison
+      genome.comparison <- tibble::data_frame(
+        ID1 = id1,
+        ID2 = id2,
+        MARKERS_COMMON = nrow(dplyr::intersect(x = id1.markers, y = id2.markers)),
+        IDENTICAL = nrow(dplyr::intersect(x = id1.data, y = id2.data) %>% dplyr::distinct(MARKERS)),
+        DIFFERENT = MARKERS_COMMON - IDENTICAL,
+        PROP_IDENTICAL = IDENTICAL / MARKERS_COMMON
+      )
+    }
+    #unused objets:
+    id.select <- id1 <- id2 <- data <- id1.data <- id2.data <- id1.markers <- id2.markers <- NULL
+    return(genome.comparison)
+  }#End genome_similarity_map
+
+  genome.comparison <- purrr::map(
+    .x = list.pair,
+    .f = genome_similarity_map,
+    data = data) %>%
     dplyr::bind_rows(.)
 
   return(genome.comparison)
@@ -837,16 +928,22 @@ allele_count <- function(x) {
 #' @export
 #' @keywords internal
 distance2df <- function(x) {
-  res <- as.matrix(x)
-  diag(res) <- NA
-  res[lower.tri(res)] <- NA
-  res <- dplyr::bind_cols(tibble::data_frame(ID1 = rownames(res)),
-                          tibble::as_data_frame(res)) %>%
-    tidyr::gather(data = ., key = ID2, value = DISTANCE, -ID1) %>%
+  # x <- dist.computation
+  x <- as.matrix(x)
+  diag(x) <- NA
+  x[lower.tri(x)] <- NA
+  x <- dplyr::bind_cols(tibble::data_frame(ID1 = rownames(x)),
+                        tibble::as_data_frame(x)) %>%
+    # tidyr::gather(data = ., key = ID2, value = DISTANCE, -ID1) %>%
+    data.table::as.data.table(.) %>%
+    data.table::melt.data.table(
+      data = ., id.vars = "ID1", variable.name = "ID2", value.name = "DISTANCE",
+      variable.factor = FALSE) %>%
+    tibble::as_data_frame(.) %>%
     dplyr::filter(!is.na(DISTANCE)) %>%
     dplyr::mutate(DISTANCE_RELATIVE = DISTANCE/max(DISTANCE)) %>%
     dplyr::arrange(DISTANCE)
-  return(res)
+  return(x)
 }#End distance2df
 
 
