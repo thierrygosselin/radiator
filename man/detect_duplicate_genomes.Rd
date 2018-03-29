@@ -7,7 +7,8 @@ to highligh potential duplicate individuals}
 \usage{
 detect_duplicate_genomes(data, subsample.markers = NULL, random.seed = NULL,
   distance.method = "manhattan", genome = FALSE,
-  blacklist.duplicates = FALSE, parallel.core = parallel::detectCores() - 1)
+  threshold.common.markers = NULL, blacklist.duplicates = FALSE,
+  parallel.core = parallel::detectCores() - 1)
 }
 \arguments{
 \item{data}{A tidy data frame object in the global environment or
@@ -39,6 +40,15 @@ threshold is more intuitive with the plots produced, but it's much longer
 to run, even in parallel, so better to run overnight.
 Default: \code{genome = FALSE}.}
 
+\item{threshold.common.markers}{(double, optional) When using the
+pairwise genome similarity approach (\code{genome = TRUE}), using a threshold
+will filter the pairwise comparison before generating the results. This is
+usefull if the number of pairwise comparisons (n*(n-1)/2) is very large and
+allows to reduce the number of false positive, when missing data is involved.
+e.g. 2 samples might have 100% markers in common, but if they only have
+30% of their genotyped markers in common, this is a poor fit.
+Default: \code{threshold.common.markers = NULL}.}
+
 \item{blacklist.duplicates}{(optional, logical)
 With \code{blacklist.duplicates = TRUE}, after visualization,
 the user is asked to enter a threshold to filter out duplicates.
@@ -63,7 +73,7 @@ A list with potentially 8 objects:
 Saved in the working directory:
 individuals.pairwise.dist.tsv, individuals.pairwise.distance.stats.tsv,
 individuals.pairwise.genome.similarity.tsv, individuals.pairwise.genome.stats.tsv,
-blackliste.id.similar.tsv
+blackliste.id.similar.tsv, blacklist.pairs.threshold.tsv
 }
 \description{
 The function can compute two methods

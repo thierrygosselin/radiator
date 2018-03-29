@@ -4,7 +4,9 @@
 \alias{genome_similarity}
 \title{genome_similarity}
 \usage{
-genome_similarity(list.pair, data = NULL)
+genome_similarity(split.vec, all.pairs, data = NULL,
+  threshold.common.markers = NULL, keep.data = TRUE,
+  pairwise.filename = NULL, blacklist.pairs.filename = NULL)
 }
 \description{
 for the parallel part
