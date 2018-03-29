@@ -336,7 +336,7 @@ detect_mixed_genomes <- function(
   ggplot2::ggsave(
     filename = file.path(path.folder, "individual.heterozygosity.manhattan.plot.pdf"),
     plot = het.manhattan,
-    width = 5 * n.pop, height = 15, dpi = 600, units = "cm", useDingbats = FALSE, limitsize = FALSE)
+    width = 5 * n.pop, height = 10 * as.numeric(missing.group), dpi = 600, units = "cm", useDingbats = FALSE, limitsize = FALSE)
 
 
 
