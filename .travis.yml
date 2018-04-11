@@ -6,6 +6,10 @@ warnings_are_errors: false
 sudo: required
 dist: trusty
 
+env:
+   global:
+     - _R_CHECK_FORCE_SUGGESTS_=FALSE
+
 matrix:
   include:
   - os: osx

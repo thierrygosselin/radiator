@@ -14,37 +14,37 @@ Description: radiator: an R package for RADseq Data Exploration, Manipulation an
 Depends:
     R (>= 3.2.3)
 Imports:
+    data.table,
     dplyr (>= 0.7.0),
+    fst (>= 0.8.4),
+    ggplot2,
+    magrittr,
+    methods,
+    parallel,
+    parallelDist,
+    pbmcapply,
     purrr,
     readr,
+    rlang,
+    stats,
+    stringi,
     tibble,
     tidyr,
-    ggplot2,
-    data.table,
-    stringi,
-    parallel,
-    methods,
-    magrittr,
-    stats,
-    utils,
-    pbmcapply,
-    rlang,
-    fst (>= 0.8.4),
-    parallelDist
+    utils
 Suggests:
     adegenet,
-    pegas,
-    vcfR (>= 1.3.0),
-    rmetasim,
-    xgboost,
-    ranger,
-    missRanger,
-    randomForestSRC,
-    lightgbm,
-    UpSetR,
     knitr,
+    lightgbm,
+    missRanger,
+    pegas,
+    randomForestSRC,
+    ranger,
     rmarkdown,
-    stringdist
+    rmetasim,
+    stringdist,
+    UpSetR,
+    vcfR (>= 1.3.0),
+    xgboost
 License: GPL (>=2)
 LazyLoad: yes
 VignetteBuilder: knitr

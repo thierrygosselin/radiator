@@ -19,6 +19,7 @@ environment:
     USE_RTOOLS: true
 
 build_script:
+  - set _R_CHECK_FORCE_SUGGESTS_=false
   - travis-tool.sh install_deps
   - travis-tool.sh install_r R.oo R.utils
 
