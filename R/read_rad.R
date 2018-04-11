@@ -11,6 +11,9 @@
 #' @param data A file in the working directory ending with .rad,
 #' a tidy genomic data produced by radiator, assigner or grur.
 
+#' @inheritParams fst::read.fst
+
+
 #' @return A tidy data frame in the global environment.
 #' @export
 #' @rdname read_rad
@@ -20,18 +23,39 @@
 #'
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
-read_rad <- function(data) {
+read_rad <- function(
+  data,
+  columns = NULL,
+  from = 1, to = NULL,
+  as.data.table = FALSE, old_format = FALSE) {
   # since version 0.8.4 there is a distinction between old and new format...
   # Catch error while reading
-  safe_fst <- purrr::safely(.f = fst::read.fst)
-  data.safe <- safe_fst(data)
+  read_rad_fst <- function(
+    data,
+    columns = NULL,
+    from = 1, to = NULL,
+    as.data.table = FALSE, old_format = FALSE) {
+    fst::read.fst(
+      path = data, columns = columns, from = from, to = to,
+      as.data.table = as.data.table, old_format = old_format)
+  }
+
+
+  safe_rad_fst <- purrr::safely(.f = read_rad_fst)
+  data.safe <- safe_rad_fst(data)
   if (is.null(data.safe$error)) {
     return(data.safe$result)
   } else {
-    data <- suppressWarnings(fst::read.fst(path = data, old_format = TRUE))
+    data.old <- suppressWarnings(fst::read.fst(path = data, old_format = TRUE)) %>%
+      radiator::write_rad(data = ., path = data)
+    data.old <- NULL
+    data <- fst::read.fst(
+      path = data, columns = columns, from = from, to = to,
+      as.data.table = as.data.table, old_format = old_format)
     message("\nThis .rad file was created with an earlier version of the fst package")
-    message("Please re-write this tidy data with: radiator::write_rad")
-    message("    as this format will not be supported in future releases.\n")
+    message("A new version with the same name was written")
+
+    # message("    as this format will not be supported in future releases.\n")
     return(data)
   }
 }#End read_rad
