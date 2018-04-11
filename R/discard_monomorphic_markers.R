@@ -34,44 +34,37 @@ discard_monomorphic_markers <- function(data, verbose = FALSE) {
   if (missing(data)) stop("Input file missing")
 
   # Import data ---------------------------------------------------------------
-  if (is.vector(data)) {
-    data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-  }
+  data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
 
-  # check genotype column naming
-  if (tibble::has_name(data, "GENOTYPE")) {
-    colnames(data) <- stringi::stri_replace_all_fixed(
-      str = colnames(data),
-      pattern = "GENOTYPE",
-      replacement = "GT",
-      vectorize_all = FALSE)
-  }
-
-  # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-  if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
-    data <- dplyr::rename(.data = data, MARKERS = LOCUS)
-  }
 
   if (tibble::has_name(data, "CHROM")) {
-  markers.df <- dplyr::distinct(.data = data, MARKERS, CHROM, LOCUS, POS)
+    markers.df <- dplyr::distinct(.data = data, MARKERS, CHROM, LOCUS, POS)
   }
   if (verbose) message("Scanning for monomorphic markers...")
   if (verbose) message("    Number of markers before = ", dplyr::n_distinct(data$MARKERS))
 
-  mono.markers <- dplyr::select(.data = data, MARKERS, GT) %>%
-    dplyr::filter(GT != "000000") %>%
-    dplyr::distinct(MARKERS, GT) %>%
-    dplyr::mutate(
-      A1 = stringi::stri_sub(GT, 1, 3),
-      A2 = stringi::stri_sub(GT, 4,6)
-    ) %>%
-    dplyr::select(-GT) %>%
-    tidyr::gather(data = ., key = ALLELES_GROUP, value = ALLELES, -MARKERS) %>%
-    dplyr::distinct(MARKERS, ALLELES) %>%
-    dplyr::count(x = ., MARKERS) %>%
-    dplyr::filter(n == 1) %>%
-    dplyr::distinct(MARKERS)
-
+  if (tibble::has_name(data, "GT_BIN")) {
+    mono.markers <- dplyr::select(.data = data, MARKERS, GT_BIN) %>%
+      dplyr::filter(!is.na(GT_BIN)) %>%
+      dplyr::distinct(MARKERS, GT_BIN) %>%
+      dplyr::count(x = ., MARKERS) %>%
+      dplyr::filter(n == 1) %>%
+      dplyr::distinct(MARKERS)
+  } else {
+    mono.markers <- dplyr::select(.data = data, MARKERS, GT) %>%
+      dplyr::filter(GT != "000000") %>%
+      dplyr::distinct(MARKERS, GT) %>%
+      dplyr::mutate(
+        A1 = stringi::stri_sub(GT, 1, 3),
+        A2 = stringi::stri_sub(GT, 4,6)
+      ) %>%
+      dplyr::select(-GT) %>%
+      tidyr::gather(data = ., key = ALLELES_GROUP, value = ALLELES, -MARKERS) %>%
+      dplyr::distinct(MARKERS, ALLELES) %>%
+      dplyr::count(x = ., MARKERS) %>%
+      dplyr::filter(n == 1) %>%
+      dplyr::distinct(MARKERS)
+  }
   # Remove the markers from the dataset
   if (verbose) message("    Number of monomorphic markers removed = ", nrow(mono.markers))
 
@@ -88,11 +81,11 @@ discard_monomorphic_markers <- function(data, verbose = FALSE) {
   want <- c("MARKERS", "CHROM", "LOCUS", "POS")
   whitelist.polymorphic.markers <- suppressWarnings(
     dplyr::select(data, dplyr::one_of(want)) %>%
-    dplyr::distinct(MARKERS, .keep_all = TRUE))
+      dplyr::distinct(MARKERS, .keep_all = TRUE))
   res <- list(input = data,
               blacklist.monomorphic.markers = mono.markers,
               whitelist.polymorphic.markers = whitelist.polymorphic.markers
-              )
+  )
   return(res)
 } # end discard mono markers
 

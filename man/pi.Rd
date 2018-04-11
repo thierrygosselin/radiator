@@ -164,10 +164,11 @@ Calculates the nucleotide diversity.
 [stackr](https://github.com/thierrygosselin/stackr) \emph{summary_haplotypes}
 function provides an estimate integrating the consensus markers found in
 [STACKS](http://catchenlab.life.illinois.edu/stacks/)
-batch_x.haplotypes.tsv file.
+batch_x.haplotypes.tsv file. The function requires \code{stringdist} package.
 }
 \examples{
 \dontrun{
+require(stringdist)
 # The simplest way to run the function:
 sum <- radiator::pi(
 data = "batch_1.vcf",

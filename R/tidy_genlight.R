@@ -11,7 +11,7 @@
 
 #' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join
 #' @importFrom stringi stri_replace_all_fixed stri_replace_all_regex stri_join
-#' @importFrom adegenet indNames pop chromosome locNames position
+# @importFrom adegenet indNames pop chromosome locNames position
 #' @importFrom tibble rownames_to_column data_frame
 #' @importFrom tidyr gather unite
 
@@ -34,13 +34,13 @@ tidy_genlight <- function(data) {
 
   # Import data ---------------------------------------------------------------
   strata.df <- tibble::data_frame(
-    INDIVIDUALS = adegenet::indNames(data),
-    POP_ID = adegenet::pop(data))
+    INDIVIDUALS = data@ind.names,
+    POP_ID = data@pop)
 
   markers <- tibble::data_frame(
-    CHROM = adegenet::chromosome(data),
-    LOCUS = adegenet::locNames(data),
-    POS = adegenet::position(data)
+    CHROM = data@chromosome,#adegenet::chromosome(data),
+    LOCUS = data@loc.names,#adegenet::locNames(data),
+    POS = data@position#adegenet::position(data)
   ) %>%
     tidyr::unite(data = ., col = MARKERS, CHROM, LOCUS, POS, sep = "__", remove = FALSE) %>%
     dplyr::select(MARKERS, CHROM, LOCUS, POS)

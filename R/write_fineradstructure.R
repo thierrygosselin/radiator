@@ -26,7 +26,6 @@
 #' @importFrom data.table as.data.table dcast.data.table
 #' @importFrom stringi stri_join stri_replace_all_fixed
 #' @importFrom tibble has_name as_data_frame
-#' @importFrom adegenet genind
 
 #' @references Malinsky M, Trucchi E, Lawson D, Falush D (2018)
 #' RADpainter and fineRADstructure: population inference from RADseq data.

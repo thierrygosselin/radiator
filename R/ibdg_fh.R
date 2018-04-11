@@ -106,8 +106,6 @@
 #' @importFrom stringi stri_join stri_replace_all_fixed stri_replace_all_regex
 #' @importFrom utils count.fields
 #' @importFrom readr read_tsv write_tsv
-#' @importFrom ape pcoa
-#' @importFrom stats dist
 #' @importFrom tibble data_frame
 #' @importFrom ggplot2 ggplot aes geom_violin geom_boxplot stat_summary labs theme element_blank element_text geom_jitter scale_colour_manual scale_y_reverse theme_light geom_bar facet_grid geom_histogram
 

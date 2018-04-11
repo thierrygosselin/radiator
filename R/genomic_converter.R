@@ -92,7 +92,6 @@
 
 #' @export
 #' @rdname genomic_converter
-# @importFrom adegenet df2genind
 #' @importFrom dplyr n_distinct summarise group_by ungroup mutate select tally distinct summarise
 #' @importFrom stringi stri_join stri_replace_all_fixed stri_sub
 #' @importFrom purrr flatten_chr

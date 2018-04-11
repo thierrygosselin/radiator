@@ -16,6 +16,7 @@
 
 #' @export
 #' @rdname tidy_vcf
+# @importFrom vcfR read.vcfR extract.gt vcf_field_names
 #' @importFrom rlang UQ
 #' @importFrom data.table melt.data.table as.data.table
 
@@ -46,6 +47,21 @@ tidy_vcf <- function(
   parallel.core = parallel::detectCores() - 1,
   verbose = FALSE,
   ...) {
+  # managing vcf.metadata and what approach to use to import faster ------------
+  if (is.logical(vcf.metadata) && !vcf.metadata) {
+    if (!requireNamespace("pegas", quietly = TRUE)) {
+      stop("pegas needed for this function to work
+           Install with install.packages('pegas')", call. = FALSE)
+    }
+    import.pegas <- TRUE # very fast but no metadata
+  } else {
+    if (!requireNamespace("vcfR", quietly = TRUE)) {
+      stop("vcfR needed for this function to work
+           Install with install.packages('vcfR')", call. = FALSE)
+    }
+    import.pegas <- FALSE #vcfR as metadata but much slower
+  }
+
   # dotslist -------------------------------------------------------------------
   dotslist <- list(...)
   want <- c("whitelist.markers", "blacklist.id", "pop.select", "pop.levels", "pop.labels")
@@ -63,14 +79,8 @@ tidy_vcf <- function(
   pop.levels <- vcf.dots[["pop.levels"]]
   pop.labels <- vcf.dots[["pop.labels"]]
 
-  # managing vcf.metadata and what approach to use to import faster
-  if (is.logical(vcf.metadata) && !vcf.metadata) {
-    import.pegas <- TRUE # very fast but no metadata
-  } else {
-    import.pegas <- FALSE #vcfR as metadata but much slower
-  }
 
-  # detect stacks (to manage ID that changed purposes over versions)
+  # detect stacks (to manage ID that changed purposes over versions) -----------
   stacks.vcf <- readr::read_lines(file = data, skip = 2, n_max = 1) %>%
     stringi::stri_detect_fixed(str = ., pattern = "Stacks")
 

@@ -91,6 +91,11 @@ tidy_wide <- function(data, import.metadata = FALSE) {
     data <- tidyr::gather(data = data, key = MARKERS, value = GT, -c(POP_ID, INDIVIDUALS))
   }
 
+  # necessary steps to make sure we work with unique markers and not duplicated LOCUS
+  if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
+    data <- dplyr::rename(.data = data, MARKERS = LOCUS)
+  }
+
   if (tibble::has_name(data, "GENOTYPE")) {
     colnames(data) <- stringi::stri_replace_all_fixed(
       str = colnames(data),
@@ -141,5 +146,8 @@ tidy_wide <- function(data, import.metadata = FALSE) {
   # clean pop id
   data$POP_ID <- clean_pop_names(data$POP_ID)
 
+
+  # Make sure no data groupings exists
+  if (!is.null(dplyr::groups(data))) data <- dplyr::ungroup(data)
   return(data)
 }#End tidy_wide

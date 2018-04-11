@@ -11,7 +11,7 @@
 
 #' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join
 #' @importFrom stringi stri_replace_all_fixed stri_replace_all_regex stri_join
-#' @importFrom adegenet indNames
+# @importFrom adegenet indNames
 #' @importFrom tibble rownames_to_column data_frame
 #' @importFrom tidyr gather unite
 
@@ -37,9 +37,10 @@ tidy_genind <- function(data) {
 
   if (biallelic) {
 
+    # changed adegenet::indNames to rownames(data@tab) to lower dependencies
     if (A2) {
     data <- tibble::as_data_frame(data@tab) %>%
-      tibble::add_column(.data = ., INDIVIDUALS = adegenet::indNames(data), .before = 1) %>%
+      tibble::add_column(.data = ., INDIVIDUALS = rownames(data@tab), .before = 1) %>%
       tibble::add_column(.data = ., POP_ID = data@pop) %>%
       dplyr::select(POP_ID, INDIVIDUALS, dplyr::ends_with(match = ".A2")) %>%
       tidyr::gather(data = ., key = MARKERS, value = GT_BIN, -c(POP_ID, INDIVIDUALS)) %>%
@@ -52,7 +53,7 @@ tidy_genind <- function(data) {
       )
     } else {
       data <- tibble::as_data_frame(data@tab) %>%
-        tibble::add_column(.data = ., INDIVIDUALS = adegenet::indNames(data), .before = 1) %>%
+        tibble::add_column(.data = ., INDIVIDUALS = rownames(data@tab), .before = 1) %>%
         tibble::add_column(.data = ., POP_ID = data@pop) %>%
         dplyr::select(POP_ID, INDIVIDUALS, dplyr::ends_with(match = ".1")) %>%
         tidyr::gather(data = ., key = MARKERS, value = GT_BIN, -c(POP_ID, INDIVIDUALS)) %>%
@@ -69,7 +70,7 @@ tidy_genind <- function(data) {
 
   } else {
     data <- tibble::as_data_frame(data@tab) %>%
-      tibble::add_column(.data = ., INDIVIDUALS = adegenet::indNames(data), .before = 1) %>%
+      tibble::add_column(.data = ., INDIVIDUALS = rownames(data@tab), .before = 1) %>%
       tibble::add_column(.data = ., POP_ID = data@pop) %>%
       tidyr::gather(data = ., key = MARKERS_ALLELES, value = COUNT, -c(POP_ID, INDIVIDUALS)) %>%
       dplyr::filter(COUNT > 0 | is.na(COUNT)) %>%

@@ -1,7 +1,7 @@
 # Write a adegenet genind object from STACKS VCF file
 
 #' @name vcf2genind
-#' @title VCF to \code{adegenet} \code{\link[adegenet]{genind}} object with filters and data imputation
+#' @title VCF to \code{adegenet genind} object with filters and data imputation
 
 #' @description For full details of the function, please use
 #' \pkg{radiator} \code{\link[radiator]{genomic_converter}}. This function is a shorcut

@@ -20,7 +20,8 @@
 #' @importFrom tidyr spread gather separate complete
 #' @importFrom stringi stri_join stri_replace_all_fixed stri_sub stri_replace_na
 #' @importFrom tibble has_name as_data_frame
-#' @importFrom adegenet genind
+# @importFrom adegenet genind
+#' @importFrom data.table as.data.table melt.data.table dcast.data.table
 
 #' @references Jombart T (2008) adegenet: a R package for the multivariate
 #' analysis of genetic markers. Bioinformatics, 24, 1403-1405.
@@ -38,18 +39,10 @@ write_genind <- function(data) {
   if (missing(data)) stop("Input file missing")
 
   # Import data ---------------------------------------------------------------
-  if (is.vector(data)) {
-    data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-  }
   want <- c("MARKERS", "POP_ID", "INDIVIDUALS", "GT", "GT_BIN")
-  data <- suppressWarnings(dplyr::select(data, dplyr::one_of(want)))
-
-  # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-  if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
-    data <- dplyr::rename(.data = data, MARKERS = LOCUS)
-  }
-
-  data <- dplyr::arrange(data, POP_ID, INDIVIDUALS)
+  data <- suppressWarnings(radiator::tidy_wide(data = data, import.metadata = TRUE) %>%
+    dplyr::select(dplyr::one_of(want)) %>%
+    dplyr::arrange(POP_ID, INDIVIDUALS))
 
   if (is.factor(data$POP_ID)) {
     pop.levels <- levels(data$POP_ID)
@@ -66,18 +59,33 @@ write_genind <- function(data) {
   pop.num <- unique(stringi::stri_detect_regex(str = pop.levels, pattern = "^[0-9]+$"))
   if (length(pop.num) == 1 && pop.num) pop.levels <- as.character(sort(as.numeric(pop.levels)))
 
-  # When VCF data available
+  # When GT_BIN available
   if (tibble::has_name(data, "GT_BIN")) {
     data <- suppressWarnings(
       dplyr::select(.data = data, MARKERS, POP_ID, INDIVIDUALS, GT_BIN) %>%
         dplyr::mutate(A1 = abs(GT_BIN - 2)) %>%
         dplyr::rename(A2 = GT_BIN) %>%
-        tidyr::gather(data = ., key = ALLELES, value = n, -c(INDIVIDUALS, POP_ID, MARKERS)) %>%
+        data.table::as.data.table(.) %>%
+        data.table::melt.data.table(
+          data = .,
+          id.vars = c("INDIVIDUALS", "POP_ID", "MARKERS"),
+          variable.name = "ALLELES",
+          value.name = "n"
+        ) %>%
+        tibble::as_data_frame(.) %>%
+        # tidyr::gather(data = ., key = ALLELES, value = n, -c(INDIVIDUALS, POP_ID, MARKERS)) %>%
         dplyr::mutate(MARKERS_ALLELES = stringi::stri_join(MARKERS, ALLELES, sep = ".")) %>%
         dplyr::select(-MARKERS, -ALLELES) %>%
-        dplyr::group_by(POP_ID, INDIVIDUALS) %>%
-        tidyr::spread(data =., key = MARKERS_ALLELES, value = n) %>%
-        dplyr::ungroup(.) %>%
+        data.table::as.data.table(.) %>%
+        data.table::dcast.data.table(
+          data = .,
+          formula = POP_ID + INDIVIDUALS ~ MARKERS_ALLELES,
+          value.var = "n"
+        ) %>%
+        tibble::as_data_frame(.) %>%
+        # dplyr::group_by(POP_ID, INDIVIDUALS) %>%
+        # tidyr::spread(data =., key = MARKERS_ALLELES, value = n) %>%
+        # dplyr::ungroup(.) %>%
         dplyr::mutate(POP_ID = factor(as.character(POP_ID))) %>%# xvalDapc doesn't accept pop as ordered factor
         dplyr::arrange(POP_ID, INDIVIDUALS))
   } else {
@@ -95,12 +103,20 @@ write_genind <- function(data) {
           A2 = stringi::stri_sub(str = GT, from = 4, to = 6)
         ) %>%
         dplyr::select(-GT) %>%
-        tidyr::gather(
+        # tidyr::gather(
+        #   data = .,
+        #   key = ALLELES,
+        #   value = GT,
+        #   -c(MARKERS, INDIVIDUALS, POP_ID)
+        # ) %>%
+        data.table::as.data.table(.) %>%
+        data.table::melt.data.table(
           data = .,
-          key = ALLELES,
-          value = GT,
-          -c(MARKERS, INDIVIDUALS, POP_ID)
+          id.vars = c("INDIVIDUALS", "POP_ID", "MARKERS"),
+          variable.name = "ALLELES",
+          value.name = "GT"
         ) %>%
+        tibble::as_data_frame(.) %>%
         dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS, GT) %>%
         dplyr::count(x = ., POP_ID, INDIVIDUALS, MARKERS, GT) %>%
         dplyr::ungroup(.) %>%
@@ -110,9 +126,16 @@ write_genind <- function(data) {
         dplyr::select(-MARKERS, -GT) %>%
         dplyr::mutate(POP_ID = factor(as.character(POP_ID))) %>%# xvalDapc doesn't accept pop as ordered factor
         dplyr::arrange(MARKERS_ALLELES, INDIVIDUALS) %>%
-        dplyr::group_by(POP_ID, INDIVIDUALS) %>%
-        tidyr::spread(data =., key = MARKERS_ALLELES, value = n) %>%
-        dplyr::ungroup(.) %>%
+        # dplyr::group_by(POP_ID, INDIVIDUALS) %>%
+        # tidyr::spread(data =., key = MARKERS_ALLELES, value = n) %>%
+        # dplyr::ungroup(.) %>%
+        data.table::as.data.table(.) %>%
+        data.table::dcast.data.table(
+          data = .,
+          formula = POP_ID + INDIVIDUALS ~ MARKERS_ALLELES,
+          value.var = "n"
+        ) %>%
+        tibble::as_data_frame(.) %>%
         dplyr::arrange(INDIVIDUALS, POP_ID))
   }
 

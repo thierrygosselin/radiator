@@ -1,7 +1,7 @@
 # Write a adegenet genlight object from VCF file
 
 #' @name vcf2genlight
-#' @title VCF to \code{adegenet} \code{\link[adegenet]{genlight}} object with filters and data imputation
+#' @title VCF to \code{adegenet genlight} object with filters and data imputation
 
 #' @description For full details of the function, please use
 #' \pkg{radiator} \code{\link[radiator]{genomic_converter}}. This function is a shorcut

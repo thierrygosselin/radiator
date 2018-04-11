@@ -55,7 +55,7 @@
 #' @importFrom parallel detectCores
 #' @importFrom stringi stri_replace_all_fixed stri_join stri_sub stri_replace_na stri_pad_left
 #' @importFrom purrr discard
-# @importFrom data.table as.data.table dcast.data.table
+#' @importFrom data.table as.data.table dcast.data.table melt.data.table
 #' @importFrom readr read_tsv write_tsv read_lines read_table
 #' @importFrom tibble as_data_frame data_frame
 #' @importFrom tidyr spread gather unite separate
@@ -190,15 +190,13 @@ If you're still encountering problem, email author for help")
           COL_TYPE = rep("c", n()),
           INFO = stringi::stri_trans_toupper(INFO)))
 
-
-
   dart.col.type <- dart.col.type %>%
     tidyr::gather(data = .,key = DELETE, value = INFO) %>%
     dplyr::select(-DELETE) %>%
     dplyr::mutate(
       INFO = stringi::stri_trans_toupper(INFO),
       INFO = stringi::stri_replace_all_fixed(INFO, pattern = " ", replacement = "", vectorize_all = FALSE)
-      ) %>%
+    ) %>%
     dplyr::left_join(want, by = "INFO") %>%
     dplyr::mutate(COL_TYPE = stringi::stri_replace_na(str = COL_TYPE, replacement = "_")) %>%
     dplyr::select(COL_TYPE) %>%
@@ -238,6 +236,10 @@ If you're still encountering problem, email author for help")
       pattern = "CLONEID",
       replacement = "LOCUS",
       vectorize_all = FALSE)
+  }
+
+  if (tibble::has_name(input, "LOCUS") && tibble::has_name(input, "CLONEID")) {
+    input <- dplyr::select(input, -CLONEID)
   }
 
   if (!tibble::has_name(input, "LOCUS")) stop("Problem tidying DArT dataset: contact author")
@@ -350,42 +352,12 @@ If you're still encountering problem, email author for help")
     # generate the split vector
     split.vec <- split_vec_row(x = input, cpu.rounds = 3, parallel.core = parallel.core)
 
-    dart2gt <- function(x) {
-      res <- x %>%
-        dplyr::mutate(
-          R = REF,
-          A = ALT,
-          R = stringi::stri_replace_all_fixed(
-            str = R, pattern = c("A", "C", "G", "T"),
-            replacement = c("001", "002", "003", "004"), vectorize_all = FALSE),
-          A = stringi::stri_replace_all_fixed(
-            str = A, pattern = c("A", "C", "G", "T"),
-            replacement = c("001", "002", "003", "004"), vectorize_all = FALSE),
-          GT = as.character(GT),
-          GT = stringi::stri_replace_all_fixed(
-            str = GT, pattern = c("0", "1", "2"),
-            replacement = c("RR", "AA", "RA"),
-            vectorize_all = FALSE),
-          GT_BIN = dplyr::if_else(GT == "RR", 0, dplyr::if_else(GT == "AA", 2, 1)),
-          GT_VCF = dplyr::if_else(GT == "RR", "0/0",
-                                  dplyr::if_else(GT == "AA", "1/1", "0/1"), missing = "./."),
-          GT_VCF_NUC = dplyr::if_else(GT == "RR", stringi::stri_join(REF, REF, sep = "/"),
-                                      dplyr::if_else(GT_VCF == "1/1", stringi::stri_join(ALT, ALT, sep = "/"),
-                                                     stringi::stri_join(REF, ALT, sep = "/")), missing = "./."),
-          GT = dplyr::if_else(GT == "RR", stringi::stri_join(R, R, sep = ""),
-                              dplyr::if_else(GT == "AA", stringi::stri_join(A, A, sep = ""),
-                                             stringi::stri_join(R, A, sep = "")), "000000")
-        ) %>%
-        dplyr::select(GT, GT_VCF, GT_VCF_NUC, GT_BIN)
-      return(res)
-    }#End dart2gt
-
     input <- dplyr::bind_cols(
       dplyr::select(input, -GT),
       dplyr::select(input, GT, REF, ALT) %>%
         split(x = ., f = split.vec) %>%
         .radiator_parallel(
-          X = ., FUN = dart2gt, mc.cores = parallel.core) %>%
+          X = ., FUN = dart2gt, mc.cores = parallel.core, dart.format = "1row") %>%
         dplyr::bind_rows(.)
     )
     split.vec <- NULL
@@ -394,122 +366,6 @@ If you're still encountering problem, email author for help")
   # Binary dart 2-row format----------------------------------------------------
   if (binary) {
     if (verbose) message("Tidying DArT SNP 2 Rows format")
-
-    # To do: merge these 2 functions and simplify codes
-    dart_binary <- function(x) {
-      # x <- input2
-      res <- dplyr::select(x, -SPLIT_VEC) %>%
-        # dplyr::group_by(MARKERS, CHROM, LOCUS, POS, TARGET_ID, REF, ALT) %>%
-        # dplyr::group_by(MARKERS, TARGET_ID, REF, ALT) %>%
-        # dplyr::summarise(GT = stringi::stri_join(GT, collapse = "_")) %>%
-        # dplyr::ungroup(.) %>%
-        data.table::as.data.table(.) %>%
-        data.table::dcast.data.table(
-          data = .,
-          formula = MARKERS + TARGET_ID + REF + ALT ~ ALLELES,
-          # fun.aggregate = function(y) paste(y, collapse = "_"),
-          value.var = "GT"
-        ) %>%
-        tibble::as_data_frame(.) %>%
-        dplyr::mutate(GT = stringi::stri_join(A1, A2, sep = "_")) %>%
-        dplyr::select(-A1, -A2) %>%
-        dplyr::mutate(
-          R = REF,
-          A = ALT,
-          R = stringi::stri_replace_all_fixed(
-            str = R, pattern = c("A", "C", "G", "T"),
-            replacement = c("001", "002", "003", "004"), vectorize_all = FALSE),
-          A = stringi::stri_replace_all_fixed(
-            str = A, pattern = c("A", "C", "G", "T"),
-            replacement = c("001", "002", "003", "004"), vectorize_all = FALSE),
-          GT = dplyr::if_else(GT == "1_0", "RR",
-                              dplyr::if_else(GT == "0_1", "AA",
-                                             dplyr::if_else(GT == "1_1", "RA", NA_character_))),
-          GT_BIN = dplyr::if_else(GT == "RR", 0, dplyr::if_else(GT == "AA", 2, 1)),
-          GT_VCF = dplyr::if_else(GT == "RR", "0/0",
-                                  dplyr::if_else(GT == "AA", "1/1", "0/1"), missing = "./."),
-          GT_VCF_NUC = dplyr::if_else(GT == "RR", stringi::stri_join(REF, REF, sep = "/"),
-                                      dplyr::if_else(GT_VCF == "1/1", stringi::stri_join(ALT, ALT, sep = "/"),
-                                                     stringi::stri_join(REF, ALT, sep = "/")), missing = "./."),
-          GT = dplyr::if_else(GT == "RR", stringi::stri_join(R, R, sep = ""),
-                              dplyr::if_else(GT == "AA", stringi::stri_join(A, A, sep = ""),
-                                             stringi::stri_join(R, A, sep = "")), missing = "000000")
-        ) %>%
-        dplyr::select(MARKERS, TARGET_ID, GT, GT_VCF, GT_VCF_NUC, GT_BIN)
-      # dplyr::select(MARKERS, CHROM, LOCUS, POS, TARGET_ID, GT, GT_VCF, GT_VCF_NUC, GT_BIN)
-      return(res)
-    }#End dart_binary
-    dart_count <- function(x) {
-      # split.id <- unique(x$SPLIT_VEC)
-      x <- dplyr::select(x, -SPLIT_VEC) %>%
-        dplyr::arrange(MARKERS, REF) %>%
-        dplyr::mutate(TEMP = rep(1:2, n()/2)) %>%
-        dplyr::select(dplyr::one_of(c("TEMP", "MARKERS", "CHROM", "LOCUS", "POS","REF", "ALT")), dplyr::everything())
-
-      x.alt <- dplyr::filter(x, TEMP == 1) %>%
-        dplyr::arrange(MARKERS) %>%
-        dplyr::select(-TEMP) %>%
-        tidyr::gather(data = .,
-                      key = TARGET_ID,
-                      value = ALLELE_ALT_DEPTH,
-                      -dplyr::one_of(c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT"))) %>%
-        dplyr::arrange(MARKERS, TARGET_ID)
-
-      x <- dplyr::filter(x, TEMP == 2) %>%
-        dplyr::arrange(MARKERS) %>%
-        dplyr::select(-dplyr::one_of(c("TEMP", "CHROM", "LOCUS", "POS", "REF", "ALT"))) %>%
-        tidyr::gather(data = .,
-                      key = TARGET_ID,
-                      value = ALLELE_REF_DEPTH,
-                      -MARKERS) %>%
-        dplyr::arrange(MARKERS, TARGET_ID) %>%
-        dplyr::select(ALLELE_REF_DEPTH) %>%
-        dplyr::bind_cols(x.alt)
-
-      x.alt <- NULL
-
-      x <- x %>%
-        dplyr::mutate(
-          A1 = dplyr::if_else(ALLELE_REF_DEPTH > 0, REF, NA_character_),
-          A2 = dplyr::if_else(ALLELE_ALT_DEPTH > 0, ALT, NA_character_),
-          VCF_A1 = dplyr::if_else(is.na(A1), NA_integer_, 0L),
-          VCF_A2 = dplyr::if_else(is.na(A2), NA_integer_, 1L)
-        ) %>%
-        dplyr::arrange(MARKERS, TARGET_ID) %>%
-        dplyr::mutate(
-          A1 = dplyr::if_else(is.na(A1), A2, A1),
-          A2 = dplyr::if_else(is.na(A2), A1, A2),
-          GT_VCF_NUC = stringi::stri_join(A1, A2, sep = "/"),
-          GT_VCF_NUC = stringi::stri_replace_na(str = GT_VCF_NUC, replacement = "./."),
-          GT_1 = stringi::stri_replace_all_fixed(
-            str = A1,
-            pattern = c("A", "C", "G", "T"),
-            replacement = c("001", "002", "003", "004"),
-            vectorize_all = FALSE),
-          GT_2 = stringi::stri_replace_all_fixed(
-            str = A2,
-            pattern = c("A", "C", "G", "T"),
-            replacement = c("001", "002", "003", "004"),
-            vectorize_all = FALSE),
-          GT = stringi::stri_join(GT_1, GT_2),
-          GT = stringi::stri_replace_na(str = GT, replacement = "000000")) %>%
-        dplyr::select(-c(A1, A2, GT_1, GT_2)) %>%
-        dplyr::mutate(
-          VCF_A1 = dplyr::if_else(is.na(VCF_A1), VCF_A2, VCF_A1),
-          VCF_A2 = dplyr::if_else(is.na(VCF_A2), VCF_A1, VCF_A2),
-          GT_VCF = stringi::stri_join(VCF_A1, VCF_A2, sep = "/"),
-          GT_VCF = stringi::stri_replace_na(str = GT_VCF, replacement = "./.")
-        ) %>%
-        dplyr::select(-c(VCF_A1, VCF_A2)) %>%
-        dplyr::mutate(
-          GT_BIN = as.numeric(
-            stringi::stri_replace_all_fixed(
-              str = GT_VCF,
-              pattern = c("0/0", "1/1", "0/1", "1/0", "./."),
-              replacement = c("0", "2", "1", "1", NA),
-              vectorize_all = FALSE)))
-      return(x)
-    }#End dart_count
 
     # keep one marker and check if genotypes are count data
     want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "CALL_RATE",
@@ -530,7 +386,6 @@ If you're still encountering problem, email author for help")
                       "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")
 
     if (!count.data) {#Genotypes coded 0, 1, 2
-
       input <- input %>%
         dplyr::mutate(
           ALLELES = stringi::stri_replace_all_regex(
@@ -576,8 +431,8 @@ If you're still encountering problem, email author for help")
         dplyr::left_join(ref.info, by = "MARKERS") %>%
         dplyr::left_join(markers.split, by = "MARKERS") %>%
         split(x = ., f = .$SPLIT_VEC) %>%
-        .radiator_parallel(
-          X = ., FUN = dart_binary, mc.cores = parallel.core) %>%
+        .radiator_parallel_mc(
+          X = ., FUN = dart2gt, mc.cores = parallel.core, dart.format = "2rows") %>%
         dplyr::bind_rows(.) %>%
         dplyr::left_join(grouping.column, by = "MARKERS") %>%
         dplyr::select(
@@ -623,17 +478,19 @@ If you're still encountering problem, email author for help")
           , by = "MARKERS")
 
       input <- split(x = input, f = input$SPLIT_VEC) %>%
-        # purrr::map_df(.x = ., .f = dart_count) # for serial test
-        .radiator_parallel_mc(X = ., FUN = dart_count, mc.preschedule = FALSE, mc.cores = parallel.core, mc.cleanup = FALSE) %>%
-        # parallel::mclapply(X = ., FUN = dart_count, mc.preschedule = FALSE, mc.cores = parallel.core, mc.cleanup = FALSE) %>% # works!
-        # .radiator_parallel(X = ., FUN = dart_count, mc.preschedule = FALSE, mc.cores = parallel.core, mc.cleanup = FALSE) %>% # not working = no progress bar possible
+        # purrr::map_df(.x = ., .f = dart2gt) # for serial test
+        .radiator_parallel_mc(X = ., FUN = dart2gt, mc.preschedule = FALSE, mc.cores = parallel.core, mc.cleanup = FALSE, dart.format = "counts") %>%
+        # parallel::mclapply(X = ., FUN = dart2gt, mc.preschedule = FALSE, mc.cores = parallel.core, mc.cleanup = FALSE, dart.format = "counts") %>% # works!
+        # .radiator_parallel(X = ., FUN = dart2gt, mc.preschedule = FALSE, mc.cores = parallel.core, mc.cleanup = FALSE, dart.format = "counts") %>% # not working = no progress bar possible
         dplyr::bind_rows(.)
 
-      input <- suppressWarnings(dplyr::select(input,
-                                              dplyr::one_of(
-                                                "MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "TARGET_ID", "GT",
-                                                "GT_VCF", "GT_VCF_NUC", "GT_BIN", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH",
-                                                "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")))
+      input <- suppressWarnings(
+        dplyr::select(
+          input,
+          dplyr::one_of(
+            "MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "TARGET_ID", "GT",
+            "GT_VCF", "GT_VCF_NUC", "GT_BIN", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH",
+            "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")))
     }
   }#End binary (2-row format) DArT file
 
@@ -683,3 +540,154 @@ If you're still encountering problem, email author for help")
   options(width = opt.change)
   return(input)
 }#End tidy_dart
+
+
+# Internal nested functions ----------------------------------------------------
+#' @title dart2gt
+#' @description Transform dart genotypes to radiator genotypes fields
+#' @rdname dart2gt
+#' @keywords internal
+#' @export
+dart2gt <- function(x, dart.format) {
+  # 1 row format
+  if (dart.format == "1row") {
+    x <- x %>%
+      dplyr::mutate(
+        R = REF,
+        A = ALT,
+        R = stringi::stri_replace_all_fixed(
+          str = R, pattern = c("A", "C", "G", "T"),
+          replacement = c("001", "002", "003", "004"), vectorize_all = FALSE),
+        A = stringi::stri_replace_all_fixed(
+          str = A, pattern = c("A", "C", "G", "T"),
+          replacement = c("001", "002", "003", "004"), vectorize_all = FALSE),
+        GT = as.character(GT),
+        GT = stringi::stri_replace_all_fixed(
+          str = GT, pattern = c("0", "1", "2"),
+          replacement = c("RR", "AA", "RA"),
+          vectorize_all = FALSE),
+        GT_BIN = dplyr::if_else(GT == "RR", 0, dplyr::if_else(GT == "AA", 2, 1)),
+        GT_VCF = dplyr::if_else(GT == "RR", "0/0",
+                                dplyr::if_else(GT == "AA", "1/1", "0/1"), missing = "./."),
+        GT_VCF_NUC = dplyr::if_else(GT == "RR", stringi::stri_join(REF, REF, sep = "/"),
+                                    dplyr::if_else(GT_VCF == "1/1", stringi::stri_join(ALT, ALT, sep = "/"),
+                                                   stringi::stri_join(REF, ALT, sep = "/")), missing = "./."),
+        GT = dplyr::if_else(GT == "RR", stringi::stri_join(R, R, sep = ""),
+                            dplyr::if_else(GT == "AA", stringi::stri_join(A, A, sep = ""),
+                                           stringi::stri_join(R, A, sep = "")), "000000")
+      ) %>%
+      dplyr::select(GT, GT_VCF, GT_VCF_NUC, GT_BIN)
+  }#End 1row
+
+  # 2 rows format also called binary
+  if (dart.format == "2rows") {
+    # x <- input2
+    x <- dplyr::select(x, -SPLIT_VEC) %>%
+      data.table::as.data.table(.) %>%
+      data.table::dcast.data.table(
+        data = .,
+        formula = MARKERS + TARGET_ID + REF + ALT ~ ALLELES,
+        value.var = "GT"
+      ) %>%
+      tibble::as_data_frame(.) %>%
+      dplyr::mutate(GT = stringi::stri_join(A1, A2, sep = "_")) %>%
+      dplyr::select(-A1, -A2) %>%
+      dplyr::mutate(
+        R = REF,
+        A = ALT,
+        R = stringi::stri_replace_all_fixed(
+          str = R, pattern = c("A", "C", "G", "T"),
+          replacement = c("001", "002", "003", "004"), vectorize_all = FALSE),
+        A = stringi::stri_replace_all_fixed(
+          str = A, pattern = c("A", "C", "G", "T"),
+          replacement = c("001", "002", "003", "004"), vectorize_all = FALSE),
+        GT = dplyr::if_else(GT == "1_0", "RR",
+                            dplyr::if_else(GT == "0_1", "AA",
+                                           dplyr::if_else(GT == "1_1", "RA", NA_character_))),
+        GT_BIN = dplyr::if_else(GT == "RR", 0, dplyr::if_else(GT == "AA", 2, 1)),
+        GT_VCF = dplyr::if_else(GT == "RR", "0/0",
+                                dplyr::if_else(GT == "AA", "1/1", "0/1"), missing = "./."),
+        GT_VCF_NUC = dplyr::if_else(GT == "RR", stringi::stri_join(REF, REF, sep = "/"),
+                                    dplyr::if_else(GT_VCF == "1/1", stringi::stri_join(ALT, ALT, sep = "/"),
+                                                   stringi::stri_join(REF, ALT, sep = "/")), missing = "./."),
+        GT = dplyr::if_else(GT == "RR", stringi::stri_join(R, R, sep = ""),
+                            dplyr::if_else(GT == "AA", stringi::stri_join(A, A, sep = ""),
+                                           stringi::stri_join(R, A, sep = "")), missing = "000000")
+      ) %>%
+      dplyr::select(MARKERS, TARGET_ID, GT, GT_VCF, GT_VCF_NUC, GT_BIN)
+  }#End 2rows
+
+  # Count data
+  if (dart.format == "counts") {
+    # split.id <- unique(x$SPLIT_VEC)
+    x <- dplyr::select(x, -SPLIT_VEC) %>%
+      dplyr::arrange(MARKERS, REF) %>%
+      dplyr::mutate(TEMP = rep(1:2, n()/2)) %>%
+      dplyr::select(dplyr::one_of(c("TEMP", "MARKERS", "CHROM", "LOCUS", "POS","REF", "ALT")), dplyr::everything())
+
+    x.alt <- dplyr::filter(x, TEMP == 1) %>%
+      dplyr::arrange(MARKERS) %>%
+      dplyr::select(-TEMP) %>%
+      tidyr::gather(data = .,
+                    key = TARGET_ID,
+                    value = ALLELE_ALT_DEPTH,
+                    -dplyr::one_of(c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT"))) %>%
+      dplyr::arrange(MARKERS, TARGET_ID)
+
+    x <- dplyr::filter(x, TEMP == 2) %>%
+      dplyr::arrange(MARKERS) %>%
+      dplyr::select(-dplyr::one_of(c("TEMP", "CHROM", "LOCUS", "POS", "REF", "ALT"))) %>%
+      tidyr::gather(data = .,
+                    key = TARGET_ID,
+                    value = ALLELE_REF_DEPTH,
+                    -MARKERS) %>%
+      dplyr::arrange(MARKERS, TARGET_ID) %>%
+      dplyr::select(ALLELE_REF_DEPTH) %>%
+      dplyr::bind_cols(x.alt)
+
+    x.alt <- NULL
+
+    x <- x %>%
+      dplyr::mutate(
+        A1 = dplyr::if_else(ALLELE_REF_DEPTH > 0, REF, NA_character_),
+        A2 = dplyr::if_else(ALLELE_ALT_DEPTH > 0, ALT, NA_character_),
+        VCF_A1 = dplyr::if_else(is.na(A1), NA_integer_, 0L),
+        VCF_A2 = dplyr::if_else(is.na(A2), NA_integer_, 1L)
+      ) %>%
+      dplyr::arrange(MARKERS, TARGET_ID) %>%
+      dplyr::mutate(
+        A1 = dplyr::if_else(is.na(A1), A2, A1),
+        A2 = dplyr::if_else(is.na(A2), A1, A2),
+        GT_VCF_NUC = stringi::stri_join(A1, A2, sep = "/"),
+        GT_VCF_NUC = stringi::stri_replace_na(str = GT_VCF_NUC, replacement = "./."),
+        GT_1 = stringi::stri_replace_all_fixed(
+          str = A1,
+          pattern = c("A", "C", "G", "T"),
+          replacement = c("001", "002", "003", "004"),
+          vectorize_all = FALSE),
+        GT_2 = stringi::stri_replace_all_fixed(
+          str = A2,
+          pattern = c("A", "C", "G", "T"),
+          replacement = c("001", "002", "003", "004"),
+          vectorize_all = FALSE),
+        GT = stringi::stri_join(GT_1, GT_2),
+        GT = stringi::stri_replace_na(str = GT, replacement = "000000")) %>%
+      dplyr::select(-c(A1, A2, GT_1, GT_2)) %>%
+      dplyr::mutate(
+        VCF_A1 = dplyr::if_else(is.na(VCF_A1), VCF_A2, VCF_A1),
+        VCF_A2 = dplyr::if_else(is.na(VCF_A2), VCF_A1, VCF_A2),
+        GT_VCF = stringi::stri_join(VCF_A1, VCF_A2, sep = "/"),
+        GT_VCF = stringi::stri_replace_na(str = GT_VCF, replacement = "./.")
+      ) %>%
+      dplyr::select(-c(VCF_A1, VCF_A2)) %>%
+      dplyr::mutate(
+        GT_BIN = as.numeric(
+          stringi::stri_replace_all_fixed(
+            str = GT_VCF,
+            pattern = c("0/0", "1/1", "0/1", "1/0", "./."),
+            replacement = c("0", "2", "1", "1", NA),
+            vectorize_all = FALSE)))
+  }#End counts data
+
+  return(x)
+}#End dart2gt

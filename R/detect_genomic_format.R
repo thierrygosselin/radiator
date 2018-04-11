@@ -34,16 +34,6 @@ detect_genomic_format <- function(data){
       data.type <- class(data)[1]
 
       if (!data.type %in% c("genind", "genlight", "gtypes")) stop("Input file not recognised")
-
-      # old code
-      # if (adegenet::is.genind(data)) {
-      #   data.type <- "genind.file"
-      #   # message("File type: genind object")
-      # } else if (class(data)[1] == "gtypes") {
-      #   data.type <- "gtypes"
-      #   } else {
-      #   stop("Input file not recognised")
-      # }
     }
   } else {
     data.type <- readChar(con = data, nchars = 16L, useBytes = TRUE)

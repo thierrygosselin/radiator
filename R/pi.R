@@ -5,7 +5,7 @@
 #' [stackr](https://github.com/thierrygosselin/stackr) \emph{summary_haplotypes}
 #' function provides an estimate integrating the consensus markers found in
 #' [STACKS](http://catchenlab.life.illinois.edu/stacks/)
-#' batch_x.haplotypes.tsv file.
+#' batch_x.haplotypes.tsv file. The function requires \code{stringdist} package.
 
 #' @inheritParams tidy_genomic_data
 
@@ -21,7 +21,7 @@
 #' @param read.length (number) The length in nucleotide of your reads
 #' (e.g. \code{read.length = 100}).
 
-#' @importFrom stringdist stringdist
+# @importFrom stringdist stringdist
 #' @importFrom utils combn count.fields
 #' @importFrom stats lm na.omit
 #' @importFrom stringi stri_replace_all_fixed stri_replace_na stri_join stri_count_fixed
@@ -43,6 +43,7 @@
 
 #' @examples
 #' \dontrun{
+#' require(stringdist)
 #' # The simplest way to run the function:
 #' sum <- radiator::pi(
 #' data = "batch_1.vcf",
@@ -78,6 +79,11 @@ pi <- function(
   snp.ld = NULL,
   parallel.core = parallel::detectCores() - 1
 ) {
+  if (!requireNamespace("stringdist", quietly = TRUE)) {
+    stop("stringdist needed for this function to work
+         Install with install.packages('stringdist')", call. = FALSE)
+  }
+
   cat("#######################################################################\n")
   cat("############################## radiator::pi #############################\n")
   cat("#######################################################################\n")

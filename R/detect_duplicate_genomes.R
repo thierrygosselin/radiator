@@ -108,7 +108,7 @@
 #' @importFrom dplyr arrange rename select group_by filter mutate rename_ filter_ bind_cols bind_rows summarise n_distinct intersect desc
 #' @importFrom utils combn
 #' @importFrom stats na.omit var median quantile dist
-#' @importFrom amap Dist
+# @importFrom amap Dist
 #' @importFrom parallelDist parDist
 #' @importFrom readr write_tsv
 #' @importFrom parallel detectCores

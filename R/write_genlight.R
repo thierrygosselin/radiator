@@ -22,7 +22,7 @@
 #' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join
 #' @importFrom stringi stri_replace_all_fixed
 #' @importFrom methods new
-#' @importFrom adegenet indNames pop chromosome locNames position
+# @importFrom adegenet indNames pop chromosome locNames position
 #' @importFrom tibble has_name
 #' @importFrom tidyr spread
 
@@ -37,16 +37,16 @@
 
 
 write_genlight <- function(data, biallelic = TRUE) {
-
   # Checking for missing and/or default arguments ------------------------------
+  if (!requireNamespace("adegenet", quietly = TRUE)) {
+    stop("adegenet needed for this function to work
+         Install with install.packages('adegenet')", call. = FALSE)
+  }
+
   if (missing(data)) stop("Input file missing")
 
   # Import data ---------------------------------------------------------------
-  if (is.vector(data)) {
     input <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-  } else {
-    input <- data
-  }
 
   # necessary steps to make sure we work with unique markers and not duplicated LOCUS
   if (tibble::has_name(input, "LOCUS") && !tibble::has_name(input, "MARKERS")) {

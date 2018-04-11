@@ -14,7 +14,7 @@ Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.}
 
 \item{plot}{(optional, logical) \code{plot = TRUE} will produce an
 \href{https://github.com/hms-dbmi/UpSetR}{UpSet plot} to visualize the number
-of markers between populations.
+of markers between populations. The package is required for this to work...
 Default: \code{plot = FALSE}.}
 
 \item{verbose}{(optional, logical) \code{verbose = TRUE} to be chatty

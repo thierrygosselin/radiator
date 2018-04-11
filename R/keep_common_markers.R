@@ -16,7 +16,7 @@
 
 #' @param plot (optional, logical) \code{plot = TRUE} will produce an
 #' \href{https://github.com/hms-dbmi/UpSetR}{UpSet plot} to visualize the number
-#' of markers between populations.
+#' of markers between populations. The package is required for this to work...
 #' Default: \code{plot = FALSE}.
 
 #' @param verbose (optional, logical) \code{verbose = TRUE} to be chatty
@@ -32,7 +32,7 @@
 #' @importFrom dplyr select mutate group_by ungroup rename tally filter semi_join n_distinct
 #' @importFrom stringi stri_replace_all_fixed stri_join
 #' @importFrom tibble has_name
-#' @importFrom UpSetR upset
+# @importFrom UpSetR upset
 
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
@@ -40,6 +40,11 @@ keep_common_markers <- function(data, plot = FALSE, verbose = FALSE) {
 
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) stop("Input file missing")
+
+  if (!requireNamespace("UpSetR", quietly = TRUE)) {
+    stop("UpSetR needed for this function to work
+         Install with install.packages('UpSetR')", call. = FALSE)
+  }
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {

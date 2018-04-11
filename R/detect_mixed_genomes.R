@@ -9,8 +9,6 @@
 #' \emph{How to get a tidy data frame ?}
 #' Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
 
-
-
 #' @param ind.heterozygosity.threshold (string, double, optional)
 #' Blacklist individuals based on observed heterozygosity (averaged across markers).
 #'
@@ -181,22 +179,7 @@ detect_mixed_genomes <- function(
   file.date <- NULL #unused object
 
   # Import data ---------------------------------------------------------------
-  if (is.vector(data)) {
-    data <- radiator::tidy_wide(data = data, import.metadata = FALSE)
-  }
-
-  # check genotype column naming
-  colnames(data) <- stringi::stri_replace_all_fixed(
-    str = colnames(data),
-    pattern = "GENOTYPE",
-    replacement = "GT",
-    vectorize_all = FALSE
-  )
-
-  # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-  if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
-    data <- dplyr::rename(.data = data, MARKERS = LOCUS)
-  }
+  data <- radiator::tidy_wide(data = data, import.metadata = FALSE)
 
   # highlight heterozygote and missing (optimized for speed depending on data)
   # you see the difference with > 30K SNP
@@ -339,7 +322,6 @@ detect_mixed_genomes <- function(
     width = 5 * n.pop, height = 10 * as.numeric(missing.group), dpi = 600, units = "cm", useDingbats = FALSE, limitsize = FALSE)
 
 
-
   het.bp <- ggplot2::ggplot(data = het.ind.overall, ggplot2::aes(x = POP_ID, y = HET_PROP, colour = POP_ID)) +
     ggplot2::geom_boxplot() +
     ggplot2::labs(x = "Populations") +
@@ -349,7 +331,7 @@ detect_mixed_genomes <- function(
       breaks = y.breaks, labels = y.breaks, limits = c(y.breaks.min, y.breaks.max)) + #y.breaks
     # breaks = y.breaks, limits = c(0, y.breaks.max), expand = c(0.06, 0)) +
     ggplot2::theme_classic() +
-    # theme_minimal() +
+    # ggplot2::theme_minimal() +
     ggplot2::theme(
       legend.position = "none",
       axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),

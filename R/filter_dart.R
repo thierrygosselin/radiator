@@ -1313,6 +1313,7 @@ on the number of genotyped individuals per pop ? (overall or pop):")
       data = input,
       distance.method = "manhattan",
       genome = genome,
+      blacklist.duplicates = TRUE,
       parallel.core = parallel.core)
 
     # subsample.markers = NULL # test
@@ -1333,6 +1334,7 @@ on the number of genotyped individuals per pop ? (overall or pop):")
           data = input,
           distance.method = "manhattan",
           genome = TRUE,
+          blacklist.duplicates = TRUE,
           parallel.core = parallel.core)
       }
       dup.genome.folder <- list.files(
@@ -1491,6 +1493,8 @@ setwd(working.dir) #back to the original working directory
 options(width = opt.change)
 return(res)
 }
+
+# Internal nested functions ----------------------------------------------------
 
 # update data.info
 #' @title data_info

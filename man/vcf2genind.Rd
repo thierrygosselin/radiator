@@ -2,7 +2,7 @@
 % Please edit documentation in R/vcf2genind.R
 \name{vcf2genind}
 \alias{vcf2genind}
-\title{VCF to \code{adegenet} \code{\link[adegenet]{genind}} object with filters and data imputation}
+\title{VCF to \code{adegenet genind} object with filters and data imputation}
 \usage{
 vcf2genind(data, output, filename = NULL, blacklist.id = NULL,
   blacklist.genotype = NULL, whitelist.markers = NULL,

@@ -149,12 +149,6 @@ merge_dart <- function(
 
   input <- suppressWarnings(dplyr::filter(input, !stringi::stri_detect_regex(str = LOCUS, pattern = "^1000")))
   dart2 <- suppressWarnings(dplyr::filter(dart2, !stringi::stri_detect_regex(str = LOCUS, pattern = "^1000")))
-
-  # input <- input %>%
-  #   dplyr::mutate(DISCARD = stringi::stri_detect_regex(str = LOCUS, pattern = "^1000")) %>%
-  #   dplyr::filter(!DISCARD) %>%
-  #   dplyr::select(-DISCARD)
-
   markers.after <- dplyr::n_distinct(input$MARKERS) + dplyr::n_distinct(dart2$MARKERS)
   message("    Markers removed: ", markers.before - markers.after)
 
