@@ -28,7 +28,7 @@
 detect_genomic_format <- function(data){
 
   if (!is.vector(data)) {
-    if (tibble::has_name(data, "POP_ID") & tibble::has_name(data, "INDIVIDUALS") & tibble::has_name(data, "MARKERS")) {
+    if (tibble::has_name(data, "POP_ID") && tibble::has_name(data, "INDIVIDUALS")) {
       data.type <- "tbl_df" #"df.file"
     } else {
       data.type <- class(data)[1]
