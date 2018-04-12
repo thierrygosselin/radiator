@@ -35,15 +35,21 @@ tidy_genind <- function(data) {
   biallelic <- max(unique(data@loc.n.all)) == 2
   A2 <- unique(stringi::stri_detect_fixed(str = sample(colnames(data@tab), 100), pattern = ".A2"))
 
-  if (biallelic) {
-
+  if (biallelic && A2) {
     # changed adegenet::indNames to rownames(data@tab) to lower dependencies
-    if (A2) {
     data <- tibble::as_data_frame(data@tab) %>%
       tibble::add_column(.data = ., INDIVIDUALS = rownames(data@tab), .before = 1) %>%
       tibble::add_column(.data = ., POP_ID = data@pop) %>%
       dplyr::select(POP_ID, INDIVIDUALS, dplyr::ends_with(match = ".A2")) %>%
-      tidyr::gather(data = ., key = MARKERS, value = GT_BIN, -c(POP_ID, INDIVIDUALS)) %>%
+      # tidyr::gather(data = ., key = MARKERS, value = GT_BIN, -c(POP_ID, INDIVIDUALS)) %>%
+      data.table::as.data.table(.) %>%
+      data.table::melt.data.table(
+        data = .,
+        id.vars = c("INDIVIDUALS", "POP_ID"),
+        variable.name = "MARKERS",
+        value.name = "GT_BIN"
+      ) %>%
+      tibble::as_data_frame(.) %>%
       dplyr::mutate(
         MARKERS = stringi::stri_replace_all_fixed(
           str = MARKERS, pattern = ".A2", replacement = "", vectorize_all = FALSE),
@@ -51,28 +57,34 @@ tidy_genind <- function(data) {
                                 dplyr::if_else(GT_BIN == 1, "0/1", "1/1"), missing = "./."),
         GT = dplyr::if_else(GT_BIN == 0, "001001", dplyr::if_else(GT_BIN == 1, "001002", "002002") , missing = "000000")
       )
-    } else {
-      data <- tibble::as_data_frame(data@tab) %>%
-        tibble::add_column(.data = ., INDIVIDUALS = rownames(data@tab), .before = 1) %>%
-        tibble::add_column(.data = ., POP_ID = data@pop) %>%
-        dplyr::select(POP_ID, INDIVIDUALS, dplyr::ends_with(match = ".1")) %>%
-        tidyr::gather(data = ., key = MARKERS, value = GT_BIN, -c(POP_ID, INDIVIDUALS)) %>%
-        dplyr::mutate(
-          MARKERS = stringi::stri_replace_all_fixed(
-            str = MARKERS, pattern = ".1", replacement = "", vectorize_all = FALSE),
-          GT_VCF = dplyr::if_else(GT_BIN == 0, "0/0",
-                                  dplyr::if_else(GT_BIN == 1, "0/1", "1/1"), missing = "./."),
-          GT = dplyr::if_else(GT_BIN == 0, "001001", dplyr::if_else(GT_BIN == 1, "001002", "002002") , missing = "000000")
-        )
-    }
 
-
-
+      # old piece of code
+      # data2 <- tibble::as_data_frame(data@tab) %>%
+      #   tibble::add_column(.data = ., INDIVIDUALS = rownames(data@tab), .before = 1) %>%
+      #   tibble::add_column(.data = ., POP_ID = data@pop) %>%
+      #   dplyr::select(POP_ID, INDIVIDUALS, dplyr::ends_with(match = ".")) %>%
+      #   tidyr::gather(data = ., key = MARKERS, value = GT_BIN, -c(POP_ID, INDIVIDUALS)) %>%
+      #   dplyr::mutate(
+      #     MARKERS = stringi::stri_replace_all_fixed(
+      #       str = MARKERS, pattern = ".1", replacement = "", vectorize_all = FALSE),
+      #     GT_VCF = dplyr::if_else(GT_BIN == 0, "0/0",
+      #                             dplyr::if_else(GT_BIN == 1, "0/1", "1/1"), missing = "./."),
+      #     GT = dplyr::if_else(GT_BIN == 0, "001001", dplyr::if_else(GT_BIN == 1, "001002", "002002") , missing = "000000")
+      #   )
   } else {
+    message("Alleles names for each markers will be converted to factors and padded with 0")
     data <- tibble::as_data_frame(data@tab) %>%
       tibble::add_column(.data = ., INDIVIDUALS = rownames(data@tab), .before = 1) %>%
       tibble::add_column(.data = ., POP_ID = data@pop) %>%
-      tidyr::gather(data = ., key = MARKERS_ALLELES, value = COUNT, -c(POP_ID, INDIVIDUALS)) %>%
+      # tidyr::gather(data = ., key = MARKERS_ALLELES, value = COUNT, -c(POP_ID, INDIVIDUALS)) %>%
+      data.table::as.data.table(.) %>%
+      data.table::melt.data.table(
+        data = .,
+        id.vars = c("INDIVIDUALS", "POP_ID"),
+        variable.name = "MARKERS_ALLELES",
+        value.name = "COUNT"
+      ) %>%
+      tibble::as_data_frame(.) %>%
       dplyr::filter(COUNT > 0 | is.na(COUNT)) %>%
       tidyr::separate(data = ., col = MARKERS_ALLELES, into = c("MARKERS", "ALLELES"), sep = "\\.") %>%
       dplyr::mutate(
@@ -85,24 +97,25 @@ tidy_genind <- function(data) {
     # if (allele.zero) stop("alleles in this multiallelic genind were coded as 0 and won't work with this script")
 
     #Isolate missing genotype
-    missing <- dplyr::filter(data, is.na(COUNT)) %>%
+    missing.hom <- dplyr::filter(data, is.na(COUNT)) %>%
       dplyr::distinct(POP_ID, INDIVIDUALS, MARKERS) %>%
       dplyr::mutate(GT = rep("000000", n())) %>%
       dplyr::ungroup(.)
 
-    #Isolate all Hom
-    hom <- dplyr::filter(data, COUNT == 2) %>%
+    #Isolate all Homozygote genotypes and combine with the missings
+    missing.hom <- dplyr::filter(data, COUNT == 2) %>%
       dplyr::group_by(POP_ID, INDIVIDUALS, MARKERS) %>%
       dplyr::summarise(GT = stringi::stri_join(ALLELES, ALLELES, sep = "")) %>%
-      dplyr::ungroup(.)
+      dplyr::ungroup(.) %>%
+      dplyr::bind_rows(missing.hom)
 
-    #Isolate all Het and combine
+    #Isolate all Het genotypes and combine
     data <- dplyr::filter(data, COUNT != 2) %>%#this will also remove the missing
       dplyr::group_by(POP_ID, INDIVIDUALS, MARKERS) %>%
       dplyr::summarise(GT = stringi::stri_join(ALLELES, collapse = "")) %>%
       dplyr::ungroup(.) %>%
-      dplyr::bind_rows(hom, missing)
-    hom <- missing <- NULL
+      dplyr::bind_rows(missing.hom)
+    missing.hom <- NULL
   }#End for multi-allelic
 return(data)
 } # End tidy_genind
