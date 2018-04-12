@@ -250,7 +250,11 @@ If you're still encountering problem, email author for help")
   #   dplyr::filter(is.na(LOCUS))
   # remove lanes with lots of NA or locus with NA or call.rate with NA
   input <- dplyr::filter(input, !is.na(LOCUS))
-  input <- dplyr::arrange(input, LOCUS, POS)
+  if (tibble::has_name(input, "POS")) {
+    input <- dplyr::arrange(input, LOCUS, POS)
+  } else {
+    input <- dplyr::arrange(input, LOCUS)
+  }
 
   # Check for duplicate rows (sometimes people combine DArT data...)----------
   input.dup <- dplyr::distinct(input, LOCUS, SNP, POS, CALL_RATE, .keep_all = FALSE)
