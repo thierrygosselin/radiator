@@ -96,6 +96,7 @@ tidy_wide <- function(data, import.metadata = FALSE) {
     data <- dplyr::rename(.data = data, MARKERS = LOCUS)
   }
 
+  # reproducibility for old format
   if (tibble::has_name(data, "GENOTYPE")) {
     colnames(data) <- stringi::stri_replace_all_fixed(
       str = colnames(data),
@@ -108,13 +109,6 @@ tidy_wide <- function(data, import.metadata = FALSE) {
     want <- c("POP_ID", "INDIVIDUALS", "MARKERS", "CHROM", "LOCUS", "POS", "GT",
               "GT_VCF_NUC", "GT_VCF", "GT_BIN")
     data <- suppressWarnings(dplyr::select(data, dplyr::one_of(want)))
-    # if ("MARKERS" %in% colnames(data) && "LOCUS" %in% colnames(data)) {
-    #   data <- dplyr::select(.data = data, POP_ID, INDIVIDUALS, LOCUS = MARKERS, GT)
-    # } else if ("MARKERS" %in% colnames(data) && !"LOCUS" %in% colnames(data)) {
-    #   data <- dplyr::select(.data = data, POP_ID, INDIVIDUALS, LOCUS = MARKERS, GT)
-    # } else {
-    #   data <- dplyr::select(.data = data, POP_ID, INDIVIDUALS, LOCUS, GT)
-    # }
   }
 
   # Remove unwanted sep in the genotypes (if found)
@@ -145,7 +139,6 @@ tidy_wide <- function(data, import.metadata = FALSE) {
 
   # clean pop id
   data$POP_ID <- clean_pop_names(data$POP_ID)
-
 
   # Make sure no data groupings exists
   if (!is.null(dplyr::groups(data))) data <- dplyr::ungroup(data)
