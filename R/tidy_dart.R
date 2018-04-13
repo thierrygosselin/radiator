@@ -141,6 +141,8 @@ If you're still encountering problem, email author for help")
         TARGET_ID, pattern = " ", replacement = "", vectorize_all = FALSE)
     )
 
+  pop.levels <- unique(strata.df$STRATA)
+
   # Check that TARGET_ID in strata match TARGET_ID in the DArT file ------------
   if (!identical(sort(target.id$TARGET_ID), sort(strata.df$TARGET_ID))) {
     stop("The DArT and strata files don't have the same TARGET_IDs: check case mapping")
@@ -516,6 +518,7 @@ If you're still encountering problem, email author for help")
       "GT", "GT_VCF", "GT_VCF_NUC", "GT_BIN", "CALL_RATE", "AVG_COUNT_REF",
       "AVG_COUNT_SNP", "REP_AVG"),
     dplyr::everything())) %>%
+    dplyr::mutate(POP_ID = factor(x = POP_ID, levels = pop.levels)) %>%
     dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
 
   write_rad(data = input, path = filename)
