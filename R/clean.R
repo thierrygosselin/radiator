@@ -47,9 +47,19 @@ clean_ind_names <- function(x) {
 #' @export
 #' @importFrom stringi stri_replace_all_fixed
 clean_pop_names <- function(x) {
-  x <- stringi::stri_replace_all_fixed(
+clean_pop <- function(x) {
+  stringi::stri_replace_all_fixed(
     str = as.character(x),
     pattern = " ",
     replacement = "_",
     vectorize_all = FALSE)
+}
+
+  if (is.factor(x)) {
+    pop.levels <- clean_pop(as.character(levels(x)))
+  } else {
+    pop.levels <- clean_pop(as.character(unique(x)))
+  }
+  x <- clean_pop(as.character(x))
+  x <- factor(x, levels = pop.levels)
 }#End clean_pop_names
