@@ -200,9 +200,7 @@ detect_duplicate_genomes <- function(
   file.date <- NULL #unused object
 
   # Import data ---------------------------------------------------------------
-  if (is.vector(data)) {
-    data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-  }
+  data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
 
   if (tibble::has_name(data, "GT_BIN")) {
     gt.field <- "GT_BIN"
