@@ -5,16 +5,9 @@ cache: packages
 warnings_are_errors: false
 sudo: required
 dist: trusty
-
 env:
    global:
      - _R_CHECK_FORCE_SUGGESTS_=FALSE
-
-matrix:
-  include:
-  - os: osx
-  - os: linux
-
 notifications:
   email:
     on_success: change
@@ -22,8 +15,6 @@ notifications:
 
 apt_packages:
   - libgsl0-dev
-
 os:
   - linux
   - osx
-# Install packages from github
