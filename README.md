@@ -90,7 +90,7 @@ Prerequisite - Suggestions - Troubleshooting
 --------------------------------------------
 
 -   **Parallel computing**: Follow the steps in this vignette [Rmd](https://www.dropbox.com/s/250r5zzuev25zvp/vignette_imputations_parallel.Rmd?dl=0) or [html](https://www.dropbox.com/s/czyli3bp8ua96tv/vignette_imputations_parallel.html?dl=0) to install [data.table](https://github.com/Rdatatable/data.table) and [XGBoost](https://github.com/dmlc/xgboost) packages (e.g. to do imputations in parallel).
--   **Installation problem:** see this vignette [Rmd](https://www.dropbox.com/s/0swxjyxnnfaypxs/vignette_installation_problems.Rmd?dl=0) or [html](https://www.dropbox.com/s/qob8hi70117h2po/vignette_installation_problems.html?dl=0)
+-   **Installation problems and issue with functions:** see this vignette [Rmd](https://www.dropbox.com/s/0swxjyxnnfaypxs/vignette_installation_problems.Rmd?dl=0) or [html](https://www.dropbox.com/s/qob8hi70117h2po/vignette_installation_problems.html?dl=0)
 -   **Windows users**: Install [Rtools](https://cran.r-project.org/bin/windows/Rtools/).
 -   For a better experience in **radiator** and in R in general, I recommend using [RStudio](https://www.rstudio.com/products/rstudio/download/). The R GUI is unstable with functions using parallel ([more info](https://stat.ethz.ch/R-manual/R-devel/library/parallel/html/mclapply.html)).
 

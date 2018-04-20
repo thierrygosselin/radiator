@@ -141,11 +141,12 @@ filter_dart <- function(
   monomorphic.out = TRUE,
   common.markers = TRUE,
   filter.reproducibility = NULL,
-  filter.coverage = NULL,
   filter.call.rate = NULL,
+  filter.coverage = NULL,
+  filter.alt.low.coverage = NULL,
   filter.ind.missing.geno = NULL,
-  number.snp.reads = NULL,
   maf.thresholds = NULL,
+  number.snp.reads = NULL,
   mixed.genomes.analysis = TRUE,
   ind.heterozygosity.threshold = NULL,
   duplicate.genomes.analysis = c(TRUE, FALSE),
@@ -246,8 +247,6 @@ filter_dart <- function(
   # create 2 data.info
   data.info <- first.data.info <- data_info(metadata, print.info = FALSE)
 
-  # message("interactive.filter: ", interactive.filter)
-  # message("filter.reproducibility: ", filter.reproducibility)
   # Filtering reproducibility  -------------------------------------------------
   if (interactive.filter || !is.null(filter.reproducibility)) {
     message("Filtering reproducibility")
@@ -476,144 +475,6 @@ filter_dart <- function(
     call.rate <- plot.call.rate.histo <- plot.call.rate.violinplot <- NULL
   }#End filter.call.rate
 
-  # Filtering coverage --------------------------------------------------------
-  if (interactive.filter || !is.null(filter.coverage)) {
-    message("Filtering markers mean coverage")
-
-    folder.extension <- stringi::stri_join("filter_coverage_dart_", file.date, sep = "")
-    path.folder.coverage <- file.path(path.folder, folder.extension)
-    dir.create(path.folder.coverage)
-    message("Folder created: \n", folder.extension)
-
-    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "AVG_COUNT_REF", "AVG_COUNT_SNP")
-
-    coverage <- dplyr::select(metadata, dplyr::one_of(want)) %>%
-      dplyr::rename(REF = AVG_COUNT_REF, ALT = AVG_COUNT_SNP) %>%
-      dplyr::distinct(MARKERS, REF, ALT, .keep_all = TRUE) %>%
-      dplyr::mutate(READS = REF + ALT)
-
-    coverage.long <- tidyr::gather(data = coverage, key = GROUP, value = COVERAGE, -c(MARKERS, CHROM, LOCUS, POS)) %>%
-      dplyr::mutate(GROUP = factor(GROUP, levels = c("READS", "REF", "ALT"), ordered = TRUE))
-    plot.coverage <- ggplot2::ggplot(
-      data = coverage.long,
-      ggplot2::aes(x = COVERAGE)) +
-      ggplot2::geom_histogram() +
-      ggplot2::labs(x = "Markers") +
-      ggplot2::labs(y = "Coverage (count)") +
-      ggplot2::theme(
-        legend.position = "none",
-        axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-        axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-        axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica", angle = 90, hjust = 1, vjust = 0.5),
-        strip.text.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold")
-      ) +
-      ggplot2::facet_grid(~ GROUP)
-    # plot.coverage
-    suppressMessages(ggplot2::ggsave(
-      filename = file.path(path.folder.coverage, "plot.coverage.pdf"),
-      plot = plot.coverage,
-      width = 30, height = 15, dpi = 600, units = "cm", useDingbats = FALSE))
-
-    plot.coverage.boxplot <- ggplot2::ggplot(
-      coverage.long,
-      ggplot2::aes(x = factor(GROUP), y = COVERAGE, na.rm = TRUE)) +
-      ggplot2::geom_violin(trim = TRUE) +
-      ggplot2::geom_boxplot(width = 0.1, fill = "black", outlier.colour = NA) +
-      ggplot2::stat_summary(fun.y = "mean", geom = "point", shape = 21, size = 2.5, fill = "white") +
-      ggplot2::labs(x = "Markers") +
-      ggplot2::labs(y = "Coverage (count)") +
-      ggplot2::theme(
-        legend.position = "none",
-        axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-        axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-        axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica"),
-        legend.title = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-        legend.text = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-        strip.text.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold")
-      )
-    # plot.coverage.boxplot
-    suppressMessages(ggplot2::ggsave(
-      filename = file.path(path.folder.coverage, "plot.coverage.boxplot.pdf"),
-      plot = plot.coverage.boxplot,
-      width = 15, height = 15, dpi = 600, units = "cm", useDingbats = FALSE))
-
-    if (interactive.filter) {
-      filter.coverage <- c(1, 1000000)
-      message("    Inspect plots in folder created to help choose coverage thresholds (min and max)...")
-      message("    Enter the minimum coverage allowed to keep a marker (e.g. 7): ")
-      filter.coverage[1] <- as.numeric(readLines(n = 1))
-    }
-
-    if (interactive.filter) {
-      message("    Enter the maximum coverage allowed to keep a marker (e.g. 150): ")
-      filter.coverage[2] <- as.numeric(readLines(n = 1))
-      filter.coverage <- as.numeric(filter.coverage)
-    }
-
-    if (!is.null(filter.coverage)) {
-      want <- c("MARKERS", "CHROM", "LOCUS", "POS")
-      blacklist.coverage.markers <- coverage %>%
-        dplyr::filter(READS < filter.coverage[1] | READS > filter.coverage[2]) %>%
-        dplyr::select(dplyr::one_of(want)) %>%
-        dplyr::distinct(MARKERS, .keep_all = TRUE)
-
-      if (nrow(blacklist.coverage.markers) > 0) {
-        n.snp.before <- data.info$n.snp
-        if (verbose) message("    Number of markers before = ", n.snp.before)
-        n.snp.blacklist <- nrow(blacklist.coverage.markers)
-        if (verbose) message("    Number of markers removed = ", n.snp.blacklist)
-        if (verbose) message("    Number of markers after = ", n.snp.before - n.snp.blacklist)
-        # input <- dplyr::anti_join(input, blacklist.coverage.markers, by = "MARKERS")
-
-        metadata <- metadata %>%
-          dplyr::filter(!MARKERS %in% blacklist.coverage.markers$MARKERS)
-
-        whitelist.markers <- dplyr::select(metadata, dplyr::one_of(want)) %>%
-          dplyr::distinct(MARKERS, .keep_all = TRUE)
-
-        new.data.info <- data_info(metadata) # updating parameters
-        filters.parameters <- tibble::data_frame(
-          FILTERS = "coverage",
-          PARAMETERS = "min/max",
-          VALUES = stringi::stri_join(filter.coverage, collapse = "/"),
-          BEFORE = stringi::stri_join(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
-          AFTER = stringi::stri_join(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
-          BLACKLIST = stringi::stri_join(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
-          UNITS = "CHROM/LOCUS/SNP",
-          COMMENTS = ""
-        )
-        readr::write_tsv(x = filters.parameters,
-                         path = filters.parameters.path, append = TRUE,
-                         col_names = FALSE)
-        # update data.info
-        data.info <- new.data.info
-
-        if (!is.null(blacklist.markers)) {
-          blacklist.markers <- dplyr::bind_rows(blacklist.markers, blacklist.coverage.markers)
-        } else {
-          blacklist.markers <- blacklist.coverage.markers
-        }
-
-        # write blacklist and whitelist
-        readr::write_tsv(x = blacklist.coverage.markers, path = file.path(path.folder.coverage, "blacklist.coverage.markers.tsv"))
-        readr::write_tsv(x = whitelist.markers, path = file.path(path.folder.coverage, "whitelist.coverage.markers.tsv"))
-      }
-    } else {
-      stop("A filter.coverage thresholds values are required...")
-    }
-    blacklist.coverage.markers <- coverage <- coverage.long <- plot.coverage <- plot.coverage.boxplot <- NULL
-  }#End filter.coverage
-
-  # update metadata file -------------------------------------------------------
-  write_rad(
-    data = metadata,
-    path = file.path(
-      path.folder,
-      stringi::stri_replace_all_fixed(metadata.file,
-                                      ".rad", "_filtered.rad",
-                                      vectorize_all = FALSE)
-    )
-  )
   # Tidy DArT ------------------------------------------------------------------
   message("\nNext step requires the genotypes")
   if (data.type == "dart") {
@@ -629,6 +490,12 @@ filter_dart <- function(
   } else {
     input <- dplyr::filter(input, MARKERS %in% whitelist.markers$MARKERS)
   }
+  # check for count data
+  count.data <- tibble::has_name(input, "ALLELE_REF_DEPTH")
+
+  # Update data info
+  data.info$n.pop <- first.data.info$n.pop <- dplyr::n_distinct(input$POP_ID)
+  data.info$n.ind <- first.data.info$n.ind <- dplyr::n_distinct(input$INDIVIDUALS)
 
   # Blacklist id ---------------------------------------------------------------
   if (is.null(blacklist.id)) { # No blacklist of ID
@@ -679,25 +546,41 @@ filter_dart <- function(
         stringi::stri_join(pop.select, collapse = ", "), sep = " ")
     }
     input <- suppressWarnings(input %>% dplyr::filter(POP_ID %in% pop.select))
-
+    n.ind.new <- dplyr::n_distinct(input$INDIVIDUALS)
     # updating parameters
     filters.parameters <- tibble::data_frame(
-      FILTERS = "pop selected",
-      PARAMETERS = "",
-      VALUES = stringi::stri_join(pop.select, collapse = ", "),
-      BEFORE = data.info$n.pop,
-      AFTER = n.pop.new,
-      BLACKLIST = data.info$n.pop - n.pop.new,
-      UNITS = "populations",
-      COMMENTS = ""
+      FILTERS = c("pop selected","pop selected"),
+      PARAMETERS = c("", ""),
+      VALUES = c(stringi::stri_join(pop.select, collapse = ", "), stringi::stri_join(pop.select, collapse = ", ")),
+      BEFORE = c(data.info$n.pop, data.info$n.ind),
+      AFTER = c(n.pop.new, n.ind.new),
+      BLACKLIST = c(data.info$n.pop - n.pop.new, data.info$n.ind - n.ind.new),
+      UNITS = c("populations", "individuals"),
+      COMMENTS = c("", "")
     )
     readr::write_tsv(x = filters.parameters, path = filters.parameters.path,
                      append = TRUE, col_names = FALSE)
     # update data.info
     data.info$n.pop <- n.pop.new
+    data.info$n.ind <- n.ind.new
+
   }
   if (is.factor(input$POP_ID)) input$POP_ID <- droplevels(input$POP_ID)
   pop.levels <- levels(input$POP_ID)
+
+
+  # Filter coverage --------
+
+  # update metadata file -------------------------------------------------------
+  write_rad(
+    data = metadata,
+    path = file.path(
+      path.folder,
+      stringi::stri_replace_all_fixed(metadata.file,
+                                      ".rad", "_filtered.rad",
+                                      vectorize_all = FALSE)
+    )
+  )
 
   # Filter monomorphic markers  ------------------------------------------------
   if (monomorphic.out) {
@@ -740,7 +623,7 @@ filter_dart <- function(
     blacklist.monomorphic.markers <- NULL
   }# End monomorphic.out
 
-  # Filter common markers between all populations  ------------------------------
+  # Filter common markers between all populations  -----------------------------
   if (common.markers) {
     input <- keep_common_markers(data = input, plot = FALSE,
                                  verbose = verbose)
@@ -1417,124 +1300,79 @@ on the number of genotyped individuals per pop ? (overall or pop):")
     duplicate.genomes <- blacklist.monomorphic.markers <- NULL
   }#End duplicate.genomes.analysis
 
-# Missing visualization analysis before filters------------------------------
-# if (missing.analysis) {
-#   if (verbose) message("Missing data analysis: after filters")
-#   missing.visualization <- grur::missing_visualization(data = input, write.plot = TRUE)
-# }
+  # Missing visualization analysis before filters------------------------------
+  # if (missing.analysis) {
+  #   if (verbose) message("Missing data analysis: after filters")
+  #   missing.visualization <- grur::missing_visualization(data = input, write.plot = TRUE)
+  # }
 
-# Writing to working directory the filtered data frame -----------------------
-# Whitelist
-res$whitelist.markers <- whitelist.markers
-readr::write_tsv(x = res$whitelist.markers, path = "whitelist.markers.tsv", col_names = TRUE)
-if (verbose) message("Writing the whitelist of markers: whitelist.markers.tsv")
+  # Writing to working directory the filtered data frame -----------------------
+  # Whitelist
+  res$whitelist.markers <- whitelist.markers
+  readr::write_tsv(x = res$whitelist.markers, path = "whitelist.markers.tsv", col_names = TRUE)
+  if (verbose) message("Writing the whitelist of markers: whitelist.markers.tsv")
 
-if (nrow(blacklist.markers) > 0) {
-  res$blacklist.markers <- blacklist.markers
-  readr::write_tsv(x = res$blacklist.markers, path = "blacklist.markers.tsv", col_names = TRUE)
-  if (verbose) message("Writing the blacklist of markers: blacklist.markers.tsv")
-}
-
-# writing the blacklist of id
-if (nrow(res$blacklist.id) > 0) {
-  readr::write_tsv(x = res$blacklist.id, path = "blacklist.id.tsv", col_names = TRUE)
-  if (verbose) message("Writing the blacklist of ids: blacklist.id.tsv")
-}
-# tidy data
-want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS", "POP_ID", "REF", "ALT", "GT", "GT_VCF", "GT_VCF_NUC", "GT_BIN")
-res$tidy.data <- dplyr::select(input, dplyr::one_of(want)) %>%
-  dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
-input <- NULL
-
-# write tidy to working directory
-if (!is.null(filename)) {
-  tidy.name <- stringi::stri_join(filename, ".filtered.rad")
-  write_rad(data = res$tidy.data, path = tidy.name)
-  message("Tidy DArT data, filtered, written to folder: \n", tidy.name)
-}
-
-
-# Import back the filter parameter file
-res$filters.parameters <- readr::read_tsv(file = filters.parameters.path, col_types = "cccccccc")
-
-# Generate new strata --------------------------------------------------------
-res$strata <-res$tidy.data %>%
-  dplyr::distinct(INDIVIDUALS, POP_ID) %>%
-  dplyr::rename(STRATA = POP_ID) %>%
-  readr::write_tsv(x = ., path = "new_filtered_strata.tsv")
-
-# genomic_converter & Imputations --------------------------------------------
-if (!is.null(output)) {
-  res$output <- radiator::genomic_converter(
-    data = res$tidy.data,
-    output = output,
-    snp.ld = snp.ld,
-    imputation.method = imputation.method,
-    hierarchical.levels = hierarchical.levels,
-    num.tree = num.tree,
-    parallel.core = parallel.core,
-    verbose = verbose)
-}
-
-if (verbose) {
-  last.data.info <- data_info(res$tidy.data)
-  cat("\n\n\n############################### RESULTS ###############################\n")
-  message("DArT data info (before -> after) filters: ")
-  message("Number of populations: ", first.data.info$n.pop, " -> ", last.data.info$n.pop)
-  message("Number of individuals: ", first.data.info$n.ind, " -> ", last.data.info$n.ind)
-  message("Number of chrom: ", first.data.info$n.chrom, " -> ", last.data.info$n.chrom)
-  message("Number of locus: ", first.data.info$n.locus, " -> ", last.data.info$n.locus)
-  message("Number of SNPs: ", first.data.info$n.snp, " -> ", last.data.info$n.snp)
-  timing <- proc.time() - timing
-  message("\nComputation time: ", round(timing[[3]]), " sec")
-  cat("############################ completed ################################\n")
-}
-setwd(working.dir) #back to the original working directory
-options(width = opt.change)
-return(res)
-}
-
-# Internal nested functions ----------------------------------------------------
-
-# update data.info
-#' @title data_info
-#' @description function generate tidy data main info
-#' @rdname data_info
-#' @keywords internal
-#' @export
-data_info <- function(x, print.info = FALSE) {
-
-  if (tibble::has_name(x, "POP_ID")) {
-    x.pop.ind <- dplyr::distinct(x, POP_ID, INDIVIDUALS)
-    n.pop <- dplyr::n_distinct(x.pop.ind$POP_ID)
-    n.ind <- dplyr::n_distinct(x.pop.ind$INDIVIDUALS)
-  } else {
-    n.pop <- 0
-    n.ind <- 0
+  if (nrow(blacklist.markers) > 0) {
+    res$blacklist.markers <- blacklist.markers
+    readr::write_tsv(x = res$blacklist.markers, path = "blacklist.markers.tsv", col_names = TRUE)
+    if (verbose) message("Writing the blacklist of markers: blacklist.markers.tsv")
   }
-  if (tibble::has_name(x, "MARKERS")) {
-    x <- dplyr::distinct(x, MARKERS, CHROM, LOCUS)
-    n.chrom <- dplyr::n_distinct(x$CHROM)
-    n.locus <- dplyr::n_distinct(x$LOCUS)
-    n.snp <- dplyr::n_distinct(x$MARKERS)
-  } else {
-    n.chrom <- 0
-    n.locus <- 0
-    n.snp <- 0
+
+  # writing the blacklist of id
+  if (nrow(res$blacklist.id) > 0) {
+    readr::write_tsv(x = res$blacklist.id, path = "blacklist.id.tsv", col_names = TRUE)
+    if (verbose) message("Writing the blacklist of ids: blacklist.id.tsv")
   }
-  res <- list(
-    n.pop = n.pop,
-    n.ind = n.ind,
-    n.chrom = n.chrom,
-    n.locus = n.locus,
-    n.snp = n.snp
-  )
-  if (print.info) {
-    message("Number of populations: ", res$n.pop)
-    message("Number of individuals: ", res$n.ind)
-    message("Number of chrom: ", res$n.chrom)
-    message("Number of locus: ", res$n.locus)
-    message("Number of SNPs: ", res$n.snp)
+  # tidy data
+  want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS", "POP_ID", "REF", "ALT", "GT", "GT_VCF", "GT_VCF_NUC", "GT_BIN")
+  res$tidy.data <- dplyr::select(input, dplyr::one_of(want)) %>%
+    dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
+  input <- NULL
+
+  # write tidy to working directory
+  if (!is.null(filename)) {
+    tidy.name <- stringi::stri_join(filename, ".filtered.rad")
+    write_rad(data = res$tidy.data, path = tidy.name)
+    message("Tidy DArT data, filtered, written to folder: \n", tidy.name)
   }
+
+
+  # Import back the filter parameter file
+  res$filters.parameters <- readr::read_tsv(file = filters.parameters.path, col_types = "cccccccc")
+
+  # Generate new strata --------------------------------------------------------
+  res$strata <-res$tidy.data %>%
+    dplyr::distinct(INDIVIDUALS, POP_ID) %>%
+    dplyr::rename(STRATA = POP_ID) %>%
+    readr::write_tsv(x = ., path = "new_filtered_strata.tsv")
+
+  # genomic_converter & Imputations --------------------------------------------
+  if (!is.null(output)) {
+    res$output <- radiator::genomic_converter(
+      data = res$tidy.data,
+      output = output,
+      snp.ld = snp.ld,
+      imputation.method = imputation.method,
+      hierarchical.levels = hierarchical.levels,
+      num.tree = num.tree,
+      parallel.core = parallel.core,
+      verbose = verbose)
+  }
+
+  if (verbose) {
+    last.data.info <- data_info(res$tidy.data)
+    cat("\n\n\n############################### RESULTS ###############################\n")
+    message("DArT data info (before -> after) filters: ")
+    message("Number of populations: ", first.data.info$n.pop, " -> ", last.data.info$n.pop)
+    message("Number of individuals: ", first.data.info$n.ind, " -> ", last.data.info$n.ind)
+    message("Number of chrom: ", first.data.info$n.chrom, " -> ", last.data.info$n.chrom)
+    message("Number of locus: ", first.data.info$n.locus, " -> ", last.data.info$n.locus)
+    message("Number of SNPs: ", first.data.info$n.snp, " -> ", last.data.info$n.snp)
+    timing <- proc.time() - timing
+    message("\nComputation time: ", round(timing[[3]]), " sec")
+    cat("############################ completed ################################\n")
+  }
+  setwd(working.dir) #back to the original working directory
+  options(width = opt.change)
   return(res)
-}
+}#End filter_dart

@@ -8,14 +8,14 @@ output file for population genetics analysis.}
 filter_dart(interactive.filter = TRUE, data, strata, output = NULL,
   pop.levels = NULL, blacklist.id = NULL, pop.select = NULL,
   monomorphic.out = TRUE, common.markers = TRUE,
-  filter.reproducibility = NULL, filter.coverage = NULL,
-  filter.call.rate = NULL, filter.ind.missing.geno = NULL,
-  number.snp.reads = NULL, maf.thresholds = NULL,
-  mixed.genomes.analysis = TRUE, ind.heterozygosity.threshold = NULL,
-  duplicate.genomes.analysis = c(TRUE, FALSE), snp.ld = NULL,
-  imputation.method = NULL, hierarchical.levels = "populations",
-  num.tree = 50, filename = NULL, verbose = TRUE,
-  parallel.core = parallel::detectCores() - 1)
+  filter.reproducibility = NULL, filter.call.rate = NULL,
+  filter.coverage = NULL, filter.alt.low.coverage = NULL,
+  filter.ind.missing.geno = NULL, maf.thresholds = NULL,
+  number.snp.reads = NULL, mixed.genomes.analysis = TRUE,
+  ind.heterozygosity.threshold = NULL, duplicate.genomes.analysis = c(TRUE,
+  FALSE), snp.ld = NULL, imputation.method = NULL,
+  hierarchical.levels = "populations", num.tree = 50, filename = NULL,
+  verbose = TRUE, parallel.core = parallel::detectCores() - 1)
 }
 \arguments{
 \item{interactive.filter}{(optional, logical) Do you want the filtering session to
@@ -81,6 +81,12 @@ Default: \code{filter.reproducibility = NULL}.
 e.g to keep markers with reproducibility >= 99%,
 use: \code{filter.reproducibility = 0.99}.}
 
+\item{filter.call.rate}{(optional, numerical) Filter the \code{CallRate}
+column in the data set. For DArT this is the proportion of samples for
+which the genotype was called. Default: \code{filter.call.rate = NULL}. e.g to keep
+markers genotyped in more than 95% of the individuals use :
+\code{filter.call.rate = 0.95}}
+
 \item{filter.coverage}{(optional, string, numerical) Filter the lower and
 upper bound of locus/read coverage. The locus/read coverage combines the markers
 average count for REF and ALT allele (respectively the \code{AvgCountRef} and
@@ -88,12 +94,6 @@ average count for REF and ALT allele (respectively the \code{AvgCountRef} and
 Default: \code{filter.coverage = NULL}.
 e.g to keep markers with coverage inbetween 7 and 200,
 use : \code{filter.coverage = c(7, 200)}.}
-
-\item{filter.call.rate}{(optional, numerical) Filter the \code{CallRate}
-column in the data set. For DArT this is the proportion of samples for
-which the genotype was called. Default: \code{filter.call.rate = NULL}. e.g to keep
-markers genotyped in more than 95% of the individuals use :
-\code{filter.call.rate = 0.95}}
 
 \item{filter.ind.missing.geno}{(optional, string) Similar to call rate, but
 more adapted to the data. 3 values are required in the string, corresponding
@@ -107,16 +107,6 @@ arguments. e.g to keep individuals genotyped at >= 70 percent for the markers,
 without considering the population info and allowing 1 population to be problematic for the
 threshold, use: \code{c("overall", 70, 1)}.
 Default: \code{filter.ind.missing.geno = NULL}.}
-
-\item{number.snp.reads}{(optional, integer) This filter removes outlier markers
-with too many SNP number per locus/read.
-Having a higher than "normal" SNP number is usually the results of
-assembly artifacts or bad assembly parameters.
-This filter is population-agnostic. This is best decide after viewing the figures,
-with the interactive mode.
-If the argument is set to \code{number.snp.reads = 2},
-locus with 3 and more SNPs will be blacklisted.
-Default: \code{number.snp.reads = NULL}.}
 
 \item{maf.thresholds}{(optional) Use for minor allele frequency (maf) or count (mac)
 filter. Default: \code{maf.thresholds = NULL}, for no filtering.
@@ -155,6 +145,16 @@ The number of pop required to pass the thresholds
 to keep the marker. Usually, I always use \code{1}, for 1 pop is required to
 pass thresholds and keep the marker.
 }}
+
+\item{number.snp.reads}{(optional, integer) This filter removes outlier markers
+with too many SNP number per locus/read.
+Having a higher than "normal" SNP number is usually the results of
+assembly artifacts or bad assembly parameters.
+This filter is population-agnostic. This is best decide after viewing the figures,
+with the interactive mode.
+If the argument is set to \code{number.snp.reads = 2},
+locus with 3 and more SNPs will be blacklisted.
+Default: \code{number.snp.reads = NULL}.}
 
 \item{mixed.genomes.analysis}{(optional, logical) Highlight outliers individual's
 observed heterozygosity for a quick
