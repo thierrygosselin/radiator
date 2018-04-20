@@ -198,4 +198,4 @@ write_vcf <- function(data, pop.info = FALSE, filename = NULL) {
 
   # Write the prunned vcf to the file ------------------------------------------
   suppressWarnings(readr::write_tsv(x = output, path = filename, append = TRUE, col_names = TRUE))
-} # end write_vcf
+}# end write_vcf

@@ -16,6 +16,8 @@
 #' \item genepop.file: for a genepop file
 #' \item haplo.file: for a stacks haplotypes file
 #' \item fstat.file: for a fstat file
+#' \item dart: for a DArT file
+#' \item fst.file: for a file ending with .rad
 #' }
 
 #' @rdname detect_genomic_format

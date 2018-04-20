@@ -181,14 +181,7 @@ filter_individual <- function(
 
   # Folder -------------------------------------------------------------------
   # Date and time
-  file.date <- stringi::stri_replace_all_fixed(
-    Sys.time(),
-    pattern = " EDT", replacement = "") %>%
-    stringi::stri_replace_all_fixed(
-      str = .,
-      pattern = c("-", " ", ":"), replacement = c("", "@", ""),
-      vectorize_all = FALSE) %>%
-    stringi::stri_sub(str = ., from = 1, to = 13)
+  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
   folder.message <- stringi::stri_join("filter_individual_", file.date, sep = "")
   path.folder <- stringi::stri_join(getwd(),"/", folder.message, sep = "")
   dir.create(file.path(path.folder))

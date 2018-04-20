@@ -216,3 +216,46 @@ compute_maf <- function(x, biallelic) {
   }
   return(x)
 }#End compute_maf
+
+# update data.info
+#' @title data_info
+#' @description function generate tidy data main info
+#' @rdname data_info
+#' @keywords internal
+#' @export
+data_info <- function(x, print.info = FALSE) {
+
+  if (tibble::has_name(x, "POP_ID")) {
+    x.pop.ind <- dplyr::distinct(x, POP_ID, INDIVIDUALS)
+    n.pop <- dplyr::n_distinct(x.pop.ind$POP_ID)
+    n.ind <- dplyr::n_distinct(x.pop.ind$INDIVIDUALS)
+  } else {
+    n.pop <- 0
+    n.ind <- 0
+  }
+  if (tibble::has_name(x, "MARKERS")) {
+    x <- dplyr::distinct(x, MARKERS, CHROM, LOCUS)
+    n.chrom <- dplyr::n_distinct(x$CHROM)
+    n.locus <- dplyr::n_distinct(x$LOCUS)
+    n.snp <- dplyr::n_distinct(x$MARKERS)
+  } else {
+    n.chrom <- 0
+    n.locus <- 0
+    n.snp <- 0
+  }
+  res <- list(
+    n.pop = n.pop,
+    n.ind = n.ind,
+    n.chrom = n.chrom,
+    n.locus = n.locus,
+    n.snp = n.snp
+  )
+  if (print.info) {
+    message("Number of chrom: ", res$n.chrom)
+    message("Number of locus: ", res$n.locus)
+    message("Number of SNPs: ", res$n.snp)
+    message("Number of populations: ", res$n.pop)
+    message("Number of individuals: ", res$n.ind)
+  }
+  return(res)
+}
