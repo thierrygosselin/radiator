@@ -12,9 +12,9 @@
 
 <meta name="author" content="Thierry Gosselin and Anne-Laure Ferchaud" />
 
-<meta name="date" content="2017-06-16" />
+<meta name="date" content="2018-04-26" />
 
-<title>Generate a ∂a∂i input file stackr::vcf2dadi</title>
+<title>Generate a ∂a∂i input file radiator::vcf2dadi</title>
 
 
 
@@ -68,16 +68,16 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 
 
-<h1 class="title toc-ignore">Generate a ∂a∂i input file <code>stackr::vcf2dadi</code></h1>
+<h1 class="title toc-ignore">Generate a ∂a∂i input file <code>radiator::vcf2dadi</code></h1>
 <h4 class="author"><em>Thierry Gosselin and Anne-Laure Ferchaud</em></h4>
-<h4 class="date"><em>2017-06-16</em></h4>
+<h4 class="date"><em>2018-04-26</em></h4>
 
 
 
 <div id="objectives" class="section level1">
 <h1>Objectives:</h1>
 <ul>
-<li>learn how to run the function <code>stackr::vcf2dadi</code></li>
+<li>learn how to run the function <code>radiator::vcf2dadi</code></li>
 </ul>
 </div>
 <div id="workflow" class="section level1">
@@ -88,9 +88,9 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <li><p>Clean your desk and remove the clutter in the global environment</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">rm</span>(<span class="dt">list=</span><span class="kw">ls</span>())</code></pre></div></li>
 <li><p>Load the required libraries</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">if (!<span class="kw">require</span>(<span class="st">&quot;stackr&quot;</span>)){
-  devtools::<span class="kw">install_github</span>(<span class="st">&quot;thierrygosselin/stackr&quot;</span>, <span class="dt">build_vignettes =</span> <span class="ot">TRUE</span>)
-  <span class="kw">library</span>(<span class="st">&quot;stackr&quot;</span>)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="cf">if</span> (<span class="op">!</span><span class="kw">require</span>(<span class="st">&quot;radiator&quot;</span>)){
+  devtools<span class="op">::</span><span class="kw">install_github</span>(<span class="st">&quot;thierrygosselin/radiator&quot;</span>)
+  <span class="kw">library</span>(<span class="st">&quot;radiator&quot;</span>)
 }</code></pre></div></li>
 <li><p>Set your working directory</p>
 <pre><code>setwd(&quot;~/Documents/vcf2dadi_example&quot;)</code></pre></li>
@@ -102,8 +102,8 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <li><p>Dataset: in this example, we use the data in Ferchaud and Hansen (2015 and 2016) paper.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># download the file:</span>
 <span class="kw">writeBin</span>(
-  httr::<span class="kw">content</span>(
-httr::<span class="kw">GET</span>(
+  httr<span class="op">::</span><span class="kw">content</span>(
+httr<span class="op">::</span><span class="kw">GET</span>(
   <span class="st">&quot;http://datadryad.org/bitstream/handle/10255/dryad.97237/sticklebacks_Danish.vcf?sequence=1&quot;</span>
 ), <span class="st">&quot;raw&quot;</span>), <span class="st">&quot;example_vcf2dadi_ferchaud_2015.vcf&quot;</span>
 )</code></pre></div>
@@ -111,16 +111,16 @@ httr::<span class="kw">GET</span>(
 <li>We need to generate a strata file necessary to make the vcf population-wise. The strata file is a tab-delimited file or object, in the global environment, with 2 columns: <code>INDIVIDUALS</code> and <code>STRATA</code>. The <code>STRATA</code> column can be any hierarchical grouping.</li>
 </ol>
 <ul>
-<li><p>Because the population id is contained in the name of the individuals and easily extracted with string command, we use the function <code>stackr::individuals2strata</code>.</p>
+<li><p>Because the population id is contained in the name of the individuals and easily extracted with string command, we use the function <code>radiator::individuals2strata</code>.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># here is one individual id: </span>
-Hadsten10_q_75.align
+Hadsten10_q_<span class="fl">75.</span>align
 <span class="co"># with pop starting at position 1 and to keep only 3 characters (necessary to discriminate populations from each other) we stop at... 3</span></code></pre></div></li>
 <li><p>For info on the function use: <code>?individuals2strata</code>. Don’t have this kind of names… you can also make the strata file by hand, the old fashion way.</p></li>
 <li><p>For your data, you might not need to make a strata file if you have already run  on your data, the strata file is similar to a stacks <code>population map file</code>, make sure you have the required column names (<code>INDIVIDUALS</code> and <code>STRATA</code>).</p></li>
-<li><p>We will extract the id from the first line of the vcf file. If the individuals were in a single column in a file (e.g. “individuals.txt”), make sure the column is named <code>INDIVIDUALS</code> and use the file directly in the function <code>stackr::individuals2strata</code>.</p></li>
+<li><p>We will extract the id from the first line of the vcf file. If the individuals were in a single column in a file (e.g. “individuals.txt”), make sure the column is named <code>INDIVIDUALS</code> and use the file directly in the function <code>radiator::individuals2strata</code>.</p></li>
 <li><p>We could put all the lines below in one call, but for clarity we’ll break down the steps:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Isolate the first line</span>
-id.vcf &lt;-<span class="st"> </span>data.table::<span class="kw">fread</span>(
+id.vcf &lt;-<span class="st"> </span>data.table<span class="op">::</span><span class="kw">fread</span>(
   <span class="dt">input =</span> <span class="st">&quot;example_vcf2dadi_ferchaud_2015.vcf&quot;</span>,
   <span class="dt">sep =</span> <span class="st">&quot;</span><span class="ch">\t</span><span class="st">&quot;</span>,
   <span class="dt">stringsAsFactors =</span> <span class="ot">FALSE</span>, 
@@ -130,13 +130,13 @@ id.vcf &lt;-<span class="st"> </span>data.table::<span class="kw">fread</span>(
   <span class="dt">nrows =</span> <span class="dv">1</span>,
   <span class="dt">showProgress =</span> <span class="ot">TRUE</span>,
   <span class="dt">verbose =</span> <span class="ot">FALSE</span>
-) %&gt;%<span class="st"> </span>
-<span class="st">  </span><span class="kw">as_data_frame</span>() %&gt;%<span class="st"> </span>
-<span class="st">  </span><span class="kw">select</span>(-<span class="st">`</span><span class="dt">#CHROM</span><span class="st">`</span>)
+) <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">as_data_frame</span>() <span class="op">%&gt;%</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">select</span>(<span class="op">-</span><span class="st">`</span><span class="dt">#CHROM</span><span class="st">`</span>)
   <span class="co"># to keep only the column name</span>
   individuals &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">INDIVIDUALS =</span> <span class="kw">colnames</span>(id.vcf)) </code></pre></div>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># create the strata</span>
-strata.stickleback &lt;-<span class="st"> </span>stackr::<span class="kw">individuals2strata</span>(
+strata.stickleback &lt;-<span class="st"> </span>radiator<span class="op">::</span><span class="kw">individuals2strata</span>(
 <span class="dt">data =</span> individuals, 
 <span class="dt">strata.start =</span> <span class="dv">1</span>,
 <span class="dt">strata.end =</span> <span class="dv">3</span>,
@@ -147,8 +147,8 @@ strata.stickleback &lt;-<span class="st"> </span>stackr::<span class="kw">indivi
 <div id="generate-ai-input-file" class="section level2">
 <h2>Generate ∂a∂i input file</h2>
 <ol style="list-style-type: decimal">
-<li><p>First run of <code>stackr::vcf2dadi</code>, without imputation. The simplest expression, with 2 arguments:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">stackr::<span class="kw">vcf2dadi</span>(
+<li><p>First run of <code>radiator::vcf2dadi</code>, without imputation. The simplest expression, with 2 arguments:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">radiator<span class="op">::</span><span class="kw">vcf2dadi</span>(
 <span class="dt">data =</span> <span class="st">&quot;example_vcf2dadi_ferchaud_2015.vcf&quot;</span>, 
 <span class="dt">strata =</span> <span class="st">&quot;strata.stickleback.tsv&quot;</span>
 )
@@ -157,27 +157,27 @@ strata.stickleback &lt;-<span class="st"> </span>stackr::<span class="kw">indivi
 <span class="co"># `strata.stickleback`</span></code></pre></div>
 <p>72 sec later, this is what we get in RStudio console:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">#######################################################################
-########################## stackr::vcf2dadi ###########################
+########################## radiator::vcf2dadi ###########################
 #######################################################################
-vcf2dadi:<span class="st"> </span>no imputation...
-File type:<span class="st"> </span>VCF
-Whitelist of markers:<span class="st"> </span>no
-Blacklisted individuals:<span class="st"> </span>no
-strata object:<span class="st"> </span>yes
+vcf2dadi<span class="op">:</span><span class="st"> </span>no imputation...
+File type<span class="op">:</span><span class="st"> </span>VCF
+Whitelist of markers<span class="op">:</span><span class="st"> </span>no
+Blacklisted individuals<span class="op">:</span><span class="st"> </span>no
+strata object<span class="op">:</span><span class="st"> </span>yes
 Importing the VCF...
 Making the VCF population wise
 Tidying the vcf...
-Erasing genotype:<span class="st"> </span>no
-Using markers common in all populations:
+Erasing genotype<span class="op">:</span><span class="st"> </span>no
+Using markers common <span class="cf">in</span> all populations<span class="op">:</span>
 Number of original markers =<span class="st"> </span><span class="dv">31802</span>
-Number of markers present in all the populations =<span class="st"> </span><span class="dv">31802</span>
+Number of markers present <span class="cf">in</span> all the populations =<span class="st"> </span><span class="dv">31802</span>
 Number of markers removed =<span class="st"> </span><span class="dv">0</span>
 Removing monomorphic markers...
-Number of monomorphic markers removed:<span class="st"> </span><span class="dv">0</span>
+Number of monomorphic markers removed<span class="op">:</span><span class="st"> </span><span class="dv">0</span>
 Computing the Allele Frequency Spectrum
 Preparing ∂a∂i input SNP data format
-∂a∂i input file name is:<span class="st"> </span>dadi_input_20160601_224119.tsv
-Saved here:<span class="st"> </span><span class="er">/</span>Users/thierry/Documents/vcf2dadi_example
+∂a∂i input file name is<span class="op">:</span><span class="st"> </span>dadi_input_20160601_<span class="fl">224119.</span>tsv
+Saved here<span class="op">:</span><span class="st"> </span><span class="er">/</span>Users<span class="op">/</span>thierry<span class="op">/</span>Documents<span class="op">/</span>vcf2dadi_example
 #######################################################################</code></pre></div></li>
 <li><p>Since we didn’t redirect the function call in an object (next example will show you how) the ∂a∂i input data is not in the global environment, it’s only written to the working directory.</p></li>
 </ol>
@@ -188,7 +188,7 @@ Saved here:<span class="st"> </span><span class="er">/</span>Users/thierry/Docum
 <p>In the example below we also use the default argument <code>monomorphic.out = TRUE</code> (turn it off with <code>FALSE</code>). Monomorphic sites are useful to get absolute numbers for the timing event. Laurent Excoffier says that <em>it allows one to use the mutation rate to calibrate the parameters on an absolute scale</em> (see this <a href="https://groups.google.com/forum/#!searchin/fastsimcoal/impact$20of$20monomorphic/fastsimcoal/dkJ6P5y1ViY/Jn977V8EAwAJ">thread</a>, for more info on the utility of monomorphic sites and SFS). However, here the RAD markers were filtered based on 8 populations, consequently, to avoid filtering bias, it’s better to remove the monomorphic markers.</p>
 <p>The best approach is to either simulate the monomorphic markers based on genome-wide estimate of pi or do a new stacks <code>populations</code> run with the 3 populations to get the monomorphic sites. If you do this, use <code>monomorphic.out = FALSE</code>.</p>
 <ol style="list-style-type: decimal">
-<li>For the second run of <code>stackr::vcf2dadi</code>, we will also ask to generate a ∂a∂i input file with:</li>
+<li>For the second run of <code>radiator::vcf2dadi</code>, we will also ask to generate a ∂a∂i input file with:</li>
 </ol>
 <ul>
 <li><p>short range LD pruning: the small reads of this experiment (RADseq &lt; 100 pb read) make the short range linkage disequillibrium pruning easy. We will keep the first SNP on every read (<code>snp.ld = &quot;first&quot;</code>). Don’t want the SNP pruning, turn it off with <code>snp.ld = NULL</code> or leave the argument missing.</p></li>
@@ -196,7 +196,7 @@ Saved here:<span class="st"> </span><span class="er">/</span>Users/thierry/Docum
 <li><p>imputations using random forest with default settings (see function arguments documentation for more details)</p></li>
 <li><p>the parallel process used by default will be all my CPU - 1.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># The function results are redirected in the object `dadi.df`</span>
-dadi.df &lt;-<span class="st"> </span>stackr::<span class="kw">vcf2dadi</span>(
+dadi.df &lt;-<span class="st"> </span>radiator<span class="op">::</span><span class="kw">vcf2dadi</span>(
   <span class="dt">data =</span> <span class="st">&quot;example_vcf2dadi_ferchaud_2015.vcf&quot;</span>, 
   <span class="dt">strata =</span> strata.stickleback, 
   <span class="dt">pop.select =</span> <span class="kw">c</span>(<span class="st">&quot;Had&quot;</span>, <span class="st">&quot;Mos&quot;</span>, <span class="st">&quot;Odd&quot;</span>),
@@ -209,54 +209,54 @@ dadi.df &lt;-<span class="st"> </span>stackr::<span class="kw">vcf2dadi</span>(
 )</code></pre></div>
 <p>60 sec later, this is what we get in RStudio console:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">#######################################################################
-########################## stackr::vcf2dadi ###########################
+########################## radiator::vcf2dadi ###########################
 #######################################################################
-vcf2dadi:<span class="st"> </span>with imputations...
-File type:<span class="st"> </span>VCF
-Whitelist of markers:<span class="st"> </span>no
-Blacklisted individuals:<span class="st"> </span>no
-strata object:<span class="st"> </span>yes
+vcf2dadi<span class="op">:</span><span class="st"> </span>with imputations...
+File type<span class="op">:</span><span class="st"> </span>VCF
+Whitelist of markers<span class="op">:</span><span class="st"> </span>no
+Blacklisted individuals<span class="op">:</span><span class="st"> </span>no
+strata object<span class="op">:</span><span class="st"> </span>yes
 Importing the VCF...
 Making the VCF population wise
 <span class="dv">3</span> <span class="kw">population</span>(s) selected
 Tidying the vcf...
-Erasing genotype:<span class="st"> </span>no
+Erasing genotype<span class="op">:</span><span class="st"> </span>no
 Minimizing LD...
 Number of original SNP =<span class="st"> </span><span class="dv">31766</span>
-Number of SNP after keeping the first SNP on the read/haplotype =<span class="st"> </span><span class="dv">17088</span>
+Number of SNP after keeping the first SNP on the read<span class="op">/</span>haplotype =<span class="st"> </span><span class="dv">17088</span>
 Number of SNP removed =<span class="st"> </span><span class="dv">14678</span>
-Filtering the tidy VCF to minimize LD by keeping only <span class="dv">1</span> SNP per short read/haplotype
-Using markers common in all populations:
+Filtering the tidy VCF to minimize LD by keeping only <span class="dv">1</span> SNP per short read<span class="op">/</span>haplotype
+Using markers common <span class="cf">in</span> all populations<span class="op">:</span>
 Number of original markers =<span class="st"> </span><span class="dv">17088</span>
-Number of markers present in all the populations =<span class="st"> </span><span class="dv">17088</span>
+Number of markers present <span class="cf">in</span> all the populations =<span class="st"> </span><span class="dv">17088</span>
 Number of markers removed =<span class="st"> </span><span class="dv">0</span>
 Removing monomorphic markers...
-Number of monomorphic markers removed:<span class="st"> </span><span class="dv">7880</span>
-MAF filter:<span class="st"> </span>yes
-The MAF table was written in your folder
+Number of monomorphic markers removed<span class="op">:</span><span class="st"> </span><span class="dv">7880</span>
+MAF filter<span class="op">:</span><span class="st"> </span>yes
+The MAF table was written <span class="cf">in</span> your folder
 The number of MARKERS removed by the MAF filters =<span class="st"> </span><span class="dv">0</span>
-The number of MARKERS before -&gt;<span class="st"> </span>after the MAF filters:<span class="st"> </span><span class="dv">9208</span> -&gt;<span class="st"> </span><span class="dv">9208</span> MARKERS
+The number of MARKERS before -&gt;<span class="st"> </span>after the MAF filters<span class="op">:</span><span class="st"> </span><span class="dv">9208</span> -&gt;<span class="st"> </span><span class="dv">9208</span> MARKERS
 Computing the Allele Frequency Spectrum
 Preparing ∂a∂i input SNP data format
-∂a∂i input file name is:<span class="st"> </span>my.first.dadi.input.file.tsv
-Saved here:<span class="st"> </span><span class="er">/</span>Users/thierry/Documents/vcf2dadi_example
-Preparing the data for imputations
+∂a∂i input file name is<span class="op">:</span><span class="st"> </span>my.first.dadi.input.file.tsv
+Saved here<span class="op">:</span><span class="st"> </span><span class="er">/</span>Users<span class="op">/</span>thierry<span class="op">/</span>Documents<span class="op">/</span>vcf2dadi_example
+Preparing the data <span class="cf">for</span> imputations
 Imputations computed by populations, take a break...
 Compiling imputations results
 Preparing imputed data set...
-Computing the Allele Frequency Spectrum for the imputed data
-∂a∂i input file name is:<span class="st"> </span>my.first.dadi.input.file_imputed.tsv
-Saved here:<span class="st"> </span><span class="er">/</span>Users/thierry/Documents/vcf2dadi_example
+Computing the Allele Frequency Spectrum <span class="cf">for</span> the imputed data
+∂a∂i input file name is<span class="op">:</span><span class="st"> </span>my.first.dadi.input.file_imputed.tsv
+Saved here<span class="op">:</span><span class="st"> </span><span class="er">/</span>Users<span class="op">/</span>thierry<span class="op">/</span>Documents<span class="op">/</span>vcf2dadi_example
 #######################################################################</code></pre></div></li>
 </ul>
 <ol start="2" style="list-style-type: decimal">
 <li><p>To view the content of <code>dadi.df</code>:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">names</span>(dadi.df)</code></pre></div></li>
 <li><p>To redirect both data frame in separate object, outside the list:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dadi.no.imputation.df &lt;-<span class="st"> </span>dadi.df$dadi.no.imputation
-dadi.imputed.df &lt;-<span class="st"> </span>dadi.df$dadi.imputed</code></pre></div></li>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dadi.no.imputation.df &lt;-<span class="st"> </span>dadi.df<span class="op">$</span>dadi.no.imputation
+dadi.imputed.df &lt;-<span class="st"> </span>dadi.df<span class="op">$</span>dadi.imputed</code></pre></div></li>
 <li><p>The first few line of the ∂a∂i non imputed file, written to the working directory:</p>
-<p><code>#∂a∂i SNP input file generated with stackr v.0.2.9 2016-06-01 23:20:32</code></p></li>
+<p><code>#∂a∂i SNP input file generated with radiator v.0.2.9 2016-06-01 23:20:32</code></p></li>
 </ol>
 <table>
 <thead>
@@ -336,7 +336,7 @@ dadi.imputed.df &lt;-<span class="st"> </span>dadi.df$dadi.imputed</code></pre><
 <p>To generate a ∂a∂i input file with an outgroup, we currently need stacks output files in order to get the fasta and SNP position. Very soon we’ll make an update where you can feed the function a file containing all this info, making the function truly stacks-free. For those of you using stacks you can do this to generate the file:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## Do not run ##
 <span class="co"># the dataset doesn't include outgroup info.</span>
-stackr::<span class="kw">vcf2dadi</span>(
+radiator<span class="op">::</span><span class="kw">vcf2dadi</span>(
   <span class="dt">data =</span> <span class="st">&quot;example_vcf2dadi_ferchaud_2015.vcf&quot;</span>, 
   <span class="dt">strata =</span> strata.stickleback, 
   <span class="dt">pop.select =</span> <span class="kw">c</span>(<span class="st">&quot;Had&quot;</span>, <span class="st">&quot;Mos&quot;</span>, <span class="st">&quot;Odd&quot;</span>),
@@ -355,8 +355,8 @@ stackr::<span class="kw">vcf2dadi</span>(
 <h1>Conclusion</h1>
 <p>Under construction</p>
 <p>Please send me suggestions and bug reports through github</p>
-<p>If you are using <strong>stackr</strong> package please cite my work.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">citation</span>(<span class="st">&quot;stackr&quot;</span>)</code></pre></div>
+<p>If you are using <strong>radiator</strong> package please cite my work.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">citation</span>(<span class="st">&quot;radiator&quot;</span>)</code></pre></div>
 <p><strong>References</strong></p>
 <p>Ferchaud A, Hansen MM (2016) The impact of selection, gene flow and demographic history on heterogeneous genomic divergence: threespine sticklebacks in divergent environments. Molecular Ecology 25(1): 238–259. <a href="http://dx.doi.org/10.1111/mec.13399" class="uri">http://dx.doi.org/10.1111/mec.13399</a></p>
 <p>Ferchaud A, Hansen MM (2015) Data from: The impact of selection, gene flow and demographic history on heterogeneous genomic divergence: threespine sticklebacks in divergent environments. Dryad Digital Repository. <a href="http://dx.doi.org/10.5061/dryad.kp11q" class="uri">http://dx.doi.org/10.5061/dryad.kp11q</a></p>

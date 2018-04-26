@@ -9,6 +9,14 @@ summary_strata(strata)
 \arguments{
 \item{strata}{(path or object) The strata file or object.}
 }
+\value{
+\enumerate{
+\item Number of strata/populations
+\item Number of individuals
+\item Number of individuals per populations
+\item Number of duplicate ids.
+}
+}
 \description{
 Summarise the information of a strata file or object.
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}

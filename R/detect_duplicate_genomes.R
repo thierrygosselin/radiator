@@ -1092,7 +1092,8 @@ remove_duplicates <- function(
       dplyr::distinct(INDIVIDUALS) %>%
       purrr::flatten_chr(.)
 
-    geno.stats <- readr::read_tsv(stats, col_types = "cd")
+    geno.stats <- readr::read_tsv(stats, col_types = "cd") %>%
+      dplyr::filter(INDIVIDUALS %in% dup.list.names)
 
     res <- list(blacklist.id = tibble::tibble(INDIVIDUALS = character(0)),
                 whitelist.id = tibble::tibble(INDIVIDUALS = character(0)))
@@ -1119,7 +1120,13 @@ remove_duplicates <- function(
       }
 
       if (nrow(dups) > 0) {
-        if (diff.pop.remove) {
+
+        diff.pop <- dup.filtered %>%
+          dplyr::filter(ID1 %in% dups$INDIVIDUALS | ID2 %in% dups$INDIVIDUALS) %>%
+          dplyr::distinct(POP_COMP) %>%
+          dplyr::filter(POP_COMP == "different pop")
+
+        if (diff.pop.remove && (nrow(diff.pop) > 0)) {
           blacklist.diff.pop <- dup.filtered %>%
             dplyr::filter(ID1 %in% dups$INDIVIDUALS | ID2 %in% dups$INDIVIDUALS) %>%
             dplyr::distinct(POP_COMP) %>%
@@ -1143,6 +1150,7 @@ remove_duplicates <- function(
 
           if (nrow(blacklist.id) > 0) res$blacklist.id <- dplyr::bind_rows(res$blacklist.id, blacklist.id)
         }
+        diff.pop <- NULL
       }
     }
     dups <- blacklist.id <- whitelist.id <- i <- new.dups <- NULL

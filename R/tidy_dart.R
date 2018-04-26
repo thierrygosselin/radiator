@@ -109,26 +109,27 @@ Edit manually before trying again
 If you're still encountering problem, email author for help")
   }
 
-  # Date and Time --------------------------------------------------------------
+  # Date & Time and filenames --------------------------------------------------
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
+
   if (is.null(filename)) {
     filename <- stringi::stri_join("radiator_tidy_dart_", file.date, ".rad")
-    meta.filename <- stringi::stri_join("radiator_tidy_dart_metadata_", file.date, ".rad")
+    # meta.filename <- stringi::stri_join("radiator_tidy_dart_metadata_", file.date, ".rad")
     strata.filename <- stringi::stri_join("radiator_tidy_dart_strata_", file.date, ".tsv")
   } else {
-    meta.filename <- stringi::stri_join(filename, "_metadata", ".rad")
-    if (file.exists(meta.filename)) {
-      message(meta.filename, " file exist, default will be used.")
-      meta.filename <- stringi::stri_join("radiator_tidy_dart_metadata_", file.date, ".rad")
-    }
+    # meta.filename <- stringi::stri_join(filename, "_metadata", ".rad")
+    # if (file.exists(meta.filename)) {
+      # message("\n", meta.filename, " file exist, default will be used.")
+      # meta.filename <- stringi::stri_join("radiator_tidy_dart_metadata_", file.date, ".rad")
+    # }
     strata.filename <- stringi::stri_join(filename, "_strata", ".tsv")
     if (file.exists(strata.filename)) {
-      message(strata.filename, " file exist, default will be used.")
+      message("\n", strata.filename, " file exist, default will be used.")
       strata.filename <- stringi::stri_join("radiator_tidy_dart_strata_", file.date, ".tsv")
     }
     filename <- stringi::stri_join(filename, ".rad")
     if (file.exists(filename)) {
-      message(filename, " file exist, default will be used.")
+      message("\n", filename, " file exist, default will be used.")
       filename <- stringi::stri_join("radiator_tidy_dart_", file.date, ".rad")
     }
   }
@@ -196,7 +197,7 @@ If you're still encountering problem, email author for help")
 For more info: ", problem.filename)
     }
     message("\nCaution: you've chosen to tidy a subsample of your DArT file.
-DArT statistics generated for all samples might no apply...\n")
+DArT statistics generated for all samples might not apply...\n")
   } else {
     if (!identical(sort(target.id$TARGET_ID), sort(strata.df$TARGET_ID))) {
       stop("\nThe DArT and strata files don't have the same TARGET_IDs")
@@ -518,10 +519,10 @@ DArT statistics generated for all samples might no apply...\n")
         dplyr::arrange(MARKERS, REF)
 
 
-      if (!file.exists(meta.filename)) {
-        write_rad(data = grouping.column, path = meta.filename)
-        message("Marker's metadata file written to the directory:\n    ", meta.filename)
-      }
+      # if (!file.exists(meta.filename)) {
+      #   write_rad(data = grouping.column, path = meta.filename)
+      #   message("Marker's metadata file written to the directory:\n    ", meta.filename)
+      # }
 
       grouping.column <- grouping.col <- NULL
 
@@ -621,7 +622,7 @@ DArT statistics generated for all samples might no apply...\n")
 #' @keywords internal
 #' @export
 dart2gt <- function(x, dart.format) {
-  # 1 row format
+  # 1 row format----------------------------------------------------------------
   if (dart.format == "1row") {
     x <- x %>%
       dplyr::mutate(
@@ -651,7 +652,7 @@ dart2gt <- function(x, dart.format) {
       dplyr::select(GT, GT_VCF, GT_VCF_NUC, GT_BIN)
   }#End 1row
 
-  # 2 rows format also called binary
+  # 2 rows format also called binary--------------------------------------------
   if (dart.format == "2rows") {
     # x <- input2
     x <- dplyr::select(x, -SPLIT_VEC) %>%
@@ -689,7 +690,7 @@ dart2gt <- function(x, dart.format) {
       dplyr::select(MARKERS, TARGET_ID, GT, GT_VCF, GT_VCF_NUC, GT_BIN)
   }#End 2rows
 
-  # Count data
+  # Count data------------------------------------------------------------------
   if (dart.format == "counts") {
     # split.id <- unique(x$SPLIT_VEC)
     x <- dplyr::select(x, -SPLIT_VEC) %>%
@@ -700,19 +701,35 @@ dart2gt <- function(x, dart.format) {
     x.alt <- dplyr::filter(x, TEMP == 1) %>%
       dplyr::arrange(MARKERS) %>%
       dplyr::select(-TEMP) %>%
-      tidyr::gather(data = .,
-                    key = TARGET_ID,
-                    value = ALLELE_ALT_DEPTH,
-                    -dplyr::one_of(c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT"))) %>%
+      # tidyr::gather(data = .,
+      #               key = TARGET_ID,
+      #               value = ALLELE_ALT_DEPTH,
+      #               -dplyr::one_of(c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT"))) %>%
+      data.table::as.data.table(.) %>%
+      data.table::melt.data.table(
+        data = .,
+        id.vars = c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT"),
+        variable.name = "TARGET_ID", variable.factor = FALSE,
+        value.name = "ALLELE_ALT_DEPTH"
+      ) %>%
+      tibble::as_data_frame(.) %>%
       dplyr::arrange(MARKERS, TARGET_ID)
 
     x <- dplyr::filter(x, TEMP == 2) %>%
       dplyr::arrange(MARKERS) %>%
       dplyr::select(-dplyr::one_of(c("TEMP", "CHROM", "LOCUS", "POS", "REF", "ALT"))) %>%
-      tidyr::gather(data = .,
-                    key = TARGET_ID,
-                    value = ALLELE_REF_DEPTH,
-                    -MARKERS) %>%
+      # tidyr::gather(data = .,
+      #               key = TARGET_ID,
+      #               value = ALLELE_REF_DEPTH,
+      #               -MARKERS) %>%
+      data.table::as.data.table(.) %>%
+      data.table::melt.data.table(
+        data = .,
+        id.vars = "MARKERS",
+        variable.name = "TARGET_ID", variable.factor = FALSE,
+        value.name = "ALLELE_REF_DEPTH"
+      ) %>%
+      tibble::as_data_frame(.) %>%
       dplyr::arrange(MARKERS, TARGET_ID) %>%
       dplyr::select(ALLELE_REF_DEPTH) %>%
       dplyr::bind_cols(x.alt)

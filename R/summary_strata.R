@@ -11,6 +11,7 @@
 #' \item Number of individuals
 #' \item Number of individuals per populations
 #' \item Number of duplicate ids.
+#' }
 #' @examples
 #' \dontrun{
 #' radiator::summary_strata(strata)
@@ -26,7 +27,7 @@ summary_strata <- function(strata) {
   strata.stats <- strata %>% dplyr::group_by(STRATA) %>% dplyr::tally(.) %>%
     dplyr::mutate(POP_IND = stringi::stri_join(STRATA, n, sep = " = "))
 
-   duplicate.id <- nrow(strata) - length(unique(strata$INDIVIDUALS))
+  duplicate.id <- nrow(strata) - length(unique(strata$INDIVIDUALS))
 
   message("Number of populations: ", dplyr::n_distinct(strata$STRATA))
   message("Number of individuals: ", dplyr::n_distinct(strata$INDIVIDUALS))

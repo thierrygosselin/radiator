@@ -199,7 +199,7 @@ filter_dart <- function(
   verbose = TRUE,
   parallel.core = parallel::detectCores() - 1,
   ...
-  ) {
+) {
   if (verbose) {
     cat("#######################################################################\n")
     cat("######################## radiator::filter_dart ########################\n")
@@ -224,12 +224,20 @@ filter_dart <- function(
   filter.coverage <- radiator.dots[["filter.coverage"]]
   filter.ind.missing.geno <- radiator.dots[["filter.ind.missing.geno"]]
 
+  if (!is.null(filter.coverage) && !is.null(filter.ind.missing.geno)) {
+    stop("
+filter.coverage is deprecated in favour of: filter.markers.coverage
+filter.ind.missing.geno is deprecated in favour of: filter.markers.missing")
+  }
+
   if (!is.null(filter.coverage)) {
-    stop("filter.coverage is deprecated in favour of: filter.markers.coverage")
+    stop("
+filter.coverage is deprecated in favour of: filter.markers.coverage")
   }
 
   if (!is.null(filter.ind.missing.geno)) {
-    stop("filter.ind.missing.geno is deprecated in favour of: filter.markers.missing")
+    stop("
+filter.ind.missing.geno is deprecated in favour of: filter.markers.missing")
   }
 
 
@@ -560,7 +568,6 @@ filter_dart <- function(
   data.info$n.pop <- first.data.info$n.pop <- dplyr::n_distinct(strata.df$STRATA)
   data.info$n.ind <- first.data.info$n.ind <- dplyr::n_distinct(strata.df$INDIVIDUALS)
 
-
   # pop.select -----------------------------------------------------------------
   if (!is.null(pop.select)) {
     if (verbose) {
@@ -627,7 +634,7 @@ filter_dart <- function(
     data.info$n.ind <- n.id.after
     data.info$n.pop <- n.pop.after
   }
-
+  metadata <- NULL
   # Tidy DArT ------------------------------------------------------------------
   message("\nNext step requires the genotypes")
   if (data.type == "dart") {
@@ -640,6 +647,7 @@ filter_dart <- function(
       dplyr::filter(MARKERS %in% whitelist.markers$MARKERS) %>%
       dplyr::filter(INDIVIDUALS %in% strata.df$INDIVIDUALS)
   }
+
   # Change populations names or order/levels -----------------------------------
   if (is.factor(input$POP_ID)) input$POP_ID <- droplevels(input$POP_ID)
   pop.levels <- levels(input$POP_ID)
@@ -651,18 +659,15 @@ filter_dart <- function(
   # Update data info
   data.info$n.pop <- dplyr::n_distinct(input$POP_ID)
   data.info$n.ind <- dplyr::n_distinct(input$INDIVIDUALS)
-
-  # radiator::write_rad(data = input, path = "test.coverage.rad")
-  # input <- radiator::read_rad(data = input, path = "test.coverage.rad")
-
-  # update metadata file -------------------------------------------------------
-  write_rad(
-    data = metadata,
-    path = file.path(
-      path.folder,
-      stringi::stri_replace_all_fixed(metadata.file,
-                                      ".rad", "_filtered.rad",
-                                      vectorize_all = FALSE)))
+  #
+  #   # update metadata file -------------------------------------------------------
+  #   write_rad(
+  #     data = metadata,
+  #     path = file.path(
+  #       path.folder,
+  #       stringi::stri_replace_all_fixed(metadata.file,
+  #                                       ".rad", "_filtered.rad",
+  #                                       vectorize_all = FALSE)))
   # Filtering coverage --------------------------------------------------------
   if (!is.null(erase.genotypes) || !is.null(filter.markers.coverage) || interactive.filter) {
     message("Filtering coverage")
@@ -868,8 +873,11 @@ filter_dart <- function(
           ALLELE_ALT_DEPTH = NA_integer_,
           READ_DEPTH = NA_integer_
         )
-      input <- dplyr::filter(input, READ_DEPTH >= threshold.low.coverage) %>%
+      # we need to keep READ_DEPTH with NA...
+      input <- input %>%
+        dplyr::filter(is.na(READ_DEPTH) | READ_DEPTH >= threshold.low.coverage) %>%
         dplyr::bind_rows(blacklist.genotypes)
+
       blacklist.genotypes <- NULL
 
       # new.data.info <- data_info(metadata) # updating parameters
@@ -1012,7 +1020,7 @@ filter_dart <- function(
         axis.text.x = element.text
       ) +
       ggplot2::facet_wrap(~ ALLELES, scales = "free")
-    # plot.gl.violinplot
+    print(plot.gl.violinplot)
     suppressWarnings(ggplot2::ggsave(
       filename = file.path(path.folder.coverage, "plot.gl.violinplot.pdf"),
       plot = plot.gl.violinplot,
@@ -1090,8 +1098,7 @@ filter_dart <- function(
     blacklist.genotypes.gl <- geno.coverage %>%
       dplyr::select(MARKERS, INDIVIDUALS, GL) %>%
       dplyr::filter(GL < threshold.gl) %>%
-      dplyr::select(MARKERS, INDIVIDUALS)
-
+      dplyr::distinct(MARKERS, INDIVIDUALS)
 
     if (nrow(blacklist.genotypes.gl) > 0) {
       n.blacklist.genotypes <- nrow(blacklist.genotypes.gl)
@@ -1100,18 +1107,18 @@ filter_dart <- function(
               round(n.blacklist.genotypes / n.genotypes * 100, 2),")")
 
       blacklist.genotypes.gl <- blacklist.genotypes.gl %>%
-        dplyr::mutate(BLACKLIST_GENOTYPES_COMMENT = "bad.gl") %>%
-        dplyr::left_join(input, by = c("MARKERS", "INDIVIDUALS")) %>%
-        dplyr::select(MARKERS, CHROM, LOCUS, POS, REF, ALT, INDIVIDUALS, POP_ID,
-                      GT, GT_VCF, GT_VCF_NUC, GT_BIN, READ_DEPTH,
-                      ALLELE_REF_DEPTH, ALLELE_ALT_DEPTH,
-                      BLACKLIST_GENOTYPES_COMMENT) %>%
+        dplyr::mutate(BLACKLIST_GENOTYPES_COMMENT = rep("bad.gl", n()))
+
+      input <- dplyr::left_join(
+        input,
+        blacklist.genotypes.gl, by = c("MARKERS", "INDIVIDUALS"))
+
+      blacklist.genotypes.gl <- dplyr::filter(
+        input, BLACKLIST_GENOTYPES_COMMENT == "bad.gl") %>%
         readr::write_tsv(
           x = .,
           path = file.path(path.folder.coverage, "blacklist.genotypes.tsv"),
-          append = TRUE)
-
-      blacklist.genotypes.gl <- blacklist.genotypes.gl %>%
+          append = TRUE) %>%
         dplyr::select(-BLACKLIST_GENOTYPES_COMMENT) %>%
         dplyr::mutate(
           GT = rep("000000", n()),
@@ -1123,12 +1130,12 @@ filter_dart <- function(
           READ_DEPTH = NA_integer_
         )
 
-      # input.bk <- input
-      # input <- input.bk
-
       input <- input %>%
-        dplyr::anti_join(blacklist.genotypes.gl, by = c("MARKERS", "INDIVIDUALS")) %>%
+        dplyr::filter(
+          is.na(BLACKLIST_GENOTYPES_COMMENT) | BLACKLIST_GENOTYPES_COMMENT != "bad.gl") %>%
         dplyr::bind_rows(blacklist.genotypes.gl)
+      blacklist.genotypes.gl <- geno.coverage <- NULL
+
 
       # new.data.info <- data_info(metadata) # updating parameters
       filters.parameters <- tibble::data_frame(
@@ -1140,12 +1147,12 @@ filter_dart <- function(
         BLACKLIST = n.blacklist.genotypes,
         UNITS = "genotypes",
         COMMENTS = ""
-      )
-      readr::write_tsv(x = filters.parameters,
-                       path = filters.parameters.path, append = TRUE,
-                       col_names = FALSE)
+      ) %>%
+        readr::write_tsv(
+          x = .,
+          path = filters.parameters.path, append = TRUE,
+          col_names = FALSE)
     }
-    blacklist.genotypes.gl <- geno.coverage <- NULL
 
     #3. High coverage genotypes ------------------------------------------------
     if (interactive.filter) message("Exploration of high coverage genotypes")
@@ -1181,11 +1188,13 @@ filter_dart <- function(
         OUTLIERS_PROP = round(OUTLIERS_N / length(COVERAGE), 3)
       ) %>%
       readr::write_tsv(x = ., path = file.path(path.folder.coverage,"genotypes.high.coverage.stats.tsv"))
+
     message("generating plot...")
     plot.high.coverage.boxplot <- ggplot2::ggplot(
-      data.high.cov,
-      ggplot2::aes(x = factor(GROUP), y = COVERAGE, na.rm = TRUE)) +
-      ggplot2::geom_boxplot() +
+      data.high.cov.stats,
+      ggplot2::aes(factor(GROUP), na.rm = TRUE)) +
+      ggplot2::geom_boxplot(
+        ggplot2::aes(ymin = MIN, lower = Q25, middle = MEDIAN, upper = Q75, ymax = MAX), stat = "identity") +
       ggplot2::labs(
         x = "Coverage groups",
         y = "Coverage (read depth)",
@@ -1200,12 +1209,33 @@ filter_dart <- function(
         legend.text = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
         strip.text.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold")
       )
-    # plot.high.coverage.boxplot
+
+    # with data, but way too long
+    # plot.high.coverage.boxplot <- ggplot2::ggplot(
+    #   data.high.cov,
+    #   ggplot2::aes(x = factor(GROUP), y = COVERAGE, na.rm = TRUE)) +
+    #   ggplot2::geom_boxplot() +
+    #   ggplot2::labs(
+    #     x = "Coverage groups",
+    #     y = "Coverage (read depth)",
+    #     title = "Genotypes coverage information") +
+    #   ggplot2::theme(
+    #     plot.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold", hjust = 0.5),
+    #     legend.position = "none",
+    #     axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+    #     axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+    #     axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica"),
+    #     legend.title = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+    #     legend.text = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+    #     strip.text.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold")
+    #   )
+    print(plot.high.coverage.boxplot)
     suppressMessages(ggplot2::ggsave(
       filename = file.path(path.folder.coverage, "plot.high.coverage.boxplot.pdf"),
       plot = plot.high.coverage.boxplot,
       width = 15, height = 10, dpi = 300, units = "cm", useDingbats = FALSE))
     plot.high.coverage.boxplot <- NULL
+
 
     # Same plot, but with outliers removed
     coverage.outliers <- data.high.cov.stats %>%
@@ -1215,10 +1245,25 @@ filter_dart <- function(
 
     plot.high.coverage.filtered.boxplot <- data.high.cov %>%
       dplyr::filter(COVERAGE <= coverage.outliers) %>%
+      dplyr::group_by(GROUP) %>%
+      dplyr::summarise(
+        MEAN = mean(COVERAGE, na.rm = TRUE),
+        MEDIAN = stats::median(COVERAGE, na.rm = TRUE),
+        SD = stats::sd(COVERAGE, na.rm = TRUE),
+        Q25 = stats::quantile(COVERAGE, 0.25, na.rm = TRUE),
+        Q75 = stats::quantile(COVERAGE, 0.75, na.rm = TRUE),
+        IQR = Q75 - Q25,
+        MIN = min(COVERAGE, na.rm = TRUE),
+        MAX = max(COVERAGE, na.rm = TRUE),
+        OUTLIERS_COVERAGE = Q75 + (1.5 * IQR),
+        OUTLIERS_N = length(COVERAGE[COVERAGE > OUTLIERS_COVERAGE]),
+        OUTLIERS_PROP = round(OUTLIERS_N / length(COVERAGE), 3)
+      ) %>%
       ggplot2::ggplot(
         data = .,
-        ggplot2::aes(x = factor(GROUP), y = COVERAGE, na.rm = TRUE)) +
-      ggplot2::geom_boxplot() +
+        ggplot2::aes(factor(GROUP), na.rm = TRUE)) +
+      ggplot2::geom_boxplot(
+        ggplot2::aes(ymin = MIN, lower = Q25, middle = MEDIAN, upper = Q75, ymax = MAX), stat = "identity") +
       ggplot2::labs(
         x = "Coverage groups",
         y = "Coverage (read depth)",
@@ -1235,13 +1280,35 @@ filter_dart <- function(
         legend.text = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
         strip.text.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold")
       )
-    # plot.high.coverage.filtered.boxplot
+    # plot.high.coverage.filtered.boxplot <- data.high.cov %>%
+    #   dplyr::filter(COVERAGE <= coverage.outliers) %>%
+    #   ggplot2::ggplot(
+    #     data = .,
+    #     ggplot2::aes(x = factor(GROUP), y = COVERAGE, na.rm = TRUE)) +
+    #   ggplot2::geom_boxplot() +
+    #   ggplot2::labs(
+    #     x = "Coverage groups",
+    #     y = "Coverage (read depth)",
+    #     title = "Genotypes coverage information",
+    #     subtitle = stringi::stri_join("(outliers genotypes > ", coverage.outliers, " read depth removed)")) +
+    #   ggplot2::theme(
+    #     plot.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold", hjust = 0.5),
+    #     plot.subtitle = ggplot2::element_text(size = 10, family = "Helvetica", hjust = 0.5),
+    #     legend.position = "none",
+    #     axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+    #     axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+    #     axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica"),
+    #     legend.title = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+    #     legend.text = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+    #     strip.text.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold")
+    #   )
+    print(plot.high.coverage.filtered.boxplot)
     suppressMessages(ggplot2::ggsave(
       filename = file.path(path.folder.coverage, "plot.high.coverage.filtered.boxplot.pdf"),
       plot = plot.high.coverage.filtered.boxplot,
       width = 15, height = 10, dpi = 300, units = "cm", useDingbats = FALSE))
 
-    data.high.cov <- plot.high.coverage.filtered.boxplot <- NULL
+    data.high.cov.stats <- data.high.cov <- plot.high.coverage.filtered.boxplot <- NULL
 
     if (interactive.filter) {
       threshold.high.coverage <- 1000
@@ -1277,7 +1344,8 @@ filter_dart <- function(
           ALLELE_ALT_DEPTH = NA_integer_,
           READ_DEPTH = NA_integer_
         )
-      input <- dplyr::filter(input, READ_DEPTH <= threshold.high.coverage) %>%
+      input <- input %>%
+        dplyr::filter(is.na(READ_DEPTH) | READ_DEPTH <= threshold.high.coverage) %>%
         dplyr::bind_rows(blacklist.genotypes)
       blacklist.genotypes <- NULL
 
@@ -1291,12 +1359,12 @@ filter_dart <- function(
         BLACKLIST = n.blacklist.genotypes,
         UNITS = "genotypes",
         COMMENTS = ""
-      )
-      readr::write_tsv(x = filters.parameters,
-                       path = filters.parameters.path, append = TRUE,
-                       col_names = FALSE)
+      ) %>%
+        readr::write_tsv(
+          x = .,
+          path = filters.parameters.path, append = TRUE,
+          col_names = FALSE)
     }
-    blacklist.genotypes <- NULL
   }#End filter coverage counts data
 
   # change to the new directory
@@ -1396,11 +1464,11 @@ filter_dart <- function(
 
     ind.missing <-  input %>%
       dplyr::select(INDIVIDUALS, POP_ID, GT_BIN) %>%
-        dplyr::group_by(INDIVIDUALS, POP_ID) %>%
-        dplyr::summarise(
-          GENOTYPED_PROP_INDIVIDUALS = length(GT_BIN[!is.na(GT_BIN)]) / length(GT_BIN)
-        ) %>%
-        dplyr::ungroup(.) %>%
+      dplyr::group_by(INDIVIDUALS, POP_ID) %>%
+      dplyr::summarise(
+        GENOTYPED_PROP_INDIVIDUALS = length(GT_BIN[!is.na(GT_BIN)]) / length(GT_BIN)
+      ) %>%
+      dplyr::ungroup(.) %>%
       readr::write_tsv(x = ., path = file.path(path.folder.id.missing, "individuals.genotyping.info.tsv"))
     pop.levels.missing <- c(levels(ind.missing$POP_ID), "OVERALL")
 
@@ -1408,7 +1476,7 @@ filter_dart <- function(
       dplyr::mutate(POP_ID = rep("OVERALL", n()))
 
     ind.missing <- suppressWarnings(dplyr::bind_rows(ind.missing, overall) %>%
-      dplyr::mutate(POP_ID = factor(POP_ID, levels = pop.levels.missing)))
+                                      dplyr::mutate(POP_ID = factor(POP_ID, levels = pop.levels.missing)))
     overall <- pop.levels.missing <- NULL
     message("generating plot...")
     missing.ind.plot <- suppressWarnings(
@@ -1470,13 +1538,13 @@ filter_dart <- function(
         COMMENTS = ""
       )
       readr::write_tsv(x = filters.parameters, path = filters.parameters.path,
-                         append = TRUE, col_names = FALSE)
+                       append = TRUE, col_names = FALSE)
       # update data.info
       data.info$n.ind <- n.id.after
     } else {
       if (verbose) message("\nBlacklisted individuals: no")
     }
-    }#End filter missing per id
+  }#End filter missing per id
 
   # Filtering markers with too many missing ------------------------------------
   if (!is.null(filter.markers.missing) || interactive.filter) {
@@ -1750,7 +1818,7 @@ on the number of genotyped individuals per pop ? (overall or pop):")
     plot.ind.threshold <- NULL
   }#End filter.markers.missing
 
-  # change to the new directory
+  # change to the new directory for MAF filtering
   old.dir <- getwd()
   setwd(path.folder)
 
@@ -1880,14 +1948,14 @@ on the number of genotyped individuals per pop ? (overall or pop):")
     blacklist.snp.number.markers <- number.snp <- number.snp.reads.plot <- NULL
   }#End number.snp.reads
 
-  # update metadata info
-  metadata <- dplyr::filter(metadata, !MARKERS %in% blacklist.markers$MARKERS)
-  write_rad(
-    data = metadata,
-    path = file.path(
-      path.folder,
-      stringi::stri_replace_all_fixed(metadata.file, ".rad", "_filtered.rad",
-                                      vectorize_all = FALSE)))
+  # # update metadata info
+  # metadata <- dplyr::filter(metadata, !MARKERS %in% blacklist.markers$MARKERS)
+  # write_rad(
+  #   data = metadata,
+  #   path = file.path(
+  #     path.folder,
+  #     stringi::stri_replace_all_fixed(metadata.file, ".rad", "_filtered.rad",
+  #                                     vectorize_all = FALSE)))
 
   # Data quality AFTER filters --------------------------------------------------
   setwd(path.folder)
