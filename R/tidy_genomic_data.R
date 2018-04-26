@@ -458,7 +458,7 @@ tidy_genomic_data <- function(
     message("Number of individuals in blacklist: ", nrow(blacklist.id))
   }
 
-  # population levels and strata------------------------------------------------
+  # Strata and pop levels ------------------------------------------------------
   if (!is.null(strata)) {
     if (is.vector(strata)) {
       strata.df <- readr::read_tsv(
@@ -952,8 +952,16 @@ tidy_genomic_data <- function(
     if (!is.null(strata)) {
       strata.df$INDIVIDUALS <- radiator::clean_ind_names(strata.df$INDIVIDUALS)
 
-      if (tibble::has_name(input, "POP_ID")) input <- dplyr::select(input, -POP_ID)
-      input <- dplyr::left_join(input, strata.df, by = "INDIVIDUALS")
+      input <- suppressWarnings(input %>% dplyr::select(-dplyr::one_of(c("POP_ID"))))
+
+      # Check for matching ids before merging info
+      check.id <- unique(sort(unique(strata.df$INDIVIDUALS)) %in%
+                           sort(unique(input$INDIVIDUALS)))
+      if (FALSE %in% check.id) {
+        stop("Non-matching INDIVIDUALS between data and strata")
+      } else {
+        input <- dplyr::left_join(input, strata.df, by = "INDIVIDUALS")
+      }
     }
 
     # Change potential problematic POP_ID space

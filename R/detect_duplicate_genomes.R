@@ -769,8 +769,8 @@ distance_individuals <- function(
   n.ind <- dplyr::n_distinct(x$INDIVIDUALS)
   x <- suppressWarnings(
     dplyr::ungroup(x) %>%
-      dplyr::mutate(
-        n = as.numeric(stringi::stri_replace_na(str = n, replacement = 999))) %>% # missing data dummy variable
+      # dplyr::mutate(
+      #   n = as.numeric(stringi::stri_replace_na(str = n, replacement = 999))) %>% # missing data dummy variable
       data.table::as.data.table(.) %>%
       data.table::dcast.data.table(
         data = .,
@@ -779,9 +779,9 @@ distance_individuals <- function(
       ) %>%
       tibble::as_data_frame(.) %>%
       tibble::remove_rownames(.) %>%
-      tibble::column_to_rownames(df = ., var = "INDIVIDUALS")
-  )
-
+      tibble::column_to_rownames(df = ., var = "INDIVIDUALS"))
+  x[is.na(x)] <- 999
+  # anyNA(x)
 
 
   # compute distance
@@ -834,7 +834,7 @@ distance_individuals <- function(
 
   x <- dplyr::bind_cols(x, ID1.pop, ID2.pop) %>%
     dplyr::mutate(
-      POP_COMP = ifelse(ID1.pop == ID2.pop, "same pop", "different pop"),
+      POP_COMP = dplyr::if_else(ID1.pop == ID2.pop, "same pop", "different pop"),
       POP_COMP = factor(POP_COMP, levels = c("same pop", "different pop"), ordered = TRUE),
       PAIRWISE = rep("pairwise", n()),
       METHOD = rep(distance.method, n())

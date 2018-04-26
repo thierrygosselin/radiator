@@ -1,3 +1,15 @@
+# radiator v.0.0.11 2018-04-26
+
+* when individuals in strata file/object and data don't match, an error is generated
+* to reduce `radiator` dependencies, several packages were moved in the **Suggests** field.
+* `filter_dart`: lots of new stuff. More appropriate filter arguments:
+    * `filter.coverage` is deprecated in favour of: filter.markers.coverage
+    * `filter.ind.missing.geno` is deprecated in favour of: `filter.markers.missing`
+    * `erase.genotypes`: new argument tailored to handle coverage for DArT counts data.
+    * `filter.individuals.missing`: allows to blacklist sample early in the filtering
+    pipeline.
+
+
 # radiator v.0.0.10 2018-03-06
 
 * New output file: stockr 

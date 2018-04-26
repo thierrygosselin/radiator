@@ -1,8 +1,8 @@
 Package: radiator
 Type: Package
 Title: RADseq Data Exploration, Manipulation and Visualization using R
-Version: 0.0.10
-Date: 2018-03-06
+Version: 0.0.11
+Date: 2018-04-26
 Encoding: UTF-8
 Authors@R: c(
   person("Thierry", "Gosselin", email = "thierrygosselin@icloud.com", role = c("aut", "cre")),
@@ -12,8 +12,9 @@ Authors@R: c(
 Maintainer: Thierry Gosselin <thierrygosselin@icloud.com>
 Description: radiator: an R package for RADseq Data Exploration, Manipulation and Visualization.
 Depends:
-    R (>= 3.2.3)
+    R (>= 3.4.0)
 Imports:
+    broom,
     data.table,
     dplyr (>= 0.7.0),
     fst (>= 0.8.4),

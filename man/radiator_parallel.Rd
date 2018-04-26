@@ -12,7 +12,7 @@ mclapply_win(X, FUN, ..., mc.preschedule = TRUE, mc.set.seed = TRUE,
 
 .radiator_parallel_mc(X, FUN, ..., mc.preschedule = TRUE,
   mc.set.seed = TRUE, mc.silent = FALSE, mc.cores = getOption("mc.cores",
-  2L), mc.cleanup = TRUE, mc.allow.recursive = TRUE)
+  2L), mc.cleanup = TRUE, mc.allow.recursive = TRUE, affinity.list = NULL)
 
 .radiator_parallel(X, FUN, ..., mc.style = "ETA", mc.substyle = NA,
   mc.cores = getOption("mc.cores", 2L),

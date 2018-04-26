@@ -13,7 +13,7 @@
 #' If you encounter a problem, sent me your data so that I can update
 #' the function. The function can import \code{.csv} or \code{.tsv} files.
 
-#' @param strata A tab delimited file with 3 columns.
+#' @param strata A tab delimited file or object with 3 columns.
 #' Columns header is:
 #' \code{TARGET_ID}, \code{INDIVIDUALS} and \code{STRATA}.
 #' Note: the column \code{STRATA} refers to any grouping of individuals.
@@ -159,14 +159,22 @@ If you're still encountering problem, email author for help")
   if (verbose) message("Importing DArT data")
 
   # Strata file ------------------------------------------------------------------
-  strata.df <- readr::read_tsv(
-    file = strata, col_names = TRUE,
-    col_types = readr::cols(.default = readr::col_character())) %>%
-    dplyr::mutate(
-      TARGET_ID = stringi::stri_trans_toupper(TARGET_ID),
-      TARGET_ID = stringi::stri_replace_all_fixed(
-        TARGET_ID, pattern = " ", replacement = "", vectorize_all = FALSE)
-    )
+  if (is.vector(strata)) {
+    strata.df <- readr::read_tsv(
+      file = strata, col_names = TRUE,
+      col_types = readr::cols(.default = readr::col_character())) %>%
+      dplyr::mutate(
+        TARGET_ID = stringi::stri_trans_toupper(TARGET_ID),
+        TARGET_ID = stringi::stri_replace_all_fixed(
+          TARGET_ID, pattern = " ", replacement = "", vectorize_all = FALSE))
+  } else {
+    strata.df <- dplyr::mutate_all(.tbl = strata, .funs = as.character) %>%
+      dplyr::mutate(
+        TARGET_ID = stringi::stri_trans_toupper(TARGET_ID),
+        TARGET_ID = stringi::stri_replace_all_fixed(
+          TARGET_ID, pattern = " ", replacement = "", vectorize_all = FALSE))
+  }
+
 
   pop.levels <- unique(strata.df$STRATA)
 
@@ -188,7 +196,7 @@ If you're still encountering problem, email author for help")
 For more info: ", problem.filename)
     }
     message("\nCaution: you've chosen to tidy a subsample of your DArT file.
-DArT statistics generated for all samples might no longer be valid...\n")
+DArT statistics generated for all samples might no apply...\n")
   } else {
     if (!identical(sort(target.id$TARGET_ID), sort(strata.df$TARGET_ID))) {
       stop("\nThe DArT and strata files don't have the same TARGET_IDs")

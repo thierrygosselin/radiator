@@ -13,7 +13,7 @@ recognised (1- and 2- row format, also called binary, and count data.).
 If you encounter a problem, sent me your data so that I can update
 the function. The function can import \code{.csv} or \code{.tsv} files.}
 
-\item{strata}{A tab delimited file with 3 columns.
+\item{strata}{A tab delimited file or object with 3 columns.
 Columns header is:
 \code{TARGET_ID}, \code{INDIVIDUALS} and \code{STRATA}.
 Note: the column \code{STRATA} refers to any grouping of individuals.
