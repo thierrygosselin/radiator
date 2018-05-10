@@ -5,10 +5,10 @@
 \title{Detect heterozygotes outliers and estimate miscall rate}
 \usage{
 detect_het_outliers(data, nreps = 2000, burn.in = NULL,
-  blacklist.id = NULL, whitelist.markers = NULL, monomorphic.out = TRUE,
-  max.marker = NULL, snp.ld = NULL, common.markers = TRUE,
-  strata = NULL, pop.levels = NULL, pop.labels = NULL,
-  pop.select = NULL, filename = NULL,
+  blacklist.id = NULL, whitelist.markers = NULL, blacklist.markers = NULL,
+  monomorphic.out = TRUE, max.marker = NULL, snp.ld = NULL,
+  common.markers = TRUE, strata = NULL, pop.levels = NULL,
+  pop.labels = NULL, pop.select = NULL, filename = NULL,
   parallel.core = parallel::detectCores() - 1)
 }
 \arguments{
@@ -51,6 +51,11 @@ separators that interfere with some packages or codes:
 \code{/}, \code{:}, \code{-} and \code{.} are changed to an underscore
 \code{_}.
 Default \code{whitelist.markers = NULL} for no whitelist of markers.}
+
+\item{blacklist.markers}{(optional) Path to a file with markers to blacklist
+before generating the miscall rate. Usefull to test the impact of different
+HWE thresholds rapidly...
+Default: \code{blacklist.markers = NULL}.}
 
 \item{monomorphic.out}{(optional) Should the monomorphic
 markers present in the dataset be filtered out ?

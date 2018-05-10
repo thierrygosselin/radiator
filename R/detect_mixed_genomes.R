@@ -22,6 +22,11 @@
 #' Default: \code{ind.heterozygosity.threshold = NULL} will turn off completely
 #' the filter and the function will only output the plots and table of heterozygosity.
 
+#' @param verbose (optional, logical) When verbose = TRUE the function is a
+#' little more chatty during execution.
+#' Default: \code{verbose = TRUE}.
+
+
 #' @details To help discard an individual based on his observed heterozygosity
 #' (averaged across markers),
 #' use the manhanttan plot to:
@@ -157,15 +162,18 @@
 
 detect_mixed_genomes <- function(
   data,
-  ind.heterozygosity.threshold = NULL
+  ind.heterozygosity.threshold = NULL,
+  verbose = TRUE
 ) {
-  cat("###############################################################################\n")
-  cat("######################## radiator::detect_mixed_genomes #######################\n")
-  cat("###############################################################################\n")
+  if (verbose) {
+    cat("###############################################################################\n")
+    cat("######################## radiator::detect_mixed_genomes #######################\n")
+    cat("###############################################################################\n")
+  }
   timing <- proc.time()
   opt.change <- getOption("width")
   options(width = 70)
-  message("Analyzing data...")
+  if (verbose) message("Analyzing data...")
   # manage missing arguments ---------------------------------------------------
   if (missing(data)) stop("missing data argument")
 
@@ -175,7 +183,7 @@ detect_mixed_genomes <- function(
   folder.extension <- stringi::stri_join("detect_mixed_genomes_", file.date, sep = "")
   path.folder <- file.path(getwd(), folder.extension)
   dir.create(path.folder)
-  message(stringi::stri_join("Folder created: \n", folder.extension))
+  if (verbose) message(stringi::stri_join("Folder created: \n", folder.extension))
   file.date <- NULL #unused object
 
   # Import data ---------------------------------------------------------------
@@ -184,11 +192,15 @@ detect_mixed_genomes <- function(
   # highlight heterozygote and missing (optimized for speed depending on data)
   # you see the difference with > 30K SNP
 
-  n.markers.pop <- dplyr::filter(data, GT != "000000") %>%
-    dplyr::distinct(MARKERS, POP_ID) %>%
+  if (tibble::has_name(data, "GT_BIN")) {
+    n.markers.pop <- dplyr::filter(data, !is.na(GT_BIN))
+    n.markers.overall <- dplyr::n_distinct(data$MARKERS[!is.na(data$GT_BIN)])
+  } else {
+    n.markers.pop <- dplyr::filter(data, GT != "000000")
+    n.markers.overall <- dplyr::n_distinct(data$MARKERS[data$GT != "000000"])
+  }
+  n.markers.pop <- dplyr::distinct(n.markers.pop, MARKERS, POP_ID) %>%
     dplyr::count(x = ., POP_ID)
-
-  n.markers.overall <- dplyr::n_distinct(data$MARKERS[data$GT != "000000"])
 
   # For figure het and missingness:
   # 1 or 2 facets that include missingness computed by pop or overall
@@ -239,12 +251,11 @@ detect_mixed_genomes <- function(
       HET_PROP = HET_NUMBER / GENOTYPED
     ) %>%
     dplyr::arrange(POP_ID, HET_PROP) %>%
-    dplyr::ungroup(.)
-
-  readr::write_tsv(
-    x = het.ind,
-    path = file.path(path.folder, "individual.heterozygosity.tsv"),
-    col_names = TRUE)
+    dplyr::ungroup(.) %>%
+    readr::write_tsv(
+      x = .,
+      path = file.path(path.folder, "individual.heterozygosity.tsv"),
+      col_names = TRUE)
 
   het.ind.overall <- dplyr::mutate(.data = het.ind, POP_ID = as.character(POP_ID)) %>%
     dplyr::bind_rows(dplyr::mutate(.data = het.ind, POP_ID = rep("OVERALL", n()))) %>%
@@ -252,30 +263,43 @@ detect_mixed_genomes <- function(
     tidyr::gather(data = ., key = MISSING_GROUP, value = MISSING_PROP, -c(POP_ID, INDIVIDUALS, GENOTYPED, HET_NUMBER, HET_PROP)) %>%
     dplyr::mutate(MISSING_GROUP = factor(MISSING_GROUP, levels = c("MISSING_PROP_POP", "MISSING_PROP_OVERALL")))
 
-
   #Stats------------------------------------------------------------------------
-  message("Calculating statistics")
-  het.ind.stats <- het.ind.overall %>%
+  message("Calculating heterozygosity statistics")
+
+  het.ind.stats <- dplyr::filter(het.ind.overall,
+                                 MISSING_GROUP != "MISSING_PROP_POP") %>%
     dplyr::group_by(POP_ID) %>%
     dplyr::summarise(
-      HET_MEAN = mean(HET_PROP, na.rm = TRUE),
-      HET_MEDIAN = stats::median(HET_PROP, na.rm = TRUE),
-      HET_SD = stats::sd(HET_PROP, na.rm = TRUE),
-      HET_MIN = min(HET_PROP, na.rm = TRUE),
-      HET_MAX = max(HET_PROP, na.rm = TRUE)
-    ) %>%
-    dplyr::mutate_if(.tbl = ., .predicate = is.numeric, .funs = round, digits = 4) %>%
-    tidyr::unite(data = ., HET_RANGE, HET_MIN, HET_MAX, sep = " - ") %>%
-    dplyr::arrange(POP_ID, HET_MEAN)
-
-  readr::write_tsv(
-    x = het.ind.stats,
-    path = file.path(path.folder, "heterozygosity.statistics.tsv"),
-    col_names = TRUE)
+      MEAN = mean(HET_PROP, na.rm = TRUE),
+      MEDIAN = stats::median(HET_PROP, na.rm = TRUE),
+      SD = stats::sd(HET_PROP, na.rm = TRUE),
+      Q25 = stats::quantile(HET_PROP, 0.25, na.rm = TRUE),
+      Q75 = stats::quantile(HET_PROP, 0.75, na.rm = TRUE),
+      IQR = stats::IQR(HET_PROP, na.rm = TRUE),
+      MIN = min(HET_PROP, na.rm = TRUE),
+      MAX = max(HET_PROP, na.rm = TRUE),
+      OUTLIERS_LOW = Q25 - (1.5 * IQR),
+      OUTLIERS_HIGH = Q75 + (1.5 * IQR),
+      OUTLIERS_LOW_N = length(HET_PROP[HET_PROP < OUTLIERS_LOW]),
+      OUTLIERS_HIGH_N = length(HET_PROP[HET_PROP > OUTLIERS_HIGH]),
+      OUTLIERS_TOTAL = OUTLIERS_HIGH_N + OUTLIERS_LOW_N,
+      OUTLIERS_PROP = round(OUTLIERS_TOTAL / length(HET_PROP), 3)) %>%
+    dplyr::mutate_if(.tbl = ., .predicate = is.numeric, .funs = round, digits = 6) %>%
+    tidyr::unite(data = ., HET_RANGE, MIN, MAX, sep = " - ") %>%
+    dplyr::arrange(POP_ID) %>%
+    readr::write_tsv(
+      x = .,
+      path = file.path(path.folder, "heterozygosity.statistics.tsv"),
+      col_names = TRUE)
 
 
   # Plots ----------------------------------------------------------------------
   message("Generating plots")
+
+  # outlier info
+  overall.outlier.low <- het.ind.stats$OUTLIERS_LOW[het.ind.stats$POP_ID == "OVERALL"]
+  overall.outlier.high <- het.ind.stats$OUTLIERS_HIGH[het.ind.stats$POP_ID == "OVERALL"]
+
   n.pop <- dplyr::n_distinct(data$POP_ID)
   rounder <- function(x, accuracy, f = round) {
     f(x / accuracy) * accuracy
@@ -287,7 +311,8 @@ detect_mixed_genomes <- function(
 
   # labeller to rename in the facet_grid or facet_wrap call:
   if (missing.group == "2") {
-    facet_names <- ggplot2::as_labeller(c(`MISSING_PROP_OVERALL` = "Missing (overall)", `MISSING_PROP_POP` = "Missing (populations)"))
+    facet_names <- ggplot2::as_labeller(c(`MISSING_PROP_OVERALL` = "Missing (overall)",
+                                          `MISSING_PROP_POP` = "Missing (populations)"))
   } else {
     facet_names <- ggplot2::as_labeller(c(`MISSING_PROP_OVERALL` = "Missing (overall)"))
     het.ind.overall <- dplyr::filter(het.ind.overall, MISSING_GROUP != "MISSING_PROP_POP")
@@ -297,12 +322,20 @@ detect_mixed_genomes <- function(
     data = het.ind.overall,
     ggplot2::aes(x = POP_ID, y = HET_PROP, size = MISSING_PROP, colour = POP_ID)) +
     ggplot2::geom_jitter(alpha = 0.6) +
-    ggplot2::scale_y_continuous(name = "Individual's Observed Heterozygosity (proportion)",
+    ggplot2::scale_y_continuous(name = "Mean Observed Heterozygosity (proportion)",
                                 breaks = y.breaks, labels = y.breaks, limits = c(y.breaks.min, y.breaks.max)) + #y.breaks
     ggplot2::scale_color_discrete(guide = "none") +
     ggplot2::scale_size_continuous(name = "Missing proportion") +
+    ggplot2::labs(
+      title = "Genome-wide individual's mean observed heterozygosity",
+      subtitle = stringi::stri_join(
+        "overall data outlier thresholds (low/high): ", overall.outlier.low, "/",
+        overall.outlier.high)
+    ) +
     ggplot2::theme(
       panel.grid.major.x = ggplot2::element_blank(),
+      plot.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold", hjust = 0.5),
+      plot.subtitle = ggplot2::element_text(size = 10, family = "Helvetica", hjust = 0.5),
       axis.line.x = ggplot2::element_blank(),
       axis.title.x = ggplot2::element_blank(),
       axis.text.x = ggplot2::element_blank(),
@@ -310,10 +343,11 @@ detect_mixed_genomes <- function(
       axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
       axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
     ) +
-    ggplot2::geom_hline(mapping = ggplot2::aes(yintercept = HET_MEAN),
+    ggplot2::geom_hline(mapping = ggplot2::aes(yintercept = MEAN),
                         het.ind.stats, linetype = "dotted", size = 0.6) +#mean
-    ggplot2::facet_grid(MISSING_GROUP ~ POP_ID, switch = "x", scales = "free", labeller = ggplot2::labeller(MISSING_GROUP = facet_names))
-  # het.manhattan # test
+    ggplot2::facet_grid(MISSING_GROUP ~ POP_ID, switch = "x", scales = "free",
+                        labeller = ggplot2::labeller(MISSING_GROUP = facet_names))
+  # het.manhattan
 
 
   ggplot2::ggsave(
@@ -324,16 +358,23 @@ detect_mixed_genomes <- function(
 
   het.bp <- ggplot2::ggplot(data = het.ind.overall, ggplot2::aes(x = POP_ID, y = HET_PROP, colour = POP_ID)) +
     ggplot2::geom_boxplot() +
-    ggplot2::labs(x = "Populations") +
-    ggplot2::labs(colour = "Populations") +
+    ggplot2::labs(
+      x = "Populations",
+      title = "Genome-wide individual's mean observed heterozygosity",
+      subtitle = stringi::stri_join(
+        "overall data outlier thresholds (low/high): ", overall.outlier.low, "/",
+        overall.outlier.high),
+      colour = "Populations") +
     ggplot2::scale_y_continuous(
-      name = "Individual's Mean Observed Heterozygosity (proportion)",
+      name = "Mean Observed Heterozygosity (proportion)",
       breaks = y.breaks, labels = y.breaks, limits = c(y.breaks.min, y.breaks.max)) + #y.breaks
     # breaks = y.breaks, limits = c(0, y.breaks.max), expand = c(0.06, 0)) +
     ggplot2::theme_classic() +
     # ggplot2::theme_minimal() +
     ggplot2::theme(
       legend.position = "none",
+      plot.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold", hjust = 0.5),
+      plot.subtitle = ggplot2::element_text(size = 10, family = "Helvetica", hjust = 0.5),
       axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
       axis.text.x = ggplot2::element_text(size = 10, family = "Helvetica"),
       axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
@@ -344,7 +385,7 @@ detect_mixed_genomes <- function(
     filename = file.path(path.folder, "individual.heterozygosity.boxplot.pdf"),
     plot = het.bp,
     width = 4 * n.pop, height = 10, dpi = 600, units = "cm", useDingbats = FALSE, limitsize = FALSE)
-
+  het.ind.overall <- NULL
   ## Step 2: Blacklist outlier individuals -------------------------------------
   # Blacklist individuals based a threshold of mean heterozygosity
   if (!is.null(ind.heterozygosity.threshold)) {
@@ -366,8 +407,10 @@ detect_mixed_genomes <- function(
     blacklist.ind.het <- "ind.heterozygosity.threshold is necessary to get a blacklist of individuals"
   }
 
-  message("Computation time: ", round((proc.time() - timing)[[3]]), " sec")
-  cat("################################## completed ##################################\n")
+  if (verbose) {
+    message("Computation time: ", round((proc.time() - timing)[[3]]), " sec")
+    cat("################################## completed ##################################\n")
+  }
   res <- list(
     individual.heterozygosity = het.ind,
     heterozygosity.statistics = het.ind.stats,

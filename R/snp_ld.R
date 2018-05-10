@@ -173,14 +173,15 @@ snp_ld <- function(
   if (snp.ld == "maf") {
     snp.locus <- dplyr::distinct(data, MARKERS, LOCUS, POS)
 
+    snp.select.no.maf <- dplyr::group_by(.data = snp.locus, LOCUS) %>%
+      dplyr::tally(.) %>%
+      dplyr::filter(n == 1) %>%
+      dplyr::left_join(snp.locus, by = "LOCUS") %>%
+      dplyr::select(-n) %>%
+      dplyr::distinct(MARKERS, .keep_all = TRUE)
+
+
     if (is.null(maf.data)) {
-
-      snp.select.no.maf <- dplyr::group_by(.data = snp.locus, LOCUS) %>%
-        dplyr::tally(.) %>%
-        dplyr::filter(n == 1) %>%
-        dplyr::left_join(snp.locus, by = "LOCUS") %>%
-        dplyr::select(-n)
-
       # calculate GLOBAL MAF per SNP/LOCUS
       if (tibble::has_name(data, "GT_BIN")) {
         markers.df <- dplyr::distinct(snp.locus, MARKERS) %>%
@@ -274,19 +275,28 @@ snp_ld <- function(
           dplyr::select(MARKERS, MAF_GLOBAL)
       }
 
-    } else {
-      maf.data <- readr::read_tsv(file = maf.data, col_types = "c__d____") %>%
-        dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-        dplyr::filter(MARKERS %in% snp.select.no.maf$MARKERS)
-    }
+      snp.select.maf <- snp.locus %>%
+        dplyr::filter(!MARKERS %in% snp.select.no.maf$MARKERS) %>%
+        dplyr::left_join(maf.data, by = "MARKERS") %>%
+        dplyr::group_by(LOCUS) %>%
+        dplyr::filter(MAF_GLOBAL == max(MAF_GLOBAL)) %>%
+        dplyr::ungroup(.) %>%
+        dplyr::distinct(LOCUS, .keep_all = TRUE)
 
-    snp.select.maf <- snp.locus %>%
-      dplyr::filter(!MARKERS %in% snp.select.no.maf$MARKERS) %>%
-      dplyr::left_join(maf.data, by = "MARKERS") %>%
-      dplyr::group_by(LOCUS) %>%
-      dplyr::filter(MAF_GLOBAL == max(MAF_GLOBAL)) %>%
-      dplyr::ungroup(.) %>%
-      dplyr::distinct(LOCUS, .keep_all = TRUE)
+    } else {
+      snp.select.maf <- snp.locus %>%
+        dplyr::filter(!MARKERS %in% snp.select.no.maf$MARKERS) %>%
+        dplyr::left_join(
+          suppressWarnings(
+            readr::read_tsv(file = maf.data, col_types = "c____d__") %>%
+              dplyr::distinct(MARKERS, .keep_all = TRUE) #%>% dplyr::filter(!MARKERS %in% snp.select.no.maf$MARKERS)
+          ), by = "MARKERS") %>%
+        dplyr::group_by(LOCUS) %>%
+        dplyr::filter(MAF_GLOBAL == max(MAF_GLOBAL)) %>%
+        dplyr::ungroup(.) %>%
+        dplyr::select(-MAF_GLOBAL) %>%
+        dplyr::distinct(LOCUS, .keep_all = TRUE)
+    }
 
     snp.select <- dplyr::distinct(snp.select.no.maf, LOCUS, POS) %>%
       dplyr::bind_rows(snp.select.maf)
@@ -299,6 +309,7 @@ snp_ld <- function(
     snp.locus <- maf.data <- NULL
   }#End snp maf
 
+  snp.select.maf <- snp.select.no.maf <- NULL
   # filtering the VCF to minimize LD -----------------------------------------
   data <- dplyr::semi_join(data, snp.select, by = c("LOCUS", "POS"))
   message("    Filtering the dataset to minimize LD by keeping only 1 SNP per locus")

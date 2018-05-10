@@ -5,7 +5,8 @@
 \title{Tidy \href{http://www.diversityarrays.com}{DArT} output file.}
 \usage{
 tidy_dart(data, strata, whitelist.markers = NULL, filename = NULL,
-  verbose = FALSE, parallel.core = parallel::detectCores() - 1)
+  tidy.output = "full", verbose = FALSE,
+  parallel.core = parallel::detectCores() - 1, ...)
 }
 \arguments{
 \item{data}{DArT output file. Note that most popular formats used by DArT are
@@ -44,6 +45,13 @@ the \code{filename} provided is \code{.rad}.
 With default: \code{filename = NULL}, the tidy data frame is
 in the global environment only (i.e. not written in the working directory...).}
 
+\item{tidy.output}{Superfluous information in the tidy data generated can be
+discarded automatically in 2 ways: \code{tidy.output == "light"} will remove
+\code{CROM, LOCUS, POS, GT_VCF, GT_VCF_NUC, GT} columns and
+\code{tidy.output == "strip"} will only keep
+\code{MARKERS, INDIVIDUALS, POP_ID, GT_BIN} columns.
+Default: \code{tidy.output == "full"}.}
+
 \item{verbose}{(optional, logical) When verbose = TRUE the function is a
 little more chatty during execution.
 Default: \code{verbose = FALSE}.}
@@ -51,6 +59,8 @@ Default: \code{verbose = FALSE}.}
 \item{parallel.core}{(optional) The number of core used for parallel
 execution during import.
 Default: \code{parallel::detectCores() - 1}.}
+
+\item{...}{(optional) To pass further argument for fine-tuning the function.}
 }
 \value{
 A tidy dataframe with several columns depending on DArT file:
@@ -82,6 +92,8 @@ Written in the working directory:
 \item The DArT metadata information
 \item The tidy DArT data
 \item The strata file associated with this tidy dataset
+\item The allele dictionary is a tibble with columns:
+\code{MARKERS, CHROM, LOCUS, POS, REF, ALT}.
 }
 }
 \description{
@@ -89,12 +101,30 @@ Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and might be of interest for users. The function generate a tidy dataset using
 \href{http://www.diversityarrays.com}{DArT} file.
 }
+\details{
+\strong{... :dot dot dot arguments}
+
+Reserved for advanced users. Additional argument passed to the function:
+\itemize{
+\item missing.memory: a \code{.rad} file that contains 3 columns:
+\code{MARKERS, INDIVIDUALS, ERASE}. The file is produced by several radiator
+functions. For DArT data, \code{\link[radiator]{filter_dart}} generate the file.
+Allows to erase genotypes that have bad statistics.
+}
+}
 \examples{
 \dontrun{
 clownfish.dart.tidy <- radiator::tidy_dart(
 data = "clownfish.dart.tsv",
 strata = "clownfish.strata.tsv",
 verbose = TRUE)
+
+# To get a strip, bare minimal version of the DArT tidy data:
+clownfish.dart.tidy <- radiator::tidy_dart(
+data = "clownfish.dart.tsv",
+strata = "clownfish.strata.tsv",
+tidy.output = "strip")
+# Only MARKERS, INDIVIDUALS, POP_ID, GT_BIN is generated in the output
 }
 }
 \author{

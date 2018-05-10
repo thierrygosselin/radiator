@@ -57,6 +57,10 @@
 #' @param parallel.core (optional) The number of core for parallel computation.
 #' Default: \code{parallel.core = parallel::detectCores() - 1}.
 
+#' @param verbose (optional, logical) When verbose = TRUE the function is a
+#' little more chatty during execution.
+#' Default: \code{verbose = TRUE}.
+
 #' @return A list with potentially 8 objects:
 #' \code{$distance }: results of the distance method
 #' \code{$distance.stats}: Summary statistics of the distance method
@@ -178,12 +182,15 @@ detect_duplicate_genomes <- function(
   genome = FALSE,
   threshold.common.markers = NULL,
   blacklist.duplicates = FALSE,
-  parallel.core = parallel::detectCores() - 1
+  parallel.core = parallel::detectCores() - 1,
+  verbose = TRUE
 ) {
-  cat("\n")
-  cat("###############################################################################\n")
-  cat("##################### radiator::detect_duplicate_genomes ######################\n")
-  cat("###############################################################################\n")
+  if (verbose) {
+    cat("\n")
+    cat("###############################################################################\n")
+    cat("##################### radiator::detect_duplicate_genomes ######################\n")
+    cat("###############################################################################\n")
+  }
   timing <- proc.time()
   opt.change <- getOption("width")
   options(width = 70)
@@ -196,7 +203,7 @@ detect_duplicate_genomes <- function(
   folder.extension <- stringi::stri_join("detect_duplicate_genomes_", file.date, sep = "")
   path.folder <- file.path(getwd(), folder.extension)
   dir.create(file.path(path.folder))
-  message("Folder created: \n", folder.extension)
+  if (verbose) message("Folder created: \n", folder.extension)
   file.date <- NULL #unused object
 
   # Import data ---------------------------------------------------------------
@@ -242,7 +249,7 @@ detect_duplicate_genomes <- function(
   res <- list()
 
   # Preparing data for comparisons ---------------------------------------------
-  message("Preparing data for analysis")
+  if (verbose) message("Preparing data for analysis")
 
   #Genotyped stats -------------------------------------------------------------
   n.markers <- dplyr::n_distinct(data$MARKERS)
@@ -290,7 +297,7 @@ detect_duplicate_genomes <- function(
       dplyr::select(-GT) %>%
       dplyr::mutate(MISSING = rep("blacklist", n()))
 
-    message("Preparing data: calculating allele count")
+    if (verbose) message("Preparing data: calculating allele count")
     input.prep <- dplyr::select(data, MARKERS, INDIVIDUALS, GT) %>%
       dplyr::left_join(
         dplyr::distinct(data, MARKERS) %>%
@@ -461,7 +468,7 @@ detect_duplicate_genomes <- function(
     }
     keep.data <- TRUE
     if (number.pairwise > 100000) {
-      message("    Time for coffee...")
+      if (verbose) message("    Time for coffee...")
       keep.data <- FALSE
     }
 
@@ -542,7 +549,7 @@ detect_duplicate_genomes <- function(
       dplyr::bind_rows(.)
     data <- id.pairwise <- NULL # no longer needed
 
-    message("Generating summary statistics")
+    if (verbose) message("Generating summary statistics")
     if (nrow(res$pairwise.genome.similarity) == 0) {
       data.import <- readr::read_tsv(file = pairwise.filename, col_types = "d____c___i__d___c_")
       new.pairwise <- nrow(data.import)
@@ -708,8 +715,9 @@ detect_duplicate_genomes <- function(
 
 
   # RESULTS --------------------------------------------------------------------
-  cat("################################### RESULTS ###################################\n")
-  message("Object in the list (if all arguments are selected):\n
+  if (verbose) {
+    cat("################################### RESULTS ###################################\n")
+    message("Object in the list (if all arguments are selected):\n
           $distance                         # Distance method results
           $distance.stats                   # Summary statistics of the distance method
           $pairwise.genome.similarity       # Genome method results
@@ -732,9 +740,10 @@ detect_duplicate_genomes <- function(
           violin.plot.genome.pdf
           manhattan.plot.genome.pdf
           ")
-  message("More details in: ", folder.extension)
-  message("Computation time: ", round((proc.time() - timing)[[3]]), " sec")
-  cat("############################## completed ##############################\n")
+    message("More details in: ", folder.extension)
+    message("Computation time: ", round((proc.time() - timing)[[3]]), " sec")
+    cat("############################## completed ##############################\n")
+  }
   options(width = opt.change)
   return(res)
 } # end function detect_duplicate_genomes
@@ -971,7 +980,7 @@ genome_similarity <- function(split.vec, all.pairs,
     threshold.common.markers = threshold.common.markers)
   all.pairs <- NULL
   blacklist.pairs.threshold <- genome.comparison %>% purrr::map_df("blacklist.pairs.threshold")
-    if (nrow(blacklist.pairs.threshold) > 0) {
+  if (nrow(blacklist.pairs.threshold) > 0) {
     readr::write_tsv(
       x = blacklist.pairs.threshold,
       path = blacklist.pairs.filename,

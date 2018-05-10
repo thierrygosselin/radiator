@@ -8,7 +8,7 @@ to highligh potential duplicate individuals}
 detect_duplicate_genomes(data, subsample.markers = NULL, random.seed = NULL,
   distance.method = "manhattan", genome = FALSE,
   threshold.common.markers = NULL, blacklist.duplicates = FALSE,
-  parallel.core = parallel::detectCores() - 1)
+  parallel.core = parallel::detectCores() - 1, verbose = TRUE)
 }
 \arguments{
 \item{data}{A tidy data frame object in the global environment or
@@ -57,6 +57,10 @@ interaction with user.}
 
 \item{parallel.core}{(optional) The number of core for parallel computation.
 Default: \code{parallel.core = parallel::detectCores() - 1}.}
+
+\item{verbose}{(optional, logical) When verbose = TRUE the function is a
+little more chatty during execution.
+Default: \code{verbose = TRUE}.}
 }
 \value{
 A list with potentially 8 objects:

@@ -234,15 +234,23 @@ data_info <- function(x, print.info = FALSE) {
     n.ind <- 0
   }
   if (tibble::has_name(x, "MARKERS")) {
-    x <- dplyr::distinct(x, MARKERS, CHROM, LOCUS)
-    n.chrom <- dplyr::n_distinct(x$CHROM)
-    n.locus <- dplyr::n_distinct(x$LOCUS)
     n.snp <- dplyr::n_distinct(x$MARKERS)
   } else {
-    n.chrom <- 0
-    n.locus <- 0
     n.snp <- 0
   }
+
+  if (tibble::has_name(x, "LOCUS")) {
+    n.locus <- dplyr::n_distinct(x$LOCUS)
+  } else {
+    n.locus <- 0
+  }
+
+  if (tibble::has_name(x, "CHROM")) {
+    n.chrom <- dplyr::n_distinct(x$CHROM)
+  } else {
+    n.chrom <- 0
+  }
+
   res <- list(
     n.pop = n.pop,
     n.ind = n.ind,

@@ -67,6 +67,11 @@ change_alleles <- function(
   parallel.core = parallel::detectCores() - 1,
   verbose = FALSE) {
 
+  # test
+  # biallelic = NULL
+  # parallel.core = parallel::detectCores() - 1
+  # verbose = TRUE
+
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) stop("Input file missing")
 
@@ -88,6 +93,11 @@ change_alleles <- function(
     letter.coding <- unique(stringi::stri_detect_regex(
       str = unique(data$REF),
       pattern = "[A-Za-z]"))
+
+    if (letter.coding && !nuc.info) {
+      data <- generate_vcf_nuc(x = data, parallel.core = parallel.core)
+      nuc.info <- TRUE
+    }
     if (!nuc.info && letter.coding) ref.info <- FALSE
   }
 
@@ -464,3 +474,32 @@ integrate_ref <- function(
   return(x)
 } #End integrate_ref
 
+
+
+#' @title generate_vcf_nuc
+#' @description Generate GT_VCF_NUC field from REF/ALT and GT_BIN columns
+#' @rdname generate_vcf_nuc
+#' @keywords internal
+#' @export
+
+generate_vcf_nuc <- function(x, parallel.core = parallel::detectCores() - 1) {
+    vcf_nuc <- function(x) {
+    x <- dplyr::select(x, -SPLIT_VEC) %>%
+      dplyr::mutate(
+      GT_VCF_NUC = dplyr::if_else(
+        GT_BIN == "0", stringi::stri_join(REF, REF, sep = "/"),
+        dplyr::if_else(GT_BIN == "2", stringi::stri_join(ALT, ALT, sep = "/"),
+                       stringi::stri_join(REF, ALT, sep = "/")), "./."))
+    }# End vcf_nuc
+
+    x <- x %>%
+      dplyr::mutate(SPLIT_VEC = split_vec_row(x = ., cpu.rounds = 3, parallel.core = parallel.core)) %>%
+      split(x = ., f = .$SPLIT_VEC) %>%
+      .radiator_parallel_mc(
+        X = .,
+        FUN = vcf_nuc,
+        mc.cores = parallel.core
+      ) %>%
+      dplyr::bind_rows(.)
+  return(x)
+}#End generate_vcf_nuc

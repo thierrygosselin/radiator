@@ -860,6 +860,7 @@ tidy_genomic_data <- function(
     input <- read_rad(data = data)
     skip.tidy.wide <- TRUE
   }
+
   # Import GENIND--------------------------------------------------------------
   if (data.type == "genind") { # DATA FRAME OF GENOTYPES
     if (verbose) message("Tidying the genind object ...")

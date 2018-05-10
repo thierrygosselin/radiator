@@ -66,10 +66,10 @@ tidy_dart_metadata <- function(
   if (missing(data)) stop("Input file missing")
   # Date and Time --------------------------------------------------------------
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
-  if (is.null(filename)) {
-    meta.filename <- stringi::stri_join("radiator_tidy_dart_metadata_", file.date, ".rad")
-  } else {
-    meta.filename <- stringi::stri_join(filename, "_metadata", ".rad")
+  if (!is.null(filename)) {
+    # meta.filename <- stringi::stri_join("radiator_tidy_dart_metadata_", file.date, ".rad")
+  # } else {
+    meta.filename <- stringi::stri_join(filename, "_metadata_", file.date,".rad")
   }
 
   data.type <- radiator::detect_genomic_format(data)
@@ -205,16 +205,23 @@ tidy_dart_metadata <- function(
         dplyr::distinct(MARKERS, .keep_all = TRUE))
   }
 
-  radiator::write_rad(data = input, path = meta.filename)
-  # readr::write_tsv(x = input, path = meta.filename)
-  message("Marker's metadata file written to the directory:\n    ", meta.filename)
-
+  if (!is.null(filename)) {
+    radiator::write_rad(data = input, path = meta.filename)
+    short.name <- list.files(path = ".", pattern = "metadata")
+    if (length(short.name) > 1) {
+      short.name <- file.info(short.name) %>%
+        tibble::rownames_to_column(df = ., var = "FILE") %>%
+        dplyr::filter(mtime == max(mtime))
+      short.name <- short.name$FILE
+    }
+    message("Marker's metadata file written:\n    ", short.name)
+  }
   # Results --------------------------------------------------------------------
   if (verbose) {
     n.chrom <- dplyr::n_distinct(input$CHROM)
     n.locus <- dplyr::n_distinct(input$LOCUS)
     n.snp <- dplyr::n_distinct(input$MARKERS)
-    message("Number of chrom: ", n.chrom)
+    message("\nNumber of chrom: ", n.chrom)
     message("Number of locus: ", n.locus)
     message("Number of SNPs: ", n.snp)
     timing <- proc.time() - timing

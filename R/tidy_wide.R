@@ -112,21 +112,22 @@ tidy_wide <- function(data, import.metadata = FALSE) {
   }
 
   # Remove unwanted sep in the genotypes (if found)
-  gt.sep <- unique(
-    stringi::stri_detect_fixed(
-      str = sample(x = data$GT, size = 5, replace = FALSE),
-      pattern = c("/", ":", "_", "-", ".")))
-
-  if (length(gt.sep) > 1) gt.sep <- TRUE
-  if (gt.sep) {
-    data <- data %>%
-      dplyr::mutate(
-        GT = stringi::stri_replace_all_fixed(
-          str = as.character(GT),
-          pattern = c("/", ":", "_", "-", "."),
-          replacement = "",
-          vectorize_all = FALSE),
-        GT = stringi::stri_pad_left(str = as.character(GT), pad = "0", width = 6))
+  if (tibble::has_name(data, "GT")) {
+    gt.sep <- unique(
+      stringi::stri_detect_fixed(
+        str = sample(x = data$GT, size = 5, replace = FALSE),
+        pattern = c("/", ":", "_", "-", ".")))
+    if (length(gt.sep) > 1) gt.sep <- TRUE
+    if (gt.sep) {
+      data <- data %>%
+        dplyr::mutate(
+          GT = stringi::stri_replace_all_fixed(
+            str = as.character(GT),
+            pattern = c("/", ":", "_", "-", "."),
+            replacement = "",
+            vectorize_all = FALSE),
+          GT = stringi::stri_pad_left(str = as.character(GT), pad = "0", width = 6))
+    }
   }
 
   # clean markers names

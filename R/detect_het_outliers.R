@@ -19,6 +19,11 @@
 
 #' @inheritParams tidy_genomic_data
 
+#' @param blacklist.markers (optional) Path to a file with markers to blacklist
+#' before generating the miscall rate. Usefull to test the impact of different
+#' HWE thresholds rapidly...
+#' Default: \code{blacklist.markers = NULL}.
+
 #' @details
 #' \strong{Before using the function:}
 #' \enumerate{
@@ -105,6 +110,7 @@ detect_het_outliers <- function (
   burn.in = NULL,
   blacklist.id = NULL,
   whitelist.markers = NULL,
+  blacklist.markers = NULL,
   monomorphic.out = TRUE,
   max.marker = NULL,
   snp.ld = NULL,
@@ -157,6 +163,17 @@ detect_het_outliers <- function (
       import.col <- purrr::discard(.x = import.col, .p = !import.col %in% want)
       res$input <- fst::read.fst(path = data, columns = import.col)
       import.col <- want <- NULL
+    }
+
+    # Remove blacklisted markers -------------------------------------------------
+    # Note to myself: I think this argument is useful because it allows to test
+    # quickly the impact of different HWE thresholds.
+    if (!is.null(blacklist.markers)) {
+      message("Removing markers in the blacklist")
+      blacklist.markers <- readr::read_tsv(
+        file = blacklist.markers,
+        col_types = readr::cols(.default = readr::col_character()))
+      res$input <- dplyr::filter(res$input, !MARKERS %in% blacklist.markers$MARKERS)
     }
 
     # because this step skip the import and filter process we include monomorphic filter
@@ -266,36 +283,83 @@ detect_het_outliers <- function (
 
 
 # Internal nested functions ----------------------------------------------------
-
-# Generate genotypes frequencies boundaries
-
-#' @title plot_het_outliers
-#' @description Function that calculates genotypes observed and expected frequencies
-#' returns a tibble with all the summary info and a plot with boundaries.
-#' @rdname plot_het_outliers
+#' @title summarise genotypes
+#' @description Function that summarise genotypes info
+#' @rdname summarise_genotypes
 #' @keywords internal
 #' @export
-#' @author Eric Anderson \email{eric.anderson@noaa.gov} and
-#' Thierry Gosselin \email{thierrygosselin@@icloud.com}
+#' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
-plot_het_outliers <- function(data, path.folder = NULL) {
-  res <- list() # to store results
-  res$het.summary <- data %>%
-    dplyr::select(POP_ID, INDIVIDUALS, MARKERS, GT_BIN) %>%
-    dplyr::filter(!is.na(GT_BIN))
-  data <- NULL
+summarise_genotypes <- function(data, path.folder = NULL) {
+  if(is.null(path.folder)) path.folder <- getwd()
 
-  n.pop <- dplyr::n_distinct(res$het.summary$POP_ID)
+  # data.bk <- data
+  # data <- data.bk
+  want <- c("MARKERS", "POP_ID", "INDIVIDUALS", "GT_BIN", "READ_DEPTH")
+  data <- suppressWarnings(dplyr::select(data, dplyr::one_of(want))) #%>% dplyr::filter(!is.na(GT_BIN))
 
-  #by pop
-  freq.pop <- res$het.summary %>%
-    dplyr::group_by(MARKERS, POP_ID) %>%
-    dplyr::summarise(
-      N = n(),
-      HOM_REF = length(GT_BIN[GT_BIN == 0]),
-      HET = length(GT_BIN[GT_BIN == 1]),
-      HOM_ALT = length(GT_BIN[GT_BIN == 2])
+  # n.pop <- dplyr::n_distinct(data$POP_ID)
+  if (is.factor(data$POP_ID)) {
+    pop.levels <- c(levels(data$POP_ID), "OVERALL")
+  } else {
+    pop.levels <- c(sort(unique(data$POP_ID)), "OVERALL")
+  }
+  data$POP_ID <- as.character(data$POP_ID)
+  replace_zero <- function(x) replace(x = x, list = which(is.na(x)), 0)
+
+  # sum of read depth per pop and overall
+  # scaled separately for pop and overall before merging
+  if (tibble::has_name(data, "READ_DEPTH")) {
+    rd.pop <- dplyr::select(data, MARKERS, POP_ID, READ_DEPTH) %>%
+      dplyr::group_by(MARKERS, POP_ID) %>%
+      dplyr::summarise(READ_DEPTH = sum(READ_DEPTH, na.rm = TRUE)) %>%
+      dplyr::ungroup(.) %>%
+      dplyr::mutate(READ_DEPTH_SCALED = READ_DEPTH / max(READ_DEPTH, na.rm = TRUE))
+
+    rd <- dplyr::bind_rows(
+      dplyr::select(rd.pop, MARKERS, POP_ID, READ_DEPTH = READ_DEPTH_SCALED),
+      dplyr::mutate(rd.pop, POP_ID = "OVERALL") %>%
+        dplyr::group_by(MARKERS, POP_ID) %>%
+        dplyr::summarise(READ_DEPTH = sum(READ_DEPTH, na.rm = TRUE)) %>%
+        dplyr::ungroup(.) %>%
+        dplyr::mutate(READ_DEPTH = READ_DEPTH / max(READ_DEPTH, na.rm = TRUE))
     ) %>%
+      dplyr::arrange(MARKERS, POP_ID) %>%
+      dplyr::select(-MARKERS, -POP_ID)
+    rd.pop <- NULL
+  } else {
+    rd <- NULL
+  }
+
+  pop <- data %>%
+    dplyr::mutate(
+      GT_BIN = dplyr::case_when(
+        GT_BIN == 0 ~ "HOM_REF",
+        GT_BIN == 1 ~ "HET",
+        GT_BIN == 2 ~ "HOM_ALT",
+          is.na(GT_BIN) ~ "MISSING")
+    ) %>%
+    dplyr::group_by(MARKERS, POP_ID, GT_BIN) %>%
+    dplyr::tally(.) %>%
+    data.table::as.data.table(.) %>%
+    data.table::dcast.data.table(
+      data = .,
+      formula = MARKERS + POP_ID ~ GT_BIN,
+      value.var = "n"
+    ) %>%
+    tibble::as_data_frame(.) %>%
+    dplyr::mutate_if(.tbl = ., .predicate = is.integer, .funs = replace_zero) %>%
+    dplyr::mutate(N = HOM_REF + HET + HOM_ALT)
+
+  data <- dplyr::bind_rows(
+    pop,
+    dplyr::mutate(pop, POP_ID = "OVERALL") %>%
+      dplyr::group_by(MARKERS, POP_ID) %>%
+      dplyr::summarise_all(.tbl = ., .funs = sum)) %>%
+    dplyr::arrange(MARKERS, POP_ID)
+  pop <- NULL
+
+  data <- data %>%
     dplyr::mutate(
       FREQ_ALT = ((HOM_ALT * 2) + HET) / (2 * N),
       FREQ_REF = 1 - FREQ_ALT,
@@ -313,50 +377,27 @@ plot_het_outliers <- function(data, path.folder = NULL) {
       HOM_HET_Z_SCORE = (HET - N_HET_EXP) / sqrt(N * FREQ_HET_E * (1 - FREQ_HET_E)),
       HOM_ALT_Z_SCORE = (HOM_ALT - N_HOM_ALT_EXP) / sqrt(N * FREQ_HOM_ALT_E * (1 - FREQ_HOM_ALT_E))
     ) %>%
-    dplyr::ungroup(.)
+    dplyr::bind_cols(rd) %>%
+    dplyr::mutate(POP_ID = factor(POP_ID, levels = pop.levels, ordered = TRUE)) %>%
+    readr::write_tsv(x = ., path = file.path(path.folder, "genotypes.summary.tsv"))
+  rd <- NULL
+  return(data)
+}#End summarise_genotypes
 
-  if (is.factor(freq.pop$POP_ID)) {
-    pop.levels <- c(levels(freq.pop$POP_ID), "OVERALL")
-  } else {
-    pop.levels <- c(sort(unique(freq.pop$POP_ID)), "OVERALL")
-  }
+# Generate genotypes frequencies boundaries
 
+#' @title plot_het_outliers
+#' @description Function that calculates genotypes observed and expected frequencies
+#' returns a tibble with all the summary info and a plot with boundaries.
+#' @rdname plot_het_outliers
+#' @keywords internal
+#' @export
+#' @author Eric Anderson \email{eric.anderson@noaa.gov} and
+#' Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
-  #overall
-  res$het.summary <- suppressWarnings(
-    res$het.summary %>%
-      dplyr::group_by(MARKERS) %>%
-      dplyr::summarise(
-        N = n(),
-        HOM_REF = length(GT_BIN[GT_BIN == 0]),
-        HET = length(GT_BIN[GT_BIN == 1]),
-        HOM_ALT = length(GT_BIN[GT_BIN == 2])
-      ) %>%
-      dplyr::mutate(
-        FREQ_ALT = ((HOM_ALT * 2) + HET) / (2 * N),
-        FREQ_REF = 1 - FREQ_ALT,
-        FREQ_HET = HET / (2 * N),
-        FREQ_HOM_REF_O = HOM_REF / N,
-        FREQ_HET_O = HET / N,
-        FREQ_HOM_ALT_O = HOM_ALT / N,
-        FREQ_HOM_REF_E = FREQ_REF^2,
-        FREQ_HET_E = 2 * FREQ_REF * FREQ_ALT,
-        FREQ_HOM_ALT_E = FREQ_ALT^2,
-        N_HOM_REF_EXP = N * FREQ_HOM_REF_E,
-        N_HET_EXP = N * FREQ_HET_E,
-        N_HOM_ALT_EXP = N * FREQ_HOM_ALT_E,
-        HOM_REF_Z_SCORE = (HOM_REF - N_HOM_REF_EXP) / sqrt(N * FREQ_HOM_REF_E * (1 - FREQ_HOM_REF_E)),
-        HOM_HET_Z_SCORE = (HET - N_HET_EXP) / sqrt(N * FREQ_HET_E * (1 - FREQ_HET_E)),
-        HOM_ALT_Z_SCORE = (HOM_ALT - N_HOM_ALT_EXP) / sqrt(N * FREQ_HOM_ALT_E * (1 - FREQ_HOM_ALT_E))
-      ) %>%
-      dplyr::ungroup(.) %>%
-      dplyr::mutate(POP_ID = rep("OVERALL", n())) %>%
-      dplyr::bind_rows(freq.pop) %>%
-      dplyr::mutate(POP_ID = factor(POP_ID, levels = pop.levels, ordered = TRUE))
-  )
-  freq.pop <- NULL
-
-  readr::write_tsv(x = res$het.summary, path = file.path(path.folder, "het.summary.tsv"))
+plot_het_outliers <- function(data, path.folder = NULL) {
+  res <- list() # to store results
+  res$het.summary <- summarise_genotypes(data, path.folder = path.folder)
 
   # prepare data for figure
   freq.summary <- dplyr::bind_cols(

@@ -4,7 +4,8 @@
 \alias{detect_mixed_genomes}
 \title{Detect mixed genomes}
 \usage{
-detect_mixed_genomes(data, ind.heterozygosity.threshold = NULL)
+detect_mixed_genomes(data, ind.heterozygosity.threshold = NULL,
+  verbose = TRUE)
 }
 \arguments{
 \item{data}{A tidy data frame object in the global environment or
@@ -24,6 +25,10 @@ than the thresholds will be blacklisted.
 
 Default: \code{ind.heterozygosity.threshold = NULL} will turn off completely
 the filter and the function will only output the plots and table of heterozygosity.}
+
+\item{verbose}{(optional, logical) When verbose = TRUE the function is a
+little more chatty during execution.
+Default: \code{verbose = TRUE}.}
 }
 \value{
 The function returns inside the global environment a list with

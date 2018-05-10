@@ -11,12 +11,12 @@ filter_dart(interactive.filter = TRUE, data, strata, output = NULL,
   filter.reproducibility = NULL, filter.call.rate = NULL,
   filter.markers.coverage = NULL, erase.genotypes = NULL,
   filter.individuals.missing = NULL, filter.markers.missing = NULL,
-  maf.thresholds = NULL, number.snp.reads = NULL,
+  maf.thresholds = NULL, number.snp.reads = NULL, snp.ld = "maf",
   mixed.genomes.analysis = TRUE, ind.heterozygosity.threshold = NULL,
-  duplicate.genomes.analysis = c(TRUE, FALSE), snp.ld = NULL,
-  imputation.method = NULL, hierarchical.levels = "populations",
-  num.tree = 50, filename = NULL, verbose = TRUE,
-  parallel.core = parallel::detectCores() - 1, ...)
+  duplicate.genomes.analysis = c(TRUE, FALSE), hw.pop.threshold = 0,
+  midp.threshold = "****", imputation.method = NULL,
+  hierarchical.levels = "strata", num.tree = 50, filename = NULL,
+  verbose = TRUE, parallel.core = parallel::detectCores() - 1, ...)
 }
 \arguments{
 \item{interactive.filter}{(optional, logical) Do you want the filtering session to
@@ -192,6 +192,24 @@ If the argument is set to \code{number.snp.reads = 2},
 locus with 3 and more SNPs will be blacklisted.
 Default: \code{number.snp.reads = NULL}.}
 
+\item{snp.ld}{(optional) \strong{For data with locus and SNP info, like VCF and DArT file}.
+SNP short distance linkage disequilibrium pruning. With anonymous markers from
+RADseq/GBS de novo discovery, you can minimize linkage disequilibrium (LD) by
+choosing among these 5 options:
+\enumerate{
+\item \code{snp.ld = "random"} for a random selection of 1 SNP on the read,
+\item \code{snp.ld = "first"} for the first one on the read...,
+\item \code{snp.ld = "last"} for the last SNP on the read and
+\item \code{snp.ld = "middle"} for locus with > 2 SNPs/read the option to select at random
+one SNP between the first and the last SNP on the read. If the locus as <= 2
+SNPs on the read, the first one is selected. Note that for that last option,
+the numbers are reported.
+\item \code{snp.ld = "maf"} will select the SNP on the locus with the maximum global
+Minor Allele Frequency (MAF).
+}
+For long distance linkage disequilibrium pruning, see details below.
+Default: \code{snp.ld = NULL}, for no pruning.}
+
 \item{mixed.genomes.analysis}{(optional, logical) Highlight outliers individual's
 observed heterozygosity for a quick
 diagnostic of mixed samples or poor polymorphism discovery due to DNA quality,
@@ -229,23 +247,23 @@ used with distance measure... handy!
 }
 Default: \code{detect_duplicate_genomes = c(TRUE, FALSE)}.}
 
-\item{snp.ld}{(optional) \strong{For data with locus and SNP info, like VCF and DArT file}.
-SNP short distance linkage disequilibrium pruning. With anonymous markers from
-RADseq/GBS de novo discovery, you can minimize linkage disequilibrium (LD) by
-choosing among these 5 options:
-\enumerate{
-\item \code{snp.ld = "random"} for a random selection of 1 SNP on the read,
-\item \code{snp.ld = "first"} for the first one on the read...,
-\item \code{snp.ld = "last"} for the last SNP on the read and
-\item \code{snp.ld = "middle"} for locus with > 2 SNPs/read the option to select at random
-one SNP between the first and the last SNP on the read. If the locus as <= 2
-SNPs on the read, the first one is selected. Note that for that last option,
-the numbers are reported.
-\item \code{snp.ld = "maf"} will select the SNP on the locus with the maximum global
-Minor Allele Frequency (MAF).
-}
-For long distance linkage disequilibrium pruning, see details below.
-Default: \code{snp.ld = NULL}, for no pruning.}
+\item{hw.pop.threshold}{(integer, optional)
+Use this threshold to allow
+variance in the number of populations passing the HWE test.
+e.g. with \code{hw.pop.threshold = 2},
+you tolerate a maximum of 2 populations that fails the HW test.
+All markers with > 2 populations in HWD will be blacklisted.
+With default, all populations need to be in HWE.
+Default: \code{hw.pop.threshold = 0}.}
+
+\item{midp.threshold}{(character, optional)
+By default the function generates blacklists/whitelists of markers and
+filtered tidy datasets for the 4 mid p-value.
+However, to get a final filtered object associated with the output of the
+function, user need to choose one
+of the 4 mid p-value \code{"*", "**", "***", "****"}.
+With default, a very conservative mid p-value threshold (= 0.0001) is selected.
+Default: \code{midp.threshold = "****"}.}
 
 \item{imputation.method}{(character, optional)
 Methods available for map-independent imputations of missing genotype

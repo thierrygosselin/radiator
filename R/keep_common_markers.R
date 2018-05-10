@@ -48,54 +48,62 @@ keep_common_markers <- function(data, plot = FALSE, verbose = FALSE) {
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {
-    input <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-  } else {
-    input <- data
+    data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
   }
 
   # check genotype column naming
-  if (tibble::has_name(input, "GENOTYPE")) {
-    colnames(input) <- stringi::stri_replace_all_fixed(
-      str = colnames(input),
+  if (tibble::has_name(data, "GENOTYPE")) {
+    colnames(data) <- stringi::stri_replace_all_fixed(
+      str = colnames(data),
       pattern = "GENOTYPE",
       replacement = "GT",
       vectorize_all = FALSE)
   }
 
   # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-  if (tibble::has_name(input, "LOCUS") && !tibble::has_name(input, "MARKERS")) {
-    input <- dplyr::rename(.data = input, MARKERS = LOCUS)
+  if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
+    data <- dplyr::rename(.data = data, MARKERS = LOCUS)
   }
 
   # markers.meta
   want <- c("MARKERS", "CHROM", "LOCUS", "POS")
-  markers.meta <- suppressWarnings(dplyr::select(input, dplyr::one_of(want)) %>%
-    dplyr::distinct(MARKERS, .keep_all = TRUE))
+  markers.meta <- suppressWarnings(dplyr::select(data, dplyr::one_of(want)) %>%
+                                     dplyr::distinct(MARKERS, .keep_all = TRUE))
 
   if (verbose) message("Using markers common in all populations:")
-  blacklist <- dplyr::select(.data = input, MARKERS, POP_ID, GT) %>%
-    dplyr::filter(GT != "000000") %>%
-    dplyr::distinct(MARKERS, POP_ID) %>%
+
+  if (tibble::has_name(data, "GT_BIN")) {
+    blacklist <- dplyr::select(.data = data, MARKERS, POP_ID, GT_BIN) %>%
+      dplyr::filter(!is.na(GT_BIN))
+  } else {
+    blacklist <- dplyr::select(.data = data, MARKERS, POP_ID, GT) %>%
+      dplyr::filter(GT != "000000")
+  }
+
+  blacklist <- dplyr::distinct(blacklist, MARKERS, POP_ID) %>%
     dplyr::count(x = ., MARKERS) %>%
-    dplyr::filter(n != dplyr::n_distinct(input$POP_ID)) %>%
+    dplyr::filter(n != dplyr::n_distinct(data$POP_ID)) %>%
     dplyr::distinct(MARKERS) %>%
     dplyr::arrange(MARKERS)
 
-  markers.input <- dplyr::n_distinct(input$MARKERS)
+  markers.data <- dplyr::n_distinct(data$MARKERS)
   blacklist.markers <- nrow(blacklist)
-  markers.in.common <- markers.input - blacklist.markers
+  markers.in.common <- markers.data - blacklist.markers
 
-  if (verbose) message("    Number of markers before = ", markers.input)
+  if (verbose) message("    Number of markers before = ", markers.data)
   if (verbose) message("    Number of markers removed = ", blacklist.markers)
   if (verbose) message("    Number of common markers between populations) = ", markers.in.common)
 
   if (plot) {
-    pops <- unique(input$POP_ID)
+    pops <- unique(data$POP_ID)
 
     if (length(pops) > 1) {
-
-      plot.data <- dplyr::filter(input, GT != "000000") %>%
-        dplyr::distinct(MARKERS, POP_ID) %>%
+      if (tibble::has_name(data, "GT_BIN")) {
+        plot.data <- dplyr::filter(data, !is.na(GT_BIN))
+      } else {
+        plot.data <- dplyr::filter(data, GT != "000000")
+      }
+      plot.data <- dplyr::distinct(plot.data, MARKERS, POP_ID) %>%
         dplyr::mutate(
           n = rep(1, n()),
           POP_ID = stringi::stri_join("POP_", POP_ID)
@@ -109,7 +117,8 @@ keep_common_markers <- function(data, plot = FALSE, verbose = FALSE) {
   }
 
   if (blacklist.markers > 0) {
-    input <- dplyr::anti_join(input, blacklist, by = "MARKERS")
+    # system.time(data2 <- dplyr::anti_join(data, blacklist, by = "MARKERS"))
+    data <- dplyr::filter(data, !MARKERS %in% blacklist$MARKERS)
 
     if (ncol(markers.meta) > 1) {
       blacklist <- dplyr::left_join(blacklist, markers.meta, by = "MARKERS") %>%
@@ -120,15 +129,15 @@ keep_common_markers <- function(data, plot = FALSE, verbose = FALSE) {
     blacklist <- tibble::data_frame(INDIVIDUALS = character(0))
   }
   want <- c("MARKERS", "CHROM", "LOCUS", "POS")
-  whitelist <- suppressWarnings(dplyr::select(input, dplyr::one_of(want)) %>%
-    dplyr::distinct(MARKERS, .keep_all = TRUE))
+  whitelist <- suppressWarnings(dplyr::select(data, dplyr::one_of(want)) %>%
+                                dplyr::distinct(MARKERS, .keep_all = TRUE))
 
 
   if (blacklist.markers > 0) {
     readr::write_tsv(x = whitelist, path = "whitelist.common.markers.tsv")
   }
 
-  return(res = list(input = input,
+  return(res = list(input = data,
                     whitelist.common.markers = whitelist,
                     blacklist.not.in.common.markers = blacklist))
 }

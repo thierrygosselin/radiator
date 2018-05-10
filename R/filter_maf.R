@@ -196,7 +196,7 @@ filter_maf <- function(
     } else {
       vcf.metadata = FALSE
     }
-
+    # whitelist.markers <- blacklist.id <- blacklist.genotype <- pop.levels <- pop.labels <- vcf.metadata <- NULL
 
     # Check pop.levels, pop.labels and pop.select---------------------------------
     check.levels <- check_pop_levels(pop.levels = pop.levels, pop.labels = pop.labels, pop.select = pop.select)
@@ -333,7 +333,12 @@ filter_maf <- function(
     # Prepare for parallel computations
     markers.df <- dplyr::distinct(input, MARKERS)
     n.markers <- nrow(markers.df)
-    maf.data <- dplyr::filter(input, GT != "000000")
+
+    if (tibble::has_name(input, "GT_BIN")) {
+      maf.data <- dplyr::filter(input, !is.na(GT_BIN))
+    } else {
+      maf.data <- dplyr::filter(input, GT != "000000")
+    }
     write_rad(data = input, path = "maf.temp.rad")
     # readr::write_tsv(x = input, path = "maf.temp.rad")
     input <- NULL

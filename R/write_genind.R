@@ -86,7 +86,7 @@ write_genind <- function(data) {
         # dplyr::group_by(POP_ID, INDIVIDUALS) %>%
         # tidyr::spread(data =., key = MARKERS_ALLELES, value = n) %>%
         # dplyr::ungroup(.) %>%
-        dplyr::mutate(POP_ID = factor(as.character(POP_ID))) %>%# xvalDapc doesn't accept pop as ordered factor
+        dplyr::mutate(POP_ID = factor(as.character(POP_ID), levels = pop.levels)) %>%# xvalDapc doesn't accept pop as ordered factor
         dplyr::arrange(POP_ID, INDIVIDUALS))
   } else {
     missing.geno <- dplyr::ungroup(data) %>%
@@ -124,7 +124,7 @@ write_genind <- function(data) {
         dplyr::mutate(MARKERS_ALLELES = stringi::stri_join(MARKERS, GT, sep = ".")) %>%
         dplyr::anti_join(missing.geno, by = c("MARKERS", "INDIVIDUALS")) %>%
         dplyr::select(-MARKERS, -GT) %>%
-        dplyr::mutate(POP_ID = factor(as.character(POP_ID))) %>%# xvalDapc doesn't accept pop as ordered factor
+        dplyr::mutate(POP_ID = factor(as.character(POP_ID), levels = pop.levels)) %>%# xvalDapc doesn't accept pop as ordered factor
         dplyr::arrange(MARKERS_ALLELES, INDIVIDUALS) %>%
         # dplyr::group_by(POP_ID, INDIVIDUALS) %>%
         # tidyr::spread(data =., key = MARKERS_ALLELES, value = n) %>%
@@ -136,12 +136,11 @@ write_genind <- function(data) {
           value.var = "n"
         ) %>%
         tibble::as_data_frame(.) %>%
-        dplyr::arrange(INDIVIDUALS, POP_ID))
+        dplyr::arrange(POP_ID, INDIVIDUALS))
   }
 
   strata.genind <- dplyr::distinct(.data = data, INDIVIDUALS, POP_ID) %>%
-    dplyr::mutate(POP_ID = factor(POP_ID, levels = pop.levels, ordered = FALSE),
-                  INDIVIDUALS = factor(INDIVIDUALS))
+    dplyr::mutate(INDIVIDUALS = factor(INDIVIDUALS, levels = unique(data$INDIVIDUALS)))
 
   # genind arguments common to all data.type
   ind <- data$INDIVIDUALS
