@@ -198,27 +198,18 @@ If you're still encountering problem, email author for help")
   if (verbose) message("Importing DArT data")
 
   # Strata file ------------------------------------------------------------------
-  if (is.vector(strata)) {
-    strata.df <- readr::read_tsv(
-      file = strata, col_names = TRUE,
-      col_types = readr::cols(.default = readr::col_character())) %>%
-      dplyr::mutate(
-        TARGET_ID = stringi::stri_trans_toupper(TARGET_ID),
-        TARGET_ID = stringi::stri_replace_all_fixed(
-          TARGET_ID, pattern = " ", replacement = "", vectorize_all = FALSE))
-  } else {
-    strata.df <- dplyr::mutate_all(.tbl = strata, .funs = as.character) %>%
-      dplyr::mutate(
-        TARGET_ID = stringi::stri_trans_toupper(TARGET_ID),
-        TARGET_ID = stringi::stri_replace_all_fixed(
-          TARGET_ID, pattern = " ", replacement = "", vectorize_all = FALSE))
-  }
-
-
-  pop.levels <- unique(strata.df$STRATA)
-
+  if (verbose) message("\nMaking DArT data population-wise...")
+  strata.df <- radiator::read_strata(
+    strata = strata,
+    pop.levels = NULL, pop.labels = NULL,
+    pop.select = NULL, blacklist.id = NULL,
+    keep.two = FALSE, verbose = verbose)
+  pop.levels <- strata.df$pop.levels
+  pop.labels <- strata.df$pop.labels
+  pop.select <- strata.df$pop.select
+  blacklist.id <- strata.df$blacklist.id
+  strata.df <- strata.df$strata
   n.ind.strata <- nrow(strata.df)
-  if (verbose) message("Number of individuals in strata: ", n.ind.strata)
 
   # Check that TARGET_ID in strata match TARGET_ID in the DArT file ------------
   if (n.ind.dart != n.ind.strata) {
@@ -665,6 +656,10 @@ DArT statistics generated for all samples might not apply...\n")
   } else {
     if (verbose) message("\nWhitelist filtered tidy DArT data written to folder")
   }
+
+  # clean...
+  input$INDIVIDUALS <- radiator::clean_ind_names(input$INDIVIDUALS)
+  input$POP_ID <- radiator::clean_pop_names(input$POP_ID)
 
   # Generate a new strata file -------------------------------------------------
   strata <- dplyr::distinct(input, INDIVIDUALS, POP_ID) %>%

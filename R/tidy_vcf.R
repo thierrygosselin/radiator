@@ -628,7 +628,8 @@ parse_genomic <- function(
     x <- data.table::melt.data.table(
       data = data.table::as.data.table(x),
       id.vars = "ID",
-      variable.name = "INDIVIDUALS", value.name = rlang::UQ(format.name),
+      variable.name = "INDIVIDUALS",
+      value.name = format.name,
       variable.factor = FALSE) %>%
       tibble::as_data_frame(.) %>%
       dplyr::select(-ID, -INDIVIDUALS)

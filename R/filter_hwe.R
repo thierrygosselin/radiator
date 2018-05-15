@@ -162,6 +162,8 @@
 
 #' @examples
 #' \dontrun{
+#' require(HardyWeinberg)
+#' require(ggtern)
 #' turtle.pop <- filter_hwe(
 #' data = "turtle.vcf",
 #' strata = "turtle.strata.tsv",
@@ -331,7 +333,7 @@ filter_hwe <- function(
                    "midp <= 0.001 (***)",
                    "midp <= 0.0001 (****)")),
       MISSING_PROP = MISSING / (MISSING + N)
-      )
+    )
   # Step 1. Impact of population threshold on marker discovery------------------
   prop_join <- function(x, y) {
     stringi::stri_join(x, " (", round(x / y, 3), ")")
@@ -393,11 +395,11 @@ filter_hwe <- function(
     tibble::as_data_frame(.) %>%
     dplyr::mutate(
       SIGNIFICANCE = factor(
-      x = SIGNIFICANCE,
-      levels = c("*", "**", "***", "****"),
-      labels = c("midp <= 0.05 (*)", "midp <= 0.01 (**)",
-                 "midp <= 0.001 (***)", "midp <= 0.0001 (****)"))
-      ) %>%
+        x = SIGNIFICANCE,
+        levels = c("*", "**", "***", "****"),
+        labels = c("midp <= 0.05 (*)", "midp <= 0.01 (**)",
+                   "midp <= 0.001 (***)", "midp <= 0.0001 (****)"))
+    ) %>%
     dplyr::filter(VALUE)
 
   overall <- hwd.helper.table.long %>%
@@ -427,14 +429,14 @@ filter_hwe <- function(
   overall <- NULL
 
   hwd.helper.table <- hwd.helper.table.long %>%
-      tidyr::complete(
-        data = .,
-        SIGNIFICANCE, N_POP_HWD,
-        fill = list(n = 0)) %>%
-      dplyr::group_by(N_POP_HWD) %>%
-      tidyr::spread(data = ., key = SIGNIFICANCE, value = n) %>%
-      dplyr::filter(N_POP_HWD != 0) %>%
-      dplyr::ungroup(.) %>%
+    tidyr::complete(
+      data = .,
+      SIGNIFICANCE, N_POP_HWD,
+      fill = list(n = 0)) %>%
+    dplyr::group_by(N_POP_HWD) %>%
+    tidyr::spread(data = ., key = SIGNIFICANCE, value = n) %>%
+    dplyr::filter(N_POP_HWD != 0) %>%
+    dplyr::ungroup(.) %>%
     readr::write_tsv(x = ., path = file.path(path.folder, "hwd.helper.table.tsv"))
 
   hwd.helper.table.long <- hwd.helper.table.long %>%
@@ -481,7 +483,7 @@ filter_hwe <- function(
     limitsize = FALSE,
     plot = plot.hwd.thresholds,
     filename = file.path(path.folder, "hwd.plot.blacklist.markers.pdf"),
-    width = n.pop * 2, height = 10,
+    width = n.pop * 4, height = 10,
     dpi = 300, units = "cm", useDingbats = FALSE)
   hwd.helper.table.long <- NULL
   if (verbose) message("Plot written: hwd.plot.blacklist.markers.pdf")
@@ -490,18 +492,18 @@ filter_hwe <- function(
   #   message("Step 1. Ternary plot visualization")
   # }
   # HardyWeinberg::HWTernaryPlot(
-    # X = dplyr::filter(data, POP_ID == "ATL") %>%
-      # dplyr::select(AA, AB, BB) %>% as.matrix, n = sample.size,
-    # region = 1,
-    # hwcurve = TRUE,
-    # verbose = TRUE)
+  # X = dplyr::filter(data, POP_ID == "ATL") %>%
+  # dplyr::select(AA, AB, BB) %>% as.matrix, n = sample.size,
+  # region = 1,
+  # hwcurve = TRUE,
+  # verbose = TRUE)
 
   # testing with duplicated info removed
   # data.dup <- data2 %>%
   #   dplyr::distinct(MARKERS, AA, AB, BB)
 
-# ternary plot -----------------------------------------------------------------
-# library(ggtern)
+  # ternary plot -----------------------------------------------------------------
+  # library(ggtern)
   num.groups <- dplyr::n_distinct(data.sum$GROUPINGS)
   if (num.groups == 6) group_colors <- c("grey", "green", "yellow", "orange",
                                          "orangered", "red")
@@ -553,7 +555,7 @@ filter_hwe <- function(
       x = "AA", y = "AB", z = "BB",
       title = "Hardy-Weinberg Equilibrium ternary plots",
       subtitle = "genotypes frequencies shown for AA: REF/REF, AB: REF/ALT and BB: ALT/ALT"
-      ) +
+    ) +
     ggplot2::theme(
       # legend.position = "none",
       plot.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold", hjust = 0.5),
@@ -566,7 +568,7 @@ filter_hwe <- function(
     plot = plot.tern,
     # filename = file.path(path.folder, "hwe.ternary.plots.read.depth.pdf"),
     filename = file.path(path.folder, "hwe.ternary.plots.missing.data.pdf"),
-    width = n.pop * 2, height = n.pop * 2,
+    width = n.pop * 4, height = n.pop * 4,
     dpi = 300, units = "cm", useDingbats = FALSE)
   hw.parabola <- NULL
   if (verbose) message("Plot written: hwe.ternary.plots.missing.data.pdf")
@@ -646,24 +648,33 @@ filter_hwe <- function(
              hwe.pop.sum = hwe.pop.sum)
 
   # Choosing the last dataset --------------------------------------------------
-  if (interactive.filter) {
-    message("\nChoosing the final filtered dataset")
-    message("   the tidy data object associated with this filter...")
-    message("   choose the mid p-value threshold (one of: *, **, *** or ****)")
-    midp.threshold <- as.character(readLines(n = 1))
-  }
-  midp.threshold <- dplyr::case_when(
-    midp.threshold == "****" ~ 0.0001,
-    midp.threshold == "***" ~ 0.001,
-    midp.threshold == "**" ~ 0.01,
-    midp.threshold == "*" ~ 0.05) %>%
-    format(., scientific = FALSE)
+  no.file <- TRUE
+  while (no.file) {
+    if (interactive.filter) {
+      message("\nChoosing the final filtered dataset")
+      message("   the tidy data object associated with this filter...")
+      message("   choose the mid p-value threshold (one of: *, **, *** or ****)")
+      midp.threshold <- as.character(readLines(n = 1))
+    }
+    midp.threshold <- dplyr::case_when(
+      midp.threshold == "****" ~ 0.0001,
+      midp.threshold == "***" ~ 0.001,
+      midp.threshold == "**" ~ 0.01,
+      midp.threshold == "*" ~ 0.05) %>%
+      format(., scientific = FALSE)
 
-  # path.folder <- yft.hw$path.folder
-  data.filtered.name <- list.files(
-    path = path.folder,
-    pattern = stringi::stri_join("tidy.filtered.hwe.",midp.threshold),
-    full.names = FALSE)
+    # path.folder <- yft.hw$path.folder
+    data.filtered.name <- list.files(
+      path = path.folder,
+      pattern = stringi::stri_join("tidy.filtered.hwe.", midp.threshold),
+      full.names = FALSE)
+    if (length(data.filtered.name) == 0) {
+      message("No file associated with this threshold, choose again")
+      no.file <- TRUE
+    } else {
+      no.file <- FALSE
+    }
+  }
 
   res$midp.threshold  <- midp.threshold
 
@@ -724,50 +735,50 @@ hwe_analysis <- function(x, parallel.core = parallel::detectCores() - 1) {
         return(mono)
       }
 
-    hw.res <- x %>%
-      dplyr::bind_cols(dplyr::rowwise(.) %>% dplyr::do(MONO = mono(.))) %>%
-      dplyr::mutate(MONO = unlist(MONO))
-    hw.poly <- dplyr::filter(hw.res, !MONO) %>%
-      dplyr::select(-MONO)
-    markers <- dplyr::select(hw.poly, MARKERS)
-    hw.poly <- dplyr::select(hw.poly, AA, AB, BB) #%>% as.matrix
+      hw.res <- x %>%
+        dplyr::bind_cols(dplyr::rowwise(.) %>% dplyr::do(MONO = mono(.))) %>%
+        dplyr::mutate(MONO = unlist(MONO))
+      hw.poly <- dplyr::filter(hw.res, !MONO) %>%
+        dplyr::select(-MONO)
+      markers <- dplyr::select(hw.poly, MARKERS)
+      hw.poly <- dplyr::select(hw.poly, AA, AB, BB) #%>% as.matrix
 
-    hw.res <- dplyr::left_join(
-      hw.res,
-      dplyr::bind_cols(
-        markers,
-        tibble::data_frame(
-          MID_P_VALUE = HardyWeinberg::HWExactStats(
-            X = hw.poly, plinkcode = TRUE, midp = TRUE)
+      hw.res <- dplyr::left_join(
+        hw.res,
+        dplyr::bind_cols(
+          markers,
+          tibble::data_frame(
+            MID_P_VALUE = HardyWeinberg::HWExactStats(
+              X = hw.poly, plinkcode = TRUE, midp = TRUE)
+          )
         )
-      )
-      , by = "MARKERS") %>%
-      dplyr::mutate(
-        HWE = MID_P_VALUE >= 0.05,
-        SIGNIFICANCE = dplyr::case_when(
-          MID_P_VALUE <= 0.0001 ~ "****",
-          MID_P_VALUE <= 0.001 ~ "***",
-          MID_P_VALUE <= 0.01 ~ "**",
-          MID_P_VALUE <= 0.05 ~ "*"),
-        `*` = MID_P_VALUE <= 0.05,
-        `**` = MID_P_VALUE <= 0.01,
-        `***` = MID_P_VALUE <= 0.001,
-        `****` = MID_P_VALUE <= 0.0001,
-        GROUPINGS = SIGNIFICANCE,
-        GROUPINGS = dplyr::if_else(
-          MONO, "monomorphic",
-          dplyr::if_else(HWE, "hwe", GROUPINGS))
+        , by = "MARKERS") %>%
+        dplyr::mutate(
+          HWE = MID_P_VALUE >= 0.05,
+          SIGNIFICANCE = dplyr::case_when(
+            MID_P_VALUE <= 0.0001 ~ "****",
+            MID_P_VALUE <= 0.001 ~ "***",
+            MID_P_VALUE <= 0.01 ~ "**",
+            MID_P_VALUE <= 0.05 ~ "*"),
+          `*` = MID_P_VALUE <= 0.05,
+          `**` = MID_P_VALUE <= 0.01,
+          `***` = MID_P_VALUE <= 0.001,
+          `****` = MID_P_VALUE <= 0.0001,
+          GROUPINGS = SIGNIFICANCE,
+          GROUPINGS = dplyr::if_else(
+            MONO, "monomorphic",
+            dplyr::if_else(HWE, "hwe", GROUPINGS))
         ) %>%
-      tibble::add_column(.data = ., POP_ID = pop, .after = 1)
-    return(hw.res)
-  }#hwe_radiator
-  x <-  x %>%
-    dplyr::mutate(SPLIT_VEC = split_vec_row(x = ., cpu.rounds = 10,
-                                            parallel.core = parallel.core)) %>%
-    split(x = ., f = .$SPLIT_VEC) %>%
-    .radiator_parallel(X = ., FUN = hwe_radiator, mc.cores = parallel.core) %>%
-    dplyr::bind_rows(.)
-  return(x)
+        tibble::add_column(.data = ., POP_ID = pop, .after = 1)
+      return(hw.res)
+    }#hwe_radiator
+    x <-  x %>%
+      dplyr::mutate(SPLIT_VEC = split_vec_row(x = ., cpu.rounds = 10,
+                                              parallel.core = parallel.core)) %>%
+      split(x = ., f = .$SPLIT_VEC) %>%
+      .radiator_parallel(X = ., FUN = hwe_radiator, mc.cores = parallel.core) %>%
+      dplyr::bind_rows(.)
+    return(x)
   }#hwe_map
 
   x <- x %>% split(x = ., f = .$POP_ID) %>%
@@ -785,73 +796,78 @@ blacklist_hw <- function(x, unfiltered.data, hw.pop.threshold, path.folder = NUL
                          filters.parameters.path) {
   if (is.null(path.folder)) path.folder <- getwd()
 
-  x <- dplyr::ungroup(x) %>% dplyr::filter(N_POP_HWD > hw.pop.threshold)
+  x <- dplyr::ungroup(x) %>%
+    dplyr::filter(N_POP_HWD > hw.pop.threshold)
 
-  bl_map <- function(x, unfiltered.data, hw.pop.threshold, path.folder, filters.parameters.path) {
+  bl_map <- function(x, unfiltered.data, hw.pop.threshold,
+                     path.folder, filters.parameters.path) {
 
-    significance.group <- unique(x$SIGNIFICANCE)
-    # significance.group <-  "****"
-    # system.time(significance.group1 <- stringi::stri_replace_all_regex(
-    #   str = significance.group,
-    #   pattern = c("^\\*\\*\\*\\*$", "^\\*\\*\\*$", "^\\*\\*$","^\\*$"),
-    #   replacement = c("0.0001", "0.001", "0.01", "0.05"),
-    #   vectorize_all = FALSE
-    # ))
+    if (nrow(x) > 0) {
+      significance.group <- unique(x$SIGNIFICANCE)
+      # significance.group <-  "****"
+      # system.time(significance.group1 <- stringi::stri_replace_all_regex(
+      #   str = significance.group,
+      #   pattern = c("^\\*\\*\\*\\*$", "^\\*\\*\\*$", "^\\*\\*$","^\\*$"),
+      #   replacement = c("0.0001", "0.001", "0.01", "0.05"),
+      #   vectorize_all = FALSE
+      # ))
 
-    significance.group <- dplyr::case_when(
-      significance.group == "****" ~ 0.0001,
-      significance.group == "***" ~ 0.001,
-      significance.group == "**" ~ 0.01,
-      significance.group == "*" ~ 0.05) %>%
-      format(., scientific = FALSE)
+      significance.group <- dplyr::case_when(
+        significance.group == "****" ~ 0.0001,
+        significance.group == "***" ~ 0.001,
+        significance.group == "**" ~ 0.01,
+        significance.group == "*" ~ 0.05) %>%
+        format(., scientific = FALSE)
 
-    blacklist.filename <- file.path(
-      path.folder,
-      stringi::stri_join(
-        "blacklist.markers.hwd", significance.group, "mid.p.value",
-        hw.pop.threshold, "hw.pop.threshold", "tsv", sep = "."))
+      blacklist.filename <- file.path(
+        path.folder,
+        stringi::stri_join(
+          "blacklist.markers.hwd", significance.group, "mid.p.value",
+          hw.pop.threshold, "hw.pop.threshold", "tsv", sep = "."))
 
-    whitelist.filename <- file.path(
-      path.folder,
-      stringi::stri_join(
-        "whitelist.markers.hwe", significance.group, "mid.p.value",
-        hw.pop.threshold, "hw.pop.threshold", "tsv", sep = "."))
+      whitelist.filename <- file.path(
+        path.folder,
+        stringi::stri_join(
+          "whitelist.markers.hwe", significance.group, "mid.p.value",
+          hw.pop.threshold, "hw.pop.threshold", "tsv", sep = "."))
 
-    rad.filename <- file.path(
-      path.folder,
-      stringi::stri_join(
-        "tidy.filtered.hwe", significance.group, "mid.p.value",
-        hw.pop.threshold, "hw.pop.threshold", "rad", sep = "."))
+      rad.filename <- file.path(
+        path.folder,
+        stringi::stri_join(
+          "tidy.filtered.hwe", significance.group, "mid.p.value",
+          hw.pop.threshold, "hw.pop.threshold", "rad", sep = "."))
 
-    # Generate the blacklist
-    want <- c("MARKERS", "CHROM", "LOCUS", "POS")
-    blacklist <- suppressWarnings(
-      dplyr::distinct(x, MARKERS) %>%
-        dplyr::left_join(
-          dplyr::select(unfiltered.data, dplyr::one_of(want)) %>%
-            dplyr::distinct(MARKERS, .keep_all = TRUE)
-          , by = "MARKERS") %>%
-        readr::write_tsv(
-          x = .,
-          path = blacklist.filename)
-    )
+      # Generate the blacklist
+      want <- c("MARKERS", "CHROM", "LOCUS", "POS")
+      blacklist <- suppressWarnings(
+        dplyr::distinct(x, MARKERS) %>%
+          dplyr::left_join(
+            dplyr::select(unfiltered.data, dplyr::one_of(want)) %>%
+              dplyr::distinct(MARKERS, .keep_all = TRUE)
+            , by = "MARKERS") %>%
+          readr::write_tsv(
+            x = .,
+            path = blacklist.filename)
+      )
 
-    # Generate the rad data + the whitelist
-    whitelist <- suppressWarnings(
-      unfiltered.data %>%
-        dplyr::filter(!MARKERS %in% blacklist$MARKERS) %>%
-        radiator::write_rad(data = ., path = rad.filename) %>%
-        dplyr::select(dplyr::one_of(want)) %>%
-        dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-        readr::write_tsv(x = ., path = whitelist.filename)
-    )
-    fil.param <- update_filter_parameter(
-      filter = "HWE",
-      unfiltered = unfiltered.data,
-      filtered = whitelist,
-      parameter = "hw.pop.threshold/mid.p.value",
-      threshold = stringi::stri_join(hw.pop.threshold, significance.group, sep = "/"),
-      param.path = filters.parameters.path)
+
+      # Generate the rad data + the whitelist
+      whitelist <- suppressWarnings(
+        unfiltered.data %>%
+          dplyr::filter(!MARKERS %in% blacklist$MARKERS) %>%
+          radiator::write_rad(data = ., path = rad.filename) %>%
+          dplyr::select(dplyr::one_of(want)) %>%
+          dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
+          readr::write_tsv(x = ., path = whitelist.filename)
+      )
+      fil.param <- update_filter_parameter(
+        filter = "HWE",
+        unfiltered = unfiltered.data,
+        filtered = whitelist,
+        parameter = "hw.pop.threshold/mid.p.value",
+        threshold = stringi::stri_join(hw.pop.threshold, significance.group, sep = "/"),
+        param.path = filters.parameters.path)
+    }
   }#End bl_map
   split(x = x, f = x$SIGNIFICANCE) %>%
     purrr::walk(

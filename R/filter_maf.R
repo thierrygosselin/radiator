@@ -858,17 +858,9 @@ Example: if you have 10 populations and choose maf.pop.num.threshold = 3,
     if (verbose) message("maf.thresholds: ", "local = ", maf.local.threshold, ", global = ", maf.global.threshold)
     if (verbose) message("maf.operator: ", maf.operator)
     if (verbose) message("maf.pop.num.threshold: ", maf.pop.num.threshold)
-    if (tibble::has_name(filter, "LOCUS")) {
-      message("The number of markers removed by the MAF filter:\nSNP: ", snp.blacklist, "\nLOCUS: ", locus.blacklist)
-      message("The number of markers before -> after the MAF filter")
-      message("SNP: ", snp.before, " -> ", snp.after)
-      message("LOCUS: ", locus.before, " -> ", locus.after)
-    } else {
-      message("The number of markers removed by the MAF filter: ", snp.blacklist)
-      message("The number of markers before -> after the MAF filter")
-      message("SNP: ", snp.before, " -> ", snp.after)
-    }
-    if (verbose) message("Computation time: ", round((proc.time() - timing)[[3]]), " sec")
+    n.markers <- stringi::stri_join(markers.before, markers.blacklist, markers.after, sep = "; ")
+    message("Number of markers/locus, before; blacklisted; after: ", n.markers)
+    if (verbose) message("\nComputation time: ", round((proc.time() - timing)[[3]]), " sec")
     if (verbose) cat("############################## completed ##############################\n")
     res <- list()
     res$tidy.filtered.maf <- filter

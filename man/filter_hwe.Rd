@@ -235,6 +235,8 @@ generate for each markers and is on my todo list to include it in this filter.
 }
 \examples{
 \dontrun{
+require(HardyWeinberg)
+require(ggtern)
 turtle.pop <- filter_hwe(
 data = "turtle.vcf",
 strata = "turtle.strata.tsv",

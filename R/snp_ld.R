@@ -303,9 +303,8 @@ snp_ld <- function(
 
     snp.before <- nrow(snp.locus)
     snp.after <- nrow(snp.select)
-    message("    Number of SNP before = ", snp.before)
-    message("    Number of SNP removed = ", snp.before - snp.after)
-    message("    Number of SNP after = ", snp.after)
+    n.markers <- stringi::stri_join(snp.before, snp.before - snp.after, snp.after, sep = "/")
+    message("    Number of markers before/blacklisted/after: ", n.markers)
     snp.locus <- maf.data <- NULL
   }#End snp maf
 

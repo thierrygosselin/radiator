@@ -267,3 +267,81 @@ data_info <- function(x, print.info = FALSE) {
   }
   return(res)
 }
+
+
+# update ind_total_reads
+#' @title ind_total_reads
+#' @description Counts the total number of reads per samples
+#' @rdname ind_total_reads
+#' @keywords internal
+#' @export
+ind_total_reads <- function(x, path.folder = NULL) {
+  # x <- unfiltered
+  # path.folder <- path.folder.coverage
+  if (is.null(path.folder)) path.folder <- getwd()
+  # generate the stats
+  read.info <- dplyr::group_by(x, INDIVIDUALS, POP_ID) %>%
+    dplyr::summarise(TOTAL_READ_COUNTS = sum(READ_DEPTH, na.rm = TRUE))
+
+  if (is.factor(read.info$POP_ID)) {
+    read.pop.levels <- levels(read.info$POP_ID)
+  } else {
+    read.pop.levels <- unique(read.info$POP_ID)
+  }
+  read.pop.levels <- c(read.pop.levels, "OVERALL")
+
+  overall.read <- dplyr::mutate(read.info, POP_ID = "OVERALL")
+
+
+  read.info <- suppressWarnings(dplyr::bind_rows(read.info, overall.read)) %>%
+    dplyr::mutate(POP_ID = factor(POP_ID, levels = read.pop.levels))
+
+  read.counts.stats <- read.info %>%
+    dplyr::group_by(POP_ID) %>%
+    dplyr::summarise(
+      MEAN = mean(TOTAL_READ_COUNTS, na.rm = TRUE),
+      MEDIAN = stats::median(TOTAL_READ_COUNTS, na.rm = TRUE),
+      SD = stats::sd(TOTAL_READ_COUNTS, na.rm = TRUE),
+      Q25 = stats::quantile(TOTAL_READ_COUNTS, 0.25, na.rm = TRUE),
+      Q75 = stats::quantile(TOTAL_READ_COUNTS, 0.75, na.rm = TRUE),
+      IQR = stats::IQR(TOTAL_READ_COUNTS, na.rm = TRUE),
+      MIN = min(TOTAL_READ_COUNTS, na.rm = TRUE),
+      MAX = max(TOTAL_READ_COUNTS, na.rm = TRUE),
+      OUTLIERS_LOW = Q25 - (1.5 * IQR),
+      OUTLIERS_HIGH = Q75 + (1.5 * IQR),
+      OUTLIERS_LOW_N = length(TOTAL_READ_COUNTS[TOTAL_READ_COUNTS < OUTLIERS_LOW]),
+      OUTLIERS_HIGH_N = length(TOTAL_READ_COUNTS[TOTAL_READ_COUNTS > OUTLIERS_HIGH]),
+      OUTLIERS_TOTAL = OUTLIERS_HIGH_N + OUTLIERS_LOW_N,
+      OUTLIERS_PROP = round(OUTLIERS_TOTAL / length(x), 3)
+    )
+
+  # plots
+  element.text <- ggplot2::element_text(size = 10,
+                                        family = "Helvetica", face = "bold")
+  n.pop <- dplyr::n_distinct(x$POP_ID)
+  ind.plot <- suppressWarnings(
+    ggplot2::ggplot(
+      read.info, ggplot2::aes(x = POP_ID, y = TOTAL_READ_COUNTS, na.rm = TRUE)) +
+      ggplot2::geom_boxplot() +
+      ggplot2::labs(x = "Populations",
+                    y = "Individuals total read counts",
+                    title = "Individuals total read counts") +
+      ggplot2::theme(
+        legend.position = "none",
+        plot.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold", hjust = 0.5),
+        # plot.subtitle = ggplot2::element_text(size = 10, family = "Helvetica", hjust = 0.5),
+        axis.title.y = element.text,
+        axis.title.x = element.text,
+        axis.text.x = element.text))
+
+  suppressWarnings(
+    ggplot2::ggsave(
+      plot = ind.plot,
+      filename = file.path(path.folder, "plot.ind.total.reads.pdf"),
+      width = n.pop * 2, height = 10, dpi = 300, units = "cm",
+      useDingbats = FALSE)
+  )
+
+}#End ind_coverage
+
+

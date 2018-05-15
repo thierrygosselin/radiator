@@ -90,9 +90,10 @@ keep_common_markers <- function(data, plot = FALSE, verbose = FALSE) {
   blacklist.markers <- nrow(blacklist)
   markers.in.common <- markers.data - blacklist.markers
 
-  if (verbose) message("    Number of markers before = ", markers.data)
-  if (verbose) message("    Number of markers removed = ", blacklist.markers)
-  if (verbose) message("    Number of common markers between populations) = ", markers.in.common)
+  if (verbose) {
+    n.markers <- stringi::stri_join(markers.data, blacklist.markers, markers.in.common, sep = "/")
+    message("    Number of markers before/blacklisted/after:", n.markers)
+  }
 
   if (plot) {
     pops <- unique(data$POP_ID)

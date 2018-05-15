@@ -1,14 +1,13 @@
 # Import, filter and transform a dart output file to different formats
 
-#' @name filter_dart
+#' @name filter_rad
 
-#' @title Swiss Army knife tool to prepare \href{http://www.diversityarrays.com}{DArT}
-#' output file for population genetics analysis.
+#' @title Pipeline to filter RADseq data.
 
-#' @description Import, filter and generate imputed datasets of DArT output file.
-#' The function uses \code{\link[radiator]{tidy_dart}} to import and tidy DArT input file.
-#' Currently 3 formats are recognized: 1- and 2- row format (also called binary),
-#' and count data.
+#' @description Designed for RADseq data. The function import VCF file,
+#' apply filters and generate imputed datasets.
+#' The function uses \code{\link[radiator]{tidy_vcf}} and several \code{filter_}
+#' functions of radiator.
 
 
 #' @param interactive.filter (optional, logical) Do you want the filtering session to
@@ -19,34 +18,8 @@
 #' monomorphic.out, common.markers}, the rest are not necessary.
 #' Default: \code{interactive.filter = TRUE}.
 
-#' @inheritParams tidy_dart
 #' @inheritParams genomic_converter
 #' @inheritParams tidy_genomic_data
-
-
-#' @param strata A tab delimited file or object with 3 columns.
-#' Columns header is:
-#' \code{TARGET_ID}, \code{INDIVIDUALS} and \code{STRATA}.
-#' Note: the column \code{STRATA} refers to any grouping of individuals.
-#' You need to make sure that
-#' the column \code{TARGET_ID} match the id used by DArT.
-#' The column \code{INDIVIDUALS} and \code{STRATA} will be kept in the tidy data.
-#' Only individuals in the strata file are kept in the tidy, i.e. that the strata
-#' is also used as a whitelist of individuals/strata.
-
-
-#' @param filter.reproducibility (optional, numerical) Filter the \code{RepAvg}
-#' column in the data set. For DArT this is the proportion of technical
-#' replicate assay pairs for which the marker score is consistent.
-#' Default: \code{filter.reproducibility = NULL}.
-#' e.g to keep markers with reproducibility >= 99%,
-#' use: \code{filter.reproducibility = 0.99}.
-
-#' @param filter.call.rate (optional, numerical) Filter the \code{CallRate}
-#' column in the data set. For DArT this is the proportion of samples for
-#' which the genotype was called. Default: \code{filter.call.rate = NULL}. e.g to keep
-#' markers genotyped in more than 95% of the individuals use :
-#' \code{filter.call.rate = 0.95}
 
 #' @param filter.markers.coverage (optional, string, numerical) Filter the lower and
 #' upper bound of locus/read coverage. The locus/read coverage combines the markers
@@ -163,7 +136,7 @@
 #' working directory. The tidy genomic data frame is generated automatically.
 
 #' @export
-#' @rdname filter_dart
+#' @rdname filter_rad
 #' @importFrom dplyr group_by select rename filter mutate summarise distinct n_distinct arrange left_join semi_join anti_join inner_join full_join tally bind_rows
 #' @importFrom parallel detectCores
 #' @importFrom stringi stri_replace_all_fixed stri_join stri_sub stri_replace_na stri_pad_left
@@ -182,7 +155,7 @@
 
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com} and Peter Grewe \email{peter.grewe@csiro.au}
 
-filter_dart <- function(
+filter_rad <- function(
   interactive.filter = TRUE,
   data,
   strata,
@@ -192,8 +165,6 @@ filter_dart <- function(
   pop.select = NULL,
   monomorphic.out = TRUE,
   common.markers = TRUE,
-  filter.reproducibility = NULL,
-  filter.call.rate = NULL,
   filter.markers.coverage = NULL,
   erase.genotypes = NULL,
   filter.individuals.missing = NULL,
@@ -227,7 +198,7 @@ filter_dart <- function(
 
   if (verbose) {
     cat("#######################################################################\n")
-    cat("######################## radiator::filter_dart ########################\n")
+    cat("######################## radiator::filter_rad #########################\n")
     cat("#######################################################################\n")
   }
   opt.change <- getOption("width")
@@ -236,34 +207,35 @@ filter_dart <- function(
   res <- list()
 
   # dotslist -------------------------------------------------------------------
+  # not yet used
   dotslist <- list(...)
-  want <- c("filter.coverage", "filter.ind.missing.geno")
-  unknowned_param <- setdiff(names(dotslist), want)
-
-  if (length(unknowned_param) > 0) {
-    stop("Unknowned \"...\" parameters ",
-         stringi::stri_join(unknowned_param, collapse = " "))
-  }
-
-  radiator.dots <- dotslist[names(dotslist) %in% want]
-  filter.coverage <- radiator.dots[["filter.coverage"]]
-  filter.ind.missing.geno <- radiator.dots[["filter.ind.missing.geno"]]
-
-  if (!is.null(filter.coverage) && !is.null(filter.ind.missing.geno)) {
-    stop("
-         filter.coverage is deprecated in favour of: filter.markers.coverage
-         filter.ind.missing.geno is deprecated in favour of: filter.markers.missing")
-  }
-
-  if (!is.null(filter.coverage)) {
-    stop("
-         filter.coverage is deprecated in favour of: filter.markers.coverage")
-  }
-
-  if (!is.null(filter.ind.missing.geno)) {
-    stop("
-         filter.ind.missing.geno is deprecated in favour of: filter.markers.missing")
-  }
+  # want <- c("filter.coverage", "filter.ind.missing.geno")
+  # unknowned_param <- setdiff(names(dotslist), want)
+  #
+  # if (length(unknowned_param) > 0) {
+  #   stop("Unknowned \"...\" parameters ",
+  #        stringi::stri_join(unknowned_param, collapse = " "))
+  # }
+  #
+  # radiator.dots <- dotslist[names(dotslist) %in% want]
+  # filter.coverage <- radiator.dots[["filter.coverage"]]
+  # filter.ind.missing.geno <- radiator.dots[["filter.ind.missing.geno"]]
+  #
+  # if (!is.null(filter.coverage) && !is.null(filter.ind.missing.geno)) {
+  #   stop("
+  #        filter.coverage is deprecated in favour of: filter.markers.coverage
+  #        filter.ind.missing.geno is deprecated in favour of: filter.markers.missing")
+  # }
+  #
+  # if (!is.null(filter.coverage)) {
+  #   stop("
+  #        filter.coverage is deprecated in favour of: filter.markers.coverage")
+  # }
+  #
+  # if (!is.null(filter.ind.missing.geno)) {
+  #   stop("
+  #        filter.ind.missing.geno is deprecated in favour of: filter.markers.missing")
+  # }
 
 
   # Checking for missing and/or default arguments ------------------------------
@@ -273,9 +245,9 @@ filter_dart <- function(
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
 
   if (is.null(filename)) {
-    folder.extension <- filename <- stringi::stri_join("filter_dart_", file.date)
+    folder.extension <- filename <- stringi::stri_join("filter_rad_", file.date)
   } else {
-    folder.extension <- stringi::stri_join("filter_dart", filename, file.date, sep = "_")
+    folder.extension <- stringi::stri_join("filter_rad", filename, file.date, sep = "_")
     filename <- stringi::stri_join(filename, file.date, sep = "_")
   }
 
@@ -286,27 +258,25 @@ filter_dart <- function(
   message("\nFolder created: \n", folder.extension)
   filename <- file.path(path.folder, filename)
 
-  # File type ------------------------------------------------------------------
-  data.type <- radiator::detect_genomic_format(data)
+  # Import file ----------------------------------------------------------------
+  input <- radiator::tidy_genomic_data(
+    data = data,
+    vcf.metadata = TRUE,
+    monomorphic.out = TRUE,
+    common.markers = TRUE,
+    strata = strata,
+    pop.levels = pop.levels,
+    pop.select = pop.select,
+    blacklist.id = blacklist.id,
+    parallel.core = parallel.core,
+    verbose = FALSE)
 
-  if (data.type == "dart") {
-    # Check that DArT file as good target id written
-    target.id <- extract_dart_target_id(data, write = FALSE)
-    if (nrow(target.id) != length(unique(target.id$TARGET_ID))) {
-      stop("non unique target id are used in the DArT file...
-           What you want are different target ids at the end of the row that
-           contains AlleleID, AlleleSequence, etc.
-           The columns headers.
-           Edit manually before trying again
-           If you're still encountering problem, email author for help")
-    }
-    target.id <- NULL
-  }
 
-  if (data.type == "fst.file") {
-    message("Importing tidy DArT data...")
-    input <- radiator::read_rad(data)
-  }
+  # Keep GT_BIN
+  want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "INDIVIDUALS",
+            "POP_ID", "GT_BIN", "READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH")
+  input <- suppressWarnings(dplyr::select(input, dplyr::one_of(want)))
+
 
   # Filter parameter file ------------------------------------------------------
   filters.parameters.path <- stringi::stri_join(
@@ -327,454 +297,23 @@ filter_dart <- function(
       col_names = TRUE)
   message("Generated a filters parameters file: filters_parameters_dart.tsv")
 
-  # Markers meta----------------------------------------------------------------
-  metadata <- radiator::tidy_dart_metadata(
-    data = data,
-    filename = NULL,
-    parallel.core = parallel.core,
-    verbose = TRUE)
-
-  # metadata.file <- list.files(path = path.folder, pattern = "metadata")
-
   # create 2 data.info
-  data.info <- first.data.info <- data_info(metadata, print.info = FALSE)
-
-  #1.Filtering reproducibility  -------------------------------------------------
-  if (interactive.filter || !is.null(filter.reproducibility)) {
-    if (verbose) cat("\n### 01: Filtering markers reproducibility #############################\n")
-    folder.extension <- stringi::stri_join("01_filter_reproducibility_", file.date, sep = "")
-    path.folder.reproducibility <- file.path(path.folder, folder.extension)
-    dir.create(path.folder.reproducibility)
-    message("Folder created: ", folder.extension)
-
-    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REP_AVG")
-    reproducibility <- dplyr::select(metadata, dplyr::one_of(want)) %>%
-      dplyr::mutate(Markers = rep("markers", n()))
-
-    outlier.rep <- stats::quantile(reproducibility$REP_AVG, 0.25, na.rm = TRUE) -
-      (1.5 * stats::IQR(reproducibility$REP_AVG, na.rm = TRUE))
-
-    plot.reproducibility.violinplot <- ggplot2::ggplot(
-      reproducibility, ggplot2::aes(x = Markers, y = REP_AVG, na.rm = TRUE)) +
-      ggplot2::geom_violin(trim = TRUE) +
-      ggplot2::geom_boxplot(width = 0.1, fill = "black", outlier.colour = NA) +
-      ggplot2::stat_summary(fun.y = "mean", geom = "point", shape = 21,
-                            size = 2.5, fill = "white") +
-      ggplot2::labs(
-        x = "Markers",
-        y = "Markers reproducibility averaged",
-        title = "DArT reproducibility stats",
-        subtitle = stringi::stri_join(
-          "outlier lower bound: ", outlier.rep)) +
-      ggplot2::theme(
-        plot.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold", hjust = 0.5),
-        plot.subtitle = ggplot2::element_text(size = 10, family = "Helvetica", hjust = 0.5),
-        legend.position = "none",
-        axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-        axis.text.x = ggplot2::element_blank()
-      )
-    # plot.reproducibility.violinplot
-    ggplot2::ggsave(
-      filename = file.path(path.folder.reproducibility, "plot.reproducibility.violinplot.pdf"),
-      plot = plot.reproducibility.violinplot,
-      width = 20, height = 15, dpi = 600, units = "cm", useDingbats = FALSE)
-
-    plot.reproducibility.histo <- ggplot2::ggplot(
-      data = reproducibility,
-      ggplot2::aes(x = REP_AVG)) +
-      ggplot2::geom_histogram() +
-      ggplot2::labs(
-        x = "Markers",
-        y = "Markers reproducibility averaged",
-        title = "DArT reproducibility stats",
-        subtitle = stringi::stri_join(
-          "outlier lower bound: ", outlier.rep)) +
-      ggplot2::theme(
-        plot.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold", hjust = 0.5),
-        plot.subtitle = ggplot2::element_text(size = 10, family = "Helvetica", hjust = 0.5),
-        legend.position = "none",
-        axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-        axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-        axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica", angle = 90, hjust = 1, vjust = 0.5),
-        strip.text.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold")
-      )
-    # plot.reproducibility.histo
-    suppressMessages(ggplot2::ggsave(
-      filename = file.path(path.folder.reproducibility, "plot.reproducibility.histo.pdf"),
-      plot = plot.reproducibility.histo,
-      width = 20, height = 15, dpi = 600, units = "cm", useDingbats = FALSE))
-
-    if (interactive.filter) {
-      suppressWarnings(print(plot.reproducibility.histo))
-      suppressWarnings(print(plot.reproducibility.violinplot))
-      message("    Inspect plots to help choose reproducibility threshold...")
-      message("    Enter the threshold value (between 0 and 1)")
-      message("    below threshold < markers are discarded): ")
-      filter.reproducibility <- as.numeric(readLines(n = 1))
-    }
-
-    if (!is.null(filter.reproducibility)) {
-      want <- c("MARKERS", "CHROM", "LOCUS", "POS")
-
-      blacklist.reproducibility.markers <- reproducibility %>%
-        dplyr::filter(REP_AVG < filter.reproducibility) %>%
-        dplyr::select(dplyr::one_of(want)) %>%
-        dplyr::distinct(MARKERS, .keep_all = TRUE)
-
-      if (nrow(blacklist.reproducibility.markers) > 0) {
-        n.snp.before <- data.info$n.snp
-        if (verbose) message("    Number of markers before = ", n.snp.before)
-        n.snp.blacklist <- nrow(blacklist.reproducibility.markers)
-        if (verbose) message("    Number of markers removed = ", n.snp.blacklist)
-        if (verbose) message("    Number of markers after = ", n.snp.before - n.snp.blacklist)
-
-        metadata <- metadata %>%
-          dplyr::filter(!MARKERS %in% blacklist.reproducibility.markers$MARKERS)
-
-        new.data.info <- data_info(metadata) # updating parameters
-
-        filters.parameters <- tibble::data_frame(
-          FILTERS = "reproducibility",
-          PARAMETERS = "",
-          VALUES = filter.reproducibility,
-          BEFORE = stringi::stri_join(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
-          AFTER = stringi::stri_join(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
-          BLACKLIST = stringi::stri_join(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
-          UNITS = "CHROM/LOCUS/SNP",
-          COMMENTS = ""
-        )
-        readr::write_tsv(x = filters.parameters,
-                         path = filters.parameters.path, append = TRUE,
-                         col_names = FALSE)
-        # update data.info
-        data.info <- new.data.info
-
-        blacklist.markers <- blacklist.reproducibility.markers
-        whitelist.markers <- dplyr::select(metadata, MARKERS, CHROM, LOCUS, POS)
-
-        # write blacklist and whitelist
-        readr::write_tsv(x = blacklist.reproducibility.markers, path = file.path(path.folder.reproducibility, "blacklist.reproducibility.markers.tsv"))
-        readr::write_tsv(x = whitelist.markers, path = file.path(path.folder.reproducibility, "whitelist.reproducibility.markers.tsv"))
-
-      }
-      blacklist.markers <- blacklist.reproducibility.markers <- NULL
-      whitelist.markers <- dplyr::select(metadata, MARKERS, CHROM, LOCUS, POS)
-    } else {
-      stop("A filter.reproducibility threshold value is required...")
-    }
-
-    reproducibility <- plot.reproducibility.histo <- NULL
-    outlier.rep <- plot.reproducibility.violinplot <- NULL
-  }#End filter.reproducibility
-
-  #2.Filtering call rate ---------------------------------------------------------
-  if (interactive.filter || !is.null(filter.call.rate)) {
-    if (verbose) cat("\n### 02: Filtering markers call rate ###################################\n")
-
-    folder.extension <- stringi::stri_join("02_filter_call_rate_", file.date, sep = "")
-    path.folder.call.rate <- file.path(path.folder, folder.extension)
-    dir.create(path.folder.call.rate)
-    message("Folder created: \n", folder.extension)
-
-    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "CALL_RATE")
-    call.rate <- dplyr::select(metadata, dplyr::one_of(want)) %>%
-      dplyr::mutate(Markers = rep("markers", n()))
-
-    median.cr <- round(stats::median(call.rate$CALL_RATE, na.rm = TRUE), 2)
-    q25 <- round(stats::quantile(call.rate$CALL_RATE, 0.25, na.rm = TRUE), 2)
-    outlier.cr <- round(q25 - (1.5 * stats::IQR(call.rate$CALL_RATE, na.rm = TRUE)), 2)
-
-    plot.call.rate.violinplot <- ggplot2::ggplot(
-      call.rate, ggplot2::aes(x = Markers, y = CALL_RATE, na.rm = TRUE)) +
-      ggplot2::geom_violin(trim = TRUE) +
-      ggplot2::geom_boxplot(width = 0.1, fill = "black", outlier.colour = NA) +
-      ggplot2::stat_summary(fun.y = "mean", geom = "point", shape = 21, size = 2.5, fill = "white") +
-      ggplot2::labs(
-        x = "Markers",
-        y = "Markers Call Rate (proportion)",
-        title = "DArT Call Rate stats",
-        subtitle = stringi::stri_join(
-          "median: ", median.cr,
-          "    outlier lower bound: ", outlier.cr, "    quantile 0.25: ", q25)) +
-      ggplot2::theme(
-        plot.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold", hjust = 0.5),
-        plot.subtitle = ggplot2::element_text(size = 10, family = "Helvetica", hjust = 0.5),
-        legend.position = "none",
-        axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-        axis.text.x = ggplot2::element_blank()
-      )
-    # plot.call.rate.violinplot
-    ggplot2::ggsave(
-      filename = file.path(path.folder.call.rate, "plot.call.rate.violinplot.pdf"),
-      plot = plot.call.rate.violinplot,
-      width = 20, height = 15, dpi = 600, units = "cm", useDingbats = FALSE)
-
-    plot.call.rate.histo <- ggplot2::ggplot(
-      data = call.rate,
-      ggplot2::aes(x = CALL_RATE)) +
-      ggplot2::geom_histogram() +
-      ggplot2::labs(
-        x = "Markers",
-        y = "Markers Call Rate (proportion)",
-        title = "DArT Call Rate stats",
-        subtitle = stringi::stri_join(
-          "median: ", median.cr,
-          "    outlier lower bound: ", outlier.cr, "    quantile 0.25: ", q25)) +
-      ggplot2::theme(
-        plot.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold", hjust = 0.5),
-        plot.subtitle = ggplot2::element_text(size = 10, family = "Helvetica", hjust = 0.5),
-        legend.position = "none",
-        axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-        axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-        axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica", angle = 90, hjust = 1, vjust = 0.5),
-        strip.text.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold")
-      )
-    # plot.call.rate.histo
-    suppressMessages(ggplot2::ggsave(
-      filename = file.path(path.folder.call.rate, "plot.call.rate.histo.pdf"),
-      plot = plot.call.rate.histo,
-      width = 20, height = 15, dpi = 600, units = "cm", useDingbats = FALSE))
-
-    if (interactive.filter) {
-      print(plot.call.rate.histo)
-      print(plot.call.rate.violinplot)
-      message("    Inspect plots in folder created to help choose call rate threshold...")
-      message("    Enter the value (between 0 and 1) for filter.call.rate threshold \n    (below threshold < markers are discarded): ")
-      filter.call.rate <- as.numeric(readLines(n = 1))
-    }
-
-    if (!is.null(filter.call.rate)) {
-      want <- c("MARKERS", "CHROM", "LOCUS", "POS")
-      blacklist.call.rate.markers <- call.rate %>%
-        dplyr::filter(CALL_RATE < filter.call.rate) %>%
-        dplyr::select(dplyr::one_of(want)) %>%
-        dplyr::distinct(MARKERS, .keep_all = TRUE)
-
-      if (nrow(blacklist.call.rate.markers) > 0) {
-        n.snp.before <- data.info$n.snp
-        if (verbose) message("    Number of markers before = ", n.snp.before)
-        n.snp.blacklist <- nrow(blacklist.call.rate.markers)
-        if (verbose) message("    Number of markers removed = ", n.snp.blacklist)
-        if (verbose) message("    Number of markers after = ", n.snp.before - n.snp.blacklist)
-
-        # input <- dplyr::anti_join(input, blacklist.call.rate.markers, by = "MARKERS")
-
-        metadata <- metadata %>%
-          dplyr::filter(!MARKERS %in% blacklist.call.rate.markers$MARKERS)
-
-        new.data.info <- data_info(metadata) # updating parameters
-        filters.parameters <- tibble::data_frame(
-          FILTERS = "call rate",
-          PARAMETERS = "",
-          VALUES = filter.call.rate,
-          BEFORE = stringi::stri_join(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
-          AFTER = stringi::stri_join(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
-          BLACKLIST = stringi::stri_join(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
-          UNITS = "CHROM/LOCUS/SNP",
-          COMMENTS = ""
-        )
-        readr::write_tsv(x = filters.parameters,
-                         path = filters.parameters.path, append = TRUE,
-                         col_names = FALSE)
-        # update data.info
-        data.info <- new.data.info
-
-        if (!is.null(blacklist.markers)) {
-          blacklist.markers <- dplyr::bind_rows(blacklist.markers, blacklist.call.rate.markers)
-        } else {
-          blacklist.markers <- blacklist.call.rate.markers
-        }
-
-        whitelist.markers <- dplyr::select(metadata, dplyr::one_of(want)) %>%
-          dplyr::distinct(MARKERS, .keep_all = TRUE)
-
-        # write blacklist and whitelist
-        readr::write_tsv(x = blacklist.call.rate.markers, path = file.path(path.folder.call.rate, "blacklist.call.rate.markers.tsv"))
-        readr::write_tsv(x = whitelist.markers, path = file.path(path.folder.call.rate, "whitelist.call.rate.markers.tsv"))
-      }
-      blacklist.call.rate.markers <- NULL
-    } else {
-      stop("A filter.call.rate threshold value is required...")
-    }
-    call.rate <- plot.call.rate.histo <- plot.call.rate.violinplot <- NULL
-    outlier.cr <- median.cr <- q25 <- NULL
-  }#End filter.call.rate
+  data.info <- first.data.info <- data_info(input, print.info = TRUE)
 
   # strata, pop.levels, pop.labels, pop.select and blacklist.id ----------------
   if (verbose) cat("\n#######################################################################\n")
-  message("\nPre-analyzing the strata file...")
-  strata.df <- radiator::read_strata(
-    strata = strata,
-    pop.levels = pop.levels, pop.labels = NULL,
-    pop.select = pop.select, blacklist.id = blacklist.id,
-    keep.two = FALSE, verbose = FALSE)
-  pop.levels <- strata.df$pop.levels
-  pop.labels <- strata.df$pop.labels
-  pop.select <- strata.df$pop.select
-  blacklist.id <- strata.df$blacklist.id
-  strata.df <- strata.df$strata
+  strata.df <- dplyr::distinct(input, INDIVIDUALS, POP_ID)
 
-  data.info$n.pop <- first.data.info$n.pop <- dplyr::n_distinct(strata.df$STRATA)
-  data.info$n.ind <- first.data.info$n.ind <- dplyr::n_distinct(strata.df$INDIVIDUALS)
-  metadata <- NULL
-  # Tidy DArT ------------------------------------------------------------------
-  message("\nNext step requires the genotypes")
-  if (data.type == "dart") {
-    input <- radiator::tidy_dart(
-      data = data, strata = strata.df,
-      whitelist.markers = whitelist.markers,
-      filename = filename, verbose = TRUE,
-      parallel.core = parallel.core,
-      tidy.output = "light")
-
-  } else {
-    input <- input %>%
-      dplyr::filter(MARKERS %in% whitelist.markers$MARKERS) %>%
-      dplyr::filter(INDIVIDUALS %in% strata.df$INDIVIDUALS)
-  }
-  strata.df <- NULL
-  # Make sure unnecessary columns are removed
-  input <- suppressWarnings(
-    dplyr::select(
-      input,
-      -dplyr::one_of(c("CHROM", "LOCUS", "POS", "REF", "ALT", "CALL_RATE", "REP_AVG"))
-    )
-  )
-
-  # clean...
-  input$INDIVIDUALS <- radiator::clean_ind_names(input$INDIVIDUALS)
-
-  # Change populations names or order/levels -----------------------------------
-  if (is.factor(input$POP_ID)) input$POP_ID <- droplevels(input$POP_ID)
-  pop.levels <- levels(input$POP_ID)
-  input <- change_pop_names(data = input, pop.levels = pop.levels)
 
   # check for count data
   count.data <- tibble::has_name(input, "ALLELE_REF_DEPTH")
 
-  # Update data info
-  data.info$n.pop <- dplyr::n_distinct(input$POP_ID)
-  data.info$n.ind <- dplyr::n_distinct(input$INDIVIDUALS)
 
-  #3.Filter monomorphic markers  ------------------------------------------------
-  if (monomorphic.out) {
-    if (verbose) cat("\n### 03: Filtering monomorphic markers #################################\n")
-    folder.extension <- stringi::stri_join("03_filter_monomorphic_markers_", file.date, sep = "")
-    path.folder.mono <- file.path(path.folder, folder.extension)
-    dir.create(path.folder.mono)
-    message("Folder created: \n", folder.extension)
-
-    input <- discard_monomorphic_markers(data = input, verbose = verbose)
-    blacklist.monomorphic.markers <- input$blacklist.monomorphic.markers
-    whitelist.markers <- input$whitelist.polymorphic.markers
-    input <- input$input
-
-    # update blacklist.markers
-    if (nrow(blacklist.monomorphic.markers) > 0) {
-      readr::write_tsv(x = blacklist.monomorphic.markers,
-                       path = file.path(path.folder.mono, "blacklist.monomorphic.markers.tsv"))
-      if (verbose) message("File written: blacklist.monomorphic.markers.tsv")
-
-      if (is.null(blacklist.markers)) {
-        blacklist.markers<- blacklist.monomorphic.markers
-      } else {
-        blacklist.markers <- dplyr::bind_rows(blacklist.markers, blacklist.monomorphic.markers)
-      }
-
-      new.data.info <- data_info(input)
-      if (count.data) {
-        new.data.info$n.chrom <- data.info$n.chrom
-        new.data.info$n.locus <- NA_integer_
-        n.locus.after <- "NA"
-        bl.locus <- "NA"
-      } else {
-        n.locus.after <- new.data.info$n.locus
-        bl.locus <- data.info$n.locus - n.locus.after
-      }
-
-      # updating parameters
-      filters.parameters <- tibble::data_frame(
-        FILTERS = "removing monomorphic markers",
-        PARAMETERS = "",
-        VALUES = "",
-        BEFORE = stringi::stri_join(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
-        AFTER = stringi::stri_join(new.data.info$n.chrom, n.locus.after, new.data.info$n.snp, sep = "/"),
-        BLACKLIST = stringi::stri_join(data.info$n.chrom - new.data.info$n.chrom, bl.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
-        UNITS = "CHROM/LOCUS/SNP",
-        COMMENTS = ""
-      ) %>%
-        readr::write_tsv(x = .,
-                         path = filters.parameters.path, append = TRUE,
-                         col_names = FALSE)
-      # update data.info
-      data.info <- new.data.info
-      # Write the file
-      radiator::write_rad(data = input, path = file.path(path.folder.mono, "tidy.data.monomorphic.rad"))
-      message("File written: tidy.data.monomorphic.rad")
-    }
-    blacklist.monomorphic.markers <- NULL
-  }# End monomorphic.out
-
-  #4.Filter common markers between all populations  -----------------------------
-  if (common.markers) {
-    if (verbose) cat("\n### 04: Filtering common markers ######################################\n")
-    folder.extension <- stringi::stri_join("04_filter_common_markers_", file.date, sep = "")
-    path.folder.common <- file.path(path.folder, folder.extension)
-    dir.create(path.folder.common)
-    message("Folder created: \n", folder.extension)
-
-    input <- keep_common_markers(data = input, plot = FALSE,
-                                 verbose = verbose)
-    blacklist.not.in.common.markers <- input$blacklist.not.in.common.markers
-    whitelist.markers <- tibble::as_data_frame(input$whitelist.common.markers) %>%
-      readr::write_tsv(
-        x = .,
-        path = file.path(path.folder.common, "whitelist.common.markers.tsv"))
-
-    if (file.exists(file.path(getwd(), "whitelist.common.markers.tsv"))) {
-      file.remove(file.path(getwd(), "whitelist.common.markers.tsv"))
-    }
-    input <- input$input
-
-    if (nrow(blacklist.not.in.common.markers) > 0) {
-      readr::write_tsv(x = blacklist.not.in.common.markers,
-                       path = file.path(path.folder.common, "blacklist.not.in.common.markers.tsv"))
-      if (verbose) message("    File written: blacklist.not.in.common.markers.tsv")
-
-      new.data.info <- data_info(input) # updating parameters
-      filters.parameters <- tibble::data_frame(
-        FILTERS = "keeping common markers",
-        PARAMETERS = "",
-        VALUES = "",
-        BEFORE = stringi::stri_join(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
-        AFTER = stringi::stri_join(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
-        BLACKLIST = stringi::stri_join(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
-        UNITS = "CHROM/LOCUS/SNP",
-        COMMENTS = ""
-      )
-      readr::write_tsv(x = filters.parameters,
-                       path = filters.parameters.path, append = TRUE,
-                       col_names = FALSE)
-      # update data.info
-      data.info <- new.data.info
-      if (!is.null(blacklist.markers)) {
-        blacklist.markers <- dplyr::bind_rows(
-          blacklist.markers,
-          blacklist.not.in.common.markers)
-      } else {
-        blacklist.markers <- blacklist.not.in.common.markers
-      }
-      # Write the file
-      radiator::write_rad(data = input, path = file.path(path.folder.common, "tidy.data.common.markers.rad"))
-      message("File written: tidy.data.common.markers.rad")
-    }
-    blacklist.not.in.common.markers <- NULL
-  } #End common.markers
-
-  #5.Filtering coverage --------------------------------------------------------
+  #1. Individuals coverage stats
+  #1.Filtering coverage --------------------------------------------------------
   if (!is.null(erase.genotypes) || !is.null(filter.markers.coverage) || interactive.filter) {
-    if (verbose) cat("\n### 05: Filtering coverage ############################################\n")
-    folder.extension <- stringi::stri_join("05_filter_coverage_", file.date, sep = "")
+    if (verbose) cat("\n### 01: Filtering coverage ############################################\n")
+    folder.extension <- stringi::stri_join("01_filter_coverage_", file.date, sep = "")
     path.folder.coverage <- file.path(path.folder, folder.extension)
     dir.create(path.folder.coverage)
     message("Folder created: ", folder.extension)
@@ -901,7 +440,10 @@ filter_dart <- function(
     radiator::write_rad(data = input, path = file.path(path.folder.coverage, "tidy.data.coverage.rad"))
     message("File written: tidy.data.coverage.rad")
   } else {# Counts data
-    # Filter low genotypes coverage
+    # Removing individuals with very low coverage ------------------------------
+
+
+    # Filter low genotypes coverage---------------------------------------------
     message("Filtering genotypes coverage")
 
     if (!is.null(erase.genotypes)) {
@@ -1302,6 +844,10 @@ filter_dart <- function(
     # Write the file
     radiator::write_rad(data = input, path = file.path(path.folder.coverage, "tidy.data.coverage.rad"))
     message("File written: tidy.data.coverage.rad")
+
+    # Individual coverage again...
+
+
   }#End filter coverage counts data
 
   # remove unnecessary metadata ------------------------------------------------
@@ -1312,10 +858,14 @@ filter_dart <- function(
     input <- dplyr::select(input, -c(READ_DEPTH, ALLELE_REF_DEPTH, ALLELE_ALT_DEPTH))
   }
 
-  #6.Filter monomorphic markers  ------------------------------------------------
+
+  # blacklist.markers prep -----------------------------------------------------
+  blacklist.markers <- NULL
+
+  #2.Filter monomorphic markers  ------------------------------------------------
   if (monomorphic.out) {
-    if (verbose) cat("\n### 06: Filtering monomorphic markers #################################\n")
-    folder.extension <- stringi::stri_join("06_filter_monomorphic_markers_", file.date, sep = "")
+    if (verbose) cat("\n### 02: Filtering monomorphic markers #################################\n")
+    folder.extension <- stringi::stri_join("02_filter_monomorphic_markers_", file.date, sep = "")
     path.folder.mono <- file.path(path.folder, folder.extension)
     dir.create(path.folder.mono)
     message("Folder created: \n", folder.extension)
@@ -1373,8 +923,8 @@ filter_dart <- function(
 
   #7.Filter common markers between all populations  -----------------------------
   if (common.markers) {
-    if (verbose) cat("\n### 07: Filtering common markers ######################################\n")
-    folder.extension <- stringi::stri_join("07_filter_common_markers_", file.date, sep = "")
+    if (verbose) cat("\n### 03: Filtering common markers ######################################\n")
+    folder.extension <- stringi::stri_join("03_filter_common_markers_", file.date, sep = "")
     path.folder.common <- file.path(path.folder, folder.extension)
     dir.create(path.folder.common)
     message("Folder created: \n", folder.extension)
@@ -1427,11 +977,11 @@ filter_dart <- function(
     blacklist.not.in.common.markers <- NULL
   } #End common.markers
 
-  #8.Filter individuals with too many missing -----------------------------------
+  #4.Filter individuals with too many missing -----------------------------------
   if (!is.null(filter.individuals.missing) || interactive.filter) {
-    if (verbose) cat("\n### 08: Filtering individuals poorly genotyped ########################\n")
+    if (verbose) cat("\n### 04: Filtering individuals poorly genotyped ########################\n")
     message("Finding individuals with too many missing genotypes...")
-    folder.extension <- stringi::stri_join("08_filter_individuals_missing_", file.date, sep = "")
+    folder.extension <- stringi::stri_join("04_filter_individuals_missing_", file.date, sep = "")
     path.folder.id.missing <- file.path(path.folder, folder.extension)
     dir.create(path.folder.id.missing)
     message("Folder created: \n", folder.extension)
@@ -1587,10 +1137,10 @@ filter_dart <- function(
   }#End filter missing per id
 
 
-  #9.Filtering markers with too many missing ------------------------------------
+  #5.Filtering markers with too many missing ------------------------------------
   if (!is.null(filter.markers.missing) || interactive.filter) {
 
-    if (verbose) cat("\n### 09: Filtering markers poorly genotyped ############################\n")
+    if (verbose) cat("\n### 05: Filtering markers poorly genotyped ############################\n")
     if (!is.null(filter.markers.missing)) {
       ind.approach <- as.character(filter.markers.missing[1])
       ind.threshold <- as.numeric(filter.markers.missing[2])
@@ -1604,7 +1154,7 @@ filter_dart <- function(
     }
 
     # Folder
-    folder.extension <- stringi::stri_join("09_filter_markers_missing_", file.date, sep = "")
+    folder.extension <- stringi::stri_join("05_filter_markers_missing_", file.date, sep = "")
     path.folder.ind.filter <- file.path(path.folder, folder.extension)
     dir.create(path.folder.ind.filter)
     message("\nFolder created: \n", folder.extension)
@@ -1703,7 +1253,10 @@ filter_dart <- function(
       dplyr::bind_rows(threshold.helper.pop, mean.pop, threshold.helper.overall) %>%
         dplyr::mutate(
           IND_THRESHOLD = as.numeric(IND_THRESHOLD),
-          POP_ID = factor(POP_ID, levels = c(levels(input$POP_ID), "MEAN_POP", "OVERALL"), ordered = TRUE)
+          POP_ID = factor(
+            x = POP_ID,
+            levels = c(levels(input$POP_ID), "MEAN_POP", "OVERALL"),
+            ordered = TRUE)
         ))
 
     # Set the breaks for the figure
@@ -1747,7 +1300,7 @@ filter_dart <- function(
       message("\nStep 1. Impact of individual threshold on marker discovery")
       print(plot.ind.threshold)
       message("Look at the plot and inspect the change in the number of markers
-in relation to the individual percentage thresholds\n")
+              in relation to the individual percentage thresholds\n")
     }
 
     # Helper table for individual thresholds
@@ -1773,8 +1326,8 @@ in relation to the individual percentage thresholds\n")
     if (interactive.filter) {
       message("Step 2. Choose the filtering approach and thresholds")
       message("The approach to filter a marker: do you want it based on the overall
-number of genotyped individuals or
-on the number of genotyped individuals per pop ? (overall or pop):")
+              number of genotyped individuals or
+              on the number of genotyped individuals per pop ? (overall or pop):")
       ind.approach <- as.character(readLines(n = 1))
 
       message("Enter the individual threshold percentage: ")
@@ -1850,6 +1403,7 @@ on the number of genotyped individuals per pop ? (overall or pop):")
     readr::write_tsv(x = filters.parameters,
                      path = filters.parameters.path, append = TRUE,
                      col_names = FALSE)
+    want <- c("MARKERS", "CHROM", "LOCUS", "POS")
     new.whitelist.markers <- suppressWarnings(dplyr::select(input, dplyr::one_of(want)) %>%
                                                 dplyr::distinct(MARKERS, .keep_all = TRUE))
 
@@ -1873,7 +1427,7 @@ on the number of genotyped individuals per pop ? (overall or pop):")
     pop <- threshold.helper.overall <- threshold.helper.pop <- NULL
     mean.pop <- threshold.helper <- max.markers <- filter <- NULL
     plot.ind.threshold <- NULL
-  }#End filter.markers.missing
+    }#End filter.markers.missing
 
   # change to the new directory for MAF filtering
   old.dir <- getwd()
@@ -1881,7 +1435,7 @@ on the number of genotyped individuals per pop ? (overall or pop):")
 
   #10.Filter Minor Allele Frequency  ---------------------------------------------
   if (!is.null(maf.thresholds) || interactive.filter) {
-    if (verbose) cat("\n### 10: Filtering markers with mac/maf  ###############################\n")
+    if (verbose) cat("\n### 06: Filtering markers with mac/maf  ###############################\n")
 
     if (interactive.filter) {
       maf.info <- radiator::filter_maf(
@@ -1900,7 +1454,7 @@ on the number of genotyped individuals per pop ? (overall or pop):")
     }
 
     old.folder.maf <- list.files(path = path.folder, pattern = "filter_maf")
-    new.folder.maf <- stringi::stri_join("10_", old.folder.maf)
+    new.folder.maf <- stringi::stri_join("06_", old.folder.maf)
     file.rename(from = old.folder.maf, to = new.folder.maf)
     old.folder.maf <- new.folder.maf <- NULL
     param.delete <- list.files(path = path.folder, pattern = "filters_parameters.tsv", full.names = TRUE)
@@ -1930,7 +1484,7 @@ on the number of genotyped individuals per pop ? (overall or pop):")
       message("File written: tidy.data.markers.geno.rad")
 
       # Write the file
-      new.folder.maf <- list.files(path = path.folder, pattern = "10_filter_maf", full.names = TRUE)
+      new.folder.maf <- list.files(path = path.folder, pattern = "06_filter_maf", full.names = TRUE)
       radiator::write_rad(data = input, path = file.path(new.folder.maf, "tidy.data.maf.rad"))
       message("File written: tidy.data.maf.rad")
       new.folder.maf <- NULL
@@ -1941,21 +1495,11 @@ on the number of genotyped individuals per pop ? (overall or pop):")
   #11.Filter snp number  ---------------------------------------------------------
   if (!is.null(number.snp.reads) || interactive.filter) {
     setwd(path.folder)
-    if (verbose) cat("\n### 11: Filtering SNP number per read/locus ###########################\n")
-    folder.extension <- stringi::stri_join("11_filter_snp_number_", file.date, sep = "")
+    if (verbose) cat("\n### 07: Filtering SNP number per read/locus ###########################\n")
+    folder.extension <- stringi::stri_join("07_filter_snp_number_", file.date, sep = "")
     path.folder.snp.number <- file.path(path.folder, folder.extension)
     dir.create(path.folder.snp.number)
     message("Folder created: \n", folder.extension)
-
-    # import markers meta
-    input <- dplyr::left_join(
-      input,
-      radiator::read_rad(
-        data = list.files(
-          path = path.folder, pattern = "metadata", full.names = TRUE),
-        columns = c("MARKERS", "CHROM", "LOCUS", "POS")
-      ),
-      by = "MARKERS")
 
     # get the number of SNP per reads/haplotypes/locus
     number.snp <- dplyr::distinct(input, MARKERS, CHROM, LOCUS, POS) %>%
@@ -2146,7 +1690,7 @@ on the number of genotyped individuals per pop ? (overall or pop):")
   # Data quality AFTER filters --------------------------------------------------
   #12.Detect mixed genomes -------------------------------------------------------
   if (interactive.filter || mixed.genomes.analysis) {
-    if (verbose) cat("\n### 12: Detect mixed genomes ##########################################\n")
+    if (verbose) cat("\n### 08: Detect mixed genomes ##########################################\n")
     # if (verbose) message("Mixed genomes analysis ...")
     mixed.genomes.analysis <- radiator::detect_mixed_genomes(
       data = input,
@@ -2255,7 +1799,7 @@ on the number of genotyped individuals per pop ? (overall or pop):")
     mixed.genomes.analysis <- NULL
 
     old.folder <- list.files(path = path.folder, pattern = "detect_mixed_genomes")
-    new.folder <- stringi::stri_join("12_", old.folder)
+    new.folder <- stringi::stri_join("08_", old.folder)
     file.rename(from = old.folder, to = new.folder)
 
     mono.file <- list.files(path = path.folder, pattern = "blacklist.monomorphic.markers")
@@ -2268,19 +1812,19 @@ on the number of genotyped individuals per pop ? (overall or pop):")
     }
 
     # Write the file
-    path.genome.mix <- list.files(path = path.folder, pattern = "12_detect_mixed_genomes", full.names = TRUE)
+    path.genome.mix <- list.files(path = path.folder, pattern = "08_detect_mixed_genomes", full.names = TRUE)
     radiator::write_rad(data = input, path = file.path(path.genome.mix, "tidy.data.mix.gen.rad"))
     message("File written: tidy.data.mix.gen.rad")
     path.genome.mix <- NULL
     old.folder <- new.folder <- mono.file <- mono.file.full <-  NULL
   }# End mixed genomes
 
-  #13.Detect duplicate genomes ---------------------------------------------------
+  #09.Detect duplicate genomes ---------------------------------------------------
   genome <- duplicate.genomes.analysis[2]
   duplicate.genomes.analysis <- duplicate.genomes.analysis[1]
 
   if (interactive.filter || duplicate.genomes.analysis) {
-    if (verbose) cat("\n### 13: Detect duplicate genomes ######################################\n")
+    if (verbose) cat("\n### 09: Detect duplicate genomes ######################################\n")
 
     # if (verbose) message("Duplicate genomes analysis...")
     duplicate.genomes <- radiator::detect_duplicate_genomes(
@@ -2315,7 +1859,7 @@ on the number of genotyped individuals per pop ? (overall or pop):")
       }
 
       old.folder <- list.files(path = path.folder, pattern = "detect_duplicate_genomes")
-      new.folder <- stringi::stri_join("13_", old.folder)
+      new.folder <- stringi::stri_join("09_", old.folder)
       file.rename(from = old.folder, to = new.folder)
       old.folder <- new.folder <- NULL
 
@@ -2406,7 +1950,7 @@ on the number of genotyped individuals per pop ? (overall or pop):")
       }
     }
     # Write the file
-    path.dup.genomes <- list.files(path = path.folder, pattern = "13_detect_duplicate_genomes", full.names = TRUE)
+    path.dup.genomes <- list.files(path = path.folder, pattern = "09_detect_duplicate_genomes", full.names = TRUE)
     radiator::write_rad(data = input, path = file.path(path.dup.genomes, "tidy.data.dup.gen.rad"))
     message("File written: tidy.data.dup.gen.rad")
     path.dup.genomes <- NULL
@@ -2416,7 +1960,7 @@ on the number of genotyped individuals per pop ? (overall or pop):")
 
   #14.Filter HWE -----------------------------------------------------------------
   if (interactive.filter || hw.pop.threshold) {
-    if (verbose) cat("\n### 14: Filter markers HWE ############################################\n")
+    if (verbose) cat("\n### 10: Filter markers HWE ############################################\n")
     input <- filter_hwe(
       interactive.filter = interactive.filter,
       data = input, strata = NULL,
@@ -2430,7 +1974,7 @@ on the number of genotyped individuals per pop ? (overall or pop):")
     input <- input$tidy.hw.filtered
 
     old.folder <- list.files(path = path.folder, pattern = "filter_hwe")
-    new.folder <- stringi::stri_join("14_", old.folder)
+    new.folder <- stringi::stri_join("10_", old.folder)
     file.rename(from = old.folder, to = new.folder)
 
     #update filter parameter file
@@ -2449,14 +1993,18 @@ on the number of genotyped individuals per pop ? (overall or pop):")
     # update data.info
     data.info <- new.data.info
 
-    bl.name <- stringi::stri_join("blacklist.markers.hwd.", midp.threshold,".mid.p.value.", hw.pop.threshold,".hw.pop.threshold")
+    bl.name <- stringi::stri_join("blacklist.markers.hwd.",
+                                  midp.threshold,".mid.p.value.",
+                                  hw.pop.threshold,".hw.pop.threshold")
     blacklist.hw <- list.files(
       path = path.folder,
       pattern = bl.name,
       full.names = TRUE, recursive = TRUE, include.dirs = TRUE) %>%
       readr::read_tsv(file = ., col_types = "cccc")
 
-    wt.name <- stringi::stri_join("whitelist.markers.hwe.", midp.threshold,".mid.p.value.", hw.pop.threshold,".hw.pop.threshold")
+    wt.name <- stringi::stri_join("whitelist.markers.hwe.",
+                                  midp.threshold,".mid.p.value.",
+                                  hw.pop.threshold,".hw.pop.threshold")
     whitelist.markers <- list.files(
       path = path.folder,
       pattern = wt.name,
@@ -2614,4 +2162,4 @@ on the number of genotyped individuals per pop ? (overall or pop):")
   setwd(working.dir) #back to the original working directory
   options(width = opt.change)
   return(res)
-}#End filter_dart
+  }#End filter_rad

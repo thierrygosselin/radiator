@@ -41,7 +41,7 @@ discard_monomorphic_markers <- function(data, verbose = FALSE) {
     markers.df <- dplyr::distinct(.data = data, MARKERS, CHROM, LOCUS, POS)
   }
   if (verbose) message("Scanning for monomorphic markers...")
-  if (verbose) message("    Number of markers before = ", dplyr::n_distinct(data$MARKERS))
+  n.markers.before <- dplyr::n_distinct(data$MARKERS)
 
   if (tibble::has_name(data, "GT_BIN")) {
     mono.markers <- dplyr::select(.data = data, MARKERS, GT_BIN) %>%
@@ -66,17 +66,17 @@ discard_monomorphic_markers <- function(data, verbose = FALSE) {
       dplyr::distinct(MARKERS)
   }
   # Remove the markers from the dataset
-  if (verbose) message("    Number of monomorphic markers removed = ", nrow(mono.markers))
+  n.markers.removed <- nrow(mono.markers)
 
   if (length(mono.markers$MARKERS) > 0) {
     data <- dplyr::anti_join(data, mono.markers, by = "MARKERS")
-    if (verbose) message("    Number of markers after = ", dplyr::n_distinct(data$MARKERS))
     if (tibble::has_name(data, "CHROM")) {
       mono.markers <- dplyr::left_join(mono.markers, markers.df, by = "MARKERS")
     }
   } else {
     mono.markers <- tibble::data_frame(MARKERS = character(0))
   }
+  n.markers.after <- dplyr::n_distinct(data$MARKERS)
 
   want <- c("MARKERS", "CHROM", "LOCUS", "POS")
   whitelist.polymorphic.markers <- suppressWarnings(
@@ -86,6 +86,10 @@ discard_monomorphic_markers <- function(data, verbose = FALSE) {
               blacklist.monomorphic.markers = mono.markers,
               whitelist.polymorphic.markers = whitelist.polymorphic.markers
   )
+  if (verbose) {
+    n.markers <- stringi::stri_join(n.markers.before, n.markers.removed, n.markers.after, sep = "/")
+    message("    Number of markers before/blacklisted/after: ", n.markers)
+  }
   return(res)
 } # end discard mono markers
 

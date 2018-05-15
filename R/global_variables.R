@@ -84,7 +84,8 @@ if (getRversion() >= "2.15.1") {
       "MISSING", "OUTLIERS_HIGH", "OUTLIERS_HIGH_N", "OUTLIERS_LOW",
       "OUTLIERS_LOW_N", "OUTLIERS_TOTAL", "MEAN", "n.pop", "READ_DEPTH_SCALED",
       "**", "***", "****", "AA", "AB", "BB", "COMMENTS", "FILTERS", "GROUPINGS",
-      "HWE", "MID_P_VALUE", "MONO", "N_POP_HWD", "SIGNIFICANCE", "X", "p", "VALUES"
+      "HWE", "MID_P_VALUE", "MONO", "N_POP_HWD", "SIGNIFICANCE", "X", "p",
+      "VALUES", "TOTAL_READ_COUNTS"
     )
   )
 }
