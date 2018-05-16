@@ -65,7 +65,7 @@
 #' @details
 #' \strong{Interactive version}
 #'
-#' todo
+#' The user is asked to look at figures before choosing filter thresholds.
 #'
 #'
 #' \strong{HWE threshold}
@@ -132,6 +132,14 @@
 #' \strong{Power test for HWE}
 #' Based on allele count/frequency and sample size. This function is longer to
 #' generate for each markers and is on my todo list to include it in this filter.
+#'
+#'
+#' \strong{Markers under selection and genome scans:}
+#'
+#' Scared of deleting those precious markers or that the filter might interfere
+#' with genome scan analysis/detection ? Don't be. Your markers or analysis is no
+#' good if it's done on bad data... Test the sensitivity of your downstream
+#' analysis with the datasets generated with the different thresholds.
 
 
 #' @note
@@ -148,27 +156,65 @@
 #'
 
 
-
-#' @return With \code{interactive.filter = FALSE}, a list in the global environment,
-#' with xx objects: TODO
+#' @return A list in the global environment objects:
 #' \enumerate{
-#' \item $
-#' \item $
-#' \item $
-#' \item $
-#' \item $filters.parameters
+#' \item $path.folder: the path to the folder generated.
+#' \item $hw.pop.threshold: the number of populations tolerated to be in HWD before
+#' blacklisting the markers.
+#' \item $plot.hwd.thresholds: useful figure that highlight the number of markers
+#' blacklisted based on the number of populations in HWD and mid p-value thresholds.
+#' \item $plot.tern: ternary plot of markers.
+#' \item $hw.manhattan: manhattan plot of markers in Hardy-Weinberg disequilibrium.
+#' \item $hwe.pop.sum: a summary tibble with populations, number of markers in total,
+#' number of markers monomorphic for the populations,
+#' number of markers in Hardy-Weinberg Equilibrium (HWE),
+#' number of markers in Hardy-Weinberg Dquilibrium (HWD) with all the different
+#' mid p-values observed on the data.
+#' \item $midp.threshold: the mid p-value threshold chosen for the final dataset (next)
+#' \item $tidy.hw.filtered: the final filtered dataset (oter datasets \code{.rad}
+#' are generated automatically by the function, check the folder)
 #' }
 #'
+#' Written in the folder:
+#' \enumerate{
+#' \item genotypes.summary.tsv: A tibble with these columns:
+#' \code{MARKERS, POP_ID, HET, HOM_ALT, HOM_REF, MISSING, N,
+#' FREQ_ALT, FREQ_REF, FREQ_HET, FREQ_HOM_REF_O, FREQ_HET_O, FREQ_HOM_ALT_O,
+#' FREQ_HOM_REF_E, FREQ_HET_E, FREQ_HOM_ALT_E, N_HOM_REF_EXP,
+#' N_HET_EXP, N_HOM_ALT_EXP, HOM_REF_Z_SCORE, HOM_HET_Z_SCORE,
+#' HOM_ALT_Z_SCORE, READ_DEPTH}
+
+#' \item hw.pop.sum.tsv: a summary tibble with populations, number of markers in total,
+#' number of markers monomorphic for the populations,
+#' number of markers in Hardy-Weinberg Equilibrium (HWE),
+#' number of markers in Hardy-Weinberg Dquilibrium (HWD) with all the different
+#' mid p-values observed on the data.
+#' \item hwd.helper.table.tsv: useful figure that highlight the number of markers
+#' blacklisted based on the number of populations in HWD and mid p-value thresholds.
+#' \item hwd.plot.blacklist.markers.pdf
+#' \item hwe.manhattan.plot.pdf: manhattan plot of markers in Hardy-Weinberg disequilibrium.
+#' \item hwe.ternary.plots.missing.data.pdf: ternary plot of markers.
+#' \item tidy.filtered.hwe.xxx.mid.p.value.xxx.hw.pop.threshold.rad: several
+#' tidy dataset filtered with different mid p value and populations in HWD thresholds
+#' \item whitelist.markers.hwe.xxx.mid.p.value.xxx.hw.pop.threshold.tsv: several
+#' whitelist of  markers with different mid p value and populations in HWD thresholds
+#' \item blacklist.markers.hwd.xxx.mid.p.value.xxx.hw.pop.threshold.tsv: several
+#' blacklist of markers with different mid p value and populations in HWD thresholds
+#' }
+#'
+#'
+
 
 #' @examples
 #' \dontrun{
 #' require(HardyWeinberg)
 #' require(ggtern)
-#' turtle.pop <- filter_hwe(
-#' data = "turtle.vcf",
-#' strata = "turtle.strata.tsv",
-#' hw.pop.thresholds = 3, # out of 5 pops
-#' filename = "tidy.hwe.turtle"
+#' library(radiator)
+#' # for the interactive version (recommended)
+#' turtle.pop <- radiator::filter_hwe(
+#'    data = "turtle.vcf",
+#'    strata = "turtle.strata.tsv",
+#'    filename = "hwe.turtle"
 #' )
 #' }
 
