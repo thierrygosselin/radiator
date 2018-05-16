@@ -38,13 +38,15 @@
 
 keep_common_markers <- function(data, plot = FALSE, verbose = FALSE) {
 
+  if (plot) {
+    if (!requireNamespace("UpSetR", quietly = TRUE)) {
+      stop("UpSetR needed for this function to work
+         Install with install.packages('UpSetR')", call. = FALSE)
+    }
+  }
+
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) stop("Input file missing")
-
-  if (!requireNamespace("UpSetR", quietly = TRUE)) {
-    stop("UpSetR needed for this function to work
-         Install with install.packages('UpSetR')", call. = FALSE)
-  }
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {

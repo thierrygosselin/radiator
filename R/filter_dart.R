@@ -782,12 +782,14 @@ filter_dart <- function(
   if (!count.data && (interactive.filter || !is.null(filter.markers.coverage))) {
     message("Filtering markers mean coverage")
     want <- c("MARKERS", "CHROM", "LOCUS", "POS", "AVG_COUNT_REF", "AVG_COUNT_SNP")
-    coverage <- dplyr::select(metadata, dplyr::one_of(want)) %>%
+    coverage <- suppressWarnings(dplyr::select(input, dplyr::one_of(want)) %>%
       dplyr::rename(REF = AVG_COUNT_REF, ALT = AVG_COUNT_SNP) %>%
       dplyr::distinct(MARKERS, REF, ALT, .keep_all = TRUE) %>%
-      dplyr::mutate(READS = REF + ALT)
+      dplyr::mutate(READS = REF + ALT))
 
-    coverage.long <- tidyr::gather(data = coverage, key = GROUP, value = COVERAGE, -c(MARKERS, CHROM, LOCUS, POS)) %>%
+    coverage.long <- tidyr::gather(data = coverage,
+                                   key = GROUP,
+                                   value = COVERAGE, -MARKERS) %>%
       dplyr::mutate(GROUP = factor(GROUP, levels = c("READS", "REF", "ALT"), ordered = TRUE))
     plot.coverage <- ggplot2::ggplot(
       data = coverage.long,
@@ -847,10 +849,11 @@ filter_dart <- function(
 
     if (!is.null(filter.coverage)) {
       want <- c("MARKERS", "CHROM", "LOCUS", "POS")
-      blacklist.coverage.markers <- coverage %>%
-        dplyr::filter(READS < filter.coverage[1] | READS > filter.coverage[2]) %>%
-        dplyr::select(dplyr::one_of(want)) %>%
-        dplyr::distinct(MARKERS, .keep_all = TRUE)
+      blacklist.coverage.markers <- suppressWarnings(
+        coverage %>%
+          dplyr::filter(READS < filter.coverage[1] | READS > filter.coverage[2]) %>%
+          dplyr::select(dplyr::one_of(want)) %>%
+          dplyr::distinct(MARKERS, .keep_all = TRUE))
 
       if (nrow(blacklist.coverage.markers) > 0) {
         n.snp.before <- data.info$n.snp
@@ -860,13 +863,14 @@ filter_dart <- function(
         if (verbose) message("    Number of markers after = ", n.snp.before - n.snp.blacklist)
         # input <- dplyr::anti_join(input, blacklist.coverage.markers, by = "MARKERS")
 
-        metadata <- metadata %>%
+        input <- input %>%
           dplyr::filter(!MARKERS %in% blacklist.coverage.markers$MARKERS)
 
-        whitelist.markers <- dplyr::select(metadata, dplyr::one_of(want)) %>%
-          dplyr::distinct(MARKERS, .keep_all = TRUE)
+        whitelist.markers <- suppressWarnings(
+          dplyr::select(input, dplyr::one_of(want)) %>%
+            dplyr::distinct(MARKERS, .keep_all = TRUE))
 
-        new.data.info <- data_info(metadata) # updating parameters
+        new.data.info <- data_info(input) # updating parameters
         filters.parameters <- tibble::data_frame(
           FILTERS = "coverage",
           PARAMETERS = "min/max",
@@ -876,22 +880,28 @@ filter_dart <- function(
           BLACKLIST = stringi::stri_join(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
           UNITS = "CHROM/LOCUS/SNP",
           COMMENTS = ""
-        )
-        readr::write_tsv(x = filters.parameters,
-                         path = filters.parameters.path, append = TRUE,
-                         col_names = FALSE)
+        ) %>%
+          readr::write_tsv(
+            x = .,
+            path = filters.parameters.path, append = TRUE,
+            col_names = FALSE)
         # update data.info
         data.info <- new.data.info
 
         if (!is.null(blacklist.markers)) {
-          blacklist.markers <- dplyr::bind_rows(blacklist.markers, blacklist.coverage.markers)
+          blacklist.markers <- dplyr::bind_rows(blacklist.markers,
+                                                blacklist.coverage.markers)
         } else {
           blacklist.markers <- blacklist.coverage.markers
         }
 
         # write blacklist and whitelist
-        readr::write_tsv(x = blacklist.coverage.markers, path = file.path(path.folder.coverage, "blacklist.coverage.markers.tsv"))
-        readr::write_tsv(x = whitelist.markers, path = file.path(path.folder.coverage, "whitelist.coverage.markers.tsv"))
+        readr::write_tsv(
+          x = blacklist.coverage.markers,
+          path = file.path(path.folder.coverage, "blacklist.coverage.markers.tsv"))
+        readr::write_tsv(
+          x = whitelist.markers,
+          path = file.path(path.folder.coverage, "whitelist.coverage.markers.tsv"))
       }
     } else {
       stop("A filter.coverage thresholds values are required...")
