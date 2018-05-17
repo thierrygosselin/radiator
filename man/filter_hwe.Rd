@@ -52,10 +52,10 @@ Default: \code{hw.pop.threshold = 0}.}
 
 \item{midp.threshold}{(character, optional)
 By default the function generates blacklists/whitelists of markers and
-filtered tidy datasets for the 4 mid p-value.
+filtered tidy datasets for the 5 mid p-value.
 However, to get a final filtered object associated with the output of the
 function, user need to choose one
-of the 4 mid p-value \code{"*", "**", "***", "****"}.
+of the 5 mid p-value \code{"*", "**", "***", "****", "*****"}.
 With default, a very conservative mid p-value threshold (= 0.0001) is selected.
 Default: \code{midp.threshold = "****"}.}
 
@@ -154,9 +154,10 @@ number of markers monomorphic for the populations,
 number of markers in Hardy-Weinberg Equilibrium (HWE),
 number of markers in Hardy-Weinberg Dquilibrium (HWD) with all the different
 mid p-values observed on the data.
-\item hwd.helper.table.tsv: useful figure that highlight the number of markers
+\item hwd.helper.table.tsv: useful tibble that highlight the number of markers
 blacklisted based on the number of populations in HWD and mid p-value thresholds.
-\item hwd.plot.blacklist.markers.pdf
+\item hwd.plot.blacklist.markers.pdf: useful figure that highlight the number of markers
+blacklisted based on the number of populations in HWD and mid p-value thresholds.
 \item hwe.manhattan.plot.pdf: manhattan plot of markers in Hardy-Weinberg disequilibrium.
 \item hwe.ternary.plots.missing.data.pdf: ternary plot of markers.
 \item tidy.filtered.hwe.xxx.mid.p.value.xxx.hw.pop.threshold.rad: several
@@ -207,6 +208,7 @@ several blacklists/whitelists of markers and
 filtered tidy data (in the directory)
 based on the \code{hw.pop.threshold} for 4 groups of mid p-values:
 \itemize{
+\item MID_P_VALUE <= 0.00001: *****
 \item MID_P_VALUE <= 0.0001: ****
 \item MID_P_VALUE <= 0.001: ***
 \item MID_P_VALUE <= 0.01: **

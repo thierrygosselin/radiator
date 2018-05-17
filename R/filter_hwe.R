@@ -39,10 +39,10 @@
 
 #' @param midp.threshold (character, optional)
 #' By default the function generates blacklists/whitelists of markers and
-#' filtered tidy datasets for the 4 mid p-value.
+#' filtered tidy datasets for the 5 mid p-value.
 #' However, to get a final filtered object associated with the output of the
 #' function, user need to choose one
-#' of the 4 mid p-value \code{"*", "**", "***", "****"}.
+#' of the 5 mid p-value \code{"*", "**", "***", "****", "*****"}.
 #' With default, a very conservative mid p-value threshold (= 0.0001) is selected.
 #' Default: \code{midp.threshold = "****"}.
 
@@ -84,6 +84,7 @@
 #' filtered tidy data (in the directory)
 #' based on the \code{hw.pop.threshold} for 4 groups of mid p-values:
 #' \itemize{
+#' \item MID_P_VALUE <= 0.00001: *****
 #' \item MID_P_VALUE <= 0.0001: ****
 #' \item MID_P_VALUE <= 0.001: ***
 #' \item MID_P_VALUE <= 0.01: **
@@ -189,9 +190,10 @@
 #' number of markers in Hardy-Weinberg Equilibrium (HWE),
 #' number of markers in Hardy-Weinberg Dquilibrium (HWD) with all the different
 #' mid p-values observed on the data.
-#' \item hwd.helper.table.tsv: useful figure that highlight the number of markers
+#' \item hwd.helper.table.tsv: useful tibble that highlight the number of markers
 #' blacklisted based on the number of populations in HWD and mid p-value thresholds.
-#' \item hwd.plot.blacklist.markers.pdf
+#' \item hwd.plot.blacklist.markers.pdf: useful figure that highlight the number of markers
+#' blacklisted based on the number of populations in HWD and mid p-value thresholds.
 #' \item hwe.manhattan.plot.pdf: manhattan plot of markers in Hardy-Weinberg disequilibrium.
 #' \item hwe.ternary.plots.missing.data.pdf: ternary plot of markers.
 #' \item tidy.filtered.hwe.xxx.mid.p.value.xxx.hw.pop.threshold.rad: several
@@ -372,12 +374,13 @@ filter_hwe <- function(
       POP_ID = factor(POP_ID, levels = pop.levels),
       GROUPINGS = factor(
         x = GROUPINGS,
-        levels = c("monomorphic", "hwe", "*", "**", "***", "****"),
+        levels = c("monomorphic", "hwe", "*", "**", "***", "****", "*****"),
         labels = c("monomorphic", "hwe",
                    "midp <= 0.05 (*)",
                    "midp <= 0.01 (**)",
                    "midp <= 0.001 (***)",
-                   "midp <= 0.0001 (****)")),
+                   "midp <= 0.0001 (****)",
+                   "midp <= 0.00001 (*****)")),
       MISSING_PROP = MISSING / (MISSING + N)
     )
   # Step 1. Impact of population threshold on marker discovery------------------
@@ -394,7 +397,8 @@ filter_hwe <- function(
       `HWD*` = length(MARKERS[`*` & !is.na(`*`)]),
       `HWD**` = length(MARKERS[`**` & !is.na(`**`)]),
       `HWD***` = length(MARKERS[`***` & !is.na(`***`)]),
-      `HWD****` = length(MARKERS[`****` & !is.na(`****`)])
+      `HWD****` = length(MARKERS[`****` & !is.na(`****`)]),
+      `HWD*****` = length(MARKERS[`****` & !is.na(`*****`)])
     ) %>%
     dplyr::ungroup(.) %>%
     readr::write_tsv(x = ., path = file.path(path.folder, "hw.pop.sum.tsv"))
@@ -402,7 +406,7 @@ filter_hwe <- function(
 
   hwd.markers.pop.sum <- data.sum %>%
     dplyr::filter(!HWE, POP_ID != "OVERALL") %>%
-    dplyr::select(POP_ID, MARKERS, `*`, `**`, `***`, `****`) %>%
+    dplyr::select(POP_ID, MARKERS, `*`, `**`, `***`, `****`, `*****`) %>%
     data.table::as.data.table(.) %>%
     data.table::melt.data.table(
       data = ., id.vars = c("MARKERS", "POP_ID"),
@@ -410,7 +414,7 @@ filter_hwe <- function(
       variable.factor = FALSE) %>%
     tibble::as_data_frame(.) %>%
     dplyr::mutate(SIGNIFICANCE = factor(SIGNIFICANCE,
-                                        levels = c("*", "**", "***", "****"))) %>%
+                                        levels = c("*", "**", "***", "****", "*****"))) %>%
     dplyr::filter(VALUE) %>%
     dplyr::group_by(MARKERS, SIGNIFICANCE) %>%
     dplyr::tally(.) %>%
@@ -418,38 +422,48 @@ filter_hwe <- function(
 
   n.markers <- dplyr::n_distinct(data$MARKERS)
   `Exact test mid p-value` <- NULL
-  # hwd.helper.table.long <- hwd.markers.pop.sum %>%
+
+  # hwd.helper.table.long <- data.sum %>%
+  #   dplyr::filter(!HWE) %>%
+  #   dplyr::select(POP_ID, MARKERS, `*`, `**`, `***`, `****`, `*****`) %>%
+  #   data.table::as.data.table(.) %>%
+  #   data.table::melt.data.table(
+  #     data = ., id.vars = c("MARKERS", "POP_ID"),
+  #     variable.name = "SIGNIFICANCE", value.name = "VALUE",
+  #     variable.factor = FALSE) %>%
+  #   tibble::as_data_frame(.) %>%
+  #   dplyr::mutate(
+  #     SIGNIFICANCE = factor(
+  #       x = SIGNIFICANCE,
+  #       levels = c("*", "**", "***", "****", "*****"),
+  #       labels = c("midp <= 0.05 (*)", "midp <= 0.01 (**)",
+  #                  "midp <= 0.001 (***)", "midp <= 0.0001 (****)",
+  #                  "midp <= 0.00001 (*****)"))
+  #   ) %>%
+  #   dplyr::filter(VALUE)
+
+  # overall <- hwd.helper.table.long %>%
+  #   dplyr::filter(POP_ID == "OVERALL") %>%
+  #   dplyr::group_by(MARKERS, SIGNIFICANCE) %>%
+  #   dplyr::tally(.) %>%
+  #   dplyr::rename(N_POP_HWD = n) %>%
   #   dplyr::group_by(SIGNIFICANCE, N_POP_HWD) %>%
   #   dplyr::tally(.) %>%
   #   dplyr::ungroup(.) %>%
-  #   dplyr::mutate(
-  #     `Exact test mid p-value` = factor(
-  #       x = SIGNIFICANCE,
-  #       levels = c("*", "**", "***", "****"),
-  #       labels = c("midp <= 0.05 (*)", "midp <= 0.01 (**)",
-  #                  "midp <= 0.001 (***)", "midp <= 0.0001 (****)")
-  #   ))
+  #   dplyr::mutate(N_POP_HWD = "OVERALL")
 
-  hwd.helper.table.long <- data.sum %>%
-    dplyr::filter(!HWE) %>%
-    dplyr::select(POP_ID, MARKERS, `*`, `**`, `***`, `****`) %>%
+  overall <- data.sum %>%
+    dplyr::filter(!HWE, POP_ID == "OVERALL") %>%
+    dplyr::select(POP_ID, MARKERS, `*`, `**`, `***`, `****`, `*****`) %>%
     data.table::as.data.table(.) %>%
     data.table::melt.data.table(
       data = ., id.vars = c("MARKERS", "POP_ID"),
       variable.name = "SIGNIFICANCE", value.name = "VALUE",
       variable.factor = FALSE) %>%
     tibble::as_data_frame(.) %>%
-    dplyr::mutate(
-      SIGNIFICANCE = factor(
-        x = SIGNIFICANCE,
-        levels = c("*", "**", "***", "****"),
-        labels = c("midp <= 0.05 (*)", "midp <= 0.01 (**)",
-                   "midp <= 0.001 (***)", "midp <= 0.0001 (****)"))
-    ) %>%
-    dplyr::filter(VALUE)
-
-  overall <- hwd.helper.table.long %>%
-    dplyr::filter(POP_ID == "OVERALL") %>%
+    dplyr::mutate(SIGNIFICANCE = factor(SIGNIFICANCE,
+                                        levels = c("*", "**", "***", "****", "*****"))) %>%
+    dplyr::filter(VALUE) %>%
     dplyr::group_by(MARKERS, SIGNIFICANCE) %>%
     dplyr::tally(.) %>%
     dplyr::rename(N_POP_HWD = n) %>%
@@ -458,11 +472,22 @@ filter_hwe <- function(
     dplyr::ungroup(.) %>%
     dplyr::mutate(N_POP_HWD = "OVERALL")
 
-  hwd.helper.table.long <- hwd.helper.table.long %>%
-    dplyr::filter(POP_ID != "OVERALL") %>%
-    dplyr::group_by(MARKERS, SIGNIFICANCE) %>%
-    dplyr::tally(.) %>%
-    dplyr::rename(N_POP_HWD = n) %>%
+  # hwd.helper.table.long <- hwd.helper.table.long %>%
+  #   dplyr::filter(POP_ID != "OVERALL") %>%
+  #   dplyr::group_by(MARKERS, SIGNIFICANCE) %>%
+  #   dplyr::tally(.) %>%
+  #   dplyr::rename(N_POP_HWD = n) %>%
+  #   dplyr::group_by(SIGNIFICANCE, N_POP_HWD) %>%
+  #   dplyr::tally(.) %>%
+  #   dplyr::ungroup(.) %>%
+  #   dplyr::mutate(N_POP_HWD = as.character(N_POP_HWD)) %>%
+  #   dplyr::bind_rows(overall) %>%
+  #   dplyr::mutate(
+  #     N_POP_HWD = factor(
+  #       x = N_POP_HWD, levels = c("OVERALL", 1:(n.pop -1)))
+  #   )
+
+  hwd.helper.table.long <- hwd.markers.pop.sum %>%
     dplyr::group_by(SIGNIFICANCE, N_POP_HWD) %>%
     dplyr::tally(.) %>%
     dplyr::ungroup(.) %>%
@@ -471,14 +496,19 @@ filter_hwe <- function(
     dplyr::mutate(
       N_POP_HWD = factor(
         x = N_POP_HWD, levels = c("OVERALL", 1:(n.pop -1)))
-    )
-  overall <- NULL
-
-  hwd.helper.table <- hwd.helper.table.long %>%
+    ) %>%
     tidyr::complete(
       data = .,
       SIGNIFICANCE, N_POP_HWD,
-      fill = list(n = 0)) %>%
+      fill = list(n = 0))
+
+  overall <- NULL
+
+  hwd.helper.table <- hwd.helper.table.long %>%
+    # tidyr::complete(
+    #   data = .,
+    #   SIGNIFICANCE, N_POP_HWD,
+    #   fill = list(n = 0)) %>%
     dplyr::group_by(N_POP_HWD) %>%
     tidyr::spread(data = ., key = SIGNIFICANCE, value = n) %>%
     dplyr::filter(N_POP_HWD != 0) %>%
@@ -529,7 +559,7 @@ filter_hwe <- function(
     limitsize = FALSE,
     plot = plot.hwd.thresholds,
     filename = file.path(path.folder, "hwd.plot.blacklist.markers.pdf"),
-    width = n.pop * 4, height = 10,
+    width = n.pop * 5, height = 10,
     dpi = 300, units = "cm", useDingbats = FALSE)
   hwd.helper.table.long <- NULL
   if (verbose) message("Plot written: hwd.plot.blacklist.markers.pdf")
@@ -551,10 +581,10 @@ filter_hwe <- function(
   # ternary plot -----------------------------------------------------------------
   # library(ggtern)
   num.groups <- dplyr::n_distinct(data.sum$GROUPINGS)
-  if (num.groups == 6) group_colors <- c("grey", "green", "yellow", "orange",
-                                         "orangered", "red")
-  if (num.groups == 5) group_colors <- c("green", "yellow", "orange",
-                                         "orangered", "red")
+  if (num.groups == 7) group_colors <- c("grey", "green", "yellow", "orange",
+                                         "orangered", "red", "darkred")
+  if (num.groups == 6) group_colors <- c("green", "yellow", "orange",
+                                         "orangered", "red", "darkred")
 
   # HW Parabola
   parabola <- tibble::tibble(p = seq(0, 1, by = 0.005)) %>%
@@ -585,10 +615,7 @@ filter_hwe <- function(
 
   plot.tern <- ggtern::ggtern(
     data = data.sum,
-    # data = dplyr::filter(data, POP_ID %in% c("ATL", "MAL")),
-    # data = dplyr::filter(data, POP_ID %in% c("OVERALL")),
     ggtern::aes(AA, AB, BB, color = GROUPINGS, size = MISSING_PROP)) +
-    # ggtern::aes(AA, AB, BB, color = GROUPINGS, size = READ_DEPTH)) +
     ggplot2::scale_color_manual(name = "Exact test mid p-value", values = group_colors) +
     ggplot2::scale_size_continuous(name = "Missing genotypes proportion") +
     ggtern::theme_rgbw() +
@@ -603,7 +630,6 @@ filter_hwe <- function(
       subtitle = "genotypes frequencies shown for AA: REF/REF, AB: REF/ALT and BB: ALT/ALT"
     ) +
     ggplot2::theme(
-      # legend.position = "none",
       plot.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold", hjust = 0.5),
       plot.subtitle = ggplot2::element_text(size = 10, family = "Helvetica", hjust = 0.5)
     ) +
@@ -614,7 +640,7 @@ filter_hwe <- function(
     plot = plot.tern,
     # filename = file.path(path.folder, "hwe.ternary.plots.read.depth.pdf"),
     filename = file.path(path.folder, "hwe.ternary.plots.missing.data.pdf"),
-    width = n.pop * 4, height = n.pop * 4,
+    width = n.pop * 5, height = n.pop * 4,
     dpi = 300, units = "cm", useDingbats = FALSE)
   hw.parabola <- NULL
   if (verbose) message("Plot written: hwe.ternary.plots.missing.data.pdf")
@@ -630,8 +656,8 @@ filter_hwe <- function(
   # y.breaks <- seq(y.breaks.min, y.breaks.max, by = y.breaks.by)
 
   num.groups <- dplyr::n_distinct(data.sum.man$GROUPINGS)
+  if (num.groups == 5) group_colors <- c("yellow", "orange", "orangered", "red", "darkred")
   if (num.groups == 4) group_colors <- c("yellow", "orange", "orangered", "red")
-  if (num.groups == 3) group_colors <- c("orange", "orangered", "red")
 
   hw.manhattan <- ggplot2::ggplot(
     data = data.sum.man,
@@ -699,10 +725,11 @@ filter_hwe <- function(
     if (interactive.filter) {
       message("\nChoosing the final filtered dataset")
       message("   the tidy data object associated with this filter...")
-      message("   choose the mid p-value threshold (one of: *, **, *** or ****)")
+      message("   choose the mid p-value threshold (one of: *, **, ***, **** or *****)")
       midp.threshold <- as.character(readLines(n = 1))
     }
     midp.threshold <- dplyr::case_when(
+      midp.threshold == "*****" ~ 0.00001,
       midp.threshold == "****" ~ 0.0001,
       midp.threshold == "***" ~ 0.001,
       midp.threshold == "**" ~ 0.01,
@@ -802,6 +829,7 @@ hwe_analysis <- function(x, parallel.core = parallel::detectCores() - 1) {
         dplyr::mutate(
           HWE = MID_P_VALUE >= 0.05,
           SIGNIFICANCE = dplyr::case_when(
+            MID_P_VALUE <= 0.00001 ~ "*****",
             MID_P_VALUE <= 0.0001 ~ "****",
             MID_P_VALUE <= 0.001 ~ "***",
             MID_P_VALUE <= 0.01 ~ "**",
@@ -810,6 +838,7 @@ hwe_analysis <- function(x, parallel.core = parallel::detectCores() - 1) {
           `**` = MID_P_VALUE <= 0.01,
           `***` = MID_P_VALUE <= 0.001,
           `****` = MID_P_VALUE <= 0.0001,
+          `*****` = MID_P_VALUE <= 0.00001,
           GROUPINGS = SIGNIFICANCE,
           GROUPINGS = dplyr::if_else(
             MONO, "monomorphic",
@@ -859,6 +888,7 @@ blacklist_hw <- function(x, unfiltered.data, hw.pop.threshold, path.folder = NUL
       # ))
 
       significance.group <- dplyr::case_when(
+        significance.group == "*****" ~ 0.00001,
         significance.group == "****" ~ 0.0001,
         significance.group == "***" ~ 0.001,
         significance.group == "**" ~ 0.01,

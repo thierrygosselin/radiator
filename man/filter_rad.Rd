@@ -259,10 +259,10 @@ Default: \code{hw.pop.threshold = 0}.}
 
 \item{midp.threshold}{(character, optional)
 By default the function generates blacklists/whitelists of markers and
-filtered tidy datasets for the 4 mid p-value.
+filtered tidy datasets for the 5 mid p-value.
 However, to get a final filtered object associated with the output of the
 function, user need to choose one
-of the 4 mid p-value \code{"*", "**", "***", "****"}.
+of the 5 mid p-value \code{"*", "**", "***", "****", "*****"}.
 With default, a very conservative mid p-value threshold (= 0.0001) is selected.
 Default: \code{midp.threshold = "****"}.}
 
