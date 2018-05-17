@@ -413,8 +413,9 @@ filter_hwe <- function(
       variable.name = "SIGNIFICANCE", value.name = "VALUE",
       variable.factor = FALSE) %>%
     tibble::as_data_frame(.) %>%
-    dplyr::mutate(SIGNIFICANCE = factor(SIGNIFICANCE,
-                                        levels = c("*", "**", "***", "****", "*****"))) %>%
+    dplyr::mutate(
+      SIGNIFICANCE = factor(SIGNIFICANCE,
+                            levels = c("*", "**", "***", "****", "*****"))) %>%
     dplyr::filter(VALUE) %>%
     dplyr::group_by(MARKERS, SIGNIFICANCE) %>%
     dplyr::tally(.) %>%
