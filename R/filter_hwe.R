@@ -28,13 +28,11 @@
 #' asked to see figures of distribution before making decisions for filtering.
 
 #' @param hw.pop.threshold (integer, optional)
-#' Use this threshold to allow
-#' variance in the number of populations passing the HWE test.
-#' e.g. with \code{hw.pop.threshold = 2},
-#' you tolerate a maximum of 2 populations that fails the HW test.
-#' All markers with > 2 populations in HWD will be blacklisted.
-#' With default, all populations need to be in HWE.
-#' Default: \code{hw.pop.threshold = 0}.
+#' Remove markers that have a certain number of pops in Hardy-Weinberg
+#' disequilibrium.
+#' With default, all populations in dataset need to be in HWD before discarding
+#' the marker.
+#' Default: \code{hw.pop.threshold = NULL}.
 
 
 #' @param midp.threshold (character, optional)
@@ -244,7 +242,7 @@ filter_hwe <- function(
   interactive.filter = TRUE,
   data,
   strata = NULL,
-  hw.pop.threshold = 0,
+  hw.pop.threshold = NULL,
   midp.threshold = "****",
   filename = NULL,
   blacklist.id = NULL,
@@ -281,7 +279,7 @@ filter_hwe <- function(
   # Message about steps taken during the process ---------------------------------
   if (interactive.filter) {
     message("Interactive mode: on")
-    if (hw.pop.threshold > 0) {
+    if (!is.null(hw.pop.threshold)) {
       message("Disabling hw.pop.threshold value")
       message("   you'll have to enter the value manually after visualization")
     }
@@ -419,8 +417,9 @@ filter_hwe <- function(
     dplyr::filter(VALUE) %>%
     dplyr::group_by(MARKERS, SIGNIFICANCE) %>%
     dplyr::tally(.) %>%
-    dplyr::rename(N_POP_HWD = n)
+    dplyr::rename(N_POP_HWD = n) #%>%dplyr::mutate(N_POP_HWD = n.pop -1 - N_POP_HWD)# To get the tolerance to...
 
+  hwd.levels <- sort(unique(hwd.markers.pop.sum$N_POP_HWD))
   n.markers <- dplyr::n_distinct(data$MARKERS)
   `Exact test mid p-value` <- NULL
 
@@ -462,8 +461,9 @@ filter_hwe <- function(
       variable.name = "SIGNIFICANCE", value.name = "VALUE",
       variable.factor = FALSE) %>%
     tibble::as_data_frame(.) %>%
-    dplyr::mutate(SIGNIFICANCE = factor(SIGNIFICANCE,
-                                        levels = c("*", "**", "***", "****", "*****"))) %>%
+    dplyr::mutate(SIGNIFICANCE = factor(
+      x = SIGNIFICANCE,
+      levels = c("*", "**", "***", "****", "*****"))) %>%
     dplyr::filter(VALUE) %>%
     dplyr::group_by(MARKERS, SIGNIFICANCE) %>%
     dplyr::tally(.) %>%
@@ -496,7 +496,7 @@ filter_hwe <- function(
     dplyr::bind_rows(overall) %>%
     dplyr::mutate(
       N_POP_HWD = factor(
-        x = N_POP_HWD, levels = c("OVERALL", 1:(n.pop -1)))
+        x = N_POP_HWD, levels = c("OVERALL", hwd.levels))
     ) %>%
     tidyr::complete(
       data = .,
@@ -506,10 +506,6 @@ filter_hwe <- function(
   overall <- NULL
 
   hwd.helper.table <- hwd.helper.table.long %>%
-    # tidyr::complete(
-    #   data = .,
-    #   SIGNIFICANCE, N_POP_HWD,
-    #   fill = list(n = 0)) %>%
     dplyr::group_by(N_POP_HWD) %>%
     tidyr::spread(data = ., key = SIGNIFICANCE, value = n) %>%
     dplyr::filter(N_POP_HWD != 0) %>%
@@ -700,6 +696,7 @@ filter_hwe <- function(
 
   #leave user with this figure before choosing threshold
 
+  if (is.null(hw.pop.threshold)) hw.pop.threshold <- n.pop - 1
   if (interactive.filter) {
     message("\nBased on figures and tables enter the hw.pop.threshold")
     message("    an integer (e.g. 4):")
@@ -710,7 +707,11 @@ filter_hwe <- function(
   # Generating blacklists, whitelists and filtered tidy data -------------------
   if (verbose) message("\nGenerating blacklists, whitelists and filtered tidy data")
   output.message <- blacklist_hw(
-    hwd.markers.pop.sum, data, hw.pop.threshold, path.folder, filters.parameters.path) %>%
+    x = hwd.markers.pop.sum,
+    unfiltered.data = data,
+    hw.pop.threshold = hw.pop.threshold,
+    path.folder = path.folder,
+    filters.parameters.path = filters.parameters.path) %>%
     dplyr::select(-FILTERS, -COMMENTS)
 
   res = list(path.folder = path.folder,
@@ -873,7 +874,7 @@ blacklist_hw <- function(x, unfiltered.data, hw.pop.threshold, path.folder = NUL
   if (is.null(path.folder)) path.folder <- getwd()
 
   x <- dplyr::ungroup(x) %>%
-    dplyr::filter(N_POP_HWD > hw.pop.threshold)
+    dplyr::filter(N_POP_HWD == hw.pop.threshold)
 
   bl_map <- function(x, unfiltered.data, hw.pop.threshold,
                      path.folder, filters.parameters.path) {

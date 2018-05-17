@@ -5,7 +5,7 @@
 \title{Filter markers based on Hardy-Weinberg Equilibrium}
 \usage{
 filter_hwe(interactive.filter = TRUE, data, strata = NULL,
-  hw.pop.threshold = 0, midp.threshold = "****", filename = NULL,
+  hw.pop.threshold = NULL, midp.threshold = "****", filename = NULL,
   blacklist.id = NULL, whitelist.markers = NULL, pop.levels = NULL,
   pop.labels = NULL, pop.select = NULL,
   parallel.core = parallel::detectCores() - 1, verbose = TRUE)
@@ -42,13 +42,11 @@ packages or codes: space is changed to an underscore \code{_}.
 Default: \code{strata = NULL}.}
 
 \item{hw.pop.threshold}{(integer, optional)
-Use this threshold to allow
-variance in the number of populations passing the HWE test.
-e.g. with \code{hw.pop.threshold = 2},
-you tolerate a maximum of 2 populations that fails the HW test.
-All markers with > 2 populations in HWD will be blacklisted.
-With default, all populations need to be in HWE.
-Default: \code{hw.pop.threshold = 0}.}
+Remove markers that have a certain number of pops in Hardy-Weinberg
+disequilibrium.
+With default, all populations in dataset need to be in HWD before discarding
+the marker.
+Default: \code{hw.pop.threshold = NULL}.}
 
 \item{midp.threshold}{(character, optional)
 By default the function generates blacklists/whitelists of markers and
