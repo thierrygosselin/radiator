@@ -150,7 +150,11 @@
 #' \dontrun{
 #' require(HardyWeinberg)
 #' require(ggtern)
-#' #TODO
+#' shark <- radiator::filter_rad(
+#'     data = "data.shark.vcf",
+#'     strata = "strata.shark.tsv",
+#'     output = "genind",
+#'     filename = "shark.filters")
 #' }
 
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com} and Peter Grewe \email{peter.grewe@csiro.au}
