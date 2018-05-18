@@ -1078,6 +1078,7 @@ filter_dart <- function(
     # using the same threshold we explore the data.
     if (interactive.filter) {
       message("2. Heterozygous genotypes coverage: REF/ALT alleles below ", threshold.low.coverage, " reads")
+      message("   Generating Heterozygous genotypes statistics ...")
     }
     gl_relative <- function(x) x / max(x)
 

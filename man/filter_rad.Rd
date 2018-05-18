@@ -337,7 +337,11 @@ The function requires 2 packages (not installed automatically with radiator):
 \dontrun{
 require(HardyWeinberg)
 require(ggtern)
-#TODO
+shark <- radiator::filter_rad(
+    data = "data.shark.vcf",
+    strata = "strata.shark.tsv",
+    output = "genind",
+    filename = "shark.filters")
 }
 }
 \author{

@@ -112,8 +112,8 @@
 #' @importFrom dplyr arrange rename select group_by filter mutate rename_ filter_ bind_cols bind_rows summarise n_distinct intersect desc
 #' @importFrom utils combn
 #' @importFrom stats na.omit var median quantile dist
-# @importFrom amap Dist
-#' @importFrom parallelDist parDist
+#' @importFrom amap Dist
+# @importFrom parallelDist parDist
 #' @importFrom readr write_tsv
 #' @importFrom parallel detectCores
 #' @importFrom purrr flatten map
@@ -269,24 +269,26 @@ detect_duplicate_genomes <- function(
   # GT_BIN available
   # for biallelic data set, just need to keep
   if (!is.null(distance.method) & gt.field == "GT_BIN") {
-    input.prep <- dplyr::ungroup(data) %>%
-      dplyr::select(MARKERS, INDIVIDUALS, n = GT_BIN) %>%
-      dplyr::mutate(MARKERS_ALLELES = MARKERS) %>%
-      dplyr::arrange(MARKERS_ALLELES, INDIVIDUALS)
-
-    # previous method was using allele count, but for biallelic data, it's duplication...
     # input.prep <- dplyr::ungroup(data) %>%
-    #   dplyr::select(MARKERS, INDIVIDUALS, ALT = GT_BIN) %>%
-    #   dplyr::mutate(REF = 2 - ALT) %>%
-    #   data.table::as.data.table(.) %>%
-    #   data.table::melt.data.table(
-    #     data = ., id.vars = c("MARKERS", "INDIVIDUALS"), variable.name = "ALLELES", value.name = "n",
-    #     variable.factor = FALSE) %>%
-    #   tibble::as_data_frame(.) %>%
-    #   # tidyr::gather(data = ., key = ALLELES, value = n, -c(MARKERS, INDIVIDUALS)) %>%
-    #   dplyr::mutate(MARKERS_ALLELES = stringi::stri_join(MARKERS, ALLELES, sep = ".")) %>%
-    #   dplyr::select(-ALLELES) %>%
+    #   dplyr::select(MARKERS, INDIVIDUALS, n = GT_BIN) %>%
+    #   dplyr::mutate(MARKERS_ALLELES = MARKERS) %>%
     #   dplyr::arrange(MARKERS_ALLELES, INDIVIDUALS)
+
+    input.prep <- dplyr::ungroup(data) %>%
+      dplyr::select(MARKERS, INDIVIDUALS, ALT = GT_BIN) %>%
+      dplyr::mutate(
+        REF = 2 - ALT,
+        REF = as.integer(REF),
+        ALT = as.integer(ALT)) %>%
+      data.table::as.data.table(.) %>%
+      data.table::melt.data.table(
+        data = ., id.vars = c("MARKERS", "INDIVIDUALS"), variable.name = "ALLELES", value.name = "n",
+        variable.factor = FALSE) %>%
+      tibble::as_data_frame(.) %>%
+      # tidyr::gather(data = ., key = ALLELES, value = n, -c(MARKERS, INDIVIDUALS)) %>%
+      dplyr::mutate(MARKERS_ALLELES = stringi::stri_join(MARKERS, ALLELES, sep = ".")) %>%
+      dplyr::select(-ALLELES) %>%
+      dplyr::arrange(MARKERS_ALLELES, INDIVIDUALS)
   }
 
   # GT_BIN NOT available
@@ -789,7 +791,7 @@ distance_individuals <- function(
       tibble::as_data_frame(.) %>%
       tibble::remove_rownames(.) %>%
       tibble::column_to_rownames(df = ., var = "INDIVIDUALS"))
-  x[is.na(x)] <- 999
+  # x[is.na(x)] <- 999
   # anyNA(x)
 
 
@@ -803,28 +805,28 @@ distance_individuals <- function(
   # test.2 <- distance2df(test.2)
 
   # if (n.ind > 400) {
-  ids <- rownames(x)
-  x <-suppressWarnings(
-    parallelDist::parDist(# doesnt allow missing data, hence the dummy category ...
-      x = as.matrix(x),
-      method = distance.method,
-      threads = parallel.core)) %>%
-    as.matrix
-
-  # dim(x)
-  rownames(x) <- colnames(x) <- ids
-  ids <- NULL
+  # ids <- rownames(x)
+  # x <-suppressWarnings(
+  #   parallelDist::parDist(# doesnt allow missing data, hence the dummy category ...
+  #     x = as.matrix(x),
+  #     method = distance.method,
+  #     threads = parallel.core)) %>%
+  #   as.matrix
+  #
+  # # dim(x)
+  # rownames(x) <- colnames(x) <- ids
+  # ids <- NULL
 
   # } else {
   #   # x <- stats::dist(
   #   #   x = x,
   #   #   method = distance.method)
   #
-  #   x <- suppressWarnings(
-  #     amap::Dist(
-  #       x = x,
-  #       method = distance.method,
-  #       nbproc = parallel.core))
+    x <- suppressWarnings(
+      amap::Dist(
+        x = x,
+        method = distance.method,
+        nbproc = parallel.core))
   # }
 
   # melt the dist matrice into a data frame

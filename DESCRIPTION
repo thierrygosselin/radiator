@@ -14,6 +14,7 @@ Description: radiator: an R package for RADseq Data Exploration, Manipulation an
 Depends:
     R (>= 3.4.0)
 Imports:
+    amap,
     broom,
     data.table,
     dplyr (>= 0.7.0),
