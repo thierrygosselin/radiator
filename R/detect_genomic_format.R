@@ -32,10 +32,11 @@ detect_genomic_format <- function(data){
   if (!is.vector(data)) {
     if (tibble::has_name(data, "POP_ID") && tibble::has_name(data, "INDIVIDUALS")) {
       data.type <- "tbl_df" #"df.file"
+      return(data.type)
     } else {
       data.type <- class(data)[1]
-
       if (!data.type %in% c("genind", "genlight", "gtypes")) stop("Input file not recognised")
+      return(data.type)
     }
   } else {
     data.type <- readChar(con = data, nchars = 16L, useBytes = TRUE)
@@ -43,6 +44,7 @@ detect_genomic_format <- function(data){
     if (identical(data.type, "##fileformat=VCF") | stringi::stri_detect_fixed(str = data, pattern = ".vcf")) {
       data.type <- "vcf.file"
       # message("File type: VCF")
+      return(data.type)
     }
 
     if (stringi::stri_detect_fixed(str = data, pattern = ".tped")) {
@@ -51,24 +53,29 @@ detect_genomic_format <- function(data){
       if (!file.exists(stringi::stri_replace_all_fixed(str = data, pattern = ".tped", replacement = ".tfam", vectorize_all = FALSE))) {
         stop("Missing tfam file with the same prefix as your tped")
       }
+      return(data.type)
     }
 
     if (stringi::stri_detect_fixed(str = data.type, pattern = "POP_ID") | stringi::stri_detect_fixed(str = data.type, pattern = "INDIVIDUALS") | stringi::stri_detect_fixed(str = data.type, pattern = "MARKERS") | stringi::stri_detect_fixed(str = data.type, pattern = "LOCUS")) {
       data.type <- "tbl_df" #"df.file"
       # message("File type: data frame of genotypes")
+      return(data.type)
     }
     if (stringi::stri_detect_fixed(str = data.type, pattern = "Catalog")) {
       data.type <- "haplo.file"
+      return(data.type)
     }
     if (stringi::stri_detect_fixed(
       str = stringi::stri_sub(str = data, from = -4, to = -1),
       pattern = ".gen")) {
       data.type <- "genepop.file"
+      return(data.type)
     }
     if (stringi::stri_detect_fixed(
       str = stringi::stri_sub(str = data, from = -4, to = -1),
       pattern = ".dat")) {
       data.type <- "fstat.file"
+      return(data.type)
     }
 
     # fst file
@@ -76,23 +83,45 @@ detect_genomic_format <- function(data){
       str = stringi::stri_sub(str = data, from = -4, to = -1),
       pattern = ".rad")) {
       data.type <- "fst.file"
+      return(data.type)
     }
 
     # DArT data
-    dart.with.header <- TRUE %in% (stringi::stri_detect_fixed(str = data.type, pattern = c("*\t", "*,")))
-    if (dart.with.header) {
-      temp.file <- suppressWarnings(suppressMessages(readr::read_table(file = data, n_max = 20, col_names = "HEADER")))
-      skip.number <- which(stringi::stri_detect_fixed(str = temp.file$HEADER,
-                                                      pattern = "AlleleID")) -1
-      data.type <- readr::read_lines(file = data, skip = skip.number, n_max = skip.number + 1)[1] %>%
-        stringi::stri_sub(str = ., from = 1, to = 16)
-    }
-    dart.clone.id <- stringi::stri_detect_fixed(str = data.type, pattern = "CloneID")
-    dart.allele.id <- stringi::stri_detect_fixed(str = data.type, pattern = "AlleleID")
-
-    if (dart.clone.id || dart.allele.id) {
-      data.type <- "dart"
+    dart.temp <- check_dart(data)
+    if (dart.temp$data.type %in% c("dart", "silico.dart")) {
+      data.type <- dart.temp$data.type
+      return(data.type)
     }
   } # end file type detection
-  return(data.type)
 } # End detect_genomic_format
+
+# INTERNAL functions -----------------------------------------------------------
+#' @title check_dart
+#' @description check dart
+#' @rdname check_dart
+#' @export
+#' @keywords internal
+check_dart <- function(data) {
+  data.type <- readChar(con = data, nchars = 16L, useBytes = TRUE)
+  dart.with.header <- TRUE %in% (stringi::stri_detect_fixed(str = data.type, pattern = c("*\t", "*,")))
+  if (dart.with.header) {
+    temp.file <- suppressWarnings(suppressMessages(readr::read_table(file = data, n_max = 20, col_names = "HEADER")))
+    # skip.number <- which(stringi::stri_detect_fixed(str = temp.file$HEADER,
+    #                                                 pattern = "AlleleID")) -1
+    skip.number <- which(stringi::stri_detect_regex(str = temp.file$HEADER,
+                                                    pattern = "^[:Letter:]")) -1
+    data.type <- readr::read_lines(file = data, skip = skip.number, n_max = skip.number + 1)[1] #%>% stringi::stri_sub(str = ., from = 1, to = 16)
+  }
+  dart.clone.id <- stringi::stri_detect_fixed(str = data.type, pattern = "CloneID")
+  dart.allele.id <- stringi::stri_detect_fixed(str = data.type, pattern = "AlleleID")
+  dart.snp.position <- stringi::stri_detect_fixed(str = data.type, pattern = "SnpPosition")
+
+  if (dart.snp.position || dart.allele.id) {
+    data.type <- "dart"
+  }
+
+  if (dart.clone.id && !dart.allele.id) {
+    data.type <- "silico.dart"
+  }
+  return(res = list(data.type = data.type, skip.number = skip.number))
+}#End check_dart

@@ -41,28 +41,13 @@ extract_dart_target_id <- function(data, write = TRUE) {
   if (missing(data)) stop("Input file missing")
 
   # Check DArT format file -----------------------------------------------------
-  data.type <- readChar(con = data, nchars = 16L, useBytes = TRUE)
-  dart.with.header <- TRUE %in% (stringi::stri_detect_fixed(str = data.type, pattern = c("*\t", "*,")))
-  if (dart.with.header) {
-    temp.file <- suppressWarnings(suppressMessages(readr::read_table(file = data, n_max = 20, col_names = "HEADER")))
-    skip.number <- which(stringi::stri_detect_fixed(str = temp.file$HEADER,
-                                                    pattern = "AlleleID") |
-                           stringi::stri_detect_fixed(str = temp.file$HEADER,
-                                                      pattern = "CloneID")) - 1
-    data.type <- readr::read_lines(file = data, skip = skip.number, n_max = skip.number + 1)[1] %>%
-      stringi::stri_sub(str = ., from = 1, to = 16)
+  dart.check <- check_dart(data)
+  if (!dart.check$data.type %in% c("dart", "silico.dart")) {
+    stop("Contact author to show your DArT data, problem during import")
   } else {
-    skip.number <- 0
+    skip.number <- dart.check$skip.number
   }
-  temp.file <- NULL
-  dart.clone.id <- stringi::stri_detect_fixed(str = data.type, pattern = "CloneID")
-  dart.allele.id <- stringi::stri_detect_fixed(str = data.type, pattern = "AlleleID")
 
-  if (dart.clone.id || dart.allele.id) {
-    data.type <- "dart"
-  } else {
-    stop("Contact author to show your DArT data, problem duting import")
-  }
   # Import data ---------------------------------------------------------------
   if (stringi::stri_detect_fixed(
     str = stringi::stri_sub(str = data, from = -4, to = -1),

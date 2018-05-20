@@ -72,6 +72,8 @@ tidy_dart_metadata <- function(
     meta.filename <- stringi::stri_join(filename, "_metadata_", file.date,".rad")
   }
 
+
+
   data.type <- radiator::detect_genomic_format(data)
 
   if (!data.type %in% c("dart", "fst.file")) {
@@ -90,19 +92,13 @@ tidy_dart_metadata <- function(
       csv <- FALSE
     }
 
-    dart.with.header <- TRUE %in%
-      (stringi::stri_detect_fixed(
-        str = readChar(con = data, nchars = 16L, useBytes = TRUE),
-        pattern = c("*\t", "*,")))
-    if (dart.with.header) {
-      temp.file <- suppressWarnings(suppressMessages(
-        readr::read_table(file = data, n_max = 20, col_names = "HEADER")))
-      skip.number <- which(stringi::stri_detect_fixed(str = temp.file$HEADER,
-                                                      pattern = "AlleleID")) - 1
+    dart.check <- check_dart(data)
+    if (!dart.check$data.type %in% c("dart", "silico.dart")) {
+      stop("Contact author to show your DArT data, problem during import")
     } else {
-      skip.number <- 0
+      skip.number <- dart.check$skip.number
     }
-    temp.file <- NULL
+
 
     if (csv) {
       dart.col.type <- readr::read_csv(

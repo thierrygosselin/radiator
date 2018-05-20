@@ -135,7 +135,7 @@ tidy_dart <- function(
   # dotslist -------------------------------------------------------------------
   # To use someday
   dotslist <- list(...)
-  want <- "missing.memory"
+  want <- c("missing.memory", "sequence")
   unknowned_param <- setdiff(names(dotslist), want)
 
   if (length(unknowned_param) > 0) {
@@ -145,6 +145,12 @@ tidy_dart <- function(
 
   radiator.dots <- dotslist[names(dotslist) %in% want]
   missing.memory <- radiator.dots[["missing.memory"]]
+  sequence <- radiator.dots[["sequence"]]
+
+  if (sequence) {
+    message("\n\nConsensus sequence will be kept in output")
+    message("    an `S` replaces the nucleotide where a SNP was found\n\n")
+  }
 
   # Check that DArT file as good target id written -----------------------------
   target.id <- extract_dart_target_id(data, write = FALSE)
@@ -173,27 +179,11 @@ If you're still encountering problem, email author for help")
   }
 
   # Check DArT format file -----------------------------------------------------
-  data.type <- readChar(con = data, nchars = 16L, useBytes = TRUE)
-  dart.with.header <- TRUE %in% (stringi::stri_detect_fixed(str = data.type, pattern = c("*\t", "*,")))
-  if (dart.with.header) {
-    temp.file <- suppressWarnings(suppressMessages(readr::read_table(file = data, n_max = 20, col_names = "HEADER")))
-    skip.number <- which(stringi::stri_detect_fixed(str = temp.file$HEADER,
-                                                    pattern = "AlleleID") |
-                           stringi::stri_detect_fixed(str = temp.file$HEADER,
-                                                      pattern = "CloneID")) - 1
-    data.type <- readr::read_lines(file = data, skip = skip.number, n_max = skip.number + 1)[1] %>%
-      stringi::stri_sub(str = ., from = 1, to = 16)
-  } else {
-    skip.number <- 0
-  }
-  temp.file <- NULL
-  dart.clone.id <- stringi::stri_detect_fixed(str = data.type, pattern = "CloneID")
-  dart.allele.id <- stringi::stri_detect_fixed(str = data.type, pattern = "AlleleID")
-
-  if (dart.clone.id || dart.allele.id) {
-    data.type <- "dart"
-  } else {
+  dart.check <- check_dart(data)
+  if (!dart.check$data.type %in% c("dart", "silico.dart")) {
     stop("\nContact author to show your DArT data, problems during import")
+  } else {
+    skip.number <- dart.check$skip.number
   }
   if (verbose) message("Importing DArT data")
 
@@ -268,10 +258,19 @@ DArT statistics generated for all samples might not apply...\n")
       col_types = readr::cols(.default = readr::col_character()))
   }
 
-  want <- tibble::data_frame(
-    INFO = c("ALLELEID", "SNP", "SNPPOSITION", "CALLRATE",
-             "AVGCOUNTREF", "AVGCOUNTSNP", "REPAVG", "CLONEID", "AVGREADDEPTH", "REPRODUCIBILITY"),
-    COL_TYPE = c("c", "c", "i", "d", "d", "d", "d", "c", "d", "d")) %>%
+  if (sequence) {
+    info <- c("ALLELEID", "SNP", "SNPPOSITION", "CALLRATE",
+              "AVGCOUNTREF", "AVGCOUNTSNP", "REPAVG", "CLONEID", "AVGREADDEPTH",
+              "REPRODUCIBILITY", "CLUSTERCONSENSUSSEQUENCE")
+    info.type <- c("c", "c", "i", "d", "d", "d", "d", "c", "d", "d", "c")
+
+  } else {
+    info <- c("ALLELEID", "SNP", "SNPPOSITION", "CALLRATE",
+              "AVGCOUNTREF", "AVGCOUNTSNP", "REPAVG", "CLONEID", "AVGREADDEPTH",
+              "REPRODUCIBILITY")
+    info.type <- c("c", "c", "i", "d", "d", "d", "d", "c", "d", "d")
+  }
+  want <- tibble::data_frame(INFO = info, COL_TYPE = info.type) %>%
     dplyr::bind_rows(
       dplyr::select(strata.df, INFO = TARGET_ID) %>%
         dplyr::mutate(
@@ -316,8 +315,12 @@ DArT statistics generated for all samples might not apply...\n")
     str = colnames(input), pattern = " ", replacement = "", vectorize_all = FALSE)
   colnames(input) <- stringi::stri_replace_all_fixed(
     str = colnames(input),
-    pattern = c("AVGCOUNTREF", "AVGCOUNTSNP", "REPAVG", "ALLELEID", "SNPPOSITION", "CALLRATE", "REPRODUCIBILITY", "AVGREADDEPTH"),
-    replacement = c("AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG", "LOCUS", "POS", "CALL_RATE", "REP_AVG", "AVG_READ_DEPTH"),
+    pattern = c("AVGCOUNTREF", "AVGCOUNTSNP", "REPAVG", "ALLELEID",
+                "SNPPOSITION", "CALLRATE", "REPRODUCIBILITY", "AVGREADDEPTH",
+                "CLUSTERCONSENSUSSEQUENCE"),
+    replacement = c("AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG", "LOCUS",
+                    "POS", "CALL_RATE", "REP_AVG", "AVG_READ_DEPTH",
+                    "SEQUENCE"),
     vectorize_all = FALSE)
 
   if (!tibble::has_name(input, "LOCUS") && tibble::has_name(input, "CLONEID")) {
@@ -355,8 +358,13 @@ DArT statistics generated for all samples might not apply...\n")
   input.dup <- NULL
 
   # Screen for duplicate names -------------------------------------------------
-  remove.list <- c("LOCUS", "SNP", "POS", "CALL_RATE", "AVG_COUNT_REF",
-                   "AVG_COUNT_SNP", "REP_AVG")
+  if (sequence) {
+    remove.list <- c("LOCUS", "SNP", "POS", "CALL_RATE", "AVG_COUNT_REF",
+                     "AVG_COUNT_SNP", "REP_AVG", "SEQUENCE")
+  } else {
+    remove.list <- c("LOCUS", "SNP", "POS", "CALL_RATE", "AVG_COUNT_REF",
+                     "AVG_COUNT_SNP", "REP_AVG")
+  }
   individuals.df <- tibble::data_frame(
     INDIVIDUALS = purrr::discard(.x = colnames(input),
                                  .p = colnames(input) %in% remove.list))
@@ -368,8 +376,13 @@ DArT statistics generated for all samples might not apply...\n")
   remove.list <- individuals.df <- duplicate.individuals <- NULL
 
   # Tidying data ---------------------------------------------------------------
-  want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "CALL_RATE",
-            "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")
+  if (sequence) {
+    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "CALL_RATE",
+              "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG", "SEQUENCE")
+  } else {
+    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "CALL_RATE",
+              "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")
+  }
 
   input <- suppressWarnings(
     input %>%
@@ -426,9 +439,14 @@ DArT statistics generated for all samples might not apply...\n")
     if (verbose) message("Tidying DArT mapping SNP 1 Row format...")
 
     # input <- dplyr::filter(input, !is.na(MARKERS))
-    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT",
-              "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")
-
+    if (sequence) {
+      want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT",
+                "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG",
+                "SEQUENCE")
+    } else {
+      want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT",
+                "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")
+    }
     # input.bk <- input
     # input <- input.bk
     input <- data.table::as.data.table(input) %>%
@@ -450,21 +468,21 @@ DArT statistics generated for all samples might not apply...\n")
         data = ., path = meta.filename)
 
     notwanted <- c("CHROM", "LOCUS", "POS", "CALL_RATE", "AVG_COUNT_REF",
-                   "AVG_COUNT_SNP", "REP_AVG")
+                   "AVG_COUNT_SNP", "REP_AVG", "SEQUENCE")
 
-    input <- input %>%
+    input <- suppressWarnings(input %>%
       dplyr::select(-dplyr::one_of(notwanted)) %>%
       dplyr::arrange(MARKERS) %>%
       dplyr::left_join(
         dplyr::distinct(input, MARKERS) %>%
           dplyr::mutate(SPLIT_VEC = split_vec_row(., 4, parallel.core = parallel.core))
         , by = "MARKERS") %>%
-      split(x = ., f = .$SPLIT_VEC)
+      split(x = ., f = .$SPLIT_VEC))
 
     want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "TARGET_ID",
               "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG",
               "GT", "GT_VCF", "GT_VCF_NUC", "GT_BIN",
-              "READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH")
+              "READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH", "SEQUENCE")
     input <- suppressWarnings(.radiator_parallel(
       X = input,
       FUN = dart2gt,
@@ -483,7 +501,7 @@ DArT statistics generated for all samples might not apply...\n")
 
     # keep one marker and check if genotypes are count data
     want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "CALL_RATE",
-              "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")
+              "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG", "SEQUENCE")
     count.data <- 0 #required to start the while loop
     while (count.data == 0) {
       count.data <- suppressWarnings(dplyr::select(
@@ -508,10 +526,10 @@ DArT statistics generated for all samples might not apply...\n")
           data = ., path = meta.filename)
 
       notwanted <- c("CHROM", "LOCUS", "POS", "CALL_RATE", "AVG_COUNT_REF",
-                     "AVG_COUNT_SNP", "REP_AVG")
-      input <- input %>%
+                     "AVG_COUNT_SNP", "REP_AVG", "SEQUENCE")
+      input <- suppressWarnings(input %>%
         dplyr::select(-dplyr::one_of(notwanted)) %>%
-        dplyr::arrange(MARKERS, REF)
+        dplyr::arrange(MARKERS, REF))
 
       if (verbose) message("Generating genotypes...")
       input <- input %>%
@@ -548,10 +566,10 @@ DArT statistics generated for all samples might not apply...\n")
 
 
       notwanted <- c("CHROM", "LOCUS", "POS", "CALL_RATE", "AVG_COUNT_REF",
-                     "AVG_COUNT_SNP", "REP_AVG")
-      input <- input %>%
+                     "AVG_COUNT_SNP", "REP_AVG", "SEQUENCE")
+      input <- suppressWarnings(input %>%
         dplyr::select(-dplyr::one_of(notwanted)) %>%
-        dplyr::arrange(MARKERS, REF)
+        dplyr::arrange(MARKERS, REF))
 
       if (verbose) message("Generating genotypes...")
       input <- input %>%
@@ -624,7 +642,7 @@ DArT statistics generated for all samples might not apply...\n")
               "POP_ID", "CALL_RATE", "REP_AVG",
               "AVG_COUNT_REF", "AVG_COUNT_SNP",
               "READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH",
-              "GT", "GT_VCF", "GT_VCF_NUC", "GT_BIN")
+              "GT", "GT_VCF", "GT_VCF_NUC", "GT_BIN", "SEQUENCE")
   }
 
   if (tidy.output == "light") {

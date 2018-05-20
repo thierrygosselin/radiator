@@ -347,6 +347,31 @@ filter_hwe <- function(
     dplyr::select(INDIVIDUALS, POP_ID) %>%
     dplyr::distinct(INDIVIDUALS, .keep_all = TRUE)
 
+  if (is.factor(strata$POP_ID)) {
+    pop.id.levels <- levels(strata$POP_ID)
+  } else {
+    pop.id.levels <- unique(strata$POP_ID)
+  }
+
+  # Check that at least 10 ind/pop
+  pop.removed <- dplyr::group_by(strata, POP_ID) %>%
+    dplyr::tally(.) %>%
+    dplyr::filter(n < 10) %>%
+    dplyr::distinct(POP_ID) %>%
+    dplyr::mutate(POP_ID = as.character(POP_ID)) %>%
+    purrr::flatten_chr(.)
+
+  if (length(pop.removed) > 0) {
+    message("\n\nStrata removed from analysis because n < 10: ", stringi::stri_join(pop.removed, collapse = ", "))
+    message("    Note: removed strata are included back in datasets at the end\n\n")
+    data.temp <- dplyr::filter(data, POP_ID %in% pop.removed)
+    data <- dplyr::filter(data, !POP_ID %in% pop.removed)
+    data$POP_ID <- droplevels(data$POP_ID)
+    strata <- dplyr::filter(strata, !POP_ID %in% pop.removed)
+  } else {
+    data.temp <- NULL
+  }
+
   # Check that data is biallelic -----------------------------------------------
   biallelic <- radiator::detect_biallelic_markers(data, parallel.core = parallel.core)
   if (!biallelic) stop("This filter requires bi-allelic data")
@@ -709,9 +734,11 @@ filter_hwe <- function(
   output.message <- blacklist_hw(
     x = hwd.markers.pop.sum,
     unfiltered.data = data,
+    data.temp = data.temp,
     hw.pop.threshold = hw.pop.threshold,
     path.folder = path.folder,
-    filters.parameters.path = filters.parameters.path) %>%
+    filters.parameters.path = filters.parameters.path,
+    pop.id.levels = pop.id.levels) %>%
     dplyr::select(-FILTERS, -COMMENTS)
 
   res = list(path.folder = path.folder,
@@ -869,8 +896,8 @@ hwe_analysis <- function(x, parallel.core = parallel::detectCores() - 1) {
 #' @export
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
-blacklist_hw <- function(x, unfiltered.data, hw.pop.threshold, path.folder = NULL,
-                         filters.parameters.path) {
+blacklist_hw <- function(x, unfiltered.data, data.temp, hw.pop.threshold, path.folder = NULL,
+                         filters.parameters.path, pop.id.levels) {
   if (is.null(path.folder)) path.folder <- getwd()
 
   x <- dplyr::ungroup(x) %>%
@@ -930,14 +957,26 @@ blacklist_hw <- function(x, unfiltered.data, hw.pop.threshold, path.folder = NUL
 
 
       # Generate the rad data + the whitelist
-      whitelist <- suppressWarnings(
-        unfiltered.data %>%
-          dplyr::filter(!MARKERS %in% blacklist$MARKERS) %>%
-          radiator::write_rad(data = ., path = rad.filename) %>%
-          dplyr::select(dplyr::one_of(want)) %>%
-          dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-          readr::write_tsv(x = ., path = whitelist.filename)
-      )
+      if (!is.null(data.temp)) {
+        whitelist <- suppressWarnings(
+          unfiltered.data %>%
+            dplyr::bind_rows(data.temp) %>%
+            dplyr::mutate(POP_ID = factor(POP_ID, levels = pop.id.levels)) %>%
+            dplyr::filter(!MARKERS %in% blacklist$MARKERS) %>%
+            radiator::write_rad(data = ., path = rad.filename) %>%
+            dplyr::select(dplyr::one_of(want)) %>%
+            dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
+            readr::write_tsv(x = ., path = whitelist.filename))
+      } else {
+        whitelist <- suppressWarnings(
+          unfiltered.data %>%
+            dplyr::filter(!MARKERS %in% blacklist$MARKERS) %>%
+            radiator::write_rad(data = ., path = rad.filename) %>%
+            dplyr::select(dplyr::one_of(want)) %>%
+            dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
+            readr::write_tsv(x = ., path = whitelist.filename))
+      }
+
       fil.param <- update_filter_parameter(
         filter = "HWE",
         unfiltered = unfiltered.data,

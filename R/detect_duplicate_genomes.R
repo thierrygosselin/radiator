@@ -1083,7 +1083,8 @@ remove_duplicates <- function(
   dup.threshold = 0.25,
   diff.pop.remove = TRUE
 ) {
-  dup.filtered <- suppressWarnings(suppressMessages(readr::read_tsv(data)))
+  dup.filtered <- suppressWarnings(suppressMessages(readr::read_tsv(data))) %>%
+    dplyr::mutate(ID1 = as.character(ID1), ID2 = as.character(ID2))
 
   if (tibble::has_name(dup.filtered, "DISTANCE_RELATIVE")) {
     dup.filtered <- dup.filtered %>%
