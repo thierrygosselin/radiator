@@ -4,7 +4,7 @@
 \alias{filter_rad}
 \title{Pipeline to filter RADseq data.}
 \usage{
-filter_rad(interactive.filter = TRUE, data, strata, output = NULL,
+filter_rad(interactive.filter = TRUE, data, strata = NULL, output = NULL,
   pop.levels = NULL, blacklist.id = NULL, pop.select = NULL,
   monomorphic.out = TRUE, common.markers = TRUE,
   filter.markers.coverage = NULL, erase.genotypes = NULL,

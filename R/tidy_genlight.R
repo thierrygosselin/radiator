@@ -37,15 +37,19 @@ tidy_genlight <- function(data) {
     INDIVIDUALS = data@ind.names,
     POP_ID = data@pop)
 
+  if (is.null(data@chromosome)) {
+    adegenet::chromosome(data) <- rep("CHROM_1", length(data@loc.names))
+  }
+
+
   markers <- tibble::data_frame(
     CHROM = data@chromosome,#adegenet::chromosome(data),
     LOCUS = data@loc.names,#adegenet::locNames(data),
     POS = data@position#adegenet::position(data)
   ) %>%
+    dplyr::mutate_all(.tbl = ., .funs = as.character) %>%
     tidyr::unite(data = ., col = MARKERS, CHROM, LOCUS, POS, sep = "__", remove = FALSE) %>%
     dplyr::select(MARKERS, CHROM, LOCUS, POS)
-
-
 
   data <- as.data.frame(data)
   colnames(data) <- markers$MARKERS

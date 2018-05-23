@@ -181,6 +181,11 @@ as half the probability of the current sample + the probabilities of all
 samples that are more extreme (see references below). Several output are
 generated to help users filter the data (see details).
 
+\strong{sampling sites vs well defined populations:} be careful what strata
+you're investigating and adjust filtering threshold accordinghly for
+downstream analysis. If you're still at the populations discovery steps,
+markers under HWD are totally normal.
+
 Prior to HW filtering, I highly recommend removing outlier individuals,
 filtering coverage and genotype likelihood (see details).
 }

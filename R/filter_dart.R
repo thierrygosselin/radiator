@@ -215,6 +215,38 @@ filter_dart <- function(
   ...
 ) {
 
+  # testing
+  # interactive.filter = TRUE
+  # # data
+  # # strata
+  # # output = NULL
+  # pop.levels = NULL
+  # blacklist.id = NULL
+  # pop.select = NULL
+  # monomorphic.out = TRUE
+  # common.markers = TRUE
+  # filter.reproducibility = NULL
+  # filter.call.rate = NULL
+  # filter.markers.coverage = NULL
+  # erase.genotypes = NULL
+  # filter.individuals.missing = NULL
+  # filter.markers.missing = NULL
+  # maf.thresholds = NULL
+  # number.snp.reads = NULL
+  # snp.ld = "maf"
+  # mixed.genomes.analysis = TRUE
+  # ind.heterozygosity.threshold = NULL
+  # duplicate.genomes.analysis = c(TRUE, FALSE)
+  # hw.pop.threshold = 0
+  # midp.threshold = "****"
+  # imputation.method = NULL
+  # hierarchical.levels = "strata"
+  # num.tree = 50
+  # # filename = NULL
+  # verbose = TRUE
+  # parallel.core = parallel::detectCores() - 1
+
+
   if (!requireNamespace("HardyWeinberg", quietly = TRUE)) {
     stop("HardyWeinberg package needed for this function to work
          Install with install.packages('HardyWeinberg')", call. = FALSE)
@@ -2461,31 +2493,34 @@ on the number of genotyped individuals per pop ? (overall or pop):")
     data.info <- new.data.info
 
     bl.name <- stringi::stri_join("blacklist.markers.hwd.", midp.threshold,".mid.p.value.", hw.pop.threshold,".hw.pop.threshold")
-    blacklist.hw <- list.files(
-      path = path.folder,
-      pattern = bl.name,
-      full.names = TRUE, recursive = TRUE, include.dirs = TRUE) %>%
-      readr::read_tsv(file = ., col_types = "cccc")
 
-    wt.name <- stringi::stri_join("whitelist.markers.hwe.", midp.threshold,".mid.p.value.", hw.pop.threshold,".hw.pop.threshold")
-    whitelist.markers <- list.files(
-      path = path.folder,
-      pattern = wt.name,
-      full.names = TRUE, recursive = TRUE, include.dirs = TRUE) %>%
-      readr::read_tsv(file = ., col_types = "cccc")
+    if (length(bl.name) > 0) {
+      blacklist.hw <- list.files(
+        path = path.folder,
+        pattern = bl.name,
+        full.names = TRUE, recursive = TRUE, include.dirs = TRUE) %>%
+        readr::read_tsv(file = ., col_types = "cccc")
 
-    if (!is.null(blacklist.markers) && nrow(blacklist.hw) > 0) {
-      blacklist.markers <- dplyr::bind_rows(blacklist.markers, blacklist.hw)
-    } else {
-      blacklist.markers <- blacklist.snp.number.markers
+      wt.name <- stringi::stri_join("whitelist.markers.hwe.", midp.threshold,".mid.p.value.", hw.pop.threshold,".hw.pop.threshold")
+      whitelist.markers <- list.files(
+        path = path.folder,
+        pattern = wt.name,
+        full.names = TRUE, recursive = TRUE, include.dirs = TRUE) %>%
+        readr::read_tsv(file = ., col_types = "cccc")
+
+      if (!is.null(blacklist.markers) && nrow(blacklist.hw) > 0) {
+        blacklist.markers <- dplyr::bind_rows(blacklist.markers, blacklist.hw)
+      } else {
+        blacklist.markers <- blacklist.snp.number.markers
+      }
+      blacklist.hw <- NULL
     }
-    blacklist.hw <- NULL
-    if (verbose) message("    Number of markers before = ", n.snp.before)
-    if (verbose) message("    Number of markers removed = ", n.snp.before - new.data.info$n.snp)
-    if (verbose) message("    Number of markers after = ", new.data.info$n.snp)
-  }
-  # Missing visualization analysis before filters------------------------------
-  # if (missing.analysis) {
+      if (verbose) message("    Number of markers before = ", n.snp.before)
+      if (verbose) message("    Number of markers removed = ", n.snp.before - new.data.info$n.snp)
+      if (verbose) message("    Number of markers after = ", new.data.info$n.snp)
+    }
+    # Missing visualization analysis before filters------------------------------
+    # if (missing.analysis) {
   #   if (verbose) message("Missing data analysis: after filters")
   #   missing.visualization <- grur::missing_visualization(data = input, write.plot = TRUE)
   # }

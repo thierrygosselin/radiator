@@ -309,9 +309,9 @@ filter_maf <- function(
 
     # keeping markers meta -------------------------------------------------------
     markers.meta <- suppressWarnings(
-      dplyr::select(input, dplyr::one_of(c("MARKERS", "CHROM", "LOCUS", "POS")))
-    ) %>%
-      dplyr::distinct(MARKERS, .keep_all = TRUE)
+      dplyr::select(input, dplyr::one_of(c("MARKERS", "CHROM", "LOCUS", "POS"))) %>%
+      dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
+      dplyr::mutate_all(.tbl = ., .funs = as.character))
 
     # strata ---------------------------------------------------------------------
     strata.df <- input %>%
@@ -832,10 +832,12 @@ Example: if you have 10 populations and choose maf.pop.num.threshold = 3,
 
     if (tibble::has_name(filter, "CHROM")) {
       whitelist.markers <- dplyr::ungroup(filter) %>%
-        dplyr::distinct(CHROM, LOCUS, POS)
+        dplyr::distinct(CHROM, LOCUS, POS) %>%
+        dplyr::mutate_all(.tbl = ., .funs = as.character)
     } else {
       whitelist.markers <- dplyr::ungroup(filter) %>%
-        dplyr::distinct(MARKERS)
+        dplyr::distinct(MARKERS) %>%
+        dplyr::mutate_all(.tbl = ., .funs = as.character)
     }
     readr::write_tsv(whitelist.markers, file.path(path.folder, "whitelist.markers.maf.tsv"), append = FALSE, col_names = TRUE)
 
@@ -844,7 +846,8 @@ Example: if you have 10 populations and choose maf.pop.num.threshold = 3,
     if (verbose) message("\nWriting the blacklist of markers: blacklist.markers.maf.tsv")
     if (tibble::has_name(filter, "CHROM")) {
       blacklist.markers <- dplyr::setdiff(
-        dplyr::select(markers.meta, CHROM, LOCUS, POS), dplyr::mutate_all(.tbl = whitelist.markers, .funs = as.character))
+        dplyr::select(markers.meta, CHROM, LOCUS, POS), whitelist.markers)
+      # dplyr::select(markers.meta, CHROM, LOCUS, POS), dplyr::mutate_all(.tbl = whitelist.markers, .funs = as.character))
 
     } else {
       blacklist.markers <- dplyr::setdiff(

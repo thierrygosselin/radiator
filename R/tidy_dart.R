@@ -147,6 +147,8 @@ tidy_dart <- function(
   missing.memory <- radiator.dots[["missing.memory"]]
   sequence <- radiator.dots[["sequence"]]
 
+  if (is.null(sequence)) sequence <- FALSE
+
   if (sequence) {
     message("\n\nConsensus sequence will be kept in output")
     message("    an `S` replaces the nucleotide where a SNP was found\n\n")

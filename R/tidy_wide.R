@@ -83,7 +83,13 @@ tidy_wide <- function(data, import.metadata = FALSE) {
   if (missing(data)) stop("Input file argument is missing")
 
   if (is.vector(data)) {# for file in the working directory
-    data <- readr::read_tsv(file = data, col_types = readr::cols(.default = readr::col_character()))
+    if (stringi::stri_detect_fixed(
+      str = stringi::stri_sub(str = data, from = -4, to = -1),
+      pattern = ".tsv")) {
+      data <- readr::read_tsv(file = data, col_types = readr::cols(.default = readr::col_character()))
+    } else if (radiator::detect_genomic_format(data) == "fst.file") {
+      data <- radiator::read_rad(data = data)
+    }
   }
 
   # Determine long (tidy) or wide dataset
