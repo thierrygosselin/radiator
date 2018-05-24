@@ -298,7 +298,7 @@ summarise_genotypes <- function(data, path.folder = NULL) {
   want <- c("MARKERS", "POP_ID", "INDIVIDUALS", "GT_BIN", "READ_DEPTH")
   data <- suppressWarnings(dplyr::select(data, dplyr::one_of(want))) #%>% dplyr::filter(!is.na(GT_BIN))
 
-  # n.pop <- dplyr::n_distinct(data$POP_ID)
+  n.pop <- dplyr::n_distinct(data$POP_ID)
   if (is.factor(data$POP_ID)) {
     pop.levels <- c(levels(data$POP_ID), "OVERALL")
   } else {
@@ -397,6 +397,7 @@ summarise_genotypes <- function(data, path.folder = NULL) {
 
 plot_het_outliers <- function(data, path.folder = NULL) {
   res <- list() # to store results
+  n.pop <- dplyr::n_distinct(data$POP_ID)
   res$het.summary <- summarise_genotypes(data, path.folder = path.folder)
 
   # prepare data for figure
