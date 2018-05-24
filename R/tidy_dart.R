@@ -451,23 +451,27 @@ DArT statistics generated for all samples might not apply...\n")
     }
     # input.bk <- input
     # input <- input.bk
-    input <- data.table::as.data.table(input) %>%
-      data.table::melt.data.table(
-        data = .,
-        id.vars = want,
-        variable.name = "TARGET_ID", variable.factor = FALSE,
-        value.name = "GT"
-      ) %>%
-      tibble::as_data_frame(.)
+    input <- suppressWarnings(
+      data.table::as.data.table(input) %>%
+        data.table::melt.data.table(
+          data = .,
+          id.vars = want,
+          variable.name = "TARGET_ID", variable.factor = FALSE,
+          value.name = "GT"
+        ) %>%
+        tibble::as_data_frame(.)
+    )
 
     # markers metadata
-    dplyr::ungroup(input) %>%
-      dplyr::select(dplyr::one_of(want)) %>%
-      dplyr::filter(!is.na(REF) | !is.na(ALT)) %>%
-      dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-      dplyr::arrange(MARKERS) %>%
-      radiator::write_rad(
-        data = ., path = meta.filename)
+    suppressWarnings(
+      dplyr::ungroup(input) %>%
+        dplyr::select(dplyr::one_of(want)) %>%
+        dplyr::filter(!is.na(REF) | !is.na(ALT)) %>%
+        dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
+        dplyr::arrange(MARKERS) %>%
+        radiator::write_rad(
+          data = ., path = meta.filename)
+    )
 
     notwanted <- c("CHROM", "LOCUS", "POS", "CALL_RATE", "AVG_COUNT_REF",
                    "AVG_COUNT_SNP", "REP_AVG", "SEQUENCE")
@@ -519,13 +523,13 @@ DArT statistics generated for all samples might not apply...\n")
 
     if (!count.data) {#Genotypes coded 0, 1, 2
       # Markers meta
-      dplyr::ungroup(input) %>%
+      suppressWarnings(dplyr::ungroup(input) %>%
         dplyr::select(dplyr::one_of(want)) %>%
         dplyr::filter(!is.na(REF) | !is.na(ALT)) %>%
         dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
         dplyr::arrange(MARKERS) %>%
         radiator::write_rad(
-          data = ., path = meta.filename)
+          data = ., path = meta.filename))
 
       notwanted <- c("CHROM", "LOCUS", "POS", "CALL_RATE", "AVG_COUNT_REF",
                      "AVG_COUNT_SNP", "REP_AVG", "SEQUENCE")
@@ -557,14 +561,15 @@ DArT statistics generated for all samples might not apply...\n")
     } else {
       if (verbose) message("DArT alleles counts (coverage/read depth) detected")
       # Markers meta
-      dplyr::ungroup(input) %>%
-        dplyr::select(dplyr::one_of(want)) %>%
-        dplyr::filter(!is.na(REF) | !is.na(ALT)) %>%
-        dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-        dplyr::arrange(MARKERS) %>%
-        dplyr::select(-AVG_COUNT_REF, -AVG_COUNT_SNP) %>%
-        radiator::write_rad(
-          data = ., path = meta.filename)
+      suppressWarnings(
+        dplyr::ungroup(input) %>%
+          dplyr::select(dplyr::one_of(want)) %>%
+          dplyr::filter(!is.na(REF) | !is.na(ALT)) %>%
+          dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
+          dplyr::arrange(MARKERS) %>%
+          dplyr::select(-AVG_COUNT_REF, -AVG_COUNT_SNP) %>%
+          radiator::write_rad(
+            data = ., path = meta.filename))
 
 
       notwanted <- c("CHROM", "LOCUS", "POS", "CALL_RATE", "AVG_COUNT_REF",
