@@ -508,9 +508,14 @@ filter_maf <- function(
       message("The maf.approach:\n
 maf.approach = \"locus\" : looks at the frequency of all ALTernative allele on the locus.
 maf.approach = \"SNP\" : SNPs on the same locus/read are considered independent.")
-      message("Choose the maf.approach (SNP/locus):")
-      maf.approach <- as.character(readLines(n = 1))
-      if (!maf.approach %in% c("SNP", "locus")) stop("maf.approach: SNP or locus")
+      # message("Choose the maf.approach (SNP/locus):")
+      # maf.approach <- as.character(readLines(n = 1))
+
+      maf.approach <- interactive_question(
+        x = "Choose the maf.approach (SNP/locus): ", answer.opt = c("SNP", "locus"))
+
+
+      # if (!maf.approach %in% c("SNP", "locus")) stop("maf.approach: SNP or locus")
     }
 
     if (maf.approach == "locus") {
@@ -527,7 +532,10 @@ because LOCUS and POS (SNP) info is not available")
       message("Choose the local minor allele threshold")
       message("   Using a frequency: choose a value between 0 and 0.9")
       message("   Using count of alternate allele: choose an integer >= 1")
-      maf.local.threshold <- as.character(readLines(n = 1))
+      # maf.local.threshold <- as.character(readLines(n = 1))
+      maf.local.threshold <- interactive_question(
+        x = "    Enter value: ", minmax = c(0, 1000))
+
       if (maf.local.threshold >= 1) {
         maf.local.threshold <- as.integer(maf.local.threshold)
         maf.count <- TRUE
@@ -542,7 +550,9 @@ because LOCUS and POS (SNP) info is not available")
       message("   Using a frequency: choose a value between 0 and 0.9")
       message("   Using count of alternate allele: choose an integer >= 1")
       message("   Note: please use the same method count/freqency as the local threshold")
-      maf.global.threshold <- as.character(readLines(n = 1))
+      # maf.global.threshold <- as.character(readLines(n = 1))
+      maf.global.threshold <- interactive_question(
+        x = "    Enter value: ", minmax = c(0, 1000))
       if (maf.global.threshold >= 1) {
         maf.global.threshold <- as.integer(maf.global.threshold)
       } else {
@@ -555,9 +565,12 @@ because LOCUS and POS (SNP) info is not available")
       message("The maf.operator:
 Option 1: AND: local \"AND\" global MAF thresholds are required to pass (more severe).
 Option 2: OR: local \"OR\" global MAF thresholds are required to pass (more tolerant).")
-      message("Choose the maf.operator (AND/OR):")
-      maf.operator <- as.character(readLines(n = 1))
-      if (!maf.operator %in% c("OR", "AND")) stop("maf.operator: either OR/AND")
+      # message("Choose the maf.operator (AND/OR):")
+      # maf.operator <- as.character(readLines(n = 1))
+      maf.operator <- interactive_question(
+        x = "Choose the maf.operator (AND/OR): ", answer.opt = c("AND", "OR"))
+
+      # if (!maf.operator %in% c("OR", "AND")) stop("maf.operator: either OR/AND")
     }
 
     # maf.pop.num.threshold
@@ -567,8 +580,10 @@ How many populations are required to pass all the thresholds to keep the marker?
 Example: if you have 10 populations and choose maf.pop.num.threshold = 3,
 3 populations out of 10 are required to pass previous thresholds")
       message("Note: not sure? use 1")
-      message("Choose the value (integer) for the maf.pop.num.threshold:")
-      maf.pop.num.threshold <- as.integer(readLines(n = 1))
+      message("Choose the maf.pop.num.threshold:")
+      # maf.pop.num.threshold <- as.integer(readLines(n = 1))
+      maf.pop.num.threshold <- interactive_question(
+        x = "    Enter value (integer): ", minmax = c(1, 1000))
     }
 
 

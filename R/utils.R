@@ -356,7 +356,7 @@ interactive_question <- function(x, answer.opt = NULL, minmax = NULL) {
   message(x)
   question <- function(x, answer.opt) {
 
-    if (!is.null(aswer.opt)) {
+    if (!is.null(answer.opt)) {
       answer.type <- (unique(class(answer.opt)))
       if (answer.type == "character") {
         x <-   match.arg(arg = readLines(n = 1), choices = answer.opt)

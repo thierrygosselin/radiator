@@ -1838,12 +1838,15 @@ on the number of genotyped individuals per pop ? (overall or pop)")
       # ind.approach <- as.character(readLines(n = 1))
       ind.approach <- interactive_question(
         x = "Enter approach: ", answer.opt = c("overall", "pop"))
+    }
 
+    if (interactive.filter) {
       # message("Enter the individual threshold percentage")
       # ind.threshold <- as.numeric(readLines(n = 1))
       ind.threshold <- interactive_question(
         x = "Enter the individual threshold percentage: ", minmax = c(0, 100))
-      if (ind.approach == "pop") {
+    }
+    if (interactive.filter && ind.approach == "pop") {
         # message("Tolerance for deviation: look at the plot produced ealier and if you see some populations dragging down
         #         the number of markers for certain percentage thresholds, you have 3 options:\n
         #         1. remove the population (use pop.select argument to keep the desired populations)
@@ -1857,7 +1860,6 @@ on the number of genotyped individuals per pop ? (overall or pop)")
         prob.pop.threshold <- interactive_question(
           x = "Enter the threshold: ", minmax = c(0, 100000000))
       }
-    }
     if (verbose) message("Filtering data")
     # some discrepencies need to be highlighted here. If you have entire pop not genotyped for a markers
     # this will compute them when doing the filtering:
@@ -2123,7 +2125,7 @@ on the number of genotyped individuals per pop ? (overall or pop)")
     if (interactive.filter) {
       message("2. Keep only 1 SNP/locus to manage short LD")
       # message("   Do you want to run this filter (y/n):")
-      run.snp.ld <- as.character(readLines(n = 1))
+      # run.snp.ld <- as.character(readLines(n = 1))
       number.snp.reads <- interactive_question(
         x = "   Do you want to run this filter (y/n):", answer.opt = c("y", "n"))
     }
