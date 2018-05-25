@@ -111,6 +111,8 @@ check_dart <- function(data) {
     skip.number <- which(stringi::stri_detect_regex(str = temp.file$HEADER,
                                                     pattern = "^[:Letter:]")) -1
     data.type <- readr::read_lines(file = data, skip = skip.number, n_max = skip.number + 1)[1] #%>% stringi::stri_sub(str = ., from = 1, to = 16)
+  } else {
+    skip.number <- 0
   }
   dart.clone.id <- stringi::stri_detect_fixed(str = data.type, pattern = "CloneID")
   dart.allele.id <- stringi::stri_detect_fixed(str = data.type, pattern = "AlleleID")
