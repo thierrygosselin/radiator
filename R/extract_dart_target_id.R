@@ -99,7 +99,7 @@ extract_dart_target_id <- function(data, write = TRUE) {
       str = stringi::stri_trans_toupper(TARGET_ID),
       pattern = discard.genome, negate = TRUE)) %>%
     dplyr::mutate(TARGET_ID = stringi::stri_replace_all_fixed(
-      TARGET_ID, pattern = " ", replacement = "", vectorize_all = FALSE))
+      TARGET_ID, pattern = c(" ", "_"), replacement = c("", "-"), vectorize_all = FALSE))
 
   if (write) readr::write_tsv(x = dart.target.id, path = "dart.target.id.tsv")
 
@@ -110,5 +110,13 @@ What you want are different target ids at the end of the row that contains Allel
 Edit manually the DArT file before trying the functions: tidy_dart and filter_dart
 If you're still encountering problem, email author for help")
   }
+
+  # check if target id are numericnumeric
+  # target.num <- unique(stringi::stri_detect_regex(
+  #   str = unique(dart.target.id$TARGET_ID), pattern = "^[[:digit:]]+L"))
+  # if (!target.num) {
+  #   dart.target.id <- dart.target.id %>%
+  #     dplyr::mutate(TARGET_ID = clean_ind_names(TARGET_ID))
+  # }
   return(dart.target.id)
 }#End extract_dart_target_id

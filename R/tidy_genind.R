@@ -5,6 +5,12 @@
 #' and might be of interest for users.
 
 #' @param data A genind object in the global environment.
+#' @param keep.allele.names Allows to keep allele names for the tidy dataset.
+#' Requires the alleles to be numeric. To have this argument in
+#' \pkg{radiator} \code{\link{tidy_genomic_data}} or
+#' \pkg{radiator} \code{\link{genomic_converter}}
+#' use it at the end. \code{...} in those function looks for it.
+#' Default: \code{keep.allele.names = FALSE}.
 
 #' @export
 #' @rdname tidy_genind
@@ -25,7 +31,7 @@
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 
-tidy_genind <- function(data) {
+tidy_genind <- function(data, keep.allele.names = FALSE) {
 
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) stop("data argument required")
@@ -57,40 +63,76 @@ tidy_genind <- function(data) {
                                 dplyr::if_else(GT_BIN == 1, "0/1", "1/1"), missing = "./."),
         GT = dplyr::if_else(GT_BIN == 0, "001001", dplyr::if_else(GT_BIN == 1, "001002", "002002") , missing = "000000")
       )
-
-      # old piece of code
-      # data2 <- tibble::as_data_frame(data@tab) %>%
-      #   tibble::add_column(.data = ., INDIVIDUALS = rownames(data@tab), .before = 1) %>%
-      #   tibble::add_column(.data = ., POP_ID = data@pop) %>%
-      #   dplyr::select(POP_ID, INDIVIDUALS, dplyr::ends_with(match = ".")) %>%
-      #   tidyr::gather(data = ., key = MARKERS, value = GT_BIN, -c(POP_ID, INDIVIDUALS)) %>%
-      #   dplyr::mutate(
-      #     MARKERS = stringi::stri_replace_all_fixed(
-      #       str = MARKERS, pattern = ".1", replacement = "", vectorize_all = FALSE),
-      #     GT_VCF = dplyr::if_else(GT_BIN == 0, "0/0",
-      #                             dplyr::if_else(GT_BIN == 1, "0/1", "1/1"), missing = "./."),
-      #     GT = dplyr::if_else(GT_BIN == 0, "001001", dplyr::if_else(GT_BIN == 1, "001002", "002002") , missing = "000000")
-      #   )
+    # old piece of code
+    # data2 <- tibble::as_data_frame(data@tab) %>%
+    #   tibble::add_column(.data = ., INDIVIDUALS = rownames(data@tab), .before = 1) %>%
+    #   tibble::add_column(.data = ., POP_ID = data@pop) %>%
+    #   dplyr::select(POP_ID, INDIVIDUALS, dplyr::ends_with(match = ".")) %>%
+    #   tidyr::gather(data = ., key = MARKERS, value = GT_BIN, -c(POP_ID, INDIVIDUALS)) %>%
+    #   dplyr::mutate(
+    #     MARKERS = stringi::stri_replace_all_fixed(
+    #       str = MARKERS, pattern = ".1", replacement = "", vectorize_all = FALSE),
+    #     GT_VCF = dplyr::if_else(GT_BIN == 0, "0/0",
+    #                             dplyr::if_else(GT_BIN == 1, "0/1", "1/1"), missing = "./."),
+    #     GT = dplyr::if_else(GT_BIN == 0, "001001", dplyr::if_else(GT_BIN == 1, "001002", "002002") , missing = "000000")
+    #   )
   } else {
-    message("Alleles names for each markers will be converted to factors and padded with 0")
-    data <- tibble::as_data_frame(data@tab) %>%
-      tibble::add_column(.data = ., INDIVIDUALS = rownames(data@tab), .before = 1) %>%
-      tibble::add_column(.data = ., POP_ID = data@pop) %>%
-      # tidyr::gather(data = ., key = MARKERS_ALLELES, value = COUNT, -c(POP_ID, INDIVIDUALS)) %>%
-      data.table::as.data.table(.) %>%
-      data.table::melt.data.table(
-        data = .,
-        id.vars = c("INDIVIDUALS", "POP_ID"),
-        variable.name = "MARKERS_ALLELES",
-        value.name = "COUNT"
-      ) %>%
-      tibble::as_data_frame(.) %>%
-      dplyr::filter(COUNT > 0 | is.na(COUNT)) %>%
-      tidyr::separate(data = ., col = MARKERS_ALLELES, into = c("MARKERS", "ALLELES"), sep = "\\.") %>%
-      dplyr::mutate(
-        ALLELES = as.numeric(factor(ALLELES)),
-        ALLELES = stringi::stri_pad_left(str = ALLELES, pad = "0", width = 3)
+
+    if (keep.allele.names) {
+      message("Alleles names are kept if all numeric and padded with 0 if length < 3")
+      data <- tibble::as_data_frame(data@tab) %>%
+        tibble::add_column(.data = ., INDIVIDUALS = rownames(data@tab), .before = 1) %>%
+        tibble::add_column(.data = ., POP_ID = data@pop) %>%
+        # tidyr::gather(data = ., key = MARKERS_ALLELES, value = COUNT, -c(POP_ID, INDIVIDUALS)) %>%
+        data.table::as.data.table(.) %>%
+        data.table::melt.data.table(
+          data = .,
+          id.vars = c("INDIVIDUALS", "POP_ID"),
+          variable.name = "MARKERS_ALLELES",
+          value.name = "COUNT"
+        ) %>%
+        tibble::as_data_frame(.) %>%
+        dplyr::filter(COUNT > 0 | is.na(COUNT)) %>%
+        tidyr::separate(data = ., col = MARKERS_ALLELES, into = c("MARKERS", "ALLELES"), sep = "\\.")
+
+      check.alleles <- unique(stringi::stri_detect_regex(str = unique(data$ALLELES), pattern = "[0-9]"))
+      check.alleles <- length(check.alleles) == 1 && check.alleles
+
+      if (check.alleles) {
+        data <- data %>%
+          dplyr::mutate(
+            ALLELES = stringi::stri_pad_left(str = ALLELES, pad = "0", width = 3)
+          )
+      } else {
+        data <- data %>%
+          dplyr::mutate(
+            ALLELES = as.numeric(factor(ALLELES)),
+            ALLELES = stringi::stri_pad_left(str = ALLELES, pad = "0", width = 3)
+          )
+      }
+
+    } else {
+      message("Alleles names for each markers will be converted to factors and padded with 0")
+      data <- tibble::as_data_frame(data@tab) %>%
+        tibble::add_column(.data = ., INDIVIDUALS = rownames(data@tab), .before = 1) %>%
+        tibble::add_column(.data = ., POP_ID = data@pop) %>%
+        # tidyr::gather(data = ., key = MARKERS_ALLELES, value = COUNT, -c(POP_ID, INDIVIDUALS)) %>%
+        data.table::as.data.table(.) %>%
+        data.table::melt.data.table(
+          data = .,
+          id.vars = c("INDIVIDUALS", "POP_ID"),
+          variable.name = "MARKERS_ALLELES",
+          value.name = "COUNT"
+        ) %>%
+        tibble::as_data_frame(.) %>%
+        dplyr::filter(COUNT > 0 | is.na(COUNT)) %>%
+        tidyr::separate(data = ., col = MARKERS_ALLELES, into = c("MARKERS", "ALLELES"), sep = "\\.") %>%
+        dplyr::mutate(
+          ALLELES = as.numeric(factor(ALLELES)),
+          ALLELES = stringi::stri_pad_left(str = ALLELES, pad = "0", width = 3)
         )
+    }
+
 
     # #If the genind was coded with allele 0, this will generate missing data with this code
     # allele.zero <- TRUE %in% stringi::stri_detect_regex(str = unique(data3$ALLELES), pattern = "^0$")
@@ -117,5 +159,5 @@ tidy_genind <- function(data) {
       dplyr::bind_rows(missing.hom)
     missing.hom <- NULL
   }#End for multi-allelic
-return(data)
+  return(data)
 } # End tidy_genind

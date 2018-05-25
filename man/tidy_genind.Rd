@@ -4,10 +4,17 @@
 \alias{tidy_genind}
 \title{Tidy a genind object to a tidy dataframe}
 \usage{
-tidy_genind(data)
+tidy_genind(data, keep.allele.names = FALSE)
 }
 \arguments{
 \item{data}{A genind object in the global environment.}
+
+\item{keep.allele.names}{Allows to keep allele names for the tidy dataset.
+Requires the alleles to be numeric. To have this argument in
+\pkg{radiator} \code{\link{tidy_genomic_data}} or
+\pkg{radiator} \code{\link{genomic_converter}}
+use it at the end. \code{...} in those function looks for it.
+Default: \code{keep.allele.names = FALSE}.}
 }
 \description{
 Tidy genind object to a tidy dataframe.

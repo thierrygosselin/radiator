@@ -123,6 +123,19 @@ tidy_dart <- function(
   parallel.core = parallel::detectCores() - 1,
   ...
 ) {
+
+  # for testing
+  # data
+  # strata
+  # whitelist.markers = NULL
+  # filename = NULL
+  # tidy.output = "full"
+  # verbose = FALSE
+  # parallel.core = parallel::detectCores() - 1
+  # missing.memory <- NULL
+  # sequence <- NULL
+
+
   opt.change <- getOption("width")
   options(width = 70)
   # for timing
@@ -188,6 +201,7 @@ If you're still encountering problem, email author for help")
     skip.number <- dart.check$skip.number
   }
   if (verbose) message("Importing DArT data")
+  dart.check <- NULL
 
   # Strata file ------------------------------------------------------------------
   if (verbose) message("\nMaking DArT data population-wise...")
@@ -284,7 +298,9 @@ DArT statistics generated for all samples might not apply...\n")
     dplyr::select(-DELETE) %>%
     dplyr::mutate(
       INFO = stringi::stri_trans_toupper(INFO),
-      INFO = stringi::stri_replace_all_fixed(INFO, pattern = " ", replacement = "", vectorize_all = FALSE)
+      INFO = stringi::stri_replace_all_fixed(
+        str = INFO, pattern = c(" ", "_"),
+        replacement = c("", "-"), vectorize_all = FALSE)
     ) %>%
     dplyr::left_join(want, by = "INFO") %>%
     dplyr::mutate(COL_TYPE = stringi::stri_replace_na(str = COL_TYPE, replacement = "_")) %>%
@@ -314,7 +330,7 @@ DArT statistics generated for all samples might not apply...\n")
   dart.col.type <- NULL
   colnames(input) <- stringi::stri_trans_toupper(colnames(input))
   colnames(input) = stringi::stri_replace_all_fixed(
-    str = colnames(input), pattern = " ", replacement = "", vectorize_all = FALSE)
+    str = colnames(input), pattern = c(" ", "_"), replacement = c("", "-"), vectorize_all = FALSE)
   colnames(input) <- stringi::stri_replace_all_fixed(
     str = colnames(input),
     pattern = c("AVGCOUNTREF", "AVGCOUNTSNP", "REPAVG", "ALLELEID",
@@ -515,7 +531,8 @@ DArT statistics generated for all samples might not apply...\n")
           dplyr::sample_n(tbl = ., size = 3) %>%
           purrr::flatten_chr(.) %>%
           as.integer %>%
-          unique %>% sum(na.rm = TRUE))
+          unique %>%
+          sum(na.rm = TRUE))
     }
     count.data <- count.data > 3
     n.markers <- dplyr::n_distinct(input$MARKERS)

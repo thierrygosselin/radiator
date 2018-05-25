@@ -12,7 +12,7 @@ genomic_converter(data, output = NULL, vcf.metadata = FALSE,
   pop.select = NULL, imputation.method = NULL,
   hierarchical.levels = "strata", num.tree = 50, pred.mean.matching = 0,
   random.seed = NULL, parallel.core = parallel::detectCores() - 1,
-  verbose = TRUE)
+  verbose = TRUE, ...)
 }
 \arguments{
 \item{data}{12 options: VCF (SNPs or Haplotypes,
@@ -265,6 +265,8 @@ Default: \code{parallel::detectCores() - 1}.}
 \item{verbose}{(optional, logical) When \code{verbose = TRUE}
 the function is a little more chatty during execution.
 Default: \code{verbose = TRUE}.}
+
+\item{...}{(optional) To pass further argument for fine-tuning the function.}
 }
 \value{
 The function returns an object (list). The content of the object

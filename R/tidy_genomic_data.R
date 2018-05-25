@@ -210,6 +210,8 @@
 #' the function is a little more chatty during execution.
 #' Default: \code{verbose = TRUE}.
 
+#' @param ... (optional) To pass further argument for fine-tuning the function.
+
 
 #' @details
 #' \strong{Long distance SNP linkage disequilibrium pruning}
@@ -381,7 +383,8 @@ tidy_genomic_data <- function(
   pop.select = NULL,
   filename = NULL,
   parallel.core = parallel::detectCores() - 1,
-  verbose = TRUE
+  verbose = TRUE,
+  ...
 ) {
   if (verbose) {
     cat("#######################################################################\n")
@@ -400,6 +403,22 @@ tidy_genomic_data <- function(
   pop.levels <- check.levels$pop.levels
   pop.labels <- check.levels$pop.labels
   pop.select <- check.levels$pop.select
+
+
+  # dotslist -------------------------------------------------------------------
+  dotslist <- list(...)
+  want <- c("keep.allele.names")
+  unknowned_param <- setdiff(names(dotslist), want)
+
+  if (length(unknowned_param) > 0) {
+    stop("Unknowned \"...\" parameters ",
+         stringi::stri_join(unknowned_param, collapse = " "))
+  }
+
+  radiator.dots <- dotslist[names(dotslist) %in% want]
+  keep.allele.names <- radiator.dots[["keep.allele.names"]]
+
+  if (is.null(keep.allele.names)) keep.allele.names <- FALSE
 
 
   # File type detection----------------------------------------------------------
@@ -864,7 +883,7 @@ tidy_genomic_data <- function(
   # Import GENIND--------------------------------------------------------------
   if (data.type == "genind") { # DATA FRAME OF GENOTYPES
     if (verbose) message("Tidying the genind object ...")
-    input <- radiator::tidy_genind(data = data)
+    input <- radiator::tidy_genind(data = data, keep.allele.names = keep.allele.names)
     data <- NULL
     # remove unwanted sep in id and pop.id names
     input <- input %>%

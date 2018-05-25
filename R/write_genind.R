@@ -41,8 +41,8 @@ write_genind <- function(data) {
   # Import data ---------------------------------------------------------------
   want <- c("MARKERS", "POP_ID", "INDIVIDUALS", "REF", "ALT", "GT", "GT_BIN")
   data <- suppressWarnings(radiator::tidy_wide(data = data, import.metadata = TRUE) %>%
-    dplyr::select(dplyr::one_of(want)) %>%
-    dplyr::arrange(POP_ID, INDIVIDUALS))
+                             dplyr::select(dplyr::one_of(want)) %>%
+                             dplyr::arrange(POP_ID, INDIVIDUALS))
 
   if (is.factor(data$POP_ID)) {
     pop.levels <- levels(data$POP_ID)
@@ -62,6 +62,41 @@ write_genind <- function(data) {
   # When GT_BIN available
   if (tibble::has_name(data, "GT_BIN")) {
     if (tibble::has_name(data, "REF")) {
+      data <- suppressWarnings(
+        dplyr::select(.data = data, MARKERS, POP_ID, INDIVIDUALS, REF, ALT, GT_BIN) %>%
+          dplyr::mutate(A1 = abs(GT_BIN - 2)) %>%
+          dplyr::rename(A2 = GT_BIN) %>%
+          data.table::as.data.table(.) %>%
+          data.table::melt.data.table(
+            data = .,
+            id.vars = c("INDIVIDUALS", "POP_ID", "MARKERS", "REF", "ALT"),
+            variable.name = "ALLELES",
+            value.name = "n"
+          ) %>%
+          tibble::as_data_frame(.) %>%
+          # tidyr::gather(data = ., key = ALLELES, value = n, -c(INDIVIDUALS, POP_ID, MARKERS)) %>%
+          dplyr::mutate(
+            ALLELES = dplyr::case_when(
+              ALLELES == "A1" ~ REF,
+              ALLELES == "A2" ~ ALT
+            ),
+            REF = NULL,
+            ALT = NULL,
+            MARKERS_ALLELES = stringi::stri_join(MARKERS, ALLELES, sep = ".")) %>%
+          dplyr::select(-MARKERS, -ALLELES) %>%
+          data.table::as.data.table(.) %>%
+          data.table::dcast.data.table(
+            data = .,
+            formula = POP_ID + INDIVIDUALS ~ MARKERS_ALLELES,
+            value.var = "n"
+          ) %>%
+          tibble::as_data_frame(.) %>%
+          # dplyr::group_by(POP_ID, INDIVIDUALS) %>%
+          # tidyr::spread(data =., key = MARKERS_ALLELES, value = n) %>%
+          # dplyr::ungroup(.) %>%
+          dplyr::mutate(POP_ID = factor(as.character(POP_ID), levels = pop.levels)) %>%# xvalDapc doesn't accept pop as ordered factor
+          dplyr::arrange(POP_ID, INDIVIDUALS))
+    } else {
       data <- suppressWarnings(
         dplyr::select(.data = data, MARKERS, POP_ID, INDIVIDUALS, GT_BIN) %>%
           dplyr::mutate(A1 = abs(GT_BIN - 2)) %>%
@@ -89,34 +124,6 @@ write_genind <- function(data) {
           # dplyr::ungroup(.) %>%
           dplyr::mutate(POP_ID = factor(as.character(POP_ID), levels = pop.levels)) %>%# xvalDapc doesn't accept pop as ordered factor
           dplyr::arrange(POP_ID, INDIVIDUALS))
-    } else {
-    data <- suppressWarnings(
-      dplyr::select(.data = data, MARKERS, POP_ID, INDIVIDUALS, GT_BIN) %>%
-        dplyr::mutate(A1 = abs(GT_BIN - 2)) %>%
-        dplyr::rename(A2 = GT_BIN) %>%
-        data.table::as.data.table(.) %>%
-        data.table::melt.data.table(
-          data = .,
-          id.vars = c("INDIVIDUALS", "POP_ID", "MARKERS"),
-          variable.name = "ALLELES",
-          value.name = "n"
-        ) %>%
-        tibble::as_data_frame(.) %>%
-        # tidyr::gather(data = ., key = ALLELES, value = n, -c(INDIVIDUALS, POP_ID, MARKERS)) %>%
-        dplyr::mutate(MARKERS_ALLELES = stringi::stri_join(MARKERS, ALLELES, sep = ".")) %>%
-        dplyr::select(-MARKERS, -ALLELES) %>%
-        data.table::as.data.table(.) %>%
-        data.table::dcast.data.table(
-          data = .,
-          formula = POP_ID + INDIVIDUALS ~ MARKERS_ALLELES,
-          value.var = "n"
-        ) %>%
-        tibble::as_data_frame(.) %>%
-        # dplyr::group_by(POP_ID, INDIVIDUALS) %>%
-        # tidyr::spread(data =., key = MARKERS_ALLELES, value = n) %>%
-        # dplyr::ungroup(.) %>%
-        dplyr::mutate(POP_ID = factor(as.character(POP_ID), levels = pop.levels)) %>%# xvalDapc doesn't accept pop as ordered factor
-        dplyr::arrange(POP_ID, INDIVIDUALS))
     }
   } else {
     missing.geno <- dplyr::ungroup(data) %>%

@@ -2126,7 +2126,7 @@ on the number of genotyped individuals per pop ? (overall or pop)")
       message("2. Keep only 1 SNP/locus to manage short LD")
       # message("   Do you want to run this filter (y/n):")
       # run.snp.ld <- as.character(readLines(n = 1))
-      number.snp.reads <- interactive_question(
+      run.snp.ld <- interactive_question(
         x = "   Do you want to run this filter (y/n):", answer.opt = c("y", "n"))
     }
 

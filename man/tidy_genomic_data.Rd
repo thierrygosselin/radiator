@@ -9,7 +9,7 @@ tidy_genomic_data(data, vcf.metadata = FALSE, whitelist.markers = NULL,
   common.markers = TRUE, maf.thresholds = NULL, max.marker = NULL,
   blacklist.id = NULL, pop.levels = NULL, pop.labels = NULL,
   strata = NULL, pop.select = NULL, filename = NULL,
-  parallel.core = parallel::detectCores() - 1, verbose = TRUE)
+  parallel.core = parallel::detectCores() - 1, verbose = TRUE, ...)
 }
 \arguments{
 \item{data}{12 options: VCF (SNPs or Haplotypes,
@@ -206,6 +206,8 @@ Default: \code{parallel::detectCores() - 1}.}
 \item{verbose}{(optional, logical) When \code{verbose = TRUE}
 the function is a little more chatty during execution.
 Default: \code{verbose = TRUE}.}
+
+\item{...}{(optional) To pass further argument for fine-tuning the function.}
 }
 \value{
 The output in your global environment is a tidy data frame.

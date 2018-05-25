@@ -32,6 +32,7 @@
 #' or the working directory. Default: \code{filename = NULL}. A default name will be used,
 #' customized with the output file(s) selected.
 
+
 #' @inheritParams tidy_genomic_data
 #' @inheritParams write_genepop
 #' @inheritParams write_genind
@@ -233,7 +234,8 @@ genomic_converter <- function(
   pred.mean.matching = 0,
   random.seed = NULL,
   parallel.core = parallel::detectCores() - 1,
-  verbose = TRUE
+  verbose = TRUE,
+  ...
 ) {
   if (verbose) {
     cat("#######################################################################\n")
@@ -363,8 +365,22 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
   opt.change <- getOption("width")
   options(width = 70)
 
+  # dotslist -------------------------------------------------------------------
+  dotslist <- list(...)
+  want <- c("keep.allele.names")
+  unknowned_param <- setdiff(names(dotslist), want)
+
+  if (length(unknowned_param) > 0) {
+    stop("Unknowned \"...\" parameters ",
+         stringi::stri_join(unknowned_param, collapse = " "))
+  }
+
+  radiator.dots <- dotslist[names(dotslist) %in% want]
+  keep.allele.names <- radiator.dots[["keep.allele.names"]]
+
+  if (is.null(keep.allele.names)) keep.allele.names <- FALSE
+
   # Filename -------------------------------------------------------------------
-  # Get date and time to have unique filenaming
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
 
   if (is.null(filename)) {
@@ -408,7 +424,8 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
     pop.labels = pop.labels,
     pop.select = pop.select,
     filename = NULL,
-    verbose = FALSE
+    verbose = FALSE,
+    keep.allele.names = keep.allele.names
   )
 
   if(verbose) message("\nPreparing data for output\n")
