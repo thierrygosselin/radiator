@@ -587,13 +587,8 @@ vcf2dadi <- function(
 
     if (is.null(dadi.input.filename)) {
       # when filename is not provided will save the 'dadi.input' with date and time
-      file.date <- stringi::stri_replace_all_fixed(Sys.time(), pattern = " EDT", replacement = "")
-      file.date <- stringi::stri_replace_all_fixed(
-        str = file.date,
-        pattern = c("-", " ", ":"),
-        replacement = c("", "_", ""),
-        vectorize_all = FALSE
-      )
+      file.date <- format(Sys.time(), "%Y%m%d@%H%M")
+
       if (write.imputation == FALSE) {
         dadi.input.filename <- stringi::stri_join("dadi_input_", file.date, ".tsv", sep = "")
       }

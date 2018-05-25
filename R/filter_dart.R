@@ -441,8 +441,10 @@ filter_dart <- function(
       suppressWarnings(print(plot.reproducibility.violinplot))
       message("    Inspect plots to help choose reproducibility threshold...")
       message("    Enter the threshold value (between 0 and 1)")
-      message("    below threshold < markers are discarded): ")
-      filter.reproducibility <- as.numeric(readLines(n = 1))
+      message("    below threshold < markers are discarded)")
+      filter.reproducibility <- interactive_question(
+        x = "Enter value: ", minmax = c(0, 1))
+      # filter.reproducibility <- as.numeric(readLines(n = 1))
     }
 
     if (!is.null(filter.reproducibility)) {
@@ -572,7 +574,10 @@ filter_dart <- function(
       print(plot.call.rate.violinplot)
       message("    Inspect plots in folder created to help choose call rate threshold...")
       message("    Enter the value (between 0 and 1) for filter.call.rate threshold \n    (below threshold < markers are discarded): ")
-      filter.call.rate <- as.numeric(readLines(n = 1))
+      # filter.call.rate <- as.numeric(readLines(n = 1))
+      filter.call.rate <- interactive_question(
+        x = "Enter value: ", minmax = c(0, 1))
+
     }
 
     if (!is.null(filter.call.rate)) {
@@ -815,9 +820,9 @@ filter_dart <- function(
     message("Filtering markers mean coverage")
     want <- c("MARKERS", "CHROM", "LOCUS", "POS", "AVG_COUNT_REF", "AVG_COUNT_SNP")
     coverage <- suppressWarnings(dplyr::select(input, dplyr::one_of(want)) %>%
-      dplyr::rename(REF = AVG_COUNT_REF, ALT = AVG_COUNT_SNP) %>%
-      dplyr::distinct(MARKERS, REF, ALT, .keep_all = TRUE) %>%
-      dplyr::mutate(READS = REF + ALT))
+                                   dplyr::rename(REF = AVG_COUNT_REF, ALT = AVG_COUNT_SNP) %>%
+                                   dplyr::distinct(MARKERS, REF, ALT, .keep_all = TRUE) %>%
+                                   dplyr::mutate(READS = REF + ALT))
 
     coverage.long <- tidyr::gather(data = coverage,
                                    key = GROUP,
@@ -869,13 +874,17 @@ filter_dart <- function(
     if (interactive.filter) {
       filter.coverage <- c(1, 1000000)
       message("    Inspect plots in folder created to help choose coverage thresholds (min and max)...")
-      message("    Enter the minimum coverage allowed to keep a marker (e.g. 7): ")
-      filter.coverage[1] <- as.numeric(readLines(n = 1))
+      message("    Enter the minimum coverage allowed to keep a marker (e.g. 7)")
+      # filter.coverage[1] <- as.numeric(readLines(n = 1))
+      filter.coverage[1] <- interactive_question(
+        x = "Enter value: ", minmax = c(0, 10000000))
     }
 
     if (interactive.filter) {
       message("    Enter the maximum coverage allowed to keep a marker (e.g. 150): ")
-      filter.coverage[2] <- as.numeric(readLines(n = 1))
+      # filter.coverage[2] <- as.numeric(readLines(n = 1))
+      filter.coverage[2] <- interactive_question(
+        x = "Enter value: ", minmax = c(0, 10000000))
       filter.coverage <- as.numeric(filter.coverage)
     }
 
@@ -1048,11 +1057,15 @@ filter_dart <- function(
       threshold.high.coverage <- 1000000000
       message("    Inspect plots to help choose min and max coverage threshold")
       message("    Enter the minimum read depth threshold to call a genotype")
-      message("    Below this threshold, genotypes are erased (e.g. 10): ")
-      threshold.low.coverage <- as.numeric(readLines(n = 1))
+      message("    Below this threshold, genotypes are erased (e.g. 10) ")
+      threshold.low.coverage <- interactive_question(
+        x = "Enter value: ", minmax = c(0, 10000000000))
+      # threshold.low.coverage <- as.numeric(readLines(n = 1))
       message("    Enter the maximum read depth threshold to call a genotype")
-      message("    Above this threshold, genotypes are erased (e.g. 200): ")
-      threshold.high.coverage <- as.numeric(readLines(n = 1))
+      message("    Above this threshold, genotypes are erased (e.g. 200) ")
+      threshold.high.coverage <- interactive_question(
+        x = "Enter value: ", minmax = c(0, 10000000000))
+      # threshold.high.coverage <- as.numeric(readLines(n = 1))
     }
 
     n.genotypes <- length(input$GT_BIN[!is.na(input$GT_BIN)])
@@ -1279,7 +1292,9 @@ filter_dart <- function(
       threshold.gl <- -1000000
       message("    Enter the gl threshold (close to 0 the better)")
       message("    Below this threshold, heterozygous genotypes are erased: ")
-      threshold.gl <- as.double(readLines(n = 1))
+      # threshold.gl <- as.double(readLines(n = 1))
+      threshold.gl <- interactive_question(
+        x = "Enter value: ", minmax = c(-1, 0))
     }
 
     blacklist.genotypes.gl <- dplyr::select(input, MARKERS, INDIVIDUALS, GL) %>%
@@ -1532,8 +1547,10 @@ filter_dart <- function(
       filter.individuals.missing <- 0
       message("    Inspect plot and tables to help choose threshold to blacklist individuals")
       message("    Enter the ind minimum genotyped proportion threshold")
-      message("    Below this threshold, individuals are blacklisted (e.g. 0.5): ")
-      filter.individuals.missing <- as.double(readLines(n = 1))
+      message("    Below this threshold, individuals are blacklisted (e.g. 0.5)")
+      # filter.individuals.missing <- as.double(readLines(n = 1))
+      filter.individuals.missing <- interactive_question(
+        x = "Enter value: ", minmax = c(0, 1))
     }
     missing.ind.plot <- NULL
     blacklist.id <- ind.missing %>%
@@ -1817,11 +1834,15 @@ in relation to the individual percentage thresholds\n")
       message("Step 2. Choose the filtering approach and thresholds")
       message("The approach to filter a marker: do you want it based on the overall
 number of genotyped individuals or
-on the number of genotyped individuals per pop ? (overall or pop):")
-      ind.approach <- as.character(readLines(n = 1))
+on the number of genotyped individuals per pop ? (overall or pop)")
+      # ind.approach <- as.character(readLines(n = 1))
+      ind.approach <- interactive_question(
+        x = "Enter approach: ", answer.opt = c("overall", "pop"))
 
-      message("Enter the individual threshold percentage: ")
-      ind.threshold <- as.numeric(readLines(n = 1))
+      # message("Enter the individual threshold percentage")
+      # ind.threshold <- as.numeric(readLines(n = 1))
+      ind.threshold <- interactive_question(
+        x = "Enter the individual threshold percentage: ", minmax = c(0, 100))
       if (ind.approach == "pop") {
         # message("Tolerance for deviation: look at the plot produced ealier and if you see some populations dragging down
         #         the number of markers for certain percentage thresholds, you have 3 options:\n
@@ -1831,8 +1852,10 @@ on the number of genotyped individuals per pop ? (overall or pop):")
         #         manage the missing values with blacklist of individuals and/or
         #         missing data imputations.\n
         #         Enter the number of problematic population that you allow to deviate from the threshold:")
-        message("Enter the number of problematic population that you allow to deviate from the threshold:")
-        prob.pop.threshold <- as.numeric(readLines(n = 1))
+        message("Next, the threshold in the number of problematic population that you allow to deviate")
+        # prob.pop.threshold <- as.numeric(readLines(n = 1))
+        prob.pop.threshold <- interactive_question(
+          x = "Enter the threshold: ", minmax = c(0, 100000000))
       }
     }
     if (verbose) message("Filtering data")
@@ -2037,7 +2060,9 @@ on the number of genotyped individuals per pop ? (overall or pop):")
       message("   Based on the plot, choose the threshold")
       message("   in maximum number of SNP/locus allowed")
       message("   (turn off by using a large integer): ")
-      number.snp.reads <- as.integer(readLines(n = 1))
+      # number.snp.reads <- as.integer(readLines(n = 1))
+      number.snp.reads <- interactive_question(
+        x = "Enter the number of SNP: ", minmax = c(0, 100))
     }
 
     blacklist.snp.number.markers <- number.snp %>%
@@ -2097,8 +2122,10 @@ on the number of genotyped individuals per pop ? (overall or pop):")
 
     if (interactive.filter) {
       message("2. Keep only 1 SNP/locus to manage short LD")
-      message("   Do you want to run this filter (y/n):")
+      # message("   Do you want to run this filter (y/n):")
       run.snp.ld <- as.character(readLines(n = 1))
+      number.snp.reads <- interactive_question(
+        x = "   Do you want to run this filter (y/n):", answer.opt = c("y", "n"))
     }
 
     if (interactive.filter && run.snp.ld == "y") {
@@ -2109,7 +2136,9 @@ on the number of genotyped individuals per pop ? (overall or pop):")
       message("   middle: for locus with > 2 SNPs/read\n     keeps the SNP in the middle")
       message("   maf: keeps the SNP with the highest MAF")
       message("\n   ENTER your choice:")
-      snp.ld <- as.character(readLines(n = 1))
+      # snp.ld <- as.character(readLines(n = 1))
+      snp.ld <- interactive_question(
+        x = "\n   ENTER your choice: ", answer.opt = c("random", "first", "last", "middle", "maf"))
     } else {
       snp.ld <- NULL
     }
@@ -2200,13 +2229,24 @@ on the number of genotyped individuals per pop ? (overall or pop):")
 
     if (interactive.filter) {
       message("\n\nInspect plots and tables in folder created...")
-      message("    Do you want to exclude individuals based on heterozygosity ? (y/n): ")
-      mixed.gen.analysis <- as.character(readLines(n = 1))
+      # message("    Do you want to exclude individuals based on heterozygosity ? (y/n): ")
+      # mixed.gen.analysis <- as.character(readLines(n = 1))
+
+      mixed.gen.analysis <- interactive_question(
+        x = "    Do you want to exclude individuals based on heterozygosity ? (y/n): ", answer.opt = c("y", "n"))
+
       if (mixed.gen.analysis == "y") {
-        message("    Enter the min value for ind.heterozygosity.threshold argument (0 turns off): ")
-        threshold.min <- as.numeric(readLines(n = 1))
-        message("    Enter the max value for ind.heterozygosity.threshold argument (1 turns off): ")
-        threshold.max <- as.numeric(readLines(n = 1))
+        mix.text <- "    Enter the min value for ind.heterozygosity.threshold argument (0 turns off): "
+        # threshold.min <- as.numeric(readLines(n = 1))
+        threshold.min <- interactive_question(x = mix.text, minmax = c(0, 1))
+
+
+        mix.text <- "    Enter the max value for ind.heterozygosity.threshold argument (1 turns off): "
+        # threshold.max <- as.numeric(readLines(n = 1))
+        threshold.max <- interactive_question(x = mix.text, minmax = c(0, 1))
+
+
+
         blacklist.ind.het  <- dplyr::ungroup(mixed.genomes.analysis$individual.heterozygosity) %>%
           dplyr::filter(HET_PROP > threshold.max | HET_PROP < threshold.min) %>%
           dplyr::distinct(INDIVIDUALS)
@@ -2345,8 +2385,11 @@ on the number of genotyped individuals per pop ? (overall or pop):")
       message("    Run the full pairwise genome comparisons")
       message("    This approach integrates markers in common & missing data\n")
 
-      message("    Do you want to run the pairwise genome comparison (y/n): ")
-      genome <- as.character(readLines(n = 1))
+      dup.text <- "    Do you want to run the pairwise genome comparison (y/n): "
+      # genome <- as.character(readLines(n = 1))
+      genome <- interactive_question(x = dup.text, answer.opt = c("y", "n"))
+
+
       if (genome == "y") {
         duplicate.genomes <- radiator::detect_duplicate_genomes(
           data = input,
@@ -2515,12 +2558,12 @@ on the number of genotyped individuals per pop ? (overall or pop):")
       }
       blacklist.hw <- NULL
     }
-      if (verbose) message("    Number of markers before = ", n.snp.before)
-      if (verbose) message("    Number of markers removed = ", n.snp.before - new.data.info$n.snp)
-      if (verbose) message("    Number of markers after = ", new.data.info$n.snp)
-    }
-    # Missing visualization analysis before filters------------------------------
-    # if (missing.analysis) {
+    if (verbose) message("    Number of markers before = ", n.snp.before)
+    if (verbose) message("    Number of markers removed = ", n.snp.before - new.data.info$n.snp)
+    if (verbose) message("    Number of markers after = ", new.data.info$n.snp)
+  }
+  # Missing visualization analysis before filters------------------------------
+  # if (missing.analysis) {
   #   if (verbose) message("Missing data analysis: after filters")
   #   missing.visualization <- grur::missing_visualization(data = input, write.plot = TRUE)
   # }

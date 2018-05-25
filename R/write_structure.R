@@ -110,17 +110,15 @@ write_structure <- function(
 
   # Filename
   if (is.null(filename)) {
-    # Get date and time to have unique filenaming
-    file.date <- stringi::stri_replace_all_fixed(Sys.time(), pattern = " EDT", replacement = "", vectorize_all = FALSE)
-    file.date <- stringi::stri_replace_all_fixed(file.date, pattern = c("-", " ", ":"), replacement = c("", "@", ""), vectorize_all = FALSE)
-    file.date <- stringi::stri_sub(file.date, from = 1, to = 13)
+    file.date <- format(Sys.time(), "%Y%m%d@%H%M")
     filename <- stringi::stri_join("radiator_structure_", file.date, ".str")
   } else {
     filename <- stringi::stri_join(filename, ".str")
   }
 
   filename.connection <- file(filename, "w") # open the connection to the file
-  writeLines(text = stringi::stri_join(markers, sep = "\t", collapse = "\t"), con = filename.connection, sep = "\n")
+  writeLines(text = stringi::stri_join(markers, sep = "\t", collapse = "\t"),
+             con = filename.connection, sep = "\n")
   close(filename.connection) # close the connection
   readr::write_tsv(x = input, path = filename, append = TRUE, col_names = FALSE)
 } # end write_structure

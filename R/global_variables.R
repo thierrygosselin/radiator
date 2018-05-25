@@ -85,7 +85,7 @@ if (getRversion() >= "2.15.1") {
       "OUTLIERS_LOW_N", "OUTLIERS_TOTAL", "MEAN", "n.pop", "READ_DEPTH_SCALED",
       "**", "***", "****", "*****","AA", "AB", "BB", "COMMENTS", "FILTERS", "GROUPINGS",
       "HWE", "MID_P_VALUE", "MONO", "N_POP_HWD", "SIGNIFICANCE", "X", "p",
-      "VALUES", "TOTAL_READ_COUNTS"
+      "VALUES", "TOTAL_READ_COUNTS", "aswer.opt"
     )
   )
 }

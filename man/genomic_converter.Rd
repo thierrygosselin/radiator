@@ -22,10 +22,11 @@ genlight (library(adegenet)), gtypes (library(strataG)), genepop, DArT,
 and a data frame in long/tidy or wide format.
 \emph{See details} of \code{\link[radiator]{tidy_genomic_data}}.}
 
-\item{output}{22 genomic data formats can be exported: tidy (by default),
+\item{output}{23 genomic data formats can be exported: tidy (by default),
 genind, genlight, vcf (for file format version, see details below), plink, genepop,
 structure, arlequin, hierfstat, gtypes (strataG), bayescan, betadiv, pcadapt,
-hzar, fineradstructure, related, snprelate (for SNPRelate's GDS, see details).
+hzar, fineradstructure, related, snprelate (for SNPRelate's GDS, see details)
+and maverick.
 Use a character string,
 e.g. \code{output = c("genind", "genepop", "structure")}, to have preferred
 output formats generated. The tidy format is generated automatically.
@@ -417,6 +418,10 @@ Pew J, Muir PH, Wang J, Frasier TR (2015)
 related: an R package for analysing pairwise relatedness from codominant
 molecular markers.
 Molecular Ecology Resources, 15, 557-561.
+
+Verity R, Nichols RA (2016) Estimating the Number of
+Subpopulations (K) in Structured Populations.
+Genetics, 203, genetics.115.180992-1839.
 }
 \seealso{
 \code{beta.div} is available on Pierre Legendre web site \url{http://adn.biol.umontreal.ca/~numericalecology/Rcode/}

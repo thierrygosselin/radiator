@@ -345,3 +345,66 @@ ind_total_reads <- function(x, path.folder = NULL) {
 }#End ind_coverage
 
 
+# interactive_question
+#' @title interactive_question
+#' @description Ask to enter a word or number
+#' @rdname interactive_question
+#' @keywords internal
+#' @export
+interactive_question <- function(x, answer.opt = NULL, minmax = NULL) {
+  # Note to myself: tryCatch might be simpler here... investigate
+  message(x)
+  question <- function(x, answer.opt) {
+
+    if (!is.null(aswer.opt)) {
+      answer.type <- (unique(class(answer.opt)))
+      if (answer.type == "character") {
+        x <-   match.arg(arg = readLines(n = 1), choices = answer.opt)
+      }
+      if (answer.type == "numeric") {
+        x <-   match.arg(arg = as.numeric(readLines(n = 1)), choices = answer.opt)
+      }
+      if (answer.type == "integer") {
+        x <-   match.arg(arg = as.integer(readLines(n = 1)), choices = answer.opt)
+      }
+    }
+    answer.type <- NULL
+    return(x)
+  }
+  safe_question <- purrr::safely(.f = question, otherwise = FALSE)
+  answers.ok <- FALSE
+  while (!answers.ok) {
+
+    if (!is.null(minmax)) {
+      # answer <- as.numeric(readLines(n = 1))
+      answer <- readLines(n = 1)
+
+      check.answer <- stringi::stri_detect_regex(str = answer, pattern = "[0-9]")
+      if (check.answer) {
+        answer <- as.numeric(answer)
+        good.value <- (answer >= minmax[1] & answer <= minmax[2])
+        if (!good.value) {
+          answers.ok <- FALSE
+          message("Please try again: ")
+        } else {
+          answers.ok <- TRUE
+        }
+        good.value <- NULL
+      } else {
+        answers.ok <- FALSE
+        message("Please try again: ")
+      }
+    } else {
+      answer <- safe_question(x, answer.opt = answer.opt)
+      if (is.null(answer$error)) {
+        answer <- answer$result
+        answers.ok <- TRUE
+      } else {
+        answers.ok <- FALSE
+        message("Please try again, options are: ",
+                stringi::stri_join(answer.opt, collapse = " or "))
+      }
+    }
+  }
+  return(answer)
+}#End interactive_question
