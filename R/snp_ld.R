@@ -288,7 +288,8 @@ snp_ld <- function(
         dplyr::filter(!MARKERS %in% snp.select.no.maf$MARKERS) %>%
         dplyr::left_join(
           suppressWarnings(
-            readr::read_tsv(file = maf.data, col_types = "c____d__") %>%
+            readr::read_tsv(file = maf.data, col_types = readr::cols(.default = readr::col_character())) %>%
+              dplyr::select(MARKERS, MAF_GLOBAL) %>%
               dplyr::distinct(MARKERS, .keep_all = TRUE) #%>% dplyr::filter(!MARKERS %in% snp.select.no.maf$MARKERS)
           ), by = "MARKERS") %>%
         dplyr::group_by(LOCUS) %>%
