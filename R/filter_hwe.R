@@ -258,6 +258,21 @@ filter_hwe <- function(
   parallel.core = parallel::detectCores() - 1,
   verbose = TRUE
 ) {
+
+  # # Testing
+  # interactive.filter = TRUE
+  # strata = NULL
+  # hw.pop.threshold = NULL
+  # midp.threshold = "****"
+  # filename = NULL
+  # blacklist.id = NULL
+  # whitelist.markers = NULL
+  # pop.levels = NULL
+  # pop.labels = NULL
+  # pop.select = NULL
+  # parallel.core = parallel::detectCores() - 1
+  # verbose = TRUE
+
   # required package
   if (!requireNamespace("HardyWeinberg", quietly = TRUE)) {
     stop("HardyWeinberg package needed for this function to work
@@ -470,35 +485,6 @@ filter_hwe <- function(
     n.markers <- dplyr::n_distinct(data$MARKERS)
     `Exact test mid p-value` <- NULL
 
-    # hwd.helper.table.long <- data.sum %>%
-    #   dplyr::filter(!HWE) %>%
-    #   dplyr::select(POP_ID, MARKERS, `*`, `**`, `***`, `****`, `*****`) %>%
-    #   data.table::as.data.table(.) %>%
-    #   data.table::melt.data.table(
-    #     data = ., id.vars = c("MARKERS", "POP_ID"),
-    #     variable.name = "SIGNIFICANCE", value.name = "VALUE",
-    #     variable.factor = FALSE) %>%
-    #   tibble::as_data_frame(.) %>%
-    #   dplyr::mutate(
-    #     SIGNIFICANCE = factor(
-    #       x = SIGNIFICANCE,
-    #       levels = c("*", "**", "***", "****", "*****"),
-    #       labels = c("midp <= 0.05 (*)", "midp <= 0.01 (**)",
-    #                  "midp <= 0.001 (***)", "midp <= 0.0001 (****)",
-    #                  "midp <= 0.00001 (*****)"))
-    #   ) %>%
-    #   dplyr::filter(VALUE)
-
-    # overall <- hwd.helper.table.long %>%
-    #   dplyr::filter(POP_ID == "OVERALL") %>%
-    #   dplyr::group_by(MARKERS, SIGNIFICANCE) %>%
-    #   dplyr::tally(.) %>%
-    #   dplyr::rename(N_POP_HWD = n) %>%
-    #   dplyr::group_by(SIGNIFICANCE, N_POP_HWD) %>%
-    #   dplyr::tally(.) %>%
-    #   dplyr::ungroup(.) %>%
-    #   dplyr::mutate(N_POP_HWD = "OVERALL")
-
     overall <- data.sum %>%
       dplyr::filter(!HWE, POP_ID == "OVERALL") %>%
       dplyr::select(POP_ID, MARKERS, `*`, `**`, `***`, `****`, `*****`) %>%
@@ -519,21 +505,6 @@ filter_hwe <- function(
       dplyr::tally(.) %>%
       dplyr::ungroup(.) %>%
       dplyr::mutate(N_POP_HWD = "OVERALL")
-
-    # hwd.helper.table.long <- hwd.helper.table.long %>%
-    #   dplyr::filter(POP_ID != "OVERALL") %>%
-    #   dplyr::group_by(MARKERS, SIGNIFICANCE) %>%
-    #   dplyr::tally(.) %>%
-    #   dplyr::rename(N_POP_HWD = n) %>%
-    #   dplyr::group_by(SIGNIFICANCE, N_POP_HWD) %>%
-    #   dplyr::tally(.) %>%
-    #   dplyr::ungroup(.) %>%
-    #   dplyr::mutate(N_POP_HWD = as.character(N_POP_HWD)) %>%
-    #   dplyr::bind_rows(overall) %>%
-    #   dplyr::mutate(
-    #     N_POP_HWD = factor(
-    #       x = N_POP_HWD, levels = c("OVERALL", 1:(n.pop -1)))
-    #   )
 
     hwd.helper.table.long <- hwd.markers.pop.sum %>%
       dplyr::group_by(SIGNIFICANCE, N_POP_HWD) %>%
@@ -745,9 +716,11 @@ filter_hwe <- function(
 
     if (is.null(hw.pop.threshold)) hw.pop.threshold <- n.pop - 1
     if (interactive.filter) {
-      message("\nBased on figures and tables enter the hw.pop.threshold")
-      message("    an integer (e.g. 4):")
-      hw.pop.threshold <- as.numeric(readLines(n = 1))
+      # message("\nBased on figures and tables enter the hw.pop.threshold (integer): ")
+      # message("    an integer (e.g. 4):")
+      # hw.pop.threshold <- as.numeric(readLines(n = 1))
+      hw.pop.threshold <- interactive_question(
+        x = "\nBased on figures and tables enter the hw.pop.threshold (integer): ", minmax = c(0, 100000000))
     }
 
     # hw.pop.threshold <- 8
@@ -776,8 +749,11 @@ filter_hwe <- function(
       if (interactive.filter) {
         message("\nChoosing the final filtered dataset")
         message("   the tidy data object associated with this filter...")
-        message("   choose the mid p-value threshold (one of: *, **, ***, **** or *****)")
-        midp.threshold <- as.character(readLines(n = 1))
+        # message("   choose the mid p-value threshold (one of: *, **, ***, **** or *****)")
+        # midp.threshold <- as.character(readLines(n = 1))
+        midp.threshold <- interactive_question(
+          x = "   choose the mid p-value threshold (one of: *, **, ***, **** or *****)", answer.opt = c("*", "**", "***", "****", "*****"))
+
       }
       midp.threshold <- dplyr::case_when(
         midp.threshold == "*****" ~ 0.00001,
