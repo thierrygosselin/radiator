@@ -39,6 +39,24 @@ write_maverick <- function(
   ...
 ) {
 
+  # for testing
+  # filename = NULL
+
+  # dotslist -------------------------------------------------------------------
+  dotslist <- list(...)
+  want <- c("subsample.markers", "whitelist.markers")
+  unknowned_param <- setdiff(names(dotslist), want)
+
+  if (length(unknowned_param) > 0) {
+    stop("Unknowned \"...\" parameters ",
+         stringi::stri_join(unknowned_param, collapse = " "))
+  }
+
+  radiator.dots <- dotslist[names(dotslist) %in% want]
+  subsample.markers <- radiator.dots[["subsample.markers"]]
+  whitelist.markers <- radiator.dots[["whitelist.markers"]]
+
+
   # Checking for missing and/or default arguments ******************************
   if (missing(data)) stop("Input file missing")
 
@@ -53,11 +71,35 @@ write_maverick <- function(
   }
 
 
-  # Create a marker vector  ------------------------------------------------
+
+  # Create a marker vector  ----------------------------------------------------
   markers <- dplyr::distinct(.data = data, MARKERS) %>%
     dplyr::arrange(MARKERS) %>%
     purrr::flatten_chr(.)
+
+  # subsample markers
+  if (!is.null(subsample.markers)) {
+    # subsample.markers <- NULL
+    # subsample.markers <- 1000
+    markers <- sample(x = markers, size = subsample.markers, replace = FALSE)
+    data <- dplyr::filter(data, MARKERS %in% markers)
+  }
+  if (!is.null(whitelist.markers)) {
+    if (is.vector(whitelist.markers)) {
+      whitelist.markers <- readr::read_tsv(
+        file = whitelist.markers,
+        col_types = readr::cols(.default = readr::col_character()))
+    }
+    data <- dplyr::filter(data, MARKERS %in% whitelist.markers$MARKERS)
+    markers <- dplyr::distinct(.data = data, MARKERS) %>%
+      dplyr::arrange(MARKERS) %>%
+      purrr::flatten_chr(.)
+  }
+
   markers <- c("INDIVIDUALS", "POP_ID", markers)
+
+  # Get info for parameter file
+  n.pop <- dplyr::n_distinct(data$POP_ID)
 
   # maverick format ------------------------------------------------------------
   data <- dplyr::select(.data = data, POP_ID, INDIVIDUALS, MARKERS, GT) %>%
@@ -82,28 +124,40 @@ write_maverick <- function(
       data.table::as.data.table(.) %>%
       data.table::dcast.data.table(
         data = .,
-        formula = INDIVIDUALS + POP_ID + ALLELES ~ MARKERS,
+        formula = INDIVIDUALS + POP_ID ~ MARKERS + ALLELES,
         value.var = "GT"
       ) %>%
       tibble::as_data_frame(.) %>%
-      dplyr::mutate(
-        POP_ID = as.integer(POP_ID),
-        ALLELES = NULL
-        ) %>%
+      dplyr::mutate(POP_ID = as.integer(POP_ID)) %>%
       dplyr::arrange(POP_ID, INDIVIDUALS)
 
+  # markers <- colnames
   # Write the file in maverick format -----------------------------------------
   message("Generating MavericK output file")
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
 
   # Filename
+  path <- getwd() # get working directory
+
   if (is.null(filename)) {
-    filename <- stringi::stri_join("radiator_maverick_", file.date, ".txt")
-    parameter.filename <- stringi::stri_join("radiator_maverick_parameters", file.date, ".txt")
+    folder.name <- stringi::stri_join("radiator_maverick_", file.date)
+    path.folder.maverick <- file.path(path, folder.name)
   } else {
-    filename <- stringi::stri_join(filename, ".txt")
-    parameter.filename <- stringi::stri_join(filename, "_parameters", ".txt")
+    folder.name <- stringi::stri_join(filename, file.date, sep = "_")
+    path.folder.maverick <- file.path(path, folder.name)
   }
+  dir.create(path.folder.maverick)
+  message("Folder created: ", folder.name)
+  output.folder <- file.path(path.folder.maverick, "ouput")
+  input.folder <- file.path(path.folder.maverick, "input")
+  dir.create(output.folder)
+  dir.create(input.folder)
+
+  filename <- stringi::stri_join(input.folder, "/data.txt")
+  parameter.filename <- stringi::stri_join(input.folder, "/parameters.txt")
+
+
+
   p.v <- suppressWarnings(stringi::stri_join(packageVersion("radiator"), collapse = ""))
   maverick.header <- stringi::stri_join(
     "#MavericK input file generated with radiator v.", p.v,
@@ -112,20 +166,20 @@ write_maverick <- function(
   filename.connection <- file(filename, "w") # open the connection to the file
 
   writeLines(text = maverick.header, con = filename.connection, sep = "\n")
-  writeLines(text = stringi::stri_join(markers, sep = "\t", collapse = "\t"), con = filename.connection, sep = "\n")
+  # writeLines(text = stringi::stri_join(markers, sep = "\t", collapse = "\t"), con = filename.connection, sep = "\n")
   close(filename.connection) # close the connection
-  readr::write_tsv(x = data, path = filename, append = TRUE, col_names = FALSE)
+  readr::write_tsv(x = data, path = filename, append = TRUE, col_names = TRUE)
 
   # Parameter file -------------------------------------------------------------
   message("Generating MavericK parameter file")
   readr::write_lines(x = "\n#### Data properties", path = parameter.filename)
-  tibble::tibble(KEY = c("headerRow_on", "popCol_on", "ploidyCol_on", "ploidy", "missingData"),
-                              VALUE = c("t", "t", "f", "2", "-9")) %>%
+  tibble::tibble(KEY = c("headerRow_on", "popCol_on", "ploidyCol_on", "ploidy", "missingData", "dataFormat"),
+                              VALUE = c("t", "t", "f", "2", "-9", "2")) %>%
     readr::write_tsv(x = ., path = parameter.filename, append = TRUE, col_names = FALSE)
 
   readr::write_lines(x = "\n\n#### Model parameters", path = parameter.filename, append = TRUE)
   tibble::tibble(KEY = c("Kmin", "Kmax", "admix_on", "fixAlpha_on", "alpha", "alphaPropSD"),
-                              VALUE = c("3", "3", "t", "t", "1.0", "0.10")) %>%
+                              VALUE = c("1", n.pop + 2, "t", "t", "1.0", "0.10")) %>%
     readr::write_tsv(x = ., path = parameter.filename, append = TRUE, col_names = FALSE)
 
   readr::write_lines(x = "\n\n#### Simulation parameters", path = parameter.filename, append = TRUE)
@@ -133,7 +187,7 @@ write_maverick <- function(
                          "thermodynamic_on", "thermodynamicRungs",
                          "thermodynamicBurnin", "thermodynamicSamples",
                          "EMalgorithm_on", "EMrepeats", "EMiterations"),
-                 VALUE = c("f", "1", "500", "5000", "f", "20", "500", "1000", "f", "100", "100")) %>%
+                 VALUE = c("f", "3", "500", "5000", "t", "20", "500", "1000", "t", "100", "100")) %>%
     readr::write_tsv(x = ., path = parameter.filename, append = TRUE, col_names = FALSE)
 
   readr::write_lines(x = "\n\n#### Basic output properties", path = parameter.filename, append = TRUE)
@@ -142,7 +196,13 @@ write_maverick <- function(
                          "outputQmatrixError_ind_on", "outputQmatrixError_pop_on",
                          "outputEvidence_on", "outputEvidenceNormalised_on",
                          "outputEvidenceDetails_on"),
-                 VALUE = c("t", "t", "t", "t", "f", "f", "f", "f", "f")) %>%
+                 VALUE = c("t", "t", "t", "t", "t", "t", "t", "t", "t")) %>%
     readr::write_tsv(x = ., path = parameter.filename, append = TRUE, col_names = FALSE)
+
+  readr::write_lines(x = "\n\n#### Additional arguments", path = parameter.filename, append = TRUE)
+  # generate output folder
+  tibble::tibble(KEY = c("outputRoot", "inputRoot"), VALUE = c(output.folder, input.folder)) %>%
+    readr::write_tsv(x = ., path = parameter.filename, append = TRUE, col_names = FALSE)
+
 return(NULL)
 } # end write_maverick
