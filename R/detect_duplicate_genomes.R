@@ -62,15 +62,17 @@
 #' Default: \code{verbose = TRUE}.
 
 #' @return A list with potentially 8 objects:
-#' \code{$distance }: results of the distance method
-#' \code{$distance.stats}: Summary statistics of the distance method
-#' \code{$pairwise.genome.similarity}: results of the genome method
-#' \code{$genome.stats}: Summary statistics of the genome method
-#' \code{$violin.plot.distance}: violin plot showing the distribution of pairwise distances
-#' \code{$manhattan.plot.distance}: same info different visual with manhattan plot
-#' \code{$violin.plot.genome}: violin plot showing the distribution of pairwise genome similarities
-#' \code{$manhattan.plot.genome}: same info different visual with manhattan plot
-#' \code{$blacklist.id.similar}: blacklisted duplicates
+#' \itemize{
+#' \item \code{$distance }: results of the distance method
+#' \item \code{$distance.stats}: Summary statistics of the distance method
+#' \item \code{$pairwise.genome.similarity}: results of the genome method
+#' \item \code{$genome.stats}: Summary statistics of the genome method
+#' \item \code{$violin.plot.distance}: violin plot showing the distribution of pairwise distances
+#' \item \code{$manhattan.plot.distance}: same info different visual with manhattan plot
+#' \item \code{$violin.plot.genome}: violin plot showing the distribution of pairwise genome similarities
+#' \item \code{$manhattan.plot.genome}: same info different visual with manhattan plot
+#' \item \code{$blacklist.id.similar}: blacklisted duplicates
+#' }
 #'
 #' Saved in the working directory:
 #' individuals.pairwise.dist.tsv, individuals.pairwise.distance.stats.tsv,
@@ -185,6 +187,18 @@ detect_duplicate_genomes <- function(
   parallel.core = parallel::detectCores() - 1,
   verbose = TRUE
 ) {
+
+  # Testing
+  # subsample.markers = NULL
+  # random.seed = NULL
+  # distance.method = "manhattan"
+  # genome = FALSE
+  # threshold.common.markers = NULL
+  # blacklist.duplicates = FALSE
+  # parallel.core = parallel::detectCores() - 1
+  # verbose = TRUE
+
+
   if (verbose) {
     cat("\n")
     cat("###############################################################################\n")
@@ -666,14 +680,20 @@ detect_duplicate_genomes <- function(
   # Removing duplicates
   if (blacklist.duplicates) {
     message("\nInspect tables and figures to decide if some individual(s) need to be blacklisted")
-    message("blacklist individual(s) (y/n): ")
-    remove.id <- as.character(readLines(n = 1))
+    # message("Do you need to blacklist individual(s) (y/n): ")
+    # remove.id <- as.character(readLines(n = 1))
+    remove.id <- interactive_question(
+      x = "    Do you need to blacklist individual(s) (y/n): ", answer.opt = c("y", "n"))
+
     if (remove.id == "y") {
-      message("2 options to blacklist individuals: manually or with a threshold")
-      message("    manually: the function generate a blacklist that you populate manually")
+      message("\nChoose how you want to remove duplicates (manually/threshold):")
+      message("    manually: the function generate a blacklist that you populate")
       message("    threshold: more powerful to fully remove duplicates")
-      message("\n    remove (manually/threshold): ")
-      remove.dup <- as.character(readLines(n = 1))
+      # message("\n    remove (manually/threshold): ")
+      # remove.dup <- as.character(readLines(n = 1))
+      remove.dup <- interactive_question(
+        x = "    Enter (manually/threshold): ", answer.opt = c("manually", "threshold"))
+
       if (remove.dup == "manually") {
         readr::write_tsv(
           x = tibble::data_frame(INDIVIDUALS = as.character()),
@@ -682,21 +702,31 @@ detect_duplicate_genomes <- function(
         message("    An empty blacklist file was generated: blacklist.id.similar.tsv")
         message("    Keep column name, just add the individual(s) to blacklist(s)")
         res$blacklist.id.similar <- "check blacklist.id.similar.tsv file"
-      } else {
-        message("Use the distance or genome analysis to blacklist duplicates ? (distance/genome): ")
-        analysis <- as.character(readLines(n = 1))
+      } else {# with threshold
+        # message("Use the distance or genome analysis to blacklist duplicates ? (distance/genome): ")
+        # analysis <- as.character(readLines(n = 1))
+        analysis <- interactive_question(
+          x = "\nChoose the analysis method to blacklist duplicates? (distance/genome): ", answer.opt = c("distance", "genome"))
+
+
         if (analysis == "distance") {
           data <-  "individuals.pairwise.dist.tsv"
         } else {
           data <-  "individuals.pairwise.genome.similarity.tsv"
         }
-        message("\n    Enter threshold to remove duplicates: ")
-        dup.threshold <- as.numeric(readLines(n = 1))
+        # message("\n    Enter threshold to remove duplicates: ")
+        # dup.threshold <- as.numeric(readLines(n = 1))
+        dup.threshold <- interactive_question(
+          x = "\nEnter the threshold to remove duplicates: (between 0 and 1)", minmax = c(0, 1))
 
-        message("\n    Remove all duplicates involved in pairs from different pop/group?")
-        message("\n    y: remove both samples in the pair")
-        message("\n    n: removes one sample in the pair, with more missing genotypes: (y/n)")
-        diff.pop.remove <- as.character(readLines(n = 1))
+        message("\nNow decide how to remove duplicates involved in pairs from different pop/group:")
+        message("    y: remove both samples in the pair")
+        message("    n: removes the sample in the pair with more missing genotypes")
+        # diff.pop.remove <- as.character(readLines(n = 1))
+        diff.pop.remove <- interactive_question(
+          x = "    Enter y/n: ", answer.opt = c("y", "n"))
+
+
         if (diff.pop.remove == "n") {
           diff.pop.remove <- FALSE
         } else {
