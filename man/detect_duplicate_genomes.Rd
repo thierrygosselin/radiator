@@ -64,15 +64,17 @@ Default: \code{verbose = TRUE}.}
 }
 \value{
 A list with potentially 8 objects:
-\code{$distance }: results of the distance method
-\code{$distance.stats}: Summary statistics of the distance method
-\code{$pairwise.genome.similarity}: results of the genome method
-\code{$genome.stats}: Summary statistics of the genome method
-\code{$violin.plot.distance}: violin plot showing the distribution of pairwise distances
-\code{$manhattan.plot.distance}: same info different visual with manhattan plot
-\code{$violin.plot.genome}: violin plot showing the distribution of pairwise genome similarities
-\code{$manhattan.plot.genome}: same info different visual with manhattan plot
-\code{$blacklist.id.similar}: blacklisted duplicates
+\itemize{
+\item \code{$distance }: results of the distance method
+\item \code{$distance.stats}: Summary statistics of the distance method
+\item \code{$pairwise.genome.similarity}: results of the genome method
+\item \code{$genome.stats}: Summary statistics of the genome method
+\item \code{$violin.plot.distance}: violin plot showing the distribution of pairwise distances
+\item \code{$manhattan.plot.distance}: same info different visual with manhattan plot
+\item \code{$violin.plot.genome}: violin plot showing the distribution of pairwise genome similarities
+\item \code{$manhattan.plot.genome}: same info different visual with manhattan plot
+\item \code{$blacklist.id.similar}: blacklisted duplicates
+}
 
 Saved in the working directory:
 individuals.pairwise.dist.tsv, individuals.pairwise.distance.stats.tsv,

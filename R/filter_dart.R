@@ -1554,6 +1554,7 @@ filter_dart <- function(
     }
     missing.ind.plot <- NULL
     blacklist.id <- ind.missing %>%
+      dplyr::filter(POP_ID != "OVERALL") %>%
       dplyr::filter(GENOTYPED_PROP_INDIVIDUALS < filter.individuals.missing) %>%
       dplyr::select(INDIVIDUALS)
     ind.missing <- NULL
@@ -1918,8 +1919,9 @@ on the number of genotyped individuals per pop ? (overall or pop)")
     readr::write_tsv(x = filters.parameters,
                      path = filters.parameters.path, append = TRUE,
                      col_names = FALSE)
-    new.whitelist.markers <- suppressWarnings(dplyr::select(input, dplyr::one_of(want)) %>%
-                                                dplyr::distinct(MARKERS, .keep_all = TRUE))
+    new.whitelist.markers <- suppressWarnings(
+      dplyr::select(input, dplyr::one_of(c("MARKERS", "CHROM", "LOCUS", "POS"))) %>%
+        dplyr::distinct(MARKERS, .keep_all = TRUE))
 
     blacklist.markers.geno <- dplyr::setdiff(whitelist.markers, new.whitelist.markers)
     if (nrow(blacklist.markers.geno) > 0) {
@@ -2425,14 +2427,15 @@ on the number of genotyped individuals per pop ? (overall or pop)")
         full.names = TRUE)
       if (length(blacklist.id.similar.path) > 0) {
         blacklist.id.similar <- suppressMessages(
-          readr::read_tsv(blacklist.id.similar.path, col_names = TRUE))
+          readr::read_tsv(
+            file = blacklist.id.similar.path,
+            col_names = TRUE,
+            col_types = readr::cols(.default = readr::col_character())))
         n.ind.blacklisted <- length(blacklist.id.similar$INDIVIDUALS)
         if (n.ind.blacklisted > 0) {
           if (verbose) message("Blacklisted individuals: ", n.ind.blacklisted, " ind.")
           if (verbose) message("    Filtering with blacklist of individuals")
-          input <- suppressWarnings(
-            dplyr::anti_join(input, blacklist.id.similar, by = "INDIVIDUALS"))
-
+          input <- dplyr::filter(input, !INDIVIDUALS %in% blacklist.id.similar$INDIVIDUALS)
           res$blacklist.id <- res$blacklist.id %>% dplyr::bind_rows(blacklist.id.similar)
           blacklist.id.similar <- NULL
 

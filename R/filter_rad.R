@@ -190,6 +190,35 @@ filter_rad <- function(
   ...
 ) {
 
+  # # testing
+  # interactive.filter = TRUE
+  # # strata = NULL
+  # # output = NULL
+  # pop.levels = NULL
+  # blacklist.id = NULL
+  # pop.select = NULL
+  # monomorphic.out = TRUE
+  # common.markers = TRUE
+  # filter.markers.coverage = NULL
+  # erase.genotypes = NULL
+  # filter.individuals.missing = NULL
+  # filter.markers.missing = NULL
+  # maf.thresholds = NULL
+  # number.snp.reads = NULL
+  # snp.ld = "maf"
+  # mixed.genomes.analysis = TRUE
+  # ind.heterozygosity.threshold = NULL
+  # duplicate.genomes.analysis = c(TRUE, FALSE)
+  # hw.pop.threshold = 0
+  # midp.threshold = "****"
+  # imputation.method = NULL
+  # hierarchical.levels = "strata"
+  # num.tree = 50
+  # # filename = NULL
+  # verbose = TRUE
+  # parallel.core = parallel::detectCores() - 1
+
+
   if (!requireNamespace("HardyWeinberg", quietly = TRUE)) {
     stop("HardyWeinberg package needed for this function to work
          Install with install.packages('HardyWeinberg')", call. = FALSE)
@@ -282,9 +311,26 @@ filter_rad <- function(
   input <- suppressWarnings(dplyr::select(input, dplyr::one_of(want)))
 
 
+  # Move some files generated during import ------------------------------------
+  if (verbose) cat("\n### 00: Imports ############################################\n")
+  folder.extension <- stringi::stri_join("00_Imports_", file.date, sep = "")
+  path.folder.import <- file.path(path.folder, folder.extension)
+  dir.create(path.folder.import)
+  message("Folder created: ", folder.extension)
+
+  old.files <- list.files(
+    pattern = "blacklist.monomorphic.markers|blacklist.not.in.common.markers|markers.missing.all.id")
+  new.files <-  file.path(path.folder.import, old.files)
+
+  if (length(old.files) > 0) {
+    purrr::pwalk(
+      .l = list(from = old.files, to = new.files),
+      .f = file.rename)
+  }
+
   # Filter parameter file ------------------------------------------------------
   filters.parameters.path <- stringi::stri_join(
-    path.folder, "/filters_parameters_dart.tsv")
+    path.folder, "/filters_parameters.tsv")
   filters.parameters <- tibble::data_frame(
     FILTERS = as.character(),
     PARAMETERS = as.character(),
@@ -299,7 +345,7 @@ filter_rad <- function(
       path = filters.parameters.path,
       append = FALSE,
       col_names = TRUE)
-  message("Generated a filters parameters file: filters_parameters_dart.tsv")
+  message("Generated a filters parameters file: filters_parameters.tsv")
 
   # create 2 data.info
   data.info <- first.data.info <- data_info(input, print.info = TRUE)
@@ -314,8 +360,8 @@ filter_rad <- function(
 
   coverage.info <- tibble::has_name(input, "READ_DEPTH")
 
-  #1. Individuals coverage stats
-  #1.Filtering coverage --------------------------------------------------------
+  #01. Individuals coverage stats
+  #01.Filtering coverage --------------------------------------------------------
   if (!is.null(erase.genotypes) || !is.null(filter.markers.coverage) || interactive.filter) {
     if (verbose) cat("\n### 01: Filtering coverage ############################################\n")
     folder.extension <- stringi::stri_join("01_filter_coverage_", file.date, sep = "")
@@ -381,13 +427,20 @@ filter_rad <- function(
         filter.coverage <- c(1, 1000000)
         message("    Inspect plots in folder created to help choose coverage thresholds (min and max)...")
         message("    Enter the minimum coverage allowed to keep a marker (e.g. 7): ")
-        filter.coverage[1] <- as.numeric(readLines(n = 1))
+        # filter.coverage[1] <- as.numeric(readLines(n = 1))
+        filter.coverage[1] <- interactive_question(
+          x = "Enter value: ", minmax = c(0, 10000000))
+
       }
 
       if (interactive.filter) {
         message("    Enter the maximum coverage allowed to keep a marker (e.g. 150): ")
-        filter.coverage[2] <- as.numeric(readLines(n = 1))
+        # filter.coverage[2] <- as.numeric(readLines(n = 1))
+        # filter.coverage <- as.numeric(filter.coverage)
+        filter.coverage[2] <- interactive_question(
+          x = "Enter value: ", minmax = c(0, 10000000))
         filter.coverage <- as.numeric(filter.coverage)
+
       }
 
       if (!is.null(filter.coverage)) {
@@ -554,11 +607,15 @@ filter_rad <- function(
         threshold.high.coverage <- 1000000000
         message("    Inspect plots to help choose min and max coverage threshold")
         message("    Enter the minimum read depth threshold to call a genotype")
-        message("    Below this threshold, genotypes are erased (e.g. 10): ")
-        threshold.low.coverage <- as.numeric(readLines(n = 1))
+        message("    Below this threshold, genotypes are erased (e.g. 10) ")
+        threshold.low.coverage <- interactive_question(
+          x = "Enter value: ", minmax = c(0, 10000000000))
+        # threshold.low.coverage <- as.numeric(readLines(n = 1))
         message("    Enter the maximum read depth threshold to call a genotype")
-        message("    Above this threshold, genotypes are erased (e.g. 200): ")
-        threshold.high.coverage <- as.numeric(readLines(n = 1))
+        message("    Above this threshold, genotypes are erased (e.g. 200) ")
+        threshold.high.coverage <- interactive_question(
+          x = "Enter value: ", minmax = c(0, 10000000000))
+        # threshold.high.coverage <- as.numeric(readLines(n = 1))
       }
 
       n.genotypes <- length(input$GT_BIN[!is.na(input$GT_BIN)])
@@ -784,8 +841,11 @@ filter_rad <- function(
         threshold.gl <- -1000000
         message("    Enter the gl threshold (close to 0 the better)")
         message("    Below this threshold, heterozygous genotypes are erased: ")
-        threshold.gl <- as.double(readLines(n = 1))
+        # threshold.gl <- as.double(readLines(n = 1))
+        threshold.gl <- interactive_question(
+          x = "Enter value: ", minmax = c(-1, 0))
       }
+
 
       blacklist.genotypes.gl <- dplyr::select(input, MARKERS, INDIVIDUALS, GL) %>%
         dplyr::filter(GL < threshold.gl) %>%
@@ -873,7 +933,7 @@ filter_rad <- function(
   # blacklist.markers prep -----------------------------------------------------
   blacklist.markers <- NULL
 
-  #2.Filter monomorphic markers  ------------------------------------------------
+  #02.Filter monomorphic markers  ------------------------------------------------
   if (monomorphic.out) {
     if (verbose) cat("\n### 02: Filtering monomorphic markers #################################\n")
     folder.extension <- stringi::stri_join("02_filter_monomorphic_markers_", file.date, sep = "")
@@ -883,7 +943,10 @@ filter_rad <- function(
 
     input <- discard_monomorphic_markers(data = input, verbose = verbose)
     blacklist.monomorphic.markers <- input$blacklist.monomorphic.markers
-    whitelist.markers <- input$whitelist.polymorphic.markers
+    whitelist.markers <- input$whitelist.polymorphic.markers %>%
+      readr::write_tsv(
+        x = .,
+        path = file.path(path.folder.mono, "whitelist.monomorphic.markers.tsv"))
     input <- input$input
 
     # update blacklist.markers
@@ -932,7 +995,7 @@ filter_rad <- function(
     blacklist.monomorphic.markers <- NULL
   }# End monomorphic.out
 
-  #7.Filter common markers between all populations  -----------------------------
+  #03.Filter common markers between all populations  -----------------------------
   if (common.markers) {
     if (verbose) cat("\n### 03: Filtering common markers ######################################\n")
     folder.extension <- stringi::stri_join("03_filter_common_markers_", file.date, sep = "")
@@ -988,7 +1051,7 @@ filter_rad <- function(
     blacklist.not.in.common.markers <- NULL
   } #End common.markers
 
-  #4.Filter individuals with too many missing -----------------------------------
+  #04.Filter individuals with too many missing -----------------------------------
   if (!is.null(filter.individuals.missing) || interactive.filter) {
     if (verbose) cat("\n### 04: Filtering individuals poorly genotyped ########################\n")
     message("Finding individuals with too many missing genotypes...")
@@ -1050,11 +1113,14 @@ filter_rad <- function(
       filter.individuals.missing <- 0
       message("    Inspect plot and tables to help choose threshold to blacklist individuals")
       message("    Enter the ind minimum genotyped proportion threshold")
-      message("    Below this threshold, individuals are blacklisted (e.g. 0.5): ")
-      filter.individuals.missing <- as.double(readLines(n = 1))
+      message("    Below this threshold, individuals are blacklisted (e.g. 0.5)")
+      # filter.individuals.missing <- as.double(readLines(n = 1))
+      filter.individuals.missing <- interactive_question(
+        x = "Enter value: ", minmax = c(0, 1))
     }
     missing.ind.plot <- NULL
     blacklist.id <- ind.missing %>%
+      dplyr::filter(POP_ID != "OVERALL") %>%
       dplyr::filter(GENOTYPED_PROP_INDIVIDUALS < filter.individuals.missing) %>%
       dplyr::select(INDIVIDUALS)
     ind.missing <- NULL
@@ -1147,8 +1213,7 @@ filter_rad <- function(
     }
   }#End filter missing per id
 
-
-  #5.Filtering markers with too many missing ------------------------------------
+  #05.Filtering markers with too many missing ------------------------------------
   if (!is.null(filter.markers.missing) || interactive.filter) {
 
     if (verbose) cat("\n### 05: Filtering markers poorly genotyped ############################\n")
@@ -1264,10 +1329,7 @@ filter_rad <- function(
       dplyr::bind_rows(threshold.helper.pop, mean.pop, threshold.helper.overall) %>%
         dplyr::mutate(
           IND_THRESHOLD = as.numeric(IND_THRESHOLD),
-          POP_ID = factor(
-            x = POP_ID,
-            levels = c(levels(input$POP_ID), "MEAN_POP", "OVERALL"),
-            ordered = TRUE)
+          POP_ID = factor(POP_ID, levels = c(levels(input$POP_ID), "MEAN_POP", "OVERALL"), ordered = TRUE)
         ))
 
     # Set the breaks for the figure
@@ -1338,23 +1400,31 @@ filter_rad <- function(
       message("Step 2. Choose the filtering approach and thresholds")
       message("The approach to filter a marker: do you want it based on the overall
               number of genotyped individuals or
-              on the number of genotyped individuals per pop ? (overall or pop):")
-      ind.approach <- as.character(readLines(n = 1))
+              on the number of genotyped individuals per pop ? (overall or pop)")
+      # ind.approach <- as.character(readLines(n = 1))
+      ind.approach <- interactive_question(
+        x = "Enter approach: ", answer.opt = c("overall", "pop"))
+    }
 
-      message("Enter the individual threshold percentage: ")
-      ind.threshold <- as.numeric(readLines(n = 1))
-      if (ind.approach == "pop") {
-        # message("Tolerance for deviation: look at the plot produced ealier and if you see some populations dragging down
-        #         the number of markers for certain percentage thresholds, you have 3 options:\n
-        #         1. remove the population (use pop.select argument to keep the desired populations)
-        #         2. remove individuals with too many missing genotypes (use blacklist.id argument)
-        #         3. use the next threshold (below) to allow variance and then
-        #         manage the missing values with blacklist of individuals and/or
-        #         missing data imputations.\n
-        #         Enter the number of problematic population that you allow to deviate from the threshold:")
-        message("Enter the number of problematic population that you allow to deviate from the threshold:")
-        prob.pop.threshold <- as.numeric(readLines(n = 1))
-      }
+    if (interactive.filter) {
+      # message("Enter the individual threshold percentage")
+      # ind.threshold <- as.numeric(readLines(n = 1))
+      ind.threshold <- interactive_question(
+        x = "Enter the individual threshold percentage: ", minmax = c(0, 100))
+    }
+    if (interactive.filter && ind.approach == "pop") {
+      # message("Tolerance for deviation: look at the plot produced ealier and if you see some populations dragging down
+      #         the number of markers for certain percentage thresholds, you have 3 options:\n
+      #         1. remove the population (use pop.select argument to keep the desired populations)
+      #         2. remove individuals with too many missing genotypes (use blacklist.id argument)
+      #         3. use the next threshold (below) to allow variance and then
+      #         manage the missing values with blacklist of individuals and/or
+      #         missing data imputations.\n
+      #         Enter the number of problematic population that you allow to deviate from the threshold:")
+      message("Next, the threshold in the number of problematic population that you allow to deviate")
+      # prob.pop.threshold <- as.numeric(readLines(n = 1))
+      prob.pop.threshold <- interactive_question(
+        x = "Enter the threshold: ", minmax = c(0, 100000000))
     }
     if (verbose) message("Filtering data")
     # some discrepencies need to be highlighted here. If you have entire pop not genotyped for a markers
@@ -1414,9 +1484,10 @@ filter_rad <- function(
     readr::write_tsv(x = filters.parameters,
                      path = filters.parameters.path, append = TRUE,
                      col_names = FALSE)
-    want <- c("MARKERS", "CHROM", "LOCUS", "POS")
-    new.whitelist.markers <- suppressWarnings(dplyr::select(input, dplyr::one_of(want)) %>%
-                                                dplyr::distinct(MARKERS, .keep_all = TRUE))
+    new.whitelist.markers <- suppressWarnings(
+      dplyr::select(input, dplyr::one_of(c("MARKERS", "CHROM", "LOCUS", "POS"))) %>%
+        dplyr::distinct(MARKERS, .keep_all = TRUE)) %>%
+      readr::write_tsv(x = ., path = "whitelist.markers.geno.tsv")
 
     blacklist.markers.geno <- dplyr::setdiff(whitelist.markers, new.whitelist.markers)
     if (nrow(blacklist.markers.geno) > 0) {
@@ -1438,13 +1509,14 @@ filter_rad <- function(
     pop <- threshold.helper.overall <- threshold.helper.pop <- NULL
     mean.pop <- threshold.helper <- max.markers <- filter <- NULL
     plot.ind.threshold <- NULL
-  }#End filter.markers.missing
+    }#End filter.markers.missing
 
   # change to the new directory for MAF filtering
   old.dir <- getwd()
   setwd(path.folder)
 
-  #10.Filter Minor Allele Frequency  ---------------------------------------------
+
+  #06.Filter Minor Allele Frequency  ---------------------------------------------
   if (!is.null(maf.thresholds) || interactive.filter) {
     if (verbose) cat("\n### 06: Filtering markers with mac/maf  ###############################\n")
 
@@ -1468,20 +1540,20 @@ filter_rad <- function(
     new.folder.maf <- stringi::stri_join("06_", old.folder.maf)
     file.rename(from = old.folder.maf, to = new.folder.maf)
     old.folder.maf <- new.folder.maf <- NULL
-    param.delete <- list.files(path = path.folder, pattern = "filters_parameters.tsv", full.names = TRUE)
-    suppressWarnings(param.delete <- file.remove(param.delete))
-    param.delete <- NULL
+    # param.delete <- list.files(path = path.folder, pattern = "filters_parameters.tsv", full.names = TRUE)
+    # suppressWarnings(param.delete <- file.remove(param.delete))
+    # param.delete <- NULL
 
-    param <- maf.info$filters.parameters
+    # param <- maf.info$filters.parameters
 
     blacklist.markers.maf <- maf.info$blacklist.markers
     whitelist.markers <- maf.info$whitelist.markers
     input <- maf.info$tidy.filtered.maf
     maf.info <- NULL
     if (nrow(blacklist.markers.maf) > 0) {
-      readr::write_tsv(x = param,
-                       path = filters.parameters.path, append = TRUE,
-                       col_names = FALSE)
+      # readr::write_tsv(x = param,
+      #                  path = filters.parameters.path, append = TRUE,
+      #                  col_names = FALSE)
       n.snp.before <- data.info$n.snp
       n.snp.blacklist <- nrow(blacklist.markers.maf)
       data.info <- data_info(input)
@@ -1503,7 +1575,7 @@ filter_rad <- function(
     blacklist.markers.maf <- param <- NULL
   }# End maf.thresholds
 
-  #11.Filter snp number  ---------------------------------------------------------
+  #07.Filter snp number  ---------------------------------------------------------
   if (!is.null(number.snp.reads) || interactive.filter) {
     setwd(path.folder)
     if (verbose) cat("\n### 07: Filtering SNP number per read/locus ###########################\n")
@@ -1549,7 +1621,9 @@ filter_rad <- function(
       message("   Based on the plot, choose the threshold")
       message("   in maximum number of SNP/locus allowed")
       message("   (turn off by using a large integer): ")
-      number.snp.reads <- as.integer(readLines(n = 1))
+      # number.snp.reads <- as.integer(readLines(n = 1))
+      number.snp.reads <- interactive_question(
+        x = "Enter the number of SNP: ", minmax = c(0, 100))
     }
 
     blacklist.snp.number.markers <- number.snp %>%
@@ -1606,11 +1680,12 @@ filter_rad <- function(
     }
     blacklist.snp.number.markers <- number.snp <- number.snp.reads.plot <- NULL
 
-
     if (interactive.filter) {
       message("2. Keep only 1 SNP/locus to manage short LD")
-      message("   Do you want to run this filter (y/n):")
-      run.snp.ld <- as.character(readLines(n = 1))
+      # message("   Do you want to run this filter (y/n):")
+      # run.snp.ld <- as.character(readLines(n = 1))
+      run.snp.ld <- interactive_question(
+        x = "   Do you want to run this filter (y/n):", answer.opt = c("y", "n"))
     }
 
     if (interactive.filter && run.snp.ld == "y") {
@@ -1620,8 +1695,9 @@ filter_rad <- function(
       message("   last: for the last SNP on the read and")
       message("   middle: for locus with > 2 SNPs/read\n     keeps the SNP in the middle")
       message("   maf: keeps the SNP with the highest MAF")
-      message("\n   ENTER your choice:")
-      snp.ld <- as.character(readLines(n = 1))
+      # snp.ld <- as.character(readLines(n = 1))
+      snp.ld <- interactive_question(
+        x = "\n   ENTER your choice: ", answer.opt = c("random", "first", "last", "middle", "maf"))
     } else {
       snp.ld <- NULL
     }
@@ -1699,7 +1775,7 @@ filter_rad <- function(
   }#End number.snp.reads
 
   # Data quality AFTER filters --------------------------------------------------
-  #12.Detect mixed genomes -------------------------------------------------------
+  #08.Detect mixed genomes -------------------------------------------------------
   if (interactive.filter || mixed.genomes.analysis) {
     if (verbose) cat("\n### 08: Detect mixed genomes ##########################################\n")
     # if (verbose) message("Mixed genomes analysis ...")
@@ -1712,13 +1788,21 @@ filter_rad <- function(
 
     if (interactive.filter) {
       message("\n\nInspect plots and tables in folder created...")
-      message("    Do you want to exclude individuals based on heterozygosity ? (y/n): ")
-      mixed.gen.analysis <- as.character(readLines(n = 1))
+      # message("    Do you want to exclude individuals based on heterozygosity ? (y/n): ")
+      # mixed.gen.analysis <- as.character(readLines(n = 1))
+      mixed.gen.analysis <- interactive_question(
+        x = "    Do you want to exclude individuals based on heterozygosity ? (y/n): ", answer.opt = c("y", "n"))
+
+
       if (mixed.gen.analysis == "y") {
-        message("    Enter the min value for ind.heterozygosity.threshold argument (0 turns off): ")
-        threshold.min <- as.numeric(readLines(n = 1))
+        mix.text <- "    Enter the min value for ind.heterozygosity.threshold argument (0 turns off): "
+        # threshold.min <- as.numeric(readLines(n = 1))
+        threshold.min <- interactive_question(x = mix.text, minmax = c(0, 1))
+
         message("    Enter the max value for ind.heterozygosity.threshold argument (1 turns off): ")
-        threshold.max <- as.numeric(readLines(n = 1))
+        # threshold.max <- as.numeric(readLines(n = 1))
+        threshold.max <- interactive_question(x = mix.text, minmax = c(0, 1))
+
         blacklist.ind.het  <- dplyr::ungroup(mixed.genomes.analysis$individual.heterozygosity) %>%
           dplyr::filter(HET_PROP > threshold.max | HET_PROP < threshold.min) %>%
           dplyr::distinct(INDIVIDUALS)
@@ -1857,8 +1941,10 @@ filter_rad <- function(
       message("    Run the full pairwise genome comparisons")
       message("    This approach integrates markers in common & missing data\n")
 
-      message("    Do you want to run the pairwise genome comparison (y/n): ")
-      genome <- as.character(readLines(n = 1))
+      dup.text <- "    Do you want to run the pairwise genome comparison (y/n): "
+      # genome <- as.character(readLines(n = 1))
+      genome <- interactive_question(x = dup.text, answer.opt = c("y", "n"))
+
       if (genome == "y") {
         duplicate.genomes <- radiator::detect_duplicate_genomes(
           data = input,
@@ -1892,14 +1978,15 @@ filter_rad <- function(
         full.names = TRUE)
       if (length(blacklist.id.similar.path) > 0) {
         blacklist.id.similar <- suppressMessages(
-          readr::read_tsv(blacklist.id.similar.path, col_names = TRUE))
+          readr::read_tsv(
+            file = blacklist.id.similar.path,
+            col_names = TRUE,
+            col_types = readr::cols(.default = readr::col_character())))
         n.ind.blacklisted <- length(blacklist.id.similar$INDIVIDUALS)
         if (n.ind.blacklisted > 0) {
           if (verbose) message("Blacklisted individuals: ", n.ind.blacklisted, " ind.")
           if (verbose) message("    Filtering with blacklist of individuals")
-          input <- suppressWarnings(
-            dplyr::anti_join(input, blacklist.id.similar, by = "INDIVIDUALS"))
-
+          input <- dplyr::filter(input, !INDIVIDUALS %in% blacklist.id.similar$INDIVIDUALS)
           res$blacklist.id <- res$blacklist.id %>% dplyr::bind_rows(blacklist.id.similar)
           blacklist.id.similar <- NULL
 
@@ -1969,7 +2056,7 @@ filter_rad <- function(
     duplicate.genomes <- blacklist.monomorphic.markers <- NULL
   }#End duplicate.genomes.analysis
 
-  #14.Filter HWE -----------------------------------------------------------------
+  #10.Filter HWE -----------------------------------------------------------------
   if (interactive.filter || hw.pop.threshold) {
     if (verbose) cat("\n### 10: Filter markers HWE ############################################\n")
     input <- filter_hwe(
@@ -1980,47 +2067,45 @@ filter_rad <- function(
       parallel.core = parallel.core,
       verbose = FALSE
     )
-    message("\n\n1:done\n\n")
     hw.pop.threshold <- input$hw.pop.threshold
     midp.threshold <- input$midp.threshold
     input <- input$tidy.hw.filtered
-    message("\n\n2:done\n\n")
 
     old.folder <- list.files(path = path.folder, pattern = "filter_hwe")
     new.folder <- stringi::stri_join("10_", old.folder)
     file.rename(from = old.folder, to = new.folder)
-    message("\n\n3:done\n\n")
 
     #update filter parameter file
     n.snp.before <- data.info$n.snp
     new.data.info <- data_info(input)
-    message("\n\n4:done\n\n")
 
-    if (!is.null(midp.threshold)) {
-      # updating parameters
-      filters.parameters <- list.files(path = path.folder, pattern = "filter_hwe", full.names = TRUE)
-      filters.parameters <- list.files(path = filters.parameters, pattern = "filters_parameters", full.names = TRUE) %>%
-        readr::read_tsv(file = ., col_types = readr::cols(.default = readr::col_character())) %>%
-        dplyr::filter(VALUES == stringi::stri_join(hw.pop.threshold,"/",midp.threshold)) %>%
-        readr::write_tsv(
-          x = .,
-          path = filters.parameters.path, append = TRUE,
-          col_names = FALSE)
-      # update data.info
-      data.info <- new.data.info
+    # updating parameters
+    filters.parameters <- list.files(path = path.folder, pattern = "filters_parameters", full.names = TRUE) %>%
+      readr::read_tsv(file = ., col_types = readr::cols(.default = readr::col_character()))
 
-      bl.name <- stringi::stri_join("blacklist.markers.hwd.",
-                                    midp.threshold,".mid.p.value.",
-                                    hw.pop.threshold,".hw.pop.threshold")
+    filters.parameters <- filters.parameters %>%
+      dplyr::filter(FILTERS != "HWE") %>%
+      dplyr::bind_rows(
+        filters.parameters %>%
+          dplyr::filter(FILTERS == "HWE", VALUES == stringi::stri_join(hw.pop.threshold,"/",midp.threshold)) %>%
+          dplyr::distinct(FILTERS, .keep_all = TRUE)) %>%
+      readr::write_tsv(
+        x = .,
+        path = filters.parameters.path, append = FALSE,
+        col_names = TRUE)
+    # update data.info
+    data.info <- new.data.info
+
+    bl.name <- stringi::stri_join("blacklist.markers.hwd.", midp.threshold,".mid.p.value.", hw.pop.threshold,".hw.pop.threshold")
+
+    if (length(bl.name) > 0) {
       blacklist.hw <- list.files(
         path = path.folder,
         pattern = bl.name,
         full.names = TRUE, recursive = TRUE, include.dirs = TRUE) %>%
         readr::read_tsv(file = ., col_types = "cccc")
 
-      wt.name <- stringi::stri_join("whitelist.markers.hwe.",
-                                    midp.threshold,".mid.p.value.",
-                                    hw.pop.threshold,".hw.pop.threshold")
+      wt.name <- stringi::stri_join("whitelist.markers.hwe.", midp.threshold,".mid.p.value.", hw.pop.threshold,".hw.pop.threshold")
       whitelist.markers <- list.files(
         path = path.folder,
         pattern = wt.name,
@@ -2034,16 +2119,19 @@ filter_rad <- function(
       }
       blacklist.hw <- NULL
     }
-      if (verbose) message("    Number of markers before = ", n.snp.before)
-      if (verbose) message("    Number of markers removed = ", n.snp.before - new.data.info$n.snp)
-      if (verbose) message("    Number of markers after = ", new.data.info$n.snp)
-    }
+    if (verbose) message("    Number of markers before = ", n.snp.before)
+    if (verbose) message("    Number of markers removed = ", n.snp.before - new.data.info$n.snp)
+    if (verbose) message("    Number of markers after = ", new.data.info$n.snp)
+  }
+
+
+
     # Missing visualization analysis before filters------------------------------
     # if (missing.analysis) {
     #   if (verbose) message("Missing data analysis: after filters")
   #   missing.visualization <- grur::missing_visualization(data = input, write.plot = TRUE)
   # }
-  message("\n\n5:done\n\n")
+
 
   # Writing to working directory the filtered data frame -----------------------
   if (verbose) cat("\n#######################################################################\n")
@@ -2063,8 +2151,6 @@ filter_rad <- function(
       by = "MARKERS")
     markers.meta <- NULL
   }
-
-
 
   # check REF/ALT alleles + new GT coding
   input <- radiator::change_alleles(
@@ -2157,7 +2243,8 @@ filter_rad <- function(
       num.tree = num.tree,
       parallel.core = parallel.core,
       filename = tidy.name,
-      verbose = verbose)
+      verbose = verbose,
+      write_tidy = FALSE)
     last.data.info <- data_info(res$output$tidy.data)
     input <- NULL
   } else {
@@ -2169,7 +2256,7 @@ filter_rad <- function(
   if (verbose) {
 
     cat("\n\n\n############################### RESULTS ###############################\n")
-    message("DArT data info (before -> after) filters: ")
+    message("data info (before -> after) filters: ")
     message("Number of populations: ", first.data.info$n.pop, " -> ", last.data.info$n.pop)
     message("Number of individuals: ", first.data.info$n.ind, " -> ", last.data.info$n.ind)
     message("Number of chrom: ", first.data.info$n.chrom, " -> ", last.data.info$n.chrom)
