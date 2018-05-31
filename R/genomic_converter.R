@@ -367,7 +367,7 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
 
   # dotslist -------------------------------------------------------------------
   dotslist <- list(...)
-  want <- c("keep.allele.names")
+  want <- c("keep.allele.names", "write.tidy")
   unknowned_param <- setdiff(names(dotslist), want)
 
   if (length(unknowned_param) > 0) {
@@ -377,8 +377,10 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
 
   radiator.dots <- dotslist[names(dotslist) %in% want]
   keep.allele.names <- radiator.dots[["keep.allele.names"]]
-
   if (is.null(keep.allele.names)) keep.allele.names <- FALSE
+  write.tidy <- radiator.dots[["write.tidy"]]
+  if (is.null(write.tidy)) write.tidy <- TRUE
+
 
   # Filename -------------------------------------------------------------------
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
@@ -798,9 +800,11 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
   # not yet implemented, use vcf2dadi
 
   # Writing tidy on disk -------------------------------------------------------
-  tidy.name <- stringi::stri_join(filename, ".rad")
-  message("\nWriting tidy data set:\n", tidy.name)
-  write_rad(data = input, path = tidy.name)
+  if (write.tidy) {
+    tidy.name <- stringi::stri_join(filename, ".rad")
+    message("\nWriting tidy data set:\n", tidy.name)
+    write_rad(data = input, path = tidy.name)
+  }
 
   if (!is.null(imputation.method)) {
     tidy.name.imp <- stringi::stri_join(filename.imp, ".rad")
