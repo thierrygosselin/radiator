@@ -351,6 +351,11 @@ summarise_genotypes <- function(data, path.folder = NULL) {
     dplyr::mutate_if(.tbl = ., .predicate = is.integer, .funs = replace_zero) %>%
     dplyr::mutate(N = HOM_REF + HET + HOM_ALT)
 
+  if (!tibble::has_name(pop, "MISSING")) {
+    pop <- dplyr::mutate(pop, MISSING = as.integer("0"))
+  }
+
+
   data <- dplyr::bind_rows(
     pop,
     dplyr::mutate(pop, POP_ID = "OVERALL") %>%
