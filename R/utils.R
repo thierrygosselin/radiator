@@ -230,25 +230,25 @@ data_info <- function(x, print.info = FALSE) {
     n.pop <- dplyr::n_distinct(x.pop.ind$POP_ID)
     n.ind <- dplyr::n_distinct(x.pop.ind$INDIVIDUALS)
   } else {
-    n.pop <- 0
-    n.ind <- 0
+    n.pop <- NA_integer_
+    n.ind <- NA_integer_
   }
   if (tibble::has_name(x, "MARKERS")) {
     n.snp <- dplyr::n_distinct(x$MARKERS)
   } else {
-    n.snp <- 0
+    n.snp <- NA_integer_
   }
 
   if (tibble::has_name(x, "LOCUS")) {
     n.locus <- dplyr::n_distinct(x$LOCUS)
   } else {
-    n.locus <- 0
+    n.locus <- NA_integer_
   }
 
   if (tibble::has_name(x, "CHROM")) {
     n.chrom <- dplyr::n_distinct(x$CHROM)
   } else {
-    n.chrom <- 0
+    n.chrom <- NA_integer_
   }
 
   res <- list(

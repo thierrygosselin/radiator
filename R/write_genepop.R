@@ -68,24 +68,29 @@ write_genepop <- function(
   ...
 ) {
 
+
+  # # For test
+  # data
+  # pop.levels = NULL
+  # genepop.header = NULL
+  # markers.line = TRUE
+  # filename = NULL
   # Checking for missing and/or default arguments ******************************
   if (missing(data)) stop("Input file missing")
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {
-    input <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-  } else {
-    input <- data
+    data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
   }
 
   # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-  if (tibble::has_name(input, "LOCUS") && !tibble::has_name(input, "MARKERS")) {
-    input <- dplyr::rename(.data = input, MARKERS = LOCUS)
+  if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
+    data <- dplyr::rename(.data = data, MARKERS = LOCUS)
   }
 
-  input <- dplyr::select(.data = input, POP_ID, INDIVIDUALS, MARKERS, GT)
+  data <- dplyr::select(.data = data, POP_ID, INDIVIDUALS, MARKERS, GT)
 
-  input <- input %>%
+  data <- data %>%
     dplyr::mutate(
       GT = stringi::stri_replace_all_fixed(
         str = as.character(GT),
@@ -97,24 +102,24 @@ write_genepop <- function(
 
   # pop.levels -----------------------------------------------------------------
   if (!is.null(pop.levels)) {
-    input <- dplyr::mutate(
-      .data = input,
+    data <- dplyr::mutate(
+      .data = data,
       POP_ID = factor(POP_ID, levels = pop.levels, ordered = TRUE),
       POP_ID = droplevels(POP_ID)
     ) %>%
       dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS)
   } else {
-    input <- dplyr::mutate(.data = input, POP_ID = factor(POP_ID)) %>%
+    data <- dplyr::mutate(.data = data, POP_ID = factor(POP_ID)) %>%
       dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS)
   }
 
   # Create a marker vector  ------------------------------------------------
-  markers <- dplyr::distinct(.data = input, MARKERS) %>%
+  markers <- dplyr::distinct(.data = data, MARKERS) %>%
     dplyr::arrange(MARKERS) %>%
     purrr::flatten_chr(.)
 
   # Wide format ----------------------------------------------------------------
-  input <- input %>%
+  data2 <- data %>%
     dplyr::arrange(MARKERS) %>%
     dplyr::group_by(POP_ID, INDIVIDUALS) %>%
     tidyr::spread(data = ., key = MARKERS, value = GT) %>%
@@ -144,8 +149,8 @@ write_genepop <- function(
   }
 
   # genepop construction
-  pop <- input$POP_ID # Create a population vector
-  input <- split(select(.data = input, -POP_ID), pop) # split genepop by populations
+  pop <- data$POP_ID # Create a population vector
+  data <- split(select(.data = data, -POP_ID), pop) # split genepop by populations
   filename.connection <- file(filename, "w") # open the connection to the file
   writeLines(text = genepop.header, con = filename.connection, sep = "\n") # write the genepop header
   if (markers.line) { # write the markers on a single line
@@ -154,8 +159,8 @@ write_genepop <- function(
     writeLines(text = stringi::stri_join(markers, sep = "\n"), con = filename.connection, sep = "\n")
   }
   close(filename.connection) # close the connection
-  for (i in 1:length(input)) {
+  for (i in 1:length(data)) {
     readr::write_delim(x = as.data.frame("pop"), path = filename, delim = "\n", append = TRUE, col_names = FALSE)
-    readr::write_delim(x = input[[i]], path = filename, delim = " ", append = TRUE, col_names = FALSE)
+    readr::write_delim(x = data[[i]], path = filename, delim = " ", append = TRUE, col_names = FALSE)
   }
 }# End write_genepop

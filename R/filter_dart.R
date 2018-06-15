@@ -471,9 +471,9 @@ filter_dart <- function(
           FILTERS = "reproducibility",
           PARAMETERS = "",
           VALUES = filter.reproducibility,
-          BEFORE = stringi::stri_join(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
-          AFTER = stringi::stri_join(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
-          BLACKLIST = stringi::stri_join(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
+          BEFORE = paste(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
+          AFTER = paste(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
+          BLACKLIST = paste(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
           UNITS = "CHROM/LOCUS/SNP",
           COMMENTS = ""
         )
@@ -604,9 +604,9 @@ filter_dart <- function(
           FILTERS = "call rate",
           PARAMETERS = "",
           VALUES = filter.call.rate,
-          BEFORE = stringi::stri_join(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
-          AFTER = stringi::stri_join(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
-          BLACKLIST = stringi::stri_join(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
+          BEFORE = paste(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
+          AFTER = paste(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
+          BLACKLIST = paste(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
           UNITS = "CHROM/LOCUS/SNP",
           COMMENTS = ""
         )
@@ -669,14 +669,10 @@ filter_dart <- function(
       dplyr::filter(MARKERS %in% whitelist.markers$MARKERS) %>%
       dplyr::filter(INDIVIDUALS %in% strata.df$INDIVIDUALS)
   }
-  strata.df <- NULL
+  # strata.df <- NULL
   # Make sure unnecessary columns are removed
-  input <- suppressWarnings(
-    dplyr::select(
-      input,
-      -dplyr::one_of(c("CHROM", "LOCUS", "POS", "REF", "ALT", "CALL_RATE", "REP_AVG"))
-    )
-  )
+  want <- c("CHROM", "LOCUS", "POS", "REF", "ALT", "CALL_RATE", "REP_AVG")
+  input <- suppressWarnings(dplyr::select(input, -dplyr::one_of(want)))
 
   # clean...
   input$INDIVIDUALS <- radiator::clean_ind_names(input$INDIVIDUALS)
@@ -734,9 +730,9 @@ filter_dart <- function(
         FILTERS = "removing monomorphic markers",
         PARAMETERS = "",
         VALUES = "",
-        BEFORE = stringi::stri_join(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
-        AFTER = stringi::stri_join(new.data.info$n.chrom, n.locus.after, new.data.info$n.snp, sep = "/"),
-        BLACKLIST = stringi::stri_join(data.info$n.chrom - new.data.info$n.chrom, bl.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
+        BEFORE = paste(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
+        AFTER = paste(new.data.info$n.chrom, n.locus.after, new.data.info$n.snp, sep = "/"),
+        BLACKLIST = paste(data.info$n.chrom - new.data.info$n.chrom, bl.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
         UNITS = "CHROM/LOCUS/SNP",
         COMMENTS = ""
       ) %>%
@@ -783,15 +779,15 @@ filter_dart <- function(
         FILTERS = "keeping common markers",
         PARAMETERS = "",
         VALUES = "",
-        BEFORE = stringi::stri_join(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
-        AFTER = stringi::stri_join(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
-        BLACKLIST = stringi::stri_join(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
+        BEFORE = paste(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
+        AFTER = paste(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
+        BLACKLIST = paste(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
         UNITS = "CHROM/LOCUS/SNP",
         COMMENTS = ""
-      )
-      readr::write_tsv(x = filters.parameters,
-                       path = filters.parameters.path, append = TRUE,
-                       col_names = FALSE)
+      ) %>%
+        readr::write_tsv(x = .,
+                         path = filters.parameters.path, append = TRUE,
+                         col_names = FALSE)
       # update data.info
       data.info <- new.data.info
       if (!is.null(blacklist.markers)) {
@@ -916,9 +912,9 @@ filter_dart <- function(
           FILTERS = "coverage",
           PARAMETERS = "min/max",
           VALUES = stringi::stri_join(filter.coverage, collapse = "/"),
-          BEFORE = stringi::stri_join(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
-          AFTER = stringi::stri_join(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
-          BLACKLIST = stringi::stri_join(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
+          BEFORE = paste(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
+          AFTER = paste(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
+          BLACKLIST = paste(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
           UNITS = "CHROM/LOCUS/SNP",
           COMMENTS = ""
         ) %>%
@@ -1075,7 +1071,6 @@ filter_dart <- function(
     blacklist.genotypes <- dplyr::filter(input, BLACKLIST_GENOTYPES_COMMENT) %>%
       dplyr::mutate(BLACKLIST_GENOTYPES_COMMENT = "low or high coverage")
     n.blacklist.genotypes <- nrow(blacklist.genotypes)
-
     if (n.blacklist.genotypes > 0) {
       message("    number of blacklisted (erased) genotypes (%): ",
               n.blacklist.genotypes, " (",
@@ -1100,19 +1095,22 @@ filter_dart <- function(
 
       # new.data.info <- data_info(metadata) # updating parameters
       n.genotypes.after <- n.genotypes - n.blacklist.genotypes
+      n.genotypes.after.prop <- round(n.genotypes.after / n.genotypes, 2)
+      n.blacklist.genotypes.prop <- round(n.blacklist.genotypes / n.genotypes, 2)
       filters.parameters <- tibble::data_frame(
         FILTERS = "low or high coverage",
         PARAMETERS = "min/max",
         VALUES = stringi::stri_join(threshold.low.coverage, threshold.high.coverage, sep = "/"),
         BEFORE = n.genotypes,
-        AFTER = n.genotypes.after,
-        BLACKLIST = n.blacklist.genotypes,
-        UNITS = "genotypes",
+        AFTER = paste(n.genotypes.after, " (", n.genotypes.after.prop, ")", sep = ""),
+        BLACKLIST = paste(n.blacklist.genotypes, " (", n.blacklist.genotypes.prop, ")", sep = ""),
+        UNITS = "genotypes (prop)",
         COMMENTS = ""
-      )
-      readr::write_tsv(x = filters.parameters,
-                       path = filters.parameters.path, append = TRUE,
-                       col_names = FALSE)
+      ) %>%
+        readr::write_tsv(
+          x = .,
+          path = filters.parameters.path, append = TRUE,
+          col_names = FALSE)
     } else {
       n.genotypes.after <- n.genotypes
     }
@@ -1307,6 +1305,8 @@ filter_dart <- function(
 
     if (n.blacklist.genotypes > 0) {
       n.genotypes <- n.genotypes.after
+      n.blacklist.genotypes.prop <- round(n.blacklist.genotypes / n.genotypes, 6)
+
       message("    number of blacklisted (erased) genotypes (%): ",
               n.blacklist.genotypes, " (",
               round(n.blacklist.genotypes / n.genotypes * 100, 2),")")
@@ -1340,14 +1340,15 @@ filter_dart <- function(
 
       # new.data.info <- data_info(metadata) # updating parameters
       n.genotypes.after <- n.genotypes - n.blacklist.genotypes
+      n.genotypes.after.prop <- round(n.genotypes.after / n.genotypes, 6)
       filters.parameters <- tibble::data_frame(
         FILTERS = "heterozygous genotypes low gl",
         PARAMETERS = "low gl",
         VALUES = threshold.gl,
         BEFORE = n.genotypes,
-        AFTER = n.genotypes.after,
-        BLACKLIST = n.blacklist.genotypes,
-        UNITS = "genotypes",
+        AFTER = paste(n.genotypes.after, " (", n.genotypes.after.prop, ")", sep = ""),
+        BLACKLIST = paste(n.blacklist.genotypes, " (", n.blacklist.genotypes.prop, ")", sep = ""),
+        UNITS = "genotypes (prop)",
         COMMENTS = ""
       ) %>%
         readr::write_tsv(
@@ -1411,9 +1412,9 @@ filter_dart <- function(
         FILTERS = "removing monomorphic markers",
         PARAMETERS = "",
         VALUES = "",
-        BEFORE = stringi::stri_join(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
-        AFTER = stringi::stri_join(new.data.info$n.chrom, n.locus.after, new.data.info$n.snp, sep = "/"),
-        BLACKLIST = stringi::stri_join(data.info$n.chrom - new.data.info$n.chrom, bl.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
+        BEFORE = paste(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
+        AFTER = paste(new.data.info$n.chrom, n.locus.after, new.data.info$n.snp, sep = "/"),
+        BLACKLIST = paste(data.info$n.chrom - new.data.info$n.chrom, bl.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
         UNITS = "CHROM/LOCUS/SNP",
         COMMENTS = ""
       ) %>%
@@ -1460,15 +1461,16 @@ filter_dart <- function(
         FILTERS = "keeping common markers",
         PARAMETERS = "",
         VALUES = "",
-        BEFORE = stringi::stri_join(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
-        AFTER = stringi::stri_join(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
-        BLACKLIST = stringi::stri_join(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
+        BEFORE = paste(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
+        AFTER = paste(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
+        BLACKLIST = paste(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
         UNITS = "CHROM/LOCUS/SNP",
         COMMENTS = ""
-      )
-      readr::write_tsv(x = filters.parameters,
-                       path = filters.parameters.path, append = TRUE,
-                       col_names = FALSE)
+      ) %>%
+        readr::write_tsv(
+          x = .,
+          path = filters.parameters.path, append = TRUE,
+          col_names = FALSE)
       # update data.info
       data.info <- new.data.info
       if (!is.null(blacklist.markers)) {
@@ -1626,9 +1628,9 @@ filter_dart <- function(
           FILTERS = "removing monomorphic markers",
           PARAMETERS = "",
           VALUES = "",
-          BEFORE = stringi::stri_join(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
-          AFTER = stringi::stri_join(new.data.info$n.chrom, n.locus.after, new.data.info$n.snp, sep = "/"),
-          BLACKLIST = stringi::stri_join(data.info$n.chrom - new.data.info$n.chrom, bl.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
+          BEFORE = paste(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
+          AFTER = paste(new.data.info$n.chrom, n.locus.after, new.data.info$n.snp, sep = "/"),
+          BLACKLIST = paste(data.info$n.chrom - new.data.info$n.chrom, bl.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
           UNITS = "CHROM/LOCUS/SNP",
           COMMENTS = ""
         ) %>%
@@ -1848,19 +1850,19 @@ on the number of genotyped individuals per pop ? (overall or pop)")
         x = "Enter the individual threshold percentage: ", minmax = c(0, 100))
     }
     if (interactive.filter && ind.approach == "pop") {
-        # message("Tolerance for deviation: look at the plot produced ealier and if you see some populations dragging down
-        #         the number of markers for certain percentage thresholds, you have 3 options:\n
-        #         1. remove the population (use pop.select argument to keep the desired populations)
-        #         2. remove individuals with too many missing genotypes (use blacklist.id argument)
-        #         3. use the next threshold (below) to allow variance and then
-        #         manage the missing values with blacklist of individuals and/or
-        #         missing data imputations.\n
-        #         Enter the number of problematic population that you allow to deviate from the threshold:")
-        message("Next, the threshold in the number of problematic population that you allow to deviate")
-        # prob.pop.threshold <- as.numeric(readLines(n = 1))
-        prob.pop.threshold <- interactive_question(
-          x = "Enter the threshold: ", minmax = c(0, 100000000))
-      }
+      # message("Tolerance for deviation: look at the plot produced ealier and if you see some populations dragging down
+      #         the number of markers for certain percentage thresholds, you have 3 options:\n
+      #         1. remove the population (use pop.select argument to keep the desired populations)
+      #         2. remove individuals with too many missing genotypes (use blacklist.id argument)
+      #         3. use the next threshold (below) to allow variance and then
+      #         manage the missing values with blacklist of individuals and/or
+      #         missing data imputations.\n
+      #         Enter the number of problematic population that you allow to deviate from the threshold:")
+      message("Next, the threshold in the number of problematic population that you allow to deviate")
+      # prob.pop.threshold <- as.numeric(readLines(n = 1))
+      prob.pop.threshold <- interactive_question(
+        x = "Enter the threshold: ", minmax = c(0, 100000000))
+    }
     if (verbose) message("Filtering data")
     # some discrepencies need to be highlighted here. If you have entire pop not genotyped for a markers
     # this will compute them when doing the filtering:
@@ -1908,17 +1910,19 @@ on the number of genotyped individuals per pop ? (overall or pop)")
       FILTERS = "Filter markers missing",
       PARAMETERS = "ind.approach/ind.threshold/prob.pop.threshold",
       VALUES = stringi::stri_join(ind.approach, ind.threshold, prob.pop.threshold, sep = "/"),
-      BEFORE = stringi::stri_join(data.info$n.chrom, data.info$n.locus, n.snp.before, sep = "/"),
-      AFTER = stringi::stri_join(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
-      BLACKLIST = stringi::stri_join(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, n.snp.blacklist, sep = "/"),
+      BEFORE = paste(data.info$n.chrom, data.info$n.locus, n.snp.before, sep = "/"),
+      AFTER = paste(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
+      BLACKLIST = paste(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, n.snp.blacklist, sep = "/"),
       UNITS = "CHROM/LOCUS/SNP",
       COMMENTS = ""
-    )
+    ) %>%
+      readr::write_tsv(
+        x = .,
+        path = filters.parameters.path, append = TRUE,
+        col_names = FALSE)
     # update data.info
     data.info <- new.data.info
-    readr::write_tsv(x = filters.parameters,
-                     path = filters.parameters.path, append = TRUE,
-                     col_names = FALSE)
+
     new.whitelist.markers <- suppressWarnings(
       dplyr::select(input, dplyr::one_of(c("MARKERS", "CHROM", "LOCUS", "POS"))) %>%
         dplyr::distinct(MARKERS, .keep_all = TRUE))
@@ -2052,7 +2056,7 @@ on the number of genotyped individuals per pop ? (overall or pop)")
       width = 20, height = 10, dpi = 300, units = "cm", useDingbats = FALSE)
 
     if (interactive.filter) {
-      message("2 non-exclusive methods to manage short LD and the number of SNPs/reads/locus:")
+      message("\n2 non-exclusive methods to manage short LD and the number of SNPs/reads/locus:")
       message("    1. Remove outlier markers with too many SNPs/locus")
       message("    2. Keep only 1 SNP/locus")
     }
@@ -2060,13 +2064,13 @@ on the number of genotyped individuals per pop ? (overall or pop)")
     if (verbose) message("\nPlot written: number.snp.locus.plot.pdf")
     if (interactive.filter) {
       print(number.snp.reads.plot)
-      message("1. Remove outlier markers with too many SNPs/locus")
-      message("   Based on the plot, choose the threshold")
-      message("   in maximum number of SNP/locus allowed")
-      message("   (turn off by using a large integer): ")
+      message("\n1. Remove outlier markers with too many SNPs/locus")
+      message("    Based on the plot, choose the threshold")
+      message("    in maximum number of SNP/locus allowed")
+      message("    (turn off by using a large integer): ")
       # number.snp.reads <- as.integer(readLines(n = 1))
       number.snp.reads <- interactive_question(
-        x = "Enter the number of SNP: ", minmax = c(0, 100))
+        x = "\n    Enter the number of SNP: ", minmax = c(0, 100))
     }
 
     blacklist.snp.number.markers <- number.snp %>%
@@ -2101,9 +2105,9 @@ on the number of genotyped individuals per pop ? (overall or pop)")
         FILTERS = "SNP number per reads/locus",
         PARAMETERS = "",
         VALUES = number.snp.reads,
-        BEFORE = stringi::stri_join(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
-        AFTER = stringi::stri_join(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
-        BLACKLIST = stringi::stri_join(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
+        BEFORE = paste(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
+        AFTER = paste(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
+        BLACKLIST = paste(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
         UNITS = "CHROM/LOCUS/SNP",
         COMMENTS = ""
       ) %>%
@@ -2125,24 +2129,24 @@ on the number of genotyped individuals per pop ? (overall or pop)")
 
 
     if (interactive.filter) {
-      message("2. Keep only 1 SNP/locus to manage short LD")
+      message("\n2. Keep only 1 SNP/locus to manage short LD")
       # message("   Do you want to run this filter (y/n):")
       # run.snp.ld <- as.character(readLines(n = 1))
       run.snp.ld <- interactive_question(
-        x = "   Do you want to run this filter (y/n):", answer.opt = c("y", "n"))
+        x = "    Do you want to run this filter (y/n):", answer.opt = c("y", "n"))
     }
 
     if (interactive.filter && run.snp.ld == "y") {
       message("4 options:")
-      message("   random: for a random selection of 1 SNP on the read")
-      message("   first: for the first one on the read")
-      message("   last: for the last SNP on the read and")
-      message("   middle: for locus with > 2 SNPs/read\n     keeps the SNP in the middle")
-      message("   maf: keeps the SNP with the highest MAF")
-      message("\n   ENTER your choice:")
+      message("    random: for a random selection of 1 SNP on the read")
+      message("    first: for the first one on the read")
+      message("    last: for the last SNP on the read and")
+      message("    middle: for locus with > 2 SNPs/read\n     keeps the SNP in the middle")
+      message("    maf: keeps the SNP with the highest MAF")
+      # message("\n   ENTER your choice:")
       # snp.ld <- as.character(readLines(n = 1))
       snp.ld <- interactive_question(
-        x = "\n   ENTER your choice: ", answer.opt = c("random", "first", "last", "middle", "maf"))
+        x = "\n    ENTER your choice: ", answer.opt = c("random", "first", "last", "middle", "maf"))
     } else {
       snp.ld <- NULL
     }
@@ -2195,9 +2199,9 @@ on the number of genotyped individuals per pop ? (overall or pop)")
           FILTERS = "Short linkage disequilibrium",
           PARAMETERS = "snp.ld",
           VALUES = snp.ld,
-          BEFORE = stringi::stri_join(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
-          AFTER = stringi::stri_join(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
-          BLACKLIST = stringi::stri_join(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
+          BEFORE = paste(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
+          AFTER = paste(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
+          BLACKLIST = paste(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
           UNITS = "CHROM/LOCUS/SNP",
           COMMENTS = ""
         ) %>%
@@ -2237,15 +2241,15 @@ on the number of genotyped individuals per pop ? (overall or pop)")
       # mixed.gen.analysis <- as.character(readLines(n = 1))
 
       mixed.gen.analysis <- interactive_question(
-        x = "    Do you want to exclude individuals based on heterozygosity ? (y/n): ", answer.opt = c("y", "n"))
+        x = "Do you want to exclude individuals based on heterozygosity ? (y/n): ", answer.opt = c("y", "n"))
 
       if (mixed.gen.analysis == "y") {
-        mix.text <- "    Enter the min value for ind.heterozygosity.threshold argument (0 turns off): "
+        mix.text <- "Enter the min value for ind.heterozygosity.threshold argument (0 turns off): "
         # threshold.min <- as.numeric(readLines(n = 1))
         threshold.min <- interactive_question(x = mix.text, minmax = c(0, 1))
 
 
-        mix.text <- "    Enter the max value for ind.heterozygosity.threshold argument (1 turns off): "
+        mix.text <- "Enter the max value for ind.heterozygosity.threshold argument (1 turns off): "
         # threshold.max <- as.numeric(readLines(n = 1))
         threshold.max <- interactive_question(x = mix.text, minmax = c(0, 1))
 
@@ -2324,9 +2328,9 @@ on the number of genotyped individuals per pop ? (overall or pop)")
           FILTERS = "removing monomorphic markers",
           PARAMETERS = "",
           VALUES = "",
-          BEFORE = stringi::stri_join(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
-          AFTER = stringi::stri_join(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
-          BLACKLIST = stringi::stri_join(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
+          BEFORE = paste(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
+          AFTER = paste(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
+          BLACKLIST = paste(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
           UNITS = "CHROM/LOCUS/SNP",
           COMMENTS = ""
         ) %>%
@@ -2382,7 +2386,7 @@ on the number of genotyped individuals per pop ? (overall or pop)")
     # random.seed = NULL # test
 
     if (interactive.filter) {
-      message("\n\n    Inspect plots and tables")
+      # message("\n\n    Inspect plots and tables")
       # filtering by distance or pairwise genome similarity ?
 
       message("    Suspicious about the duplicates analysis?")
@@ -2475,9 +2479,9 @@ on the number of genotyped individuals per pop ? (overall or pop)")
               FILTERS = "removing monomorphic markers",
               PARAMETERS = "",
               VALUES = "",
-              BEFORE = stringi::stri_join(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
-              AFTER = stringi::stri_join(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
-              BLACKLIST = stringi::stri_join(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
+              BEFORE = paste(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
+              AFTER = paste(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
+              BLACKLIST = paste(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
               UNITS = "CHROM/LOCUS/SNP",
               COMMENTS = ""
             ) %>%
@@ -2671,6 +2675,11 @@ on the number of genotyped individuals per pop ? (overall or pop)")
     dplyr::rename(STRATA = POP_ID) %>%
     readr::write_tsv(x = ., path = "new_filtered_strata.tsv")
 
+  # new strata with dart target id
+  strata.df %>%
+    dplyr::filter(INDIVIDUALS %in% res$strata$INDIVIDUALS) %>%
+    readr::write_tsv(x = ., path = " new_filtered_strata_dart.tsv")
+
   # genomic_converter & Imputations --------------------------------------------
   if (!is.null(output)) {
     if (verbose) message("\nData transferred to genomic converter")
@@ -2683,7 +2692,8 @@ on the number of genotyped individuals per pop ? (overall or pop)")
       num.tree = num.tree,
       parallel.core = parallel.core,
       filename = tidy.name,
-      verbose = verbose)
+      verbose = verbose,
+      write.tidy = FALSE)
     last.data.info <- data_info(res$output$tidy.data)
     input <- NULL
   } else {

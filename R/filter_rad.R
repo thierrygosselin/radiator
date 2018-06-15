@@ -469,9 +469,9 @@ filter_rad <- function(
             FILTERS = "coverage",
             PARAMETERS = "min/max",
             VALUES = stringi::stri_join(filter.coverage, collapse = "/"),
-            BEFORE = stringi::stri_join(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
-            AFTER = stringi::stri_join(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
-            BLACKLIST = stringi::stri_join(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
+            BEFORE = paste(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
+            AFTER = paste(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
+            BLACKLIST = paste(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
             UNITS = "CHROM/LOCUS/SNP",
             COMMENTS = ""
           )
@@ -977,9 +977,9 @@ filter_rad <- function(
         FILTERS = "removing monomorphic markers",
         PARAMETERS = "",
         VALUES = "",
-        BEFORE = stringi::stri_join(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
-        AFTER = stringi::stri_join(new.data.info$n.chrom, n.locus.after, new.data.info$n.snp, sep = "/"),
-        BLACKLIST = stringi::stri_join(data.info$n.chrom - new.data.info$n.chrom, bl.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
+        BEFORE = paste(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
+        AFTER = paste(new.data.info$n.chrom, n.locus.after, new.data.info$n.snp, sep = "/"),
+        BLACKLIST = paste(data.info$n.chrom - new.data.info$n.chrom, bl.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
         UNITS = "CHROM/LOCUS/SNP",
         COMMENTS = ""
       ) %>%
@@ -1026,9 +1026,9 @@ filter_rad <- function(
         FILTERS = "keeping common markers",
         PARAMETERS = "",
         VALUES = "",
-        BEFORE = stringi::stri_join(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
-        AFTER = stringi::stri_join(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
-        BLACKLIST = stringi::stri_join(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
+        BEFORE = paste(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
+        AFTER = paste(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
+        BLACKLIST = paste(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
         UNITS = "CHROM/LOCUS/SNP",
         COMMENTS = ""
       )
@@ -1192,9 +1192,9 @@ filter_rad <- function(
           FILTERS = "removing monomorphic markers",
           PARAMETERS = "",
           VALUES = "",
-          BEFORE = stringi::stri_join(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
-          AFTER = stringi::stri_join(new.data.info$n.chrom, n.locus.after, new.data.info$n.snp, sep = "/"),
-          BLACKLIST = stringi::stri_join(data.info$n.chrom - new.data.info$n.chrom, bl.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
+          BEFORE = paste(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
+          AFTER = paste(new.data.info$n.chrom, n.locus.after, new.data.info$n.snp, sep = "/"),
+          BLACKLIST = paste(data.info$n.chrom - new.data.info$n.chrom, bl.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
           UNITS = "CHROM/LOCUS/SNP",
           COMMENTS = ""
         ) %>%
@@ -1473,9 +1473,9 @@ filter_rad <- function(
       FILTERS = "Filter markers missing",
       PARAMETERS = "ind.approach/ind.threshold/prob.pop.threshold",
       VALUES = stringi::stri_join(ind.approach, ind.threshold, prob.pop.threshold, sep = "/"),
-      BEFORE = stringi::stri_join(data.info$n.chrom, data.info$n.locus, n.snp.before, sep = "/"),
-      AFTER = stringi::stri_join(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
-      BLACKLIST = stringi::stri_join(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, n.snp.blacklist, sep = "/"),
+      BEFORE = paste(data.info$n.chrom, data.info$n.locus, n.snp.before, sep = "/"),
+      AFTER = paste(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
+      BLACKLIST = paste(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, n.snp.blacklist, sep = "/"),
       UNITS = "CHROM/LOCUS/SNP",
       COMMENTS = ""
     )
@@ -1658,9 +1658,9 @@ filter_rad <- function(
         FILTERS = "SNP number per reads/locus",
         PARAMETERS = "",
         VALUES = number.snp.reads,
-        BEFORE = stringi::stri_join(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
-        AFTER = stringi::stri_join(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
-        BLACKLIST = stringi::stri_join(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
+        BEFORE = paste(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
+        AFTER = paste(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
+        BLACKLIST = paste(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
         UNITS = "CHROM/LOCUS/SNP",
         COMMENTS = ""
       ) %>%
@@ -1750,9 +1750,9 @@ filter_rad <- function(
           FILTERS = "Short linkage disequilibrium",
           PARAMETERS = "snp.ld",
           VALUES = snp.ld,
-          BEFORE = stringi::stri_join(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
-          AFTER = stringi::stri_join(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
-          BLACKLIST = stringi::stri_join(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
+          BEFORE = paste(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
+          AFTER = paste(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
+          BLACKLIST = paste(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
           UNITS = "CHROM/LOCUS/SNP",
           COMMENTS = ""
         ) %>%
@@ -1876,9 +1876,9 @@ filter_rad <- function(
           FILTERS = "removing monomorphic markers",
           PARAMETERS = "",
           VALUES = "",
-          BEFORE = stringi::stri_join(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
-          AFTER = stringi::stri_join(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
-          BLACKLIST = stringi::stri_join(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
+          BEFORE = paste(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
+          AFTER = paste(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
+          BLACKLIST = paste(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
           UNITS = "CHROM/LOCUS/SNP",
           COMMENTS = ""
         ) %>%
@@ -2026,9 +2026,9 @@ filter_rad <- function(
               FILTERS = "removing monomorphic markers",
               PARAMETERS = "",
               VALUES = "",
-              BEFORE = stringi::stri_join(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
-              AFTER = stringi::stri_join(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
-              BLACKLIST = stringi::stri_join(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
+              BEFORE = paste(data.info$n.chrom, data.info$n.locus, data.info$n.snp, sep = "/"),
+              AFTER = paste(new.data.info$n.chrom, new.data.info$n.locus, new.data.info$n.snp, sep = "/"),
+              BLACKLIST = paste(data.info$n.chrom - new.data.info$n.chrom, data.info$n.locus - new.data.info$n.locus, data.info$n.snp - new.data.info$n.snp, sep = "/"),
               UNITS = "CHROM/LOCUS/SNP",
               COMMENTS = ""
             ) %>%
@@ -2244,7 +2244,7 @@ filter_rad <- function(
       parallel.core = parallel.core,
       filename = tidy.name,
       verbose = verbose,
-      write_tidy = FALSE)
+      write.tidy = FALSE)
     last.data.info <- data_info(res$output$tidy.data)
     input <- NULL
   } else {

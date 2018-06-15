@@ -512,7 +512,7 @@ maf.approach = \"SNP\" : SNPs on the same locus/read are considered independent.
       # maf.approach <- as.character(readLines(n = 1))
 
       maf.approach <- interactive_question(
-        x = "Choose the maf.approach (SNP/locus): ", answer.opt = c("SNP", "locus"))
+        x = "\nChoose the maf.approach (SNP/locus): ", answer.opt = c("SNP", "locus"))
 
 
       # if (!maf.approach %in% c("SNP", "locus")) stop("maf.approach: SNP or locus")
@@ -529,9 +529,9 @@ because LOCUS and POS (SNP) info is not available")
 
     # maf.thresholds
     if (interactive.filter) {
-      message("Choose the local minor allele threshold")
-      message("   Using a frequency: choose a value between 0 and 0.9")
-      message("   Using count of alternate allele: choose an integer >= 1")
+      message("\nChoose the local minor allele threshold")
+      message("    Using a FREQUENCY, choose a value between 0 and 0.9")
+      message("    Using COUNT of alternate allele, choose an integer >= 1")
       # maf.local.threshold <- as.character(readLines(n = 1))
       maf.local.threshold <- interactive_question(
         x = "    Enter value: ", minmax = c(0, 1000))
@@ -546,10 +546,10 @@ because LOCUS and POS (SNP) info is not available")
     }
 
     if (interactive.filter) {
-      message("Choose the global minor allele threshold")
-      message("   Using a frequency: choose a value between 0 and 0.9")
-      message("   Using count of alternate allele: choose an integer >= 1")
-      message("   Note: please use the same method count/freqency as the local threshold")
+      message("\nChoose the global minor allele threshold")
+      message("    Using a FREQUENCY, choose a value between 0 and 0.9")
+      message("    Using COUNT of alternate allele, choose an integer >= 1")
+      message("    Note: please use the same method count/freqency as the local threshold")
       # maf.global.threshold <- as.character(readLines(n = 1))
       maf.global.threshold <- interactive_question(
         x = "    Enter value: ", minmax = c(0, 1000))
@@ -562,28 +562,29 @@ because LOCUS and POS (SNP) info is not available")
 
     # maf.operator
     if (interactive.filter) {
-      message("The maf.operator:
-Option 1: AND: local \"AND\" global MAF thresholds are required to pass (more severe).
-Option 2: OR: local \"OR\" global MAF thresholds are required to pass (more tolerant).")
+      message("\nThe maf.operator (AND/OR):
+    Option 1: local \"AND\" global MAF thresholds are required to pass (more severe).
+    Option 2: local \"OR\" global MAF thresholds are required to pass (more tolerant).")
+      message("No idea what to choose? Use OR")
       # message("Choose the maf.operator (AND/OR):")
       # maf.operator <- as.character(readLines(n = 1))
       maf.operator <- interactive_question(
-        x = "Choose the maf.operator (AND/OR): ", answer.opt = c("AND", "OR"))
+        x = "    Choose the maf.operator (AND/OR): ", answer.opt = c("AND", "OR"))
 
       # if (!maf.operator %in% c("OR", "AND")) stop("maf.operator: either OR/AND")
     }
 
     # maf.pop.num.threshold
     if (interactive.filter) {
-      message("Last threshold... \n\nmaf.pop.num.threshold:
-How many populations are required to pass all the thresholds to keep the marker?\n
-Example: if you have 10 populations and choose maf.pop.num.threshold = 3,
-3 populations out of 10 are required to pass previous thresholds")
-      message("Note: not sure? use 1")
-      message("Choose the maf.pop.num.threshold:")
+      message("\nLast threshold... \n\nmaf.pop.num.threshold:
+    How many populations are required to pass all the thresholds to keep the marker?\n
+    Example: if you have 10 populations and choose maf.pop.num.threshold = 3,
+    3 populations out of 10 are required to pass previous thresholds")
+      message("    Note: not sure? use 1")
+      # message("\n    Choose the maf.pop.num.threshold:")
       # maf.pop.num.threshold <- as.integer(readLines(n = 1))
       maf.pop.num.threshold <- interactive_question(
-        x = "    Enter value (integer): ", minmax = c(1, 1000))
+        x = "    Enter threshold (integer): ", minmax = c(1, 1000))
     }
 
 
