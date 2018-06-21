@@ -3,6 +3,9 @@
 #' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 #' and might be of interest for users.
 #' @param strata (path or object) The strata file or object.
+#' @param pop.id (logical) When \code{pop.id = TRUE}, the strata returns
+#' the stratification colname \code{POP_ID}.
+#' Default: \code{pop.id = FALSE}, returns \code{STRATA}.
 #' @inheritParams tidy_genomic_data
 #' @param keep.two (optional, logical) The output is limited to 2 columns:
 #' \code{INDIVIDUALS, STRATA}.
@@ -21,7 +24,7 @@
 #' radiator::read_strata(strata)
 #' }
 
-read_strata <- function(strata,
+read_strata <- function(strata, pop.id = FALSE,
                         pop.levels = NULL, pop.labels = NULL,
                         pop.select = NULL, blacklist.id = NULL,
                         keep.two = TRUE, verbose = FALSE) {
@@ -112,6 +115,9 @@ read_strata <- function(strata,
   }
 
   strata <- dplyr::arrange(strata, STRATA, INDIVIDUALS)
+
+  if (isTRUE(pop.id)) strata <- dplyr::rename(strata, POP_ID = STRATA)
+
   return(
     res = list(
       strata = strata,

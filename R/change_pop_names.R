@@ -46,7 +46,7 @@ change_pop_names <- function(data, pop.levels = NULL, pop.labels = NULL) {
   if (is.null(pop.levels)) { # no pop.levels
     data$POP_ID <- factor(data$POP_ID)
   } else {# with pop.levels
-    data$POP_ID <- factor(x = data$POP_ID, levels = pop.levels, ordered = TRUE)
+    data$POP_ID <- factor(x = data$POP_ID, levels = pop.levels, ordered = FALSE)
     levels(data$POP_ID) <- pop.labels
   }
   data <- dplyr::arrange(data, POP_ID, INDIVIDUALS)

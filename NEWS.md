@@ -1,3 +1,11 @@
+# radiator v.0.0.12 2018-06-21
+
+* transferred `write_gsi_sim` from assigner to radiator
+* 2 `write` functions: `write_snprelate` and `write_seqarray`
+
+
+
+
 # radiator v.0.0.11 2018-04-26
 
 * when individuals in strata file/object and data don't match, an error is generated

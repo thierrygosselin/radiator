@@ -2141,7 +2141,7 @@ on the number of genotyped individuals per pop ? (overall or pop)")
       message("    random: for a random selection of 1 SNP on the read")
       message("    first: for the first one on the read")
       message("    last: for the last SNP on the read and")
-      message("    middle: for locus with > 2 SNPs/read\n     keeps the SNP in the middle")
+      message("    middle: for locus > 2 SNPs, keep the middle SNP")
       message("    maf: keeps the SNP with the highest MAF")
       # message("\n   ENTER your choice:")
       # snp.ld <- as.character(readLines(n = 1))
@@ -2678,7 +2678,7 @@ on the number of genotyped individuals per pop ? (overall or pop)")
   # new strata with dart target id
   strata.df %>%
     dplyr::filter(INDIVIDUALS %in% res$strata$INDIVIDUALS) %>%
-    readr::write_tsv(x = ., path = " new_filtered_strata_dart.tsv")
+    readr::write_tsv(x = ., path = "new_filtered_strata_dart.tsv")
 
   # genomic_converter & Imputations --------------------------------------------
   if (!is.null(output)) {

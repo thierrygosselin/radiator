@@ -702,6 +702,10 @@ detect_duplicate_genomes <- function(
         message("    An empty blacklist file was generated: blacklist.id.similar.tsv")
         message("    Keep column name, just add the individual(s) to blacklist(s)")
         res$blacklist.id.similar <- "check blacklist.id.similar.tsv file"
+
+        finished <- interactive_question(
+          x = "    When finished filling the blacklist type `y`:",
+          answer.opt = c("y", "Y", "yes", "Yes", "YES"))
       } else {# with threshold
         # message("Use the distance or genome analysis to blacklist duplicates ? (distance/genome): ")
         # analysis <- as.character(readLines(n = 1))

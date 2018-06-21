@@ -119,7 +119,7 @@ write_genepop <- function(
     purrr::flatten_chr(.)
 
   # Wide format ----------------------------------------------------------------
-  data2 <- data %>%
+  data <- data %>%
     dplyr::arrange(MARKERS) %>%
     dplyr::group_by(POP_ID, INDIVIDUALS) %>%
     tidyr::spread(data = ., key = MARKERS, value = GT) %>%

@@ -141,13 +141,8 @@ tidy_wide <- function(data, import.metadata = FALSE) {
     data$MARKERS <- clean_markers_names(data$MARKERS)
   }
 
-  # clean id names
-  data$INDIVIDUALS <- clean_ind_names(data$INDIVIDUALS)
-
-  # clean pop id
-  data$POP_ID <- clean_pop_names(data$POP_ID)
-
-  # Make sure no data groupings exists
-  if (!is.null(dplyr::groups(data))) data <- dplyr::ungroup(data)
+  data$INDIVIDUALS <- clean_ind_names(data$INDIVIDUALS)# clean id names
+  data$POP_ID <- clean_pop_names(data$POP_ID)# clean pop id
+  data <- dplyr::ungroup(data) # Make sure no data groupings exists
   return(data)
 }#End tidy_wide

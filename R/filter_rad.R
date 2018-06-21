@@ -1693,7 +1693,7 @@ filter_rad <- function(
       message("   random: for a random selection of 1 SNP on the read")
       message("   first: for the first one on the read")
       message("   last: for the last SNP on the read and")
-      message("   middle: for locus with > 2 SNPs/read\n     keeps the SNP in the middle")
+      message("   middle: for locus > 2 SNPs, keep the middle SNP")
       message("   maf: keeps the SNP with the highest MAF")
       # snp.ld <- as.character(readLines(n = 1))
       snp.ld <- interactive_question(
@@ -1799,7 +1799,7 @@ filter_rad <- function(
         # threshold.min <- as.numeric(readLines(n = 1))
         threshold.min <- interactive_question(x = mix.text, minmax = c(0, 1))
 
-        message("    Enter the max value for ind.heterozygosity.threshold argument (1 turns off): ")
+        mix.text <- "Enter the max value for ind.heterozygosity.threshold argument (1 turns off): "
         # threshold.max <- as.numeric(readLines(n = 1))
         threshold.max <- interactive_question(x = mix.text, minmax = c(0, 1))
 

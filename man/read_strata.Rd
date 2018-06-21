@@ -4,12 +4,16 @@
 \alias{read_strata}
 \title{read strata}
 \usage{
-read_strata(strata, pop.levels = NULL, pop.labels = NULL,
+read_strata(strata, pop.id = FALSE, pop.levels = NULL, pop.labels = NULL,
   pop.select = NULL, blacklist.id = NULL, keep.two = TRUE,
   verbose = FALSE)
 }
 \arguments{
 \item{strata}{(path or object) The strata file or object.}
+
+\item{pop.id}{(logical) When \code{pop.id = TRUE}, the strata returns
+the stratification colname \code{POP_ID}.
+Default: \code{pop.id = FALSE}, returns \code{STRATA}.}
 
 \item{pop.levels}{(optional, string) This refers to the levels in a factor. In this
 case, the id of the pop.
