@@ -684,7 +684,6 @@ filter_hwe <- function(
         y = "Markers mid p-value",
         title = "Manhanttan plot of markers in Hardy-Weinberg disequilibrium"
       ) +
-      ggplot2::theme_bw()+
       ggplot2::theme(
         panel.grid.major.x = ggplot2::element_blank(),
         plot.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold", hjust = 0.5),
@@ -696,6 +695,7 @@ filter_hwe <- function(
         axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
         axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
       ) +
+      ggplot2::theme_bw() +
       ggplot2::facet_grid(GROUPINGS ~ POP_ID, scales = "free")
 
     # if (interactive.filter) print(hw.manhattan)

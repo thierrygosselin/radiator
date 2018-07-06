@@ -440,7 +440,6 @@ detect_duplicate_genomes <- function(
       ggplot2::labs(colour = "Population comparisons") +
       ggplot2::scale_colour_manual(values = c("#0571b0", "black")) +
       ggplot2::scale_y_reverse() +
-      ggplot2::theme_light() +
       ggplot2::theme(
         # legend.position = "none",
         panel.grid.minor.x = ggplot2::element_blank(),
@@ -450,7 +449,8 @@ detect_duplicate_genomes <- function(
         axis.text.x = ggplot2::element_blank(),
         axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
         axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
-      )
+      ) +
+      ggplot2::theme_light()
     ggplot2::ggsave(
       filename = file.path(path.folder, "manhattan.plot.distance.pdf"),
       plot = res$manhattan.plot.distance,
@@ -659,7 +659,6 @@ detect_duplicate_genomes <- function(
       ggplot2::labs(colour = "Population comparisons") +
       ggplot2::scale_colour_manual(values = c("#0571b0", "black")) +
       ggplot2::scale_size_area(name = "Markers missing", max_size = 6) +
-      ggplot2::theme_light() +
       ggplot2::theme(
         # legend.position = "none",
         panel.grid.minor.x = ggplot2::element_blank(),
@@ -669,7 +668,8 @@ detect_duplicate_genomes <- function(
         axis.text.x = ggplot2::element_blank(),
         axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
         axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
-      )
+      ) +
+      ggplot2::theme_light()
 
     ggplot2::ggsave(
       filename = file.path(path.folder, "manhattan.plot.genome.pdf"),

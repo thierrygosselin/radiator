@@ -64,6 +64,10 @@
 #' At this point you need to distinguish between an artifact of poor polymorphism discovery
 #' or a biological reason (highly inbred individual, etc.).
 #' }
+#'
+#' \strong{heterozygosity and missing data:}
+#' If you see a pattern with the heterozygosity and missing data,
+#' try changing the genotyping rate required to keep markers and/or individuals.
 
 
 #' @return The function returns inside the global environment a list with
@@ -369,8 +373,6 @@ detect_mixed_genomes <- function(
       name = "Mean Observed Heterozygosity (proportion)",
       breaks = y.breaks, labels = y.breaks, limits = c(y.breaks.min, y.breaks.max)) + #y.breaks
     # breaks = y.breaks, limits = c(0, y.breaks.max), expand = c(0.06, 0)) +
-    ggplot2::theme_classic() +
-    # ggplot2::theme_minimal() +
     ggplot2::theme(
       legend.position = "none",
       plot.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold", hjust = 0.5),
@@ -379,7 +381,8 @@ detect_mixed_genomes <- function(
       axis.text.x = ggplot2::element_text(size = 10, family = "Helvetica"),
       axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
       axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
-    )
+    ) +
+    ggplot2::theme_classic()
   # het.bp
   ggplot2::ggsave(
     filename = file.path(path.folder, "individual.heterozygosity.boxplot.pdf"),

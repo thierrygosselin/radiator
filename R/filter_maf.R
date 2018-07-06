@@ -132,6 +132,20 @@ filter_maf <- function(
   verbose = TRUE,
   ...
 ) {
+
+  # testing
+  # strata = NULL
+  # interactive.filter = TRUE
+  # maf.thresholds = NULL
+  # monomorphic.out = TRUE
+  # common.markers = FALSE
+  # snp.ld = NULL
+  # pop.select = NULL
+  # filename = NULL
+  # parallel.core = parallel::detectCores() - 1
+  # verbose = TRUE
+
+
   if (!is.null(maf.thresholds)) {
     if (interactive.filter) verbose <- TRUE
     if (verbose) cat("#######################################################################\n")
@@ -393,13 +407,13 @@ filter_maf <- function(
       histo.maf.global <- ggplot2::ggplot(global.data, ggplot2::aes(x = GLOBAL)) +
         ggplot2::geom_histogram(bins = 30) +
         ggplot2::labs(y = "Number of markers", x = "Global Minor Allele (count and frequency)") +
-        ggplot2::theme_minimal() +
         ggplot2::theme(
           legend.position = "none",
           axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
           axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold")
         ) +
-        ggplot2::facet_grid(~GROUP, scales = "free")
+        ggplot2::theme_minimal() +
+        ggplot2::facet_grid(~ GROUP, scales = "free")
       print(histo.maf.global)
 
       # save
@@ -431,14 +445,11 @@ filter_maf <- function(
 
       histo.maf.local <- histo.maf.local %>%
         dplyr::select(MARKERS, POP_ID, `ALT count` = ALT_LOCAL, `ALT frequency` = MAF_LOCAL) %>%
-        tidyr::gather(data = ., key = "GROUP", value = "LOCAL", -c(MARKERS, POP_ID))
-
-      histo.maf.local <- ggplot2::ggplot(data = histo.maf.local, ggplot2::aes(x = LOCAL, na.rm = FALSE)) +
-        # ggplot2::geom_line(ggplot2::aes(y = ..scaled.., color = POP_ID), stat = "density", adjust = 1) + # pop colored
+        tidyr::gather(data = ., key = "GROUP", value = "LOCAL", -c(MARKERS, POP_ID)) %>%
+        ggplot2::ggplot(
+        data = ., ggplot2::aes(x = LOCAL, na.rm = FALSE)) +
         ggplot2::geom_histogram(bins = 30) +
-        # ggplot2::scale_x_continuous(breaks = seq(0,1, by = 0.1)) +
         ggplot2::labs(x = "Minor Allele Frequency (MAF)", y = "Number of markers") +
-        # ggplot2::labs(y = "Density of MARKERS (scaled)") +
         ggplot2::expand_limits(y = 0) +
         ggplot2::theme(
           axis.title.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
@@ -448,7 +459,7 @@ filter_maf <- function(
           strip.text.y = ggplot2::element_text(angle = 0, size = 12, family = "Helvetica", face = "bold"),
           strip.text.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold")
         ) +
-        ggplot2::facet_grid(POP_ID~GROUP, scales = "free_x")
+        ggplot2::facet_grid(POP_ID ~ GROUP, scales = "free_x")
       print(histo.maf.local)
       ggplot2::ggsave(
         filename = file.path(path.folder, "maf.local.spectrums.pdf"),

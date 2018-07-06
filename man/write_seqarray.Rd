@@ -4,8 +4,8 @@
 \alias{write_seqarray}
 \title{Write a SeqArray GDS file from a vcf file and generate a connection object.}
 \usage{
-write_seqarray(vcf, filename = NULL, parallel.core = parallel::detectCores()
-  - 1, verbose = TRUE, write.info = FALSE)
+write_seqarray(vcf, filename = NULL, vcf.stats = FALSE,
+  parallel.core = parallel::detectCores() - 1, verbose = TRUE, ...)
 }
 \arguments{
 \item{vcf}{The path to the vcf file.}
@@ -16,6 +16,12 @@ If filename chosen is already present in the
 working directory, the default \code{radiator_datetime.gds} is chosen.
 Default: \code{filename = NULL}.}
 
+\item{vcf.stats}{(logical) When \code{vcf.stats = TRUE}, individual's missing
+genotype proportion, averaged heterozygosity, total coverage, mean genotype
+coverage and marker's metadata along count for ref and alt alleles and mean
+coverage is generated and written in the working directory.
+Default: \code{vcf.stats = FALSE}.}
+
 \item{parallel.core}{(optional) The number of core used for parallel
 execution during import.
 Default: \code{parallel::detectCores() - 1}.}
@@ -24,10 +30,7 @@ Default: \code{parallel::detectCores() - 1}.}
 the function is a little more chatty during execution.
 Default: \code{verbose = TRUE}.}
 
-\item{write.info}{(logical) When \code{write.info = TRUE}, the markers metadata
-(CHROM+LOCUS+POS and missingness) and individuals names and missingness is
-written in the working directory.
-Default: \code{write.info = FALSE}.}
+\item{...}{(optional) To pass further argument for fine-tuning the function.}
 }
 \description{
 Write a SeqArray \href{http://zhengxwen.github.io/SeqArray/}{SeqArray}

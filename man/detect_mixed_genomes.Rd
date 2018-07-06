@@ -91,6 +91,10 @@ e.g. for biallelic data, look for coverage imbalance between ALT/REF allele.
 At this point you need to distinguish between an artifact of poor polymorphism discovery
 or a biological reason (highly inbred individual, etc.).
 }
+
+\strong{heterozygosity and missing data:}
+If you see a pattern with the heterozygosity and missing data,
+try changing the genotyping rate required to keep markers and/or individuals.
 }
 \examples{
 \dontrun{
