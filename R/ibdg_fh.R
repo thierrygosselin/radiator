@@ -349,7 +349,6 @@ ibdg_fh <- function(
     ggplot2::labs(y = "Individual IBDg (FH)") +
     ggplot2::labs(x = "Populations") +
     ggplot2::labs(colour = "Populations") +
-    ggplot2::theme_bw() +
     # ggplot2::theme_classic() +
     # theme_dark() +
     ggplot2::theme(
@@ -360,6 +359,7 @@ ibdg_fh <- function(
       axis.text.x = ggplot2::element_text(size = 10, family = "Helvetica"),
       axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
       axis.text.y = ggplot2::element_text(size = 10, family = "Helvetica")) +
+    ggplot2::theme_bw() +
     ggplot2::coord_flip()
 
   # Histogram
@@ -367,7 +367,6 @@ ibdg_fh <- function(
     ggplot2::geom_histogram() +
     ggplot2::labs(x = "Individual IBDg (FH)") +
     ggplot2::labs(y = "Markers (number)") +
-    ggplot2::theme_bw() +
     ggplot2::theme(
       legend.position = "none",
       axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
@@ -375,7 +374,8 @@ ibdg_fh <- function(
       axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
       axis.text.x = ggplot2::element_text(size = 10, family = "Helvetica"),
       strip.text.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold")
-    )
+    ) +
+    ggplot2::theme_bw()
   # fh.distribution.plot
 
 

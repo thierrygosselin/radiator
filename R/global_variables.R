@@ -85,7 +85,10 @@ if (getRversion() >= "2.15.1") {
       "OUTLIERS_LOW_N", "OUTLIERS_TOTAL", "MEAN", "n.pop", "READ_DEPTH_SCALED",
       "**", "***", "****", "*****","AA", "AB", "BB", "COMMENTS", "FILTERS", "GROUPINGS",
       "HWE", "MID_P_VALUE", "MONO", "N_POP_HWD", "SIGNIFICANCE", "X", "p",
-      "VALUES", "TOTAL_READ_COUNTS", "aswer.opt", "markers.meta", "vcf.connection"
+      "VALUES", "TOTAL_READ_COUNTS", "aswer.opt", "markers.meta", "vcf.connection",
+      "ALT_COUNT", "INDIVIDUALS_VCF", "MAC", "MAC_FILTER", "REF_COUNT",
+      "SNP_PER_LOCUS_MAC", "SNP_POS_READ_IQR", "SNP_POS_READ_OUTLIERS",
+      "SNP_POS_READ_Q75", "VARIANT_ID"
     )
   )
 }

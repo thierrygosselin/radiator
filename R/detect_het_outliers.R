@@ -242,14 +242,14 @@ detect_het_outliers <- function (
   res$trace.mcmc.plot <- ggplot2::ggplot(res$m.nreps, ggplot2::aes(x = iter, y = m)) +
     ggplot2::geom_line() +
     ggplot2::labs(y= "Heterozygote miscall rate", x = "Number of MCMC sweeps") +
-    ggplot2::theme_bw() +
     ggplot2::theme(
       legend.position = "none",
       axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
       axis.text.x = ggplot2::element_text(size = 10, family = "Helvetica"),
       axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
       axis.text.y = ggplot2::element_text(size = 10, family = "Helvetica")
-    )
+    ) +
+    ggplot2::theme_bw()
   if (!is.null(path.folder)) {
     ggplot2::ggsave(
       filename = file.path(path.folder, "trace.mcmc.plot.pdf"),
@@ -435,7 +435,6 @@ plot_het_outliers <- function(data, path.folder = NULL) {
     ggplot2::geom_polygon(data = boundaries, fill = NA, linetype = "dashed", colour = "black") +
     ggplot2::geom_abline(slope = 1, intercept = 0, linetype = "solid") +
     ggplot2::labs(x = "Genotypes (expected frequency) ", y = "Genotypes (observed frequency)") +
-    ggplot2::theme_bw() +
     ggplot2::theme(
       legend.position = "none",
       axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
@@ -443,6 +442,7 @@ plot_het_outliers <- function(data, path.folder = NULL) {
       axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
       axis.text.y = ggplot2::element_text(size = 10, family = "Helvetica")
     ) +
+    ggplot2::theme_bw() +
     ggplot2::facet_grid(POP_ID ~ GENOTYPES)
 
   if (!is.null(path.folder)) {

@@ -38,6 +38,8 @@
 #' @importFrom stringi stri_replace_all_fixed
 #' @importFrom tibble has_name
 #' @importFrom tidyr spread
+# @importFrom SeqVarTools heterozygosity
+# @importFrom gdsfmt add.gdsn
 
 #' @references Zheng X, Gogarten S, Lawrence M, Stilp A, Conomos M, Weir BS,
 #' Laurie C, Levine D (2017). SeqArray -- A storage-efficient high-performance
@@ -74,6 +76,18 @@ write_seqarray <- function(
   if (!"SeqArray" %in% utils::installed.packages()[,"Package"]) {
     stop('Please install SeqArray for this option:\n
          devtools::install_github("zhengxwen/SeqArray")')
+  }
+
+  if (!"SeqVarTools" %in% utils::installed.packages()[,"Package"]) {
+    stop('Please install SeqVarTools for this option:\n
+         source("https://bioconductor.org/biocLite.R")
+         biocLite("SeqVarTools")')
+  }
+
+  if (!"gdsfmt" %in% utils::installed.packages()[,"Package"]) {
+    stop('Please install gdsfmt for this option:\n
+         source("https://bioconductor.org/biocLite.R")
+         biocLite("gdsfmt")')
   }
 
   # Checking for missing and/or default arguments ------------------------------
@@ -535,8 +549,7 @@ boxplot_stats <- function(data, title,
                    ymax = OUTLIERS_HIGH), stat = "identity") +
     ggplot2::labs(
       y = y.axis.title,
-      title = title) +
-    ggplot2::theme_bw()
+      title = title)
 
   # Draw upper outliers
   if (facet.columns) {
@@ -597,7 +610,8 @@ boxplot_stats <- function(data, title,
       legend.position = "none",
       axis.title.y = element.text,
       axis.text.y = element.text
-    )
+    ) +
+    ggplot2::theme_bw()
 
   if (facet.columns) {
     fig.boxplot <- fig.boxplot + ggplot2::facet_grid(GROUP ~ ., scales = "free")

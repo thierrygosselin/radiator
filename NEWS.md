@@ -1,9 +1,13 @@
+# radiator v.0.0.13 2018-07-09
+
+* working to make radiator work correctly with ggplot2 v.3.0.0
+* radiator ready for R 3.5.1 "Feather Spray" released on 2018/07/05
+
+
 # radiator v.0.0.12 2018-06-21
 
 * transferred `write_gsi_sim` from assigner to radiator
 * 2 `write` functions: `write_snprelate` and `write_seqarray`
-
-
 
 
 # radiator v.0.0.11 2018-04-26

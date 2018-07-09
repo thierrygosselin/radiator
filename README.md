@@ -9,7 +9,7 @@ developed.](http://www.repostatus.org/badges/latest/active.svg)](http://www.repo
 [![DOI](https://zenodo.org/badge/14548/thierrygosselin/radiator.svg)](https://zenodo.org/badge/latestdoi/14548/thierrygosselin/radiator)
 
 [![packageversion](https://img.shields.io/badge/Package%20version-0.0.12-orange.svg)](commits/master)
-[![Last-changedate](https://img.shields.io/badge/last%20change-2018--07--06-brightgreen.svg)](/commits/master)
+[![Last-changedate](https://img.shields.io/badge/last%20change-2018--07--09-brightgreen.svg)](/commits/master)
 
 ------------------------------------------------------------------------
 
