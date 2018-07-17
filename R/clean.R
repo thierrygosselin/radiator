@@ -31,8 +31,8 @@ clean_markers_names <- function(x) {
 clean_ind_names <- function(x) {
   x <- stringi::stri_replace_all_fixed(
     str = as.character(x),
-    pattern = c("_", ":"),
-    replacement = c("-", "-"),
+    pattern = c("_", ":", " "),
+    replacement = c("-", "-", ""),
     vectorize_all = FALSE)
 }#End clean_ind_names
 

@@ -12,7 +12,6 @@
 #' \emph{How to get a tidy data frame ?}
 #' Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
 
-
 #' @param pop.levels (optional, string) A character string with your populations ordered.
 #' Default: \code{pop.levels = NULL}.
 
@@ -23,7 +22,6 @@
 #' (not very useful with thousands of markers) and not printed at all for the
 #' structure file.
 #' Default: \code{markers.line = TRUE}.
-
 
 #' @param filename (optional) The file name prefix for the structure file
 #' written to the working directory. With default: \code{filename = NULL},
@@ -61,39 +59,43 @@ write_structure <- function(
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {
-    input <- radiator::tidy_wide(data = data, import.metadata = FALSE)
+    data <- radiator::tidy_wide(data = data, import.metadata = FALSE)
   } else {
-    input <- data
+    data$INDIVIDUALS <- clean_ind_names(data$INDIVIDUALS)
+    data$POP_ID <- clean_pop_names(data$POP_ID)
+    data$MARKERS <- clean_markers_names(data$MARKERS)
   }
+
+
 
   # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-  if (tibble::has_name(input, "LOCUS") && !tibble::has_name(input, "MARKERS")) {
-    input <- dplyr::rename(.data = input, MARKERS = LOCUS)
+  if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
+    data <- dplyr::rename(.data = data, MARKERS = LOCUS)
   }
 
 
-  input <- dplyr::select(.data = input, POP_ID, INDIVIDUALS, MARKERS, GT)
+  data <- dplyr::select(.data = data, POP_ID, INDIVIDUALS, MARKERS, GT)
 
   # pop.levels -----------------------------------------------------------------
   if (!is.null(pop.levels)) {
-    input <- dplyr::mutate(
-      .data = input,
+    data <- dplyr::mutate(
+      .data = data,
         POP_ID = factor(POP_ID, levels = pop.levels, ordered = TRUE),
         POP_ID = droplevels(POP_ID)
       ) %>%
       dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS)
   } else {
-    input <- dplyr::mutate(.data = input, POP_ID = factor(POP_ID)) %>%
+    data <- dplyr::mutate(.data = data, POP_ID = factor(POP_ID)) %>%
       dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS)
   }
 
   # Create a marker vector  ------------------------------------------------
-  markers <- dplyr::distinct(.data = input, MARKERS) %>%
+  markers <- dplyr::distinct(.data = data, MARKERS) %>%
     dplyr::arrange(MARKERS) %>%
     purrr::flatten_chr(.)
 
   # Structure format ----------------------------------------------------------------
-  input <- input %>%
+  data <- data %>%
     tidyr::separate(col = GT, into = c("A1", "A2"), sep = 3, extra = "drop", remove = TRUE) %>%
     tidyr::gather(data = ., key = ALLELES, value = GT, -c(POP_ID, INDIVIDUALS, MARKERS)) %>%
     dplyr::mutate(
@@ -120,5 +122,5 @@ write_structure <- function(
   writeLines(text = stringi::stri_join(markers, sep = "\t", collapse = "\t"),
              con = filename.connection, sep = "\n")
   close(filename.connection) # close the connection
-  readr::write_tsv(x = input, path = filename, append = TRUE, col_names = FALSE)
+  readr::write_tsv(x = data, path = filename, append = TRUE, col_names = FALSE)
 } # end write_structure

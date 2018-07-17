@@ -628,37 +628,39 @@ filter_hwe <- function(
       dplyr::mutate(POP_ID = factor(POP_ID, pop.levels))
     parabola <- sample.size <- NULL
 
-    plot.tern <- ggtern::ggtern(
-      data = data.sum,
-      ggtern::aes(AA, AB, BB, color = GROUPINGS, size = MISSING_PROP)) +
-      ggplot2::scale_color_manual(name = "Exact test mid p-value", values = group_colors) +
-      ggplot2::scale_size_continuous(name = "Missing genotypes proportion") +
-      ggtern::theme_rgbw() +
-      ggplot2::geom_point(alpha = 0.4) +
-      ggplot2::geom_line(data = hw.parabola, ggplot2::aes(x = AA, y = AB),
-                         linetype = 2, size = 0.6, colour = "black") +
-      ggtern::theme_nogrid_minor() +
-      ggtern::theme_nogrid_major() +
-      ggplot2::labs(
-        x = "AA", y = "AB", z = "BB",
-        title = "Hardy-Weinberg Equilibrium ternary plots",
-        subtitle = "genotypes frequencies shown for AA: REF/REF, AB: REF/ALT and BB: ALT/ALT"
-      ) +
-      ggplot2::theme(
-        plot.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold", hjust = 0.5),
-        plot.subtitle = ggplot2::element_text(size = 10, family = "Helvetica", hjust = 0.5)
-      ) +
-      ggplot2::facet_wrap(~ POP_ID)
-    # plot.tern
-    ggtern::ggsave(
-      limitsize = FALSE,
-      plot = plot.tern,
-      # filename = file.path(path.folder, "hwe.ternary.plots.read.depth.pdf"),
-      filename = file.path(path.folder, "hwe.ternary.plots.missing.data.pdf"),
-      width = n.pop * 5, height = n.pop * 4,
-      dpi = 300, units = "cm", useDingbats = FALSE)
-    hw.parabola <- NULL
-    if (verbose) message("Plot written: hwe.ternary.plots.missing.data.pdf")
+    # plot.tern <- ggtern::ggtern(
+    #   data = data.sum,
+    #   ggtern::aes(AA, AB, BB, color = GROUPINGS, size = MISSING_PROP)) +
+    #   ggplot2::scale_color_manual(name = "Exact test mid p-value", values = group_colors) +
+    #   ggplot2::scale_size_continuous(name = "Missing genotypes proportion") +
+    #   ggplot2::geom_point(alpha = 0.4) +
+    #   ggplot2::geom_line(data = hw.parabola, ggplot2::aes(x = AA, y = AB),
+    #                      linetype = 2, size = 0.6, colour = "black") +
+    #   ggplot2::labs(
+    #     x = "AA", y = "AB", z = "BB",
+    #     title = "Hardy-Weinberg Equilibrium ternary plots",
+    #     subtitle = "genotypes frequencies shown for AA: REF/REF, AB: REF/ALT and BB: ALT/ALT"
+    #   ) +
+    #   ggplot2::theme(
+    #     plot.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold", hjust = 0.5),
+    #     plot.subtitle = ggplot2::element_text(size = 10, family = "Helvetica", hjust = 0.5)
+    #   ) +
+    #   ggtern::theme_rgbw() +
+    #   ggtern::theme_nogrid_minor() +
+    #   ggtern::theme_nogrid_major() +
+    #   ggplot2::facet_wrap(~ POP_ID)
+    # # plot.tern
+    # ggtern::ggsave(
+    #   limitsize = FALSE,
+    #   plot = plot.tern,
+    #   # filename = file.path(path.folder, "hwe.ternary.plots.read.depth.pdf"),
+    #   filename = file.path(path.folder, "hwe.ternary.plots.missing.data.pdf"),
+    #   width = n.pop * 5, height = n.pop * 4,
+    #   dpi = 300, units = "cm", useDingbats = FALSE)
+    # hw.parabola <- NULL
+    # if (verbose) message("Plot written: hwe.ternary.plots.missing.data.pdf")
+
+    plot.tern <- "temporarily out of order"
 
     # Manhattan plot -------------------------------------------------------------
     data.sum.man <- dplyr::mutate(data.sum, X = "x") %>% dplyr::filter(MID_P_VALUE < 0.05)
