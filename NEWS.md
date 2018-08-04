@@ -1,3 +1,10 @@
+# radiator v.0.0.14 2018-08-04
+
+* `filter_dart` and `filter_rad`: can now opt out of HWE filtering. 
+* `filter_hwe`: user can opt to see figures but skip filtering
+
+
+
 # radiator v.0.0.13 2018-07-09
 
 * working to make radiator work correctly with ggplot2 v.3.0.0

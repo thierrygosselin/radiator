@@ -5,8 +5,8 @@
 \title{Write a \href{http://cmpg.unibe.ch/software/BayeScan/}{BayeScan}
 file from a tidy data frame}
 \usage{
-write_bayescan(data, pop.select = NULL, snp.ld = NULL, filename = NULL,
-  parallel.core = parallel::detectCores() - 1)
+write_bayescan(data, pop.select = NULL, snp.ld = NULL,
+  filename = NULL, parallel.core = parallel::detectCores() - 1)
 }
 \arguments{
 \item{data}{A tidy data frame object in the global environment or

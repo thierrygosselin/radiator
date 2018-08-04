@@ -1509,7 +1509,7 @@ filter_rad <- function(
     pop <- threshold.helper.overall <- threshold.helper.pop <- NULL
     mean.pop <- threshold.helper <- max.markers <- filter <- NULL
     plot.ind.threshold <- NULL
-    }#End filter.markers.missing
+  }#End filter.markers.missing
 
   # change to the new directory for MAF filtering
   old.dir <- getwd()
@@ -2059,76 +2059,84 @@ filter_rad <- function(
   #10.Filter HWE -----------------------------------------------------------------
   if (interactive.filter || hw.pop.threshold) {
     if (verbose) cat("\n### 10: Filter markers HWE ############################################\n")
-    input <- filter_hwe(
-      interactive.filter = interactive.filter,
-      data = input, strata = NULL,
-      hw.pop.threshold = hw.pop.threshold,
-      midp.threshold = midp.threshold,
-      parallel.core = parallel.core,
-      verbose = FALSE
-    )
-    hw.pop.threshold <- input$hw.pop.threshold
-    midp.threshold <- input$midp.threshold
-    input <- input$tidy.hw.filtered
+    # message to do HW filtering or not
+    hw.q <- "    Do you want to filter you markers based on HW principles ?\nYou can still opt out after looking at the figures. (y/n): \n"
+    do.hw <- interactive_question(x = hw.q, answer.opt = c("y", "n"))
 
-    old.folder <- list.files(path = path.folder, pattern = "filter_hwe")
-    new.folder <- stringi::stri_join("10_", old.folder)
-    file.rename(from = old.folder, to = new.folder)
+    if (do.hw == "y") {
+      input <- filter_hwe(
+        interactive.filter = interactive.filter,
+        data = input, strata = NULL,
+        hw.pop.threshold = hw.pop.threshold,
+        midp.threshold = midp.threshold,
+        parallel.core = parallel.core,
+        verbose = FALSE)
+      hw.pop.threshold <- input$hw.pop.threshold
+      midp.threshold <- input$midp.threshold
+      input <- input$tidy.hw.filtered
 
-    #update filter parameter file
-    n.snp.before <- data.info$n.snp
-    new.data.info <- data_info(input)
+      old.folder <- list.files(path = path.folder, pattern = "filter_hwe")
+      new.folder <- stringi::stri_join("10_", old.folder)
+      file.rename(from = old.folder, to = new.folder)
 
-    # updating parameters
-    filters.parameters <- list.files(path = path.folder, pattern = "filters_parameters", full.names = TRUE) %>%
-      readr::read_tsv(file = ., col_types = readr::cols(.default = readr::col_character()))
+      #update filter parameter file
+      n.snp.before <- data.info$n.snp
+      new.data.info <- data_info(input)
 
-    filters.parameters <- filters.parameters %>%
-      dplyr::filter(FILTERS != "HWE") %>%
-      dplyr::bind_rows(
-        filters.parameters %>%
-          dplyr::filter(FILTERS == "HWE", VALUES == stringi::stri_join(hw.pop.threshold,"/",midp.threshold)) %>%
-          dplyr::distinct(FILTERS, .keep_all = TRUE)) %>%
-      readr::write_tsv(
-        x = .,
-        path = filters.parameters.path, append = FALSE,
-        col_names = TRUE)
-    # update data.info
-    data.info <- new.data.info
+      # updating parameters
+      filters.parameters <- list.files(path = path.folder, pattern = "filters_parameters", full.names = TRUE) %>%
+        readr::read_tsv(file = ., col_types = readr::cols(.default = readr::col_character()))
 
-    bl.name <- stringi::stri_join("blacklist.markers.hwd.", midp.threshold,".mid.p.value.", hw.pop.threshold,".hw.pop.threshold")
+      filters.parameters <- filters.parameters %>%
+        dplyr::filter(FILTERS != "HWE") %>%
+        dplyr::bind_rows(
+          filters.parameters %>%
+            dplyr::filter(FILTERS == "HWE", VALUES == stringi::stri_join(hw.pop.threshold,"/",midp.threshold)) %>%
+            dplyr::distinct(FILTERS, .keep_all = TRUE)) %>%
+        readr::write_tsv(
+          x = .,
+          path = filters.parameters.path, append = FALSE,
+          col_names = TRUE)
+      # update data.info
+      data.info <- new.data.info
 
-    if (length(bl.name) > 0) {
-      blacklist.hw <- list.files(
-        path = path.folder,
-        pattern = bl.name,
-        full.names = TRUE, recursive = TRUE, include.dirs = TRUE) %>%
-        readr::read_tsv(file = ., col_types = "cccc")
+      bl.name <- stringi::stri_join("blacklist.markers.hwd.", midp.threshold,".mid.p.value.", hw.pop.threshold,".hw.pop.threshold")
 
-      wt.name <- stringi::stri_join("whitelist.markers.hwe.", midp.threshold,".mid.p.value.", hw.pop.threshold,".hw.pop.threshold")
-      whitelist.markers <- list.files(
-        path = path.folder,
-        pattern = wt.name,
-        full.names = TRUE, recursive = TRUE, include.dirs = TRUE) %>%
-        readr::read_tsv(file = ., col_types = "cccc")
+      if (length(bl.name) > 0) {
+        blacklist.hw <- list.files(
+          path = path.folder,
+          pattern = bl.name,
+          full.names = TRUE, recursive = TRUE, include.dirs = TRUE) %>%
+          readr::read_tsv(file = ., col_types = "cccc")
 
-      if (!is.null(blacklist.markers) && nrow(blacklist.hw) > 0) {
-        blacklist.markers <- dplyr::bind_rows(blacklist.markers, blacklist.hw)
-      } else {
-        blacklist.markers <- blacklist.snp.number.markers
+        wt.name <- stringi::stri_join("whitelist.markers.hwe.", midp.threshold,".mid.p.value.", hw.pop.threshold,".hw.pop.threshold")
+        whitelist.markers <- list.files(
+          path = path.folder,
+          pattern = wt.name,
+          full.names = TRUE, recursive = TRUE, include.dirs = TRUE) %>%
+          readr::read_tsv(file = ., col_types = "cccc")
+
+        if (!is.null(blacklist.markers) && nrow(blacklist.hw) > 0) {
+          blacklist.markers <- dplyr::bind_rows(blacklist.markers, blacklist.hw)
+        } else {
+          blacklist.markers <- blacklist.snp.number.markers
+        }
+        blacklist.hw <- NULL
       }
-      blacklist.hw <- NULL
+      if (verbose) message("    Number of markers before = ", n.snp.before)
+      if (verbose) message("    Number of markers removed = ", n.snp.before - new.data.info$n.snp)
+      if (verbose) message("    Number of markers after = ", new.data.info$n.snp)
+    } else {
+      hw.pop.threshold <- input$hw.pop.threshold
+      midp.threshold <- input$midp.threshold
+      input <- input$tidy.hw.filtered
     }
-    if (verbose) message("    Number of markers before = ", n.snp.before)
-    if (verbose) message("    Number of markers removed = ", n.snp.before - new.data.info$n.snp)
-    if (verbose) message("    Number of markers after = ", new.data.info$n.snp)
-  }
+  }#End HW
 
 
-
-    # Missing visualization analysis before filters------------------------------
-    # if (missing.analysis) {
-    #   if (verbose) message("Missing data analysis: after filters")
+  # Missing visualization analysis before filters------------------------------
+  # if (missing.analysis) {
+  #   if (verbose) message("Missing data analysis: after filters")
   #   missing.visualization <- grur::missing_visualization(data = input, write.plot = TRUE)
   # }
 

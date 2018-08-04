@@ -4,7 +4,8 @@
 \alias{check_pop_levels}
 \title{Check the use of pop.levels, pop.labels and pop.select arguments.}
 \usage{
-check_pop_levels(pop.levels = NULL, pop.labels = NULL, pop.select = NULL)
+check_pop_levels(pop.levels = NULL, pop.labels = NULL,
+  pop.select = NULL)
 }
 \arguments{
 \item{pop.levels}{(optional, string) This refers to the levels in a factor. In this

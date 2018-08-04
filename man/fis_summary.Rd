@@ -6,10 +6,11 @@
 \usage{
 fis_summary(data, vcf.metadata = TRUE, whitelist.markers = NULL,
   monomorphic.out = TRUE, blacklist.genotype = NULL, snp.ld = NULL,
-  common.markers = TRUE, maf.thresholds = NULL, maf.pop.num.threshold = 1,
-  maf.approach = "SNP", maf.operator = "OR", max.marker = NULL,
-  blacklist.id = NULL, pop.levels = NULL, pop.labels = NULL,
-  strata = NULL, pop.select = NULL, filename = NULL, verbose = FALSE)
+  common.markers = TRUE, maf.thresholds = NULL,
+  maf.pop.num.threshold = 1, maf.approach = "SNP",
+  maf.operator = "OR", max.marker = NULL, blacklist.id = NULL,
+  pop.levels = NULL, pop.labels = NULL, strata = NULL,
+  pop.select = NULL, filename = NULL, verbose = FALSE)
 }
 \arguments{
 \item{data}{12 options: VCF (SNPs or Haplotypes,

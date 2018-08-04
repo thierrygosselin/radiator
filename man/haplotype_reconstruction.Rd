@@ -4,7 +4,8 @@
 \alias{haplotype_reconstruction}
 \title{haplotype_reconstruction}
 \usage{
-haplotype_reconstruction(data, parallel.core = parallel::detectCores() - 1)
+haplotype_reconstruction(data, parallel.core = parallel::detectCores() -
+  1)
 }
 \description{
 Reconstruct haplotypes

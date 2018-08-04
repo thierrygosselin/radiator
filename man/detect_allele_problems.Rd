@@ -4,11 +4,12 @@
 \alias{detect_allele_problems}
 \title{Detect alternate allele problems}
 \usage{
-detect_allele_problems(data, allele.threshold = 3, whitelist.markers = NULL,
-  monomorphic.out = TRUE, blacklist.genotype = NULL, snp.ld = NULL,
-  common.markers = TRUE, maf.thresholds = NULL, max.marker = NULL,
-  blacklist.id = NULL, pop.levels = NULL, pop.labels = NULL,
-  strata = NULL, pop.select = NULL, filename = NULL, verbose = FALSE)
+detect_allele_problems(data, allele.threshold = 3,
+  whitelist.markers = NULL, monomorphic.out = TRUE,
+  blacklist.genotype = NULL, snp.ld = NULL, common.markers = TRUE,
+  maf.thresholds = NULL, max.marker = NULL, blacklist.id = NULL,
+  pop.levels = NULL, pop.labels = NULL, strata = NULL,
+  pop.select = NULL, filename = NULL, verbose = FALSE)
 }
 \arguments{
 \item{data}{12 options: VCF (SNPs or Haplotypes,

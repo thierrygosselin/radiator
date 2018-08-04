@@ -5,8 +5,8 @@
 \title{Compute pairwise genome similarity or distance between individuals
 to highligh potential duplicate individuals}
 \usage{
-detect_duplicate_genomes(data, subsample.markers = NULL, random.seed = NULL,
-  distance.method = "manhattan", genome = FALSE,
+detect_duplicate_genomes(data, subsample.markers = NULL,
+  random.seed = NULL, distance.method = "manhattan", genome = FALSE,
   threshold.common.markers = NULL, blacklist.duplicates = FALSE,
   parallel.core = parallel::detectCores() - 1, verbose = TRUE)
 }

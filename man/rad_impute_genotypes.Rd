@@ -4,9 +4,9 @@
 \alias{rad_impute_genotypes}
 \title{rad_impute_genotypes}
 \usage{
-rad_impute_genotypes(marker.list, data, data.na, data.gl = NULL, data.imp,
-  num.tree = 100, pred.mean.matching = 0, random.seed = NULL,
-  parallel.core = parallel::detectCores() - 1,
+rad_impute_genotypes(marker.list, data, data.na, data.gl = NULL,
+  data.imp, num.tree = 100, pred.mean.matching = 0,
+  random.seed = NULL, parallel.core = parallel::detectCores() - 1,
   hierarchical.levels = "strata", pred.error = pred.error)
 }
 \description{

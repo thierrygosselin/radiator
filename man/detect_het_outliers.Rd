@@ -5,10 +5,11 @@
 \title{Detect heterozygotes outliers and estimate miscall rate}
 \usage{
 detect_het_outliers(data, nreps = 2000, burn.in = NULL,
-  blacklist.id = NULL, whitelist.markers = NULL, blacklist.markers = NULL,
-  monomorphic.out = TRUE, max.marker = NULL, snp.ld = NULL,
-  common.markers = TRUE, strata = NULL, pop.levels = NULL,
-  pop.labels = NULL, pop.select = NULL, filename = NULL,
+  blacklist.id = NULL, whitelist.markers = NULL,
+  blacklist.markers = NULL, monomorphic.out = TRUE,
+  max.marker = NULL, snp.ld = NULL, common.markers = TRUE,
+  strata = NULL, pop.levels = NULL, pop.labels = NULL,
+  pop.select = NULL, filename = NULL,
   parallel.core = parallel::detectCores() - 1)
 }
 \arguments{

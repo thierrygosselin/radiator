@@ -708,94 +708,106 @@ filter_hwe <- function(
       dpi = 600, units = "cm", useDingbats = FALSE, limitsize = FALSE)
     if (verbose) message("Plot written: hwe.manhattan.plot.pdf")
 
-    # generate the blacklist/whitelist -------------------------------------------
-    # Generate blacklist of markers with the 4 significance groups
-    # threshold (integer) The number of outlier pop you tolerate to deviate from HWE.
-    # e.g. if \code{threshold = 2}, blacklist of markers out of HWE in more than (>=)
-    # 2 populations will be generated for all significance groupings.
+    # continue with filters or not ------
+    hw.q <- "\nDo you want to continue with the filtering ? (y/n):"
+    do.hw <- interactive_question(x = hw.q, answer.opt = c("y", "n"))
 
-    #leave user with this figure before choosing threshold
+    if (do.hw == "y") {
 
-    if (is.null(hw.pop.threshold)) hw.pop.threshold <- n.pop - 1
-    if (interactive.filter) {
-      # message("\nBased on figures and tables enter the hw.pop.threshold (integer): ")
-      # message("    an integer (e.g. 4):")
-      # hw.pop.threshold <- as.numeric(readLines(n = 1))
-      hw.pop.threshold <- interactive_question(
-        x = "\nBased on figures and tables enter the hw.pop.threshold (integer): ", minmax = c(0, 100000000))
-    }
+      # generate the blacklist/whitelist -------------------------------------------
+      # Generate blacklist of markers with the 4 significance groups
+      # threshold (integer) The number of outlier pop you tolerate to deviate from HWE.
+      # e.g. if \code{threshold = 2}, blacklist of markers out of HWE in more than (>=)
+      # 2 populations will be generated for all significance groupings.
 
-    # hw.pop.threshold <- 8
-    # Generating blacklists, whitelists and filtered tidy data -------------------
-    if (verbose) message("\nGenerating blacklists, whitelists and filtered tidy data")
-    output.message <- blacklist_hw(
-      x = hwd.markers.pop.sum,
-      unfiltered.data = data,
-      data.temp = data.temp,
-      hw.pop.threshold = hw.pop.threshold,
-      path.folder = path.folder,
-      filters.parameters.path = filters.parameters.path,
-      pop.id.levels = pop.id.levels) %>%
-      dplyr::select(-FILTERS, -COMMENTS)
+      #leave user with this figure before choosing threshold
 
-    res = list(path.folder = path.folder,
-               hw.pop.threshold = hw.pop.threshold,
-               plot.hwd.thresholds = plot.hwd.thresholds,
-               plot.tern = plot.tern,
-               hw.manhattan = hw.manhattan,
-               hwe.pop.sum = hwe.pop.sum)
-
-    # Choosing the last dataset --------------------------------------------------
-    no.file <- TRUE
-    while (no.file) {
+      if (is.null(hw.pop.threshold)) hw.pop.threshold <- n.pop - 1
       if (interactive.filter) {
-        message("\nChoosing the final filtered dataset")
-        message("   the tidy data object associated with this filter...")
-        # message("   choose the mid p-value threshold (one of: *, **, ***, **** or *****)")
-        # midp.threshold <- as.character(readLines(n = 1))
-        midp.threshold <- interactive_question(
-          x = "   choose the mid p-value threshold (one of: *, **, ***, **** or *****)", answer.opt = c("*", "**", "***", "****", "*****"))
-
+        # message("\nBased on figures and tables enter the hw.pop.threshold (integer): ")
+        # message("    an integer (e.g. 4):")
+        # hw.pop.threshold <- as.numeric(readLines(n = 1))
+        hw.pop.threshold <- interactive_question(
+          x = "\nBased on figures and tables enter the hw.pop.threshold (integer): ", minmax = c(0, 100000000))
       }
-      midp.threshold <- dplyr::case_when(
-        midp.threshold == "*****" ~ 0.00001,
-        midp.threshold == "****" ~ 0.0001,
-        midp.threshold == "***" ~ 0.001,
-        midp.threshold == "**" ~ 0.01,
-        midp.threshold == "*" ~ 0.05) %>%
-        format(., scientific = FALSE)
 
-      # path.folder <- yft.hw$path.folder
-      data.filtered.name <- list.files(
+      # hw.pop.threshold <- 8
+      # Generating blacklists, whitelists and filtered tidy data -------------------
+      if (verbose) message("\nGenerating blacklists, whitelists and filtered tidy data")
+      output.message <- blacklist_hw(
+        x = hwd.markers.pop.sum,
+        unfiltered.data = data,
+        data.temp = data.temp,
+        hw.pop.threshold = hw.pop.threshold,
+        path.folder = path.folder,
+        filters.parameters.path = filters.parameters.path,
+        pop.id.levels = pop.id.levels) %>%
+        dplyr::select(-FILTERS, -COMMENTS)
+
+      res = list(path.folder = path.folder,
+                 hw.pop.threshold = hw.pop.threshold,
+                 plot.hwd.thresholds = plot.hwd.thresholds,
+                 plot.tern = plot.tern,
+                 hw.manhattan = hw.manhattan,
+                 hwe.pop.sum = hwe.pop.sum)
+
+      # Choosing the last dataset --------------------------------------------------
+      no.file <- TRUE
+      while (no.file) {
+        if (interactive.filter) {
+          message("\nChoosing the final filtered dataset")
+          message("   the tidy data object associated with this filter...")
+          # message("   choose the mid p-value threshold (one of: *, **, ***, **** or *****)")
+          # midp.threshold <- as.character(readLines(n = 1))
+          midp.threshold <- interactive_question(
+            x = "   choose the mid p-value threshold (one of: *, **, ***, **** or *****)", answer.opt = c("*", "**", "***", "****", "*****"))
+
+        }
+        midp.threshold <- dplyr::case_when(
+          midp.threshold == "*****" ~ 0.00001,
+          midp.threshold == "****" ~ 0.0001,
+          midp.threshold == "***" ~ 0.001,
+          midp.threshold == "**" ~ 0.01,
+          midp.threshold == "*" ~ 0.05) %>%
+          format(., scientific = FALSE)
+
+        # path.folder <- yft.hw$path.folder
+        data.filtered.name <- list.files(
+          path = path.folder,
+          pattern = stringi::stri_join("tidy.filtered.hwe.", midp.threshold),
+          full.names = FALSE)
+        if (length(data.filtered.name) == 0) {
+          message("No file associated with this threshold, choose again")
+          no.file <- TRUE
+        } else {
+          no.file <- FALSE
+        }
+      }
+
+      res$midp.threshold  <- midp.threshold
+
+      message("\nFinal filtered tidy dataset: \n", data.filtered.name)
+      message("\nUsing hw.pop.threshold/midp.threshold: ", hw.pop.threshold, "/", midp.threshold)
+
+      res$tidy.hw.filtered <- list.files(
         path = path.folder,
         pattern = stringi::stri_join("tidy.filtered.hwe.", midp.threshold),
-        full.names = FALSE)
-      if (length(data.filtered.name) == 0) {
-        message("No file associated with this threshold, choose again")
-        no.file <- TRUE
-      } else {
-        no.file <- FALSE
-      }
+        full.names = TRUE) %>%
+        radiator::read_rad(data = .)
+    } else {
+      res$hw.pop.threshold <- NULL
+      res$midp.threshold <- NULL
+      res$tidy.hw.filtered <- data
     }
-
-    res$midp.threshold  <- midp.threshold
-
-    message("\nFinal filtered tidy dataset: \n", data.filtered.name)
-    message("\nUsing hw.pop.threshold/midp.threshold: ", hw.pop.threshold, "/", midp.threshold)
-
-    res$tidy.hw.filtered <- list.files(
-      path = path.folder,
-      pattern = stringi::stri_join("tidy.filtered.hwe.", midp.threshold),
-      full.names = TRUE) %>%
-      radiator::read_rad(data = .)
-
     # results --------------------------------------------------------------------
     if (verbose) {
       cat("############################### RESULTS ###############################\n")
-      message("with hw.pop.threshold: ", "> ", hw.pop.threshold)
-      # message("The number of markers (SNP/LOCUS) before -> blacklisted -> after the HWE filter:\n", markers.before, " -> ", markers.after)
+      if (do.hw == "y") {
+        message("with hw.pop.threshold: ", "> ", hw.pop.threshold)
+        # message("The number of markers (SNP/LOCUS) before -> blacklisted -> after the HWE filter:\n", markers.before, " -> ", markers.after)
 
-      print(output.message)
+        print(output.message)
+      }
 
       timing <- proc.time() - timing
       message("\nComputation time: ", round(timing[[3]]), " sec")

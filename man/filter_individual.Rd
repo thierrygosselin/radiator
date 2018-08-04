@@ -4,14 +4,14 @@
 \alias{filter_individual}
 \title{Individual filter}
 \usage{
-filter_individual(data, vcf.metadata = FALSE, interactive.filter = TRUE,
-  ind.approach = "pop", ind.threshold = 0.5, prob.pop.threshold = 0,
-  percent = FALSE, filename = NULL, blacklist.id = NULL,
-  blacklist.genotype = NULL, whitelist.markers = NULL,
-  monomorphic.out = TRUE, max.marker = NULL, snp.ld = NULL,
-  common.markers = FALSE, strata = NULL, pop.levels = NULL,
-  pop.labels = NULL, pop.select = NULL,
-  parallel.core = parallel::detectCores() - 1)
+filter_individual(data, vcf.metadata = FALSE,
+  interactive.filter = TRUE, ind.approach = "pop",
+  ind.threshold = 0.5, prob.pop.threshold = 0, percent = FALSE,
+  filename = NULL, blacklist.id = NULL, blacklist.genotype = NULL,
+  whitelist.markers = NULL, monomorphic.out = TRUE,
+  max.marker = NULL, snp.ld = NULL, common.markers = FALSE,
+  strata = NULL, pop.levels = NULL, pop.labels = NULL,
+  pop.select = NULL, parallel.core = parallel::detectCores() - 1)
 }
 \arguments{
 \item{data}{12 options: VCF (SNPs or Haplotypes,

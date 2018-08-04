@@ -4,8 +4,8 @@
 \alias{write_colony}
 \title{Write a \code{COLONY} input file from 9 genomic formats}
 \usage{
-write_colony(data, strata = NULL, pop.levels = NULL, pop.labels = NULL,
-  blacklist.id = NULL, blacklist.genotype = NULL,
+write_colony(data, strata = NULL, pop.levels = NULL,
+  pop.labels = NULL, blacklist.id = NULL, blacklist.genotype = NULL,
   whitelist.markers = NULL, monomorphic.out = TRUE, snp.ld = NULL,
   common.markers = TRUE, maf.thresholds = NULL, max.marker = NULL,
   sample.markers = NULL, pop.select = NULL, allele.freq = NULL,

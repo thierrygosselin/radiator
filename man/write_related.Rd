@@ -4,8 +4,8 @@
 \alias{write_related}
 \title{Write a related file from a tidy data frame}
 \usage{
-write_related(data, filename = NULL, parallel.core = parallel::detectCores()
-  - 1, ...)
+write_related(data, filename = NULL,
+  parallel.core = parallel::detectCores() - 1, ...)
 }
 \arguments{
 \item{data}{A tidy data frame object in the global environment or

@@ -4,8 +4,8 @@
 \alias{rad_decoding_haplotypes}
 \title{rad_decoding_haplotypes}
 \usage{
-rad_decoding_haplotypes(data = NULL, parallel.core = parallel::detectCores()
-  - 1)
+rad_decoding_haplotypes(data = NULL,
+  parallel.core = parallel::detectCores() - 1)
 }
 \description{
 separate snp group merged with rad_encoding_snp

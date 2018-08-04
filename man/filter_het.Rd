@@ -5,14 +5,15 @@
 \title{Heterozygosity filter}
 \usage{
 filter_het(data, interactive.filter = TRUE,
-  ind.heterozygosity.threshold = NULL, het.approach = c("SNP", "overall"),
-  het.threshold = 1, het.dif.threshold = 1, outlier.pop.threshold = 1,
-  helper.tables = FALSE, coverage.info = FALSE, filename = NULL,
-  vcf.metadata = TRUE, blacklist.id = NULL, blacklist.genotype = NULL,
-  whitelist.markers = NULL, monomorphic.out = TRUE, max.marker = NULL,
-  snp.ld = NULL, common.markers = FALSE, strata = NULL,
-  pop.levels = NULL, pop.labels = NULL, pop.select = NULL,
-  parallel.core = parallel::detectCores() - 1)
+  ind.heterozygosity.threshold = NULL, het.approach = c("SNP",
+  "overall"), het.threshold = 1, het.dif.threshold = 1,
+  outlier.pop.threshold = 1, helper.tables = FALSE,
+  coverage.info = FALSE, filename = NULL, vcf.metadata = TRUE,
+  blacklist.id = NULL, blacklist.genotype = NULL,
+  whitelist.markers = NULL, monomorphic.out = TRUE,
+  max.marker = NULL, snp.ld = NULL, common.markers = FALSE,
+  strata = NULL, pop.levels = NULL, pop.labels = NULL,
+  pop.select = NULL, parallel.core = parallel::detectCores() - 1)
 }
 \arguments{
 \item{data}{12 options: VCF (SNPs or Haplotypes,

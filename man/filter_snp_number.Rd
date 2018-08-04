@@ -4,13 +4,13 @@
 \alias{filter_snp_number}
 \title{Filter SNP number per locus/read}
 \usage{
-filter_snp_number(data, vcf.metadata = FALSE, interactive.filter = TRUE,
-  max.snp.number, filename = NULL, blacklist.id = NULL,
-  blacklist.genotype = NULL, whitelist.markers = NULL,
-  monomorphic.out = TRUE, max.marker = NULL, snp.ld = NULL,
-  common.markers = FALSE, strata = NULL, pop.levels = NULL,
-  pop.labels = NULL, pop.select = NULL,
-  parallel.core = parallel::detectCores() - 1)
+filter_snp_number(data, vcf.metadata = FALSE,
+  interactive.filter = TRUE, max.snp.number, filename = NULL,
+  blacklist.id = NULL, blacklist.genotype = NULL,
+  whitelist.markers = NULL, monomorphic.out = TRUE,
+  max.marker = NULL, snp.ld = NULL, common.markers = FALSE,
+  strata = NULL, pop.levels = NULL, pop.labels = NULL,
+  pop.select = NULL, parallel.core = parallel::detectCores() - 1)
 }
 \arguments{
 \item{data}{12 options: VCF (SNPs or Haplotypes,

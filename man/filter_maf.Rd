@@ -5,9 +5,10 @@
 \title{MAF filter}
 \usage{
 filter_maf(data, strata = NULL, interactive.filter = TRUE,
-  maf.thresholds = NULL, monomorphic.out = TRUE, common.markers = FALSE,
-  snp.ld = NULL, pop.select = NULL, filename = NULL,
-  parallel.core = parallel::detectCores() - 1, verbose = TRUE, ...)
+  maf.thresholds = NULL, monomorphic.out = TRUE,
+  common.markers = FALSE, snp.ld = NULL, pop.select = NULL,
+  filename = NULL, parallel.core = parallel::detectCores() - 1,
+  verbose = TRUE, ...)
 }
 \arguments{
 \item{data}{12 options: VCF (SNPs or Haplotypes,

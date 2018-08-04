@@ -4,8 +4,8 @@
 \alias{write_gsi_sim}
 \title{Write a gsi_sim file from a data frame (wide or long/tidy).}
 \usage{
-write_gsi_sim(data, pop.levels = NULL, pop.labels = NULL, strata = NULL,
-  filename = "gsi_sim.unname.txt")
+write_gsi_sim(data, pop.levels = NULL, pop.labels = NULL,
+  strata = NULL, filename = "gsi_sim.unname.txt")
 }
 \arguments{
 \item{data}{A tidy genomic data set in the working directory tidy formats.

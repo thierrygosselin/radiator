@@ -4,7 +4,8 @@
 \alias{tidy_silico_dart}
 \title{Tidy silico \href{http://www.diversityarrays.com}{DArT} output file.}
 \usage{
-tidy_silico_dart(data, strata = NULL, filename = NULL, verbose = TRUE)
+tidy_silico_dart(data, strata = NULL, filename = NULL,
+  verbose = TRUE)
 }
 \arguments{
 \item{data}{Silico DArT output file.

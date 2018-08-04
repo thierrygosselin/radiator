@@ -10,9 +10,9 @@ genomic_converter(data, output = NULL, vcf.metadata = FALSE,
   common.markers = TRUE, maf.thresholds = NULL, max.marker = NULL,
   strata = NULL, pop.levels = NULL, pop.labels = NULL,
   pop.select = NULL, imputation.method = NULL,
-  hierarchical.levels = "strata", num.tree = 50, pred.mean.matching = 0,
-  random.seed = NULL, parallel.core = parallel::detectCores() - 1,
-  verbose = TRUE, ...)
+  hierarchical.levels = "strata", num.tree = 50,
+  pred.mean.matching = 0, random.seed = NULL,
+  parallel.core = parallel::detectCores() - 1, verbose = TRUE, ...)
 }
 \arguments{
 \item{data}{12 options: VCF (SNPs or Haplotypes,

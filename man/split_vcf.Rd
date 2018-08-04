@@ -4,9 +4,9 @@
 \alias{split_vcf}
 \title{Split a VCF file}
 \usage{
-split_vcf(data, strata, monomorphic.out = FALSE, common.markers = FALSE,
-  pop.levels = NULL, pop.labels = NULL, pop.select = NULL,
-  blacklist.id = NULL, whitelist.markers = NULL,
+split_vcf(data, strata, monomorphic.out = FALSE,
+  common.markers = FALSE, pop.levels = NULL, pop.labels = NULL,
+  pop.select = NULL, blacklist.id = NULL, whitelist.markers = NULL,
   parallel.core = parallel::detectCores() - 1)
 }
 \arguments{

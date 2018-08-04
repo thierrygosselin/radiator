@@ -5,9 +5,10 @@
 \title{Map-independent imputations of missing genotypes}
 \usage{
 radiator_imputations_module(data, imputation.method = NULL,
-  hierarchical.levels = "strata", num.tree = 50, pred.mean.matching = 0,
-  verbose = TRUE, parallel.core = parallel::detectCores() - 1,
-  random.seed = NULL, filename = NULL, ...)
+  hierarchical.levels = "strata", num.tree = 50,
+  pred.mean.matching = 0, verbose = TRUE,
+  parallel.core = parallel::detectCores() - 1, random.seed = NULL,
+  filename = NULL, ...)
 }
 \arguments{
 \item{data}{A tidy genomic dataset.
