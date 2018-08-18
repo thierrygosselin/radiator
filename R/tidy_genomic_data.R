@@ -456,11 +456,15 @@ tidy_genomic_data <- function(
   # Import blacklist id --------------------------------------------------------
   if (!is.null(blacklist.id)) {# With blacklist of ID
     if (is.vector(blacklist.id)) {
-      suppressMessages(blacklist.id <- readr::read_tsv(blacklist.id, col_names = TRUE))
+      suppressMessages(blacklist.id <- readr::read_tsv(
+        blacklist.id,
+        col_names = TRUE,
+        col_types = readr::cols(.default = readr::col_character())))
     } else {
       if (!tibble::has_name(blacklist.id, "INDIVIDUALS")) {
         stop("Blacklist of individuals should have 1 column named: INDIVIDUALS")
       }
+      blacklist.id <- dplyr::mutate_all(.tbl = blacklist.id, .funs = as.character)
     }
     # not for plink file, where it's done after.
     # see plink section to understand

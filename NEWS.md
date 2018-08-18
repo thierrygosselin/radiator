@@ -1,3 +1,9 @@
+# radiator v.0.0.15 2018-08-17
+
+* `genomic_converter`, `tidy_genomic_data`: bug fix when individuals are integers
+* `fis_summary`: arguments updated
+
+
 # radiator v.0.0.14 2018-08-04
 
 * `filter_dart` and `filter_rad`: can now opt out of HWE filtering. 

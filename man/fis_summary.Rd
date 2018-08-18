@@ -5,12 +5,10 @@
 \title{Fis summary}
 \usage{
 fis_summary(data, vcf.metadata = TRUE, whitelist.markers = NULL,
-  monomorphic.out = TRUE, blacklist.genotype = NULL, snp.ld = NULL,
-  common.markers = TRUE, maf.thresholds = NULL,
-  maf.pop.num.threshold = 1, maf.approach = "SNP",
-  maf.operator = "OR", max.marker = NULL, blacklist.id = NULL,
-  pop.levels = NULL, pop.labels = NULL, strata = NULL,
-  pop.select = NULL, filename = NULL, verbose = FALSE)
+  monomorphic.out = TRUE, snp.ld = NULL, common.markers = TRUE,
+  maf.thresholds = NULL, blacklist.id = NULL, pop.levels = NULL,
+  pop.labels = NULL, strata = NULL, pop.select = NULL,
+  filename = NULL, verbose = FALSE)
 }
 \arguments{
 \item{data}{12 options: VCF (SNPs or Haplotypes,
@@ -49,28 +47,6 @@ Default \code{whitelist.markers = NULL} for no whitelist of markers.}
 \item{monomorphic.out}{(optional) Should the monomorphic
 markers present in the dataset be filtered out ?
 Default: \code{monomorphic.out = TRUE}.}
-
-\item{blacklist.genotype}{(optional) Useful to erase genotype with below
-average quality, e.g. genotype with more than 2 alleles in diploid likely
-sequencing errors or genotypes with poor genotype likelihood or coverage.
-The blacklist has a minimum of 2 column headers (markers and individuals).
-Markers can be 1 column (CHROM or LOCUS or POS),
-a combination of 2 (e.g. CHROM and POS or CHROM and LOCUS or LOCUS and POS) or
-all 3 (CHROM, LOCUS, POS). The markers columns must be designated: CHROM (character
-or integer) and/or LOCUS (integer) and/or POS (integer). The id column designated
-INDIVIDUALS (character) columns header.
-The blacklist is an object in your global environment or
-a file in the working directory (e.g. "blacklist.genotype.txt").
-For de novo VCF, CHROM column
-with 'un' need to be changed to 1.
-Marker names are cleaned of
-separators that interfere with some packages or codes:
-\code{/}, \code{:}, \code{-} and \code{.} are changed to an underscore
-\code{_}.
-Ids are also cleaned of separators that interfere with some packages or codes:
-\code{_} and \code{:} are changed to a dash \code{-}.
-Default: \code{blacklist.genotype = NULL} for no blacklist of
-genotypes to erase.}
 
 \item{snp.ld}{(optional) \strong{For data with locus and SNP info, like VCF and DArT file}.
 SNP short distance linkage disequilibrium pruning. With anonymous markers from
@@ -130,13 +106,6 @@ The number of pop required to pass the thresholds
 to keep the marker. Usually, I always use \code{1}, for 1 pop is required to
 pass thresholds and keep the marker.
 }}
-
-\item{max.marker}{(integer, optional) For large PLINK files,
-useful to subsample marker number. e.g. if the data set
-contains 200 000 markers and \code{max.marker = 10000}, 10000 markers are
-subsampled randomly from the 200000 markers. If you need specific markers,
-use \code{whitelist.markers} argument.
-Default: \code{max.marker = NULL}.}
 
 \item{blacklist.id}{(optional) A blacklist with individual ID and
 a column header 'INDIVIDUALS'. The blacklist is an object in your

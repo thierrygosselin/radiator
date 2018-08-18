@@ -178,7 +178,7 @@ write_vcf <- function(data, pop.info = FALSE, filename = NULL) {
   readr::write_delim(x = tibble::data_frame(file.date), path = filename, delim = " ", append = TRUE, col_names = FALSE)
 
   # Source ---------------------------------------------------------------------
-  readr::write_delim(x = tibble::data_frame(stringi::stri_join("##source=radiator_v.", utils::packageVersion("radiator"))), path = filename, delim = " ", append = TRUE, col_names = FALSE)
+  readr::write_delim(x = tibble::data_frame(stringi::stri_join("##source=radiator_v.", as.character(utils::packageVersion("radiator")))), path = filename, delim = " ", append = TRUE, col_names = FALSE)
 
   # Info field 1 ---------------------------------------------------------------
   info1 <- as.data.frame('##INFO=<ID=NS,Number=1,Type=Integer,Description=\"Number of Samples With Data\">')

@@ -251,11 +251,15 @@ See this file for the list and count: duplicated.markers.tsv\n\n")
   # Import blacklist id --------------------------------------------------------
   if (!is.null(blacklist.id)) {# With blacklist of ID
     if (is.vector(blacklist.id)) {
-      suppressMessages(blacklist.id <- readr::read_tsv(blacklist.id, col_names = TRUE))
+      suppressMessages(blacklist.id <- readr::read_tsv(
+        blacklist.id,
+        col_names = TRUE,
+        col_types = readr::cols(.default = readr::col_character())))
     } else {
       if (!tibble::has_name(blacklist.id, "INDIVIDUALS")) {
         stop("Blacklist of individuals should have 1 column named: INDIVIDUALS")
       }
+      blacklist.id <- dplyr::mutate_all(.tbl = blacklist.id, .funs = as.character)
     }
     blacklist.id$INDIVIDUALS <- radiator::clean_ind_names(blacklist.id$INDIVIDUALS)
 
@@ -877,6 +881,7 @@ strata_vcf <- function(strata, input, blacklist.id) {
         ))
     } else {
       strata.df <- strata
+      strata.df <- dplyr::mutate_all(.tbl = strata.df, .funs = as.character)
     }
   }
 

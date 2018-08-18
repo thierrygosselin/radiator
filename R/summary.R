@@ -389,14 +389,9 @@ fis_summary <- function(
   vcf.metadata = TRUE,
   whitelist.markers = NULL,
   monomorphic.out = TRUE,
-  blacklist.genotype = NULL,
   snp.ld = NULL,
   common.markers = TRUE,
   maf.thresholds = NULL,
-  maf.pop.num.threshold = 1,
-  maf.approach = "SNP",
-  maf.operator = "OR",
-  max.marker = NULL,
   blacklist.id = NULL,
   pop.levels = NULL,
   pop.labels = NULL,
@@ -419,21 +414,17 @@ fis_summary <- function(
       data = data,
       vcf.metadata = TRUE,
       blacklist.id = blacklist.id,
-      blacklist.genotype = blacklist.genotype,
       whitelist.markers = whitelist.markers,
       monomorphic.out = monomorphic.out,
-      max.marker = max.marker,
       snp.ld = snp.ld,
       common.markers = common.markers,
       maf.thresholds = maf.thresholds,
-      maf.pop.num.threshold = maf.pop.num.threshold,
-      maf.approach = maf.approach,
-      maf.operator = maf.operator,
       strata = strata,
       pop.levels = pop.levels,
       pop.labels = pop.labels,
       pop.select = pop.select,
-      filename = NULL
+      filename = NULL,
+      verbose = FALSE
     )
   )
 
