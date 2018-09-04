@@ -30,6 +30,21 @@
 #' A vcf file of 21 GB with ~2 millions SNPs take about ~5 min with 7 CPU.
 #'
 #' After the file is generated, it's a matter of sec to open a connection.
+#'
+#'
+#' \strong{... :dot dot dot arguments, to pass further argument to the function}
+#' x arguments are available:
+#' \enumerate{
+#' \item whitelist.markers
+#' \item blacklist.id
+#' \item pop.select
+#' \item pop.levels
+#' \item pop.labels
+#' \item snp.read.position.filter
+#' \item mac.threshold
+#' }
+#' Documentation for these arguments is detailed
+#' in \code{\link[radiator]{tidy_genomic_data}}.
 
 #' @export
 #' @rdname write_seqarray
@@ -55,6 +70,7 @@
 
 write_seqarray <- function(
   vcf,
+  strata = NULL,
   filename = NULL,
   vcf.stats = FALSE,
   parallel.core = parallel::detectCores() - 1,
@@ -62,13 +78,21 @@ write_seqarray <- function(
   ...
 ) {
 
-  #Test
-  # vcf = populations.snps.vcf
-  # filename = NULL
+  ##Test
+  # vcf = "test.vcf" # data = "populations.snps.vcf"
+  # strata <- "StLaw_popmap_thierry.tsv"
+  # filename <- NULL
   # vcf.stats <- TRUE
-  # parallel.core = parallel::detectCores() - 1
-  # verbose = TRUE
+  # parallel.core <- parallel::detectCores() - 1
+  # verbose <- TRUE
   # snp.read.position.filter <- c("outliers", "q75", "iqr")
+  # mac.threshold <- 4
+  # blacklist.id = "blacklist.id.missing.50.tsv"
+  # pop.select = NULL
+  # pop.levels = NULL
+  # pop.labels = NULL
+  # whitelist.markers = NULL
+  # keep.gds <- TRUE
 
   res <- list() #store the results
   timing.import <- proc.time()
@@ -95,7 +119,8 @@ write_seqarray <- function(
 
   # dotslist -------------------------------------------------------------------
   dotslist <- list(...)
-  want <- c("snp.read.position.filter", "mac.threshold")
+  want <- c("whitelist.markers", "snp.read.position.filter", "mac.threshold",
+            "blacklist.id", "pop.select", "pop.levels", "pop.labels", "keep.gds")
   unknowned_param <- setdiff(names(dotslist), want)
 
   if (length(unknowned_param) > 0) {
@@ -104,15 +129,24 @@ write_seqarray <- function(
   }
 
   radiator.dots <- dotslist[names(dotslist) %in% want]
+  whitelist.markers <- radiator.dots[["whitelist.markers"]]
   snp.read.position.filter <- radiator.dots[["snp.read.position.filter"]]
   mac.threshold <- radiator.dots[["mac.threshold"]]
+  blacklist.id <- radiator.dots[["blacklist.id"]]
+  pop.select <- radiator.dots[["pop.select"]]
+  pop.levels <- radiator.dots[["pop.levels"]]
+  pop.labels <- radiator.dots[["pop.labels"]]
+  keep.gds <- radiator.dots[["keep.gds"]]
 
-  snp.read.position.filter <- match.arg(
-    arg = snp.read.position.filter,
-    choices = c("outliers", "iqr", "q75"),
-    several.ok = TRUE)
+  # useful outside this function
+  if (is.null(keep.gds)) keep.gds <- TRUE
 
-  mac.threshold <- 4
+  if (!is.null(snp.read.position.filter)) {
+    snp.read.position.filter <- match.arg(
+      arg = snp.read.position.filter,
+      choices = c("outliers", "iqr", "q75"),
+      several.ok = TRUE)
+  }
 
   # Start --------
   message("\nReading VCF...")
@@ -131,9 +165,11 @@ write_seqarray <- function(
     ind.file <- stringi::stri_join("vcf_individuals_info_", file.date, ".tsv")
     markers.file <- stringi::stri_join("vcf_markers_metadata_", file.date, ".tsv")
     filename <- stringi::stri_join("radiator_", file.date, ".gds")
+    blacklist.markers <- stringi::stri_join("blacklist.markers_", file.date, ".tsv")
   } else {
     ind.file <- stringi::stri_join(filename, "_vcf_individuals_info_", file.date, ".tsv")
     markers.file <- stringi::stri_join(filename, "_vcf_markers_metadata_", file.date, ".tsv")
+    blacklist.markers <- stringi::stri_join(filename, "_blacklist.markers_", file.date, ".tsv")
     filename.problem <- file.exists(filename)
     if (filename.problem) {
       filename <- stringi::stri_join(filename, "_", file.date, ".gds")
@@ -150,21 +186,31 @@ write_seqarray <- function(
     parallel = parallel.core,
     storage.option = "ZIP_RA",
     verbose = FALSE) %>%
-    SeqArray::seqOpen(gds.fn = .)
+    SeqArray::seqOpen(gds.fn = ., readonly = FALSE)
   if (verbose) message("\nconversion timing: ", round((proc.time() - timing.vcf)[[3]]), " sec")
 
-  if (verbose) {
+  if (verbose && keep.gds) {
     message("\nSeqArray GDS file generated: ", filename)
     message("To close the connection use SeqArray::seqClose(OBJECT_NAME$vcf.connection)")
   }
 
   # Strata ---------------------------------------------------------------------
-  strata <- radiator::read_strata(strata) %$% strata
+  # import strata and filter with blacklist of id if present...
+  strata <- radiator::read_strata(
+    strata = strata,
+    pop.levels = pop.levels,
+    pop.labels = pop.labels,
+    pop.select = pop.select,
+    blacklist.id = blacklist.id) %$% strata
+
+  # keep id in VCF and clean
   res$individuals <- tibble::tibble(
     INDIVIDUALS_VCF = SeqArray::seqGetData(res$vcf.connection, "sample.id")) %>%
     dplyr::mutate(INDIVIDUALS = radiator::clean_ind_names(INDIVIDUALS_VCF))
 
   # test <- res$individuals
+
+  # replace id in VCF
   gdsfmt::add.gdsn(
     node = res$vcf.connection,
     name = "sample.id",
@@ -173,7 +219,10 @@ write_seqarray <- function(
     compress = "ZIP_RA",
     closezip = TRUE)
 
-  res$individuals %<>% dplyr::left_join(strata, by = "INDIVIDUALS")
+  # potentially filter ids based on strata
+  res$individuals %<>%
+    dplyr::filter(INDIVIDUALS %in% strata$INDIVIDUALS) %>%
+    dplyr::left_join(strata, by = "INDIVIDUALS")
 
   SeqArray::seqSetFilter(object = res$vcf.connection,
                          sample.id = res$individuals$INDIVIDUALS,
@@ -183,13 +232,46 @@ write_seqarray <- function(
 
   # Markers metadata  -----------------------------------------------------------
   if (vcf.stats) {
-    if (verbose) message("radiator is working on the file ...")
-    res$markers.meta <- tibble::tibble(
-      VARIANT_ID = SeqArray::seqGetData(res$vcf.connection, "variant.id"),
-      CHROM = SeqArray::seqGetData(res$vcf.connection, "chromosome"),
-      LOCUS = SeqArray::seqGetData(res$vcf.connection, "annotation/id"),
-      POS = SeqArray::seqGetData(res$vcf.connection, "position"))
+    if (verbose) message("\nradiator is working on the file ...")
 
+    # Check stacks version
+    stacks.2 <- stringi::stri_detect_fixed(
+      str = as.data.frame(x = SeqArray::header(res$vcf.connection)$META)[3,1],
+      pattern = "Stacks v2")
+
+    if (stacks.2) {
+      vcf.locus <- SeqArray::seqGetData(res$vcf.connection, "annotation/id")
+      sample.size <- min(length(unique(vcf.locus)), 100)
+      ref.genome <- sample(x = unique(vcf.locus), size = sample.size, replace = FALSE) %>%
+        stringi::stri_detect_regex(str = ., pattern = "[^[:alnum:]]+") %>%
+        unique
+      sample.size <- NULL
+
+      if (ref.genome) {
+        res$markers.meta <- tibble::tibble(
+          VARIANT_ID = SeqArray::seqGetData(res$vcf.connection, "variant.id"),
+          CHROM = SeqArray::seqGetData(res$vcf.connection, "chromosome"),
+          LOCUS = vcf.locus,
+          POS = SeqArray::seqGetData(res$vcf.connection, "position"))
+      } else {
+        res$markers.meta <- tibble::tibble(
+          VARIANT_ID = SeqArray::seqGetData(res$vcf.connection, "variant.id"),
+          CHROM = "1",
+          LOCUS = SeqArray::seqGetData(res$vcf.connection, "chromosome"),
+          POS = SeqArray::seqGetData(res$vcf.connection, "position")) %>%
+          dplyr::mutate(COL = POS - 1)
+      }
+      vcf.locus <- NULL
+    } else {
+      res$markers.meta <- tibble::tibble(
+        VARIANT_ID = SeqArray::seqGetData(res$vcf.connection, "variant.id"),
+        CHROM = SeqArray::seqGetData(res$vcf.connection, "chromosome"),
+        LOCUS = SeqArray::seqGetData(res$vcf.connection, "annotation/id"),
+        POS = SeqArray::seqGetData(res$vcf.connection, "position"))
+    }
+
+
+    # test <- res$markers.meta
 
     # detect ":" or "_" in locus id
     if (stringi::stri_detect_regex(str = res$markers.meta[1,3], pattern = "[^[:alnum:]]+")) {
@@ -204,15 +286,122 @@ write_seqarray <- function(
       # check <- tibble::tibble(LOCUS = SeqArray::seqGetData(res$vcf.connection, "variant.id"))
     }
 
+    # Generate MARKERS column and fix types
+    res$markers.meta %<>%
+      dplyr::mutate_at(.tbl = .,
+                       .vars = c("CHROM", "LOCUS", "POS"),
+                       .funs = radiator::clean_markers_names) %>%
+      dplyr::mutate(
+        MARKERS = stringi::stri_join(CHROM, LOCUS, POS, sep = "__"),
+        REF = SeqArray::seqGetData(gdsfile = res$vcf.connection, var.name = "$ref"),
+        ALT = SeqArray::seqGetData(gdsfile = res$vcf.connection, var.name = "$alt")
+      )
+
+    # test <- res$markers.meta
+
+    # Scan and filter with FILTER column ---------------------------------------
+    res$markers.meta$FILTER <- SeqArray::seqGetData(res$vcf.connection, "annotation/filter")
+    filter.check.unique <- unique(res$markers.meta$FILTER)
+
+    if (length(filter.check.unique) > 1) {
+      message("Filtering markers based on VCF FILTER column")
+
+      variant.select <- dplyr::filter(res$markers.meta, FILTER == "PASS") %>%
+        dplyr::select(VARIANT_ID) %>%
+        purrr::flatten_int(.)
+
+      n.markers.before <- nrow(res$markers.meta)
+      n.markers.after <- length(variant.select)
+      message("    Number of markers before = ", n.markers.before)
+      message("    Number of markers removed = ", n.markers.before - n.markers.after)
+      message("    Number of markers after = ", n.markers.after)
+
+      SeqArray::seqSetFilter(object = res$vcf.connection,
+                             variant.id = variant.select,
+                             verbose = FALSE)
+    }
+    filter.check.unique <- NULL
+    res$markers.meta %<>% dplyr::select(-FILTER)
+
+    # bi- or multi-alllelic VCF --------------------------------------------------
+    alt.num <- max(unique(SeqArray::seqNumAllele(gdsfile = res$vcf.connection))) - 1
+
+    if (alt.num > 1) {
+      res$biallelic <- FALSE
+      message("VCF is multi-allelic")
+    } else {
+      res$biallelic <- TRUE
+      message("VCF is biallelic")
+    }
+
+    # Filter with whitelist of markers------------------------------------------
+    if (!is.null(whitelist.markers)) {
+
+      # Import whitelist of markers
+      if (is.vector(whitelist.markers)) {
+        whitelist.markers <- suppressMessages(
+          readr::read_tsv(whitelist.markers, col_names = TRUE) %>%
+            dplyr::mutate_all(.tbl = ., .funs = as.character))
+      }
+      columns.names.whitelist <- colnames(whitelist.markers)
+      nrow.before <- nrow(whitelist.markers)
+      whitelist.markers <- dplyr::distinct(whitelist.markers)
+      nrow.after <- nrow(whitelist.markers)
+      duplicate.whitelist.markers <- nrow.before - nrow.after
+      if (duplicate.whitelist.markers > 0) {
+        message("Whitelist of markers with ", duplicate.whitelist.markers, " duplicated identifiers...")
+        message("    Creating unique whitelist")
+        message("    Warning: downstream results might be impacted by this, check how you made your VCF file...")
+      }
+      nrow.before <- nrow.after <- duplicate.whitelist.markers <- NULL
+
+      whitelist.markers <- dplyr::mutate_all(
+        .tbl = whitelist.markers, .funs = clean_markers_names)
+
+      if (!biallelic) {
+        if (ncol(whitelist.markers) >= 3) {
+          message("Note: whitelist with CHROM LOCUS POS columns and VCF haplotype:
+                If the whitelist was not created from this VCF,
+                the filtering could result in losing all the markers.
+                The POS column is different in biallelic and multiallelic file...\n")
+
+          message("Discarding the POS column in the whitelist")
+          whitelist.markers <- dplyr::select(whitelist.markers, -POS)
+        }
+
+        if (ncol(whitelist.markers) == 1 && tibble::has_name(whitelist.markers, "MARKERS")) {
+          message("Note: whitelist MARKERS column and VCF haplotype:
+                If the whitelist was not created from this VCF,
+                the filtering could result in losing all the markers.
+                The POS column used in the MARKERS column is different in biallelic and multiallelic file...\n")
+        }
+      }
+      message("Filtering: ", nrow(whitelist.markers), " markers in whitelist")
+      columns.names.whitelist <- colnames(whitelist.markers)
+
+      variant.select <- suppressWarnings(
+        dplyr::semi_join(
+          res$markers.meta, whitelist.markers, by = columns.names.whitelist)) %>%
+        dplyr::select(VARIANT_ID) %>%
+        purrr::flatten_int(.)
+
+      SeqArray::seqSetFilter(object = res$vcf.connection,
+                             variant.id = variant.select,
+                             verbose = FALSE)
+
+      if (length(SeqArray::seqGetData(res$vcf.connection, "variant.id")) == 0) {
+        stop("No markers left in the dataset, check whitelist...")
+      }
+    }
+
     # Markers stats ------------------------------------------------------------
     if (verbose) message("Updating markers metadata and stats")
     n.markers <- dplyr::n_distinct(res$markers.meta$VARIANT_ID)
     want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS",
-              "COL","MISSING_PROP", "REF_COUNT", "MAC", "SNP_PER_LOCUS")
-    res$markers.meta  <- suppressWarnings(
+              "COL", "REF", "ALT", "MISSING_PROP", "REF_COUNT", "MAC", "SNP_PER_LOCUS")
+    res$markers.meta <- suppressWarnings(
       dplyr::bind_cols(
-        dplyr::mutate(res$markers.meta,
-                      MARKERS = stringi::stri_join(CHROM, LOCUS, POS, sep = "__")),
+        res$markers.meta,
         SeqArray::seqAlleleCount(
           gdsfile = res$vcf.connection,
           ref.allele = NULL,
@@ -235,14 +424,15 @@ write_seqarray <- function(
         dplyr::group_by(LOCUS) %>%
         dplyr::mutate(SNP_PER_LOCUS = n()) %>%
         dplyr::ungroup(.) %>%
-        dplyr::select(want)
+        dplyr::select(dplyr::one_of(want))
     )
     # test <- res$markers.meta
+
     # when low MAC is remove that number drops...
     if (!is.null(mac.threshold)) {
       res$markers.meta %<>%
         dplyr::mutate(
-          MAC_FILTER = dplyr::if_else(MAC >= 4, TRUE, FALSE))
+          MAC_FILTER = dplyr::if_else(MAC >= mac.threshold, TRUE, FALSE))
     } else {
       res$markers.meta %<>%
         dplyr::mutate(MAC_FILTER = TRUE)
@@ -252,19 +442,19 @@ write_seqarray <- function(
     # position of the SNPs on the read -----------------------------------------
     if (tibble::has_name(res$markers.meta, "COL")) {
       if (verbose) message("Generating SNP position on read stats")
-      res$snp.col.stats <- tibble_stats(
+      res$stats$snp.col.stats <- tibble_stats(
         x = dplyr::filter(res$markers.meta, MAC_FILTER) %>% # using filtered dataset
           dplyr::distinct(MARKERS,COL) %$%
           COL,
         group = "snp position on read") #%>% dplyr::select(-OUTLIERS_LOW)
-      snp.col.iqr.threshold <- c(res$snp.col.stats$Q25, res$snp.col.stats$Q75)
+      snp.col.iqr.threshold <- c(res$stats$snp.col.stats$Q25, res$stats$snp.col.stats$Q75)
 
       # outliers
       if ("outliers" %in% snp.read.position.filter) {
         res$markers.meta %<>%
           dplyr::mutate(
             SNP_POS_READ_OUTLIERS = dplyr::if_else(
-              COL < res$snp.col.stats$OUTLIERS_HIGH, TRUE, FALSE))
+              COL < res$stats$snp.col.stats$OUTLIERS_HIGH, TRUE, FALSE))
       } else {
         res$markers.meta %<>% dplyr::mutate(SNP_POS_READ_OUTLIERS = TRUE)
       }
@@ -290,7 +480,7 @@ write_seqarray <- function(
       }
 
       # Update
-      res$snp.col.stats %<>% dplyr::bind_rows(
+      res$stats$snp.col.stats %<>% dplyr::bind_rows(
         tibble_stats(
           x = unique.col <- res$markers.meta %>%
             dplyr::filter(MAC_FILTER) %>% # mac filter
@@ -300,10 +490,10 @@ write_seqarray <- function(
             dplyr::distinct(MARKERS, COL) %$% COL,
           group = "snp position on read filtered")) #%>% dplyr::select(-OUTLIERS_LOW))
       snp.col.iqr.threshold <- NULL
-      # test <- res$snp.col.stats
+      # test <- res$stats$snp.col.stats
       # Generate box plot
-      res$snp.pos.read.fig <- boxplot_stats(
-        data = res$snp.col.stats,
+      res$figures$snp.pos.read.fig <- boxplot_stats(
+        data = res$stats$snp.col.stats,
         title = "Impact of filter on the SNP position on the read",
         x.axis.title = "SNP position on the read groupings",
         y.axis.title = "SNP position (base pair)",
@@ -311,7 +501,7 @@ write_seqarray <- function(
     }
     # number of SNPs per locus -------------------------------------------------
     # before and after filtering
-    res$snp.locus.stats <- tibble_stats(
+    res$stats$snp.locus.stats <- tibble_stats(
       x = res$markers.meta$SNP_PER_LOCUS,
       group =  "unfiltered") %>%
       dplyr::bind_rows(
@@ -342,34 +532,53 @@ write_seqarray <- function(
       dplyr::arrange(GROUP)
 
     # Generate box plot
-    res$snp.per.locus.fig <- boxplot_stats(
-      data = res$snp.locus.stats,
+    res$figures$snp.per.locus.fig <- boxplot_stats(
+      data = res$stats$snp.locus.stats,
       title = "Impact of filters on the number of SNPs per locus",
       x.axis.title = "groupings",
       y.axis.title = "Number of SNPs per locus",
       bp.filename = "vcf.number.snp.per.locus.pdf")
 
-    # get unique locus id and generate a variant.locus.id vector ---------------
-    variant.locus.id <- res$markers.meta %>%
+    # generate a variant.id vector ---------------------------------------------
+    variant.id.select <- res$markers.meta %>%
       dplyr::filter(MAC_FILTER) %>% # mac filter
       dplyr::filter(SNP_POS_READ_OUTLIERS) %>% # outlier snp on read filter
       dplyr::filter(SNP_POS_READ_Q75) %>% # snp below Q75
       dplyr::filter(SNP_POS_READ_IQR) %>%
-      dplyr::select(LOCUS, VARIANT_ID) %>%
-      dplyr::distinct(LOCUS, .keep_all = TRUE) %>%
+      # dplyr::select(LOCUS, VARIANT_ID) %>%
+      # dplyr::distinct(LOCUS, .keep_all = TRUE) %>%
       dplyr::select(VARIANT_ID) %>%
       purrr::flatten_int(.)
 
-    # SeqArray::seqSetFilter(object = res$vcf.connection, variant.id = variant.locus.id, verbose = FALSE)
+    # Apply the filter on the gds ...
+    SeqArray::seqSetFilter(object = res$vcf.connection,
+                           variant.id = variant.id.select, verbose = FALSE)
+    # Check filter
+    # SeqArray::seqGetFilter(gdsfile = res$vcf.connection)
     # SeqArray::seqResetFilter(object = res$vcf.connection, verbose = FALSE)
 
     if (verbose) message("Generating coverage stats")
-    coverage.info <- extract_coverage(data = res$vcf.connection,
-                                      variant.locus.id = variant.locus.id)
+    coverage.info <- extract_coverage(data = res$vcf.connection)
+    # variant.id.select = variant.id.select) # old version discard if no longer necessary
+
+    # blacklisted markers ------------------------------------------------------
+    blacklisted.markers <- nrow(res$markers.meta) - length(variant.id.select)
+
+    if (blacklisted.markers > 0) {
+      if (verbose) message("Number of blacklisted markers: ", blacklisted.markers)
+      res$blacklist.markers <- dplyr::filter(
+        res$markers.meta, !VARIANT_ID %in% variant.id.select) %>%
+        readr::write_tsv(x = ., path = blacklist.markers)
+      res$markers.meta %<>% dplyr::filter(VARIANT_ID %in% variant.id.select)
+    }
 
     #Coverage: MARKERS
     res$markers.meta %<>% dplyr::mutate(COVERAGE_MEAN = coverage.info$markers.mean) %>%
       readr::write_tsv(x = ., path = markers.file)
+    # dplyr::left_join(
+    #   tibble::tibble(VARIANT_ID = variant.id.select,
+    #                  COVERAGE_MEAN = coverage.info$markers.mean
+    #   ), by = "VARIANT_ID")
 
     # Individuals stats --------------------------------------------------------
     if (verbose) message("Generating individual stats")
@@ -388,7 +597,7 @@ write_seqarray <- function(
     coverage.info <- NULL
 
     # test <- res$individuals
-    res$ind.stats <- tibble_stats(
+    res$stats$ind.stats <- tibble_stats(
       x = res$individuals$MISSING_PROP,
       group = "individual's missing genotypes") %>%
       dplyr::bind_rows(
@@ -402,10 +611,10 @@ write_seqarray <- function(
           x = as.numeric(res$individuals$COVERAGE_MEAN),
           group = "individual's mean coverage")
       )
-    # test <- res$ind.stats
+    # test <- res$stats$ind.stats
 
-    ind.stats.fig <- boxplot_stats(
-      data = res$ind.stats,
+    res$figures$ind.stats.fig <- boxplot_stats(
+      data = res$stats$ind.stats,
       title = "Individual's QC stats",
       x.axis.title = NULL,
       y.axis.title = "Statistics",
@@ -417,25 +626,26 @@ write_seqarray <- function(
     res$n.locus <- dplyr::n_distinct(res$markers.meta$LOCUS)
     res$n.markers <- dplyr::n_distinct(res$markers.meta$MARKERS)
     res$n.individuals <- nrow(res$individuals)
-    res$ind.missing <- round(mean(res$individuals$MISSING_PROP, na.rm = TRUE), 2)
-    res$ind.cov.total <- round(mean(res$individuals$COVERAGE_TOTAL, na.rm = TRUE), 0)
-    res$ind.cov.mean <- round(mean(res$individuals$COVERAGE_MEAN, na.rm = TRUE), 0)
-    res$markers.missing <- round(mean(res$markers.meta$MISSING_PROP, na.rm = TRUE), 2)
-    res$markers.cov <- round(mean(res$markers.meta$COVERAGE_MEAN, na.rm = TRUE), 0)
+    res$stats$ind.missing <- round(mean(res$individuals$MISSING_PROP, na.rm = TRUE), 2)
+    res$stats$ind.cov.total <- round(mean(res$individuals$COVERAGE_TOTAL, na.rm = TRUE), 0)
+    res$stats$ind.cov.mean <- round(mean(res$individuals$COVERAGE_MEAN, na.rm = TRUE), 0)
+    res$stats$markers.missing <- round(mean(res$markers.meta$MISSING_PROP, na.rm = TRUE), 2)
+    res$stats$markers.cov <- round(mean(res$markers.meta$COVERAGE_MEAN, na.rm = TRUE), 0) # same as above because NA...
 
+    res$filename <- filename
 
     if (verbose) {
+      message("\n\nMissing data (averaged): ")
+      message("    markers: ", res$stats$markers.missing)
+      message("    individuals: ", res$stats$ind.missing)
+      message("\n\nCoverage info:")
+      message("    individuals mean read depth: ", res$stats$ind.cov.total)
+      message("    individuals mean genotype coverage: ", res$stats$ind.cov.mean)
+      message("    markers mean coverage: ", res$stats$markers.cov)
       message("\n\nNumber of chromosome/contig/scaffold: ", res$n.chromosome)
       message("Number of locus: ", res$n.locus)
       message("Number of markers: ", res$n.markers)
       message("Number of individuals: ", res$n.individuals)
-      message("\n\nMissing data (averaged): ")
-      message("    markers: ", res$markers.missing)
-      message("    individuals: ", res$ind.missing)
-      message("\n\nCoverage info:")
-      message("    individuals mean read depth: ", res$ind.cov.total)
-      message("    individuals mean genotype coverage: ", res$ind.cov.mean)
-      message("    markers mean coverage: ", res$markers.cov)
     }
 
 
@@ -503,13 +713,16 @@ tibble_stats <- function(x, group, subsample = NULL) {
 #' @rdname extract_coverage
 #' @keywords internal
 #' @export
-extract_coverage <- function(data = NULL, variant.locus.id = NULL) {
+extract_coverage <- function(data = NULL) {#, variant.id.select = NULL) {
   # data <- res$vcf.connection
   coverage.info <- list()
   depth <- SeqArray::seqGetData(data, "annotation/format/DP")
-  coverage.info$ind.cov.tot <- as.integer(round(rowSums(x = depth$data[,variant.locus.id], na.rm = TRUE, dims = 1L), 0))
-  coverage.info$ind.cov.mean <- as.integer(round(rowMeans(x = depth$data[,variant.locus.id], na.rm = TRUE, dims = 1L), 0))
+  # test <- depth$data
+  coverage.info$ind.cov.tot <- as.integer(round(rowSums(x = depth$data, na.rm = TRUE, dims = 1L), 0))
+  coverage.info$ind.cov.mean <- as.integer(round(rowMeans(x = depth$data, na.rm = TRUE, dims = 1L), 0))
   coverage.info$markers.mean <- as.integer(round(colMeans(x = depth$data, na.rm = TRUE, dims = 1L), 0))
+  # coverage.info$ind.cov.tot <- as.integer(round(rowSums(x = depth$data[,variant.id.select], na.rm = TRUE, dims = 1L), 0))
+  # coverage.info$ind.cov.mean <- as.integer(round(rowMeans(x = depth$data[,variant.id.select], na.rm = TRUE, dims = 1L), 0))
   return(coverage.info)
 }#End extract_coverage
 
@@ -519,17 +732,24 @@ extract_coverage <- function(data = NULL, variant.locus.id = NULL) {
 #' @rdname boxplot_stats
 #' @keywords internal
 #' @export
-boxplot_stats <- function(data, title,
+boxplot_stats <- function(data,
+                          title,
                           x.axis.title = NULL,
                           y.axis.title,
                           facet.columns = FALSE,
                           facet.rows = FALSE,
                           bp.filename = NULL) {
   # data <- test
+  # x.axis.title = NULL
   # x.axis.title <- "SNP position on the read groupings"
+  # title <- "Individual's QC stats"
   # title <- "Impact of filter on the SNP position in the read"
+  # y.axis.title <- "Statistics"
   # y.axis.title <- "SNP position (base pair)"
   # bp.filename <- "vcf.snp.position.read.pdf"
+  # bp.filename <- "test.pdf"
+  # facet.columns = TRUE
+  # facet.rows = FALSE
 
   n.group <- dplyr::n_distinct(data$GROUP)
   element.text <- ggplot2::element_text(size = 10,
@@ -585,6 +805,16 @@ boxplot_stats <- function(data, title,
         linetype = "dashed")
   }
 
+  fig.boxplot <- fig.boxplot +
+    ggplot2::theme(
+      plot.title = ggplot2::element_text(size = 12, family = "Helvetica",
+                                         face = "bold", hjust = 0.5),
+      legend.position = "none",
+      axis.title.y = element.text,
+      axis.text.y = element.text
+    ) +
+    ggplot2::theme_bw()
+
   if (is.null(x.axis.title)) {
     fig.boxplot <- fig.boxplot +
       ggplot2::theme(
@@ -603,32 +833,36 @@ boxplot_stats <- function(data, title,
   }
 
 
-  fig.boxplot <- fig.boxplot +
-    ggplot2::theme(
-      plot.title = ggplot2::element_text(size = 12, family = "Helvetica",
-                                         face = "bold", hjust = 0.5),
-      legend.position = "none",
-      axis.title.y = element.text,
-      axis.text.y = element.text
-    ) +
-    ggplot2::theme_bw()
+  # fig.boxplot <- fig.boxplot +
+  #   ggplot2::theme(
+  #     plot.title = ggplot2::element_text(size = 12, family = "Helvetica",
+  #                                        face = "bold", hjust = 0.5),
+  #     legend.position = "none",
+  #     axis.title.y = element.text,
+  #     axis.text.y = element.text
+  #   ) +
+  #   ggplot2::theme_bw()
 
   if (facet.columns) {
     fig.boxplot <- fig.boxplot + ggplot2::facet_grid(GROUP ~ ., scales = "free")
     n.facet <- n.group * 2
     width <- 10
-    height <- 10 + (2 * n.group)
-  } else {
-    width <-  10 + (5 * n.group) + 1
-    height <-  10
+    height <- 10 + (4 * n.group)
   }
+
+  # else {
+  # width <-  10 + (5 * n.group) + 1
+  # height <-  10
+  # }
 
   if (facet.rows) {
     fig.boxplot <- fig.boxplot + ggplot2::facet_grid(FACET_ROWS ~ ., scales = "free")
     n.facet <- n.group * 2
     width <- 10
-    height <- 10 + (2 * n.group)
-  } else {
+    height <- 10 + (4 * n.group)
+  }
+
+  if (!facet.rows && !facet.columns) {
     width <-  10 + (5 * n.group) + 1
     height <-  10
   }

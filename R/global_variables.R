@@ -88,7 +88,8 @@ if (getRversion() >= "2.15.1") {
       "VALUES", "TOTAL_READ_COUNTS", "aswer.opt", "markers.meta", "vcf.connection",
       "ALT_COUNT", "INDIVIDUALS_VCF", "MAC", "MAC_FILTER", "REF_COUNT",
       "SNP_PER_LOCUS_MAC", "SNP_POS_READ_IQR", "SNP_POS_READ_OUTLIERS",
-      "SNP_POS_READ_Q75", "VARIANT_ID"
+      "SNP_POS_READ_Q75", "VARIANT_ID", "genotypes", "NEW_POP", "NEW_INDIVIDUALS",
+      "biallelic"
     )
   )
 }

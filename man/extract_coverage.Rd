@@ -4,7 +4,7 @@
 \alias{extract_coverage}
 \title{extract_coverage}
 \usage{
-extract_coverage(data = NULL, variant.locus.id = NULL)
+extract_coverage(data = NULL)
 }
 \description{
 Extract coverage information from a GDS file

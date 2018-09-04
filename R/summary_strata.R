@@ -59,12 +59,22 @@ read_strata <- function(strata, pop.id = FALSE,
                         trim_ws = TRUE))
     }
     blacklist.id$INDIVIDUALS <- clean_ind_names(blacklist.id$INDIVIDUALS)
+
+
+    # remove potential duplicate id
+    dup <- dplyr::distinct(.data = blacklist.id, INDIVIDUALS)
+    blacklist.id.dup <- nrow(blacklist.id) - nrow(dup)
+    if (blacklist.id.dup >1) {
+      message("Duplicate id's in blacklist: ", blacklist.id.dup)
+      blacklist.id <- dup
+    }
+    dup <- blacklist.id.dup <- NULL
     n.ind.blacklist <- length(blacklist.id$INDIVIDUALS)
     if (verbose) message("\nNumber of individuals in blacklist: ", n.ind.blacklist, " ind.")
     n.ind.blacklisted <- length(strata$INDIVIDUALS %in% blacklist.id$INDIVIDUALS)
     strata <- dplyr::filter(strata, !INDIVIDUALS %in% blacklist.id$INDIVIDUALS)
     if (verbose) message("\nBlacklisted individuals: ", n.ind.blacklisted, " ind.")
-    }
+  }
 
 
   # manage levels, labels and pop.select ---------------------------------------

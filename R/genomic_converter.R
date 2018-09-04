@@ -237,6 +237,7 @@ genomic_converter <- function(
   verbose = TRUE,
   ...
 ) {
+
   if (verbose) {
     cat("#######################################################################\n")
     cat("##################### radiator::genomic_converter #####################\n")
@@ -427,7 +428,15 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
     pop.select = pop.select,
     filename = NULL,
     verbose = FALSE,
-    keep.allele.names = keep.allele.names
+    keep.allele.names = keep.allele.names,
+    vcf.stats = TRUE,
+    snp.read.position.filter = NULL,
+    mac.threshold = NULL,
+    gt.vcf.nuc = TRUE,
+    gt.vcf = TRUE,
+    gt = TRUE,
+    gt.bin = TRUE,
+    keep.gds = FALSE
   )
 
   if(verbose) message("\nPreparing data for output\n")
@@ -473,7 +482,7 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
           vectorize_all = FALSE
         )
       } else {
-        message("IMPORTANT: you have > 20 000 markers (", marker.number, ")",
+        message("\nIMPORTANT: you have > 20 000 markers (", marker.number, ")",
                 "\nDo you want the more suitable genlight object instead of the current genind? (y/n):")
         overide.genind <- as.character(readLines(n = 1))
         if (overide.genind == "y") {

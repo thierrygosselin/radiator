@@ -42,7 +42,11 @@ NULL
 #' @keywords internal
 #' @export
 split_vec_row <- function(x, cpu.rounds, parallel.core = parallel::detectCores() - 1) {
-  n.row <- nrow(x)
+  if (!is.integer(x)) {
+    n.row <- nrow(x)
+  } else {
+    n.row <- x
+  }
   split.vec <- as.integer(floor((parallel.core * cpu.rounds * (1:n.row - 1) / n.row) + 1))
   return(split.vec)
 }#End split_vec_row

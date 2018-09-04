@@ -53,28 +53,61 @@ write_fineradstructure <- function(data, filename = NULL) {
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
   if (is.null(filename)) {
     filename <- stringi::stri_join("radiator_fineradstructure_", file.date, ".tsv")
+    dic.filename <- stringi::stri_join("radiator_fineradstructure_dictionary_", file.date, ".tsv")
   } else {
     filename.problem <- file.exists(filename)
     if (filename.problem) {
+      dic.filename <- stringi::stri_join(filename, "_fineradstructure_dictionary_", file.date, ".tsv")
       filename <- stringi::stri_join(filename, "_fineradstructure_", file.date, ".tsv")
     } else {
+      dic.filename <- stringi::stri_join(filename, "_fineradstructure_dictionary.tsv")
       filename <- stringi::stri_join(filename, "_fineradstructure.tsv")
     }
   }
 
   # Conversion  ----------------------------------------------------------------
-  want <- c("MARKERS", "INDIVIDUALS", "GT_VCF_NUC")
-  data <- suppressWarnings(dplyr::select(data, dplyr::one_of(want))) %>%
+  # dictionnary pop and id
+  dictionary <- dplyr::distinct(data, POP_ID, INDIVIDUALS) %>%
+    dplyr::arrange(POP_ID, INDIVIDUALS) %>%
     dplyr::mutate(
+      POP_ID = factor(POP_ID),
+      NEW_POP = as.integer(POP_ID),
+      NEW_POP = LETTERS[NEW_POP],
+      INDIVIDUALS = factor(INDIVIDUALS),
+      NEW_INDIVIDUALS = as.integer(INDIVIDUALS),
+      ID = stringi::stri_join(NEW_POP, NEW_INDIVIDUALS)
+    ) %>%
+    readr::write_tsv(x = ., path = dic.filename)
+
+  message("Dictionary filename for id and pop: ", dic.filename)
+
+
+  want <- c("LOCUS", "MARKERS", "INDIVIDUALS", "GT_VCF_NUC")
+  data <- suppressWarnings(
+    dplyr::select(data, dplyr::one_of(want)) %>%
+    dplyr::left_join(dplyr::select(dictionary, ID, INDIVIDUALS), by = "INDIVIDUALS")) %>%
+    dplyr::mutate(
+      INDIVIDUALS = NULL,
       GT_VCF_NUC = stringi::stri_replace_all_fixed(
         str = GT_VCF_NUC, pattern = "./.", replacement = NA, vectorize_all = FALSE)
-      ) %>%
+    ) %>%
+    separate_gt(x = ., sep = "/", gt = "GT_VCF_NUC",
+                gather = TRUE, exclude = c("LOCUS", "MARKERS", "ID")) %>%
+    dplyr::group_by(LOCUS, ID, ALLELE_GROUP) %>%
+    dplyr::summarise(HAPLOTYPES = stringi::stri_join(HAPLOTYPES, collapse = "")) %>%
+    dplyr::mutate(HAPLOTYPES = stringi::stri_replace_all_fixed(
+      str = HAPLOTYPES, pattern = ".", replacement = "N", vectorize_all = FALSE)) %>%
+    dplyr::arrange(LOCUS, ID, ALLELE_GROUP) %>%
+    dplyr::group_by(LOCUS, ID) %>%
+    dplyr::summarise(HAPLOTYPES = stringi::stri_join(HAPLOTYPES, collapse = "/")) %>%
+    dplyr::ungroup(.) %>%
     data.table::as.data.table(.) %>%
     data.table::dcast.data.table(
       data = .,
-      formula = MARKERS ~ INDIVIDUALS, value.var = "GT_VCF_NUC"
-      ) %>%
-    dplyr::select(-MARKERS) %>%
+      formula = LOCUS ~ ID, value.var = "HAPLOTYPES"
+    ) %>%
+    dplyr::arrange(LOCUS) %>%
+    dplyr::select(-LOCUS) %>%
     readr::write_tsv(x = ., path = filename, na = "")
   return(data)
 } # End write_fineradstructure

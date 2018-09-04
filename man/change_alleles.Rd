@@ -5,7 +5,7 @@
 \title{Change REF and ALT alleles based on count}
 \usage{
 change_alleles(data, biallelic = NULL,
-  parallel.core = parallel::detectCores() - 1, verbose = FALSE)
+  parallel.core = parallel::detectCores() - 1, verbose = FALSE, ...)
 }
 \arguments{
 \item{data}{A genomic data set in the global environment tidy formats.
@@ -24,6 +24,9 @@ Default: \code{parallel.core = parallel::detectCores() - 1}.}
 \item{verbose}{(optional, logical) \code{verbose = TRUE} to be chatty
 during execution.
 Default: \code{verbose = FALSE}.}
+
+\item{...}{(optional) To pass further argument for fine-tuning the tidying
+(details below).}
 }
 \value{
 Depending if the input file is biallelic or multiallelic,

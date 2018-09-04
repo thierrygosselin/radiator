@@ -79,6 +79,8 @@ several other filtering options.
 \item pop.select
 \item pop.levels
 \item pop.labels
+\item ref.calibration
+\item vcf.stats
 }
 Documentation for these arguments is detailed
 in \code{\link[radiator]{tidy_genomic_data}}, the only difference here, the

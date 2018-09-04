@@ -302,7 +302,15 @@ filter_rad <- function(
     pop.select = pop.select,
     blacklist.id = blacklist.id,
     parallel.core = parallel.core,
-    verbose = FALSE)
+    verbose = FALSE,
+    vcf.stats = TRUE,
+    snp.read.position.filter = NULL,
+    mac.threshold = NULL,
+    gt.vcf.nuc = TRUE,
+    gt.vcf = TRUE,
+    gt = TRUE,
+    gt.bin = TRUE,
+    keep.gds = FALSE)
 
 
   # Keep GT_BIN

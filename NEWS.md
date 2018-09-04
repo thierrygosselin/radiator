@@ -1,3 +1,9 @@
+# radiator v.0.0.16 2018-09-04
+
+* `tidy_vcf`, `tidy_genomic_data` and `genomic_converter`: way faster with huge VCF
+* `write_fineradstructure`: fix bug when data was from DArT
+
+
 # radiator v.0.0.15 2018-08-17
 
 * `genomic_converter`, `tidy_genomic_data`: bug fix when individuals are integers

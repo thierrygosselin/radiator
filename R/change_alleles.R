@@ -27,6 +27,10 @@
 #' during execution.
 #' Default: \code{verbose = FALSE}.
 
+#' @param ... (optional) To pass further argument for fine-tuning the tidying
+#' (details below).
+
+
 #' @return
 #' Depending if the input file is biallelic or multiallelic,
 #' the function will output additional to REF and ALT column several genotype codings:
@@ -65,12 +69,19 @@ change_alleles <- function(
   data,
   biallelic = NULL,
   parallel.core = parallel::detectCores() - 1,
-  verbose = FALSE) {
+  verbose = FALSE,
+  ...
+  ) {
 
   # test
   # biallelic = NULL
   # parallel.core = parallel::detectCores() - 1
   # verbose = TRUE
+  # gt.vcf.nuc <- TRUE
+  # gt.vcf <- TRUE
+  # gt <- TRUE
+  # gt.bin <- TRUE
+
 
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) stop("Input file missing")
@@ -78,6 +89,31 @@ change_alleles <- function(
   # necessary steps to make sure we work with unique markers and not duplicated LOCUS
   if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
     data <- dplyr::rename(.data = data, MARKERS = LOCUS)
+  }
+
+  # dotslist -------------------------------------------------------------------
+  dotslist <- list(...)
+  want <- c("gt.vcf.nuc", "gt.vcf", "gt", "gt.bin")
+  unknowned_param <- setdiff(names(dotslist), want)
+
+  if (length(unknowned_param) > 0) {
+    stop("Unknowned \"...\" parameters ",
+         stringi::stri_join(unknowned_param, collapse = " "))
+  }
+
+  radiator.dots <- dotslist[names(dotslist) %in% want]
+  gt.vcf.nuc <- radiator.dots[["gt.vcf.nuc"]]
+  gt.vcf <- radiator.dots[["gt.vcf"]]
+  gt <- radiator.dots[["gt"]]
+  gt.bin <- radiator.dots[["gt.bin"]]
+
+  if (is.null(gt.vcf.nuc)) gt.vcf.nuc <- TRUE
+  if (is.null(gt.vcf)) gt.vcf <- TRUE
+  if (is.null(gt)) gt <- TRUE
+  if (is.null(gt.bin)) gt.bin <- TRUE
+
+  if (!gt.vcf.nuc && !gt) {
+    stop("At least one of gt.vcf.nuc or gt must be TRUE")
   }
 
   # get number of markers
@@ -160,7 +196,7 @@ change_alleles <- function(
       inversion <- FALSE
     }
     old.ref <- NULL
-    message("    number of markers with REF/ALT change(s) = ", nrow(change.ref))
+    message("\nNumber of markers with REF/ALT change(s) = ", nrow(change.ref))
   } else {
     inversion <- FALSE
   }

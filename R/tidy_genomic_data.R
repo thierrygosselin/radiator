@@ -407,7 +407,9 @@ tidy_genomic_data <- function(
 
   # dotslist -------------------------------------------------------------------
   dotslist <- list(...)
-  want <- c("keep.allele.names")
+  want <- c("keep.allele.names", "snp.read.position.filter", "mac.threshold",
+            "ref.calibration", "gt.vcf.nuc", "gt.vcf", "gt", "gt.bin", "vcf.stats",
+            "keep.gds")
   unknowned_param <- setdiff(names(dotslist), want)
 
   if (length(unknowned_param) > 0) {
@@ -419,7 +421,36 @@ tidy_genomic_data <- function(
   keep.allele.names <- radiator.dots[["keep.allele.names"]]
 
   if (is.null(keep.allele.names)) keep.allele.names <- FALSE
+  snp.read.position.filter <- radiator.dots[["snp.read.position.filter"]]
+  mac.threshold <- radiator.dots[["mac.threshold"]]
+  ref.calibration <- radiator.dots[["ref.calibration"]]
+  gt.vcf.nuc <- radiator.dots[["gt.vcf.nuc"]]
+  gt.vcf <- radiator.dots[["gt.vcf"]]
+  gt <- radiator.dots[["gt"]]
+  gt.bin <- radiator.dots[["gt.bin"]]
+  vcf.stats <- radiator.dots[["vcf.stats"]]
+  filename <- radiator.dots[["filename"]]
+  keep.gds <- radiator.dots[["keep.gds"]]
 
+  if (is.null(keep.gds)) keep.gds <- TRUE
+  if (is.null(vcf.stats)) vcf.stats <- TRUE
+  if (is.null(ref.calibration)) ref.calibration <- FALSE
+  if (is.null(gt.vcf.nuc)) gt.vcf.nuc <- TRUE
+  if (is.null(gt.vcf)) gt.vcf <- TRUE
+  if (is.null(gt)) gt <- TRUE
+  if (is.null(gt.bin)) gt.bin <- TRUE
+
+
+  if (!gt.vcf.nuc && !gt) {
+    stop("At least one of gt.vcf.nuc or gt must be TRUE")
+  }
+
+  if (!is.null(snp.read.position.filter)) {
+    snp.read.position.filter <- match.arg(
+      arg = snp.read.position.filter,
+      choices = c("outliers", "iqr", "q75"),
+      several.ok = TRUE)
+  }
 
   # File type detection----------------------------------------------------------
   skip.tidy.wide <- FALSE # initiate for data frame below
@@ -526,8 +557,19 @@ tidy_genomic_data <- function(
       blacklist.id = blacklist.id,
       pop.select = pop.select,
       pop.levels = pop.levels,
-      pop.labels = pop.labels
-    )
+      pop.labels = pop.labels,
+      filename = NULL,
+      vcf.stats = TRUE,
+      snp.read.position.filter = NULL,
+      mac.threshold = NULL,
+      gt.vcf.nuc = TRUE,
+      gt.vcf = TRUE,
+      gt = TRUE,
+      gt.bin = TRUE,
+      keep.gds = FALSE
+    ) %$%
+      genotypes
+
     biallelic <- radiator::detect_biallelic_markers(input)
   } # End import VCF
 
@@ -1167,12 +1209,12 @@ tidy_genomic_data <- function(
 
   # Minor Allele Frequency filter ----------------------------------------------
   if (!is.null(maf.thresholds)) { # with MAF
-  input <- radiator::filter_maf(
-    data = input,
-    interactive.filter = FALSE,
-    maf.thresholds = maf.thresholds,
-    parallel.core = parallel.core,
-    verbose = FALSE)$tidy.filtered.maf
+    input <- radiator::filter_maf(
+      data = input,
+      interactive.filter = FALSE,
+      maf.thresholds = maf.thresholds,
+      parallel.core = parallel.core,
+      verbose = FALSE)$tidy.filtered.maf
   } # End of MAF filters
 
 
