@@ -46,9 +46,15 @@
 #' doi:10.1093/bioinformatics/bts606
 
 #' @details The function requires \href{https://github.com/zhengxwen/SNPRelate}{SNPRelate}
-#' to prepare the data for LDna. To install SNPRelate:
+#' to prepare the data for LDna.
+#'
+#' To install SNPRelate:
 #' source("https://bioconductor.org/biocLite.R")
-#' biocLite("SNPRelate"').
+#' biocLite("SNPRelate").
+#'
+#' To install LDna:
+#' devtools::install_github("petrikemppainen/LDna")
+#'
 #'
 #' \strong{Further arguments passed via the \emph{dots-dots-dots}:}
 #' \itemize{
@@ -71,6 +77,7 @@ write_ldna <- function(data,
   # data <- unfiltered.data
   # filename = NULL
   # parallel.core = parallel::detectCores() - 1
+  # keep.gds <- TRUE
 
   # Check that snprelate is installed
   if (!requireNamespace("SNPRelate", quietly = TRUE)) {
@@ -117,6 +124,8 @@ write_ldna <- function(data,
     data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
   }
 
+  markers <- unique(data$MARKERS)
+
   # Check if data is biallelic -------------------------------------------------
   biallelic <- radiator::detect_biallelic_markers(data = data)
   if (!biallelic) stop("LDna requires biallelic genotypes")
@@ -146,16 +155,20 @@ write_ldna <- function(data,
     num.thread = parallel.core,
     verbose = TRUE) %$%
     LD
+
+  # anyNA(long.distance.ld)
   # long.distance.ld.bk <- long.distance.ld
   # long.distance.ld <- long.distance.ld.bk
 
   # fill diagonal and upper matrix with NA
   message("Preparing the data for LDna")
-  long.distance.ld[upper.tri(long.distance.ld, diag = FALSE)] <- NA
-  long.distance.ld[is.nan(long.distance.ld)] <- NA # removes NaN
+  long.distance.ld[upper.tri(long.distance.ld, diag = TRUE)] <- NA
+  # long.distance.ld[is.nan(long.distance.ld)] <- NA # removes NaN
   long.distance.ld <- long.distance.ld^2 # R-square required by LDna
 
- # write object ----------------------------------------------------------------
+  # dim(long.distance.ld)
+  colnames(long.distance.ld) <- rownames(long.distance.ld) <- markers
+  # write object ----------------------------------------------------------------
   if (write.ldna) {
     message("Writing LDna file: ", filename)
     save(long.distance.ld, file = filename)
