@@ -409,7 +409,8 @@ filter_dart <- function(
     ggplot2::ggsave(
       filename = file.path(path.folder.reproducibility, "plot.reproducibility.violinplot.pdf"),
       plot = plot.reproducibility.violinplot,
-      width = 20, height = 15, dpi = 600, units = "cm", useDingbats = FALSE)
+      width = 20, height = 15, dpi = 600, units = "cm",
+      useDingbats = FALSE, limitsize = FALSE)
 
     plot.reproducibility.histo <- ggplot2::ggplot(
       data = reproducibility,
@@ -434,7 +435,8 @@ filter_dart <- function(
     suppressMessages(ggplot2::ggsave(
       filename = file.path(path.folder.reproducibility, "plot.reproducibility.histo.pdf"),
       plot = plot.reproducibility.histo,
-      width = 20, height = 15, dpi = 600, units = "cm", useDingbats = FALSE))
+      width = 20, height = 15, dpi = 600, units = "cm",
+      useDingbats = FALSE, limitsize = FALSE))
 
     if (interactive.filter) {
       suppressWarnings(print(plot.reproducibility.histo))
@@ -541,7 +543,8 @@ filter_dart <- function(
     ggplot2::ggsave(
       filename = file.path(path.folder.call.rate, "plot.call.rate.violinplot.pdf"),
       plot = plot.call.rate.violinplot,
-      width = 20, height = 15, dpi = 600, units = "cm", useDingbats = FALSE)
+      width = 20, height = 15, dpi = 600, units = "cm",
+      useDingbats = FALSE, limitsize = FALSE)
 
     plot.call.rate.histo <- ggplot2::ggplot(
       data = call.rate,
@@ -567,7 +570,8 @@ filter_dart <- function(
     suppressMessages(ggplot2::ggsave(
       filename = file.path(path.folder.call.rate, "plot.call.rate.histo.pdf"),
       plot = plot.call.rate.histo,
-      width = 20, height = 15, dpi = 600, units = "cm", useDingbats = FALSE))
+      width = 20, height = 15, dpi = 600, units = "cm",
+      useDingbats = FALSE, limitsize = FALSE))
 
     if (interactive.filter) {
       print(plot.call.rate.histo)
@@ -842,7 +846,8 @@ filter_dart <- function(
     suppressMessages(ggplot2::ggsave(
       filename = file.path(path.folder.coverage, "plot.coverage.pdf"),
       plot = plot.coverage,
-      width = 30, height = 15, dpi = 600, units = "cm", useDingbats = FALSE))
+      width = 30, height = 15, dpi = 600, units = "cm",
+      useDingbats = FALSE, limitsize = FALSE))
 
     plot.coverage.boxplot <- ggplot2::ggplot(
       coverage.long,
@@ -865,7 +870,8 @@ filter_dart <- function(
     suppressMessages(ggplot2::ggsave(
       filename = file.path(path.folder.coverage, "plot.coverage.boxplot.pdf"),
       plot = plot.coverage.boxplot,
-      width = 15, height = 15, dpi = 600, units = "cm", useDingbats = FALSE))
+      width = 15, height = 15, dpi = 600, units = "cm",
+      useDingbats = FALSE, limitsize = FALSE))
 
     if (interactive.filter) {
       filter.coverage <- c(1, 1000000)
@@ -1045,7 +1051,8 @@ filter_dart <- function(
     suppressMessages(ggplot2::ggsave(
       filename = file.path(path.folder.coverage, "plot.coverage.boxplot.pdf"),
       plot = plot.coverage.boxplot,
-      width = 15, height = 20, dpi = 300, units = "cm", useDingbats = FALSE))
+      width = 15, height = 20, dpi = 300, units = "cm",
+      useDingbats = FALSE, limitsize = FALSE))
     plot.coverage.boxplot <- NULL
 
     if (interactive.filter) {
@@ -1226,7 +1233,7 @@ filter_dart <- function(
       filename = file.path(path.folder.coverage, "plot.gl.violinplot.pdf"),
       plot = plot.gl.violinplot,
       width = length(overall.levels) * 1.8, height = 10, dpi = 300, units = "cm",
-      useDingbats = FALSE))
+      useDingbats = FALSE, limitsize = FALSE))
     plot.gl.violinplot <- NULL
 
     # GL and coverage correlation statistics------------------------------------
@@ -1541,7 +1548,7 @@ filter_dart <- function(
         plot = missing.ind.plot,
         filename = file.path(path.folder.id.missing, "plot.missing.ind.pdf"),
         width = data.info$n.pop * 2, height = 10, dpi = 300, units = "cm",
-        useDingbats = FALSE)
+        useDingbats = FALSE, limitsize = FALSE)
     )
 
     if (interactive.filter) {
@@ -1804,7 +1811,8 @@ filter_dart <- function(
       plot = plot.ind.threshold,
       filename = file.path(path.folder.ind.filter, "plot.ind.threshold.pdf"),
       width = pop.number*5, height = 10,
-      dpi = 600, units = "cm", useDingbats = FALSE)
+      dpi = 600, units = "cm", useDingbats = FALSE,
+      limitsize = FALSE)
 
     if (interactive.filter) {
       message("\nStep 1. Impact of individual threshold on marker discovery")
@@ -2053,7 +2061,8 @@ on the number of genotyped individuals per pop ? (overall or pop)")
     ggplot2::ggsave(
       filename = file.path(path.folder.snp.number, "number.snp.locus.plot.pdf"),
       plot = number.snp.reads.plot,
-      width = 20, height = 10, dpi = 300, units = "cm", useDingbats = FALSE)
+      width = 20, height = 10, dpi = 300, units = "cm",
+      useDingbats = FALSE, limitsize = FALSE)
 
     if (interactive.filter) {
       message("\n2 non-exclusive methods to manage short LD and the number of SNPs/reads/locus:")
@@ -2513,7 +2522,7 @@ on the number of genotyped individuals per pop ? (overall or pop)")
   if (interactive.filter || hw.pop.threshold) {
     if (verbose) cat("\n### 14: Filter markers HWE ############################################\n")
     # message to do HW filtering or not
-    hw.q <- "    Do you want to filter you markers based on HW principles ?\nYou can still opt out after looking at the figures. (y/n): \n"
+    hw.q <- "Do you want to filter you markers based on HW principles ?\nYou can still opt out after looking at the figures. (y/n): \n"
     do.hw <- interactive_question(x = hw.q, answer.opt = c("y", "n"))
 
     if (do.hw == "y") {

@@ -85,7 +85,10 @@ tidy_vcf <- function(
   # Check that SeqArray is installed
   if (!"SeqArray" %in% utils::installed.packages()[,"Package"]) {
     stop('Please install SeqArray for this option:\n
-         devtools::install_github("zhengxwen/SeqArray")')
+         devtools::install_github("zhengxwen/SeqArray")
+         or the bioconductor version:
+         source("https://bioconductor.org/biocLite.R")
+         biocLite("SeqArray")')
   }
 
   if (!"SeqVarTools" %in% utils::installed.packages()[,"Package"]) {
@@ -395,7 +398,13 @@ tidy_vcf <- function(
   data$genotypes <- dplyr::arrange(data$genotypes, POP_ID, INDIVIDUALS)
 
   timing <- proc.time() - timing
-  if (verbose) message("\nTidying vcf time: ", round(timing[[3]]), " sec")
+  if (verbose) {
+    if (vcf.stats) {
+      message("\nTiming for tidying and generating stats of vcf: ", round(timing[[3]]), " sec")
+    } else {
+      message("\nTiming for tidying vcf: ", round(timing[[3]]), " sec")
+    }
+  }
   options(width = opt.change)
   return(data)
 }#End tidy_vcf

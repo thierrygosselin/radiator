@@ -17,7 +17,7 @@
 #' included in the FORMAT field (along the GT info for each samples ?). To make
 #' the VCF population-ready use \code{pop.info = TRUE}. The population information
 #' must be included in the \code{POP_ID} column of the tidy dataset.
-#' Default: \code{pop.info = FALSE}.
+#' Default: \code{pop.info = FALSE}. Experimental.
 
 #' @param filename (optional) The file name prefix for the vcf file
 #' written to the working directory. With default: \code{filename = NULL},
@@ -85,7 +85,7 @@ write_vcf <- function(data, pop.info = FALSE, filename = NULL) {
 
   id.string <- unique(data$INDIVIDUALS)# keep to sort vcf columns
   # Remove the POP_ID column ---------------------------------------------------
-  if (tibble::has_name(data, "POP_ID") || (!pop.info)) {
+  if (tibble::has_name(data, "POP_ID") && (!pop.info)) {
     data <- dplyr::select(.data = data, -POP_ID)
   }
 

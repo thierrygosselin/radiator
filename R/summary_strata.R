@@ -110,8 +110,8 @@ read_strata <- function(strata, pop.id = FALSE,
   }
 
   if (!is.null(pop.select) || !is.null(blacklist.id)) {
-    pop.levels <- droplevels(pop.levels)
-    pop.labels <- droplevels(pop.labels)
+    if (is.factor(pop.levels)) pop.levels <- droplevels(pop.levels)
+    if (is.factor(pop.labels)) pop.labels <- droplevels(pop.labels)
   }
 
   # If dart file manage TARGET_ID ----------------------------------------------

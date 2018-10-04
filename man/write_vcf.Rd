@@ -16,7 +16,7 @@ Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.}
 included in the FORMAT field (along the GT info for each samples ?). To make
 the VCF population-ready use \code{pop.info = TRUE}. The population information
 must be included in the \code{POP_ID} column of the tidy dataset.
-Default: \code{pop.info = FALSE}.}
+Default: \code{pop.info = FALSE}. Experimental.}
 
 \item{filename}{(optional) The file name prefix for the vcf file
 written to the working directory. With default: \code{filename = NULL},

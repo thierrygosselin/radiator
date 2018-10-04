@@ -64,6 +64,13 @@ tidy_silico_dart <- function(
   filename = NULL,
   verbose = TRUE
 ) {
+
+  # Test
+  # data = "Report_DAci18-3647_1_moreOrders_SilicoDArT_2.csv"
+  # strata = "sturgeon_sex_strata_no_u.tsv"
+  # filename = NULL
+  # verbose = TRUE
+
   opt.change <- getOption("width")
   options(width = 70)
   # for timing
@@ -131,15 +138,16 @@ tidy_silico_dart <- function(
         x = strata.id.check,
         path = problem.filename)
       stop("\nSome of the samples in the strata are not found in the DArT file.
-           For more info: ", problem.filename)
+For more info: ", problem.filename)
     }
-
+    message("\nCaution: you've chosen to tidy a subsample of your DArT file.
+DArT statistics generated for all samples might not apply...\n")
     strata.id.check <- NULL
-    } else {
-      if (!identical(sort(target.id$TARGET_ID), sort(strata.df$TARGET_ID))) {
-        stop("\nThe DArT and strata files don't have the same TARGET_IDs")
-      }
+  } else {
+    if (!identical(sort(target.id$TARGET_ID), sort(strata.df$TARGET_ID))) {
+      stop("\nThe DArT and strata files don't have the same TARGET_IDs")
     }
+  }
   target.id <- NULL
 
   # need to check for duplicate names... yes happening all the time

@@ -4,7 +4,8 @@
 \alias{write_snprelate}
 \title{Write a SNPRelate object from a tidy data frame}
 \usage{
-write_snprelate(data, biallelic = TRUE, filename = NULL)
+write_snprelate(data, biallelic = TRUE, filename = NULL,
+  verbose = TRUE)
 }
 \arguments{
 \item{data}{A tidy data frame object in the global environment or
@@ -22,6 +23,10 @@ radiator will append \code{.gds} to the filename.
 If filename chosen is already present in the
 working directory, the default \code{radiator_snprelate_datetime.gds} is chosen.
 Default: \code{filename = NULL}.}
+
+\item{verbose}{(optional, logical) When \code{verbose = TRUE}
+the function is a little more chatty during execution.
+Default: \code{verbose = TRUE}.}
 }
 \description{
 Write a \href{https://github.com/zhengxwen/SNPRelate}{SNPRelate}

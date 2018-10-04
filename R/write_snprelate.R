@@ -23,6 +23,8 @@
 #' working directory, the default \code{radiator_snprelate_datetime.gds} is chosen.
 #' Default: \code{filename = NULL}.
 
+#' @inheritParams tidy_genomic_data
+
 #' @export
 #' @rdname write_snprelate
 
@@ -40,7 +42,7 @@
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 
-write_snprelate <- function(data, biallelic = TRUE, filename = NULL) {
+write_snprelate <- function(data, biallelic = TRUE, filename = NULL, verbose = TRUE) {
 
   # Check that snprelate is installed
   if (!requireNamespace("SNPRelate", quietly = TRUE)) {
@@ -90,7 +92,7 @@ write_snprelate <- function(data, biallelic = TRUE, filename = NULL) {
   if (!biallelic) stop("SNPRelate requires biallelic genotypes")
   # verbose <- FALSE
 
-  message("Generating GDS format...")
+  if (verbose) message("Generating GDS format...")
   # keep markers in common
   # gds.genotypes <- suppressMessages(radiator::keep_common_markers(data = input)$input)
 
@@ -151,9 +153,9 @@ write_snprelate <- function(data, biallelic = TRUE, filename = NULL) {
 
   gds.file.connection <- SNPRelate::snpgdsOpen(filename)
 
-  message("\nNote: \n
+  if (verbose) message("\nNote: \n
 GDS filename: ", filename)
 
-  message("\nTo close the connection use SNPRelate::snpgdsClose(OBJECT_NAME)")
+  if (verbose) message("\nTo close the connection use SNPRelate::snpgdsClose(OBJECT_NAME)")
   return(gds.file.connection)
 } # End write_snprelate

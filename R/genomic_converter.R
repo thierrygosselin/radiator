@@ -832,8 +832,6 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
 
   if (verbose) {
     cat("############################### RESULTS ###############################\n")
-    message("Tidy data in your global environment")
-    message("Depending on output selected, check the list in your global environment and your working directory")
     message("Data format of input: ", data.type)
     if (biallelic) {
       message("Biallelic data")

@@ -79,31 +79,29 @@ write_pcadapt <- function(
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {
-    input <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-  } else {
-    input <- data
+    data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
   }
 
   # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-  if (tibble::has_name(input, "LOCUS") && !tibble::has_name(input, "MARKERS")) {
-    input <- dplyr::rename(.data = input, MARKERS = LOCUS)
+  if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
+    data <- dplyr::rename(.data = data, MARKERS = LOCUS)
   }
 
   # pop.select -----------------------------------------------------------------
   if (!is.null(pop.select)) {
     message("pop.select: ")
-    input <- dplyr::filter(input, POP_ID %in% pop.select)
-    if (is.factor(input$POP_ID)) input$POP_ID <- droplevels(input$POP_ID)
+    data <- dplyr::filter(data, POP_ID %in% pop.select)
+    if (is.factor(data$POP_ID)) data$POP_ID <- droplevels(data$POP_ID)
   }
 
   # Keeping common markers -----------------------------------------------------
-  input <- radiator::keep_common_markers(data = input, verbose = TRUE)$input
+  data <- radiator::keep_common_markers(data = data, verbose = TRUE)$input
 
   # Removing monomorphic markers -----------------------------------------------
-  input <- radiator::discard_monomorphic_markers(data = input, verbose = TRUE)$input
+  data <- radiator::discard_monomorphic_markers(data = data, verbose = TRUE)$input
 
   # detect biallelic markers ---------------------------------------------------
-  biallelic <- radiator::detect_biallelic_markers(data = input)
+  biallelic <- radiator::detect_biallelic_markers(data = data)
 
   if (!biallelic) {
     stop("\npcadapt only work with biallelic dataset")
@@ -111,18 +109,18 @@ write_pcadapt <- function(
 
   # Linkage disequilibrium -----------------------------------------------------
   if (!is.null(snp.ld)) {
-    if (tibble::has_name(input, "LOCUS") && tibble::has_name(input, "POS")) {
+    if (tibble::has_name(data, "LOCUS") && tibble::has_name(data, "POS")) {
       message("Short distance linkage disequilibrium pruning")
       message("    snp.ld: ", snp.ld)
-      input <- radiator::snp_ld(data = input, snp.ld = snp.ld)
+      data <- radiator::snp_ld(data = data, snp.ld = snp.ld)
     }
   }
 
 
   # MAF ------------------------------------------------------------------------
   if (!is.null(maf.thresholds)) { # with MAF
-    input <- radiator::filter_maf(
-      data = input,
+    data <- radiator::filter_maf(
+      data = data,
       interactive.filter = FALSE,
       maf.thresholds = maf.thresholds,
       parallel.core = parallel.core,
@@ -131,27 +129,27 @@ write_pcadapt <- function(
 
   # Biallelic and GT_BIN -------------------------------------------------------
 
-  n.ind <- dplyr::n_distinct(input$INDIVIDUALS)
-  n.pop <- dplyr::n_distinct(input$POP_ID)
-  n.markers <- dplyr::n_distinct(input$MARKERS)
+  n.ind <- dplyr::n_distinct(data$INDIVIDUALS)
+  n.pop <- dplyr::n_distinct(data$POP_ID)
+  n.markers <- dplyr::n_distinct(data$MARKERS)
 
 
-  if (!tibble::has_name(input, "GT_BIN")) {
-    input <- radiator::change_alleles(
-      data = dplyr::select(input, MARKERS, INDIVIDUALS, POP_ID, GT),
+  if (!tibble::has_name(data, "GT_BIN")) {
+    data <- radiator::change_alleles(
+      data = dplyr::select(data, MARKERS, INDIVIDUALS, POP_ID, GT),
       biallelic = TRUE,
       parallel.core = parallel.core, verbose = TRUE)$input
   }
 
 
-  pop.string <- input %>%
+  pop.string <- data %>%
     dplyr::distinct(POP_ID, INDIVIDUALS) %>%
     dplyr::arrange(POP_ID, INDIVIDUALS) %>%
     dplyr::select(POP_ID)
 
   pop.string <- pop.string$POP_ID
 
-  input <- dplyr::select(input, MARKERS, INDIVIDUALS, POP_ID, GT_BIN) %>%
+  data <- dplyr::select(data, MARKERS, INDIVIDUALS, POP_ID, GT_BIN) %>%
     dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS) %>%
     dplyr::select(-POP_ID) %>%
     dplyr::mutate(GT_BIN = replace(GT_BIN, which(is.na(GT_BIN)), 9)) %>%
@@ -162,14 +160,7 @@ write_pcadapt <- function(
 
   # writing file to directory  ------------------------------------------------
   # Filename: date and time to have unique filenaming
-  file.date <- stringi::stri_replace_all_fixed(
-    Sys.time(),
-    pattern = " EDT", replacement = "") %>%
-    stringi::stri_replace_all_fixed(
-      str = .,
-      pattern = c("-", " ", ":"), replacement = c("", "@", ""),
-      vectorize_all = FALSE) %>%
-    stringi::stri_sub(str = ., from = 1, to = 13)
+  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
 
   if (is.null(filename)) {
     filename <- stringi::stri_join("radiator_pcadapt_", file.date, ".txt")
@@ -186,11 +177,11 @@ write_pcadapt <- function(
     Number of populations: ", n.pop, "\n    Number of individuals: ", n.ind,
           "\n    Number of markers: ", n.markers)
 
-  readr::write_delim(x = input, path = filename, col_names = FALSE,
+  readr::write_delim(x = data, path = filename, col_names = FALSE,
                      append = FALSE, delim = " ")
 
-  input <- as.matrix(input)
-  res <- list(genotype.matrix = input, pop.string = pop.string)
+  data <- as.matrix(data)
+  res <- list(genotype.matrix = data, pop.string = pop.string)
   return(res)
 }# End write_pcadapt
 

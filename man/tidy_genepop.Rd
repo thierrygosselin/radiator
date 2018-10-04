@@ -115,20 +115,17 @@ We will use the genepop dataset provided with adegenet package
 if (!require("adegenet")) install.packages("adegenet")
 
 The simplest form of the function:
-nancycats.tidy <- tidy_genepop(
+nancycats.tidy <- radiator::tidy_genepop(
 data = system.file(
 "files/nancycats.gen",
-package = "adegenet"
-)
-)
+package = "adegenet"))
 
 # To output a data frame in wide format, with markers in separate columns:
-nancycats.wide <- tidy_genepop(
+nancycats.wide <- radiator::tidy_genepop(
 data = system.file(
 "files/nancycats.gen",
 package="adegenet"
-), tidy = FALSE
-)
+), tidy = FALSE)
 }
 }
 \references{
