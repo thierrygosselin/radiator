@@ -179,7 +179,7 @@ write_ldna <- function(data,
 
   # remove SNPRelate GDS object -------------------------------------------------
   if (!keep.gds) {
-    message("Removing SNPRelate GDS file")
+    message("Removing GDS file")
     if (file.exists(data$filename)) file.remove(data$filename)
   }
   return(long.distance.ld)

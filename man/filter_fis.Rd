@@ -8,6 +8,13 @@ filter_fis(data, approach = "haplotype", fis.min.threshold,
   fis.max.threshold, fis.diff.threshold, pop.threshold, percent, filename)
 }
 \arguments{
+\item{data}{12 options: VCF (SNPs or Haplotypes,
+to make the vcf population ready, see details below),
+plink, stacks haplotype file, genind (library(adegenet)),
+genlight (library(adegenet)), gtypes (library(strataG)), genepop, DArT,
+and a data frame in long/tidy or wide format.
+\emph{See details} of \code{\link[radiator]{tidy_genomic_data}}.}
+
 \item{approach}{Character. By \code{"SNP"} or by \code{"haplotype"}.
 The function will consider the SNP or haplotype statistics to filter the marker.
 Default by \code{"haplotype"}.}
@@ -29,5 +36,5 @@ the \code{filename} provided is \code{.rad}.
 Default: \code{filename = NULL}.}
 }
 \description{
-or a tidy VCF file.
+TODO
 }

@@ -12,16 +12,19 @@ ld_long_distance(data, ld.threshold = NULL, ldna = FALSE,
 a tidy data frame in wide or long format in the working directory.
 \emph{How to get a tidy data frame ?}
 Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
-\strong{The genotypes are biallelic.}}
+\strong{TBiallelic genotypes required...}}
 
 \item{ld.threshold}{(optional, double) The threshold to prune SNP based on
 Long Distance Threshold.
 Default: \code{ld.threshold = NULL}.}
 
-\item{ldna}{(optional, logical) Output an LDna lower matrix object.
+\item{ldna}{(optional, logical) LDna lower matrix object can be gerated in
+the output. To have it written in the working directory, use
+\pkg{radiator} \code{\link{write_ldna}}.
 Default: \code{ldna = FALSE}.}
 
-\item{filename}{(optional) TTO DO
+\item{filename}{(optional) Prefix for the files written in the working directory.
+TTO DO
 he file name of the LDna lower matrix file.
 Radiator will append \code{.ldna.rds} to the filename.
 If filename chosen is already present in the
@@ -38,7 +41,8 @@ Default: \code{parallel::detectCores() - 1}.}
 function (see details).}
 }
 \description{
-Generate SNP long distance Linkage Disequilibrium statistics
+Generate SNP long distance Linkage Disequilibrium statistics and
+figures to help decide the appropriate threshold to prune the dataset.
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and might be of interest for users.
 }
@@ -52,8 +56,55 @@ biocLite("SNPRelate").
 
 \strong{Further arguments passed via the \emph{dots-dots-dots}:}
 \itemize{
-\item keep.gds Default \code{keep.gds = FALSE}, the SNPRelate GDS object
+\item keep.gds Default: \code{keep.gds = FALSE}, the SNPRelate GDS object
 generated is removed after completion of the LDna object.
+\item manhattan.plot.ld With default, \code{manhattan.plot.ld = FALSE}, the
+manhattan plot is given in the output, but not written in the working directory.
+Note that generating the figure takes time and huge space...
+}
+
+#' @return A list in the global environment, with these objects:
+\enumerate{
+\item $ld.full.matrix: the the full matrix of LD values
+\item $ld.lower.matrix: the lower matrix of LD values
+\item $ld.upper.matrix: the upper matrix of LD values
+\item $ldna: when argument is used, this is the LDna lower matrix
+\item $ld.tibble: a tibble with the pairwise LD values observed between markers
+\item $pb.ld: tibble with LD statistics used for the boxplot
+\item $ld.boxplot: box plot of LD values
+\item $pb.ld.no.outliers: tibble with LD statistics used for the boxplot,
+with upper outliers removed
+\item $ld.boxplot.no.outliers: box plot of LD values, with upper outliers removed
+\item $manhattan.plot.ld: manhattan plot of LD values
+\item $whitelist.snp.ld: whitelist of markers kept after filtering for LD.
+The argument \code{ld.threshold} must be used to generate the whitelist.
+\item $blacklist.snp.ld: blacklist of markers prunned during the filtering
+for LD.
+The argument \code{ld.threshold} must be used to generate the blacklist.
+\item $data: The filtered tidy dataset.
+}
+}
+\examples{
+\dontrun{
+require(SNPRelate)
+library(radiator)
+data <- radiator::tidy_vcf(
+data = "my.vcf", strata = "my.strata.tsv",
+vcf.metadata = FALSE, vcf.stats = TRUE, verbose = TRUE)
+
+# Without pruning
+check.ld <- radiator::ld_long_distance(
+data = data$genotypes,
+ld.threshold = NULL,
+manhattan.plot = TRUE,
+ldna = TRUE)
+
+# With pruning
+pruned.ld <- radiator::ld_long_distance(
+data = data$genotypes,
+ld.threshold = 0.5,
+manhattan.plot = FALSE,
+ldna = TRUE)
 }
 }
 \references{

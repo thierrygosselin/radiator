@@ -4,7 +4,8 @@
 #'
 #' @title Generate SNP long distance Linkage Disequilibrium statistics
 #'
-#' @description Generate SNP long distance Linkage Disequilibrium statistics
+#' @description Generate SNP long distance Linkage Disequilibrium statistics and
+#' figures to help decide the appropriate threshold to prune the dataset.
 #' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 #' and might be of interest for users.
 
@@ -12,10 +13,11 @@
 #' a tidy data frame in wide or long format in the working directory.
 #' \emph{How to get a tidy data frame ?}
 #' Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
-#' \strong{The genotypes are biallelic.}
+#' \strong{TBiallelic genotypes required...}
 
 
-#' @param filename (optional) TTO DO
+#' @param filename (optional) Prefix for the files written in the working directory.
+#' TTO DO
 #' he file name of the LDna lower matrix file.
 #' Radiator will append \code{.ldna.rds} to the filename.
 #' If filename chosen is already present in the
@@ -26,7 +28,9 @@
 
 #' @inheritParams tidy_genomic_data
 
-#' @param ldna (optional, logical) Output an LDna lower matrix object.
+#' @param ldna (optional, logical) LDna lower matrix object can be gerated in
+#' the output. To have it written in the working directory, use
+#' \pkg{radiator} \code{\link{write_ldna}}.
 #' Default: \code{ldna = FALSE}.
 #'
 #' @param ld.threshold (optional, double) The threshold to prune SNP based on
@@ -58,10 +62,57 @@
 #'
 #' \strong{Further arguments passed via the \emph{dots-dots-dots}:}
 #' \itemize{
-#' \item keep.gds Default \code{keep.gds = FALSE}, the SNPRelate GDS object
+#' \item keep.gds Default: \code{keep.gds = FALSE}, the SNPRelate GDS object
 #' generated is removed after completion of the LDna object.
+#' \item manhattan.plot.ld With default, \code{manhattan.plot.ld = FALSE}, the
+#' manhattan plot is given in the output, but not written in the working directory.
+#' Note that generating the figure takes time and huge space...
 #' }
 #'
+#' #' @return A list in the global environment, with these objects:
+#' \enumerate{
+#' \item $ld.full.matrix: the the full matrix of LD values
+#' \item $ld.lower.matrix: the lower matrix of LD values
+#' \item $ld.upper.matrix: the upper matrix of LD values
+#' \item $ldna: when argument is used, this is the LDna lower matrix
+#' \item $ld.tibble: a tibble with the pairwise LD values observed between markers
+#' \item $pb.ld: tibble with LD statistics used for the boxplot
+#' \item $ld.boxplot: box plot of LD values
+#' \item $pb.ld.no.outliers: tibble with LD statistics used for the boxplot,
+#' with upper outliers removed
+#' \item $ld.boxplot.no.outliers: box plot of LD values, with upper outliers removed
+#' \item $manhattan.plot.ld: manhattan plot of LD values
+#' \item $whitelist.snp.ld: whitelist of markers kept after filtering for LD.
+#' The argument \code{ld.threshold} must be used to generate the whitelist.
+#' \item $blacklist.snp.ld: blacklist of markers prunned during the filtering
+#' for LD.
+#' The argument \code{ld.threshold} must be used to generate the blacklist.
+#' \item $data: The filtered tidy dataset.
+#' }
+
+#' @examples
+#' \dontrun{
+#' require(SNPRelate)
+#' library(radiator)
+#' data <- radiator::tidy_vcf(
+#' data = "my.vcf", strata = "my.strata.tsv",
+#' vcf.metadata = FALSE, vcf.stats = TRUE, verbose = TRUE)
+#'
+#' # Without pruning
+#' check.ld <- radiator::ld_long_distance(
+#' data = data$genotypes,
+#' ld.threshold = NULL,
+#' manhattan.plot = TRUE,
+#' ldna = TRUE)
+#'
+#' # With pruning
+#' pruned.ld <- radiator::ld_long_distance(
+#' data = data$genotypes,
+#' ld.threshold = 0.5,
+#' manhattan.plot = FALSE,
+#' ldna = TRUE)
+#' }
+
 
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
@@ -79,6 +130,7 @@ ld_long_distance <- function(
   # keep.gds <- FALSE
   # ldna <- TRUE
   # ld.threshold = 0.2
+  # manhattan.plot <- FALSE
 
   timing <- proc.time()
   opt.change <- getOption("width")
@@ -95,7 +147,7 @@ ld_long_distance <- function(
 
   # dotslist -------------------------------------------------------------------
   radiator.dots <- list(...)
-  want <- c("keep.gds")
+  want <- c("keep.gds", "manhattan.plot")
   unknowned_param <- setdiff(names(radiator.dots), want)
 
   if (length(unknowned_param) > 0) {
@@ -104,9 +156,11 @@ ld_long_distance <- function(
   }
 
   keep.gds <- radiator.dots[["keep.gds"]]
+  manhattan.plot <- radiator.dots[["manhattan.plot"]]
 
   # useful outside this function
   if (is.null(keep.gds)) keep.gds <- FALSE
+  if (is.null(manhattan.plot)) manhattan.plot <- FALSE
 
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) stop("Input file missing")
@@ -140,7 +194,7 @@ ld_long_distance <- function(
   if (!biallelic) stop("LDna requires biallelic genotypes")
 
   # Generating SNPRelate data --------------------------------------------------
-  message("Generating SNPRelate data")
+  message("Preparing the data...")
   res$data.gds <- radiator::write_snprelate(
     data = data,
     biallelic = TRUE,
@@ -191,8 +245,8 @@ ld_long_distance <- function(
   # Use the upper or lower matrix as input
   res$ld.tibble <- ld2df(x = res$ld.upper.matrix)
 
-  # stats ----------------------------------------------------------------------
-
+  # stats and figures----------------------------------------------------------------------
+  message("Generating statistics and figures...")
 
   # OUTLIERS_LOW = Q25 - (1.5 * IQR)
   # OUTLIERS_HIGH <-  Q75 + (1.5 * IQR)
@@ -285,73 +339,6 @@ ld_long_distance <- function(
     width = 15, height = 20,
     dpi = 300, units = "cm", useDingbats = FALSE))
 
-  # Pruning --------------------------------------------------------------------
-
-  if (!is.null(ld.threshold)){
-    # ld.threshold <- 0.12
-    long.ld.pruning <- SNPRelate::snpgdsLDpruning(
-      gdsobj = res$data.gds,
-      autosome.only = FALSE,
-      remove.monosnp = TRUE,
-      maf = NaN, missing.rate = NaN,
-      method = "r",
-      ld.threshold = ld.threshold,
-      num.thread = 1,
-      #Warning message:
-      # In SNPRelate::snpgdsLDpruning(gdsobj = data, autosome.only = FALSE,  :
-      # The current version of 'snpgdsLDpruning()' does not support multi-threading.
-      verbose = FALSE)
-  }
-
-  # length(long.ld.pruning$chrun)
-  # remove SNPRelate GDS object -------------------------------------------------
-  if (!keep.gds) {
-    res$data.gds <- NULL
-    message("Removing SNPRelate GDS file")
-    if (file.exists(filename.gds)) file.remove(filename.gds)
-  }
-
-  res$markers.ld.info <- markers
-  markers <- NULL
-
-  if (unique(stringi::stri_detect_fixed(
-    str = sample(x = res$markers.ld.info$MARKERS, size = 10), pattern = "__"))) {
-    res$markers.ld.info <- tidyr::separate(
-      data = res$markers.ld.info,
-      col = MARKERS, into = c("CHROM", "LOCUS", "POS"),
-      sep = "__", remove = FALSE)
-  }
-
-  if (!is.null(ld.threshold)){
-    res$markers.ld.info <- res$markers.ld.info %>%
-      dplyr::mutate(
-        LONG_DISTANCE_PRUNING = dplyr::if_else(
-          SNPRELATE %in% long.ld.pruning$chrun, "whitelist", "blacklist"))
-    long.ld.pruning <- NULL
-
-    res$whitelist.snp.ld <- dplyr::filter(res$markers.ld.info,
-                                          LONG_DISTANCE_PRUNING == "whitelist") %>%
-      dplyr::select(dplyr::one_of(c("MARKERS", "CHROM", "LOCUS", "POS"))) %>%
-      readr::write_tsv(x = ., path = "whitelist.snp.long.dist.ld.tsv")
-
-    message("Number of SNPs after pruning for long distance LD: ",
-            nrow(res$whitelist.snp.ld))
-
-
-    res$blacklist.snp.ld <- dplyr::filter(res$markers.ld.info,
-                                          LONG_DISTANCE_PRUNING == "blacklist") %>%
-      dplyr::select(dplyr::one_of(c("MARKERS", "CHROM", "LOCUS", "POS"))) %>%
-      readr::write_tsv(x = ., path = "blacklist.snp.long.dist.ld.tsv")
-
-    message("Number of prunned SNPs based on long distance LD: ",
-            nrow(res$blacklist.snp.ld))
-
-    if (nrow(res$blacklist.snp.ld) > 0) {
-      res$data <- dplyr::filter(data, MARKERS %in% res$whitelist.snp.ld$MARKERS)
-    }
-  }
-  data <- NULL
-
   res$manhattan.plot.ld <- res$ld.tibble %>%
     dplyr::mutate(X = "1") %>%
     dplyr::group_by(LD) %>%
@@ -376,11 +363,80 @@ ld_long_distance <- function(
       axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
     )
   # res$manhattan.plot.ld
-  suppressMessages(ggplot2::ggsave(
-    filename = "manhattan.plot.ld.pdf",
-    plot = res$manhattan.plot.ld,
-    width = 15, height = 20,
-    dpi = 300, units = "cm", useDingbats = FALSE))
+  if (manhattan.plot) {
+    suppressMessages(ggplot2::ggsave(
+      filename = "manhattan.plot.ld.png",
+      plot = res$manhattan.plot.ld,
+      width = 15, height = 20,
+      dpi = 100, units = "cm"#useDingbats = FALSE
+    ))
+  }
+  # Filtering ------------------------------------------------------------------
+  if (!is.null(ld.threshold)){
+    message("Pruning SNPs based on LD...")
+    # ld.threshold <- 0.12
+    long.ld.pruning <- SNPRelate::snpgdsLDpruning(
+      gdsobj = res$data.gds,
+      autosome.only = FALSE,
+      remove.monosnp = TRUE,
+      maf = NaN, missing.rate = NaN,
+      method = "r",
+      ld.threshold = ld.threshold,
+      num.thread = 1,
+      #Warning message:
+      # In SNPRelate::snpgdsLDpruning(gdsobj = data, autosome.only = FALSE,  :
+      # The current version of 'snpgdsLDpruning()' does not support multi-threading.
+      verbose = FALSE)
+  }
+  # remove SNPRelate GDS object
+  if (!keep.gds) {
+    res$data.gds <- NULL
+    message("Removing GDS file")
+    if (file.exists(filename.gds)) file.remove(filename.gds)
+  }
+
+  # Get the markers meta back
+  markers.ld.info <- markers
+  markers <- NULL
+  if (unique(stringi::stri_detect_fixed(
+    str = sample(x = markers.ld.info$MARKERS, size = 10), pattern = "__"))) {
+    markers.ld.info <- tidyr::separate(
+      data = markers.ld.info,
+      col = MARKERS, into = c("CHROM", "LOCUS", "POS"),
+      sep = "__", remove = FALSE)
+  }
+
+  if (!is.null(ld.threshold)){
+    message("Generating whitelist and blacklist of markers")
+    markers.ld.info <- markers.ld.info %>%
+      dplyr::mutate(
+        LONG_DISTANCE_PRUNING = dplyr::if_else(
+          SNPRELATE %in% long.ld.pruning$chrun, "whitelist", "blacklist"))
+    long.ld.pruning <- NULL
+
+    res$whitelist.snp.ld <- dplyr::filter(markers.ld.info,
+                                          LONG_DISTANCE_PRUNING == "whitelist") %>%
+      dplyr::select(dplyr::one_of(c("MARKERS", "CHROM", "LOCUS", "POS"))) %>%
+      readr::write_tsv(x = ., path = "whitelist.snp.long.dist.ld.tsv")
+
+    message("Number of SNPs after pruning for long distance LD: ",
+            nrow(res$whitelist.snp.ld))
+
+
+    res$blacklist.snp.ld <- dplyr::filter(markers.ld.info,
+                                          LONG_DISTANCE_PRUNING == "blacklist") %>%
+      dplyr::select(dplyr::one_of(c("MARKERS", "CHROM", "LOCUS", "POS"))) %>%
+      readr::write_tsv(x = ., path = "blacklist.snp.long.dist.ld.tsv")
+
+    message("Number of prunned SNPs based on long distance LD: ",
+            nrow(res$blacklist.snp.ld))
+
+    if (nrow(res$blacklist.snp.ld) > 0) {
+      res$data <- dplyr::filter(data, MARKERS %in% res$whitelist.snp.ld$MARKERS)
+    }
+  }
+  data <- NULL
+
 
   message("Computation time: ", round((proc.time() - timing)[[3]]), " sec")
   options(width = opt.change)
