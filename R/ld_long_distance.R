@@ -416,22 +416,26 @@ ld_long_distance <- function(
 
     res$whitelist.snp.ld <- dplyr::filter(markers.ld.info,
                                           LONG_DISTANCE_PRUNING == "whitelist") %>%
-      dplyr::select(dplyr::one_of(c("MARKERS", "CHROM", "LOCUS", "POS"))) %>%
-      readr::write_tsv(x = ., path = "whitelist.snp.long.dist.ld.tsv")
-
+      dplyr::select(dplyr::one_of(c("MARKERS", "CHROM", "LOCUS", "POS")))
     message("Number of SNPs after pruning for long distance LD: ",
             nrow(res$whitelist.snp.ld))
+
+    if (nrow(res$whitelist.snp.ld) > 0) {
+      readr::write_tsv(x = res$whitelist.snp.ld,
+                       path = "whitelist.snp.long.dist.ld.tsv")
+    }
 
 
     res$blacklist.snp.ld <- dplyr::filter(markers.ld.info,
                                           LONG_DISTANCE_PRUNING == "blacklist") %>%
-      dplyr::select(dplyr::one_of(c("MARKERS", "CHROM", "LOCUS", "POS"))) %>%
-      readr::write_tsv(x = ., path = "blacklist.snp.long.dist.ld.tsv")
+      dplyr::select(dplyr::one_of(c("MARKERS", "CHROM", "LOCUS", "POS")))
 
     message("Number of prunned SNPs based on long distance LD: ",
             nrow(res$blacklist.snp.ld))
 
     if (nrow(res$blacklist.snp.ld) > 0) {
+      readr::write_tsv(x = res$blacklist.snp.ld,
+                       path = "blacklist.snp.long.dist.ld.tsv")
       res$data <- dplyr::filter(data, MARKERS %in% res$whitelist.snp.ld$MARKERS)
     }
   }
