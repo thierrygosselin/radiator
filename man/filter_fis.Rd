@@ -8,14 +8,11 @@ filter_fis(data, approach = "haplotype", fis.min.threshold,
   fis.max.threshold, fis.diff.threshold, pop.threshold, percent, filename)
 }
 \arguments{
-\item{data}{A data frame object or file (using ".tsv")
-of class sumstats or a tidy VCF summarised.}
-
-\item{approach}{Character. By \code{"SNP"} or by \code{"haplotype"}. 
-The function will consider the SNP or haplotype MAF statistics to filter the marker. 
+\item{approach}{Character. By \code{"SNP"} or by \code{"haplotype"}.
+The function will consider the SNP or haplotype statistics to filter the marker.
 Default by \code{"haplotype"}.}
 
-\item{fis.min.threshold}{Number}
+\item{fis.min.threshold}{Number.}
 
 \item{fis.max.threshold}{Number.}
 
@@ -25,7 +22,11 @@ Default by \code{"haplotype"}.}
 
 \item{percent}{Is the threshold a percentage ? TRUE or FALSE.}
 
-\item{filename}{Name of the file written to the working directory (optional).}
+\item{filename}{(optional) The function uses \code{\link[fst]{write.fst}},
+to write the tidy data frame in
+the folder created in the working directory. The file extension appended to
+the \code{filename} provided is \code{.rad}.
+Default: \code{filename = NULL}.}
 }
 \description{
 or a tidy VCF file.

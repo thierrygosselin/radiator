@@ -15,12 +15,12 @@
 
 
 #' @param filename (optional) The file name of the LDna lower matrix file.
-#' Radiator will append \code{.ldna} to the filename.
+#' Radiator will append \code{.ldna.rds} to the filename.
 #' If filename chosen is already present in the
-#' working directory, the default \code{radiator_datetime.ldna} is chosen.
+#' working directory, the default \code{radiator_datetime.ldna.rds} is chosen.
 #' With default, \code{filename = NULL}, no file is generated, only an object in
 #' the Global Environment.
-#' To read the data back into R, use load("filename.ldna").
+#' To read the data back into R, use readRDS("filename.ldna.rds").
 
 #' @inheritParams tidy_genomic_data
 
@@ -70,7 +70,7 @@ write_ldna <- function(data,
                        filename = NULL,
                        parallel.core = parallel::detectCores() - 1,
                        ...
-                       ) {
+) {
 
 
   # testing
@@ -107,10 +107,10 @@ write_ldna <- function(data,
   # Filename -------------------------------------------------------------------
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
   if (is.null(filename)) {
-    write.ldna <- TRUE
+    write.ldna <- FALSE
     filename <- stringi::stri_join("radiator_", file.date, ".ldna")
   } else {
-    write.ldna <- FALSE
+    write.ldna <- TRUE
     filename.problem <- file.exists(filename)
     if (filename.problem) {
       filename <- stringi::stri_join(filename, "_", file.date, ".ldna")
@@ -138,7 +138,7 @@ write_ldna <- function(data,
     filename = filename,
     verbose = FALSE)
   if (keep.gds) {
-    message("SNPRelate GDS file generated: ", filename)
+    message("SNPRelate GDS file generated: ", filename, ".gds")
     message("To close the connection use SNPRelate::snpgdsClose(filename)")
   }
 
@@ -162,16 +162,19 @@ write_ldna <- function(data,
 
   # fill diagonal and upper matrix with NA
   message("Preparing the data for LDna")
-  long.distance.ld[upper.tri(long.distance.ld, diag = TRUE)] <- NA
+  long.distance.ld[upper.tri(long.distance.ld, diag = TRUE)] <- rlang::na_dbl
   # long.distance.ld[is.nan(long.distance.ld)] <- NA # removes NaN
   long.distance.ld <- long.distance.ld^2 # R-square required by LDna
 
   # dim(long.distance.ld)
   colnames(long.distance.ld) <- rownames(long.distance.ld) <- markers
+  markers <- NULL
+
   # write object ----------------------------------------------------------------
   if (write.ldna) {
+    filename <- stringi::stri_join(filename, ".rds")
     message("Writing LDna file: ", filename)
-    save(long.distance.ld, file = filename)
+    saveRDS(object = long.distance.ld, file = filename)
   }
 
   # remove SNPRelate GDS object -------------------------------------------------

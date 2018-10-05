@@ -95,11 +95,11 @@
 #' helper tables are written to the directory.
 #' Default: \code{helper.tables = FALSE}.
 
-#' @param filename (optional) The function uses \code{\link[fst]{write.fst}},
-#' to write the tidy data frame in
-#' the folder created in the working directory. The file extension appended to
-#' the \code{filename} provided is \code{.rad}.
-#' Default: \code{filename = NULL}.
+  #' @param filename (optional) The function uses \code{\link[fst]{write.fst}},
+  #' to write the tidy data frame in
+  #' the folder created in the working directory. The file extension appended to
+  #' the \code{filename} provided is \code{.rad}.
+  #' Default: \code{filename = NULL}.
 
 #' @details
 #' \strong{Interactive version}

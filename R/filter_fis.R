@@ -1,18 +1,21 @@
-# Fis 
+# Fis
 #' @title Fis filter
-#' @description  
-#' or a tidy VCF file.
-#' @param data A data frame object or file (using ".tsv")
-#' of class sumstats or a tidy VCF summarised.
-#' @param approach Character. By \code{"SNP"} or by \code{"haplotype"}. 
-#' The function will consider the SNP or haplotype MAF statistics to filter the marker. 
+#' @description
+#' TODO
+#' @param approach Character. By \code{"SNP"} or by \code{"haplotype"}.
+#' The function will consider the SNP or haplotype statistics to filter the marker.
 #' Default by \code{"haplotype"}.
-#' @param fis.min.threshold Number
+#' @param fis.min.threshold Number.
 #' @param fis.max.threshold Number.
 #' @param fis.diff.threshold Number (0 - 1)
 #' @param pop.threshold Fixed number of pop required to keep the locus.
 #' @param percent Is the threshold a percentage ? TRUE or FALSE.
-#' @param filename Name of the file written to the working directory (optional).
+#' @param filename (optional) The function uses \code{\link[fst]{write.fst}},
+#' to write the tidy data frame in
+#' the folder created in the working directory. The file extension appended to
+#' the \code{filename} provided is \code{.rad}.
+#' Default: \code{filename = NULL}.
+#' @inheritParams tidy_genomic_data
 #' @rdname filter_fis
 #' @export
 #' @importFrom stringi stri_join stri_replace_all_fixed stri_sub stri_detect_fixed
@@ -21,7 +24,7 @@
 
 
 filter_fis <- function(data, approach = "haplotype", fis.min.threshold, fis.max.threshold, fis.diff.threshold, pop.threshold, percent, filename) {
-  
+
   if (is.vector(data)) {
     data <- readr::read_tsv(data, col_names = T)
     message("Using the file in your directory")
@@ -29,9 +32,9 @@ filter_fis <- function(data, approach = "haplotype", fis.min.threshold, fis.max.
     data <- data
     message("Using the file from your global environment")
   }
-  
+
   pop.number <- dplyr::n_distinct(data$POP_ID)
-  
+
   if(stringi::stri_detect_fixed(pop.threshold, ".") & pop.threshold < 1) {
     multiplication.number <- 1/pop.number
     message("Using a proportion threshold...")
@@ -45,7 +48,7 @@ filter_fis <- function(data, approach = "haplotype", fis.min.threshold, fis.max.
     message("Using a fixed threshold...")
     threshold.id <- "population as a fixed"
   }
-  
+
   if (missing(approach) | approach == "haplotype"){
     message("Approach selected: haplotype")
     fis.filter <- data %>%
@@ -85,8 +88,8 @@ filter_fis <- function(data, approach = "haplotype", fis.min.threshold, fis.max.
       dplyr::left_join(data, by = c("LOCUS", "POS")) %>%
       dplyr::arrange(LOCUS, POS, POP_ID)
 }
-  
-  
+
+
   if (missing(filename) == "FALSE") {
     message("Saving the file in your working directory...")
     readr::write_tsv(fis.filter, filename, append = FALSE, col_names = TRUE)
@@ -94,11 +97,11 @@ filter_fis <- function(data, approach = "haplotype", fis.min.threshold, fis.max.
   } else {
     saving <- "Saving was not selected..."
   }
-  
-  
+
+
   invisible(cat(sprintf(
     "Fis filter:
-Fis min >= %s or Fis max <= %s or 
+Fis min >= %s or Fis max <= %s or
 difference along the read/haplotype between the max and min Fis > %s,
 all in %s percent of the sampling sites/pop were removed\n
 The number of SNP removed by the Fis filter = %s SNP
