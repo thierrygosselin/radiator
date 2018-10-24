@@ -28,114 +28,117 @@ read_strata <- function(strata, pop.id = FALSE,
                         pop.levels = NULL, pop.labels = NULL,
                         pop.select = NULL, blacklist.id = NULL,
                         keep.two = TRUE, verbose = FALSE) {
-  if (verbose) message("Analyzing strata file")
-  if (is.vector(strata)) {
-    strata <- readr::read_tsv(
-      file = strata,
-      col_types = readr::cols(.default = readr::col_character()))
-  }
-
-  if (tibble::has_name(strata, "POP_ID") && !tibble::has_name(strata, "STRATA")) {
-    colnames(strata) <- stringi::stri_replace_all_fixed(
-      colnames(strata), "POP_ID", "STRATA",
-      vectorize_all = FALSE)
-  }
-
-  if (keep.two) strata <- dplyr::select(strata, INDIVIDUALS, STRATA)
-
-  # clean....
-  strata$INDIVIDUALS <- radiator::clean_ind_names(strata$INDIVIDUALS)
-  strata$STRATA <- radiator::clean_pop_names(strata$STRATA)
-
-  if (verbose) message("Number of individuals: ", dplyr::n_distinct(strata$INDIVIDUALS))
-  if (verbose) message("Number of strata: ", dplyr::n_distinct(strata$STRATA))
-  #blacklist.id ----------------------------------------------------------------
-  if (!is.null(blacklist.id)){
-    if (is.vector(blacklist.id)) {
-      blacklist.id <- suppressMessages(
-        readr::read_tsv(file = blacklist.id,
-                        col_names = TRUE,
-                        col_types = "c",
-                        trim_ws = TRUE))
+  if (is.null(strata)) {
+    res <- NULL
+  } else {
+    if (verbose) message("Analyzing strata file")
+    if (is.vector(strata)) {
+      strata <- readr::read_tsv(
+        file = strata,
+        col_types = readr::cols(.default = readr::col_character()))
     }
-    blacklist.id$INDIVIDUALS <- clean_ind_names(blacklist.id$INDIVIDUALS)
 
-
-    # remove potential duplicate id
-    dup <- dplyr::distinct(.data = blacklist.id, INDIVIDUALS)
-    blacklist.id.dup <- nrow(blacklist.id) - nrow(dup)
-    if (blacklist.id.dup >1) {
-      message("Duplicate id's in blacklist: ", blacklist.id.dup)
-      blacklist.id <- dup
+    if (tibble::has_name(strata, "POP_ID") && !tibble::has_name(strata, "STRATA")) {
+      colnames(strata) <- stringi::stri_replace_all_fixed(
+        colnames(strata), "POP_ID", "STRATA",
+        vectorize_all = FALSE)
     }
-    dup <- blacklist.id.dup <- NULL
-    n.ind.blacklist <- length(blacklist.id$INDIVIDUALS)
-    if (verbose) message("\nNumber of individuals in blacklist: ", n.ind.blacklist, " ind.")
-    n.ind.blacklisted <- length(strata$INDIVIDUALS %in% blacklist.id$INDIVIDUALS)
-    strata <- dplyr::filter(strata, !INDIVIDUALS %in% blacklist.id$INDIVIDUALS)
-    if (verbose) message("\nBlacklisted individuals: ", n.ind.blacklisted, " ind.")
-  }
+
+    if (keep.two) strata <- dplyr::select(strata, INDIVIDUALS, STRATA)
+
+    # clean....
+    strata$INDIVIDUALS <- radiator::clean_ind_names(strata$INDIVIDUALS)
+    strata$STRATA <- radiator::clean_pop_names(strata$STRATA)
+
+    if (verbose) message("Number of individuals: ", dplyr::n_distinct(strata$INDIVIDUALS))
+    if (verbose) message("Number of strata: ", dplyr::n_distinct(strata$STRATA))
+    #blacklist.id ----------------------------------------------------------------
+    if (!is.null(blacklist.id)){
+      if (is.vector(blacklist.id)) {
+        blacklist.id <- suppressMessages(
+          readr::read_tsv(file = blacklist.id,
+                          col_names = TRUE,
+                          col_types = "c",
+                          trim_ws = TRUE))
+      }
+      blacklist.id$INDIVIDUALS <- clean_ind_names(blacklist.id$INDIVIDUALS)
 
 
-  # manage levels, labels and pop.select ---------------------------------------
-  check <- check_pop_levels(pop.levels = pop.levels,
-                            pop.labels = pop.labels,
-                            pop.select = pop.select)
-  pop.levels <- check$pop.levels
-  pop.labels <- check$pop.labels
-  pop.select <- check$pop.select
+      # remove potential duplicate id
+      dup <- dplyr::distinct(.data = blacklist.id, INDIVIDUALS)
+      blacklist.id.dup <- nrow(blacklist.id) - nrow(dup)
+      if (blacklist.id.dup >1) {
+        message("Duplicate id's in blacklist: ", blacklist.id.dup)
+        blacklist.id <- dup
+      }
+      dup <- blacklist.id.dup <- NULL
+      n.ind.blacklist <- length(blacklist.id$INDIVIDUALS)
+      if (verbose) message("\nNumber of individuals in blacklist: ", n.ind.blacklist, " ind.")
+      n.ind.blacklisted <- length(strata$INDIVIDUALS %in% blacklist.id$INDIVIDUALS)
+      strata <- dplyr::filter(strata, !INDIVIDUALS %in% blacklist.id$INDIVIDUALS)
+      if (verbose) message("\nBlacklisted individuals: ", n.ind.blacklisted, " ind.")
+    }
 
-  if (!is.null(pop.select)) {
-    n.pop.new <- length(pop.select)
-    if (verbose) message("\nPopulations/strata selected: ", stringi::stri_join(pop.select, collapse = ", "), " (", n.pop.new," pops)")
-    strata <- suppressWarnings(dplyr::filter(strata, STRATA %in% pop.select))
-  }
+
+    # manage levels, labels and pop.select ---------------------------------------
+    check <- check_pop_levels(pop.levels = pop.levels,
+                              pop.labels = pop.labels,
+                              pop.select = pop.select)
+    pop.levels <- check$pop.levels
+    pop.labels <- check$pop.labels
+    pop.select <- check$pop.select
+
+    if (!is.null(pop.select)) {
+      n.pop.new <- length(pop.select)
+      if (verbose) message("\nPopulations/strata selected: ", stringi::stri_join(pop.select, collapse = ", "), " (", n.pop.new," pops)")
+      strata <- suppressWarnings(dplyr::filter(strata, STRATA %in% pop.select))
+    }
 
 
-  if (is.null(pop.levels)) { # no pop.levels
-    strata$STRATA <- factor(strata$STRATA)
-    pop.levels <- pop.labels <- unique(strata$STRATA)
-  } else {# with pop.levels
-    n.pop <- unique(strata$STRATA)
-    if (length(n.pop) != length(pop.levels)) {
-      if (verbose) message("pop.levels and unique STRATA/POP_ID have different length")
-      if (verbose) message("    using unique STRATA/POP_ID names to replace pop.levels")
+    if (is.null(pop.levels)) { # no pop.levels
+      strata$STRATA <- factor(strata$STRATA)
       pop.levels <- pop.labels <- unique(strata$STRATA)
+    } else {# with pop.levels
+      n.pop <- unique(strata$STRATA)
+      if (length(n.pop) != length(pop.levels)) {
+        if (verbose) message("pop.levels and unique STRATA/POP_ID have different length")
+        if (verbose) message("    using unique STRATA/POP_ID names to replace pop.levels")
+        pop.levels <- pop.labels <- unique(strata$STRATA)
+      }
+      strata$STRATA <- factor(
+        x = strata$STRATA,
+        levels = pop.levels,
+        labels = pop.labels,
+        ordered = FALSE)
     }
-    strata$STRATA <- factor(
-      x = strata$STRATA,
-      levels = pop.levels,
-      labels = pop.labels,
-      ordered = FALSE)
-  }
 
-  if (!is.null(pop.select) || !is.null(blacklist.id)) {
-    if (is.factor(pop.levels)) pop.levels <- droplevels(pop.levels)
-    if (is.factor(pop.labels)) pop.labels <- droplevels(pop.labels)
-  }
+    if (!is.null(pop.select) || !is.null(blacklist.id)) {
+      if (is.factor(pop.levels)) pop.levels <- droplevels(pop.levels)
+      if (is.factor(pop.labels)) pop.labels <- droplevels(pop.labels)
+    }
 
-  # If dart file manage TARGET_ID ----------------------------------------------
-  if (tibble::has_name(strata, "TARGET_ID")) {
-    strata <- strata %>%
-      dplyr::mutate(
-        TARGET_ID = stringi::stri_trans_toupper(TARGET_ID),
-        TARGET_ID = stringi::stri_replace_all_fixed(
-          TARGET_ID, pattern = " ", replacement = "", vectorize_all = FALSE),
-        TARGET_ID = clean_ind_names(TARGET_ID))
-  }
+    # If dart file manage TARGET_ID ----------------------------------------------
+    if (tibble::has_name(strata, "TARGET_ID")) {
+      strata <- strata %>%
+        dplyr::mutate(
+          TARGET_ID = stringi::stri_trans_toupper(TARGET_ID),
+          TARGET_ID = stringi::stri_replace_all_fixed(
+            TARGET_ID, pattern = " ", replacement = "", vectorize_all = FALSE),
+          TARGET_ID = clean_ind_names(TARGET_ID))
+    }
 
-  strata <- dplyr::arrange(strata, STRATA, INDIVIDUALS)
+    strata <- dplyr::arrange(strata, STRATA, INDIVIDUALS)
 
-  if (isTRUE(pop.id)) strata <- dplyr::rename(strata, POP_ID = STRATA)
+    if (isTRUE(pop.id)) strata <- dplyr::rename(strata, POP_ID = STRATA)
 
-  return(
     res = list(
       strata = strata,
       pop.levels = pop.levels,
       pop.labels = pop.labels,
       pop.select = pop.select,
       blacklist.id = blacklist.id)
-  )
+  }
+  return(res)
 }#End read_strata
 
 

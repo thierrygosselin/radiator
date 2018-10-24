@@ -6,4 +6,5 @@
 ^appveyor\.yml$
 ^README\.Rmd$
 ^README-.*\.png$
+^vignettes/*\.Rmd
 

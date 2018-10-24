@@ -63,7 +63,8 @@ Default: \code{verbose = TRUE}.}
 The output in your global environment is a tidy data frame.
 }
 \description{
-Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
+Used internally in
+\href{https://github.com/thierrygosselin/radiator}{radiator}
 and might be of interest for users.
 Highly recommended to use \code{\link[radiator]{tidy_genomic_data}} or
 \code{\link[radiator]{genomic_converter}}. Those two functions allows

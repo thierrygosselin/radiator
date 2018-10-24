@@ -20,7 +20,7 @@ Fast write .rad file.
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and \href{https://github.com/thierrygosselin/assigner}{assigner}
 and might be of interest for users.
-The function uses \code{\link[fst]{write.fst}} with a compression level of 85,
+The function uses \code{\link[fst]{write_fst}} with a compression level of 85,
 that work well with RADseq dataset.
 }
 \author{

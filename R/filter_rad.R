@@ -294,24 +294,22 @@ filter_rad <- function(
   # Import file ----------------------------------------------------------------
   input <- radiator::tidy_genomic_data(
     data = data,
+    strata = strata,
     vcf.metadata = TRUE,
     monomorphic.out = TRUE,
     common.markers = TRUE,
-    strata = strata,
     pop.levels = pop.levels,
     pop.select = pop.select,
     blacklist.id = blacklist.id,
     parallel.core = parallel.core,
     verbose = FALSE,
     vcf.stats = TRUE,
-    snp.read.position.filter = NULL,
-    mac.threshold = NULL,
     gt.vcf.nuc = TRUE,
     gt.vcf = TRUE,
     gt = TRUE,
     gt.bin = TRUE,
-    keep.gds = FALSE)
-
+    keep.gds = FALSE
+  )
 
   # Keep GT_BIN
   want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "INDIVIDUALS",
@@ -2068,7 +2066,7 @@ filter_rad <- function(
   if (interactive.filter || hw.pop.threshold) {
     if (verbose) cat("\n### 10: Filter markers HWE ############################################\n")
     # message to do HW filtering or not
-    hw.q <- "    Do you want to filter you markers based on HW principles ?\nYou can still opt out after looking at the figures. (y/n): \n"
+    hw.q <- "Do you want to filter you markers based on HW principles ?\nYou can still opt out after looking at the figures. (y/n): \n"
     do.hw <- interactive_question(x = hw.q, answer.opt = c("y", "n"))
 
     if (do.hw == "y") {

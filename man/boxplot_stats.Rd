@@ -5,7 +5,8 @@
 \title{boxplot_stats}
 \usage{
 boxplot_stats(data, title, x.axis.title = NULL, y.axis.title,
-  facet.columns = FALSE, facet.rows = FALSE, bp.filename = NULL)
+  facet.columns = FALSE, facet.rows = FALSE, bp.filename = NULL,
+  path.folder = NULL)
 }
 \description{
 Generate a boxplot

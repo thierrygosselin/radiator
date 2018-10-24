@@ -238,6 +238,33 @@ genomic_converter <- function(
   ...
 ) {
 
+  # Testing
+  # data
+  # output = NULL
+  # vcf.metadata = FALSE
+  # filename = NULL
+  # blacklist.id = NULL
+  # blacklist.genotype = NULL
+  # whitelist.markers = NULL
+  # monomorphic.out = TRUE
+  # snp.ld = NULL
+  # common.markers = TRUE
+  # maf.thresholds = NULL
+  # max.marker = NULL
+  # strata = NULL
+  # pop.levels = NULL
+  # pop.labels = NULL
+  # pop.select = NULL
+  # imputation.method = NULL
+  # hierarchical.levels = "strata"
+  # num.tree = 50
+  # pred.mean.matching = 0
+  # random.seed = NULL
+  # parallel.core = parallel::detectCores() - 1
+  # verbose = TRUE
+  # write.tidy <- TRUE
+  # keep.allele.names <- FALSE
+  #
   if (verbose) {
     cat("#######################################################################\n")
     cat("##################### radiator::genomic_converter #####################\n")
@@ -430,8 +457,6 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
     verbose = FALSE,
     keep.allele.names = keep.allele.names,
     vcf.stats = TRUE,
-    snp.read.position.filter = NULL,
-    mac.threshold = NULL,
     gt.vcf.nuc = TRUE,
     gt.vcf = TRUE,
     gt = TRUE,
@@ -452,8 +477,10 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
   # strata.df <- input %>%
   #   distinct(INDIVIDUALS, POP_ID)
   # # strata <- strata.df
-  pop.levels <- levels(input$POP_ID)
-  pop.labels <- pop.levels
+  if (!is.null(strata)) {
+    pop.levels <- levels(input$POP_ID)
+    pop.labels <- pop.levels
+  }
 
 
   # prepare output res list
@@ -828,7 +855,7 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
     n.chromosome <- "no chromosome info"
   }
   n.individuals <- dplyr::n_distinct(input$INDIVIDUALS)
-  n.pop <- dplyr::n_distinct(input$POP_ID)
+  if (!is.null(strata)) n.pop <- dplyr::n_distinct(input$POP_ID)
 
   if (verbose) {
     cat("############################### RESULTS ###############################\n")
@@ -845,7 +872,7 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
     }
     message("Number of chromosome/contig/scaffold: ", n.chromosome)
     message("Number of individuals ", n.individuals)
-    message("Number of populations ", n.pop)
+    if (!is.null(strata))  message("Number of populations ", n.pop)
     timing <- proc.time() - timing
     message("\nComputation time: ", round(timing[[3]]), " sec")
     cat("################ radiator::genomic_converter completed ################\n")

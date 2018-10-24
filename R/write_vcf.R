@@ -81,7 +81,11 @@ write_vcf <- function(data, pop.info = FALSE, filename = NULL) {
   }
 
   # Order/sort by pop and ind --------------------------------------------------
-  data <- dplyr::arrange(data, POP_ID, INDIVIDUALS)
+  if (tibble::has_name(data, "POP_ID")) {
+    data <- dplyr::arrange(data, POP_ID, INDIVIDUALS)
+  } else {
+    data <- dplyr::arrange(data, INDIVIDUALS)
+  }
 
   id.string <- unique(data$INDIVIDUALS)# keep to sort vcf columns
   # Remove the POP_ID column ---------------------------------------------------
@@ -148,6 +152,12 @@ write_vcf <- function(data, pop.info = FALSE, filename = NULL) {
           replacement = c("A", "C", "G", "T"),
           vectorize_all = FALSE)
       )
+  }
+
+  if (tibble::has_name(output, "COL")) {
+    output <- output %>% dplyr::mutate(LOCUS = stringi::stri_join(LOCUS, COL, sep = "_"))
+  } else {
+    output <- output %>% dplyr::mutate(LOCUS = stringi::stri_join(LOCUS, as.numeric(POS) - 1, sep = "_"))
   }
 
   # Keep the required columns

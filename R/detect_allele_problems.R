@@ -61,7 +61,6 @@
 #' 2 heterozygote individuals calling the polymorphic markers or 1 individual
 #' homozygote for the alternate allele.
 #'
-#'
 #' Look for problem with :
 #' \itemize{
 #' \item read depth/coverage problem

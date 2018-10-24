@@ -547,7 +547,12 @@ radiator_imputations_module <- function(
     }
     data <- NULL #unused object
 
-    message("\nNumber of populations: ", dplyr::n_distinct(input$POP_ID))
+    if (tibble::has_name(input, "POP_ID")) {
+      pop.info <- TRUE
+    } else {
+      pop.info <- FALSE
+    }
+    if (pop.info) message("\nNumber of populations: ", dplyr::n_distinct(input$POP_ID))
     message("Number of individuals: ", dplyr::n_distinct(input$INDIVIDUALS))
     message("Number of markers: ", dplyr::n_distinct(input$MARKERS))
 

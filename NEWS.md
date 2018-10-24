@@ -1,3 +1,9 @@
+# radiator v.0.0.18 2018-10-23
+
+* `tidy_vcf`, `tidy_genomic_data` and `genomic_converter`: work without strata/pop grouping
+* `snp_ld`: new argument `ld.threshold` for long.distance linkage disequilibrium.
+* `write_vcf`: will now output ID as LOCUS_COL or LOCUS_(POS-1) if COL info is not provided.
+
 # radiator v.0.0.17 2018-10-04
 
 * `tidy_vcf`, `tidy_genomic_data` and `genomic_converter`: way faster with huge VCF

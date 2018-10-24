@@ -433,3 +433,143 @@ interactive_question <- function(x, answer.opt = NULL, minmax = NULL) {
   }
   return(answer)
 }#End interactive_question
+
+
+# check_header_source
+#' @title Check the vcf header and detect vcf source
+#' @description Check the vcf header and detect vcf source
+#' @rdname check_header_source
+#' @keywords internal
+#' @export
+check_header_source <- function(vcf) {
+
+  check.header <- SeqArray::seqVCF_Header(vcf)
+
+  if (check.header$format$Number[check.header$format$ID == "AD"] == 1) {
+    check.header$format$Number[check.header$format$ID == "AD"] <- "."
+  }
+
+  check.source <- check.header$header$value[check.header$header$id == "source"]
+  is.stacks <- stringi::stri_detect_fixed(str = check.source, pattern = "Stacks")
+  if (is.stacks) {
+    stacks.2 <- keep.stacks.gl <- stringi::stri_detect_fixed(
+      str = check.source,
+      pattern = "Stacks v2")
+    if (!keep.stacks.gl) {
+      check.header$format <- dplyr::filter(check.header$format, ID != "GL")
+    }
+  } else {
+    stacks.2 <- FALSE
+  }
+  return(res = list(source = stacks.2, check.header = check.header))
+}#End check_header_source
+
+#' @title markers_genotyped_helper
+#' @description Help individual's genotyped threshold
+#' @rdname markers_genotyped_helper
+#' @export
+#' @keywords internal
+markers_genotyped_helper <- function(x, y, overall.only = FALSE) {
+  # x <- res$missing.genotypes.markers.pop
+  # Set the breaks for the figure
+  max.markers <- dplyr::n_distinct(y$MARKERS)
+
+  threshold.helper.overall <- y %>%
+    dplyr::ungroup(.) %>%
+    dplyr::summarise(
+      `0` = length(PERCENT[PERCENT == 0]),
+      `10` = length(PERCENT[PERCENT <= 10]),
+      `20` = length(PERCENT[PERCENT <= 20]),
+      `30` = length(PERCENT[PERCENT <= 30]),
+      `40` = length(PERCENT[PERCENT <= 40]),
+      `50` = length(PERCENT[PERCENT <= 50]),
+      `60` = length(PERCENT[PERCENT <= 60]),
+      `70` = length(PERCENT[PERCENT <= 70]),
+      `80` = length(PERCENT[PERCENT <= 80]),
+      `90` = length(PERCENT[PERCENT <= 90]),
+      `100` = length(PERCENT[PERCENT <= 100])
+    ) %>%
+    tidyr::gather(data = ., key = GENOTYPED_THRESHOLD, value = NUMBER_MARKERS) %>%
+    dplyr::mutate(POP_ID = rep("OVERALL", n()))
+
+  if (!overall.only){
+    threshold.helper.pop <- x %>%
+      dplyr::group_by(POP_ID) %>%
+      dplyr::summarise(
+        `0` = length(PERCENT[PERCENT == 0]),
+        `10` = length(PERCENT[PERCENT <= 10]),
+        `20` = length(PERCENT[PERCENT <= 20]),
+        `30` = length(PERCENT[PERCENT <= 30]),
+        `40` = length(PERCENT[PERCENT <= 40]),
+        `50` = length(PERCENT[PERCENT <= 50]),
+        `60` = length(PERCENT[PERCENT <= 60]),
+        `70` = length(PERCENT[PERCENT <= 70]),
+        `80` = length(PERCENT[PERCENT <= 80]),
+        `90` = length(PERCENT[PERCENT <= 90]),
+        `100` = length(PERCENT[PERCENT <= 100])
+      ) %>%
+      tidyr::gather(data = ., key = GENOTYPED_THRESHOLD, value = NUMBER_MARKERS, -POP_ID)
+
+    mean.pop <- threshold.helper.pop %>%
+      dplyr::group_by(GENOTYPED_THRESHOLD) %>%
+      dplyr::summarise(
+        NUMBER_MARKERS = round(mean(NUMBER_MARKERS), 0)
+      ) %>%
+      dplyr::mutate(POP_ID = rep("MEAN_POP", n()))
+
+    # Check if x$POP_ID is a factor
+    if (is.factor(x$POP_ID)) {
+      x.pop.levels <- levels(x$POP_ID)
+    } else {
+      x.pop.levels <- unique(x$POP_ID)
+    }
+
+    threshold.helper <- suppressWarnings(
+      dplyr::bind_rows(threshold.helper.pop, mean.pop, threshold.helper.overall) %>%
+        dplyr::mutate(
+          GENOTYPED_THRESHOLD = as.numeric(GENOTYPED_THRESHOLD),
+          POP_ID = factor(POP_ID, levels = c(x.pop.levels, "MEAN_POP", "OVERALL"), ordered = TRUE)
+        ))
+    threshold.helper.pop <- mean.pop <- threshold.helper.overall <- x <- y <- NULL
+  } else {
+    threshold.helper <- threshold.helper.overall %>%
+        dplyr::mutate(
+          GENOTYPED_THRESHOLD = as.numeric(GENOTYPED_THRESHOLD)
+        )
+    threshold.helper.overall <- x <- y <- NULL
+  }
+  #Function to replace plyr::round_any
+  rounder <- function(x, accuracy, f = round) {
+    f(x / accuracy) * accuracy
+  }
+
+  if (max.markers >= 1000) {
+    y.breaks.by <- rounder(max.markers / 10, 100, ceiling)
+    y.breaks.max <- rounder(max.markers, 1000, ceiling)
+    y.breaks <- seq(0, y.breaks.max, by = y.breaks.by)
+  } else {
+    y.breaks.by <- rounder(max.markers / 10, 10, ceiling)
+    y.breaks.max <- rounder(max.markers, 100, ceiling)
+    y.breaks <- seq(0, y.breaks.max, by = y.breaks.by)
+  }
+
+
+  plot.markers.geno.threshold <- ggplot2::ggplot(
+    threshold.helper,
+    ggplot2::aes(x = GENOTYPED_THRESHOLD, y = NUMBER_MARKERS)) +
+    ggplot2::geom_line() +
+    ggplot2::geom_point(size = 2, shape = 21, fill = "white") +
+    ggplot2::scale_x_continuous(name = "Marker's missing genotype threshold (percent)", breaks = c(0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100)) +
+    ggplot2::scale_y_continuous(name = "Markers\n(whitelisted number)", breaks = y.breaks, limits = c(0, y.breaks.max)) +
+    ggplot2::theme(
+      axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+      axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+      axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica"),#, angle = 90, hjust = 1, vjust = 0.5),
+      strip.text.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold")
+    ) +
+    ggplot2::theme_bw() +
+    ggplot2::facet_grid(~POP_ID)
+  # plot.markers.geno.threshold
+  return(plot.markers.geno.threshold)
+}#End markers_genotyped_helper
+

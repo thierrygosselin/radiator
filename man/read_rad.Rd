@@ -30,7 +30,7 @@ Fast read .rad file.
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and \href{https://github.com/thierrygosselin/assigner}{assigner}
 and might be of interest for users.
-The function uses \code{\link[fst]{read.fst}}.
+The function uses \code{\link[fst]{read_fst}}.
 }
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}

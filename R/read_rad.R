@@ -6,18 +6,18 @@
 #' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 #' and \href{https://github.com/thierrygosselin/assigner}{assigner}
 #' and might be of interest for users.
-#' The function uses \code{\link[fst]{read.fst}}.
+#' The function uses \code{\link[fst]{read_fst}}.
 
 #' @param data A file in the working directory ending with .rad,
 #' a tidy genomic data produced by radiator, assigner or grur.
 
-#' @inheritParams fst::read.fst
+#' @inheritParams fst::read_fst
 
 
 #' @return A tidy data frame in the global environment.
 #' @export
 #' @rdname read_rad
-#' @importFrom fst read.fst
+#' @importFrom fst read_fst
 #' @importFrom purrr safely
 #'
 #'
@@ -32,7 +32,7 @@ read_rad <- function(
   # Catch error while reading
   read_rad_fst <- function(
     data) {
-    fst::read.fst(
+    fst::read_fst(
       path = data, columns = NULL, from = 1, to = 2,
       as.data.table = FALSE, old_format = FALSE) %>%
       tibble::as_data_frame(.)
@@ -43,16 +43,16 @@ read_rad <- function(
   data.safe <- safe_rad_fst(data)
   if (is.null(data.safe$error)) {
     # return(data.safe$result)
-    data <- fst::read.fst(
+    data <- fst::read_fst(
       path = data, columns = columns, from = from, to = to,
       as.data.table = as.data.table, old_format = old_format) %>%
       tibble::as_data_frame(.)
     return(data)
   } else {
-    data.old <- suppressWarnings(fst::read.fst(path = data, old_format = TRUE)) %>%
+    data.old <- suppressWarnings(fst::read_fst(path = data, old_format = TRUE)) %>%
       radiator::write_rad(data = ., path = data)
     data.old <- NULL
-    data <- fst::read.fst(
+    data <- fst::read_fst(
       path = data, columns = columns, from = from, to = to,
       as.data.table = as.data.table, old_format = old_format) %>%
       tibble::as_data_frame(.)
@@ -71,7 +71,7 @@ read_rad <- function(
 #' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 #' and \href{https://github.com/thierrygosselin/assigner}{assigner}
 #' and might be of interest for users.
-#' The function uses \code{\link[fst]{write.fst}} with a compression level of 85,
+#' The function uses \code{\link[fst]{write_fst}} with a compression level of 85,
 #' that work well with RADseq dataset.
 
 #' @param data A file in the working directory ending with .rad,
@@ -82,12 +82,12 @@ read_rad <- function(
 #' @return A tidy data frame in the global environment.
 #' @export
 #' @rdname write_rad
-#' @importFrom fst write.fst
+#' @importFrom fst write_fst
 #'
 #'
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 write_rad <- function(data, path) {
   tibble::as_data_frame(data) %>%
-  fst::write.fst(x = ., path = path, compress = 85)
+  fst::write_fst(x = ., path = path, compress = 85)
 }#End write_rad

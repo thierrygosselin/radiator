@@ -89,7 +89,12 @@ if (getRversion() >= "2.15.1") {
       "ALT_COUNT", "INDIVIDUALS_VCF", "MAC", "MAC_FILTER", "REF_COUNT",
       "SNP_PER_LOCUS_MAC", "SNP_POS_READ_IQR", "SNP_POS_READ_OUTLIERS",
       "SNP_POS_READ_Q75", "VARIANT_ID", "genotypes", "NEW_POP", "NEW_INDIVIDUALS",
-      "biallelic", "LD", "x", "SNPRELATE", "LONG_DISTANCE_PRUNING"
+      "biallelic", "LD", "x", "SNPRELATE", "LONG_DISTANCE_PRUNING",
+      "COVERAGE_MEAN", "FILTER_COVERAGE", "FILTER_LONG_LD", "FILTER_MAC",
+      "FILTER_SHORT_LD", "FILTER_STRANDS", "GENOTYPED_THRESHOLD", "MARKERS_A",
+      "MARKERS_B", "MISSING_POP", "NUMBER_MARKERS", "SNP_PER_LOCUS", "id.select",
+      "individuals.missing", "keep.both.strands", "n.ind", "snp.select.no.maf",
+      "common.markers", "FILTER_INDIVIDUALS_MISSING", "tidy.data", "num.variant"
     )
   )
 }

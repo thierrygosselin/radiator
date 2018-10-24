@@ -407,8 +407,13 @@ tidy_genomic_data <- function(
 
   # dotslist -------------------------------------------------------------------
   dotslist <- list(...)
-  want <- c("keep.allele.names", "snp.read.position.filter", "mac.threshold",
-            "ref.calibration", "gt.vcf.nuc", "gt.vcf", "gt", "gt.bin", "vcf.stats",
+  want <- c("keep.allele.names",
+            "filter.snp.read.position", "filter.mac",
+            "filter.coverage.outliers", "filter.markers.missing", "filter.short.ld",
+            "filter.long.ld", "filter.individuals.missing",
+            "keep.both.strands",
+            "ref.calibration", "gt.vcf.nuc", "gt.vcf", "gt", "gt.bin",
+            "vcf.stats",
             "keep.gds")
   unknowned_param <- setdiff(names(dotslist), want)
 
@@ -420,18 +425,25 @@ tidy_genomic_data <- function(
   radiator.dots <- dotslist[names(dotslist) %in% want]
   keep.allele.names <- radiator.dots[["keep.allele.names"]]
 
-  if (is.null(keep.allele.names)) keep.allele.names <- FALSE
-  snp.read.position.filter <- radiator.dots[["snp.read.position.filter"]]
-  mac.threshold <- radiator.dots[["mac.threshold"]]
+
   ref.calibration <- radiator.dots[["ref.calibration"]]
   gt.vcf.nuc <- radiator.dots[["gt.vcf.nuc"]]
   gt.vcf <- radiator.dots[["gt.vcf"]]
   gt <- radiator.dots[["gt"]]
   gt.bin <- radiator.dots[["gt.bin"]]
   vcf.stats <- radiator.dots[["vcf.stats"]]
-  filename <- radiator.dots[["filename"]]
   keep.gds <- radiator.dots[["keep.gds"]]
 
+  filter.snp.read.position <- radiator.dots[["filter.snp.read.position"]]
+  filter.mac <- radiator.dots[["filter.mac"]]
+  filter.coverage.outliers <- radiator.dots[["filter.coverage.outliers"]]
+  filter.markers.missing <- radiator.dots[["filter.markers.missing"]]
+  filter.short.ld <- radiator.dots[["filter.short.ld"]]
+  filter.long.ld <- radiator.dots[["filter.long.ld"]]
+  filter.individuals.missing <- radiator.dots[["filter.individuals.missing"]]
+  keep.both.strands <- radiator.dots[["keep.both.strands"]]
+
+  if (is.null(keep.allele.names)) keep.allele.names <- FALSE
   if (is.null(keep.gds)) keep.gds <- TRUE
   if (is.null(vcf.stats)) vcf.stats <- TRUE
   if (is.null(ref.calibration)) ref.calibration <- FALSE
@@ -439,15 +451,17 @@ tidy_genomic_data <- function(
   if (is.null(gt.vcf)) gt.vcf <- TRUE
   if (is.null(gt)) gt <- TRUE
   if (is.null(gt.bin)) gt.bin <- TRUE
-
+  if (is.null(keep.both.strands)) keep.both.strands <- FALSE
+  if (is.null(filter.coverage.outliers)) filter.coverage.outliers <- FALSE
+  if (is.null(common.markers)) common.markers <- TRUE
 
   if (!gt.vcf.nuc && !gt) {
     stop("At least one of gt.vcf.nuc or gt must be TRUE")
   }
 
-  if (!is.null(snp.read.position.filter)) {
-    snp.read.position.filter <- match.arg(
-      arg = snp.read.position.filter,
+  if (!is.null(filter.snp.read.position)) {
+    filter.snp.read.position <- match.arg(
+      arg = filter.snp.read.position,
       choices = c("outliers", "iqr", "q75"),
       several.ok = TRUE)
   }
@@ -560,15 +574,22 @@ tidy_genomic_data <- function(
       pop.labels = pop.labels,
       filename = NULL,
       vcf.stats = TRUE,
-      snp.read.position.filter = NULL,
-      mac.threshold = NULL,
+      filter.individuals.missing = filter.individuals.missing,
+      common.markers = common.markers,
+      keep.both.strands = keep.both.strands,
+      filter.mac = filter.mac,
+      filter.coverage.outliers = filter.coverage.outliers,
+      filter.markers.missing = filter.markers.missing,
+      filter.snp.read.position = filter.snp.read.position,
+      filter.short.ld = filter.short.ld,
+      filter.long.ld = filter.long.ld,
       gt.vcf.nuc = TRUE,
       gt.vcf = TRUE,
       gt = TRUE,
       gt.bin = TRUE,
       keep.gds = FALSE
     ) %$%
-      genotypes
+      tidy.data
 
     biallelic <- radiator::detect_biallelic_markers(input)
   } # End import VCF
@@ -1067,8 +1088,10 @@ tidy_genomic_data <- function(
   # Arrange the id and create a strata after pop select ------------------------
   input$INDIVIDUALS <- radiator::clean_ind_names(input$INDIVIDUALS)
 
-  strata.df <- dplyr::ungroup(input) %>%
-    dplyr::distinct(POP_ID, INDIVIDUALS)
+  if (!is.null(strata)) {
+    strata.df <- dplyr::ungroup(input) %>%
+      dplyr::distinct(POP_ID, INDIVIDUALS)
+  }
 
   # Blacklist genotypes --------------------------------------------------------
   if (is.null(blacklist.genotype)) { # no Whitelist
@@ -1171,6 +1194,7 @@ tidy_genomic_data <- function(
   input$MARKERS <- radiator::clean_markers_names(input$MARKERS)
 
   # Markers in common between all populations (optional) -----------------------
+  if (is.null(strata)) common.markers <- FALSE
   if (common.markers) { # keep only markers present in all pop
     input <- radiator::keep_common_markers(input, verbose = TRUE)$input
   } # End common markers
@@ -1233,7 +1257,7 @@ tidy_genomic_data <- function(
     n.chromosome <- "no chromosome info"
   }
   n.individuals <- dplyr::n_distinct(input$INDIVIDUALS)
-  n.pop <- dplyr::n_distinct(input$POP_ID)
+  if(!is.null(strata)) n.pop <- dplyr::n_distinct(input$POP_ID)
 
   if (verbose) {
     cat("############################### RESULTS ###############################\n")
@@ -1259,7 +1283,7 @@ tidy_genomic_data <- function(
   }
   message("    Number of chromosome/contig/scaffold: ", n.chromosome)
   message("    Number of individuals: ", n.individuals)
-  message("    Number of populations: ", n.pop)
+  if (!is.null(strata)) message("    Number of populations: ", n.pop)
   if (verbose) timing <- proc.time() - timing
   if (verbose) message("Computation time: ", round(timing[[3]]), " sec")
   if (verbose) {

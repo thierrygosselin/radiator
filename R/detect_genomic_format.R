@@ -35,7 +35,7 @@ detect_genomic_format <- function(data){
       return(data.type)
     } else {
       data.type <- class(data)[1]
-      if (!data.type %in% c("genind", "genlight", "gtypes")) stop("Input file not recognised")
+      if (!data.type %in% c("genind", "genlight", "gtypes", "SeqVarGDSClass")) stop("Input file not recognised")
       return(data.type)
     }
   } else {
