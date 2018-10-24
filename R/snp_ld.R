@@ -880,7 +880,7 @@ snp_ld <- function(
 
       }
   }#End long distance LD pruning
-  message("Generating whitelist and blacklist of markers")
+  message("    Generating whitelist and blacklist of markers")
   message("\nComputation time for LD: ", round((proc.time() - timing)[[3]]), " sec")
   options(width = opt.change)
 

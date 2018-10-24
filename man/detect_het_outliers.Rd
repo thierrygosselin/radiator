@@ -153,6 +153,8 @@ Default: \code{parallel::detectCores() - 1}.}
 A folder generated automatically with date and time,
 the file \code{het.summary.tsv} contains the summary statistics. The file
 \code{markers.genotypes.boundaries.pdf} is the plot with boundaries.
+The overall genotyping and heterozygotes miscall rate is writen in the file
+\code{overall_error_rate.tsv}.
 The function also returns a list inside the global environment with
 8 objects:
 

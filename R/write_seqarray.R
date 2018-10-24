@@ -273,6 +273,14 @@ write_seqarray <- function(
     SeqArray::seqOpen(gds.fn = ., readonly = FALSE)
 
   check.header <- detect.source <- NULL
+  # Summary --------------------------------------------------------------------
+  # vcf.sum <- SeqArray::seqSummary(res$vcf.connection, verbose = FALSE)
+  # this might be safer, because using seqSummary seems to forget if filters were used
+  n.ind <- length(SeqArray::seqGetData(res$vcf.connection, "sample.id"))
+  n.markers <- length(SeqArray::seqGetData(res$vcf.connection, "variant.id"))
+  message("\nNumber of SNPs: ", n.markers)
+  message("Number of samples: ", n.ind)
+  # vcf.sum <- NULL
 
   if (verbose) message("\nconversion timing: ", round((proc.time() - timing.vcf)[[3]]), " sec")
 
@@ -280,12 +288,6 @@ write_seqarray <- function(
     message("\nGDS file generated: \n", filename.short)
     message("To close the connection use SeqArray::seqClose(OBJECT_NAME$vcf.connection)")
   }
-
-  # Summary --------------------------------------------------------------------
-  vcf.sum <- SeqArray::seqSummary(res$vcf.connection, verbose = FALSE)
-  message("\nNumber of SNPs: ", vcf.sum$num.variant)
-  message("Number of samples: ", vcf.sum$num.sample)
-  vcf.sum <- NULL
 
   # Strata ---------------------------------------------------------------------
   # import strata and filter with blacklist of id if present...
@@ -1072,6 +1074,8 @@ write_seqarray <- function(
       # test <- res$markers.meta
     }
     # number of SNPs per locus -------------------------------------------------
+
+    # Note to myself: there is no filtering here, just an output of the stats...
     # before and after filtering
     res$stats$snp.locus.stats <- tibble_stats(
       x = dplyr::distinct(res$markers.meta, LOCUS, SNP_PER_LOCUS) %$%
@@ -1149,10 +1153,13 @@ write_seqarray <- function(
     # blacklisted markers ------------------------------------------------------
 
     # Stats --------------------------------------------------------------------
-    vcf.sum <- SeqArray::seqSummary(res$vcf.connection, verbose = FALSE)
-    res$n.markers <-  vcf.sum$num.variant
-    res$n.individuals <- vcf.sum$num.sample
-    vcf.sum <- NULL
+    res$n.individuals <- length(SeqArray::seqGetData(res$vcf.connection, "sample.id"))
+    res$n.markers <- length(SeqArray::seqGetData(res$vcf.connection, "variant.id"))
+
+    # # vcf.sum <- SeqArray::seqSummary(res$vcf.connection, verbose = FALSE)
+    # res$n.markers <-  vcf.sum$num.variant
+    # res$n.individuals <- vcf.sum$num.sample
+    # vcf.sum <- NULL
 
     if (vcf.stats) {
       res$n.chromosome <- dplyr::n_distinct(res$markers.meta$CHROM)
