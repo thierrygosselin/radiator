@@ -160,11 +160,18 @@ The function returns a list with the function call and:
 use $ to access each #' objects in the list.
 }
 \description{
-Calculates the nucleotide diversity.
-[stackr](https://github.com/thierrygosselin/stackr) \emph{summary_haplotypes}
-function provides an estimate integrating the consensus markers found in
+Calculates the nucleotide diversity (Nei & Li, 1979).
+
+To get an estimate with the consensus reads, use the
+function \emph{summary_haplotypes} found in the package
+[stackr](https://github.com/thierrygosselin/stackr). The estimate in
+\emph{summary_haplotypes} integrates the consensus markers found in
 [STACKS](http://catchenlab.life.illinois.edu/stacks/)
-batch_x.haplotypes.tsv file. The function requires \code{stringdist} package.
+populations.haplotypes.tsv file.
+Both radiator and stackr functions requires \code{stringdist} package.
+
+The \code{read.length} argument below is used directly in the calculations.
+To be correctly estimated, the reads obviously need to be of identical size...
 }
 \examples{
 \dontrun{

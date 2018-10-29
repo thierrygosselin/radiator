@@ -73,7 +73,8 @@
 #' 0.3 or 30% missing genotypes. This can help discover more polymorphic markers
 #' with some dataset.
 #' \item \code{path.folder}: to write ouput in a specific path
-#' (used internally in radiator).
+#' (used internally in radiator). Default: \code{path.folder = getwd()}.
+#' If the supplied directory doesn't exist, it's created.
 #' }
 
 #' @export
@@ -198,11 +199,15 @@ write_seqarray <- function(
 
   # useful outside this function
   if (is.null(keep.gds)) keep.gds <- TRUE
-  if (is.null(path.folder)) path.folder <- getwd()
   if (is.null(keep.both.strands)) keep.both.strands <- FALSE
   if (is.null(long.ld.missing)) long.ld.missing <- FALSE
   if (is.null(filter.coverage.outliers)) filter.coverage.outliers <- FALSE
   if (is.null(common.markers)) common.markers <- TRUE
+  if (is.null(path.folder)) {
+    path.folder <- getwd()
+  } else {
+    if (!dir.exists(path.folder)) dir.create(path.folder)
+  }
 
   if (!is.null(filter.snp.read.position)) {
     filter.snp.read.position <- match.arg(
@@ -210,6 +215,7 @@ write_seqarray <- function(
       choices = c("outliers", "iqr", "q75"),
       several.ok = TRUE)
   }
+
 
 
   # LD

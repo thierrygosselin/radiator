@@ -242,34 +242,6 @@ filter_rad <- function(
   # dotslist -------------------------------------------------------------------
   # not yet used
   dotslist <- list(...)
-  # want <- c("filter.coverage", "filter.ind.missing.geno")
-  # unknowned_param <- setdiff(names(dotslist), want)
-  #
-  # if (length(unknowned_param) > 0) {
-  #   stop("Unknowned \"...\" parameters ",
-  #        stringi::stri_join(unknowned_param, collapse = " "))
-  # }
-  #
-  # radiator.dots <- dotslist[names(dotslist) %in% want]
-  # filter.coverage <- radiator.dots[["filter.coverage"]]
-  # filter.ind.missing.geno <- radiator.dots[["filter.ind.missing.geno"]]
-  #
-  # if (!is.null(filter.coverage) && !is.null(filter.ind.missing.geno)) {
-  #   stop("
-  #        filter.coverage is deprecated in favour of: filter.markers.coverage
-  #        filter.ind.missing.geno is deprecated in favour of: filter.markers.missing")
-  # }
-  #
-  # if (!is.null(filter.coverage)) {
-  #   stop("
-  #        filter.coverage is deprecated in favour of: filter.markers.coverage")
-  # }
-  #
-  # if (!is.null(filter.ind.missing.geno)) {
-  #   stop("
-  #        filter.ind.missing.geno is deprecated in favour of: filter.markers.missing")
-  # }
-
 
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) stop("Input file missing")
@@ -313,7 +285,8 @@ filter_rad <- function(
 
   # Keep GT_BIN
   want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "INDIVIDUALS",
-            "POP_ID", "GT_BIN", "READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH")
+            "POP_ID", "GT_BIN", "READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH",
+            "GQ", "GL_HOM_REF", "GL_HET", "GL_HOM_ALT")
   input <- suppressWarnings(dplyr::select(input, dplyr::one_of(want)))
 
 
@@ -506,8 +479,6 @@ filter_rad <- function(
       message("File written: tidy.data.coverage.rad")
     } else {# Counts data
       # Removing individuals with very low coverage ------------------------------
-
-
       # Filter low genotypes coverage---------------------------------------------
       message("Filtering genotypes coverage")
 

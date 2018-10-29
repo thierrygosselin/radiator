@@ -106,7 +106,8 @@ e.g. \code{filter.individuals.missing = 0.7}, will remove individuals with >
 0.3 or 30% missing genotypes. This can help discover more polymorphic markers
 with some dataset.
 \item \code{path.folder}: to write ouput in a specific path
-(used internally in radiator).
+(used internally in radiator). Default: \code{path.folder = getwd()}.
+If the supplied directory doesn't exist, it's created.
 }
 }
 \references{
