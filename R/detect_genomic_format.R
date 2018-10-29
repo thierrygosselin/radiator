@@ -18,6 +18,7 @@
 #' \item fstat.file: for a fstat file
 #' \item dart: for a DArT file
 #' \item fst.file: for a file ending with .rad
+#' \item SeqVarGDSClass: for SeqArray GDS file.
 #' }
 
 #' @rdname detect_genomic_format
