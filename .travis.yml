@@ -5,9 +5,9 @@ cache: packages
 warnings_are_errors: false
 sudo: required
 dist: trusty
-#env:
-#   global:
-#     - _R_CHECK_FORCE_SUGGESTS_=FALSE
+env:
+   global:
+     - _R_CHECK_FORCE_SUGGESTS_ = FALSE
 notifications:
   email:
     on_success: change
@@ -18,3 +18,5 @@ apt_packages:
 os:
   - linux
   - osx
+
+TRAVIS_R_VERSION=3.5.0
