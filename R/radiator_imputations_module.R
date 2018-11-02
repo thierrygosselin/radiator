@@ -1016,7 +1016,7 @@ radiator_imputations_module <- function(
 
         if (hierarchical.levels == "strata") {
           input <- dplyr::ungroup(input) %>%
-            dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS) %>%
+            dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS) %>%
             dplyr::mutate(
               # GT_N = as.numeric(factor(replace(GT, which(is.na(GT)), 0))),
               POP_ID_N = as.numeric(factor(POP_ID)),
@@ -1029,7 +1029,7 @@ radiator_imputations_module <- function(
           input.wide <- dplyr::select(
             .data = input,
             MARKERS, POP_ID = POP_ID_N, INDIVIDUALS = INDIVIDUALS_N, GT = GT_N) %>%
-            dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS) %>%
+            dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS) %>%
             dplyr::group_by(POP_ID, INDIVIDUALS) %>%
             tidyr::spread(data = ., key = MARKERS, value = GT) %>%
             dplyr::ungroup(.)
@@ -1037,7 +1037,7 @@ radiator_imputations_module <- function(
 
         if (hierarchical.levels == "global") {
           input <- dplyr::ungroup(input) %>%
-            dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS) %>%
+            dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS) %>%
             dplyr::select(-POP_ID) %>%
             dplyr::mutate(INDIVIDUALS_N = as.numeric(factor(INDIVIDUALS))) %>%
             dplyr::group_by(MARKERS) %>%
@@ -1116,7 +1116,7 @@ radiator_imputations_module <- function(
 
         # Reintroduce the stratification (check if required)
         input.imp <- dplyr::left_join(strata.before, input.imp, by = "INDIVIDUALS") %>%
-          dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
+          dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS)
         strata.before <- NULL# remove unused objects
 
         if (separate.haplo) {
@@ -1189,7 +1189,7 @@ radiator_imputations_module <- function(
             tidyr::gather(data = ., key = MARKERS, value = GT, -INDIVIDUALS) %>%
             # Reintroduce the stratification (check if required)
             dplyr::right_join(strata.before, by = "INDIVIDUALS") %>%
-            dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
+            dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS)
         }#End RF by pop
 
         # Random Forests global
@@ -1211,7 +1211,7 @@ radiator_imputations_module <- function(
             tidyr::gather(data = ., key = MARKERS, value = GT, -INDIVIDUALS) %>%
             # Reintroduce the stratification (check if required)
             dplyr::right_join(strata.before, by = "INDIVIDUALS") %>%
-            dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
+            dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS)
         } #End RF global
 
 
@@ -1275,7 +1275,7 @@ radiator_imputations_module <- function(
       }
       want <- marker.meta <- NULL
     } else {
-      input.imp <- dplyr::arrange(.data = input.imp, MARKERS, POP_ID, INDIVIDUALS)
+      input.imp <- dplyr::arrange(.data = input.imp, POP_ID, INDIVIDUALS, MARKERS)
     }
 
     # Write to working directory
