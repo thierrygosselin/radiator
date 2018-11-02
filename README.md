@@ -1,6 +1,6 @@
 [![Travis-CI Build Status](https://travis-ci.org/thierrygosselin/radiator.svg?branch=master)](https://travis-ci.org/thierrygosselin/radiator) [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/thierrygosselin/radiator?branch=master&svg=true)](https://ci.appveyor.com/project/thierrygosselin/radiator) [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/radiator)](http://cran.r-project.org/package=radiator) [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active) [![DOI](https://zenodo.org/badge/14548/thierrygosselin/radiator.svg)](https://zenodo.org/badge/latestdoi/14548/thierrygosselin/radiator)
 
-[![packageversion](https://img.shields.io/badge/Package%20version-0.0.18-orange.svg)](commits/master) [![Last-changedate](https://img.shields.io/badge/last%20change-2018--10--29-brightgreen.svg)](/commits/master)
+[![packageversion](https://img.shields.io/badge/Package%20version-0.0.19-orange.svg)](commits/master) [![Last-changedate](https://img.shields.io/badge/last%20change-2018--11--02-brightgreen.svg)](/commits/master)
 
 ------------------------------------------------------------------------
 
@@ -62,7 +62,7 @@ library(radiator)
 </tr>
 <tr class="odd">
 <td align="left"><strong>Imputations</strong></td>
-<td align="left">The imputation engine or <strong>grur</strong> inside <strong>radiator</strong>.<br><br><strong>Map-independent</strong> imputations of missing genotypes using:<br><strong>Random Forests</strong> (on-the-fly-imputations or predictive modeling),<br><strong>Extreme Gradient Tree Boosting</strong><br>Strawman imputations (~ max/mean/mode: the most frequently observed, non-missing genotypes is used).<br><br> Imputations can be conducted <strong>overall samples</strong> or <strong>by populations</strong>.<br><br>Imputations are integrated in several <strong>radiator</strong> functions.<br><br>For the separate module, see <a href="https://github.com/thierrygosselin/grur">grur</a></td>
+<td align="left">The imputation engine of <a href="https://github.com/thierrygosselin/grur">grur</a> inside <strong>radiator</strong>.<br><br><strong>Map-independent</strong> imputations of missing genotypes using:<br><strong>Random Forests</strong> (on-the-fly-imputations or predictive modeling),<br><strong>Extreme Gradient Tree Boosting</strong><br>Strawman imputations (~ max/mean/mode: the most frequently observed, non-missing genotypes is used).<br><br> Imputations can be conducted <strong>overall samples</strong> or <strong>by populations/strata/grouping</strong>.<br><br>Imputations are integrated in several <strong>radiator</strong> functions.</td>
 </tr>
 <tr class="even">
 <td align="left"><strong><a href="http://ggplot2.org">ggplot2</a>-based plotting</strong></td>

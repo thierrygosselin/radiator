@@ -181,6 +181,7 @@ snp_ld <- function(
   # ld.wide <- FALSE
   # ld.tibble <- FALSE
   # manhattan.plot <- FALSE
+  # long.ld.missing = FALSE
 
   timing <- proc.time()
   opt.change <- getOption("width")
@@ -210,7 +211,6 @@ snp_ld <- function(
   if (is.null(ld.tibble)) ld.tibble <- FALSE
   if (is.null(ld.figures)) ld.figures <- FALSE
   if (is.null(manhattan.plot)) manhattan.plot <- FALSE
-
   if (is.null(ld.threshold)) long.ld.missing <- FALSE
 
   # match arg ------------------------------------------------------------------
@@ -568,10 +568,9 @@ snp_ld <- function(
   } else {
     message("    There is no variation in the number of SNP/locus across the data")
   }
-  snp.select <- NULL
   # Note to myself:
   # locus.stats: this stats could be written in directory or output in res
-  locus.stats <- NULL
+  snp.select <-  locus.stats <- NULL
 
 
   # Long distance LD pruning ---------------------------------------------------
@@ -814,21 +813,78 @@ snp_ld <- function(
       message("Long distance LD pruning WITHOUT missing data stats")
       # ld.threshold <- 0.8
       ld.markers <- list()
-      ld.markers$whitelist.markers <- SNPRelate::snpgdsLDpruning(
-        gdsobj = res.snp.ld$data.gds,
-        snp.id = variant.id.select,
-        autosome.only = FALSE,
-        remove.monosnp = TRUE,
-        maf = NaN,
-        missing.rate = NaN,
-        method = "r",
-        ld.threshold = ld.threshold,
-        num.thread = 1,
-        #Warning message:
-        # In SNPRelate::snpgdsLDpruning(gdsobj = data, autosome.only = FALSE,  :
-        # The current version of 'snpgdsLDpruning()' does not support multi-threading.
-        verbose = FALSE) %>%
-        purrr::flatten_int(.)
+
+      # TODO:
+      # parallelize with and without the use of missing
+      # with SNPRelate::snpgdsLDpruning, split a whitelist of markers based
+      # on chromosome
+
+      n.chrom <- dplyr::n_distinct(markers$CHROM)
+
+      if (parallel.core > 1) {
+        prune_ld_par <- function(chrom.snp.select, data, threshold) {
+          pruned.snp <- SNPRelate::snpgdsLDpruning(
+            gdsobj = data,
+            snp.id = chrom.snp.select$VARIANT_ID,
+            autosome.only = FALSE,
+            remove.monosnp = TRUE,
+            maf = NaN,
+            missing.rate = NaN,
+            method = "r",
+            ld.threshold = threshold,
+            num.thread = 1,
+            verbose = TRUE) %>%
+            purrr::flatten_int(.)
+          return(pruned.snp)
+        }#End prune_ld_par
+
+
+        # ld.markers$whitelist.markers <-
+        #   split(x = x, f = split.vec) %>%
+        #   .radiator_parallel(
+        #     X = ., FUN = clean, mc.cores = parallel.core) %>%
+        #   purrr::flatten_int(.)
+
+        # sample.chrom <- sample(x = unique(markers$CHROM), size = 11)
+        #
+        # check <- dplyr::left_join(
+        #   dplyr::select(markers, CHROM, VARIANT_ID),
+        #   dplyr::distinct(markers, CHROM) %>%
+        #     dplyr::mutate(
+        #       SPLIT_VEC = split_vec_row(x = ., cpu.rounds = 10, parallel.core = parallel.core)
+        #     )
+        #   , by = "CHROM") %>%
+        #   dplyr::filter(CHROM %in% sample.chrom) %>%
+        #   dplyr::select(-CHROM) %>%
+        #   split(x = ., f = .$SPLIT_VEC) %>%
+        #   .radiator_parallel_mc(
+        #     X = .,
+        #     FUN = prune_ld_par,
+        #     mc.cores = parallel.core,
+        #     data = res.snp.ld$data.gds, threshold = ld.threshold
+        #   ) %>%
+        #   purrr::flatten_int(.)
+        # length(unique(check$CHROM))
+
+
+      } else {
+
+
+
+        ld.markers$whitelist.markers <- SNPRelate::snpgdsLDpruning(
+          gdsobj = res.snp.ld$data.gds,
+          snp.id = variant.id.select,
+          autosome.only = FALSE,
+          remove.monosnp = TRUE,
+          maf = NaN,
+          missing.rate = NaN,
+          method = "r",
+          ld.threshold = ld.threshold,
+          num.thread = 1,
+          verbose = TRUE) %>%
+          purrr::flatten_int(.)
+      }
+
 
       ld.markers$blacklist.markers <- purrr::keep(
         .x = variant.id.select,
@@ -860,9 +916,9 @@ snp_ld <- function(
       data <- dplyr::filter(data, MARKERS %in% res.snp.ld$whitelist.snp.ld$MARKERS)
     } else {
       # radiator.gds <- gdsfmt::index.gdsn(
-        # node = res.snp.ld$data.gds, path = "radiator/markers.meta")
+      # node = res.snp.ld$data.gds, path = "radiator/markers.meta")
       # long.ld <- tibble::tibble(MARKERS = gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = radiator.gds, path = "MARKERS"))) %>%
-        # dplyr::mutate(FILTER_LONG_LD = dplyr::if_else(MARKERS %in% res.snp.ld$whitelist.snp.ld$MARKERS, TRUE, FALSE))
+      # dplyr::mutate(FILTER_LONG_LD = dplyr::if_else(MARKERS %in% res.snp.ld$whitelist.snp.ld$MARKERS, TRUE, FALSE))
       # check <- dplyr::filter(long.ld, FILTER_LONG_LD)
       # gdsfmt::add.gdsn(
       #   node = radiator.gds,
@@ -878,7 +934,7 @@ snp_ld <- function(
                              variant.id = res.snp.ld$whitelist.snp.ld$VARIANT_ID,
                              verbose = FALSE)
 
-      }
+    }
   }#End long distance LD pruning
   message("    Generating whitelist and blacklist of markers")
   message("\nComputation time for LD: ", round((proc.time() - timing)[[3]]), " sec")
