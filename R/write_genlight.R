@@ -58,6 +58,7 @@ write_genlight <- function(data, biallelic = TRUE) {
   if (!biallelic) stop("genlight object requires biallelic genotypes")
 
   # data = input
+  input %<>% dplyr::arrange(MARKERS, CHROM, LOCUS, POS, POP_ID, INDIVIDUALS)
   marker.meta <- dplyr::distinct(.data = input, MARKERS, CHROM, LOCUS, POS)
 
   if (!tibble::has_name(input, "GT_BIN")) {
@@ -71,10 +72,9 @@ write_genlight <- function(data, biallelic = TRUE) {
 
   input <- dplyr::select(.data = input, MARKERS, POP_ID, INDIVIDUALS, GT_BIN) %>%
     dplyr::mutate(GT_BIN = as.integer(GT_BIN)) %>%
-    dplyr::arrange(MARKERS) %>%
     dplyr::group_by(INDIVIDUALS, POP_ID) %>%
     tidyr::spread(data = ., key = MARKERS, value = GT_BIN) %>%
-    dplyr::arrange(POP_ID, INDIVIDUALS)
+    dplyr::ungroup(.)
 
   # Generate genlight
   genlight.object <- methods::new(
