@@ -116,7 +116,7 @@ write_gsi_sim <- function(
   # Info for gsi_sim input -----------------------------------------------------
   n.individuals <- dplyr::n_distinct(data$INDIVIDUALS)  # number of individuals
   n.markers <- dplyr::n_distinct(data$MARKERS)          # number of markers
-  list.markers <- unique(data$MARKERS)                  # list of markers
+  list.markers <- order(unique(data$MARKERS))           # list of markers
 
   # Spread/dcast in wide format ------------------------------------------------------
   data <- dplyr::select(data, MARKERS, POP_ID, INDIVIDUALS, GT) %>%
