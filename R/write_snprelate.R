@@ -48,7 +48,7 @@ write_snprelate <- function(data, biallelic = TRUE, filename = NULL, verbose = T
   if (!requireNamespace("SNPRelate", quietly = TRUE)) {
     stop('To install SNPRelate:\n
          source("https://bioconductor.org/biocLite.R")
-         biocLite("SNPRelate"')
+         biocLite("SNPRelate")')
   }
 
   # Checking for missing and/or default arguments ------------------------------
@@ -60,7 +60,7 @@ write_snprelate <- function(data, biallelic = TRUE, filename = NULL, verbose = T
   if (is.null(filename)) {
     filename <- stringi::stri_join("radiator_snprelate_", file.date, ".gds")
   } else {
-    filename.problem <- file.exists(filename)
+    filename.problem <- file.exists(stringi::stri_join(filename, ".gds"))
     if (filename.problem) {
       filename <- stringi::stri_join(filename, "_snprelate_", file.date, ".gds")
     } else {
