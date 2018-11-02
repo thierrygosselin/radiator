@@ -55,7 +55,14 @@
 
 
 #' @details
-#' \strong{Input files:} Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
+#'
+#'
+#' \strong{Advance mode, using \emph{dots-dots-dots ...}}
+#' Currently all the advanced arguments are linked to using VCF files and
+#' described in \pkg{radiator} \code{\link{tidy_vcf}} and \code{\link{write_seqarray}}
+#'
+#' \strong{Input files:} Look into \pkg{radiator} \code{\link{tidy_genomic_data}}
+#' details section.
 #'
 #'
 #' \strong{Imputations details:}
@@ -73,20 +80,6 @@
 #' the version inside the newly created VCF, that should do the trick.
 #' \href{https://vcftools.github.io/specs.html}{For more
 #' information on Variant Call Format specifications}.
-#'
-#'
-#' \strong{SNPRelate:}
-#'
-#' I received too many emails with students having problem with SNPRelate, so
-#' I'm removing the option to output in SNPRelate from genomic_coverter.
-#' If you really want to do it,
-#' \href{https://github.com/zhengxwen/SNPRelate}{install SNPRelate}
-#' separately following the author's instruction. From a tidy data set created
-#' in genomic_converter you can download my code
-#' \href{https://www.dropbox.com/s/7xujizkvpi0ddac/write_snprelate.R?dl=0}{here}
-#' and source it to get a SNPRelate object. However, I'm no longer offering
-#' support for this.
-
 
 #' @return The function returns an object (list). The content of the object
 #' can be listed with \code{names(object)} and use \code{$} to isolate specific
@@ -264,6 +257,8 @@ genomic_converter <- function(
   # verbose = TRUE
   # write.tidy <- TRUE
   # keep.allele.names <- FALSE
+  # markers.info <- NULL
+
   #
   if (verbose) {
     cat("#######################################################################\n")
@@ -537,8 +532,8 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
       verbose = verbose,
       parallel.core = parallel.core,
       filename = NULL
-    )
-
+    ) %>%
+      dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS)
   } # End imputations
 
   # OUTPUT ---------------------------------------------------------------------
@@ -815,6 +810,7 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
       res$stockr.imputed <- radiator::write_stockr(data = input.imp)
     }
   }
+
   # structure --------------------------------------------------------------------
   if ("maverick" %in% output) {
     if (verbose) message("Generating MavericK files without imputation")
