@@ -214,6 +214,12 @@
 
 
 #' @details
+#'
+#' \strong{Advance mode, using \emph{dots-dots-dots ...}}
+#' Currently all the advanced arguments are linked to using VCF files and
+#' described in \pkg{radiator} \code{\link{tidy_vcf}} and \code{\link{write_seqarray}}
+#'
+#'
 #' \strong{Long distance SNP linkage disequilibrium pruning}
 #' If you have markers position on a genome or a linkage map,
 #' you can go further in removing linked markers by using
@@ -223,11 +229,19 @@
 #'
 #' \strong{Input files:}
 #' \enumerate{
-#' \item VCF biallelic file (e.g. \code{data = "batch_1.vcf"})
-#' To make the VCF population ready, you need the \code{strata} argument.
-#'
-#' \item VCF haplotypic file (e.g. \code{data = "batch_1.haplotypes.vcf"})
-#' To make the VCF population ready, you need the \code{strata} argument.
+#' \item VCF files: Biallelic and haplotypes files are imported.
+#' To make the VCF population-ready, you have to use \code{strata} argument.
+#' \strong{GATK VCF files:} Some VCF have an \code{ID} column filled with \code{.},
+#' the LOCUS information is all contained along the linkage group in the
+#' \code{CHROM} column. To make it work with
+#' \href{https://github.com/thierrygosselin/radiator}{radiator},
+#' the \code{ID} column is filled with the \code{POS} column info.
+#' \strong{platypus VCF files:} Some VCF files don't have an ID filed with values,
+#' here the same thing as GATK VCF files above is done.
+#' \strong{stacks VCF files:} with \emph{de novo} approaches, the CHROM column is
+#' filled with "1", the LOCUS column correspond to the CHROM section in stacks VCF and
+#' the COL column is POS -1. With a reference genome, the ID column in stacks VCF is
+#' separated into "LOCUS", "COL", "STRANDS".
 #'
 #' \item haplotype file created in STACKS (e.g. \code{data = "batch_1.haplotypes.tsv"}).
 #' To make the haplotype file population ready, you need the \code{strata} argument.
@@ -282,20 +296,12 @@
 #'
 #' \item \href{http://www.diversityarrays.com}{DArT} file.
 #'
-#' \item genepop data file (e.g. \code{data = "kiwi_data.gen"}). Here, the function can only use
-#' alleles encoded with 3 digits.
+#' \item genepop data file must end with \code{.gen},
+#' e.g. \code{data = "kiwi_data.gen"}. For now, the function can only use
+#' genepop files with alleles encoded with 3 digits.
+#'
+#' \item fstat file must end with \code{.dat}, but currently not used (contact author).
 #' }
-#'
-#'
-#' \strong{GATK VCF files:} Some VCF have an \code{ID} column filled with \code{.},
-#' the LOCUS information is all contained along the linkage group in the
-#' \code{CHROM} column. To make it work with
-#' \href{https://github.com/thierrygosselin/radiator}{radiator},
-#' the \code{ID} column is filled with the \code{POS} column info.
-#'
-#' \strong{platypus VCF files:} Some VCF files don't have an ID filed with values,
-#' here the same thing as GATK VCF files above is done.
-
 
 #' @return The output in your global environment is a tidy data frame.
 #' If \code{filename} is provided, the tidy data frame is also
@@ -414,7 +420,7 @@ tidy_genomic_data <- function(
             "keep.both.strands",
             "ref.calibration", "gt.vcf.nuc", "gt.vcf", "gt", "gt.bin",
             "vcf.stats",
-            "keep.gds")
+            "keep.gds", "markers.info")
   unknowned_param <- setdiff(names(dotslist), want)
 
   if (length(unknowned_param) > 0) {
@@ -440,6 +446,7 @@ tidy_genomic_data <- function(
   filter.markers.missing <- radiator.dots[["filter.markers.missing"]]
   filter.short.ld <- radiator.dots[["filter.short.ld"]]
   filter.long.ld <- radiator.dots[["filter.long.ld"]]
+  markers.info <- radiator.dots[["markers.info"]]
   filter.individuals.missing <- radiator.dots[["filter.individuals.missing"]]
   keep.both.strands <- radiator.dots[["keep.both.strands"]]
 
@@ -1250,6 +1257,9 @@ tidy_genomic_data <- function(
   }
 
   # Results --------------------------------------------------------------------
+  input %<>% dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS)
+
+
   n.markers <- dplyr::n_distinct(input$MARKERS)
   if (tibble::has_name(input, "CHROM")) {
     n.chromosome <- dplyr::n_distinct(input$CHROM)
