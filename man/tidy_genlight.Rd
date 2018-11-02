@@ -4,15 +4,34 @@
 \alias{tidy_genlight}
 \title{Tidy a genlight object to a tidy dataframe}
 \usage{
-tidy_genlight(data)
+tidy_genlight(data, verbose = FALSE)
 }
 \arguments{
 \item{data}{A genlight object in the global environment.}
+
+\item{verbose}{(optional, logical) When \code{verbose = TRUE}
+the function is a little more chatty during execution.
+Default: \code{verbose = TRUE}.}
 }
 \description{
 Tidy genlight object to a tidy dataframe.
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and might be of interest for users.
+}
+\details{
+A string of the same dimension is generated when genlight:
+\enumerate{
+\item \code{is.null(genlight@pop)}: pop1 will be integrated
+in the tidy dataset.
+\item \code{is.null(data@chromosome)}: CHROM1 will be integrated
+in the tidy dataset.
+\item \code{is.null(data@loc.names)}: LOCUS1 to dim(genlight)[2]
+will be integrated in the tidy dataset.
+\item \code{is.null(data@position)}: an integer string of
+length = dim(genlight)[2] will be integrated in the tidy dataset.
+}
+
+\strong{Note: that if all CHROM, LOCUS and POS is missing the function will be terminated}
 }
 \references{
 Jombart T (2008) adegenet: a R package for the multivariate

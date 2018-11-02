@@ -4,16 +4,25 @@
 \alias{tidy_vcf}
 \title{Tidy a vcf file (bi/multi-allelic).}
 \usage{
-tidy_vcf(data, strata = NULL, vcf.metadata = FALSE,
-  parallel.core = parallel::detectCores() - 1, verbose = FALSE, ...)
+tidy_vcf(data, strata = NULL, parallel.core = parallel::detectCores() -
+  1, verbose = FALSE, ...)
 }
 \arguments{
-\item{data}{12 options: VCF (SNPs or Haplotypes,
-to make the vcf population ready, see details below),
-plink, stacks haplotype file, genind (library(adegenet)),
-genlight (library(adegenet)), gtypes (library(strataG)), genepop, DArT,
-and a data frame in long/tidy or wide format.
-\emph{See details} of \code{\link[radiator]{tidy_genomic_data}}.}
+\item{data}{(character string) The VCF SNPs are biallelic or haplotypes.
+
+
+To make the VCF population-ready, you have to use \code{strata} argument.
+\strong{GATK VCF files:} Some VCF have an \code{ID} column filled with \code{.},
+the LOCUS information is all contained along the linkage group in the
+\code{CHROM} column. To make it work with
+\href{https://github.com/thierrygosselin/radiator}{radiator},
+the \code{ID} column is filled with the \code{POS} column info.
+\strong{platypus VCF files:} Some VCF files don't have an ID filed with values,
+here the same thing as GATK VCF files above is done.
+\strong{stacks VCF files:} with \emph{de novo} approaches, the CHROM column is
+filled with "1", the LOCUS column correspond to the CHROM section in stacks VCF and
+the COL column is POS -1. With a reference genome, the ID column in stacks VCF is
+separated into "LOCUS", "COL", "STRANDS".}
 
 \item{strata}{(optional)
 The strata file is a tab delimited file with a minimum of 2 columns headers:
@@ -35,18 +44,6 @@ have the required column names (\code{INDIVIDUALS} and \code{STRATA}).
 The strata column is cleaned of a white spaces that interfere with some
 packages or codes: space is changed to an underscore \code{_}.
 Default: \code{strata = NULL}.}
-
-\item{vcf.metadata}{(optional, logical or string) For VCF files only.
-With \code{logical, TRUE/FALSE}, \code{vcf.metadata = FALSE}, only the genotype
-information is kept (GT field). With \code{vcf.metadata = TRUE},
-all the metadata contained in the \code{FORMAT} field will be kept in
-the tidy data file. radiator is currently keeping/cleaning only these metadata:
-\code{"DP", "AD", "GL", "PL", "GQ", "HQ", "GOF", "NR", "NV"}.
-If you need different one, submit a request.
-With \code{string}, explicitely ask for a particular FORMAT field you want
-to keep (except the GT field that is always imported).
-e.g. \code{vcf.metadata = "PL"} or \code{vcf.metadata = c("DP", "GL")}.
-Default: \code{vcf.metadata = FALSE}.}
 
 \item{parallel.core}{(optional) The number of core used for parallel
 execution during import.
@@ -72,21 +69,36 @@ to manipulate and prune the dataset with blacklists and whitelists along
 several other filtering options.
 }
 \details{
-\strong{... :dot dot dot arguments}
-5 arguments are available:
+\strong{Advance mode, using \emph{dots-dots-dots ...}}
 \enumerate{
-\item whitelist.markers
-\item blacklist.id
-\item pop.select
-\item pop.levels
-\item pop.labels
-\item ref.calibration
-\item vcf.stats
+\item \code{whitelist.markers: }documented in \code{\link[radiator]{tidy_genomic_data}}
+\item \code{blacklist.id: }documented in \code{\link[radiator]{tidy_genomic_data}}
+\item \code{pop.select: }documented in \code{\link[radiator]{tidy_genomic_data}}
+\item \code{pop.levels: }documented in \code{\link[radiator]{tidy_genomic_data}}
+\item \code{pop.labels: }documented in \code{\link[radiator]{tidy_genomic_data}}
+\item \code{ref.calibration: } (optional, logical)
+Default: \code{ref.calibration = FALSE}.
+REF/ALT alleles are designated based on count.
+The allele with the higher overall count is called REF.
+When the count for REF/ALT alleles is equal, the REF allele is chosen randomly.
+REF/ALT designation can change when individuals are blacklisted.
+If individuals are blacklisted by
+internal filters inside this function the argument is turned on automatically.
+If you removed individuals in another software that doesn't check this, force
+the calibration of REF/ALT alleles: \code{ref.calibration = TRUE}.
+\item \code{vcf.stats: } (optional, logical) Generates individuals and markers important statistics
+helpful for filtering. These are very fast to generate and because computational
+cost is minimal, even for huge VCFs, the default is \code{vcf.stats = TRUE}.
+\item \code{vcf.metadata: } (optional, logical or character string)
+With \code{vcf.metadata = FALSE}, only the genotypes are kept (GT field).
+With \code{vcf.metadata = TRUE},
+all the metadata contained in the \code{FORMAT} field will be kept in
+the tidy data file. radiator is currently keeping/cleaning only these metadata:
+\code{"DP", "AD", "GL", "PL", "GQ", "HQ", "GOF", "NR", "NV", "RO", "QR", "AO", "QA"}.
+e.g. you only wnat AD and PL, \code{vcf.metadata = c("AD", "PL")}.
+If yours is not in the list, submit a request.
+Default: \code{vcf.metadata = FALSE}.
 }
-Documentation for these arguments is detailed
-in \code{\link[radiator]{tidy_genomic_data}}, the only difference here, the
-arguments are objects are in the global environment, not as file in the directory.
-If files are essential in your pipeline, please use \code{\link[radiator]{tidy_genomic_data}}.
 }
 \examples{
 \dontrun{
