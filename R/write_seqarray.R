@@ -7,7 +7,23 @@
 #' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 #' and might be of interest for users.
 
-#' @param vcf The path to the vcf file.
+
+#' @param data (character string) The VCF SNPs are biallelic or haplotypes.
+#'
+#'
+#' To make the VCF population-ready, you have to use \code{strata} argument.
+#' \strong{GATK VCF files:} Some VCF have an \code{ID} column filled with \code{.},
+#' the LOCUS information is all contained along the linkage group in the
+#' \code{CHROM} column. To make it work with
+#' \href{https://github.com/thierrygosselin/radiator}{radiator},
+#' the \code{ID} column is filled with the \code{POS} column info.
+#' \strong{platypus VCF files:} Some VCF files don't have an ID filed with values,
+#' here the same thing as GATK VCF files above is done.
+#' \strong{stacks VCF files:} with \emph{de novo} approaches, the CHROM column is
+#' filled with "1", the LOCUS column correspond to the CHROM section in stacks VCF and
+#' the COL column is POS -1. With a reference genome, the ID column in stacks VCF is
+#' separated into "LOCUS", "COL", "STRANDS".
+
 
 #' @param filename (optional) The file name of the Genomic Data Structure (GDS) file.
 #' radiator will append \code{.gds} to the filename.
@@ -17,11 +33,15 @@
 
 #' @inheritParams tidy_genomic_data
 
-#' @param vcf.stats (logical) When \code{vcf.stats = TRUE}, individual's missing
-#' genotype proportion, averaged heterozygosity, total coverage, mean genotype
-#' coverage and marker's metadata along count for ref and alt alleles and mean
+#' @param vcf.stats (optional, logical) Generates individuals and markers
+#' important statistics helpful for filtering.
+#' These are very fast to generate and because computational
+#' cost is minimal, even for huge VCFs, the default is \code{vcf.stats = TRUE}.
+#' Starts: individual's missing genotype proportion, averaged heterozygosity,
+#' total coverage, mean genotype coverage and marker's metadata
+#' along count for ref and alt alleles and mean
 #' coverage is generated and written in the working directory.
-#' Default: \code{vcf.stats = FALSE}.
+#' Default: \code{vcf.stats = TRUE}.
 
 #' @param ... (optional) Advance mode that allows to pass further arguments
 #' for fine-tuning the function (see details).
@@ -32,9 +52,10 @@
 #' A vcf file of 35 GB with ~4 millions SNPs take about ~7 min with 8 CPU.
 #' A vcf file of 21 GB with ~2 millions SNPs take about ~5 min with 7 CPU.
 #'
-#' After the file is generated, it's a matter of sec to open a connection.
+#' After the file is generated, you can close your computer and
+#' come back to it a month later and it's now a matter of sec to open a connection.
 #'
-#' \strong{Advance mode, using \emph{dots-dots-dots}}
+#' \strong{Advance mode, using \emph{dots-dots-dots ...}}
 #' \enumerate{
 #' \item \code{whitelist.markers}: detailed in \code{\link[radiator]{tidy_genomic_data}}.
 #' \item \code{blacklist.id}: detailed in \code{\link[radiator]{tidy_genomic_data}}.
@@ -70,8 +91,13 @@
 #' \item \code{filter.individuals.missing}: (double) Use this argument to
 #' blacklist individuals with too many missing data.
 #' e.g. \code{filter.individuals.missing = 0.7}, will remove individuals with >
-#' 0.3 or 30% missing genotypes. This can help discover more polymorphic markers
+#' 0.7 or 70% missing genotypes. This can help discover more polymorphic markers
 #' with some dataset.
+#' \item \code{markers.info}: (character) With default: \code{markers.info = NULL},
+#' all the variable in the vcf INFO field are imported.
+#' To import only DP (the SNP total read depth) and AF (the SNP allele frequency),
+#' use \code{markers.info = c("DP", "AF")}.
+#' Using, \code{markers.info = character(0)} will not import INFO variables.
 #' \item \code{path.folder}: to write ouput in a specific path
 #' (used internally in radiator). Default: \code{path.folder = getwd()}.
 #' If the supplied directory doesn't exist, it's created.
@@ -96,26 +122,53 @@
 #' The variant call format and VCFtools.
 #' Bioinformatics, 27, 2156-2158.
 
+
+#' @examples
+#' \dontrun{
+#' # with built-in defaults:
+#'  prep.data <- radiator::write_seqarray(vcf = "populations.snps.vcf")
+#'
+#' # Using more arguments and filters (recommended):
+#' prep.data <- radiator::write_seqarray(
+#' data = "populations.snps.vcf",
+#' strata = "strata_salamander.tsv",
+#' vcf.stats = TRUE,
+#' filter.individuals.missing = "outlier",
+#' common.markers = TRUE,
+#' keep.both.strands = FALSE,
+#' filter.mac = 4,
+#' filter.markers.missing = 50,
+#' filter.snp.read.position = "outliers",
+#' filter.short.ld = "maf",
+#' filter.long.ld = NULL,
+#' vcf.metadata = TRUE,
+#' path.folder = "salamander/prep_data",
+#' verbose = TRUE)
+#' }
+
+
+
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 
 write_seqarray <- function(
-  vcf,
+  data,
   strata = NULL,
   filename = NULL,
-  vcf.stats = FALSE,
+  vcf.stats = TRUE,
   parallel.core = parallel::detectCores() - 1,
   verbose = TRUE,
   ...
 ) {
 
   ##Test
-  # vcf = "populations.snps.vcf"
+  # data = "populations.snps.vcf"
   # strata <- "spis-popmap-448samples.tsv"
   # filename <- NULL
   # vcf.stats <- TRUE
   # parallel.core <- parallel::detectCores() - 1
   # verbose <- TRUE
+  # vcf.metadata = TRUE
   # keep.both.strands = FALSE
   # common.markers = TRUE
   # filter.mac <- 4
@@ -132,6 +185,7 @@ write_seqarray <- function(
   # pop.labels = NULL
   # whitelist.markers = NULL
   # keep.gds <- TRUE
+  # markers.info = NULL
   # path.folder = NULL
 
   res <- list() #store the results
@@ -158,7 +212,7 @@ write_seqarray <- function(
   }
 
   # Checking for missing and/or default arguments ------------------------------
-  if (missing(vcf)) stop("vcf file missing")
+  if (missing(data)) stop("vcf file missing")
 
   # dotslist -------------------------------------------------------------------
   dotslist <- list(...)
@@ -168,7 +222,7 @@ write_seqarray <- function(
             "filter.long.ld", "filter.individuals.missing", "common.markers",
             "keep.both.strands",
             "blacklist.id", "pop.select", "pop.levels", "pop.labels", "keep.gds",
-            "path.folder", "long.ld.missing")
+            "path.folder", "long.ld.missing", "markers.info", "vcf.metadata")
   unknowned_param <- setdiff(names(dotslist), want)
 
   if (length(unknowned_param) > 0) {
@@ -189,6 +243,8 @@ write_seqarray <- function(
   common.markers <- radiator.dots[["common.markers"]]
   keep.both.strands <- radiator.dots[["keep.both.strands"]]
   long.ld.missing <- radiator.dots[["long.ld.missing"]]
+  markers.info <- radiator.dots[["markers.info"]]
+  vcf.metadata <- radiator.dots[["vcf.metadata"]]
 
   blacklist.id <- radiator.dots[["blacklist.id"]]
   pop.select <- radiator.dots[["pop.select"]]
@@ -216,6 +272,26 @@ write_seqarray <- function(
       several.ok = TRUE)
   }
 
+  # vcf.metadata
+  if (is.logical(vcf.metadata)) {
+    if (vcf.metadata) {
+      overwrite.metadata <- NULL
+    } else {
+      overwrite.metadata <- "GT"
+    }
+  } else {#NULL or character
+    if (is.null(vcf.metadata)) {
+      overwrite.metadata <- NULL
+      vcf.metadata <- TRUE
+    } else {
+      overwrite.metadata <- vcf.metadata
+      if (!"GT" %in% overwrite.metadata) {
+        message("GT field always included in vcf.metadata")
+        overwrite.metadata <- c("GT", overwrite.metadata)
+      }
+      vcf.metadata <- TRUE
+    }
+  }
 
 
   # LD
@@ -229,7 +305,7 @@ write_seqarray <- function(
   message("\nReading VCF...")
 
   # Get file size
-  big.vcf <- file.size(vcf)
+  big.vcf <- file.size(data)
 
   if (verbose) {
     if (big.vcf > 500000000) message("Large vcf file may take several minutes...")
@@ -249,7 +325,7 @@ write_seqarray <- function(
     markers.file <- stringi::stri_join(filename, "_vcf_markers_metadata_", file.date, ".tsv")
     blacklist.markers <- stringi::stri_join(filename, "_blacklist.markers_", file.date, ".tsv")
     blacklist.id.filename <- stringi::stri_join(filename, "_blacklist.individuals_", file.date, ".tsv")
-    filename.problem <- file.exists(filename)
+    filename.problem <- file.exists(stringi::stri_join(filename, ".gds"))
     if (filename.problem) {
       filename <- stringi::stri_join(filename, "_", file.date, ".gds")
     } else {
@@ -264,17 +340,22 @@ write_seqarray <- function(
   timing.vcf <- proc.time()
 
   # Check for bad header generated by stacks
-  detect.source <- check_header_source(vcf)
+  detect.source <- check_header_source(data)
   stacks.2 <- detect.source$source
   check.header <- detect.source$check.header
 
+  if (!is.null(detect.source$markers.info)) markers.info <- detect.source$markers.info
+  if (!is.null(detect.source$overwrite.metadata)) overwrite.metadata <- detect.source$overwrite.metadata
+
   res$vcf.connection <- SeqArray::seqVCF2GDS(
-    vcf.fn = vcf,
+    vcf.fn = data,
     out.fn = filename,
     parallel = parallel.core,
     storage.option = "ZIP_RA",
     verbose = FALSE,
-    header = check.header
+    header = check.header,
+    info.import = markers.info, # characters, the variable name(s) in the INFO field for import; or NULL for all variables
+    fmt.import = overwrite.metadata# characters, the variable name(s) in the FORMAT field for import; or NULL for all variables#
   ) %>%
     SeqArray::seqOpen(gds.fn = ., readonly = FALSE)
 
@@ -324,6 +405,36 @@ write_seqarray <- function(
     name = "radiator",
     replace = TRUE)
 
+  # Number of alleles ----------------------------------------------------------
+  # if (max(unique(SeqArray::seqNumAllele(gdsfile = res$vcf.connection))) - 1 > 1) {
+  #   stop("Diploid dataset required")
+  # }
+
+  # bi- or multi-alllelic VCF --------------------------------------------------
+  # Haplotypes or SNPs
+  ref <- SeqArray::seqGetData(gdsfile = res$vcf.connection, var.name = "$ref")
+  sample.size <- min(length(unique(ref)), 100)
+  res$biallelic <- max(unique(stringi::stri_count_regex(
+    str = sample(
+      x = unique(ref),
+      size = sample.size), pattern = "[A-Z]"))) == 1
+  sample.size <- ref <- NULL
+
+  if (res$biallelic) {
+    message("\nVCF: biallelic SNPs")
+  } else {
+    message("\nVCF: haplotypes")
+  }
+
+  # add biallelic info to GDS
+  gdsfmt::add.gdsn(
+    node = radiator.gds,
+    name = "biallelic",
+    val = res$biallelic,
+    replace = TRUE,
+    compress = "ZIP_RA",
+    closezip = TRUE)
+
   # Sync id in STRATA and VCF --------------------------------------------------
   if (!is.null(strata)) {
     if (verbose) message("\nSynchronizing sample IDs in VCF and strata...")
@@ -349,47 +460,54 @@ write_seqarray <- function(
 
   # Markers metadata  -----------------------------------------------------------
   if (vcf.stats) {
-    if (verbose) message("\nWorking on the vcf ...")
-    if (stacks.2) {
-      vcf.locus <- SeqArray::seqGetData(res$vcf.connection, "annotation/id")
-      sample.size <- min(length(unique(vcf.locus)), 100)
-      ref.genome <- sample(x = unique(vcf.locus), size = sample.size, replace = FALSE) %>%
-        stringi::stri_detect_regex(str = ., pattern = "[^[:alnum:]]+") %>%
-        unique
-      sample.size <- NULL
+    # if (verbose) message("\nWorking on the vcf ...")
+    res$markers.meta <- tibble::tibble(
+      VARIANT_ID = SeqArray::seqGetData(res$vcf.connection, "variant.id"),
+      CHROM = SeqArray::seqGetData(res$vcf.connection, "chromosome"),
+      LOCUS = SeqArray::seqGetData(res$vcf.connection, "annotation/id"),
+      POS = SeqArray::seqGetData(res$vcf.connection, "position"))
 
-      if (ref.genome) {
-        res$markers.meta <- tibble::tibble(
-          VARIANT_ID = SeqArray::seqGetData(res$vcf.connection, "variant.id"),
-          CHROM = SeqArray::seqGetData(res$vcf.connection, "chromosome"),
-          LOCUS = vcf.locus,
-          POS = SeqArray::seqGetData(res$vcf.connection, "position"))
-      } else {
-        res$markers.meta <- tibble::tibble(
-          VARIANT_ID = SeqArray::seqGetData(res$vcf.connection, "variant.id"),
-          CHROM = "1",
-          LOCUS = SeqArray::seqGetData(res$vcf.connection, "chromosome"),
-          POS = SeqArray::seqGetData(res$vcf.connection, "position")) %>%
-          dplyr::mutate(COL = POS - 1)
-      }
-      vcf.locus <- NULL
+    # reference genome or de novo
+    sample.size <- min(length(unique(res$markers.meta$CHROM)), 100)
+    ref.genome <- sample(x = unique(res$markers.meta$CHROM), size = sample.size, replace = FALSE) %>%
+      stringi::stri_detect_regex(str = ., pattern = "[^[:alnum:]]+") %>%
+      unique
+    sample.size <- NULL
+
+    if (ref.genome) {
+      if (verbose) message("Reads assembly: reference-assisted")
     } else {
-      res$markers.meta <- tibble::tibble(
-        VARIANT_ID = SeqArray::seqGetData(res$vcf.connection, "variant.id"),
-        CHROM = SeqArray::seqGetData(res$vcf.connection, "chromosome"),
-        LOCUS = SeqArray::seqGetData(res$vcf.connection, "annotation/id"),
-        POS = SeqArray::seqGetData(res$vcf.connection, "position"))
+      if (verbose) message("Reads assembly: de novo")
+    }
 
-      ref.genome <- sample(
-        x = unique(res$markers.meta$CHROM),
-        size = min(length(unique(res$markers.meta$CHROM)), 100), replace = FALSE) %>%
-        stringi::stri_detect_regex(str = ., pattern = "[^[:alnum:]]+") %>%
-        unique
+    # Add to GDS
+    gdsfmt::add.gdsn(
+      node = radiator.gds,
+      name = "reference.genome",
+      val = ref.genome,
+      replace = FALSE,
+      compress = "ZIP_RA",
+      closezip = TRUE)
 
-      if (!ref.genome) {
-        res$markers.meta <- res$markers.meta %>%
-          dplyr::mutate(CHROM = "1")
+    # Stacks specific adjustments
+    if (!ref.genome) {
+      if (stacks.2) {
+        res$markers.meta %<>% dplyr::mutate(
+          LOCUS = CHROM,
+          CHROM = "1",
+          COL = POS - 1)
+      } else {
+        res$markers.meta %<>% dplyr::mutate(
+          CHROM = "1")
       }
+    }
+
+    # GATK, platypus and freebayes specific adjustment
+    # Locus with NA or . or ""
+    weird.locus <- length(unique(res$markers.meta$LOCUS)) <= 1
+    if (weird.locus && !stacks.2) {
+      if (verbose) message("LOCUS field empty... adding unique id instead")
+      res$markers.meta$LOCUS <- res$markers.meta$VARIANT_ID
     }
 
     # LOCUS cleaning and Strands detection -------------------------------------
@@ -465,24 +583,6 @@ write_seqarray <- function(
       compress = "ZIP_RA",
       closezip = TRUE)
 
-    # Add to GDS if we're dealing with de novo data or not
-    if (ref.genome) {
-      gdsfmt::add.gdsn(
-        node = radiator.gds,
-        name = "reference.genome",
-        val = "TRUE",
-        replace = FALSE,
-        compress = "ZIP_RA",
-        closezip = TRUE)
-    } else {
-      gdsfmt::add.gdsn(
-        node = radiator.gds,
-        name = "reference.genome",
-        val = "FALSE",
-        replace = FALSE,
-        compress = "ZIP_RA",
-        closezip = TRUE)
-    }
     # Scan and filter with FILTER column ---------------------------------------
     res$markers.meta$FILTER <- SeqArray::seqGetData(
       res$vcf.connection, "annotation/filter")
@@ -507,24 +607,6 @@ write_seqarray <- function(
     }
     filter.check.unique <- NULL
     res$markers.meta %<>% dplyr::select(-FILTER)
-
-    # bi- or multi-alllelic VCF ------------------------------------------------
-    if (max(unique(SeqArray::seqNumAllele(gdsfile = res$vcf.connection))) - 1 > 1) {
-      res$biallelic <- FALSE
-      message("VCF is multi-allelic")
-    } else {
-      res$biallelic <- TRUE
-      message("VCF is biallelic")
-    }
-
-    # add biallelic info to GDS
-    gdsfmt::add.gdsn(
-      node = radiator.gds,
-      name = "biallelic",
-      val = res$biallelic,
-      replace = FALSE,
-      compress = "ZIP_RA",
-      closezip = TRUE)
 
     # Filter with whitelist of markers------------------------------------------
     if (!is.null(whitelist.markers)) {
@@ -588,7 +670,6 @@ write_seqarray <- function(
 
     # Individuals stats --------------------------------------------------------
     if (verbose) message("Generating individual stats")
-    id.stats.before.filter <- extract_coverage(data = res$vcf.connection)
 
     res$individuals %<>% dplyr::mutate(
       MISSING_PROP = round(SeqArray::seqMissing(
@@ -596,28 +677,52 @@ write_seqarray <- function(
         .progress = TRUE,
         parallel = parallel.core), 6),
       HETEROZYGOSITY = round(SeqVarTools::heterozygosity(
-        gdsobj = res$vcf.connection, margin = "by.sample", use.names = FALSE), 6),
-      COVERAGE_TOTAL = id.stats.before.filter$ind.cov.tot,
-      COVERAGE_MEAN = id.stats.before.filter$ind.cov.mean
-    ) %>%
-      readr::write_tsv(x = ., path = file.path(path.folder, ind.file))
+        gdsobj = res$vcf.connection, margin = "by.sample", use.names = FALSE), 6)
+    )
+    # check <- res$individuals
+
+    if (stacks.2 && !res$biallelic) {
+      if (verbose) message("\nHaplotype VCF generated by stacks doesn't have coverage info")
+    } else {
+      id.stats.before.filter <- extract_coverage(data = res$vcf.connection)
+      res$individuals %<>% dplyr::mutate(
+        COVERAGE_TOTAL = id.stats.before.filter$ind.cov.tot,
+        COVERAGE_MEAN = id.stats.before.filter$ind.cov.mean
+      )
+    }
+    # check <- res$individuals
+
+    readr::write_tsv(x = res$individuals, path = file.path(path.folder, ind.file))
     id.stats.before.filter <- NULL
 
     # test <- res$individuals
-    res$stats$ind.stats <- tibble_stats(
-      x = res$individuals$MISSING_PROP,
-      group = "individual's missing genotypes") %>%
-      dplyr::bind_rows(
-        tibble_stats(
-          x = res$individuals$HETEROZYGOSITY,
-          group = "individual's heterozygosity"),
-        tibble_stats(
-          x = as.numeric(res$individuals$COVERAGE_TOTAL),
-          group = "individual's total coverage"),
-        tibble_stats(
-          x = as.numeric(res$individuals$COVERAGE_MEAN),
-          group = "individual's mean coverage")
-      )
+
+    if (stacks.2 && !res$biallelic) {
+      res$stats$ind.stats <- tibble_stats(
+        x = res$individuals$MISSING_PROP,
+        group = "individual's missing genotypes") %>%
+        dplyr::bind_rows(
+          tibble_stats(
+            x = res$individuals$HETEROZYGOSITY,
+            group = "individual's heterozygosity")
+        )
+    } else {
+      res$stats$ind.stats <- tibble_stats(
+        x = res$individuals$MISSING_PROP,
+        group = "individual's missing genotypes") %>%
+        dplyr::bind_rows(
+          tibble_stats(
+            x = res$individuals$HETEROZYGOSITY,
+            group = "individual's heterozygosity"),
+          tibble_stats(
+            x = as.numeric(res$individuals$COVERAGE_TOTAL),
+            group = "individual's total coverage"),
+          tibble_stats(
+            x = as.numeric(res$individuals$COVERAGE_MEAN),
+            group = "individual's mean coverage")
+        )
+    }
+
     # test <- res$stats$ind.stats
 
     res$figures$ind.stats.fig <- boxplot_stats(
@@ -630,23 +735,23 @@ write_seqarray <- function(
       path.folder = path.folder)
 
     # test <- res$stats$ind.stats
+    # test <- res$individuals
 
     if (!is.null(filter.individuals.missing)) {
 
       if (!purrr::is_double(filter.individuals.missing)) {
-        outlier.id.missing <- 1 - res$stats$ind.stats$OUTLIERS_HIGH[1]
+        outlier.id.missing <- floor(res$stats$ind.stats$OUTLIERS_HIGH[1]*100)/100
         message("Removing outlier individuals based on genotyping statistics: ", outlier.id.missing)
         filter.individuals.missing <- outlier.id.missing
       }
 
-      message("Removing individuals with too many missing genotypes")
       blacklist.id <- res$individuals %>%
-        dplyr::filter(MISSING_PROP > 1 - filter.individuals.missing) %>%
+        dplyr::filter(MISSING_PROP > filter.individuals.missing) %>%
         dplyr::ungroup(.) %>%
         dplyr::distinct(INDIVIDUALS)
       blacklisted.id <- nrow(blacklist.id)
       if (blacklisted.id > 0) {
-        if (verbose) message("Number of individuals blacklisted: ", blacklisted.id)
+        if (verbose) message("Number of individuals blacklisted based on missing genotypes: ", blacklisted.id)
         res$blacklist.id <- blacklist.id
         res$individuals %<>% dplyr::mutate(
           FILTER_INDIVIDUALS_MISSING = dplyr::if_else(
@@ -655,18 +760,23 @@ write_seqarray <- function(
         readr::write_tsv(x = blacklist.id, path = file.path(path.folder, blacklist.id.filename))
 
         # update the strata and the GDS
-        strata %<>% dplyr::filter(!INDIVIDUALS %in% blacklist.id$INDIVIDUALS)
-        SeqArray::seqSetFilter(object = res$vcf.connection,
-                               sample.id = strata$INDIVIDUALS,
-                               # action = "set",
-                               verbose = FALSE)
-        gdsfmt::add.gdsn(
-          node = radiator.gds,
-          name = "STRATA",
-          val = strata$STRATA,
-          replace = TRUE,
-          compress = "ZIP_RA",
-          closezip = TRUE)
+        if (!is.null(strata)) {
+          strata %<>% dplyr::filter(!INDIVIDUALS %in% blacklist.id$INDIVIDUALS)
+          gdsfmt::add.gdsn(
+            node = radiator.gds,
+            name = "STRATA",
+            val = strata$STRATA,
+            replace = TRUE,
+            compress = "ZIP_RA",
+            closezip = TRUE)
+        }
+        SeqArray::seqSetFilter(
+          object = res$vcf.connection,
+          sample.id = dplyr::filter(
+            res$individuals,
+            FILTER_INDIVIDUALS_MISSING) %$% INDIVIDUALS,
+          verbose = FALSE)
+
       } else {
         res$individuals$FILTER_INDIVIDUALS_MISSING = TRUE
       }
@@ -702,11 +812,28 @@ write_seqarray <- function(
             per.variant = TRUE, .progress = TRUE, parallel = parallel.core))) %>%
         dplyr::mutate(
           MAC = dplyr::if_else(ALT_COUNT < REF_COUNT, ALT_COUNT, REF_COUNT),
-          ALT_COUNT = NULL) %>%
+          ALT_COUNT = NULL)
+    )
+
+    if (res$biallelic) {
+      res$markers.meta %<>%
         dplyr::group_by(LOCUS) %>%
         dplyr::mutate(SNP_PER_LOCUS = n()) %>%
-        dplyr::ungroup(.))
+        dplyr::ungroup(.)
+    } else {
+      message("With haplotype vcf, number of SNP/locus is counted based on the REF allele")
+      message("   this stat is good only if nuc length is equalt between REF and ALT haplotypes")
+      message("\n   stacks haplotype vcf: ok")
+      message("   dDocent freebayes haplotype vcf: be careful")
 
+      res$markers.meta %<>%
+          dplyr::mutate(
+            SNP_PER_LOCUS = stringi::stri_length(
+              str = SeqArray::seqGetData(gdsfile = res$vcf.connection, var.name = "$ref"))
+          )
+    }
+
+    # test <- res$markers.meta
     if (is.null(strata)) {
       suppressWarnings(res$markers.meta %<>% dplyr::select(dplyr::one_of(want)))
     } else {
@@ -721,10 +848,12 @@ write_seqarray <- function(
     # test <- res$markers.meta
 
     # make sure GDS is updated with sample -------------------------------------
-    SeqArray::seqSetFilter(object = res$vcf.connection,
-                           sample.id = strata$INDIVIDUALS,
-                           # action = "set",
-                           verbose = FALSE)
+    SeqArray::seqSetFilter(
+      object = res$vcf.connection,
+      sample.id = dplyr::filter(
+        res$individuals,
+        FILTER_INDIVIDUALS_MISSING) %$% INDIVIDUALS,
+      verbose = FALSE)
 
     # Generate a blacklist of markers to store info ----------------------------
     res$blacklist.markers <- tibble::tibble(MARKERS = character(0), FILTER = character(0))
@@ -816,7 +945,7 @@ write_seqarray <- function(
         dplyr::select(MARKERS)
 
       if (nrow(blacklist.mac) > 0) {
-        message("Number of markers with low MAC removed: ", nrow(blacklist.mac))
+        message("Number of markers with low MAC blacklisted: ", nrow(blacklist.mac))
         # update the blacklist
         res$blacklist.markers <- dplyr::bind_rows(
           res$blacklist.markers,
@@ -867,7 +996,7 @@ write_seqarray <- function(
     # Generate box plot
     res$figures$coverage.stats.fig <- boxplot_stats(
       data = res$stats$coverage.stats,
-      title = "Impact of filtering outliers\n on coverage statistics",
+      title = "Impact of filtering outliers\non coverage statistics",
       x.axis.title = NULL,
       y.axis.title = "Markers coverage (mean read depth)",
       facet.columns = TRUE,
@@ -953,7 +1082,7 @@ write_seqarray <- function(
         dplyr::select(MARKERS)
 
       if (nrow(blacklist.markers.missing) > 0) {
-        message("Number of markers with too many missing genotypes: ", nrow(blacklist.markers.missing))
+        message("Number of markers blacklisted based on missing individuals/genotypes: ", nrow(blacklist.markers.missing))
         # update the blacklist
         res$blacklist.markers <- dplyr::bind_rows(
           res$blacklist.markers,
