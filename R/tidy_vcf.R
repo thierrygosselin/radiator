@@ -70,7 +70,42 @@
 #' e.g. you only wnat AD and PL, \code{vcf.metadata = c("AD", "PL")}.
 #' If yours is not in the list, submit a request.
 #' Default: \code{vcf.metadata = FALSE}.
-
+#' \item \code{common.markers}: (logical) Default: code{common.markers = TRUE}.
+#' Detailed in \code{\link[radiator]{tidy_genomic_data}}.
+#' \item \code{filter.mac}: (integer) To blacklist markers below a specific MAC
+#' (calculated overall).
+#' \item \code{filter.coverage.outliers}: (logical) To blacklist markers with low and
+#' high coverage based on outlier statistics.
+#' \item \code{filter.markers.missing}: (integer) To blacklist markers with too
+#' many missing data. e.g. \code{filter.markers.missing = 10}, will only keep
+#' markers with missing rate <= to 10%.
+#' \item \code{filter.snp.read.position}: 3 options available, \code{"outliers", "q75", "iqr"}.
+#' This argument will blacklist markers based on it's position on the read.
+#' \code{filter.snp.read.position = "outliers"}, will remove markers based
+#' on outlier statistics of the position on the reads. e.g. if majority of SNPs
+#' are found between 10 and 90 pb, and very few above and below, those markers are
+#' discarded. Use this function argument with dataset with problematic assembly,
+#' or \emph{de novo} assembly with undocumented or poorly selected
+#' mismatch threshold.
+#' \item \code{filter.short.ld}: this is the \code{snp.ld} argument
+#' in \code{\link[radiator]{snp_ld}}
+#' \item \code{filter.long.ld}: this is the \code{ld.threshold} argument
+#' in \code{\link[radiator]{snp_ld}}
+#' \item \code{long.ld.missing}: this is the \code{long.ld.missing} argument
+#' in \code{\link[radiator]{snp_ld}}
+#' \item \code{filter.individuals.missing}: (double) Use this argument to
+#' blacklist individuals with too many missing data.
+#' e.g. \code{filter.individuals.missing = 0.7}, will remove individuals with >
+#' 0.7 or 70% missing genotypes. This can help discover more polymorphic markers
+#' with some dataset.
+#' \item \code{markers.info}: (character) With default: \code{markers.info = NULL},
+#' all the variable in the vcf INFO field are imported.
+#' To import only DP (the SNP total read depth) and AF (the SNP allele frequency),
+#' use \code{markers.info = c("DP", "AF")}.
+#' Using, \code{markers.info = character(0)} will not import INFO variables.
+#' \item \code{path.folder}: to write ouput in a specific path
+#' (used internally in radiator). Default: \code{path.folder = getwd()}.
+#' If the supplied directory doesn't exist, it's created.
 #' }
 #' @examples
 #' \dontrun{
@@ -103,7 +138,7 @@
 #'  bl.numbers <- dplyr::count(prep.data$blacklist.markers, FILTER)
 #' }
 
-
+#' @seealso \code{\link[radiator]{write_seqarray}}
 
 
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
