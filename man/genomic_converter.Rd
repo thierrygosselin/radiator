@@ -42,7 +42,7 @@ If you need different one, submit a request.
 With \code{string}, explicitely ask for a particular FORMAT field you want
 to keep (except the GT field that is always imported).
 e.g. \code{vcf.metadata = "PL"} or \code{vcf.metadata = c("DP", "GL")}.
-Default: \code{vcf.metadata = FALSE}.}
+Default: \code{vcf.metadata = TRUE}.}
 
 \item{filename}{(optional) The filename prefix for the object in the global environment
 or the working directory. Default: \code{filename = NULL}. A default name will be used,

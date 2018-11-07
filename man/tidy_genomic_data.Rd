@@ -4,7 +4,7 @@
 \alias{tidy_genomic_data}
 \title{Transform common genomic dataset format in a tidy data frame}
 \usage{
-tidy_genomic_data(data, vcf.metadata = FALSE, whitelist.markers = NULL,
+tidy_genomic_data(data, vcf.metadata = TRUE, whitelist.markers = NULL,
   monomorphic.out = TRUE, blacklist.genotype = NULL, snp.ld = NULL,
   common.markers = TRUE, maf.thresholds = NULL, max.marker = NULL,
   blacklist.id = NULL, pop.levels = NULL, pop.labels = NULL,
@@ -29,7 +29,7 @@ If you need different one, submit a request.
 With \code{string}, explicitely ask for a particular FORMAT field you want
 to keep (except the GT field that is always imported).
 e.g. \code{vcf.metadata = "PL"} or \code{vcf.metadata = c("DP", "GL")}.
-Default: \code{vcf.metadata = FALSE}.}
+Default: \code{vcf.metadata = TRUE}.}
 
 \item{whitelist.markers}{(optional) A whitelist containing CHROM (character
 or integer) and/or LOCUS (integer) and/or
