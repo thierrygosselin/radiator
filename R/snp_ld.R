@@ -550,15 +550,6 @@ snp_ld <- function(
       data <- res.snp.ld$whitelist.snp.ld
 
       # updating the GDS object ------------------------------------------------
-      # radiator.gds <- gdsfmt::index.gdsn(
-      #   node = res.snp.ld$data.gds, path = "radiator/markers.meta")
-      # gdsfmt::add.gdsn(
-      #   node = radiator.gds,
-      #   name = "FILTER_SHORT_LD",
-      #   val = data$FILTER_SHORT_LD,
-      #   replace = TRUE,
-      #   compress = "ZIP_RA",
-      #   closezip = TRUE)
       SeqArray::seqSetFilter(object = res.snp.ld$data.gds,
                              variant.id = data$VARIANT_ID,
                              verbose = FALSE)
@@ -567,6 +558,9 @@ snp_ld <- function(
     message("    Filtering the dataset to minimize LD by keeping only 1 SNP per locus")
   } else {
     message("    There is no variation in the number of SNP/locus across the data")
+    res.snp.ld$whitelist.snp.ld <- snp.locus
+    res.snp.ld$blacklist.snp.ld <- NULL
+    data <- res.snp.ld$snp.locus
   }
   # Note to myself:
   # locus.stats: this stats could be written in directory or output in res
@@ -819,72 +813,69 @@ snp_ld <- function(
       # with SNPRelate::snpgdsLDpruning, split a whitelist of markers based
       # on chromosome
 
-      n.chrom <- dplyr::n_distinct(markers$CHROM)
+      # So far test shows that there's no gain in speed to do it in parallel
+      # more test with different datasets required (tested 2...)
+      # n.chrom <- dplyr::n_distinct(markers$CHROM)
 
-      if (parallel.core > 1) {
-        prune_ld_par <- function(chrom.snp.select, data, threshold) {
-          pruned.snp <- SNPRelate::snpgdsLDpruning(
-            gdsobj = data,
-            snp.id = chrom.snp.select$VARIANT_ID,
-            autosome.only = FALSE,
-            remove.monosnp = TRUE,
-            maf = NaN,
-            missing.rate = NaN,
-            method = "r",
-            ld.threshold = threshold,
-            num.thread = 1,
-            verbose = TRUE) %>%
-            purrr::flatten_int(.)
-          return(pruned.snp)
-        }#End prune_ld_par
+      # if (parallel.core > 1) {
+      # prune_ld_par <- function(chrom.snp.select, data, threshold) {
+      # pruned.snp <- SNPRelate::snpgdsLDpruning(
+      #   gdsobj = data,
+      #   snp.id = chrom.snp.select$VARIANT_ID,
+      #   autosome.only = FALSE,
+      #   remove.monosnp = TRUE,
+      #   maf = NaN,
+      #   missing.rate = NaN,
+      #   method = "r",
+      #   ld.threshold = threshold,
+      #   num.thread = 1,
+      #   verbose = TRUE) %>%
+      #   purrr::flatten_int(.)
+      # return(pruned.snp)
+      # }#End prune_ld_par
+      #
 
+      # ld.markers$whitelist.markers <-
+      #   split(x = x, f = split.vec) %>%
+      #   .radiator_parallel(
+      #     X = ., FUN = clean, mc.cores = parallel.core) %>%
+      #   purrr::flatten_int(.)
 
-        # ld.markers$whitelist.markers <-
-        #   split(x = x, f = split.vec) %>%
-        #   .radiator_parallel(
-        #     X = ., FUN = clean, mc.cores = parallel.core) %>%
-        #   purrr::flatten_int(.)
-
-        # sample.chrom <- sample(x = unique(markers$CHROM), size = 11)
-        #
-        # check <- dplyr::left_join(
-        #   dplyr::select(markers, CHROM, VARIANT_ID),
-        #   dplyr::distinct(markers, CHROM) %>%
-        #     dplyr::mutate(
-        #       SPLIT_VEC = split_vec_row(x = ., cpu.rounds = 10, parallel.core = parallel.core)
-        #     )
-        #   , by = "CHROM") %>%
-        #   dplyr::filter(CHROM %in% sample.chrom) %>%
-        #   dplyr::select(-CHROM) %>%
-        #   split(x = ., f = .$SPLIT_VEC) %>%
-        #   .radiator_parallel_mc(
-        #     X = .,
-        #     FUN = prune_ld_par,
-        #     mc.cores = parallel.core,
-        #     data = res.snp.ld$data.gds, threshold = ld.threshold
-        #   ) %>%
-        #   purrr::flatten_int(.)
-        # length(unique(check$CHROM))
-
-
-      } else {
-
+      # sample.chrom <- sample(x = unique(markers$CHROM), size = 11)
+      #
+      # check <- dplyr::left_join(
+      #   dplyr::select(markers, CHROM, VARIANT_ID),
+      #   dplyr::distinct(markers, CHROM) %>%
+      #     dplyr::mutate(
+      #       SPLIT_VEC = split_vec_row(x = ., cpu.rounds = 10, parallel.core = parallel.core)
+      #     )
+      #   , by = "CHROM") %>%
+      #   dplyr::filter(CHROM %in% sample.chrom) %>%
+      #   dplyr::select(-CHROM) %>%
+      #   split(x = ., f = .$SPLIT_VEC) %>%
+      #   .radiator_parallel_mc(
+      #     X = .,
+      #     FUN = prune_ld_par,
+      #     mc.cores = parallel.core,
+      #     data = res.snp.ld$data.gds, threshold = ld.threshold
+      #   ) %>%
+      #   purrr::flatten_int(.)
+      # length(unique(check$CHROM))
 
 
-        ld.markers$whitelist.markers <- SNPRelate::snpgdsLDpruning(
-          gdsobj = res.snp.ld$data.gds,
-          snp.id = variant.id.select,
-          autosome.only = FALSE,
-          remove.monosnp = TRUE,
-          maf = NaN,
-          missing.rate = NaN,
-          method = "r",
-          ld.threshold = ld.threshold,
-          num.thread = 1,
-          verbose = TRUE) %>%
-          purrr::flatten_int(.)
-      }
-
+      ld.markers$whitelist.markers <- SNPRelate::snpgdsLDpruning(
+        gdsobj = res.snp.ld$data.gds,
+        snp.id = variant.id.select,
+        sample.id = SeqArray::seqGetData(res.snp.ld$data.gds, "sample.id"),
+        autosome.only = FALSE,
+        remove.monosnp = TRUE,
+        maf = NaN,
+        missing.rate = NaN,
+        method = "r",
+        ld.threshold = ld.threshold,
+        num.thread = 1,
+        verbose = FALSE) %>%
+        purrr::flatten_int(.)
 
       ld.markers$blacklist.markers <- purrr::keep(
         .x = variant.id.select,
@@ -895,45 +886,26 @@ snp_ld <- function(
             VARIANT_ID %in% ld.markers$whitelist.markers, TRUE, FALSE))
       ld.markers <- NULL
       # check <- dplyr::filter(markers, FILTER_LONG_LD)
-    }
+      # }
 
-    res.snp.ld$whitelist.snp.ld <- dplyr::filter(markers, FILTER_LONG_LD)
-    message("    Number of SNPs after pruning for long distance LD: ",
-            nrow(res.snp.ld$whitelist.snp.ld))
+      res.snp.ld$whitelist.snp.ld <- dplyr::filter(markers, FILTER_LONG_LD)
+      message("    Number of SNPs after pruning for long distance LD: ",
+              nrow(res.snp.ld$whitelist.snp.ld))
 
-    res.snp.ld$blacklist.snp.ld <- dplyr::filter(markers, !FILTER_LONG_LD)
+      res.snp.ld$blacklist.snp.ld <- dplyr::filter(markers, !FILTER_LONG_LD)
 
-    message("    Number of prunned SNPs based on long distance LD: ",
-            nrow(res.snp.ld$blacklist.snp.ld))
+      message("    Number of prunned SNPs based on long distance LD: ",
+              nrow(res.snp.ld$blacklist.snp.ld))
 
-    # if (nrow(res.snp.ld$blacklist.snp.ld) > 0) {
-    #   readr::write_tsv(x = res.snp.ld$blacklist.snp.ld,
-    #                    path = "blacklist.snp.long.dist.ld.tsv")
-    # }
+      # updating the GDS object ------------------------------------------------
+      if (data.type == "tbl_df") {
+        data <- dplyr::filter(data, MARKERS %in% res.snp.ld$whitelist.snp.ld$MARKERS)
+      } else {
+        SeqArray::seqSetFilter(object = res.snp.ld$data.gds,
+                               variant.id = res.snp.ld$whitelist.snp.ld$VARIANT_ID,
+                               verbose = FALSE)
 
-    # updating the GDS object ------------------------------------------------
-    if (data.type == "tbl_df") {
-      data <- dplyr::filter(data, MARKERS %in% res.snp.ld$whitelist.snp.ld$MARKERS)
-    } else {
-      # radiator.gds <- gdsfmt::index.gdsn(
-      # node = res.snp.ld$data.gds, path = "radiator/markers.meta")
-      # long.ld <- tibble::tibble(MARKERS = gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = radiator.gds, path = "MARKERS"))) %>%
-      # dplyr::mutate(FILTER_LONG_LD = dplyr::if_else(MARKERS %in% res.snp.ld$whitelist.snp.ld$MARKERS, TRUE, FALSE))
-      # check <- dplyr::filter(long.ld, FILTER_LONG_LD)
-      # gdsfmt::add.gdsn(
-      #   node = radiator.gds,
-      #   name = "FILTER_LONG_LD",
-      #   val = long.ld$FILTER_LONG_LD,
-      #   replace = TRUE,
-      #   compress = "ZIP_RA",
-      #   closezip = TRUE)
-      # long.ld <- NULL
-
-
-      SeqArray::seqSetFilter(object = res.snp.ld$data.gds,
-                             variant.id = res.snp.ld$whitelist.snp.ld$VARIANT_ID,
-                             verbose = FALSE)
-
+      }
     }
   }#End long distance LD pruning
   message("    Generating whitelist and blacklist of markers")
