@@ -30,7 +30,7 @@ If you need different one, submit a request.
 With \code{string}, explicitely ask for a particular FORMAT field you want
 to keep (except the GT field that is always imported).
 e.g. \code{vcf.metadata = "PL"} or \code{vcf.metadata = c("DP", "GL")}.
-Default: \code{vcf.metadata = FALSE}.}
+Default: \code{vcf.metadata = TRUE}.}
 
 \item{interactive.filter}{(optional, logical) Do you want the filtering session to
 be interactive. With default: \code{interactive.filter == TRUE}, the user is

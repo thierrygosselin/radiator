@@ -105,7 +105,7 @@ If you need different one, submit a request.
 With \code{string}, explicitely ask for a particular FORMAT field you want
 to keep (except the GT field that is always imported).
 e.g. \code{vcf.metadata = "PL"} or \code{vcf.metadata = c("DP", "GL")}.
-Default: \code{vcf.metadata = FALSE}.}
+Default: \code{vcf.metadata = TRUE}.}
 
 \item{blacklist.id}{(optional) A blacklist with individual ID and
 a column header 'INDIVIDUALS'. The blacklist is an object in your
