@@ -66,7 +66,7 @@
 #' With \code{vcf.metadata = TRUE},
 #' all the metadata contained in the \code{FORMAT} field will be kept in
 #' the tidy data file. radiator is currently keeping/cleaning only these metadata:
-#' \code{"DP", "AD", "GL", "PL", "GQ", "HQ", "GOF", "NR", "NV", "RO", "QR", "AO", "QA"}.
+#' \code{"DP", "AD", "GL", "PL", "GQ", "HQ", "GOF", "NR", "NV"}.
 #' e.g. you only wnat AD and PL, \code{vcf.metadata = c("AD", "PL")}.
 #' If yours is not in the list, submit a request.
 #' Default: \code{vcf.metadata = FALSE}.
@@ -218,6 +218,7 @@ tidy_vcf <- function(
   gt <- radiator.dots[["gt"]]
   gt.bin <- radiator.dots[["gt.bin"]]
   vcf.stats <- radiator.dots[["vcf.stats"]]
+  vcf.metadata <- radiator.dots[["vcf.metadata"]]
   filename <- radiator.dots[["filename"]]
   keep.gds <- radiator.dots[["keep.gds"]]
 
@@ -258,10 +259,10 @@ tidy_vcf <- function(
 
   # import VCF -----------------------------------------------------------------
   data <- radiator::write_seqarray(
-    vcf = data,
+    data = data,
     strata = strata,
     filename = filename,
-    vcf.stats = TRUE,
+    vcf.stats = vcf.stats,
     blacklist.id = blacklist.id,
     whitelist.markers = whitelist.markers,
     verbose = TRUE,
@@ -447,10 +448,11 @@ tidy_vcf <- function(
         varname = "annotation/format",
         check = "none", verbose = FALSE)$ID
       # current version doesn't deal well with PL with 3 fields separated with ","
+      # want <- c("DP", "AD", "GL", "PL", "HQ", "GQ", "GOF", "NR", "NV", "RO", "QR", "AO", "QA")
       want <- c("DP", "AD", "GL", "PL", "HQ", "GQ", "GOF", "NR", "NV")
+
       if (!is.null(overwrite.metadata)) want <- overwrite.metadata
       parse.format.list <- purrr::keep(.x = have, .p = have %in% want)
-
       # work on parallelization of this part
       data$tidy.data.metadata <- purrr::map(
         .x = parse.format.list, .f = parse_gds_metadata, data = data,
@@ -627,6 +629,10 @@ parse_gds_metadata <- function(
   # format.name <- x <- "GOF"
   # format.name <- x <- "NR"
   # format.name <- x <- "NV"
+  # format.name <- x <- "RO" # not yet implementer
+  # format.name <- x <- "QR" # not yet implementer
+  # format.name <- x <- "AO" # not yet implementer
+  # format.name <- x <- "QA" # not yet implementer
 
   if (verbose) message("\nParsing and tidying: ", format.name)
 
@@ -662,9 +668,6 @@ parse_gds_metadata <- function(
     # test <- res$DP
   } # End DP
 
-
-
-  # Haplotype Quality
   # Cleaning HQ: Haplotype quality as phred score
   if (format.name == "HQ") {
     res$HQ <- tibble::tibble(HQ = SeqArray::seqGetData(
@@ -682,7 +685,6 @@ parse_gds_metadata <- function(
     }
   } # End HQ
 
-  # Genotypes Quality
   # Cleaning GQ: Genotype quality as phred score
   if (format.name == "GQ") {
     if (verbose) message("GQ column: Genotype Quality")
@@ -729,12 +731,6 @@ parse_gds_metadata <- function(
     # test <- res$NR
   }#End cleaning NR column
 
-  #
-  #     input <- clean_nr(x = input,
-  #                       split.vec = split.vec,
-  #                       parallel.core = parallel.core)
-
-  # NV
   # Cleaning NV: Number of reads containing variant in this sample
   if (format.name == "NV") {
     if (verbose) message("NV column: splitting column into the number of variant")
@@ -744,11 +740,43 @@ parse_gds_metadata <- function(
     # test <- res$NV
   }#End cleaning NV column
 
+  # RO
+  # Cleaning RO: Reference allele observation count
+  # if (format.name == "RO") {
+  #   if (verbose) message("RO column: splitting column into the number of variant")
+  #   res$RO <- tibble::tibble(RO = SeqArray::seqGetData(
+  #     gdsfile = data$vcf.connection,
+  #     var.name = "annotation/format/RO")$data %>% as.vector(.))
+  #   # test <- res$RO
+  # }#End cleaning RO column
 
-  # input <- clean_nv(x = input,
-  #                   split.vec = split.vec,
-  #                   parallel.core = parallel.core)
+  # # Cleaning QR: Sum of quality of the reference observations
+  # if (format.name == "QR") {
+  #   if (verbose) message("QR column: splitting column into the number of variant")
+  #   res$QR <- tibble::tibble(QR = SeqArray::seqGetData(
+  #     gdsfile = data$vcf.connection,
+  #     var.name = "annotation/format/QR")$data %>% as.vector(.))
+  #   # test <- res$QR
+  # }#End cleaning QR column
 
+
+  # # Cleaning AO: Alternate allele observation count
+  # if (format.name == "AO") {
+  #   if (verbose) message("AO column: splitting column into the number of variant")
+  #   res$AO <- tibble::tibble(AO = SeqArray::seqGetData(
+  #     gdsfile = data$vcf.connection,
+  #     var.name = "annotation/format/AO")$data %>% as.vector(.))
+  #   # test <- res$AO
+  # }#End cleaning AO column
+
+  # # Cleaning QA: Sum of quality of the alternate observations
+  # if (format.name == "QA") {
+  #   if (verbose) message("QA column: splitting column into the number of variant")
+  #   res$QA <- tibble::tibble(QA = SeqArray::seqGetData(
+  #     gdsfile = data$vcf.connection,
+  #     var.name = "annotation/format/QA")$data %>% as.vector(.))
+  #   # test <- res$QA
+  # }#End cleaning QA column
 
 
 
