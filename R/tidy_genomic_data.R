@@ -29,7 +29,7 @@
 #' With \code{string}, explicitely ask for a particular FORMAT field you want
 #' to keep (except the GT field that is always imported).
 #' e.g. \code{vcf.metadata = "PL"} or \code{vcf.metadata = c("DP", "GL")}.
-#' Default: \code{vcf.metadata = FALSE}.
+#' Default: \code{vcf.metadata = TRUE}.
 
 #' @param whitelist.markers (optional) A whitelist containing CHROM (character
 #' or integer) and/or LOCUS (integer) and/or
@@ -374,7 +374,7 @@
 
 tidy_genomic_data <- function(
   data,
-  vcf.metadata = FALSE,
+  vcf.metadata = TRUE,
   whitelist.markers = NULL,
   monomorphic.out = TRUE,
   blacklist.genotype = NULL,
@@ -567,6 +567,8 @@ tidy_genomic_data <- function(
 
   # Import VCF------------------------------------------------------------------
   if (data.type == "vcf.file") { # VCF
+    if (!vcf.metadata) vcf.stats <- FALSE
+
     if (verbose) message("Importing and tidying the VCF...")
     input <- radiator::tidy_vcf(
       data = data,
@@ -580,7 +582,7 @@ tidy_genomic_data <- function(
       pop.levels = pop.levels,
       pop.labels = pop.labels,
       filename = NULL,
-      vcf.stats = TRUE,
+      vcf.stats = vcf.stats,
       filter.individuals.missing = filter.individuals.missing,
       common.markers = common.markers,
       keep.both.strands = keep.both.strands,
@@ -595,10 +597,11 @@ tidy_genomic_data <- function(
       gt = TRUE,
       gt.bin = TRUE,
       keep.gds = FALSE
-    ) %$%
-      tidy.data
+    )
 
-    biallelic <- radiator::detect_biallelic_markers(input)
+    # biallelic <- radiator::detect_biallelic_markers(input)
+    biallelic <- input$biallelic
+    input <- input$tidy.data
   } # End import VCF
 
   # Import PLINK ---------------------------------------------------------------
