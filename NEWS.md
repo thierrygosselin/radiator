@@ -1,3 +1,8 @@
+# radiator v.0.0.19 2018-11-07
+
+* `tidy_vcf`, `tidy_genomic_data` and `genomic_converter`: works better with freebayes and stacks vcf
+
+
 # radiator v.0.0.18 2018-10-23
 
 * `tidy_vcf`, `tidy_genomic_data` and `genomic_converter`: work without strata/pop grouping

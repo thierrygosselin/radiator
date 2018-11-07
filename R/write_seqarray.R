@@ -457,132 +457,143 @@ write_seqarray <- function(
       compress = "ZIP_RA",
       closezip = TRUE)
   }
+  # Markers metadata  ----------------------------------------------------------
+  res$markers.meta <- tibble::tibble(
+    VARIANT_ID = SeqArray::seqGetData(res$vcf.connection, "variant.id"),
+    CHROM = SeqArray::seqGetData(res$vcf.connection, "chromosome"),
+    LOCUS = SeqArray::seqGetData(res$vcf.connection, "annotation/id"),
+    POS = SeqArray::seqGetData(res$vcf.connection, "position"))
 
-  # Markers metadata  -----------------------------------------------------------
-  if (vcf.stats) {
-    # if (verbose) message("\nWorking on the vcf ...")
-    res$markers.meta <- tibble::tibble(
-      VARIANT_ID = SeqArray::seqGetData(res$vcf.connection, "variant.id"),
-      CHROM = SeqArray::seqGetData(res$vcf.connection, "chromosome"),
-      LOCUS = SeqArray::seqGetData(res$vcf.connection, "annotation/id"),
-      POS = SeqArray::seqGetData(res$vcf.connection, "position"))
+  # reference genome or de novo
+  sample.size <- min(length(unique(res$markers.meta$CHROM)), 100)
+  ref.genome <- sample(x = unique(res$markers.meta$CHROM), size = sample.size, replace = FALSE) %>%
+    stringi::stri_detect_regex(str = ., pattern = "[^[:alnum:]]+") %>%
+    unique
+  sample.size <- NULL
 
-    # reference genome or de novo
-    sample.size <- min(length(unique(res$markers.meta$CHROM)), 100)
-    ref.genome <- sample(x = unique(res$markers.meta$CHROM), size = sample.size, replace = FALSE) %>%
-      stringi::stri_detect_regex(str = ., pattern = "[^[:alnum:]]+") %>%
-      unique
-    sample.size <- NULL
+  if (ref.genome) {
+    if (verbose) message("Reads assembly: reference-assisted")
+  } else {
+    if (verbose) message("Reads assembly: de novo")
+  }
 
-    if (ref.genome) {
-      if (verbose) message("Reads assembly: reference-assisted")
+  # Add to GDS
+  gdsfmt::add.gdsn(
+    node = radiator.gds,
+    name = "reference.genome",
+    val = ref.genome,
+    replace = FALSE,
+    compress = "ZIP_RA",
+    closezip = TRUE)
+
+  # Stacks specific adjustments
+  if (!ref.genome) {
+    if (stacks.2) {
+      res$markers.meta %<>% dplyr::mutate(
+        LOCUS = CHROM,
+        CHROM = "1",
+        COL = POS - 1)
     } else {
-      if (verbose) message("Reads assembly: de novo")
+      res$markers.meta %<>% dplyr::mutate(
+        CHROM = "1")
     }
+  }
 
-    # Add to GDS
-    gdsfmt::add.gdsn(
-      node = radiator.gds,
-      name = "reference.genome",
-      val = ref.genome,
-      replace = FALSE,
-      compress = "ZIP_RA",
-      closezip = TRUE)
+  # GATK, platypus and freebayes specific adjustment
+  # Locus with NA or . or ""
+  weird.locus <- length(unique(res$markers.meta$LOCUS)) <= 1
+  if (weird.locus && !stacks.2) {
+    if (verbose) message("LOCUS field empty... adding unique id instead")
+    res$markers.meta$LOCUS <- res$markers.meta$VARIANT_ID
+  }
 
-    # Stacks specific adjustments
-    if (!ref.genome) {
-      if (stacks.2) {
-        res$markers.meta %<>% dplyr::mutate(
-          LOCUS = CHROM,
-          CHROM = "1",
-          COL = POS - 1)
-      } else {
-        res$markers.meta %<>% dplyr::mutate(
-          CHROM = "1")
-      }
-    }
+  # LOCUS cleaning and Strands detection -------------------------------------
+  if (stringi::stri_detect_regex(str = res$markers.meta[1,3], pattern = "[^[:alnum:]]+")) {
+    locus.sep <- unique(stringi::stri_extract_all_regex(
+      str = res$markers.meta[1,3],
+      pattern = "[^a-zA-Z0-9-+-]",
+      omit_no_match = TRUE)[[1]])
 
-    # GATK, platypus and freebayes specific adjustment
-    # Locus with NA or . or ""
-    weird.locus <- length(unique(res$markers.meta$LOCUS)) <= 1
-    if (weird.locus && !stacks.2) {
-      if (verbose) message("LOCUS field empty... adding unique id instead")
-      res$markers.meta$LOCUS <- res$markers.meta$VARIANT_ID
-    }
+    res$markers.meta <- suppressWarnings(
+      tidyr::separate(
+        data = res$markers.meta,
+        col = LOCUS, into = c("LOCUS", "COL", "STRANDS"),
+        sep = locus.sep,
+        # sep = "",
+        extra = "drop", fill = "warn",
+        remove = TRUE, convert = TRUE)
+    )
+    if (anyNA(res$markers.meta$STRANDS)) res$markers.meta$STRANDS <- NA_character_
+    locus.sep <- NULL
 
-    # LOCUS cleaning and Strands detection -------------------------------------
-    if (stringi::stri_detect_regex(str = res$markers.meta[1,3], pattern = "[^[:alnum:]]+")) {
-      locus.sep <- unique(stringi::stri_extract_all_regex(
-        str = res$markers.meta[1,3],
-        pattern = "[^a-zA-Z0-9-+-]",
-        omit_no_match = TRUE)[[1]])
+    detect.strand <- any(stringi::stri_detect_fixed(str = unique(res$markers.meta$STRANDS), pattern = "+"))
+    if(anyNA(detect.strand)) detect.strand <- FALSE
 
-      res$markers.meta <- suppressWarnings(
-        tidyr::separate(
-          data = res$markers.meta,
-          col = LOCUS, into = c("LOCUS", "COL", "STRANDS"),
-          sep = locus.sep,
-          # sep = "",
-          extra = "drop", fill = "warn",
-          remove = TRUE, convert = TRUE)
-      )
-      if(anyNA(res$markers.meta$STRANDS)) res$markers.meta$STRANDS <- NA_character_
-      locus.sep <- NULL
+    if(detect.strand) {
+      blacklist.strands <- dplyr::distinct(res$markers.meta, CHROM, LOCUS, POS) %>%
+        dplyr::group_by(CHROM, POS) %>%
+        dplyr::tally(.) %>%
+        dplyr::filter(n > 1) %>%
+        dplyr::ungroup(.) %>%
+        dplyr::select(CHROM, POS)
 
-      detect.strand <- any(stringi::stri_detect_fixed(str = unique(res$markers.meta$STRANDS), pattern = "+"))
-      if(anyNA(detect.strand)) detect.strand <- FALSE
-
-      if(detect.strand) {
-        blacklist.strands <- dplyr::distinct(res$markers.meta, CHROM, LOCUS, POS) %>%
-          dplyr::group_by(CHROM, POS) %>%
-          dplyr::tally(.) %>%
-          dplyr::filter(n > 1) %>%
-          dplyr::ungroup(.) %>%
-          dplyr::select(CHROM, POS)
-
-        if (nrow(blacklist.strands) == 0) {
-          blacklist.strands <- NULL
-        } else {
-          blacklist.strands %<>%
-            dplyr::mutate_at(.tbl = .,
-                             .vars = c("CHROM", "POS"),
-                             .funs = radiator::clean_markers_names)
-          if (verbose) {
-            message("\n\nDetected ", nrow(blacklist.strands)," duplicate SNPs on different strands (+/-)")
-            message("    By default radiator prune SNPs on one of the strand (-)")
-            message("    To change this behavior, use argument: keep.both.strands = TRUE\n\n")
-          }
-        }
-
-      } else {
+      if (nrow(blacklist.strands) == 0) {
         blacklist.strands <- NULL
+      } else {
+        blacklist.strands %<>%
+          dplyr::mutate_at(.tbl = .,
+                           .vars = c("CHROM", "POS"),
+                           .funs = radiator::clean_markers_names)
+        if (verbose) {
+          message("\n\nDetected ", nrow(blacklist.strands)," duplicate SNPs on different strands (+/-)")
+          message("    By default radiator prune SNPs on one of the strand (-)")
+          message("    To change this behavior, use argument: keep.both.strands = TRUE\n\n")
+        }
       }
-      detect.strand <- NULL
+
     } else {
+      res$markers.meta %<>% dplyr::select(-STRANDS)
       blacklist.strands <- NULL
     }
+    detect.strand <- NULL
+  } else {
+    blacklist.strands <- NULL
+  }
 
-    # Generate MARKERS column and fix types
-    res$markers.meta %<>%
-      dplyr::mutate_at(
-        .tbl = .,
-        .vars = c("CHROM", "LOCUS", "POS"),
-        .funs = radiator::clean_markers_names) %>%
-      dplyr::mutate(
-        MARKERS = stringi::stri_join(CHROM, LOCUS, POS, sep = "__"),
-        REF = SeqArray::seqGetData(gdsfile = res$vcf.connection, var.name = "$ref"),
-        ALT = SeqArray::seqGetData(gdsfile = res$vcf.connection, var.name = "$alt")
-      )
+  # Generate MARKERS column and fix types
+  res$markers.meta %<>%
+    dplyr::mutate_at(
+      .tbl = .,
+      .vars = c("CHROM", "LOCUS", "POS"),
+      .funs = radiator::clean_markers_names) %>%
+    dplyr::mutate(
+      MARKERS = stringi::stri_join(CHROM, LOCUS, POS, sep = "__"),
+      REF = SeqArray::seqGetData(gdsfile = res$vcf.connection, var.name = "$ref"),
+      ALT = SeqArray::seqGetData(gdsfile = res$vcf.connection, var.name = "$alt")
+    )
 
-    # # ADD MARKERS META to GDS --------------------------------------------------
-    gdsfmt::add.gdsn(
-      node = radiator.gds,
-      name = "markers.meta",
-      val = res$markers.meta,
-      replace = TRUE,
-      compress = "ZIP_RA",
-      closezip = TRUE)
+  # # ADD MARKERS META to GDS --------------------------------------------------
+  suppressWarnings(gdsfmt::add.gdsn(
+    node = radiator.gds,
+    name = "markers.meta",
+    val = res$markers.meta,
+    replace = TRUE,
+    compress = "ZIP_RA",
+    closezip = TRUE))
 
+  # replace chromosome info in GDS
+  # Why ? well snp ld e.g. will otherwise be performed by chromosome and with de novo data = by locus...
+  gdsfmt::add.gdsn(
+    node = res$vcf.connection,
+    name = "chromosome",
+    val = res$markers.meta$CHROM,
+    replace = TRUE,
+    compress = "ZIP_RA",
+    closezip = TRUE)
+
+
+  #-----------------------------------  VCF STATS   ----------------------------
+  if (vcf.stats) {
     # Scan and filter with FILTER column ---------------------------------------
     res$markers.meta$FILTER <- SeqArray::seqGetData(
       res$vcf.connection, "annotation/filter")
@@ -670,7 +681,6 @@ write_seqarray <- function(
 
     # Individuals stats --------------------------------------------------------
     if (verbose) message("Generating individual stats")
-
     res$individuals %<>% dplyr::mutate(
       MISSING_PROP = round(SeqArray::seqMissing(
         gdsfile = res$vcf.connection, per.variant = FALSE,
@@ -822,15 +832,15 @@ write_seqarray <- function(
         dplyr::ungroup(.)
     } else {
       message("With haplotype vcf, number of SNP/locus is counted based on the REF allele")
-      message("   this stat is good only if nuc length is equalt between REF and ALT haplotypes")
-      message("\n   stacks haplotype vcf: ok")
-      message("   dDocent freebayes haplotype vcf: be careful")
+      message("    this stat is good only if nuc length is equal between REF and ALT haplotypes")
+      message("    stacks haplotype vcf: ok")
+      message("    dDocent/freebayes haplotype vcf: be careful")
 
       res$markers.meta %<>%
-          dplyr::mutate(
-            SNP_PER_LOCUS = stringi::stri_length(
-              str = SeqArray::seqGetData(gdsfile = res$vcf.connection, var.name = "$ref"))
-          )
+        dplyr::mutate(
+          SNP_PER_LOCUS = stringi::stri_length(
+            str = SeqArray::seqGetData(gdsfile = res$vcf.connection, var.name = "$ref"))
+        )
     }
 
     # test <- res$markers.meta
@@ -1236,6 +1246,24 @@ write_seqarray <- function(
 
     # SNP LD -------------------------------------------------------------------
     if (!is.null(filter.short.ld)) {
+
+      # data = res$vcf.connection
+      # snp.ld = filter.short.ld
+      # maf.data = NULL
+      # ld.threshold = filter.long.ld
+      # parallel.core = parallel.core
+      # filename = NULL
+      # long.ld.missing = long.ld.missing
+      # keep.gds <- TRUE
+      # ld.figures <- TRUE
+      # ld.wide <- FALSE
+      # ld.tibble <- FALSE
+      # manhattan.plot <- FALSE
+      # long.ld.missing = FALSE
+
+
+
+
       filter.ld <- snp_ld(
         data = res$vcf.connection,
         snp.ld = filter.short.ld,
@@ -1279,53 +1307,44 @@ write_seqarray <- function(
       blacklist.snp.ld <- filter.ld <- NULL
 
       # make sure GDS is updated with sample -------------------------------------
-      SeqArray::seqSetFilter(object = res$vcf.connection,
-                             sample.id = strata$INDIVIDUALS,
-                             # action = "set",
-                             verbose = FALSE)
+      SeqArray::seqSetFilter(
+        object = res$vcf.connection,
+        sample.id = dplyr::filter(
+          res$individuals,
+          FILTER_INDIVIDUALS_MISSING) %$% INDIVIDUALS,
+        verbose = FALSE)
     }
 
-    # blacklisted markers ------------------------------------------------------
-
-    # Stats --------------------------------------------------------------------
-    res$n.individuals <- length(SeqArray::seqGetData(res$vcf.connection, "sample.id"))
-    res$n.markers <- length(SeqArray::seqGetData(res$vcf.connection, "variant.id"))
-
-    # # vcf.sum <- SeqArray::seqSummary(res$vcf.connection, verbose = FALSE)
-    # res$n.markers <-  vcf.sum$num.variant
-    # res$n.individuals <- vcf.sum$num.sample
-    # vcf.sum <- NULL
-
-    if (vcf.stats) {
-      res$n.chromosome <- dplyr::n_distinct(res$markers.meta$CHROM)
-      res$n.locus <- dplyr::n_distinct(res$markers.meta$LOCUS)
-      res$stats$ind.missing <- round(mean(res$individuals$MISSING_PROP[res$individuals$FILTER_INDIVIDUALS_MISSING], na.rm = TRUE), 2)
-      res$stats$ind.cov.total <- round(mean(res$individuals$COVERAGE_TOTAL[res$individuals$FILTER_INDIVIDUALS_MISSING], na.rm = TRUE), 0)
-      res$stats$ind.cov.mean <- round(mean(res$individuals$COVERAGE_MEAN[res$individuals$FILTER_INDIVIDUALS_MISSING], na.rm = TRUE), 0)
-      res$stats$markers.missing <- round(mean(res$markers.meta$MISSING_PROP, na.rm = TRUE), 2)
-      res$stats$markers.cov <- round(mean(res$markers.meta$COVERAGE_MEAN, na.rm = TRUE), 0) # same as above because NA...
-    }
-    res$filename <- filename
-
-    if (verbose) {
-      if (vcf.stats) {
-        message("\n\nMissing data (averaged): ")
-        message("    markers: ", res$stats$markers.missing)
-        message("    individuals: ", res$stats$ind.missing)
-        message("\n\nCoverage info:")
-        message("    individuals mean read depth: ", res$stats$ind.cov.total)
-        message("    individuals mean genotype coverage: ", res$stats$ind.cov.mean)
-        message("    markers mean coverage: ", res$stats$markers.cov)
-        message("\n\nNumber of chromosome/contig/scaffold: ", res$n.chromosome)
-        message("Number of locus: ", res$n.locus)
-      }
-      message("Number of markers: ", res$n.markers)
-      message("Number of individuals: ", res$n.individuals)
-    }
-
-
+    res$stats$ind.missing <- round(mean(res$individuals$MISSING_PROP[res$individuals$FILTER_INDIVIDUALS_MISSING], na.rm = TRUE), 2)
+    res$stats$ind.cov.total <- round(mean(res$individuals$COVERAGE_TOTAL[res$individuals$FILTER_INDIVIDUALS_MISSING], na.rm = TRUE), 0)
+    res$stats$ind.cov.mean <- round(mean(res$individuals$COVERAGE_MEAN[res$individuals$FILTER_INDIVIDUALS_MISSING], na.rm = TRUE), 0)
+    res$stats$markers.missing <- round(mean(res$markers.meta$MISSING_PROP, na.rm = TRUE), 2)
+    res$stats$markers.cov <- round(mean(res$markers.meta$COVERAGE_MEAN, na.rm = TRUE), 0) # same as above because NA...
   }#End stats
 
+  # RESUME ----------------------------------------------------------------------
+  number.info <- SeqArray::seqGetFilter(gdsfile = res$vcf.connection)
+  res$n.individuals <- length(number.info$sample.sel[number.info$sample.sel])
+  res$n.markers <- length(number.info$variant.sel[number.info$variant.sel])
+  res$n.chromosome <- dplyr::n_distinct(res$markers.meta$CHROM)
+  res$n.locus <- dplyr::n_distinct(res$markers.meta$LOCUS)
+  res$filename <- filename
+
+  if (verbose) {
+    if (vcf.stats) {
+      message("\n\nMissing data (averaged): ")
+      message("    markers: ", res$stats$markers.missing)
+      message("    individuals: ", res$stats$ind.missing)
+      message("\n\nCoverage info:")
+      message("    individuals mean read depth: ", res$stats$ind.cov.total)
+      message("    individuals mean genotype coverage: ", res$stats$ind.cov.mean)
+      message("    markers mean coverage: ", res$stats$markers.cov)
+    }
+    message("\n\nNumber of chromosome/contig/scaffold: ", res$n.chromosome)
+    message("Number of locus: ", res$n.locus)
+    message("Number of markers: ", res$n.markers)
+    message("Number of individuals: ", res$n.individuals)
+  }
   # prepare data for the SeqVarTools package
   # seqOptimize("tmp.gds", target="by.sample")
   timing.import <- proc.time() - timing.import
