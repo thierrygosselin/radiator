@@ -94,7 +94,11 @@ tidy_wide <- function(data, import.metadata = FALSE) {
 
   # Determine long (tidy) or wide dataset
   if (!"MARKERS" %in% colnames(data) && !"LOCUS" %in% colnames(data)) {
-    data <- tidyr::gather(data = data, key = MARKERS, value = GT, -c(POP_ID, INDIVIDUALS))
+    if (tibble::has_name(data, "POP_ID")) {
+      data <- tidyr::gather(data = data, key = MARKERS, value = GT, -c(POP_ID, INDIVIDUALS))
+    } else {
+      data <- tidyr::gather(data = data, key = MARKERS, value = GT, -INDIVIDUALS)
+    }
   }
 
   # necessary steps to make sure we work with unique markers and not duplicated LOCUS
@@ -142,7 +146,7 @@ tidy_wide <- function(data, import.metadata = FALSE) {
   }
 
   data$INDIVIDUALS <- clean_ind_names(data$INDIVIDUALS)# clean id names
-  data$POP_ID <- clean_pop_names(data$POP_ID)# clean pop id
+  if (tibble::has_name(data, "POP_ID"))   data$POP_ID <- clean_pop_names(data$POP_ID)# clean pop id
   data <- dplyr::ungroup(data) # Make sure no data groupings exists
   return(data)
 }#End tidy_wide

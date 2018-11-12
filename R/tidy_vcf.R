@@ -345,6 +345,7 @@ tidy_vcf <- function(
     tidy.vcf <- TRUE
   }
 
+  # Tidying TRUE  --------------------------------------------------------------
   if (tidy.vcf) {
     # re-calibration of ref/alt alleles ------------------------------------------
     if (ref.calibration) {
@@ -484,16 +485,25 @@ tidy_vcf <- function(
         check = "none", verbose = FALSE)$ID
       # current version doesn't deal well with PL with 3 fields separated with ","
       # want <- c("DP", "AD", "GL", "PL", "HQ", "GQ", "GOF", "NR", "NV", "RO", "QR", "AO", "QA")
-      want <- c("DP", "AD", "GL", "PL", "HQ", "GQ", "GOF", "NR", "NV")
 
-      if (!is.null(overwrite.metadata)) want <- overwrite.metadata
-      parse.format.list <- purrr::keep(.x = have, .p = have %in% want)
-      # work on parallelization of this part
-      data$tidy.data.metadata <- purrr::map(
-        .x = parse.format.list, .f = parse_gds_metadata, data = data,
-        verbose = verbose, parallel.core = parallel.core) %>%
-        purrr::flatten(.) %>%
-        purrr::flatten_df(.)
+      if (length(have) > 0) {
+        want <- c("DP", "AD", "GL", "PL", "HQ", "GQ", "GOF", "NR", "NV")
+
+        if (!is.null(overwrite.metadata)) want <- overwrite.metadata
+        if (verbose) message("    genotypes metadata: ", stringi::stri_join(want, collapse = ", "))
+
+        parse.format.list <- purrr::keep(.x = have, .p = have %in% want)
+        # work on parallelization of this part
+        data$tidy.data.metadata <- purrr::map(
+          .x = parse.format.list, .f = parse_gds_metadata, data = data,
+          verbose = verbose, parallel.core = parallel.core) %>%
+          purrr::flatten(.) %>%
+          purrr::flatten_df(.)
+      } else {
+        if (verbose) message("    genotypes metadata: none found")
+        vcf.metadata <- FALSE
+        data$tidy.data.metadata <- NULL
+      }
     }
 
     # Remove or not gds connection and file --------------------------------------
@@ -516,7 +526,8 @@ tidy_vcf <- function(
     ## Note to myself: check timig with 1M SNPs to see
     ## if this is more efficient than data.table melt...
 
-    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF", "ALT")
+    want <- intersect(c("MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF", "ALT"),
+                      names(data$markers.meta))
     data$tidy.data <- suppressWarnings(
       dplyr::select(data$markers.meta, dplyr::one_of(want))) %>%
       dplyr::bind_cols(

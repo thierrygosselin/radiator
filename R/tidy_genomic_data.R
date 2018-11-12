@@ -1105,7 +1105,7 @@ tidy_genomic_data <- function(
 
   # Blacklist genotypes --------------------------------------------------------
   if (is.null(blacklist.genotype)) { # no Whitelist
-    if (verbose) message("Erasing genotype: no")
+      if (verbose) message("Erasing genotype: no")
   } else {
     if (verbose) message("Erasing genotype: yes")
     want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS")
@@ -1260,7 +1260,11 @@ tidy_genomic_data <- function(
   }
 
   # Results --------------------------------------------------------------------
-  input %<>% dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS)
+  if (!is.null(strata)) {
+    input %<>% dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS)
+  } else {
+    input %<>% dplyr::arrange(INDIVIDUALS, MARKERS)
+  }
 
 
   n.markers <- dplyr::n_distinct(input$MARKERS)

@@ -94,7 +94,8 @@ if (getRversion() >= "2.15.1") {
       "FILTER_SHORT_LD", "FILTER_STRANDS", "GENOTYPED_THRESHOLD", "MARKERS_A",
       "MARKERS_B", "MISSING_POP", "NUMBER_MARKERS", "SNP_PER_LOCUS", "id.select",
       "individuals.missing", "keep.both.strands", "n.ind", "snp.select.no.maf",
-      "common.markers", "FILTER_INDIVIDUALS_MISSING", "tidy.data", "num.variant"
+      "common.markers", "FILTER_INDIVIDUALS_MISSING", "tidy.data", "num.variant",
+      "STRANDS", "COVERAGE_TOTAL", "COVERAGE_MEAN"
     )
   )
 }

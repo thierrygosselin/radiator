@@ -444,11 +444,6 @@ interactive_question <- function(x, answer.opt = NULL, minmax = NULL) {
 check_header_source <- function(vcf) {
 
   check.header <- SeqArray::seqVCF_Header(vcf)
-
-  if (check.header$format$Number[check.header$format$ID == "AD"] == 1) {
-    check.header$format$Number[check.header$format$ID == "AD"] <- "."
-  }
-
   problematic.id <- c("AD", "AO", "QA", "GL")
   problematic.id <- purrr::keep(.x = problematic.id, .p = problematic.id %in% check.header$format$ID)
   for (p in problematic.id) {
@@ -465,15 +460,6 @@ check_header_source <- function(vcf) {
     if (!keep.stacks.gl) {
       check.header$format <- dplyr::filter(check.header$format, ID != "GL")
     }
-    # check for HQ in FORMAT header (stacks haplotypes specific adjustments)
-    # if (TRUE %in% c(check.header$format$ID == "HQ")) {
-    #   markers.info <- character(0)
-    #   overwrite.metadata <- "GT"
-    # } else {
-    #   markers.info <- NULL
-    #   overwrite.metadata <- NULL
-    # }
-    # This trick doesnt work because stacks SNP vcf also as the HQ in the header :(
     markers.info <- NULL
     overwrite.metadata <- NULL
   } else {

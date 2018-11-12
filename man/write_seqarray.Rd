@@ -10,20 +10,21 @@ write_seqarray(data, strata = NULL, filename = NULL,
 }
 \arguments{
 \item{data}{(character string) The VCF SNPs are biallelic or haplotypes.
-
-
 To make the VCF population-ready, you have to use \code{strata} argument.
-\strong{GATK VCF files:} Some VCF have an \code{ID} column filled with \code{.},
+
+\itemize{
+\item \strong{GATK, platypus and ipyrad VCFs:}
+Some VCFs have an \code{ID} column filled with \code{.},
 the LOCUS information is all contained along the linkage group in the
-\code{CHROM} column. To make it work with
+\code{CHROM} column. Consequently, the short read locus information is unknown.
+To make it work with
 \href{https://github.com/thierrygosselin/radiator}{radiator},
 the \code{ID} column is filled with the \code{POS} column info.
-\strong{platypus VCF files:} Some VCF files don't have an ID filed with values,
-here the same thing as GATK VCF files above is done.
-\strong{stacks VCF files:} with \emph{de novo} approaches, the CHROM column is
+\item \strong{stacks VCFs:} with \emph{de novo} approaches, the CHROM column is
 filled with "1", the LOCUS column correspond to the CHROM section in stacks VCF and
 the COL column is POS -1. With a reference genome, the ID column in stacks VCF is
-separated into "LOCUS", "COL", "STRANDS".}
+separated into "LOCUS", "COL", "STRANDS".
+}}
 
 \item{strata}{(optional)
 The strata file is a tab delimited file with a minimum of 2 columns headers:
@@ -73,6 +74,23 @@ Default: \code{verbose = TRUE}.}
 \item{...}{(optional) Advance mode that allows to pass further arguments
 for fine-tuning the function (see details).}
 }
+\value{
+The function returns a list with:
+\enumerate{
+\item \code{vcf.connection}: the name of the GDS file.
+To close the connection with the GDS file: use \code{SeqArray::seqClose(OBJECT_NAME$vcf.connection)}
+\item \code{individuals}: a tibble with the names of samples in the original
+VCF \code{INDIVIDUALS_VCF} and corrected for use in radiator \code{INDIVIDUALS}
+\item \code{biallelic}: is the data biallelic or not.
+\item \code{markers.meta}: a tibble with the markers metadata, including:
+\code{VARIANT_ID, CHROM, LOCUS, POS, COL, MARKERS, REF, ALT} when available.
+\item \code{n.ind}: the number of individuals
+\item \code{n.markers}: the number of markers
+\item \code{n.chromosome}: the numer of chromosome
+\item \code{n.locus}: the number of locus
+\item \code{filename}: the name of the file used.
+}
+}
 \description{
 Write a SeqArray \href{http://zhengxwen.github.io/SeqArray/}{SeqArray}
 file (Zheng et al. 2017) from a vcf file and generate a connection object.
@@ -104,7 +122,7 @@ Detailed in \code{\link[radiator]{tidy_genomic_data}}.
 high coverage based on outlier statistics.
 \item \code{filter.markers.missing}: (integer) To blacklist markers with too
 many missing data. e.g. \code{filter.markers.missing = 10}, will only keep
-markers with missing rate <= to 10%.
+markers with missing rate <= to 10 percent.
 \item \code{filter.snp.read.position}: 3 options available, \code{"outliers", "q75", "iqr"}.
 This argument will blacklist markers based on it's position on the read.
 \code{filter.snp.read.position = "outliers"}, will remove markers based
@@ -137,24 +155,24 @@ If the supplied directory doesn't exist, it's created.
 \examples{
 \dontrun{
 # with built-in defaults:
- prep.data <- radiator::write_seqarray(vcf = "populations.snps.vcf")
+ prep.data <- radiator::write_seqarray(data = "populations.snps.vcf")
 
 # Using more arguments and filters (recommended):
 prep.data <- radiator::write_seqarray(
-data = "populations.snps.vcf",
-strata = "strata_salamander.tsv",
-vcf.stats = TRUE,
-filter.individuals.missing = "outlier",
-common.markers = TRUE,
-keep.both.strands = FALSE,
-filter.mac = 4,
-filter.markers.missing = 50,
-filter.snp.read.position = "outliers",
-filter.short.ld = "maf",
-filter.long.ld = NULL,
-vcf.metadata = TRUE,
-path.folder = "salamander/prep_data",
-verbose = TRUE)
+    data = "populations.snps.vcf",
+    strata = "strata_salamander.tsv",
+    vcf.stats = TRUE,
+    filter.individuals.missing = "outlier",
+    common.markers = TRUE,
+    keep.both.strands = FALSE,
+    filter.mac = 4,
+    filter.markers.missing = 50,
+    filter.snp.read.position = "outliers",
+    filter.short.ld = "maf",
+    filter.long.ld = NULL,
+    vcf.metadata = TRUE,
+    path.folder = "salamander/prep_data",
+    verbose = TRUE)
 }
 }
 \references{

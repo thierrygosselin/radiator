@@ -9,20 +9,21 @@
 
 
 #' @param data (character string) The VCF SNPs are biallelic or haplotypes.
-#'
-#'
 #' To make the VCF population-ready, you have to use \code{strata} argument.
-#' \strong{GATK VCF files:} Some VCF have an \code{ID} column filled with \code{.},
+#'
+#' \itemize{
+#' \item \strong{GATK, platypus and ipyrad VCFs:}
+#' Some VCFs have an \code{ID} column filled with \code{.},
 #' the LOCUS information is all contained along the linkage group in the
-#' \code{CHROM} column. To make it work with
+#' \code{CHROM} column. Consequently, the short read locus information is unknown.
+#' To make it work with
 #' \href{https://github.com/thierrygosselin/radiator}{radiator},
 #' the \code{ID} column is filled with the \code{POS} column info.
-#' \strong{platypus VCF files:} Some VCF files don't have an ID filed with values,
-#' here the same thing as GATK VCF files above is done.
-#' \strong{stacks VCF files:} with \emph{de novo} approaches, the CHROM column is
+#' \item \strong{stacks VCFs:} with \emph{de novo} approaches, the CHROM column is
 #' filled with "1", the LOCUS column correspond to the CHROM section in stacks VCF and
 #' the COL column is POS -1. With a reference genome, the ID column in stacks VCF is
 #' separated into "LOCUS", "COL", "STRANDS".
+#' }
 
 
 #' @param filename (optional) The file name of the Genomic Data Structure (GDS) file.
@@ -30,8 +31,6 @@
 #' If filename chosen is already present in the
 #' working directory, the default \code{radiator_datetime.gds} is chosen.
 #' Default: \code{filename = NULL}.
-
-#' @inheritParams tidy_genomic_data
 
 #' @param vcf.stats (optional, logical) Generates individuals and markers
 #' important statistics helpful for filtering.
@@ -43,10 +42,12 @@
 #' coverage is generated and written in the working directory.
 #' Default: \code{vcf.stats = TRUE}.
 
+
 #' @param ... (optional) Advance mode that allows to pass further arguments
 #' for fine-tuning the function (see details).
 
-#' @seealso \code{\link{snp_ld}}
+#' @inheritParams tidy_genomic_data
+
 
 #' @details
 #' A vcf file of 35 GB with ~4 millions SNPs take about ~7 min with 8 CPU.
@@ -73,7 +74,7 @@
 #' high coverage based on outlier statistics.
 #' \item \code{filter.markers.missing}: (integer) To blacklist markers with too
 #' many missing data. e.g. \code{filter.markers.missing = 10}, will only keep
-#' markers with missing rate <= to 10%.
+#' markers with missing rate <= to 10 percent.
 #' \item \code{filter.snp.read.position}: 3 options available, \code{"outliers", "q75", "iqr"}.
 #' This argument will blacklist markers based on it's position on the read.
 #' \code{filter.snp.read.position = "outliers"}, will remove markers based
@@ -103,15 +104,32 @@
 #' If the supplied directory doesn't exist, it's created.
 #' }
 
+#' @return
+#' The function returns a list with:
+#' \enumerate{
+#' \item \code{vcf.connection}: the name of the GDS file.
+#' To close the connection with the GDS file: use \code{SeqArray::seqClose(OBJECT_NAME$vcf.connection)}
+#' \item \code{individuals}: a tibble with the names of samples in the original
+#' VCF \code{INDIVIDUALS_VCF} and corrected for use in radiator \code{INDIVIDUALS}
+#' \item \code{biallelic}: is the data biallelic or not.
+#' \item \code{markers.meta}: a tibble with the markers metadata, including:
+#' \code{VARIANT_ID, CHROM, LOCUS, POS, COL, MARKERS, REF, ALT} when available.
+#' \item \code{n.ind}: the number of individuals
+#' \item \code{n.markers}: the number of markers
+#' \item \code{n.chromosome}: the numer of chromosome
+#' \item \code{n.locus}: the number of locus
+#' \item \code{filename}: the name of the file used.
+#' }
+
+
 #' @export
 #' @rdname write_seqarray
-
 #' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join
 #' @importFrom stringi stri_replace_all_fixed
 #' @importFrom tibble has_name
 #' @importFrom tidyr spread
-# @importFrom SeqVarTools heterozygosity
-# @importFrom gdsfmt add.gdsn
+
+#' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 #' @references Zheng X, Gogarten S, Lawrence M, Stilp A, Conomos M, Weir BS,
 #' Laurie C, Levine D (2017). SeqArray -- A storage-efficient high-performance
@@ -122,34 +140,30 @@
 #' The variant call format and VCFtools.
 #' Bioinformatics, 27, 2156-2158.
 
+#' @seealso \code{\link{snp_ld}}
 
 #' @examples
 #' \dontrun{
 #' # with built-in defaults:
-#'  prep.data <- radiator::write_seqarray(vcf = "populations.snps.vcf")
+#'  prep.data <- radiator::write_seqarray(data = "populations.snps.vcf")
 #'
 #' # Using more arguments and filters (recommended):
 #' prep.data <- radiator::write_seqarray(
-#' data = "populations.snps.vcf",
-#' strata = "strata_salamander.tsv",
-#' vcf.stats = TRUE,
-#' filter.individuals.missing = "outlier",
-#' common.markers = TRUE,
-#' keep.both.strands = FALSE,
-#' filter.mac = 4,
-#' filter.markers.missing = 50,
-#' filter.snp.read.position = "outliers",
-#' filter.short.ld = "maf",
-#' filter.long.ld = NULL,
-#' vcf.metadata = TRUE,
-#' path.folder = "salamander/prep_data",
-#' verbose = TRUE)
+#'     data = "populations.snps.vcf",
+#'     strata = "strata_salamander.tsv",
+#'     vcf.stats = TRUE,
+#'     filter.individuals.missing = "outlier",
+#'     common.markers = TRUE,
+#'     keep.both.strands = FALSE,
+#'     filter.mac = 4,
+#'     filter.markers.missing = 50,
+#'     filter.snp.read.position = "outliers",
+#'     filter.short.ld = "maf",
+#'     filter.long.ld = NULL,
+#'     vcf.metadata = TRUE,
+#'     path.folder = "salamander/prep_data",
+#'     verbose = TRUE)
 #' }
-
-
-
-#' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
-
 
 write_seqarray <- function(
   data,
@@ -331,6 +345,10 @@ write_seqarray <- function(
     } else {
       filename <- stringi::stri_join(filename, ".gds")
     }
+    filename.problem <- file.exists(filename)
+    if (filename.problem) {
+      filename <- stringi::stri_join("duplicated_", filename)
+    }
   }
 
   filename.short <- filename
@@ -360,6 +378,7 @@ write_seqarray <- function(
     SeqArray::seqOpen(gds.fn = ., readonly = FALSE)
 
   check.header <- detect.source <- NULL
+
   # Summary --------------------------------------------------------------------
   # vcf.sum <- SeqArray::seqSummary(res$vcf.connection, verbose = FALSE)
   # this might be safer, because using seqSummary seems to forget if filters were used
@@ -372,8 +391,7 @@ write_seqarray <- function(
   if (verbose) message("\nconversion timing: ", round((proc.time() - timing.vcf)[[3]]), " sec")
 
   if (verbose && keep.gds) {
-    message("\nGDS file generated: \n", filename.short)
-    message("To close the connection use SeqArray::seqClose(OBJECT_NAME$vcf.connection)")
+    message("\nGDS file generated: ", filename.short)
   }
 
   # Strata ---------------------------------------------------------------------
@@ -464,19 +482,35 @@ write_seqarray <- function(
     LOCUS = SeqArray::seqGetData(res$vcf.connection, "annotation/id"),
     POS = SeqArray::seqGetData(res$vcf.connection, "position"))
 
-  # reference genome or de novo
-  sample.size <- min(length(unique(res$markers.meta$CHROM)), 100)
-  ref.genome <- sample(x = unique(res$markers.meta$CHROM), size = sample.size, replace = FALSE) %>%
-    stringi::stri_detect_regex(str = ., pattern = "[^[:alnum:]]+") %>%
-    unique
-  sample.size <- NULL
+  # check <- res$markers.meta
 
+  # reference genome or de novo ------------------------------------------------
+  ref.genome <- sample(x = unique(res$markers.meta$CHROM),
+                       size = min(length(unique(res$markers.meta$CHROM)), 100),
+                       replace = FALSE)
+
+  # if the chrom.unique > 1 more likely not to be de novo assembly (e.g. with old stacks version)
+  chrom.unique <- length(unique(ref.genome)) == 1
+
+  # presence of underscore or other separator: more likely ref genome
+  chrom.sep <- TRUE %in%
+    stringi::stri_detect_regex(str = ref.genome, pattern = "[^[:alnum:]]+") %>%
+    unique
+
+  # presence of letters = more likely ref genome
+  chrom.alpha <- TRUE %in%
+    stringi::stri_detect_regex(str = ref.genome, pattern = "[[:alpha:]]+") %>%
+    unique
+
+  if (chrom.unique) ref.genome <- FALSE
+  if (chrom.alpha || chrom.sep) ref.genome <- TRUE
   if (ref.genome) {
     if (verbose) message("Reads assembly: reference-assisted")
   } else {
     if (verbose) message("Reads assembly: de novo")
   }
 
+  chrom.unique <- chrom.alpha <- chrom.sep <- NULL
   # Add to GDS
   gdsfmt::add.gdsn(
     node = radiator.gds,
@@ -498,6 +532,7 @@ write_seqarray <- function(
         CHROM = "1")
     }
   }
+
 
   # GATK, platypus and freebayes specific adjustment
   # Locus with NA or . or ""
@@ -691,14 +726,25 @@ write_seqarray <- function(
     )
     # check <- res$individuals
 
+    # Check that DP is trere
+    dp <- "DP" %in% names(SeqArray::geno(x = res$vcf.connection))
+
+    if (!dp && verbose && vcf.stats) {
+      message("DP genotype metadata in VCF: no")
+      message("    skipping coverage summary statistics (individuals and markers")
+    }
+
+
     if (stacks.2 && !res$biallelic) {
       if (verbose) message("\nHaplotype VCF generated by stacks doesn't have coverage info")
     } else {
-      id.stats.before.filter <- extract_coverage(data = res$vcf.connection)
-      res$individuals %<>% dplyr::mutate(
-        COVERAGE_TOTAL = id.stats.before.filter$ind.cov.tot,
-        COVERAGE_MEAN = id.stats.before.filter$ind.cov.mean
-      )
+      if (dp) {
+        id.stats.before.filter <- extract_coverage(data = res$vcf.connection)
+        res$individuals %<>% dplyr::mutate(
+          COVERAGE_TOTAL = id.stats.before.filter$ind.cov.tot,
+          COVERAGE_MEAN = id.stats.before.filter$ind.cov.mean
+        )
+      }
     }
     # check <- res$individuals
 
@@ -723,14 +769,18 @@ write_seqarray <- function(
         dplyr::bind_rows(
           tibble_stats(
             x = res$individuals$HETEROZYGOSITY,
-            group = "individual's heterozygosity"),
+            group = "individual's heterozygosity"))
+
+      if (dp) {
+        res$stats$ind.stats %<>% dplyr::bind_rows(
           tibble_stats(
-            x = as.numeric(res$individuals$COVERAGE_TOTAL),
-            group = "individual's total coverage"),
-          tibble_stats(
-            x = as.numeric(res$individuals$COVERAGE_MEAN),
-            group = "individual's mean coverage")
+          x = as.numeric(res$individuals$COVERAGE_TOTAL),
+          group = "individual's total coverage"),
+        tibble_stats(
+          x = as.numeric(res$individuals$COVERAGE_MEAN),
+          group = "individual's mean coverage")
         )
+      }
     }
 
     # test <- res$stats$ind.stats
@@ -983,74 +1033,75 @@ write_seqarray <- function(
     }
     # test <- res$markers.meta
     # Coverage Stats -----------------------------------------------------------
-    if (verbose) message("Generating coverage stats")
-    coverage.info <- extract_coverage(data = res$vcf.connection)
+    if (dp) {
+      if (verbose) message("Generating coverage stats")
+      coverage.info <- extract_coverage(data = res$vcf.connection)
 
-    res$stats$coverage.stats <- tibble_stats(
-      x = coverage.info$markers.mean,
-      group =  "unfiltered")
+      res$stats$coverage.stats <- tibble_stats(
+        x = coverage.info$markers.mean,
+        group =  "unfiltered")
 
 
-    res$stats$coverage.stats <- dplyr::bind_rows(
-      res$stats$coverage.stats,
-      tibble_stats(
-        x = coverage.info$markers.mean[coverage.info$markers.mean >= res$stats$coverage.stats$OUTLIERS_LOW &
-                                         coverage.info$markers.mean <= res$stats$coverage.stats$OUTLIERS_HIGH],
-        group = "filtered outliers")
-    ) %>%
-      dplyr::mutate(GROUP = factor(
-        x = GROUP,
-        levels = c("unfiltered", "filtered outliers"))) %>%
-      dplyr::arrange(GROUP)
+      res$stats$coverage.stats <- dplyr::bind_rows(
+        res$stats$coverage.stats,
+        tibble_stats(
+          x = coverage.info$markers.mean[coverage.info$markers.mean >= res$stats$coverage.stats$OUTLIERS_LOW &
+                                           coverage.info$markers.mean <= res$stats$coverage.stats$OUTLIERS_HIGH],
+          group = "filtered outliers")
+      ) %>%
+        dplyr::mutate(GROUP = factor(
+          x = GROUP,
+          levels = c("unfiltered", "filtered outliers"))) %>%
+        dplyr::arrange(GROUP)
 
-    # Generate box plot
-    res$figures$coverage.stats.fig <- boxplot_stats(
-      data = res$stats$coverage.stats,
-      title = "Impact of filtering outliers\non coverage statistics",
-      x.axis.title = NULL,
-      y.axis.title = "Markers coverage (mean read depth)",
-      facet.columns = TRUE,
-      bp.filename = "coverage.statistics.pdf",
-      path.folder = path.folder)
+      # Generate box plot
+      res$figures$coverage.stats.fig <- boxplot_stats(
+        data = res$stats$coverage.stats,
+        title = "Impact of filtering outliers\non coverage statistics",
+        x.axis.title = NULL,
+        y.axis.title = "Markers coverage (mean read depth)",
+        facet.columns = TRUE,
+        bp.filename = "coverage.statistics.pdf",
+        path.folder = path.folder)
 
-    res$markers.meta$COVERAGE_MEAN <- coverage.info$markers.mean
+      res$markers.meta$COVERAGE_MEAN <- coverage.info$markers.mean
 
-    if (filter.coverage.outliers) {
-      blacklist.coverage <- res$markers.meta %>%
-        dplyr::filter(
-          COVERAGE_MEAN < res$stats$coverage.stats$OUTLIERS_LOW[1] |
-            COVERAGE_MEAN > res$stats$coverage.stats$OUTLIERS_HIGH[1]) %>%
-        dplyr::select(MARKERS)
+      if (filter.coverage.outliers) {
+        blacklist.coverage <- res$markers.meta %>%
+          dplyr::filter(
+            COVERAGE_MEAN < res$stats$coverage.stats$OUTLIERS_LOW[1] |
+              COVERAGE_MEAN > res$stats$coverage.stats$OUTLIERS_HIGH[1]) %>%
+          dplyr::select(MARKERS)
 
-      if (nrow(blacklist.coverage) > 0) {
-        message("Number of markers with outlier coverage removed: ", nrow(blacklist.coverage))
-        # update the blacklist
-        res$blacklist.markers <- dplyr::bind_rows(
-          res$blacklist.markers,
-          dplyr::mutate(blacklist.coverage, FILTER = "filter.coverage.outliers"))
-        # check <- res$blacklist.markers
+        if (nrow(blacklist.coverage) > 0) {
+          message("Number of markers with outlier coverage removed: ", nrow(blacklist.coverage))
+          # update the blacklist
+          res$blacklist.markers <- dplyr::bind_rows(
+            res$blacklist.markers,
+            dplyr::mutate(blacklist.coverage, FILTER = "filter.coverage.outliers"))
+          # check <- res$blacklist.markers
 
-        # Update markers.meta
-        res$markers.meta %<>% dplyr::filter(!MARKERS %in% blacklist.coverage$MARKERS)
-        # check <- res$markers.meta
+          # Update markers.meta
+          res$markers.meta %<>% dplyr::filter(!MARKERS %in% blacklist.coverage$MARKERS)
+          # check <- res$markers.meta
 
-        # Update GDS
-        gdsfmt::add.gdsn(
-          node = radiator.gds,
-          name = "markers.meta",
-          val = res$markers.meta,
-          replace = TRUE,
-          compress = "ZIP_RA",
-          closezip = TRUE)
+          # Update GDS
+          gdsfmt::add.gdsn(
+            node = radiator.gds,
+            name = "markers.meta",
+            val = res$markers.meta,
+            replace = TRUE,
+            compress = "ZIP_RA",
+            closezip = TRUE)
 
-        SeqArray::seqSetFilter(object = res$vcf.connection,
-                               variant.id = res$markers.meta$VARIANT_ID,
-                               verbose = FALSE)
+          SeqArray::seqSetFilter(object = res$vcf.connection,
+                                 variant.id = res$markers.meta$VARIANT_ID,
+                                 verbose = FALSE)
+        }
+        blacklist.coverage <- NULL
       }
-      blacklist.coverage <- NULL
+      coverage.info <- NULL
     }
-    coverage.info <- NULL
-
     # Filter markers genotyping/missing ----------------------------------------
     if (!is.null(strata)) {
       res$figures$missing.markers.fig <- markers_genotyped_helper(
@@ -1261,9 +1312,6 @@ write_seqarray <- function(
       # manhattan.plot <- FALSE
       # long.ld.missing = FALSE
 
-
-
-
       filter.ld <- snp_ld(
         data = res$vcf.connection,
         snp.ld = filter.short.ld,
@@ -1315,11 +1363,12 @@ write_seqarray <- function(
         verbose = FALSE)
     }
 
+    # For summary at the end of the function:
     res$stats$ind.missing <- round(mean(res$individuals$MISSING_PROP[res$individuals$FILTER_INDIVIDUALS_MISSING], na.rm = TRUE), 2)
-    res$stats$ind.cov.total <- round(mean(res$individuals$COVERAGE_TOTAL[res$individuals$FILTER_INDIVIDUALS_MISSING], na.rm = TRUE), 0)
-    res$stats$ind.cov.mean <- round(mean(res$individuals$COVERAGE_MEAN[res$individuals$FILTER_INDIVIDUALS_MISSING], na.rm = TRUE), 0)
+    if (dp) res$stats$ind.cov.total <- round(mean(res$individuals$COVERAGE_TOTAL[res$individuals$FILTER_INDIVIDUALS_MISSING], na.rm = TRUE), 0)
+    if (dp) res$stats$ind.cov.mean <- round(mean(res$individuals$COVERAGE_MEAN[res$individuals$FILTER_INDIVIDUALS_MISSING], na.rm = TRUE), 0)
     res$stats$markers.missing <- round(mean(res$markers.meta$MISSING_PROP, na.rm = TRUE), 2)
-    res$stats$markers.cov <- round(mean(res$markers.meta$COVERAGE_MEAN, na.rm = TRUE), 0) # same as above because NA...
+    if (dp) res$stats$markers.cov <- round(mean(res$markers.meta$COVERAGE_MEAN, na.rm = TRUE), 0) # same as above because NA...
   }#End stats
 
   # RESUME ----------------------------------------------------------------------
@@ -1335,10 +1384,10 @@ write_seqarray <- function(
       message("\n\nMissing data (averaged): ")
       message("    markers: ", res$stats$markers.missing)
       message("    individuals: ", res$stats$ind.missing)
-      message("\n\nCoverage info:")
-      message("    individuals mean read depth: ", res$stats$ind.cov.total)
-      message("    individuals mean genotype coverage: ", res$stats$ind.cov.mean)
-      message("    markers mean coverage: ", res$stats$markers.cov)
+      if (dp) message("\n\nCoverage info:")
+      if (dp) message("    individuals mean read depth: ", res$stats$ind.cov.total)
+      if (dp) message("    individuals mean genotype coverage: ", res$stats$ind.cov.mean)
+      if (dp) message("    markers mean coverage: ", res$stats$markers.cov)
     }
     message("\n\nNumber of chromosome/contig/scaffold: ", res$n.chromosome)
     message("Number of locus: ", res$n.locus)
@@ -1411,6 +1460,8 @@ extract_coverage <- function(data = NULL) {#, variant.id.select = NULL) {
   # data <- res$vcf.connection
   coverage.info <- list()
   depth <- SeqArray::seqGetData(data, "annotation/format/DP")
+
+
   # test <- depth$data
   coverage.info$ind.cov.tot <- as.integer(round(rowSums(x = depth$data, na.rm = TRUE, dims = 1L), 0))
   coverage.info$ind.cov.mean <- as.integer(round(rowMeans(x = depth$data, na.rm = TRUE, dims = 1L), 0))
@@ -1591,7 +1642,7 @@ missing_per_pop <- function(
       MARKERS = gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = vcf.connection, path = "radiator/markers.meta/MARKERS")),
       MISSING_PROP = SeqArray::seqMissing(
         gdsfile = vcf.connection,
-        per.variant = TRUE, .progress = TRUE, parallel = parallel.core))
+        per.variant = TRUE, .progress = TRUE, parallel = parallel.core - 1))
     SeqArray::seqResetFilter(
       object = vcf.connection, sample = TRUE, variant = FALSE, verbose = FALSE)
     return(res)
@@ -1604,10 +1655,9 @@ missing_per_pop <- function(
       .x = .$id.select,
       .f = missing_pop,
       vcf.connection = vcf.connection,
-      parallel.core = parallel.core)) %>% #102
-    tidyr::unnest(data = ., MISSING_POP) %>%#114
-    #406 MB ... not very storage efficient by handy:
-    dplyr::mutate(STRATA = as.character(STRATA)) %>% # less space
+      parallel.core = parallel.core)) %>%
+    tidyr::unnest(data = ., MISSING_POP) %>%
+    dplyr::mutate(STRATA = as.character(STRATA)) %>%
     dplyr::group_by(MARKERS) %>%
     tidyr::nest(data = ., .key = MISSING_POP)
   return(res)
