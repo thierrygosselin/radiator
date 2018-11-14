@@ -806,11 +806,11 @@ snp_ld <- function(
             )
           } else {
             message("    with LD threshold: ", ld.threshold, " SNPs blacklisted: 0")
-            ld.markers$blacklist.markers <- NULL
+            ld.markers <- list(blacklist.markers = NULL)
           }
         } else {
           message("    with LD threshold: ", ld.threshold, " SNPs blacklisted: 0")
-          ld.markers$blacklist.markers <- NULL
+          ld.markers <- list(blacklist.markers = NULL)
         }
         # Reset the filter of the GDS-------------------------------------------
         SeqArray::seqSetFilter(object = x, variant.id = w.m, sample.id = w.s,
