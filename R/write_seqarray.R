@@ -201,6 +201,7 @@ write_seqarray <- function(
   # keep.gds <- TRUE
   # markers.info = NULL
   # path.folder = NULL
+  # subsample.markers.stats = 0.2
 
   res <- list() #store the results
   timing.import <- proc.time()
@@ -236,7 +237,8 @@ write_seqarray <- function(
             "filter.long.ld", "filter.individuals.missing", "common.markers",
             "keep.both.strands",
             "blacklist.id", "pop.select", "pop.levels", "pop.labels", "keep.gds",
-            "path.folder", "long.ld.missing", "markers.info", "vcf.metadata")
+            "path.folder", "long.ld.missing", "markers.info", "vcf.metadata",
+            "subsample.markers.stats")
   unknowned_param <- setdiff(names(dotslist), want)
 
   if (length(unknowned_param) > 0) {
@@ -259,6 +261,7 @@ write_seqarray <- function(
   long.ld.missing <- radiator.dots[["long.ld.missing"]]
   markers.info <- radiator.dots[["markers.info"]]
   vcf.metadata <- radiator.dots[["vcf.metadata"]]
+  subsample.markers.stats <- radiator.dots[["subsample.markers.stats"]]
 
   blacklist.id <- radiator.dots[["blacklist.id"]]
   pop.select <- radiator.dots[["pop.select"]]
@@ -285,6 +288,7 @@ write_seqarray <- function(
       choices = c("outliers", "iqr", "q75"),
       several.ok = TRUE)
   }
+  if (is.null(subsample.markers.stats)) subsample.markers.stats <- 0.2
 
   # vcf.metadata
   if (is.logical(vcf.metadata)) {
@@ -361,6 +365,7 @@ write_seqarray <- function(
   detect.source <- check_header_source(data)
   stacks.2 <- detect.source$source
   check.header <- detect.source$check.header
+  dp <- "DP" %in% detect.source$check.header$format$ID # Check that DP is trere
 
   if (!is.null(detect.source$markers.info)) markers.info <- detect.source$markers.info
   if (!is.null(detect.source$overwrite.metadata)) overwrite.metadata <- detect.source$overwrite.metadata
@@ -627,107 +632,230 @@ write_seqarray <- function(
     closezip = TRUE)
 
 
-  #-----------------------------------  VCF STATS   ----------------------------
-  if (vcf.stats) {
-    # Scan and filter with FILTER column ---------------------------------------
-    res$markers.meta$FILTER <- SeqArray::seqGetData(
-      res$vcf.connection, "annotation/filter")
-    filter.check.unique <- unique(res$markers.meta$FILTER)
+  # PRE-FILTERING --------------------------------------------------------------
+  # whitelist of markers, the filter column in the vcf and blacklisted strands
+  # The order here doesnt matter
 
-    if (length(filter.check.unique) > 1) {
-      message("Filtering markers based on VCF FILTER column")
+  # Generate a blacklist of markers to store info ----------------------------
+  res$blacklist.markers <- tibble::tibble(MARKERS = character(0), FILTER = character(0))
 
-      variant.select <- dplyr::filter(res$markers.meta, FILTER == "PASS") %>%
-        dplyr::select(VARIANT_ID) %>%
-        purrr::flatten_int(.)
+  # Filter with whitelist of markers--------------------------------------------
+  if (!is.null(whitelist.markers)) {
 
-      n.markers.before <- nrow(res$markers.meta)
-      n.markers.after <- length(variant.select)
-      message("    Number of markers before = ", n.markers.before)
-      message("    Number of markers removed = ", n.markers.before - n.markers.after)
-      message("    Number of markers after = ", n.markers.after)
-
-      SeqArray::seqSetFilter(object = res$vcf.connection,
-                             variant.id = variant.select,
-                             verbose = FALSE)
+    # Import whitelist of markers
+    if (is.vector(whitelist.markers)) {
+      whitelist.markers <- suppressMessages(
+        readr::read_tsv(whitelist.markers, col_names = TRUE) %>%
+          dplyr::mutate_all(.tbl = ., .funs = as.character))
     }
-    filter.check.unique <- NULL
-    res$markers.meta %<>% dplyr::select(-FILTER)
+    columns.names.whitelist <- colnames(whitelist.markers)
+    nrow.before <- nrow(whitelist.markers)
+    whitelist.markers <- dplyr::distinct(whitelist.markers)
+    nrow.after <- nrow(whitelist.markers)
+    duplicate.whitelist.markers <- nrow.before - nrow.after
+    if (duplicate.whitelist.markers > 0) {
+      message("Whitelist of markers with ", duplicate.whitelist.markers, " duplicated identifiers...")
+      message("    Creating unique whitelist")
+      message("    Warning: downstream results might be impacted by this, check how you made your VCF file...")
+    }
+    nrow.before <- nrow.after <- duplicate.whitelist.markers <- NULL
 
-    # Filter with whitelist of markers------------------------------------------
-    if (!is.null(whitelist.markers)) {
+    whitelist.markers <- dplyr::mutate_all(
+      .tbl = whitelist.markers, .funs = clean_markers_names)
 
-      # Import whitelist of markers
-      if (is.vector(whitelist.markers)) {
-        whitelist.markers <- suppressMessages(
-          readr::read_tsv(whitelist.markers, col_names = TRUE) %>%
-            dplyr::mutate_all(.tbl = ., .funs = as.character))
-      }
-      columns.names.whitelist <- colnames(whitelist.markers)
-      nrow.before <- nrow(whitelist.markers)
-      whitelist.markers <- dplyr::distinct(whitelist.markers)
-      nrow.after <- nrow(whitelist.markers)
-      duplicate.whitelist.markers <- nrow.before - nrow.after
-      if (duplicate.whitelist.markers > 0) {
-        message("Whitelist of markers with ", duplicate.whitelist.markers, " duplicated identifiers...")
-        message("    Creating unique whitelist")
-        message("    Warning: downstream results might be impacted by this, check how you made your VCF file...")
-      }
-      nrow.before <- nrow.after <- duplicate.whitelist.markers <- NULL
-
-      whitelist.markers <- dplyr::mutate_all(
-        .tbl = whitelist.markers, .funs = clean_markers_names)
-
-      if (!biallelic) {
-        if (ncol(whitelist.markers) >= 3) {
-          message("Note: whitelist with CHROM LOCUS POS columns and VCF haplotype:
+    if (!biallelic) {
+      if (ncol(whitelist.markers) >= 3) {
+        message("Note: whitelist with CHROM LOCUS POS columns and VCF haplotype:
                 If the whitelist was not created from this VCF,
                 the filtering could result in losing all the markers.
                 The POS column is different in biallelic and multiallelic file...\n")
 
-          message("Discarding the POS column in the whitelist")
-          whitelist.markers <- dplyr::select(whitelist.markers, -POS)
-        }
+        message("Discarding the POS column in the whitelist")
+        whitelist.markers <- dplyr::select(whitelist.markers, -POS)
+      }
 
-        if (ncol(whitelist.markers) == 1 && tibble::has_name(whitelist.markers, "MARKERS")) {
-          message("Note: whitelist MARKERS column and VCF haplotype:
+      if (ncol(whitelist.markers) == 1 && tibble::has_name(whitelist.markers, "MARKERS")) {
+        message("Note: whitelist MARKERS column and VCF haplotype:
                 If the whitelist was not created from this VCF,
                 the filtering could result in losing all the markers.
                 The POS column used in the MARKERS column is different in biallelic and multiallelic file...\n")
-        }
-      }
-      message("Filtering: ", nrow(whitelist.markers), " markers in whitelist")
-      columns.names.whitelist <- colnames(whitelist.markers)
-
-      variant.select <- suppressWarnings(
-        dplyr::semi_join(
-          res$markers.meta, whitelist.markers, by = columns.names.whitelist)) %>%
-        dplyr::select(VARIANT_ID) %>%
-        purrr::flatten_int(.)
-
-      SeqArray::seqSetFilter(object = res$vcf.connection,
-                             variant.id = variant.select,
-                             verbose = FALSE)
-
-      if (length(SeqArray::seqGetData(res$vcf.connection, "variant.id")) == 0) {
-        stop("No markers left in the dataset, check whitelist...")
       }
     }
+    message("Filtering: ", nrow(whitelist.markers), " markers in whitelist")
+    columns.names.whitelist <- colnames(whitelist.markers)
+
+    variant.select <- suppressWarnings(
+      dplyr::semi_join(
+        res$markers.meta, whitelist.markers, by = columns.names.whitelist)) %>%
+      dplyr::select(VARIANT_ID) %>%
+      purrr::flatten_int(.)
+
+    SeqArray::seqSetFilter(object = res$vcf.connection,
+                           variant.id = variant.select,
+                           verbose = FALSE)
+
+    if (length(SeqArray::seqGetData(res$vcf.connection, "variant.id")) == 0) {
+      stop("No markers left in the dataset, check whitelist...")
+    }
+  }
+  # Scan and filter with FILTER column ---------------------------------------
+  res$markers.meta$FILTER <- SeqArray::seqGetData(
+    res$vcf.connection, "annotation/filter")
+  filter.check.unique <- unique(res$markers.meta$FILTER)
+
+  if (length(filter.check.unique) > 1) {
+    message("Filtering markers based on VCF FILTER column")
+    n.markers.before <- nrow(res$markers.meta)
+
+    blacklist.vcf.filter <- res$markers.meta %>%
+      dplyr::filter(FILTER != "PASS") %>%
+      dplyr::select(MARKERS)
+
+    # update the blacklist
+    res$blacklist.markers %<>% dplyr::bind_rows(
+      dplyr::mutate(blacklist.vcf.filter, FILTER = "vcf filter column")
+    )
+
+    res$markers.meta %<>% dplyr::filter(FILTER == "PASS")
+    n.markers.after <- nrow(res$markers.meta)
+    message("    Number of markers before = ", n.markers.before)
+    message("    Number of markers removed = ", n.markers.before - n.markers.after)
+    message("    Number of markers after = ", n.markers.after)
+
+    SeqArray::seqSetFilter(object = res$vcf.connection,
+                           variant.id = res$markers.meta$VARIANT_ID,
+                           verbose = FALSE)
+  }
+  filter.check.unique <- NULL
+  res$markers.meta %<>% dplyr::select(-FILTER)
+  # check <- res$markers.meta
+
+  # FILTER STRANDS -----------------------------------------------------------
+  if (!is.null(blacklist.strands) && !keep.both.strands) {
+    blacklist.strands <- dplyr::right_join(res$markers.meta, blacklist.strands,
+                                           by = c("CHROM", "POS")) %>%
+      dplyr::select(VARIANT_ID, MARKERS, CHROM, POS)
+
+    SeqArray::seqSetFilter(object = res$vcf.connection,
+                           variant.id = blacklist.strands$VARIANT_ID,
+                           verbose = FALSE)
+
+    blacklist.strands <- SeqArray::seqAlleleCount(
+      gdsfile = res$vcf.connection,
+      ref.allele = NULL,
+      .progress = TRUE,
+      parallel = parallel.core) %>%
+      unlist(.) %>%
+      matrix(
+        data = .,
+        nrow = nrow(blacklist.strands), ncol = 2, byrow = TRUE,
+        dimnames = list(rownames = blacklist.strands$VARIANT_ID,
+                        colnames = c("REF_COUNT", "ALT_COUNT"))) %>%
+      tibble::as_tibble(., rownames = "VARIANT_ID") %>%
+      tibble::add_column(.data = .,
+                         MARKERS = blacklist.strands$MARKERS,
+                         CHROM = blacklist.strands$CHROM,
+                         POS = blacklist.strands$POS,
+                         MISSING_PROP = SeqArray::seqMissing(
+                           gdsfile = res$vcf.connection,
+                           per.variant = TRUE, .progress = TRUE, parallel = parallel.core),
+                         .after = 1) %>%
+      dplyr::mutate(
+        MAC = dplyr::if_else(ALT_COUNT < REF_COUNT, ALT_COUNT, REF_COUNT),
+        ALT_COUNT = NULL, REF_COUNT = NULL) %>%
+      dplyr::group_by(CHROM, POS) %>%
+      dplyr::filter(MISSING_PROP == max(MISSING_PROP)) %>%
+      dplyr::filter(MAC == min(MAC)) %>%
+      dplyr::ungroup(.) %>%
+      dplyr::arrange(CHROM, POS) %>%
+      dplyr::distinct(CHROM, POS, .keep_all = TRUE) %>%
+      dplyr::select(MARKERS)
+
+    message("Number of duplicated markers on different strands removed: ", nrow(blacklist.strands))
+
+    # update the blacklist
+    res$blacklist.markers %<>% dplyr::bind_rows(
+      dplyr::mutate(blacklist.strands, FILTER = "keep.both.strands")
+    )
+
+    # Update markers.meta
+    res$markers.meta %<>% dplyr::filter(!MARKERS %in% blacklist.strands$MARKERS)
+    # check <- res$markers.meta
+
+    # Update GDS
+    gdsfmt::add.gdsn(
+      node = radiator.gds,
+      name = "markers.meta",
+      val = res$markers.meta,
+      replace = TRUE,
+      compress = "ZIP_RA",
+      closezip = TRUE)
+
+    SeqArray::seqSetFilter(object = res$vcf.connection,
+                           variant.id = res$markers.meta$VARIANT_ID,
+                           verbose = FALSE)
+  }
+
+  blacklist.strands <- NULL
+
+  #-----------------------------------  VCF STATS   ----------------------------
+  if (vcf.stats) {
+    COVERAGE_TOTAL <- COVERAGE_MEAN <- MISSING_PROP <- HETEROZYGOSITY <- NULL
+
+    # SUBSAMPLE markers when the number if high --------------------------------
+    # 10-20% seems to give identical results to 1M
+
+    whitelist.variant.id <- res$markers.meta$VARIANT_ID
+    n.markers <- length(whitelist.variant.id)
+    if (n.markers > 200000) {
+      m.subsample <- TRUE
+      variant.select <- sample(x = res$markers.meta$VARIANT_ID,
+                               size = round(subsample.markers.stats * length(res$markers.meta$VARIANT_ID), 0))
+      res$markers.meta %<>% dplyr::mutate(SUBSAMPLE_STATS = dplyr::if_else(VARIANT_ID %in% variant.select, TRUE, FALSE))
+      # check <- res$markers.meta
+    } else {
+      m.subsample <- FALSE
+      res$markers.meta %<>% dplyr::mutate(SUBSAMPLE_STATS = TRUE)
+    }
+
+    # variant.select.vcf.info <- sample(x = res$markers.meta$VARIANT_ID,
+    #                                   size = min(10L, length(res$markers.meta$VARIANT_ID)))
 
     # Individuals stats --------------------------------------------------------
     if (verbose) message("Generating individual stats")
+    # Note to my self: the test you ran show that timing of missing prop is
+    # not really impacted by number of markers, but heterozygosity is...
+
     res$individuals %<>% dplyr::mutate(
       MISSING_PROP = round(SeqArray::seqMissing(
         gdsfile = res$vcf.connection, per.variant = FALSE,
         .progress = TRUE,
-        parallel = parallel.core), 6),
+        parallel = parallel.core), 6))
+
+    if (m.subsample) {
+      SeqArray::seqSetFilter(object = res$vcf.connection,
+                             variant.id = variant.select,
+                             action = "push+set",
+                             verbose = FALSE)
+
+      # check <- SeqArray::seqGetFilter(res$vcf.connection)
+      # length(check$sample.sel[check$sample.sel])
+      # length(check$variant.sel[check$variant.sel])
+      # n.markers
+    }
+    res$individuals %<>% dplyr::mutate(
       HETEROZYGOSITY = round(SeqVarTools::heterozygosity(
         gdsobj = res$vcf.connection, margin = "by.sample", use.names = FALSE), 6)
     )
-    # check <- res$individuals
 
-    # Check that DP is trere
-    dp <- "DP" %in% names(SeqArray::geno(x = res$vcf.connection))
+    if (m.subsample) {
+      SeqArray::seqSetFilter(res$vcf.connection, action = "pop", verbose = TRUE)
+      # check <- SeqArray::seqGetFilter(res$vcf.connection)
+      # length(check$sample.sel[check$sample.sel])
+      # length(check$variant.sel[check$variant.sel])
+      # n.markers
+    }
+    # check <- res$individuals
 
     if (!dp && verbose && vcf.stats) {
       message("DP genotype metadata in VCF: no")
@@ -739,7 +867,16 @@ write_seqarray <- function(
       if (verbose) message("\nHaplotype VCF generated by stacks doesn't have coverage info")
     } else {
       if (dp) {
-        id.stats.before.filter <- extract_coverage(data = res$vcf.connection)
+        # if (m.subsample) {
+        #   SeqArray::seqSetFilter(object = res$vcf.connection,
+        #                          variant.id = variant.select,
+        #                          action = "push+set",
+        #                          verbose = FALSE)
+        # }
+        id.stats.before.filter <- extract_coverage(data = res$vcf.connection, markers = FALSE)
+        # if (m.subsample) {
+        #   SeqArray::seqSetFilter(res$vcf.connection, action = "pop", verbose = TRUE)
+        # }
         res$individuals %<>% dplyr::mutate(
           COVERAGE_TOTAL = id.stats.before.filter$ind.cov.tot,
           COVERAGE_MEAN = id.stats.before.filter$ind.cov.mean
@@ -774,20 +911,25 @@ write_seqarray <- function(
       if (dp) {
         res$stats$ind.stats %<>% dplyr::bind_rows(
           tibble_stats(
-          x = as.numeric(res$individuals$COVERAGE_TOTAL),
-          group = "individual's total coverage"),
-        tibble_stats(
-          x = as.numeric(res$individuals$COVERAGE_MEAN),
-          group = "individual's mean coverage")
+            x = as.numeric(res$individuals$COVERAGE_TOTAL),
+            group = "individual's total coverage"),
+          tibble_stats(
+            x = as.numeric(res$individuals$COVERAGE_MEAN),
+            group = "individual's mean coverage")
         )
       }
     }
 
     # test <- res$stats$ind.stats
+    if (m.subsample) {
+      title.ind.stats <- stringi::stri_join("Individual's QC stats\n", "het subsample markers: ", length(variant.select))
+    } else {
+      title.ind.stats <- "Individual's QC stats"
+    }
 
     res$figures$ind.stats.fig <- boxplot_stats(
       data = res$stats$ind.stats,
-      title = "Individual's QC stats",
+      title = title.ind.stats,
       x.axis.title = NULL,
       y.axis.title = "Statistics",
       facet.columns = TRUE,
@@ -875,6 +1017,7 @@ write_seqarray <- function(
           ALT_COUNT = NULL)
     )
 
+
     if (res$biallelic) {
       res$markers.meta %<>%
         dplyr::group_by(LOCUS) %>%
@@ -897,6 +1040,7 @@ write_seqarray <- function(
     if (is.null(strata)) {
       suppressWarnings(res$markers.meta %<>% dplyr::select(dplyr::one_of(want)))
     } else {
+      if (verbose) message("Calculating markers missingness per strata...")
       suppressWarnings(res$markers.meta %<>%
                          dplyr::left_join(
                            missing_per_pop(vcf.connection = res$vcf.connection,
@@ -914,9 +1058,6 @@ write_seqarray <- function(
         res$individuals,
         FILTER_INDIVIDUALS_MISSING) %$% INDIVIDUALS,
       verbose = FALSE)
-
-    # Generate a blacklist of markers to store info ----------------------------
-    res$blacklist.markers <- tibble::tibble(MARKERS = character(0), FILTER = character(0))
 
     # COMMON MARKERS -----------------------------------------------------------
     # Remove markers not in common if option selected
@@ -946,58 +1087,14 @@ write_seqarray <- function(
         SeqArray::seqSetFilter(object = res$vcf.connection,
                                variant.id = res$markers.meta$VARIANT_ID,
                                verbose = FALSE)
+        n.markers <- length(res$markers.meta$VARIANT_ID)
       } else {
         message("    all markers in common between strata")
       }
       not.in.common <- not.common.markers <- NULL
     }
 
-    # FILTER STRANDS -----------------------------------------------------------
-    if (!is.null(blacklist.strands)) {
-      blacklist.strands <- dplyr::right_join(res$markers.meta, blacklist.strands,
-                                             by = c("CHROM", "POS")) %>%
-        dplyr::mutate_at(.tbl = .,
-                         .vars = c("MISSING_PROP", "MAC", "SNP_PER_LOCUS"),
-                         .funs = as.numeric) %>%
-        dplyr::group_by(CHROM, POS) %>%
-        dplyr::filter(MISSING_PROP == max(MISSING_PROP)) %>%
-        dplyr::filter(SNP_PER_LOCUS == max(SNP_PER_LOCUS)) %>%
-        dplyr::filter(MAC == min(MAC)) %>%
-        dplyr::ungroup(.) %>%
-        dplyr::arrange(CHROM, POS) %>%
-        dplyr::distinct(CHROM, POS, .keep_all = TRUE) %>%
-        dplyr::select(MARKERS)
 
-      if (!keep.both.strands) {
-        if (nrow(blacklist.strands) > 0) {
-          message("Number of duplicated markers on different strands removed: ", nrow(blacklist.strands))
-
-          # update the blacklist
-          res$blacklist.markers <- dplyr::bind_rows(
-            res$blacklist.markers,
-            dplyr::mutate(blacklist.strands, FILTER = "keep.both.strands"))
-
-          # Update markers.meta
-          res$markers.meta %<>% dplyr::filter(!MARKERS %in% blacklist.strands$MARKERS)
-          # check <- res$markers.meta
-
-          # Update GDS
-          gdsfmt::add.gdsn(
-            node = radiator.gds,
-            name = "markers.meta",
-            val = res$markers.meta,
-            replace = TRUE,
-            compress = "ZIP_RA",
-            closezip = TRUE)
-
-          SeqArray::seqSetFilter(object = res$vcf.connection,
-                                 variant.id = res$markers.meta$VARIANT_ID,
-                                 verbose = FALSE)
-        }
-      }
-    }
-
-    blacklist.strands <- NULL
 
     # FILTER MAC----------------------------------------------------------------
     if (!is.null(filter.mac)) {
@@ -1028,14 +1125,18 @@ write_seqarray <- function(
         SeqArray::seqSetFilter(object = res$vcf.connection,
                                variant.id = res$markers.meta$VARIANT_ID,
                                verbose = FALSE)
+        n.markers <- length(res$markers.meta$VARIANT_ID)
       }
       blacklist.mac <- NULL
     }
     # test <- res$markers.meta
+
+
+
     # Coverage Stats -----------------------------------------------------------
     if (dp) {
       if (verbose) message("Generating coverage stats")
-      coverage.info <- extract_coverage(data = res$vcf.connection)
+      coverage.info <- extract_coverage(data = res$vcf.connection, ind = FALSE)
 
       res$stats$coverage.stats <- tibble_stats(
         x = coverage.info$markers.mean,
@@ -1456,16 +1557,20 @@ tibble_stats <- function(x, group, subsample = NULL) {
 #' @rdname extract_coverage
 #' @keywords internal
 #' @export
-extract_coverage <- function(data = NULL) {#, variant.id.select = NULL) {
+extract_coverage <- function(data = NULL, markers = TRUE, ind = TRUE) {#, variant.id.select = NULL) {
   # data <- res$vcf.connection
   coverage.info <- list()
   depth <- SeqArray::seqGetData(data, "annotation/format/DP")
 
-
   # test <- depth$data
-  coverage.info$ind.cov.tot <- as.integer(round(rowSums(x = depth$data, na.rm = TRUE, dims = 1L), 0))
-  coverage.info$ind.cov.mean <- as.integer(round(rowMeans(x = depth$data, na.rm = TRUE, dims = 1L), 0))
-  coverage.info$markers.mean <- as.integer(round(colMeans(x = depth$data, na.rm = TRUE, dims = 1L), 0))
+  if (ind) {
+    coverage.info$ind.cov.tot <- as.integer(round(rowSums(x = depth$data, na.rm = TRUE, dims = 1L), 0))
+    coverage.info$ind.cov.mean <- as.integer(round(rowMeans(x = depth$data, na.rm = TRUE, dims = 1L), 0))
+  }
+
+  if (markers) {
+    coverage.info$markers.mean <- as.integer(round(colMeans(x = depth$data, na.rm = TRUE, dims = 1L), 0))
+  }
   # coverage.info$ind.cov.tot <- as.integer(round(rowSums(x = depth$data[,variant.id.select], na.rm = TRUE, dims = 1L), 0))
   # coverage.info$ind.cov.mean <- as.integer(round(rowMeans(x = depth$data[,variant.id.select], na.rm = TRUE, dims = 1L), 0))
   return(coverage.info)

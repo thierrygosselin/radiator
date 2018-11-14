@@ -1,3 +1,9 @@
+# radiator v.0.0.21 2018-11-14
+
+* `snp.ld`: using missing data now works by chromosome/scaffold.
+
+
+
 # radiator v.0.0.20 2018-11-12
 
 * `tidy_vcf`, `tidy_genomic_data` and `genomic_converter`: works better with ipyrad vcf's
