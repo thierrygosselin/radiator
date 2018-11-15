@@ -364,7 +364,7 @@ write_seqarray <- function(
 
   # Filter parameter file ------------------------------------------------------
   filters.parameters.path <- stringi::stri_join(
-    path.folder, "/filters_parameters.tsv")
+    path.folder, "/filters_parameters_", file.date, ".tsv")
   filters.parameters <- tibble::data_frame(
     FILTERS = as.character(),
     PARAMETERS = as.character(),
@@ -379,7 +379,7 @@ write_seqarray <- function(
       path = filters.parameters.path,
       append = FALSE,
       col_names = TRUE)
-  if (verbose) message("Generated a filters parameters file: filters_parameters.tsv")
+  if (verbose) message("Generated a filters parameters file: filters_parameters_", file.date, ".tsv")
 
   # Read vcf -------------------------------------------------------------------
   timing.vcf <- proc.time()
@@ -1043,7 +1043,7 @@ write_seqarray <- function(
       x.axis.title = NULL,
       y.axis.title = "Statistics",
       facet.columns = TRUE,
-      bp.filename = "vcf.individuals.qc.pdf",
+      bp.filename = stringi::stri_join("vcf.individuals.qc_", file.date, ".pdf"),
       path.folder = path.folder)
 
     # test <- res$stats$ind.stats
@@ -1077,7 +1077,8 @@ write_seqarray <- function(
           gdsfmt::add.gdsn(
             node = radiator.gds,
             name = "STRATA",
-            val = strata$STRATA,
+            val = strata,
+            # val = strata$STRATA,
             replace = TRUE,
             compress = "ZIP_RA",
             closezip = TRUE)
@@ -1330,7 +1331,7 @@ write_seqarray <- function(
         x.axis.title = NULL,
         y.axis.title = "Markers coverage (mean read depth)",
         facet.columns = TRUE,
-        bp.filename = "coverage.statistics.pdf",
+        bp.filename = stringi::stri_join("coverage.statistics_", file.date, ".pdf"),
         path.folder = path.folder)
 
       res$markers.meta$COVERAGE_MEAN <- coverage.info$markers.mean
@@ -1408,7 +1409,7 @@ write_seqarray <- function(
       n.pop <- dplyr::n_distinct(strata$STRATA) + 2
       ggplot2::ggsave(
         plot = res$figures$missing.markers.fig,
-        filename = file.path(path.folder, "plot.markers.genotyping.rate.pdf"),
+        filename = file.path(path.folder, stringi::stri_join("plot.markers.genotyping.rate_", file.date, ".pdf")),
         width = n.pop * 10, height = 10,
         dpi = 300, units = "cm", useDingbats = FALSE, limitsize = FALSE)
     } else {#overall only
@@ -1420,7 +1421,7 @@ write_seqarray <- function(
       )
       ggplot2::ggsave(
         plot = res$figures$missing.markers.fig,
-        filename = file.path(path.folder, "plot.markers.genotyping.rate.pdf"),
+        filename = file.path(path.folder, stringi::stri_join("plot.markers.genotyping.rate_", file.date, ".pdf")),
         width = 15, height = 10,
         dpi = 300, units = "cm", useDingbats = FALSE)
     }
@@ -1540,7 +1541,7 @@ write_seqarray <- function(
         x.axis.title = NULL,
         y.axis.title = "SNP position (base pair)",
         facet.columns = TRUE,
-        bp.filename = "vcf.snp.position.read.pdf",
+        bp.filename = stringi::stri_join("vcf.snp.position.read_", file.date, ".pdf"),
         path.folder = path.folder)
 
       # Filtering ...
@@ -1616,7 +1617,7 @@ write_seqarray <- function(
       title = "Number of SNPs per locus",
       x.axis.title = NULL,
       y.axis.title = "Number of SNPs per locus",
-      bp.filename = "vcf.number.snp.per.locus.pdf",
+      bp.filename = stringi::stri_join("vcf.number.snp.per.locus_", file.date, ".pdf"),
       path.folder = path.folder)
 
     # generate a variant.id vector ---------------------------------------------

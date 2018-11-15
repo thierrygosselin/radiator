@@ -2,14 +2,14 @@
 % Please edit documentation in R/read_rad.R
 \name{read_rad}
 \alias{read_rad}
-\title{Read tidy genomic data file ending .rad}
+\title{Read radiator file ending .rad}
 \usage{
 read_rad(data, columns = NULL, from = 1, to = NULL,
   as.data.table = FALSE, old_format = FALSE)
 }
 \arguments{
 \item{data}{A file in the working directory ending with .rad,
-a tidy genomic data produced by radiator, assigner or grur.}
+and produced by radiator, assigner or grur.}
 
 \item{columns}{Column names to read. The default is to read all all columns.}
 
@@ -23,14 +23,20 @@ dataset \code{x} before writing will be retained. This allows for storage of sor
 \item{old_format}{use TRUE to read fst files generated with a fst package version lower than v0.8.0}
 }
 \value{
-A tidy data frame in the global environment.
+A tidy data frame or GDS object in the global environment.
 }
 \description{
-Fast read .rad file.
+Fast read of .rad file.
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and \href{https://github.com/thierrygosselin/assigner}{assigner}
 and might be of interest for users.
-The function uses \code{\link[fst]{read_fst}}.
+The function uses \code{\link[fst]{read_fst}} or
+CoreArray Genomic Data Structure (\href{https://github.com/zhengxwen/gdsfmt}{GDS})
+file system.
+}
+\details{
+For GDS file system \strong{read_rad} will open the GDS connection file
+set the filters (variant and sample) based on the info found in the file.
 }
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}

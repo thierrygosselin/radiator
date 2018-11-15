@@ -33,22 +33,20 @@ detect_genomic_format <- function(data){
   if (!is.vector(data)) {
     if (tibble::has_name(data, "POP_ID") && tibble::has_name(data, "INDIVIDUALS")) {
       data.type <- "tbl_df" #"df.file"
-      return(data.type)
     } else {
       data.type <- class(data)[1]
       if (!data.type %in% c("genind", "genlight", "gtypes", "SeqVarGDSClass")) stop("Input file not recognised")
-      return(data.type)
     }
   } else {
     data.type <- readChar(con = data, nchars = 16L, useBytes = TRUE)
+    file.ending <- stringi::stri_sub(str = data, from = -4, to = -1)
 
-    if (identical(data.type, "##fileformat=VCF") | stringi::stri_detect_fixed(str = data, pattern = ".vcf")) {
+    if (identical(data.type, "##fileformat=VCF") || file.ending == ".vcf") {
       data.type <- "vcf.file"
       # message("File type: VCF")
-      return(data.type)
     }
 
-    if (stringi::stri_detect_fixed(str = data, pattern = ".tped")) {
+    if (file.ending == ".tped") {
       data.type <- "plink.file"
       # message("File type: PLINK")
       if (!file.exists(stringi::stri_replace_all_fixed(str = data, pattern = ".tped", replacement = ".tfam", vectorize_all = FALSE))) {
@@ -64,36 +62,31 @@ detect_genomic_format <- function(data){
     }
     if (stringi::stri_detect_fixed(str = data.type, pattern = "Catalog")) {
       data.type <- "haplo.file"
-      return(data.type)
     }
-    if (stringi::stri_detect_fixed(
-      str = stringi::stri_sub(str = data, from = -4, to = -1),
-      pattern = ".gen")) {
+    if (file.ending == ".gen") {
       data.type <- "genepop.file"
-      return(data.type)
-    }
-    if (stringi::stri_detect_fixed(
-      str = stringi::stri_sub(str = data, from = -4, to = -1),
-      pattern = ".dat")) {
-      data.type <- "fstat.file"
-      return(data.type)
     }
 
-    # fst file
-    if (stringi::stri_detect_fixed(
-      str = stringi::stri_sub(str = data, from = -4, to = -1),
-      pattern = ".rad")) {
-      data.type <- "fst.file"
-      return(data.type)
+    if (file.ending == ".dat") {
+      data.type <- "fstat.file"
+    }
+
+    # .rad, fst file or gds
+    if (TRUE %in% (c(".rad", ".gds") %in% file.ending)) {
+      if (stringi::stri_detect_fixed(str = data.type, pattern = "COREARRAY")) {
+        data.type <- "gds.file"
+      } else {
+        data.type <- "fst.file"
+      }
     }
 
     # DArT data
     dart.temp <- check_dart(data)
     if (dart.temp$data.type %in% c("dart", "silico.dart")) {
       data.type <- dart.temp$data.type
-      return(data.type)
     }
   } # end file type detection
+  return(data.type)
 } # End detect_genomic_format
 
 # INTERNAL functions -----------------------------------------------------------
