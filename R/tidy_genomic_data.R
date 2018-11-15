@@ -416,7 +416,7 @@ tidy_genomic_data <- function(
   want <- c("keep.allele.names",
             "filter.snp.read.position", "filter.mac",
             "filter.coverage.outliers", "filter.markers.missing", "filter.short.ld",
-            "filter.long.ld", "filter.individuals.missing",
+            "filter.long.ld", "long.ld.missing","filter.individuals.missing",
             "filter.strands",
             "ref.calibration", "gt.vcf.nuc", "gt.vcf", "gt", "gt.bin",
             "vcf.stats",
@@ -446,6 +446,7 @@ tidy_genomic_data <- function(
   filter.markers.missing <- radiator.dots[["filter.markers.missing"]]
   filter.short.ld <- radiator.dots[["filter.short.ld"]]
   filter.long.ld <- radiator.dots[["filter.long.ld"]]
+  long.ld.missing <- radiator.dots[["long.ld.missing"]]
   markers.info <- radiator.dots[["markers.info"]]
   filter.individuals.missing <- radiator.dots[["filter.individuals.missing"]]
   filter.strands <- radiator.dots[["filter.strands"]]
@@ -459,6 +460,7 @@ tidy_genomic_data <- function(
   if (is.null(gt)) gt <- TRUE
   if (is.null(gt.bin)) gt.bin <- TRUE
   if (is.null(filter.strands)) filter.strands <- "blacklist"
+  if (is.null(long.ld.missing)) long.ld.missing <- FALSE
   if (is.null(filter.coverage.outliers)) filter.coverage.outliers <- FALSE
   if (is.null(common.markers)) common.markers <- TRUE
 
@@ -592,6 +594,7 @@ tidy_genomic_data <- function(
       filter.snp.read.position = filter.snp.read.position,
       filter.short.ld = filter.short.ld,
       filter.long.ld = filter.long.ld,
+      long.ld.missing = long.ld.missing,
       gt.vcf.nuc = TRUE,
       gt.vcf = TRUE,
       gt = TRUE,

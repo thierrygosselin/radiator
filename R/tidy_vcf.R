@@ -217,7 +217,7 @@ tidy_vcf <- function(
             "pop.levels", "pop.labels",
             "filter.snp.read.position", "filter.mac",
             "filter.coverage.outliers", "filter.markers.missing", "filter.short.ld",
-            "filter.long.ld", "filter.individuals.missing", "common.markers",
+            "filter.long.ld", "long.ld.missing","filter.individuals.missing", "common.markers",
             "filter.strands", "path.folder",
             "ref.calibration", "gt.vcf.nuc", "gt.vcf", "gt", "gt.bin", "vcf.stats",
             "filename", "keep.gds", "vcf.metadata")
@@ -241,6 +241,7 @@ tidy_vcf <- function(
   filter.markers.missing <- radiator.dots[["filter.markers.missing"]]
   filter.short.ld <- radiator.dots[["filter.short.ld"]]
   filter.long.ld <- radiator.dots[["filter.long.ld"]]
+  long.ld.missing <- radiator.dots[["long.ld.missing"]]
   # markers.info <- radiator.dots[["markers.info"]]
   filter.individuals.missing <- radiator.dots[["filter.individuals.missing"]]
   common.markers <- radiator.dots[["common.markers"]]
@@ -266,6 +267,7 @@ tidy_vcf <- function(
   if (is.null(gt.bin)) gt.bin <- TRUE
   if (is.null(path.folder)) path.folder <- getwd()
   if (is.null(filter.strands)) filter.strands <- "blacklist"
+  if (is.null(long.ld.missing)) long.ld.missing <- FALSE
   if (is.null(filter.coverage.outliers)) filter.coverage.outliers <- FALSE
   if (is.null(common.markers)) common.markers <- TRUE
 
@@ -312,6 +314,7 @@ tidy_vcf <- function(
     filter.snp.read.position = filter.snp.read.position,
     filter.short.ld = filter.short.ld,
     filter.long.ld = filter.long.ld,
+    long.ld.missing = long.ld.missing,
     markers.info = character(0),
     vcf.metadata = vcf.metadata,
     path.folder = path.folder
