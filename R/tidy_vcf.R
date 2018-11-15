@@ -119,7 +119,7 @@
 #' vcf.stats = TRUE,
 #' filter.individuals.missing = "outlier",
 #' common.markers = TRUE,
-#' keep.both.strands = FALSE,
+#' filter.strands = FALSE,
 #' filter.mac = 4,
 #' filter.markers.missing = 50,
 #' filter.snp.read.position = "outliers",
@@ -166,7 +166,7 @@ tidy_vcf <- function(
 
   # filter.individuals.missing = "outlier"
   # common.markers = TRUE
-  # keep.both.strands = FALSE
+  # filter.strands = FALSE
   # filter.mac = 4
   # filter.coverage.outliers = TRUE
   # filter.markers.missing = 10
@@ -218,7 +218,7 @@ tidy_vcf <- function(
             "filter.snp.read.position", "filter.mac",
             "filter.coverage.outliers", "filter.markers.missing", "filter.short.ld",
             "filter.long.ld", "filter.individuals.missing", "common.markers",
-            "keep.both.strands", "path.folder",
+            "filter.strands", "path.folder",
             "ref.calibration", "gt.vcf.nuc", "gt.vcf", "gt", "gt.bin", "vcf.stats",
             "filename", "keep.gds", "vcf.metadata")
   unknowned_param <- setdiff(names(dotslist), want)
@@ -244,7 +244,7 @@ tidy_vcf <- function(
   # markers.info <- radiator.dots[["markers.info"]]
   filter.individuals.missing <- radiator.dots[["filter.individuals.missing"]]
   common.markers <- radiator.dots[["common.markers"]]
-  keep.both.strands <- radiator.dots[["keep.both.strands"]]
+  filter.strands <- radiator.dots[["filter.strands"]]
   path.folder <- radiator.dots[["path.folder"]]
 
   ref.calibration <- radiator.dots[["ref.calibration"]]
@@ -265,7 +265,7 @@ tidy_vcf <- function(
   if (is.null(gt)) gt <- TRUE
   if (is.null(gt.bin)) gt.bin <- TRUE
   if (is.null(path.folder)) path.folder <- getwd()
-  if (is.null(keep.both.strands)) keep.both.strands <- FALSE
+  if (is.null(filter.strands)) filter.strands <- "blacklist"
   if (is.null(filter.coverage.outliers)) filter.coverage.outliers <- FALSE
   if (is.null(common.markers)) common.markers <- TRUE
 
@@ -305,7 +305,7 @@ tidy_vcf <- function(
     keep.gds = keep.gds,
     filter.individuals.missing = filter.individuals.missing,
     common.markers = common.markers,
-    keep.both.strands = keep.both.strands,
+    filter.strands = filter.strands,
     filter.mac = filter.mac,
     filter.coverage.outliers = filter.coverage.outliers,
     filter.markers.missing = filter.markers.missing,

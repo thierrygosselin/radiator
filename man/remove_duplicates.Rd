@@ -3,13 +3,18 @@
 \name{remove_duplicates}
 \alias{remove_duplicates}
 \alias{ld_pruning}
+\alias{ld_chrom_missing}
 \title{Read tidy genomic data file ending .rad}
 \usage{
 remove_duplicates(data = "individuals.pairwise.dist.tsv",
   stats = "genotyped.statistics.tsv", dup.threshold = 0.25,
   diff.pop.remove = TRUE)
 
-ld_pruning(ld.tibble = NULL, stats = NULL, ld.threshold = 0.8)
+ld_pruning(ld.tibble = NULL, stats = NULL, ld.threshold = 0.8,
+  verbose = TRUE)
+
+ld_chrom_missing(chrom.select, x, data.type, ld.threshold,
+  parallel.core = parallel::detectCores() - 1, verbose = TRUE)
 }
 \arguments{
 \item{data}{(path) The individual's pairwise data.
@@ -32,8 +37,22 @@ Default: \code{ld.tibble = NULL}.}
 \item{ld.threshold}{(double) The threshold to prune SNPs in LD.
 Default: \code{ld.threshold = 0.8}.}
 
+\item{verbose}{(logical, optional) Default: \code{verbose = TRUE}.}
+
+\item{chrom.select}{The split dataset by chromosome.}
+
+\item{x}{The GDS object.}
+
+\item{data.type}{The type of dataset.}
+
+\item{parallel.core}{The number of CPU.}
+
 \item{stats}{(path) The markers missingness info statistics.
 Default: \code{stats = NULL}.}
+
+\item{ld.threshold}{The LD threshold.}
+
+\item{verbose}{(logical, optional) Default: \code{verbose = TRUE}.}
 }
 \value{
 A list with blacklisted duplicates. Write the blacklist in the working
@@ -41,6 +60,8 @@ directory.
 
 A list with blacklisted SNPs.  Write the blacklist in the working
 directory.
+
+A list with blacklisted SNPs.
 }
 \description{
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
@@ -48,9 +69,15 @@ To remove duplicate individuals based on threshold established from the
 visualization figures.
 
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
-Prune dataset based on LD. Use missingness to keep 1 SNP.
+Prune dataset based on LD.
+
+Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
+Prune dataset based on LD, uses missingness to keep 1 SNP. This is the function
+that does it for 1 chrom. It's then used with purrr::map to run seriall on all chrom.
 }
 \author{
+Thierry Gosselin \email{thierrygosselin@icloud.com}
+
 Thierry Gosselin \email{thierrygosselin@icloud.com}
 
 Thierry Gosselin \email{thierrygosselin@icloud.com}

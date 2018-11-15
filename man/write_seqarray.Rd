@@ -111,9 +111,13 @@ come back to it a month later and it's now a matter of sec to open a connection.
 \item \code{pop.select}: detailed in \code{\link[radiator]{tidy_genomic_data}}.
 \item \code{pop.levels}: detailed in \code{\link[radiator]{tidy_genomic_data}}.
 \item \code{pop.labels}: detailed in \code{\link[radiator]{tidy_genomic_data}}.
-\item \code{keep.both.strands}: (logical) Radiator removes
-duplicate SNPs found on different strands,
-by default (\code{keep.both.strands = FALSE}).
+\item \code{filter.strands}: (optional, character) Filter duplicate SNPs
+found on different strands (+/-), options are:
+\code{"keep.both", "best.stats", "blacklist"}. \code{"keep.both"}: does nothing
+and duplicated markers are kept (not recommended, but here for testing purposes),
+\code{"best.stats"}: will keep only one, based on the best statistics
+(MAC and missingness). \code{"blacklist"}: discard all duplicated markers.
+Default (\code{filter.strands = "blacklist"}).
 \item \code{common.markers}: (logical) Default: code{common.markers = TRUE}.
 Detailed in \code{\link[radiator]{tidy_genomic_data}}.
 \item \code{filter.mac}: (integer) To blacklist markers below a specific MAC
@@ -164,7 +168,7 @@ prep.data <- radiator::write_seqarray(
     vcf.stats = TRUE,
     filter.individuals.missing = "outlier",
     common.markers = TRUE,
-    keep.both.strands = FALSE,
+    filter.strands = "blacklist",
     filter.mac = 4,
     filter.markers.missing = 50,
     filter.snp.read.position = "outliers",
@@ -186,7 +190,7 @@ The variant call format and VCFtools.
 Bioinformatics, 27, 2156-2158.
 }
 \seealso{
-\code{\link{snp_ld}}
+\code{\link{snp_ld}} and \code{\link[radiator]{tidy_genomic_data}}
 }
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}

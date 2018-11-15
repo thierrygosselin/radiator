@@ -5,7 +5,8 @@
 \title{GBS/RADseq short and long distance linkage disequilibrium pruning}
 \usage{
 snp_ld(data, snp.ld = "maf", maf.data = NULL, ld.threshold = NULL,
-  parallel.core = parallel::detectCores() - 1, filename = NULL, ...)
+  parallel.core = parallel::detectCores() - 1, filename = NULL,
+  verbose = TRUE, ...)
 }
 \arguments{
 \item{data}{A tidy data set with ID (LOCUS) and POS (SNP) information.
@@ -54,6 +55,9 @@ Default: \code{parallel::detectCores() - 1}.}
 \item{filename}{(optional, character) File name prefix for file written in
 the working directory.
 Default: \code{filename = NULL}.}
+
+\item{verbose}{(optional, logical) The function will write more details.
+Default: \code{verbose = TRUE}.}
 
 \item{...}{(optional) Advance mode that allows to pass further arguments
 for fine-tuning the function (see details).}
@@ -157,6 +161,9 @@ Zheng X, Levine D, Shen J, Gogarten SM, Laurie C, Weir BS.
 (2012) A high-performance computing toolset for relatedness and principal component
 analysis of SNP data. Bioinformatics. 28: 3326-3328.
 doi:10.1093/bioinformatics/bts606
+}
+\seealso{
+\href{https://github.com/zhengxwen/SNPRelate}{SNPRelate}
 }
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}

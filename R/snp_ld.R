@@ -63,6 +63,9 @@
 #' the working directory.
 #' Default: \code{filename = NULL}.
 
+#' @param verbose (optional, logical) The function will write more details.
+#' Default: \code{verbose = TRUE}.
+
 
 #' @param ... (optional) Advance mode that allows to pass further arguments
 #' for fine-tuning the function (see details).
@@ -77,10 +80,7 @@
 #' @importFrom tibble has_name
 #' @importFrom dplyr select distinct group_by sample_n summarise semi_join n_distinct
 
-#' @references Zheng X, Levine D, Shen J, Gogarten SM, Laurie C, Weir BS.
-#' (2012) A high-performance computing toolset for relatedness and principal component
-#' analysis of SNP data. Bioinformatics. 28: 3326-3328.
-#' doi:10.1093/bioinformatics/bts606
+
 
 #' @details The function requires \href{https://github.com/zhengxwen/SNPRelate}{SNPRelate}
 #' (see example below on how to install).
@@ -132,6 +132,13 @@
 #' \item $gds: the path to the GDS file.
 #' }
 
+#' @references Zheng X, Levine D, Shen J, Gogarten SM, Laurie C, Weir BS.
+#' (2012) A high-performance computing toolset for relatedness and principal component
+#' analysis of SNP data. Bioinformatics. 28: 3326-3328.
+#' doi:10.1093/bioinformatics/bts606
+
+#' @seealso \href{https://github.com/zhengxwen/SNPRelate}{SNPRelate}
+
 #' @examples
 #' \dontrun{
 #' #require(SNPRelate)
@@ -165,6 +172,7 @@ snp_ld <- function(
   ld.threshold = NULL,
   parallel.core = parallel::detectCores() - 1,
   filename = NULL,
+  verbose = TRUE,
   ...
 ) {
 
@@ -181,12 +189,12 @@ snp_ld <- function(
   # ld.wide <- FALSE
   # ld.tibble <- FALSE
   # manhattan.plot <- FALSE
-  # long.ld.missing = FALSE
+  # long.ld.missing = TRUE
 
   timing <- proc.time()
   opt.change <- getOption("width")
   options(width = 70)
-  res.snp.ld <- list()# to store the output
+  res.ld <- list()# to store the output
 
   # dotslist -------------------------------------------------------------------
   radiator.dots <- list(...)
@@ -263,30 +271,30 @@ snp_ld <- function(
       if (!biallelic) stop("Long distance LD: biallelic genotypes required")
 
       # Generating SNPRelate data --------------------------------------------------
-      message("Preparing the data...")
-      res.snp.ld$data.gds <- radiator::write_snprelate(
+      if (verbose) if (verbose) message("Preparing the data...")
+      res.ld$data.gds <- radiator::write_snprelate(
         data = data,
         biallelic = TRUE,
         filename = filename,
         verbose = FALSE)
       if (keep.gds) {
-        message("SNPRelate GDS file generated: ", filename.gds)
-        message("To close the connection use SNPRelate::snpgdsClose(filename)")
+        if (verbose) if (verbose) message("SNPRelate GDS file generated: ", filename.gds)
+        if (verbose) if (verbose) message("To close the connection use SNPRelate::snpgdsClose(filename)")
       }
     }
   } else {
-    res.snp.ld$data.gds <- data
+    res.ld$data.gds <- data
     data <- markers <- tibble::tibble(
-      VARIANT_ID = gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = res.snp.ld$data.gds, path = "radiator/markers.meta/VARIANT_ID")),
-      MARKERS = gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = res.snp.ld$data.gds, path = "radiator/markers.meta/MARKERS")),
-      CHROM = gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = res.snp.ld$data.gds, path = "radiator/markers.meta/CHROM")),
-      LOCUS = gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = res.snp.ld$data.gds, path = "radiator/markers.meta/LOCUS")),
-      POS = gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = res.snp.ld$data.gds, path = "radiator/markers.meta/POS"))
+      VARIANT_ID = gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = res.ld$data.gds, path = "radiator/markers.meta/VARIANT_ID")),
+      MARKERS = gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = res.ld$data.gds, path = "radiator/markers.meta/MARKERS")),
+      CHROM = gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = res.ld$data.gds, path = "radiator/markers.meta/CHROM")),
+      LOCUS = gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = res.ld$data.gds, path = "radiator/markers.meta/LOCUS")),
+      POS = gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = res.ld$data.gds, path = "radiator/markers.meta/POS"))
     )
   }
 
-  message("Minimizing short distance LD...")
-  message("    snp.ld = ", snp.ld)
+  if (verbose) if (verbose) message("Minimizing short distance LD...")
+  if (verbose) if (verbose) message("    snp.ld = ", snp.ld)
 
   snp.locus <- dplyr::distinct(data, LOCUS, MARKERS, .keep_all = TRUE) %>%
     dplyr::arrange(LOCUS, MARKERS)
@@ -298,7 +306,7 @@ snp_ld <- function(
 
   if (nrow(locus.stats) > 1) {
     range.number.snp.locus <- range(locus.stats$SNP_N, na.rm = TRUE)
-    message("    The range in the number of SNP/locus is: ", stringi::stri_join(range.number.snp.locus, collapse = "-"))
+    if (verbose) if (verbose) message("    The range in the number of SNP/locus is: ", stringi::stri_join(range.number.snp.locus, collapse = "-"))
     # Random selection ---------------------------------------------------------
     if (snp.ld == "random") {
       snp.select <- snp.locus %>%
@@ -306,9 +314,8 @@ snp_ld <- function(
         dplyr::sample_n(tbl = ., size = 1, replace = FALSE)
       snp.before <- nrow(snp.locus)
       snp.after <- nrow(snp.select)
-      message("    Number of SNP before = ", snp.before)
-      message("    Number of SNP removed = ", snp.before - snp.after)
-      message("    Number of SNP after = ", snp.after)
+      n.markers <- stringi::stri_join(snp.before, snp.before - snp.after, snp.after, sep = " / ")
+      if (verbose) message("    Number of SNPs before / blacklisted / after: ", n.markers)
     }#End snp random
 
     # Fist SNP on the read -----------------------------------------------------
@@ -318,9 +325,8 @@ snp_ld <- function(
         dplyr::summarise(POS = min(POS))
       snp.before <- nrow(snp.locus)
       snp.after <- nrow(snp.select)
-      message("    Number of SNP before = ", snp.before)
-      message("    Number of SNP removed = ", snp.before - snp.after)
-      message("    Number of SNP after = ", snp.after)
+      n.markers <- stringi::stri_join(snp.before, snp.before - snp.after, snp.after, sep = " / ")
+      if (verbose) message("    Number of SNPs before / blacklisted / after: ", n.markers)
     }#End snp first
 
     # Last SNP on the read -----------------------------------------------------
@@ -330,9 +336,8 @@ snp_ld <- function(
         dplyr::summarise(POS = max(POS))
       snp.before <- nrow(snp.locus)
       snp.after <- nrow(snp.select)
-      message("    Number of SNP before = ", snp.before)
-      message("    Number of SNP removed = ", snp.before - snp.after)
-      message("    Number of SNP after = ", snp.after)
+      n.markers <- stringi::stri_join(snp.before, snp.before - snp.after, snp.after, sep = " / ")
+      if (verbose) message("    Number of SNPs before / blacklisted / after: ", n.markers)
     }#End snp last
 
     # Middle SNP on the read -----------------------------------------------------
@@ -345,8 +350,8 @@ snp_ld <- function(
         dplyr::select(LOCUS)
 
       if (nrow(pick.middle) == 0) {
-        message("IMPORTANT: the data doesn't have more than 3 SNPs per locus")
-        message("    First SNP will be selected instead...")
+        if (verbose) message("IMPORTANT: the data doesn't have more than 3 SNPs per locus")
+        if (verbose) message("    First SNP will be selected instead...")
         snp.select <- snp.locus %>%
           dplyr::group_by(LOCUS) %>%
           dplyr::summarise(POS = min(POS))
@@ -356,7 +361,7 @@ snp_ld <- function(
         keep.first <- snp.locus.prep %>%
           dplyr::filter(n <= 2) %>%
           dplyr::select(LOCUS)
-        message("    Number of locus with first SNP selected: ", nrow(keep.first))
+        if (verbose) message("    Number of locus with first SNP selected: ", nrow(keep.first))
         keep.first.select <- snp.locus %>%
           dplyr::filter(LOCUS %in% keep.first$LOCUS) %>%
           dplyr::group_by(LOCUS) %>%
@@ -369,15 +374,14 @@ snp_ld <- function(
           dplyr::filter(POS != max(POS)) %>% # remove the last SNP
           dplyr::sample_n(tbl = ., size = 1, replace = FALSE) # pick one at random
 
-        message("    Number of locus with random middle SNP selected: ", nrow(pick.middle))
+        if (verbose) message("    Number of locus with random middle SNP selected: ", nrow(pick.middle))
         snp.select <- dplyr::bind_rows(keep.first.select, pick.middle.select) %>%
           dplyr::arrange(LOCUS, POS)
       }
       snp.before <- nrow(snp.locus)
       snp.after <- nrow(snp.select)
-      message("    Number of SNP before = ", snp.before)
-      message("    Number of SNP removed = ", snp.before - snp.after)
-      message("    Number of SNP after = ", snp.after)
+      n.markers <- stringi::stri_join(snp.before, snp.before - snp.after, snp.after, sep = " / ")
+      if (verbose) message("    Number of SNPs before / blacklisted / after: ", n.markers)
     }#End snp middle
 
     # SNP with max MAF on the read -----------------------------------------------
@@ -484,7 +488,7 @@ snp_ld <- function(
             markers %>%
               dplyr::bind_cols(
                 SeqArray::seqAlleleCount(
-                  gdsfile = res.snp.ld$data.gds,
+                  gdsfile = res.ld$data.gds,
                   ref.allele = NULL,
                   .progress = TRUE,
                   parallel = parallel.core) %>%
@@ -534,8 +538,8 @@ snp_ld <- function(
 
       snp.before <- nrow(snp.locus)
       snp.after <- nrow(snp.select)
-      n.markers <- stringi::stri_join(snp.before, snp.before - snp.after, snp.after, sep = "/")
-      message("    Number of markers before/blacklisted/after: ", n.markers)
+      n.markers <- stringi::stri_join(snp.before, snp.before - snp.after, snp.after, sep = " / ")
+      if (verbose) message("    Number of SNPs before / blacklisted / after: ", n.markers)
       snp.locus <- markers <- NULL
     }#End snp maf
 
@@ -545,21 +549,21 @@ snp_ld <- function(
     if (data.type == "tbl_df") {
       data <- dplyr::filter(data, MARKERS %in% snp.select$MARKERS)
     } else {
-      res.snp.ld$whitelist.snp.ld <- snp.select
-      res.snp.ld$blacklist.snp.ld <- dplyr::filter(data, !MARKERS %in% snp.select$MARKERS)
-      data <- res.snp.ld$whitelist.snp.ld
+      res.ld$whitelist.snp.ld <- snp.select
+      res.ld$blacklist.snp.ld <- dplyr::filter(data, !MARKERS %in% snp.select$MARKERS)
+      data <- res.ld$whitelist.snp.ld
 
       # updating the GDS object ------------------------------------------------
-      SeqArray::seqSetFilter(object = res.snp.ld$data.gds,
+      SeqArray::seqSetFilter(object = res.ld$data.gds,
                              variant.id = data$VARIANT_ID,
                              verbose = FALSE)
 
     }
-    message("    Filtering the dataset to minimize LD by keeping only 1 SNP per locus")
+    # if (verbose) message("    Filtering the dataset to minimize LD by keeping only 1 SNP per locus")
   } else {
-    message("    There is no variation in the number of SNP/locus across the data")
-    data <- res.snp.ld$whitelist.snp.ld <- snp.locus
-    res.snp.ld$blacklist.snp.ld <- NULL
+    if (verbose) message("    There is no variation in the number of SNP/locus across the data")
+    data <- res.ld$whitelist.snp.ld <- snp.locus
+    res.ld$blacklist.snp.ld <- NULL
   }
   # Note to myself:
   # locus.stats: this stats could be written in directory or output in res
@@ -567,299 +571,97 @@ snp_ld <- function(
 
 
   # Long distance LD pruning ---------------------------------------------------
-
   if (!is.null(ld.threshold)) {
-    # updating GDS object
     want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS")
-    markers <- variant.id.select <- suppressWarnings(
+    markers <- suppressWarnings(
       dplyr::select(data, dplyr::one_of(want)) %>%
         dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
         dplyr::arrange(VARIANT_ID))
 
+    chrom.tick <- dplyr::distinct(markers, CHROM) %>%
+      dplyr::mutate(
+        CHROM_TICK = stringi::stri_join(seq(from = 1, to = n(), by = 1), n(), sep = "/"))
 
-    # # Test with 10000 markers
-    # random.markers <- 5000
-    # markers <- variant.id.select <- dplyr::sample_n(
-    #   tbl = variant.id.select, size = random.markers) %>%
-    #   dplyr::arrange(VARIANT_ID)
+    markers %<>% dplyr::left_join(chrom.tick, by = "CHROM") %>% dplyr::arrange(VARIANT_ID)
 
-    variant.id.select <- variant.id.select %>%
+    chrom.tick <- chrom.tick$CHROM
+    variant.id.select <- markers %>%
       dplyr::select(VARIANT_ID) %>%
       purrr::flatten_int(.)
 
-    # Apply the filter on the gds ...
-    # SeqArray::seqSetFilter(object = res.snp.ld$data.gds,
-    #                        variant.id = variant.id.select, verbose = FALSE)
     n.markers <- length(variant.id.select)
+    # LONG LD with MISSING -----------------------------------------------------
     if (long.ld.missing) {
-      message("Long distance LD pruning with missing data")
-      message("Computing LD by  CHROM/scaffold...")
-      chrom.select <- markers %>% split(x = ., f = .$CHROM)
+      if (verbose) message("Long distance LD pruning with missing data")
+      chrom.select <- markers %>%
+        dplyr::mutate(CHROM = factor(x = CHROM, levels = chrom.tick, ordered = TRUE)) %>%
+        split(x = ., f = .$CHROM)
+      n.chrom <- length(chrom.select)
+      if (verbose) message("Computing LD by CHROM/scaffold (n = ", n.chrom, "), with LD threshold: ", ld.threshold)
+
       # chrom.select <- chrom.select[1:10]
       # chrom.select <- chrom.select[[9]]
-      ld_chrom_missing <- function(chrom.select, x, data.type) {
-        message("Chrom: ", unique(chrom.select$CHROM))
-        message("    number SNPs: ", length(chrom.select$VARIANT_ID))
-        # save the filters------------------------------------------------------
-        w.m <- SeqArray::seqGetData(x, "variant.id")
-        w.s <- SeqArray::seqGetData(x, "sample.id")
 
-        # Adjusting the parallel.core argument ---------------------------------
-        # SNPRelate doesnt like when lower than number of markers used...
-        parallel.core.temp <- max(1L, length(chrom.select$MARKERS))
-        if (parallel.core <= parallel.core.temp) {
-          parallel.core.temp <- parallel.core
-        }
+      # if (verbose) message("Pruning markers in long distance LD...")
+      # With furrr
+      # chrom.ld <- furrr::future_map_dfr(.x = chrom.select,
+      #                           .f = ld_chrom_missing,
+      #                           x = res.ld$data.gds,
+      #                           data.type = data.type,
+      #                           ld.threshold = ld.threshold,
+      #                           parallel.core = parallel.core,
+      #                           verbose = FALSE,
+      #                           .progress = TRUE)
 
-        if (nrow(chrom.select) > 1) {
-          res.chrom <- SNPRelate::snpgdsLDMat(
-            gdsobj = x,
-            snp.id = chrom.select$VARIANT_ID,
-            sample.id = w.s,
-            slide = -1,
-            mat.trim = FALSE,
-            method = "r", #composite and corr option are the same with 0, 1, 2 gt coding
-            num.thread = parallel.core.temp,
-            with.id = TRUE,
-            verbose = FALSE) %$%
-            LD %>%
-            magrittr::set_colnames(x = ., chrom.select$MARKERS) %>%
-            magrittr::set_rownames(x = ., chrom.select$MARKERS)
-
-          # The function SNPRelate::snpgdsLDMat also set the filter
-          # to the chosen markers and samples...
-          # check <- SeqArray::seqGetFilter(x)
-          # length(check$sample.sel[check$sample.sel])
-          # length(check$variant.sel[check$variant.sel])
-          # n.markers
-
-
-          # work on the output ---------------------------------------------------------
-          # long.distance.ld <- long.distance.ld^2
-
-          # Full matrix
-          # if (ld.wide) {
-          #   # generate a tibble
-          #   filename.ld.wide <- stringi::stri_join(filename, ".wide")
-          #   message("Writing LD wide tibble file: ", filename.ld.wide)
-          #   radiator::write_rad(
-          #     data = dplyr::bind_cols(tibble::data_frame(
-          #       MARKERS_A = rownames(res.snp.ld$ld.tibble)),
-          #       tibble::as_data_frame(res.snp.ld$ld.tibble)),
-          #     path = filename.ld.wide)
-          # }
-
-          # LD tibble long...
-          # Here we want the tibble in long format with LD values in one column
-          # message("Generating LD tibble...")
-          # we don't need the full matrix
-          res.chrom[lower.tri(res.chrom, diag = TRUE)] <- rlang::na_dbl
-
-          # stats and figures----------------------------------------------------------------------
-          # if (ld.figures) {
-          #   message("Generating statistics")
-          #   res.snp.ld$ld.summary <- tibble::tibble(
-          #     LD = as.vector(res.snp.ld$ld.tibble[!is.na(res.snp.ld$ld.tibble)])) %>%
-          #     dplyr::summarise(
-          #       MIN = min(LD, na.rm = TRUE),
-          #       Q25 = stats::quantile(LD, 0.25, na.rm = TRUE),
-          #       MEDIAN = stats::median(LD, na.rm = TRUE),
-          #       Q75 = stats::quantile(LD, 0.75, na.rm = TRUE),
-          #       MAX = max(LD, na.rm = TRUE),
-          #       IQR = stats::IQR(LD, na.rm = TRUE)
-          #     ) %>%
-          #     dplyr::mutate(
-          #       OUTLIERS_LOW = Q25 - (1.5 * IQR),
-          #       OUTLIERS_HIGH =  Q75 + (1.5 * IQR),
-          #       GROUP = 1
-          #     )
-          #
-          #   if (res.snp.ld$ld.summary$OUTLIERS_LOW < 0) {
-          #     res.snp.ld$ld.summary$OUTLIERS_LOW <- res.snp.ld$ld.summary$MIN
-          #   }
-          #
-          #   message("Generating figures...")
-          #   res.snp.ld$ld.boxplot <- boxplot_stats(
-          #     data = res.snp.ld$ld.summary,
-          #     title = "Markers long distance linkage disequilibrium (LD)",
-          #     x.axis.title = NULL,
-          #     y.axis.title = "Long distance linkage disequilibrium (r)",
-          #     bp.filename = "ld.boxplot.pdf")
-          #
-          #   # res.snp.ld$ld.no.outliers.tibble <- dplyr::filter(res.snp.ld$ld.tibble, LD < res.snp.ld$ld.summary$OUTLIERS_HIGH & LD > res.snp.ld$ld.summary$OUTLIERS_LOW)
-          #
-          #   # Note to myself : interesting but not sure worth the time exploring...
-          #
-          #
-          #   # res.snp.ld$ld.no.outliers.summary <- tibble::tibble(
-          #   #   x = 1,
-          #   #   MIN = min(res.snp.ld$ld.no.outliers.tibble$LD, na.rm = TRUE),
-          #   #   Q25 = stats::quantile(res.snp.ld$ld.no.outliers.tibble$LD, 0.25, na.rm = TRUE),
-          #   #   MEDIAN = stats::median(res.snp.ld$ld.no.outliers.tibble$LD, na.rm = TRUE),
-          #   #   Q75 = stats::quantile(res.snp.ld$ld.no.outliers.tibble$LD, 0.75, na.rm = TRUE),
-          #   #   MAX = max(res.snp.ld$ld.no.outliers.tibble$LD, na.rm = TRUE),
-          #   #   IQR = stats::IQR(res.snp.ld$ld.no.outliers.tibble$LD, na.rm = TRUE),
-          #   #   OUTLIERS_LOW = Q25 - (1.5 * IQR),
-          #   #   OUTLIERS_HIGH =  Q75 + (1.5 * IQR)
-          #   # )
-          #   # if (res.snp.ld$ld.no.outliers.summary$OUTLIERS_LOW < 0) res.snp.ld$ld.no.outliers.summary$OUTLIERS_LOW <- res.snp.ld$ld.no.outliers.summary$MIN
-          #   #
-          #   # element.text <- ggplot2::element_text(size = 10,
-          #   #                                       family = "Helvetica", face = "bold")
-          #   #
-          #   # res.snp.ld$ld.boxplot.no.outliers <- ggplot2::ggplot(
-          #   #   data = res.snp.ld$ld.no.outliers.summary, ggplot2::aes(x)) +
-          #   #   ggplot2::geom_boxplot(
-          #   #     ggplot2::aes(ymin = MIN, lower = Q25, middle = MEDIAN,
-          #   #                  upper = Q75, ymax = MAX), stat = "identity") +
-          #   #   ggplot2::labs(
-          #   #     y = "Long distance linkage disequilibrium",
-          #   #     title = "Markers long distance linkage disequilibrium (LD)") +
-          #   #   ggplot2::theme_bw() +
-          #   #   ggplot2::theme(
-          #   #     plot.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold", hjust = 0.5),
-          #   #     legend.position = "none",
-          #   #     axis.title.x = ggplot2::element_blank(),
-          #   #     axis.title.y = element.text,
-          #   #     axis.text.x = ggplot2::element_blank(),
-          #   #     axis.ticks.x = ggplot2::element_blank()
-          #   #   )
-          #   # element.text <- NULL
-          #   # print(res.snp.ld$ld.boxplot.no.outliers)
-          #   # suppressMessages(ggplot2::ggsave(
-          #   #   filename = "ld.no.outliers.boxplot.pdf",
-          #   #   # filename = file.path(path.folder.coverage, "plot.coverage.boxplot.pdf"),
-          #   #   plot = res.snp.ld$ld.boxplot.no.outliers,
-          #   #   width = 15, height = 20,
-          #   #   dpi = 300, units = "cm", useDingbats = FALSE))
-          #
-          #
-          #   # res.snp.ld$ld.manhattan.plot
-          #   # if (manhattan.plot) {
-          #   #   res.snp.ld$ld.manhattan.plot <- res.snp.ld$ld.tibble %>%
-          #   #     # dplyr::mutate(X = "1") %>%
-          #   #     dplyr::group_by(LD) %>%
-          #   #     dplyr::tally(.) %>%
-          #   #     dplyr::ungroup(.) %>%
-          #   #     dplyr::mutate(X = "1") %>%
-          #   #     ggplot2::ggplot(data = .,
-          #   #                     ggplot2::aes(x = X, y = LD, size = n)) +
-          #   #     ggplot2::geom_jitter(alpha = 0.3, stat = "identity") +
-          #   #     ggplot2::labs(y = "LD") +
-          #   #     ggplot2::scale_size_area(name = "Pairs of markers", max_size = 6) +
-          #   #     ggplot2::theme_light() +
-          #   #     ggplot2::theme(
-          #   #       # legend.position = "none",
-          #   #       panel.grid.minor.x = ggplot2::element_blank(),
-          #   #       panel.grid.major.x = ggplot2::element_blank(),
-          #   #       # panel.grid.major.y = element_blank(),
-          #   #       axis.title.x = ggplot2::element_blank(),
-          #   #       axis.text.x = ggplot2::element_blank(),
-          #   #       axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-          #   #       axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
-          #   #     )
-          #   #
-          #   #   suppressMessages(ggplot2::ggsave(
-          #   #     filename = "ld.manhattan.plot.png",
-          #   #     plot = res.snp.ld$ld.manhattan.plot,
-          #   #     width = 15, height = 20,
-          #   #     dpi = 100, units = "cm"#useDingbats = FALSE
-          #   #   ))
-          #   # }
-          # }#End ld.figures
-
-          # Generate the missingness stats -----------------------------------------
-          # message("Generate missingness stats")
-          if (data.type == "tbl_df") {
-            if (tibble::has_name(x, "GT")) {
-              markers.missing <- dplyr::filter(x, GT != "000000") %>%
-                dplyr::group_by(MARKERS) %>%
-                dplyr::summarise(GENOTYPED_PROP = length(GT) / n.ind)
-            } else {
-              markers.missing <- dplyr::filter(x, !is.na(GT_BIN)) %>%
-                dplyr::group_by(MARKERS) %>%
-                dplyr::summarise(GENOTYPED_PROP = length(GT_BIN) / n.ind)
-            }
-          } else {
-            markers.missing <- tibble::tibble(
-              MARKERS = chrom.select$MARKERS,
-              MISSING_PROP = SeqArray::seqMissing(
-                gdsfile = x,
-                per.variant = TRUE, .progress = TRUE, parallel = parallel.core.temp)) %>%
-              dplyr::mutate(GENOTYPED_PROP = 1 - MISSING_PROP, MISSING_PROP = NULL)
-          }
-
-          # Pruning the SNPs -------------------------------------------------------
-          # message("Pruning markers in long distance LD...")
-
-          # These LD values are not used anyway during the pruning
-          res.chrom[res.chrom <= ld.threshold] <- rlang::na_dbl
-          # remove rows and cols with all missing values
-          res.chrom <- res.chrom[rowSums(res.chrom, na.rm = TRUE) > 0, colSums(res.chrom, na.rm = TRUE) > 0, drop = FALSE]
-
-          if (length(res.chrom) >= 1) {
-            res.chrom <- ld2df(x = res.chrom)
-            ld.markers <- ld_pruning(
-              ld.tibble = res.chrom,
-              stats = markers.missing,
-              ld.threshold = ld.threshold
-            )
-          } else {
-            message("    with LD threshold: ", ld.threshold, " SNPs blacklisted: 0")
-            ld.markers <- list(blacklist.markers = NULL)
-          }
-        } else {
-          message("    with LD threshold: ", ld.threshold, " SNPs blacklisted: 0")
-          ld.markers <- list(blacklist.markers = NULL)
-        }
-        # Reset the filter of the GDS-------------------------------------------
-        SeqArray::seqSetFilter(object = x, variant.id = w.m, sample.id = w.s,
-                               verbose = FALSE)
-        return(ld.markers$blacklist.markers)
-      }#End ld_chrom_missing
-
-      # message("Pruning markers in long distance LD...")
+      # with purrr:
       chrom.ld <- purrr::map_df(.x = chrom.select,
                                 .f = ld_chrom_missing,
-                                x = res.snp.ld$data.gds,
-                                data.type = data.type)
+                                x = res.ld$data.gds,
+                                data.type = data.type,
+                                ld.threshold = ld.threshold,
+                                parallel.core = parallel.core,
+                                verbose = verbose)
 
-      # message("Generating whitelist and blacklist of markers")
+      # if (verbose) message("Generating whitelist and blacklist of markers")
       markers %<>%
         dplyr::mutate(
           FILTER_LONG_LD = dplyr::if_else(
             MARKERS %in% chrom.ld$MARKERS, FALSE, TRUE))
       chrom.ld <- NULL
-      res.snp.ld$whitelist.snp.ld <- dplyr::filter(markers, FILTER_LONG_LD)
-      message("    Number of SNPs after pruning for long distance LD: ",
-              nrow(res.snp.ld$whitelist.snp.ld))
+      res.ld$whitelist.snp.ld <- dplyr::filter(markers, FILTER_LONG_LD) %>%
+        dplyr::select(-FILTER_LONG_LD)
 
-      res.snp.ld$blacklist.snp.ld <- dplyr::filter(markers, !FILTER_LONG_LD)
 
-      message("    Number of prunned SNPs based on long distance LD: ",
-              nrow(res.snp.ld$blacklist.snp.ld))
+      if (is.null(res.ld$blacklist.snp.ld)) {
+        res.ld$blacklist.snp.ld <- dplyr::filter(markers, !FILTER_LONG_LD) %>%
+          dplyr::select(-FILTER_LONG_LD)
+      } else {
+        res.ld$blacklist.snp.ld  %<>% dplyr::bind_rows(
+          dplyr::filter(markers, !FILTER_LONG_LD) %>%
+            dplyr::select(-FILTER_LONG_LD))
+      }
+
+      n.before <- nrow(markers)
+      n.after <- nrow(res.ld$whitelist.snp.ld)
+      if (verbose) message("\nNumber of SNPs (before / blacklisted / after) pruning for long distance LD: ",
+              n.before, " / ", n.before - n.after, " / ", n.after)
 
       # updating the GDS object ------------------------------------------------
       if (data.type == "tbl_df") {
-        data <- dplyr::filter(data, MARKERS %in% res.snp.ld$whitelist.snp.ld$MARKERS)
+        data <- dplyr::filter(data, MARKERS %in% res.ld$whitelist.snp.ld$MARKERS)
       } else {
-        SeqArray::seqSetFilter(object = res.snp.ld$data.gds,
-                               variant.id = res.snp.ld$whitelist.snp.ld$VARIANT_ID,
-                               verbose = TRUE)
+        SeqArray::seqSetFilter(object = res.ld$data.gds,
+                               variant.id = res.ld$whitelist.snp.ld$VARIANT_ID,
+                               verbose = FALSE)
       }
 
     } else {
       # Pruning with SNPRelate::snpgdsLDpruning --------------------------------------
       # problem with this one is that missigness is unaccounted for during SNP selection
       # SNPs are randomly selected...
-      message("Long distance LD pruning WITHOUT missing data stats")
+      if (verbose) message("Long distance LD pruning WITHOUT missing data stats")
       # ld.threshold <- 0.8
       ld.markers <- list()
-
-      # TODO:
-      # parallelize with and without the use of missing
-      # with SNPRelate::snpgdsLDpruning, split a whitelist of markers based
-      # on chromosome
 
       # So far test shows that there's no gain in speed to do it in parallel
       # more test with different datasets required (tested 2...)
@@ -905,16 +707,16 @@ snp_ld <- function(
       #     X = .,
       #     FUN = prune_ld_par,
       #     mc.cores = parallel.core,
-      #     data = res.snp.ld$data.gds, threshold = ld.threshold
+      #     data = res.ld$data.gds, threshold = ld.threshold
       #   ) %>%
       #   purrr::flatten_int(.)
       # length(unique(check$CHROM))
 
 
       ld.markers$whitelist.markers <- SNPRelate::snpgdsLDpruning(
-        gdsobj = res.snp.ld$data.gds,
+        gdsobj = res.ld$data.gds,
         snp.id = variant.id.select,
-        sample.id = SeqArray::seqGetData(res.snp.ld$data.gds, "sample.id"),
+        sample.id = SeqArray::seqGetData(res.ld$data.gds, "sample.id"),
         autosome.only = FALSE,
         remove.monosnp = TRUE,
         maf = NaN,
@@ -928,40 +730,42 @@ snp_ld <- function(
       ld.markers$blacklist.markers <- purrr::keep(
         .x = variant.id.select,
         .p = !variant.id.select %in% ld.markers$whitelist.markers)
-      markers <- markers %>%
+      markers %<>%
         dplyr::mutate(
           FILTER_LONG_LD = dplyr::if_else(
             VARIANT_ID %in% ld.markers$whitelist.markers, TRUE, FALSE))
       ld.markers <- NULL
-      res.snp.ld$whitelist.snp.ld <- dplyr::filter(markers, FILTER_LONG_LD)
-      message("    Number of SNPs after pruning for long distance LD: ",
-              nrow(res.snp.ld$whitelist.snp.ld))
-
-      res.snp.ld$blacklist.snp.ld <- dplyr::filter(markers, !FILTER_LONG_LD)
-
-      message("    Number of prunned SNPs based on long distance LD: ",
-              nrow(res.snp.ld$blacklist.snp.ld))
-
+      res.ld$whitelist.snp.ld <- dplyr::filter(markers, FILTER_LONG_LD)
+      if (is.null(res.ld$blacklist.snp.ld)) {
+        res.ld$blacklist.snp.ld <- dplyr::filter(markers, !FILTER_LONG_LD)
+      } else {
+        res.ld$blacklist.snp.ld %<>%
+          dplyr::bind_rows(dplyr::filter(markers, !FILTER_LONG_LD))
+      }
+      n.before <- nrow(markers)
+      n.after <- nrow(res.ld$whitelist.snp.ld)
+      if (verbose) message("\nNumber of SNPs (before / blacklisted / after) pruning for long distance LD: ",
+              n.before, " / ", n.before - n.after, " / ", n.after)
       # updating the GDS object ------------------------------------------------
       if (data.type == "tbl_df") {
-        data <- dplyr::filter(data, MARKERS %in% res.snp.ld$whitelist.snp.ld$MARKERS)
+        data <- dplyr::filter(data, MARKERS %in% res.ld$whitelist.snp.ld$MARKERS)
       } else {
-        SeqArray::seqSetFilter(object = res.snp.ld$data.gds,
-                               variant.id = res.snp.ld$whitelist.snp.ld$VARIANT_ID,
+        SeqArray::seqSetFilter(object = res.ld$data.gds,
+                               variant.id = res.ld$whitelist.snp.ld$VARIANT_ID,
                                verbose = FALSE)
 
       }
     }
   }#End long distance LD pruning
 
-  message("    Generating whitelist and blacklist of markers")
-  message("\nComputation time for LD: ", round((proc.time() - timing)[[3]]), " sec")
+  if (verbose) message("Generating whitelist and blacklist of markers")
+  if (verbose) message("\nComputation time for LD: ", round((proc.time() - timing)[[3]]), " sec")
   options(width = opt.change)
 
   if (data.type == "tbl_df") {
     return(data)
   } else {
-    return(res.snp.ld)
+    return(res.ld)
   }
 }#End snp_ld
 
@@ -975,10 +779,7 @@ snp_ld <- function(
 #' @export
 #' @keywords internal
 ld2df <- function(x) {
-  # x <- ld.upper.matrix
   x <- as.matrix(x)
-  # diag(x) <- NA
-  # x[lower.tri(x)] <- NA
   x <- dplyr::bind_cols(tibble::data_frame(MARKERS_A = rownames(x)),
                         tibble::as_data_frame(x)) %>%
     data.table::as.data.table(.) %>%
@@ -996,7 +797,7 @@ ld2df <- function(x) {
 #' @name ld_pruning
 #' @title Prune dataset based on LD.
 #' @description Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
-#' Prune dataset based on LD. Use missingness to keep 1 SNP.
+#' Prune dataset based on LD.
 
 #' @param ld.tibble (path) The markers LD pairwise data.
 #' Default: \code{ld.tibble = NULL}.
@@ -1004,7 +805,7 @@ ld2df <- function(x) {
 #' Default: \code{stats = NULL}.
 #' @param ld.threshold (double) The threshold to prune SNPs in LD.
 #' Default: \code{ld.threshold = 0.8}.
-
+#' @param verbose (logical, optional) Default: \code{verbose = TRUE}.
 #' @return A list with blacklisted SNPs.  Write the blacklist in the working
 #' directory.
 #' @export
@@ -1015,7 +816,8 @@ ld2df <- function(x) {
 ld_pruning <- function(
   ld.tibble = NULL,
   stats = NULL,
-  ld.threshold = 0.8
+  ld.threshold = 0.8,
+  verbose = TRUE
 ) {
   #test
   # ld.tibble = res$ld.tibble
@@ -1070,22 +872,268 @@ ld_pruning <- function(
           dplyr::sample_n(tbl = ., size = 1) %>% # make sure only 1 is selected
           dplyr::select(MARKERS)
 
-        if (nrow(whitelist.markers) > 0) res$whitelist.markers <- dplyr::bind_rows(res$whitelist.markers, whitelist.markers)
+        if (nrow(whitelist.markers) > 0) res$whitelist.markers %<>% dplyr::bind_rows(whitelist.markers)
 
         blacklist.markers <- dplyr::filter(dups, !MARKERS %in% whitelist.markers$MARKERS) %>%
           dplyr::select(MARKERS)
 
-        if (nrow(blacklist.markers) > 0) res$blacklist.markers <- dplyr::bind_rows(res$blacklist.markers, blacklist.markers)
+        if (nrow(blacklist.markers) > 0) res$blacklist.markers %<>% dplyr::bind_rows(blacklist.markers)
       }
     }
     dups <- blacklist.markers <- whitelist.markers <- i <- new.dups <- NULL
     res$blacklist.markers <- dplyr::distinct(res$blacklist.markers, MARKERS)
     res$whitelist.markers <- NULL
-    message("    with LD threshold: ", ld.threshold, " SNPs blacklisted: ", nrow(res$blacklist.markers))
+    if (verbose) message("    SNPs blacklisted: ", nrow(res$blacklist.markers))
 
   } else {
-    message("    with LD threshold: ", ld.threshold, " SNPs blacklisted: 0")
+    if (verbose) message("    SNPs blacklisted: 0")
     res <- list(blacklist.markers = tibble::tibble(MARKERS = character(0)))
   }
   return(res)
 } # End ld_pruning
+
+
+# ld_chrom_missing  ------------------------------------------------------------------
+
+#' @name ld_chrom_missing
+#' @title Prune dataset based on LD and missingness.
+#' @description Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
+#' Prune dataset based on LD, uses missingness to keep 1 SNP. This is the function
+#' that does it for 1 chrom. It's then used with purrr::map to run seriall on all chrom.
+#' @param chrom.select The split dataset by chromosome.
+#' @param x The GDS object.
+#' @param data.type The type of dataset.
+#' @param ld.threshold The LD threshold.
+#' @param parallel.core The number of CPU.
+#' @param verbose (logical, optional) Default: \code{verbose = TRUE}.
+#' @return A list with blacklisted SNPs.
+#' @export
+#' @keywords internal
+#' @rdname remove_duplicates
+#' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
+
+ld_chrom_missing <- function(chrom.select,
+                             x,
+                             data.type,
+                             ld.threshold,
+                             parallel.core = parallel::detectCores() - 1,
+                             verbose = TRUE) {
+  if (verbose) message("Chrom: ", unique(chrom.select$CHROM), " SNPs number: ", length(chrom.select$VARIANT_ID), "    (", unique(chrom.select$CHROM_TICK), ")")
+
+  # save the filters------------------------------------------------------
+  w.m <- SeqArray::seqGetData(x, "variant.id")
+  w.s <- SeqArray::seqGetData(x, "sample.id")
+
+  # Adjusting the parallel.core argument ---------------------------------
+  # SNPRelate doesnt like when lower than number of markers used...
+  parallel.core.temp <- max(1L, length(chrom.select$MARKERS))
+  if (parallel.core <= parallel.core.temp) {
+    parallel.core.temp <- parallel.core
+  }
+
+  if (nrow(chrom.select) > 1) {
+    res.chrom <- SNPRelate::snpgdsLDMat(
+      gdsobj = x,
+      snp.id = chrom.select$VARIANT_ID,
+      sample.id = w.s,
+      slide = -1,
+      mat.trim = FALSE,
+      method = "r", #composite and corr option are the same with 0, 1, 2 gt coding
+      num.thread = parallel.core.temp,
+      with.id = TRUE,
+      verbose = FALSE) %$%
+      LD %>%
+      magrittr::set_colnames(x = ., chrom.select$MARKERS) %>%
+      magrittr::set_rownames(x = ., chrom.select$MARKERS)
+
+    # The function SNPRelate::snpgdsLDMat also set the filter
+    # to the chosen markers and samples...
+    # check <- SeqArray::seqGetFilter(x)
+    # length(check$sample.sel[check$sample.sel])
+    # length(check$variant.sel[check$variant.sel])
+    # n.markers
+
+
+    # work on the output ---------------------------------------------------------
+    # long.distance.ld <- long.distance.ld^2
+
+    # Full matrix
+    # if (ld.wide) {
+    #   # generate a tibble
+    #   filename.ld.wide <- stringi::stri_join(filename, ".wide")
+    #   if (verbose) message("Writing LD wide tibble file: ", filename.ld.wide)
+    #   radiator::write_rad(
+    #     data = dplyr::bind_cols(tibble::data_frame(
+    #       MARKERS_A = rownames(res.ld$ld.tibble)),
+    #       tibble::as_data_frame(res.ld$ld.tibble)),
+    #     path = filename.ld.wide)
+    # }
+
+    # LD tibble long...
+    # Here we want the tibble in long format with LD values in one column
+    # if (verbose) message("Generating LD tibble...")
+    # we don't need the full matrix
+    res.chrom[lower.tri(res.chrom, diag = TRUE)] <- rlang::na_dbl
+
+    # stats and figures----------------------------------------------------------------------
+    # if (ld.figures) {
+    #   if (verbose) message("Generating statistics")
+    #   res.ld$ld.summary <- tibble::tibble(
+    #     LD = as.vector(res.ld$ld.tibble[!is.na(res.ld$ld.tibble)])) %>%
+    #     dplyr::summarise(
+    #       MIN = min(LD, na.rm = TRUE),
+    #       Q25 = stats::quantile(LD, 0.25, na.rm = TRUE),
+    #       MEDIAN = stats::median(LD, na.rm = TRUE),
+    #       Q75 = stats::quantile(LD, 0.75, na.rm = TRUE),
+    #       MAX = max(LD, na.rm = TRUE),
+    #       IQR = stats::IQR(LD, na.rm = TRUE)
+    #     ) %>%
+    #     dplyr::mutate(
+    #       OUTLIERS_LOW = Q25 - (1.5 * IQR),
+    #       OUTLIERS_HIGH =  Q75 + (1.5 * IQR),
+    #       GROUP = 1
+    #     )
+    #
+    #   if (res.ld$ld.summary$OUTLIERS_LOW < 0) {
+    #     res.ld$ld.summary$OUTLIERS_LOW <- res.ld$ld.summary$MIN
+    #   }
+    #
+    #   if (verbose) message("Generating figures...")
+    #   res.ld$ld.boxplot <- boxplot_stats(
+    #     data = res.ld$ld.summary,
+    #     title = "Markers long distance linkage disequilibrium (LD)",
+    #     x.axis.title = NULL,
+    #     y.axis.title = "Long distance linkage disequilibrium (r)",
+    #     bp.filename = "ld.boxplot.pdf")
+    #
+    #   # res.ld$ld.no.outliers.tibble <- dplyr::filter(res.ld$ld.tibble, LD < res.ld$ld.summary$OUTLIERS_HIGH & LD > res.ld$ld.summary$OUTLIERS_LOW)
+    #
+    #   # Note to myself : interesting but not sure worth the time exploring...
+    #
+    #
+    #   # res.ld$ld.no.outliers.summary <- tibble::tibble(
+    #   #   x = 1,
+    #   #   MIN = min(res.ld$ld.no.outliers.tibble$LD, na.rm = TRUE),
+    #   #   Q25 = stats::quantile(res.ld$ld.no.outliers.tibble$LD, 0.25, na.rm = TRUE),
+    #   #   MEDIAN = stats::median(res.ld$ld.no.outliers.tibble$LD, na.rm = TRUE),
+    #   #   Q75 = stats::quantile(res.ld$ld.no.outliers.tibble$LD, 0.75, na.rm = TRUE),
+    #   #   MAX = max(res.ld$ld.no.outliers.tibble$LD, na.rm = TRUE),
+    #   #   IQR = stats::IQR(res.ld$ld.no.outliers.tibble$LD, na.rm = TRUE),
+    #   #   OUTLIERS_LOW = Q25 - (1.5 * IQR),
+    #   #   OUTLIERS_HIGH =  Q75 + (1.5 * IQR)
+    #   # )
+    #   # if (res.ld$ld.no.outliers.summary$OUTLIERS_LOW < 0) res.ld$ld.no.outliers.summary$OUTLIERS_LOW <- res.ld$ld.no.outliers.summary$MIN
+    #   #
+    #   # element.text <- ggplot2::element_text(size = 10,
+    #   #                                       family = "Helvetica", face = "bold")
+    #   #
+    #   # res.ld$ld.boxplot.no.outliers <- ggplot2::ggplot(
+    #   #   data = res.ld$ld.no.outliers.summary, ggplot2::aes(x)) +
+    #   #   ggplot2::geom_boxplot(
+    #   #     ggplot2::aes(ymin = MIN, lower = Q25, middle = MEDIAN,
+    #   #                  upper = Q75, ymax = MAX), stat = "identity") +
+    #   #   ggplot2::labs(
+    #   #     y = "Long distance linkage disequilibrium",
+    #   #     title = "Markers long distance linkage disequilibrium (LD)") +
+    #   #   ggplot2::theme_bw() +
+    #   #   ggplot2::theme(
+    #   #     plot.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold", hjust = 0.5),
+    #   #     legend.position = "none",
+    #   #     axis.title.x = ggplot2::element_blank(),
+    #   #     axis.title.y = element.text,
+    #   #     axis.text.x = ggplot2::element_blank(),
+    #   #     axis.ticks.x = ggplot2::element_blank()
+    #   #   )
+    #   # element.text <- NULL
+    #   # print(res.ld$ld.boxplot.no.outliers)
+    #   # suppressMessages(ggplot2::ggsave(
+    #   #   filename = "ld.no.outliers.boxplot.pdf",
+    #   #   # filename = file.path(path.folder.coverage, "plot.coverage.boxplot.pdf"),
+    #   #   plot = res.ld$ld.boxplot.no.outliers,
+    #   #   width = 15, height = 20,
+    #   #   dpi = 300, units = "cm", useDingbats = FALSE))
+    #
+    #
+    #   # res.ld$ld.manhattan.plot
+    #   # if (manhattan.plot) {
+    #   #   res.ld$ld.manhattan.plot <- res.ld$ld.tibble %>%
+    #   #     # dplyr::mutate(X = "1") %>%
+    #   #     dplyr::group_by(LD) %>%
+    #   #     dplyr::tally(.) %>%
+    #   #     dplyr::ungroup(.) %>%
+    #   #     dplyr::mutate(X = "1") %>%
+    #   #     ggplot2::ggplot(data = .,
+    #   #                     ggplot2::aes(x = X, y = LD, size = n)) +
+    #   #     ggplot2::geom_jitter(alpha = 0.3, stat = "identity") +
+    #   #     ggplot2::labs(y = "LD") +
+    #   #     ggplot2::scale_size_area(name = "Pairs of markers", max_size = 6) +
+    #   #     ggplot2::theme_light() +
+    #   #     ggplot2::theme(
+    #   #       # legend.position = "none",
+    #   #       panel.grid.minor.x = ggplot2::element_blank(),
+    #   #       panel.grid.major.x = ggplot2::element_blank(),
+    #   #       # panel.grid.major.y = element_blank(),
+    #   #       axis.title.x = ggplot2::element_blank(),
+    #   #       axis.text.x = ggplot2::element_blank(),
+    #   #       axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+    #   #       axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
+    #   #     )
+    #   #
+    #   #   suppressMessages(ggplot2::ggsave(
+    #   #     filename = "ld.manhattan.plot.png",
+    #   #     plot = res.ld$ld.manhattan.plot,
+    #   #     width = 15, height = 20,
+    #   #     dpi = 100, units = "cm"#useDingbats = FALSE
+    #   #   ))
+    #   # }
+    # }#End ld.figures
+
+    # Generate the missingness stats -----------------------------------------
+    # if (verbose) message("Generate missingness stats")
+    if (data.type == "tbl_df") {
+      if (tibble::has_name(x, "GT")) {
+        markers.missing <- dplyr::filter(x, GT != "000000") %>%
+          dplyr::group_by(MARKERS) %>%
+          dplyr::summarise(GENOTYPED_PROP = length(GT) / n.ind)
+      } else {
+        markers.missing <- dplyr::filter(x, !is.na(GT_BIN)) %>%
+          dplyr::group_by(MARKERS) %>%
+          dplyr::summarise(GENOTYPED_PROP = length(GT_BIN) / n.ind)
+      }
+    } else {
+      markers.missing <- tibble::tibble(
+        MARKERS = chrom.select$MARKERS,
+        MISSING_PROP = SeqArray::seqMissing(
+          gdsfile = x,
+          per.variant = TRUE, .progress = TRUE, parallel = parallel.core.temp)) %>%
+        dplyr::mutate(GENOTYPED_PROP = 1 - MISSING_PROP, MISSING_PROP = NULL)
+    }
+
+    # Pruning the SNPs -------------------------------------------------------
+    # if (verbose) message("Pruning markers in long distance LD...")
+
+    # These LD values are not used anyway during the pruning
+    res.chrom[res.chrom <= ld.threshold] <- rlang::na_dbl
+    # remove rows and cols with all missing values
+    res.chrom <- res.chrom[rowSums(res.chrom, na.rm = TRUE) > 0, colSums(res.chrom, na.rm = TRUE) > 0, drop = FALSE]
+
+    if (length(res.chrom) >= 1) {
+      res.chrom <- ld2df(x = res.chrom)
+      ld.markers <- ld_pruning(
+        ld.tibble = res.chrom,
+        stats = markers.missing,
+        ld.threshold = ld.threshold
+      )
+    } else {
+      if (verbose) message("    SNPs blacklisted: 0")
+      ld.markers <- list(blacklist.markers = NULL)
+    }
+  } else {
+    if (verbose) message("    SNPs blacklisted: 0")
+    ld.markers <- list(blacklist.markers = NULL)
+  }
+  # Reset the filter of the GDS-------------------------------------------
+  SeqArray::seqSetFilter(object = x, variant.id = w.m, sample.id = w.s,
+                         verbose = FALSE)
+  return(ld.markers$blacklist.markers)
+}#End ld_chrom_missing
