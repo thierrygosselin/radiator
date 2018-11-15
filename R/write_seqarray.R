@@ -1624,6 +1624,21 @@ write_seqarray <- function(
 
     # SNP LD -------------------------------------------------------------------
     if (!is.null(filter.short.ld)) {
+
+      # data = res$vcf.connection
+      # snp.ld = filter.short.ld
+      # maf.data = NULL
+      # ld.threshold = filter.long.ld
+      # parallel.core = parallel.core
+      # filename = NULL
+      # long.ld.missing = long.ld.missing
+      # keep.gds <- TRUE
+      # ld.figures <- TRUE
+      # ld.wide <- FALSE
+      # ld.tibble <- FALSE
+      # manhattan.plot <- FALSE
+      # long.ld.missing = FALSE
+
       filter.ld <- snp_ld(
         data = res$vcf.connection,
         snp.ld = filter.short.ld,
