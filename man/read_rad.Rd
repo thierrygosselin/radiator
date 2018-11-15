@@ -2,41 +2,63 @@
 % Please edit documentation in R/read_rad.R
 \name{read_rad}
 \alias{read_rad}
-\title{Read radiator file ending .rad}
+\title{Read radiator file ending .rad or .gds}
 \usage{
 read_rad(data, columns = NULL, from = 1, to = NULL,
   as.data.table = FALSE, old_format = FALSE)
 }
 \arguments{
-\item{data}{A file in the working directory ending with .rad,
+\item{data}{A file in the working directory ending with .rad or .gds,
 and produced by radiator, assigner or grur.}
 
-\item{columns}{Column names to read. The default is to read all all columns.}
+\item{columns}{(optional) For fst file. Column names to read. The default is to read all all columns.
+Default: \code{columns = NULL}.}
 
-\item{from}{Read data starting from this row number.}
+\item{from}{(optional) For fst file. Read data starting from this row number.
+Default: \code{from = 1}.}
 
-\item{to}{Read data up until this row number. The default is to read to the last row of the stored dataset.}
+\item{to}{(optional) For fst file. Read data up until this row number.
+The default is to read to the last row of the stored dataset.
+Default: \code{to = NULL}.}
 
-\item{as.data.table}{If TRUE, the result will be returned as a \code{data.table} object. Any keys set on
-dataset \code{x} before writing will be retained. This allows for storage of sorted datasets.}
+\item{as.data.table}{(optional, logical) For fst file. If \code{TRUE},
+the result will be returned as a \code{data.table} object.
+Any keys set on dataset \code{x} before writing will be retained.
+This allows for storage of sorted datasets.
+Default: \code{as.data.table = TRUE}.}
 
-\item{old_format}{use TRUE to read fst files generated with a fst package version lower than v0.8.0}
+\item{old_format}{(optional, logical) For fst file. Use \code{TRUE} to read fst
+files generated with a fst package version lower than v.0.8.0
+Default: \code{old_format = FALSE}.}
 }
 \value{
-A tidy data frame or GDS object in the global environment.
+A radiator tidy data frame or
+GDS object (with read/write permissions) in the global environment.
 }
 \description{
-Fast read of .rad file.
-Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
-and \href{https://github.com/thierrygosselin/assigner}{assigner}
-and might be of interest for users.
+Fast read of .rad or .gds file.
 The function uses \code{\link[fst]{read_fst}} or
 CoreArray Genomic Data Structure (\href{https://github.com/zhengxwen/gdsfmt}{GDS})
 file system.
+
+
+Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
+and \href{https://github.com/thierrygosselin/assigner}{assigner}
+and might be of interest for users.
 }
 \details{
-For GDS file system \strong{read_rad} will open the GDS connection file
-set the filters (variant and sample) based on the info found in the file.
+For GDS file system, \strong{read_rad} will open the GDS connection file
+set the filters (variants and samples) based on the info found in the file.
+}
+\examples{
+\dontrun{
+require(SeqArray)
+shark <- radiator::read_rad(data = "data.shark.gds")
+turtle <- radiator::read_rad(data = "data.turtle.rad")
+}
+}
+\seealso{
+\href{https://github.com/fstpackage/fst}{fst} and \href{https://github.com/zhengxwen/gdsfmt}{GDS}
 }
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}
