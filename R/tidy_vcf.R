@@ -333,15 +333,16 @@ tidy_vcf <- function(
     cat("\n\n############################# IMPORTANT ###############################\n")
     message("Tidying vcf with ", n.markers, " SNPs is not optimal")
     message("and requires a computer with > 16GB RAM")
-    message("Apply basic filters detailed in the function doc")
-    message("Reduce to\n< 100 000 SNPs or ideally ~ 10 000 unlinked SNPs\n\n")
+    message("\nApply basic filters detailed in the function doc")
+    message("Reduce to < 100 000 SNPs or ideally ~ 10 000 unlinked SNPs\n")
     tidy.vcf <- interactive_question(
       x = "\nContinue tidying the VCF (Yes/No) ?",
       answer.opt = c("Y", "N", "Yes", "No", "YES", "NO", "yes", "no"))
     if (any(c("Y", "Yes", "YES", "yes") %in% tidy.vcf)) {
       tidy.vcf <- TRUE
+      message("Tidying the large vcf...")
     } else {
-      message("\nKeeping the SeqArray GDS object and file")
+      message("\nKeeping the GDS object/file")
       tidy.vcf <- FALSE
     }
   } else {

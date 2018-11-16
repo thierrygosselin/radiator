@@ -331,7 +331,7 @@ write_seqarray <- function(
 
   if (verbose) {
     if (big.vcf > 500000000) message("Large vcf file may take several minutes...")
-    if (big.vcf > 5000000000) message("    you have time for a coffee!")
+    if (big.vcf > 5000000000) message("    you actually have time for a coffee!")
   }
 
   # Filename -------------------------------------------------------------------
@@ -1063,7 +1063,7 @@ write_seqarray <- function(
         dplyr::distinct(INDIVIDUALS)
       blacklisted.id <- nrow(blacklist.id)
       if (blacklisted.id > 0) {
-        if (verbose) message("Number of individuals blacklisted based on missing genotypes: ", blacklisted.id)
+        if (verbose) message("    number of individuals blacklisted based on missing genotypes: ", blacklisted.id)
         res$blacklist.id <- blacklist.id
         res$individuals %<>% dplyr::mutate(
           FILTER_INDIVIDUALS_MISSING = dplyr::if_else(
@@ -1344,7 +1344,7 @@ write_seqarray <- function(
           dplyr::select(MARKERS)
 
         if (nrow(blacklist.coverage) > 0) {
-          message("Number of markers with outlier coverage removed: ", nrow(blacklist.coverage))
+          message("    number of markers with outlier coverage blacklisted: ", nrow(blacklist.coverage))
           # update the blacklist
           res$blacklist.markers <- dplyr::bind_rows(
             res$blacklist.markers,
@@ -1436,7 +1436,7 @@ write_seqarray <- function(
         dplyr::select(MARKERS)
 
       if (nrow(blacklist.markers.missing) > 0) {
-        message("Number of markers blacklisted based on missing individuals/genotypes: ", nrow(blacklist.markers.missing))
+        message("    number of markers blacklisted based on missing individuals/genotypes: ", nrow(blacklist.markers.missing))
         # update the blacklist
         res$blacklist.markers <- dplyr::bind_rows(
           res$blacklist.markers,
@@ -1551,7 +1551,7 @@ write_seqarray <- function(
           dplyr::select(MARKERS)
 
         if (nrow(blacklist.snp.read.position) > 0) {
-          message("Number of markers blacklisted based on position on the read: ", nrow(blacklist.snp.read.position))
+          message("    number of markers blacklisted based on position on the read: ", nrow(blacklist.snp.read.position))
           # update the blacklist
           res$blacklist.markers <- dplyr::bind_rows(
             res$blacklist.markers,
@@ -1632,13 +1632,10 @@ write_seqarray <- function(
       # ld.threshold = filter.long.ld
       # parallel.core = parallel.core
       # filename = NULL
-      # long.ld.missing = long.ld.missing
       # keep.gds <- TRUE
       # ld.figures <- TRUE
-      # ld.wide <- FALSE
-      # ld.tibble <- FALSE
-      # manhattan.plot <- FALSE
       # long.ld.missing = FALSE
+      # path.folder = path.folder
 
       filter.ld <- snp_ld(
         data = res$vcf.connection,
@@ -1648,7 +1645,8 @@ write_seqarray <- function(
         parallel.core = parallel.core,
         filename = NULL,
         verbose = verbose,
-        long.ld.missing = long.ld.missing
+        long.ld.missing = long.ld.missing,
+        path.folder = path.folder
       )
       # names(filter.ld)
       blacklist.snp.ld <- res$markers.meta %>%
@@ -1731,7 +1729,7 @@ write_seqarray <- function(
 
   if (verbose) {
     if (vcf.stats) {
-      message("\n\nMissing data (averaged): ")
+      message("\n\nSummary:\nMissing data (averaged): ")
       message("    markers: ", res$stats$markers.missing)
       message("    individuals: ", res$stats$ind.missing)
       if (dp) message("\n\nCoverage info:")

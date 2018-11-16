@@ -65,8 +65,6 @@ for fine-tuning the function (see details).}
 \value{
 A list in the global environment, with these objects:
 \enumerate{
-\item $ld.wide: a tibble with the pairwise LD values observed between markers in wide format.
-\item $ld.tibble: a tibble with the pairwise LD values observed between markers in one column (long format).
 \item $ld.summary: tibble with LD statistics used for the boxplot
 \item $ld.boxplot: box plot of LD values
 \item $whitelist.snp.ld: whitelist of markers kept after filtering for LD.
@@ -126,13 +124,10 @@ generated for the long distance LD is removed after completion. With GDS input,
 the GDS file is always updated and kept in the working directory.
 \item \code{ld.figures}: (logical) Generate long distance LD statistics and
 figures.
-Default: \code{ld.figures = FALSE}
-\item \code{ld.wide}: (logical) Generate a tibble with the pairwise LD values
-observed between markers in wide format.
-Default: \code{ld.wide = FALSE}
-\item \code{ld.tibble}: (logical) Generate a tibble with the pairwise LD
-values observed between markers in one column (long format).
-Default: \code{ld.tibble = FALSE}
+Default: \code{ld.figures = TRUE}
+\item \code{path.folder}: to write ouput in a specific path
+(used internally in radiator). Default: \code{path.folder = getwd()}.
+If the supplied directory doesn't exist, it's created.
 }
 }
 \examples{

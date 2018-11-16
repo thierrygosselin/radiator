@@ -95,7 +95,8 @@ if (getRversion() >= "2.15.1") {
       "MARKERS_B", "MISSING_POP", "NUMBER_MARKERS", "SNP_PER_LOCUS", "id.select",
       "individuals.missing", "keep.both.strands", "n.ind", "snp.select.no.maf",
       "common.markers", "FILTER_INDIVIDUALS_MISSING", "tidy.data", "num.variant",
-      "STRANDS", "COVERAGE_TOTAL", "COVERAGE_MEAN"
+      "STRANDS", "COVERAGE_TOTAL", "COVERAGE_MEAN", "NUMBER_SNP",
+      "NUMBER_SNP_BLACKLISTED"
     )
   )
 }

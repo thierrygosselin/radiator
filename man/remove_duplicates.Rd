@@ -14,7 +14,8 @@ ld_pruning(ld.tibble = NULL, stats = NULL, ld.threshold = 0.8,
   verbose = TRUE)
 
 ld_chrom_missing(chrom.select, x, data.type, ld.threshold,
-  parallel.core = parallel::detectCores() - 1, verbose = TRUE)
+  parallel.core = parallel::detectCores() - 1, ld.figures = TRUE,
+  verbose = TRUE)
 }
 \arguments{
 \item{data}{(path) The individual's pairwise data.
