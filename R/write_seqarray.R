@@ -93,6 +93,15 @@
 #' in \code{\link[radiator]{snp_ld}}
 #' \item \code{long.ld.missing}: this is the \code{long.ld.missing} argument
 #' in \code{\link[radiator]{snp_ld}}
+#' \item \code{ld.method}: (optional, character) The values available are
+#' \code{"composite"}, for LD composite measure, \code{"r"} for R coefficient
+#' (by EM algorithm assuming HWE, it could be negative), \code{"r2"} for r^2,
+#' \code{"dprime"} for D',
+#' \code{"corr"} for correlation coefficient. The method corr and composite are
+#' equivalent when SNPs are coded based on the presence of the alternate allele
+#' (\code{0, 1, 2}).
+#' Default: \code{ld.method = "r2"}.
+
 #' \item \code{filter.individuals.missing}: (double) Use this argument to
 #' blacklist individuals with too many missing data.
 #' e.g. \code{filter.individuals.missing = 0.7}, will remove individuals with >
@@ -196,6 +205,7 @@ write_seqarray <- function(
   # filter.short.ld <- "maf"
   # filter.long.ld <- 0.8
   # long.ld.missing <- TRUE
+  # ld.method <- "r2"
   # filter.individuals.missing <- 0.7
   # blacklist.id = NULL
   # pop.select = NULL
@@ -238,10 +248,11 @@ write_seqarray <- function(
   want <- c("whitelist.markers",
             "filter.snp.read.position", "filter.mac",
             "filter.coverage.outliers", "filter.markers.missing", "filter.short.ld",
-            "filter.long.ld", "filter.individuals.missing", "common.markers",
+            "filter.long.ld", "long.ld.missing", "ld.method",
+            "filter.individuals.missing", "common.markers",
             "filter.strands",
             "blacklist.id", "pop.select", "pop.levels", "pop.labels", "keep.gds",
-            "path.folder", "long.ld.missing", "markers.info", "vcf.metadata",
+            "path.folder", "markers.info", "vcf.metadata",
             "subsample.markers.stats")
   unknowned_param <- setdiff(names(dotslist), want)
 
@@ -260,6 +271,7 @@ write_seqarray <- function(
   filter.short.ld <- radiator.dots[["filter.short.ld"]]
   filter.long.ld <- radiator.dots[["filter.long.ld"]]
   long.ld.missing <- radiator.dots[["long.ld.missing"]]
+  ld.method <- radiator.dots[["ld.method"]]
   filter.individuals.missing <- radiator.dots[["filter.individuals.missing"]]
   common.markers <- radiator.dots[["common.markers"]]
   filter.strands <- radiator.dots[["filter.strands"]]
@@ -278,6 +290,13 @@ write_seqarray <- function(
   if (is.null(keep.gds)) keep.gds <- TRUE
   if (is.null(filter.strands)) filter.strands <- "blacklist"
   if (is.null(long.ld.missing)) long.ld.missing <- FALSE
+
+  if (is.null(ld.method)) {
+    ld.method <- "r2"
+  } else {
+    ld.method <- match.arg(ld.method, c("composite", "r", "r2", "dprime", "corr"))
+  }
+
   if (is.null(filter.coverage.outliers)) filter.coverage.outliers <- FALSE
   if (is.null(common.markers)) common.markers <- TRUE
   if (is.null(path.folder)) {
@@ -421,29 +440,6 @@ write_seqarray <- function(
   if (verbose && keep.gds) {
     message("\nGDS file generated: ", filename.short)
   }
-  # Strata ---------------------------------------------------------------------
-  # import strata and filter with blacklist of id if present...
-  strata <- radiator::read_strata(
-    strata = strata,
-    pop.levels = pop.levels,
-    pop.labels = pop.labels,
-    pop.select = pop.select,
-    blacklist.id = blacklist.id) %$% strata
-
-  # clean sample id in VCF -----------------------------------------------------
-  res$individuals <- tibble::tibble(
-    INDIVIDUALS_VCF = SeqArray::seqGetData(res$vcf.connection, "sample.id")) %>%
-    dplyr::mutate(INDIVIDUALS = radiator::clean_ind_names(INDIVIDUALS_VCF))
-
-  # replace id in VCF
-  gdsfmt::add.gdsn(
-    node = res$vcf.connection,
-    name = "sample.id",
-    val = res$individuals$INDIVIDUALS,
-    replace = TRUE,
-    compress = "ZIP_RA",
-    closezip = TRUE)
-
   # radiator gds folder --------------------------------------------------------
   radiator.gds <- gdsfmt::addfolder.gdsn(
     node = res$vcf.connection,
@@ -475,29 +471,105 @@ write_seqarray <- function(
     compress = "ZIP_RA",
     closezip = TRUE)
 
-  # Sync id in STRATA and VCF --------------------------------------------------
-  if (!is.null(strata)) {
-    if (verbose) message("\nSynchronizing sample IDs in VCF and strata...")
-    res$individuals %<>%
-      dplyr::filter(INDIVIDUALS %in% strata$INDIVIDUALS) %>%
-      dplyr::left_join(strata, by = "INDIVIDUALS")
+  # Strata ---------------------------------------------------------------------
+  # import strata and filter with blacklist of id if present...
+  strata <- radiator::read_strata(
+    strata = strata,
+    pop.levels = pop.levels,
+    pop.labels = pop.labels,
+    pop.select = pop.select,
+    blacklist.id = blacklist.id) %$% strata
 
-    SeqArray::seqSetFilter(object = res$vcf.connection,
-                           sample.id = res$individuals$INDIVIDUALS,
-                           # action = "set",
-                           verbose = FALSE)
-    # SeqArray::seqResetFilter(object = res$vcf.connection, sample = TRUE, variant = TRUE, verbose = TRUE)
+  # clean sample id in VCF -----------------------------------------------------
+  individuals.vcf <- tibble::tibble(
+    INDIVIDUALS_VCF = SeqArray::seqGetData(res$vcf.connection, "sample.id")) %>%
+    dplyr::mutate(INDIVIDUALS_CLEAN = radiator::clean_ind_names(INDIVIDUALS_VCF))
 
-    # Add STRATA to GDS
+  if (!identical(individuals.vcf$INDIVIDUALS_VCF, individuals.vcf$INDIVIDUALS_CLEAN)) {
+    if (verbose) message("Cleaning VCF sample names")
+    clean.id.filename <- stringi::stri_join("cleaned.vcf.id.info_", file.date, ".tsv")
+    readr::write_tsv(x = individuals.vcf,
+                     path = stringi::stri_join(path.folder, "/", clean.id.filename))
     gdsfmt::add.gdsn(
       node = radiator.gds,
-      name = "STRATA",
-      val = strata,
-      # val = strata$STRATA,
+      name = "vcf.id.clean",
+      val = individuals.vcf,
       replace = TRUE,
       compress = "ZIP_RA",
       closezip = TRUE)
   }
+
+  # replace id in VCF
+  gdsfmt::add.gdsn(
+    node = res$vcf.connection,
+    name = "sample.id",
+    val = individuals.vcf$INDIVIDUALS_CLEAN,
+    replace = TRUE,
+    compress = "ZIP_RA",
+    closezip = TRUE)
+
+
+  res$individuals <- dplyr::select(individuals.vcf, INDIVIDUALS = INDIVIDUALS_CLEAN)
+
+  # Add a individuals node
+  gdsfmt::add.gdsn(
+    node = radiator.gds,
+    name = "individuals",
+    val = res$individuals,
+    replace = TRUE,
+    compress = "ZIP_RA",
+    closezip = TRUE)
+
+  # Sync id in STRATA and VCF --------------------------------------------------
+  if (!is.null(strata)) {
+    if (verbose) message("\nSynchronizing sample IDs in VCF and strata...")
+    strata %<>% dplyr::filter(INDIVIDUALS %in% individuals.vcf$INDIVIDUALS_CLEAN)
+    individuals.vcf <- NULL
+
+    blacklist.strata <- n.ind - nrow(strata)
+    if (blacklist.strata != 0) {
+      if (verbose) message("    number of sample blacklisted by the stata: ", blacklist.strata)
+      # the param file is updated after markers metadata below
+    }
+
+    SeqArray::seqSetFilter(object = res$vcf.connection,
+                           sample.id = strata$INDIVIDUALS,
+                           verbose = FALSE)
+
+    res$individuals <- strata
+    gdsfmt::add.gdsn(
+      node = radiator.gds,
+      name = "individuals",
+      val = res$individuals,
+      replace = TRUE,
+      compress = "ZIP_RA",
+      closezip = TRUE)
+
+    strata <- TRUE
+    # # Add STRATA to GDS
+    # gdsfmt::add.gdsn(
+    #   node = radiator.gds,
+    #   name = "STRATA",
+    #   val = strata,
+    #   # val = strata$STRATA,
+    #   replace = TRUE,
+    #   compress = "ZIP_RA",
+    #   closezip = TRUE)
+  } else {
+    strata <- FALSE
+    blacklist.strata <- 0L
+
+    res$individuals %<>% dplyr::mutate(STRATA = 1L)
+    gdsfmt::add.gdsn(
+      node = radiator.gds,
+      name = "individuals",
+      val = res$individuals,
+      replace = TRUE,
+      compress = "ZIP_RA",
+      closezip = TRUE)
+  }
+
+
   # Markers metadata  ----------------------------------------------------------
   res$markers.meta <- tibble::tibble(
     VARIANT_ID = SeqArray::seqGetData(res$vcf.connection, "variant.id"),
@@ -649,9 +721,11 @@ write_seqarray <- function(
     closezip = TRUE)
 
   # update filter param ----------------------------------------------------------
+  # The original VCF's values
+
   info.new <- data_info(res$markers.meta) # updating parameters
-  info.new$n.pop <- length(unique(strata$STRATA))
-  info.new$n.ind <- length(unique(strata$INDIVIDUALS))
+  info.new$n.pop <- 0L
+  info.new$n.ind <- n.ind
 
   filters.parameters <- tibble::data_frame(
     FILTERS = "vcf",
@@ -659,15 +733,38 @@ write_seqarray <- function(
     VALUES = "",
     BEFORE = paste(info.new$n.ind, info.new$n.pop, info.new$n.chrom, info.new$n.locus, info.new$n.snp, sep = " / "),
     AFTER = paste(info.new$n.ind, info.new$n.pop, info.new$n.chrom, info.new$n.locus, info.new$n.snp, sep = " / "),
-    BLACKLIST = "",
+    BLACKLIST = "0 / 0 / 0 / 0 / 0",
     UNITS = "individuals / strata / chrom / locus / markers",
-    COMMENTS = ""
+    COMMENTS = "the vcf is not population-wise"
   ) %>%
     readr::write_tsv(x = .,
                      path = filters.parameters.path, append = TRUE,
                      col_names = FALSE)
   # update info
   info <- info.new
+
+
+  if (blacklist.strata != 0 && strata) {
+    info.new <- data_info(res$markers.meta) # updating parameters
+    info.new$n.pop <- length(unique(res$individuals$STRATA))
+    info.new$n.ind <- length(unique(res$individuals$INDIVIDUALS))
+
+    filters.parameters <- tibble::data_frame(
+      FILTERS = "vcf",
+      PARAMETERS = "with strata included",
+      VALUES = "",
+      BEFORE = paste(info$n.ind, info$n.pop, info.new$n.chrom, info.new$n.locus, info.new$n.snp, sep = " / "),
+      AFTER = paste(info.new$n.ind, info.new$n.pop, info.new$n.chrom, info.new$n.locus, info.new$n.snp, sep = " / "),
+      BLACKLIST = paste(info$n.ind - info.new$n.ind, 0L, 0L, 0L, 0L, sep = " / "),
+      UNITS = "individuals / strata / chrom / locus / markers",
+      COMMENTS = ""
+    ) %>%
+      readr::write_tsv(x = .,
+                       path = filters.parameters.path, append = TRUE,
+                       col_names = FALSE)
+    # update info
+    info <- info.new
+  }
 
   # PRE-FILTERING --------------------------------------------------------------
   # whitelist of markers, the filter column in the vcf and blacklisted strands
@@ -738,8 +835,8 @@ write_seqarray <- function(
 
     # update filter param ----------------------------------------------------------
     info.new <- data_info(res$markers.meta) # updating parameters
-    info.new$n.pop <- length(unique(strata$STRATA))
-    info.new$n.ind <- length(unique(strata$INDIVIDUALS))
+    info.new$n.pop <- length(unique(res$individuals$STRATA))
+    info.new$n.ind <- length(unique(res$individuals$INDIVIDUALS))
 
     filters.parameters <- tibble::data_frame(
       FILTERS = "whitelist markers",
@@ -786,8 +883,8 @@ write_seqarray <- function(
 
     # update filter param ----------------------------------------------------------
     info.new <- data_info(res$markers.meta) # updating parameters
-    info.new$n.pop <- length(unique(strata$STRATA))
-    info.new$n.ind <- length(unique(strata$INDIVIDUALS))
+    info.new$n.pop <- length(unique(res$individuals$STRATA))
+    info.new$n.ind <- length(unique(res$individuals$INDIVIDUALS))
 
     filters.parameters <- tibble::data_frame(
       FILTERS = "vcf filter column",
@@ -861,7 +958,7 @@ write_seqarray <- function(
     }
 
     if (filter.strands != "keep.both") {
-      message("Number of duplicated markers on different strands removed: ", nrow(blacklist.strands))
+      message("Number of duplicated markers on different strands blacklisted: ", nrow(blacklist.strands))
 
       # update the blacklist
       res$blacklist.markers %<>% dplyr::bind_rows(
@@ -887,8 +984,8 @@ write_seqarray <- function(
 
       # update filter param ----------------------------------------------------------
       info.new <- data_info(res$markers.meta) # updating parameters
-      info.new$n.pop <- length(unique(strata$STRATA))
-      info.new$n.ind <- length(unique(strata$INDIVIDUALS))
+      info.new$n.pop <- length(unique(res$individuals$STRATA))
+      info.new$n.ind <- length(unique(res$individuals$INDIVIDUALS))
 
       filters.parameters <- tibble::data_frame(
         FILTERS = "duplicated markers on different strands",
@@ -945,6 +1042,7 @@ write_seqarray <- function(
     if (m.subsample) {
       SeqArray::seqSetFilter(object = res$vcf.connection,
                              variant.id = variant.select,
+                             sample.id = res$individuals$INDIVIDUALS,
                              action = "push+set",
                              verbose = FALSE)
 
@@ -1064,36 +1162,44 @@ write_seqarray <- function(
       blacklisted.id <- nrow(blacklist.id)
       if (blacklisted.id > 0) {
         if (verbose) message("    number of individuals blacklisted based on missing genotypes: ", blacklisted.id)
-        res$blacklist.id <- blacklist.id
-        res$individuals %<>% dplyr::mutate(
-          FILTER_INDIVIDUALS_MISSING = dplyr::if_else(
-            INDIVIDUALS %in% blacklist.id$INDIVIDUALS, FALSE, TRUE)) %>%
-          readr::write_tsv(x = ., path = file.path(path.folder, ind.file))
-        readr::write_tsv(x = blacklist.id, path = file.path(path.folder, blacklist.id.filename))
+        res$blacklist.id <- blacklist.id %>%
+          readr::write_tsv(x = ., path = file.path(path.folder, blacklist.id.filename))
 
-        # update the strata and the GDS
-        if (!is.null(strata)) {
-          strata %<>% dplyr::filter(!INDIVIDUALS %in% blacklist.id$INDIVIDUALS)
-          gdsfmt::add.gdsn(
-            node = radiator.gds,
-            name = "STRATA",
-            val = strata,
-            # val = strata$STRATA,
-            replace = TRUE,
-            compress = "ZIP_RA",
-            closezip = TRUE)
-        }
+        res$individuals %<>% dplyr::filter(!INDIVIDUALS %in% blacklist.id$INDIVIDUALS)
+        # res$individuals %<>% dplyr::mutate(
+        #   FILTER_INDIVIDUALS_MISSING = dplyr::if_else(
+        #     INDIVIDUALS %in% blacklist.id$INDIVIDUALS, FALSE, TRUE)) %>%
+        #   readr::write_tsv(x = ., path = file.path(path.folder, ind.file))
+
+        # update the GDS
+        gdsfmt::add.gdsn(
+          node = radiator.gds,
+          name = "individuals",
+          val = res$individuals,
+          replace = TRUE,
+          compress = "ZIP_RA",
+          closezip = TRUE)
+
+        # if (!strata) {
+        #   strata %<>% dplyr::filter(!INDIVIDUALS %in% blacklist.id$INDIVIDUALS)
+        #   gdsfmt::add.gdsn(
+        #     node = radiator.gds,
+        #     name = "STRATA",
+        #     val = strata,
+        #     # val = strata$STRATA,
+        #     replace = TRUE,
+        #     compress = "ZIP_RA",
+        #     closezip = TRUE)
+        # }
         SeqArray::seqSetFilter(
           object = res$vcf.connection,
-          sample.id = dplyr::filter(
-            res$individuals,
-            FILTER_INDIVIDUALS_MISSING) %$% INDIVIDUALS,
+          sample.id = res$individuals$INDIVIDUALS,
           verbose = FALSE)
 
         # update filter param ----------------------------------------------------------
         info.new <- data_info(res$markers.meta) # updating parameters
-        info.new$n.pop <- length(unique(strata$STRATA))
-        info.new$n.ind <- length(unique(strata$INDIVIDUALS))
+        info.new$n.pop <- length(unique(res$individuals$STRATA))
+        info.new$n.ind <- length(unique(res$individuals$INDIVIDUALS))
 
         filters.parameters <- tibble::data_frame(
           FILTERS = "Filter individuals based on missingness (with outlier stats or values)",
@@ -1110,11 +1216,7 @@ write_seqarray <- function(
                            col_names = FALSE)
         # update info
         info <- info.new
-      } else {
-        res$individuals$FILTER_INDIVIDUALS_MISSING = TRUE
       }
-    } else {
-      res$individuals$FILTER_INDIVIDUALS_MISSING = TRUE
     }#filter.individuals.missing
     blacklist.id <- NULL
 
@@ -1168,31 +1270,32 @@ write_seqarray <- function(
     }
 
     # test <- res$markers.meta
-    if (is.null(strata)) {
+    if (!strata) {
       suppressWarnings(res$markers.meta %<>% dplyr::select(dplyr::one_of(want)))
     } else {
       if (verbose) message("Calculating markers missingness per strata...")
-      suppressWarnings(res$markers.meta %<>%
-                         dplyr::left_join(
-                           missing_per_pop(vcf.connection = res$vcf.connection,
-                                           strata = strata,
-                                           parallel.core = parallel.core)
-                           , by = "MARKERS") %>%
-                         dplyr::select(dplyr::one_of(want)))
+      suppressWarnings(
+        res$markers.meta %<>%
+          dplyr::left_join(
+            missing_per_pop(
+              vcf.connection = res$vcf.connection,
+              strata = dplyr::distinct(res$individuals, INDIVIDUALS, STRATA),
+              parallel.core = parallel.core)
+            , by = "MARKERS") %>%
+          dplyr::select(dplyr::one_of(want))
+      )
     }
     # test <- res$markers.meta
 
-    # make sure GDS is updated with sample -------------------------------------
+    # sync GDS with sample -----------------------------------------------------
     SeqArray::seqSetFilter(
       object = res$vcf.connection,
-      sample.id = dplyr::filter(
-        res$individuals,
-        FILTER_INDIVIDUALS_MISSING) %$% INDIVIDUALS,
+      sample.id = res$individuals$INDIVIDUALS,
       verbose = FALSE)
 
     # COMMON MARKERS -----------------------------------------------------------
     # Remove markers not in common if option selected
-    if (common.markers && !is.null(strata)) {
+    if (common.markers && strata) {
       message("Scanning for markers in common...")
       not.common.markers <- dplyr::select(res$markers.meta, MARKERS, MISSING_POP) %>%
         tidyr::unnest(MISSING_POP) %>%
@@ -1201,7 +1304,7 @@ write_seqarray <- function(
       not.in.common <- nrow(not.common.markers)
 
       if (not.in.common > 0) {
-        message("    number of markers not in common between strata: ", not.in.common)
+        message("    number of markers not in common between strata blacklisted: ", not.in.common)
         # update the blacklist
         res$blacklist.markers <- dplyr::bind_rows(
           res$blacklist.markers,
@@ -1222,8 +1325,8 @@ write_seqarray <- function(
 
         # update filter param ----------------------------------------------------------
         info.new <- data_info(res$markers.meta) # updating parameters
-        info.new$n.pop <- length(unique(strata$STRATA))
-        info.new$n.ind <- length(unique(strata$INDIVIDUALS))
+        info.new$n.pop <- length(unique(res$individuals$STRATA))
+        info.new$n.ind <- length(unique(res$individuals$INDIVIDUALS))
 
         filters.parameters <- tibble::data_frame(
           FILTERS = "Filter for common markers",
@@ -1279,8 +1382,8 @@ write_seqarray <- function(
 
         # update filter param ----------------------------------------------------------
         info.new <- data_info(res$markers.meta) # updating parameters
-        info.new$n.pop <- length(unique(strata$STRATA))
-        info.new$n.ind <- length(unique(strata$INDIVIDUALS))
+        info.new$n.pop <- length(unique(res$individuals$STRATA))
+        info.new$n.ind <- length(unique(res$individuals$INDIVIDUALS))
 
         filters.parameters <- tibble::data_frame(
           FILTERS = "Filter for low minor allele count",
@@ -1373,8 +1476,8 @@ write_seqarray <- function(
 
         # update filter param ----------------------------------------------------------
         info.new <- data_info(res$markers.meta) # updating parameters
-        info.new$n.pop <- length(unique(strata$STRATA))
-        info.new$n.ind <- length(unique(strata$INDIVIDUALS))
+        info.new$n.pop <- length(unique(res$individuals$STRATA))
+        info.new$n.ind <- length(unique(res$individuals$INDIVIDUALS))
 
         filters.parameters <- tibble::data_frame(
           FILTERS = "Filter for low or high coverage markers",
@@ -1396,7 +1499,7 @@ write_seqarray <- function(
     }
 
     # Filter markers genotyping/missing ----------------------------------------
-    if (!is.null(strata)) {
+    if (strata) {
       res$figures$missing.markers.fig <- markers_genotyped_helper(
         x = dplyr::select(res$markers.meta, MARKERS, MISSING_POP) %>%
           tidyr::unnest(MISSING_POP) %>%
@@ -1406,7 +1509,7 @@ write_seqarray <- function(
           dplyr::mutate(PERCENT = PERCENT * 100),
         overall.only = FALSE
       )
-      n.pop <- dplyr::n_distinct(strata$STRATA) + 2
+      n.pop <- dplyr::n_distinct(res$individuals$STRATA) + 2
       ggplot2::ggsave(
         plot = res$figures$missing.markers.fig,
         filename = file.path(path.folder, stringi::stri_join("plot.markers.genotyping.rate_", file.date, ".pdf")),
@@ -1463,8 +1566,8 @@ write_seqarray <- function(
       blacklist.markers.missing <- NULL
       # update filter param ----------------------------------------------------------
       info.new <- data_info(res$markers.meta) # updating parameters
-      info.new$n.pop <- length(unique(strata$STRATA))
-      info.new$n.ind <- length(unique(strata$INDIVIDUALS))
+      info.new$n.pop <- length(unique(res$individuals$STRATA))
+      info.new$n.ind <- length(unique(res$individuals$INDIVIDUALS))
 
       filters.parameters <- tibble::data_frame(
         FILTERS = "Filter markers based on missingness",
@@ -1581,8 +1684,8 @@ write_seqarray <- function(
         blacklist.snp.read.position <- NULL
         # update filter param ----------------------------------------------------------
         info.new <- data_info(res$markers.meta) # updating parameters
-        info.new$n.pop <- length(unique(strata$STRATA))
-        info.new$n.ind <- length(unique(strata$INDIVIDUALS))
+        info.new$n.pop <- length(unique(res$individuals$STRATA))
+        info.new$n.ind <- length(unique(res$individuals$INDIVIDUALS))
 
         filters.parameters <- tibble::data_frame(
           FILTERS = "Filter SNPs based on position on read",
@@ -1630,12 +1733,11 @@ write_seqarray <- function(
       # snp.ld = filter.short.ld
       # maf.data = NULL
       # ld.threshold = filter.long.ld
-      # parallel.core = parallel.core
       # filename = NULL
       # keep.gds <- TRUE
       # ld.figures <- TRUE
-      # long.ld.missing = FALSE
-      # path.folder = path.folder
+      # long.ld.missing = TRUE
+      # ld.method = "r2"
 
       filter.ld <- snp_ld(
         data = res$vcf.connection,
@@ -1646,6 +1748,7 @@ write_seqarray <- function(
         filename = NULL,
         verbose = verbose,
         long.ld.missing = long.ld.missing,
+        ld.method = ld.method,
         path.folder = path.folder
       )
       # names(filter.ld)
@@ -1681,18 +1784,16 @@ write_seqarray <- function(
       }
       blacklist.snp.ld <- filter.ld <- NULL
 
-      # make sure GDS is updated with sample -------------------------------------
+      # sync GDS with sample -----------------------------------------------------
       SeqArray::seqSetFilter(
         object = res$vcf.connection,
-        sample.id = dplyr::filter(
-          res$individuals,
-          FILTER_INDIVIDUALS_MISSING) %$% INDIVIDUALS,
+        sample.id = res$individuals$INDIVIDUALS,
         verbose = FALSE)
 
       # update filter param ----------------------------------------------------------
       info.new <- data_info(res$markers.meta) # updating parameters
-      info.new$n.pop <- length(unique(strata$STRATA))
-      info.new$n.ind <- length(unique(strata$INDIVIDUALS))
+      info.new$n.pop <- length(unique(res$individuals$STRATA))
+      info.new$n.ind <- length(unique(res$individuals$INDIVIDUALS))
 
       filters.parameters <- tibble::data_frame(
         FILTERS = "Filter for short and long LD",
@@ -1712,14 +1813,35 @@ write_seqarray <- function(
     }
 
     # For summary at the end of the function:
-    res$stats$ind.missing <- round(mean(res$individuals$MISSING_PROP[res$individuals$FILTER_INDIVIDUALS_MISSING], na.rm = TRUE), 2)
-    if (dp) res$stats$ind.cov.total <- round(mean(res$individuals$COVERAGE_TOTAL[res$individuals$FILTER_INDIVIDUALS_MISSING], na.rm = TRUE), 0)
-    if (dp) res$stats$ind.cov.mean <- round(mean(res$individuals$COVERAGE_MEAN[res$individuals$FILTER_INDIVIDUALS_MISSING], na.rm = TRUE), 0)
+    res$stats$ind.missing <- round(mean(res$individuals$MISSING_PROP, na.rm = TRUE), 2)
+    if (dp) res$stats$ind.cov.total <- round(mean(res$individuals$COVERAGE_TOTAL, na.rm = TRUE), 0)
+    if (dp) res$stats$ind.cov.mean <- round(mean(res$individuals$COVERAGE_MEAN, na.rm = TRUE), 0)
     res$stats$markers.missing <- round(mean(res$markers.meta$MISSING_PROP, na.rm = TRUE), 2)
     if (dp) res$stats$markers.cov <- round(mean(res$markers.meta$COVERAGE_MEAN, na.rm = TRUE), 0) # same as above because NA...
   }#End stats
 
-  # RESUME ----------------------------------------------------------------------
+  # Final Sync GDS -------------------------------------------------------------------
+
+  # blacklist.id
+  gdsfmt::add.gdsn(
+    node = radiator.gds,
+    name = "blacklist.id",
+    val = res$blacklist.id,
+    replace = TRUE,
+    compress = "ZIP_RA",
+    closezip = TRUE)
+
+  # blacklist.markers
+  gdsfmt::add.gdsn(
+    node = radiator.gds,
+    name = "blacklist.markers",
+    val = res$blacklist.markers,
+    replace = TRUE,
+    compress = "ZIP_RA",
+    closezip = TRUE)
+
+
+  # RESULTS --------------------------------------------------------------------
   number.info <- SeqArray::seqGetFilter(gdsfile = res$vcf.connection)
   res$n.individuals <- length(number.info$sample.sel[number.info$sample.sel])
   res$n.markers <- length(number.info$variant.sel[number.info$variant.sel])

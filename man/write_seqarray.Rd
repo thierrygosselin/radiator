@@ -141,6 +141,14 @@ in \code{\link[radiator]{snp_ld}}
 in \code{\link[radiator]{snp_ld}}
 \item \code{long.ld.missing}: this is the \code{long.ld.missing} argument
 in \code{\link[radiator]{snp_ld}}
+\item \code{ld.method}: (optional, character) The values available are
+\code{"composite"}, for LD composite measure, \code{"r"} for R coefficient
+(by EM algorithm assuming HWE, it could be negative), \code{"r2"} for r^2,
+\code{"dprime"} for D',
+\code{"corr"} for correlation coefficient. The method corr and composite are
+equivalent when SNPs are coded based on the presence of the alternate allele
+(\code{0, 1, 2}).
+Default: \code{ld.method = "r2"}.
 \item \code{filter.individuals.missing}: (double) Use this argument to
 blacklist individuals with too many missing data.
 e.g. \code{filter.individuals.missing = 0.7}, will remove individuals with >

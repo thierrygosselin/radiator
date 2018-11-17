@@ -416,7 +416,8 @@ tidy_genomic_data <- function(
   want <- c("keep.allele.names",
             "filter.snp.read.position", "filter.mac",
             "filter.coverage.outliers", "filter.markers.missing", "filter.short.ld",
-            "filter.long.ld", "long.ld.missing","filter.individuals.missing",
+            "filter.long.ld", "long.ld.missing", "ld.method",
+            "filter.individuals.missing",
             "filter.strands",
             "ref.calibration", "gt.vcf.nuc", "gt.vcf", "gt", "gt.bin",
             "vcf.stats",
@@ -447,6 +448,8 @@ tidy_genomic_data <- function(
   filter.short.ld <- radiator.dots[["filter.short.ld"]]
   filter.long.ld <- radiator.dots[["filter.long.ld"]]
   long.ld.missing <- radiator.dots[["long.ld.missing"]]
+  ld.method <- radiator.dots[["ld.method"]]
+
   markers.info <- radiator.dots[["markers.info"]]
   filter.individuals.missing <- radiator.dots[["filter.individuals.missing"]]
   filter.strands <- radiator.dots[["filter.strands"]]
@@ -461,6 +464,13 @@ tidy_genomic_data <- function(
   if (is.null(gt.bin)) gt.bin <- TRUE
   if (is.null(filter.strands)) filter.strands <- "blacklist"
   if (is.null(long.ld.missing)) long.ld.missing <- FALSE
+
+  if (is.null(ld.method)) {
+    ld.method <- "r2"
+  } else {
+    ld.method <- match.arg(ld.method, c("composite", "r", "r2", "dprime", "corr"))
+  }
+
   if (is.null(filter.coverage.outliers)) filter.coverage.outliers <- FALSE
   if (is.null(common.markers)) common.markers <- TRUE
 
@@ -595,6 +605,7 @@ tidy_genomic_data <- function(
       filter.short.ld = filter.short.ld,
       filter.long.ld = filter.long.ld,
       long.ld.missing = long.ld.missing,
+      ld.method = ld.method,
       gt.vcf.nuc = TRUE,
       gt.vcf = TRUE,
       gt = TRUE,

@@ -97,7 +97,7 @@ the tidy data file. radiator is currently keeping/cleaning only these metadata:
 \code{"DP", "AD", "GL", "PL", "GQ", "HQ", "GOF", "NR", "NV"}.
 e.g. you only wnat AD and PL, \code{vcf.metadata = c("AD", "PL")}.
 If yours is not in the list, submit a request.
-Default: \code{vcf.metadata = FALSE}.
+Default: \code{vcf.metadata = TRUE}.
 \item \code{common.markers}: (logical) Default: code{common.markers = TRUE}.
 Detailed in \code{\link[radiator]{tidy_genomic_data}}.
 \item \code{filter.mac}: (integer) To blacklist markers below a specific MAC

@@ -69,7 +69,7 @@
 #' \code{"DP", "AD", "GL", "PL", "GQ", "HQ", "GOF", "NR", "NV"}.
 #' e.g. you only wnat AD and PL, \code{vcf.metadata = c("AD", "PL")}.
 #' If yours is not in the list, submit a request.
-#' Default: \code{vcf.metadata = FALSE}.
+#' Default: \code{vcf.metadata = TRUE}.
 #' \item \code{common.markers}: (logical) Default: code{common.markers = TRUE}.
 #' Detailed in \code{\link[radiator]{tidy_genomic_data}}.
 #' \item \code{filter.mac}: (integer) To blacklist markers below a specific MAC
@@ -217,7 +217,8 @@ tidy_vcf <- function(
             "pop.levels", "pop.labels",
             "filter.snp.read.position", "filter.mac",
             "filter.coverage.outliers", "filter.markers.missing", "filter.short.ld",
-            "filter.long.ld", "long.ld.missing","filter.individuals.missing", "common.markers",
+            "filter.long.ld", "long.ld.missing", "ld.method",
+            "filter.individuals.missing", "common.markers",
             "filter.strands", "path.folder",
             "ref.calibration", "gt.vcf.nuc", "gt.vcf", "gt", "gt.bin", "vcf.stats",
             "filename", "keep.gds", "vcf.metadata")
@@ -242,6 +243,14 @@ tidy_vcf <- function(
   filter.short.ld <- radiator.dots[["filter.short.ld"]]
   filter.long.ld <- radiator.dots[["filter.long.ld"]]
   long.ld.missing <- radiator.dots[["long.ld.missing"]]
+  ld.method <- radiator.dots[["ld.method"]]
+
+  if (is.null(ld.method)) {
+    ld.method <- "r2"
+  } else {
+    ld.method <- match.arg(ld.method, c("composite", "r", "r2", "dprime", "corr"))
+  }
+
   # markers.info <- radiator.dots[["markers.info"]]
   filter.individuals.missing <- radiator.dots[["filter.individuals.missing"]]
   common.markers <- radiator.dots[["common.markers"]]
@@ -259,7 +268,14 @@ tidy_vcf <- function(
   keep.gds <- radiator.dots[["keep.gds"]]
 
   if (is.null(keep.gds)) keep.gds <- TRUE
+  if (is.null(vcf.metadata)) vcf.metadata <- TRUE
   if (is.null(vcf.stats)) vcf.stats <- TRUE
+
+  if (!vcf.metadata && vcf.stats) {
+    message("To generate statistics, vcf.metadata must be TRUE")
+    vcf.metadata <- TRUE
+  }
+
   if (is.null(ref.calibration)) ref.calibration <- FALSE
   if (is.null(gt.vcf.nuc)) gt.vcf.nuc <- TRUE
   if (is.null(gt.vcf)) gt.vcf <- TRUE
@@ -315,18 +331,14 @@ tidy_vcf <- function(
     filter.short.ld = filter.short.ld,
     filter.long.ld = filter.long.ld,
     long.ld.missing = long.ld.missing,
+    ld.method = ld.method,
     markers.info = character(0),
     vcf.metadata = vcf.metadata,
     path.folder = path.folder
   )
 
   # Number of markers and tidy approach ----------------------------------------
-  if (vcf.stats) {
-    id.string <- data$individuals$INDIVIDUALS[data$individuals$FILTER_INDIVIDUALS_MISSING]
-  } else {
-    id.string <- data$individuals$INDIVIDUALS
-  }
-
+  id.string <- data$individuals$INDIVIDUALS
   n.markers <- length(SeqArray::seqGetData(data$vcf.connection, "variant.id"))
 
   if (n.markers > 100000) {
@@ -617,6 +629,8 @@ tidy_vcf <- function(
             dplyr::select(INDIVIDUALS, POP_ID = STRATA),
           by = "INDIVIDUALS")
       )
+    } else {
+      data$tidy.data %<>% dplyr::mutate(POP_ID = 1L)
     }
 
 
