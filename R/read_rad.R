@@ -109,7 +109,7 @@ read_rad <- function(
     message("Opening GDS file connection")
     data <- SeqArray::seqOpen(gds.fn = data, readonly = FALSE)
 
-    rad_sample <- purrr::safely(.f = function(x) gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/STRATA/INDIVIDUALS")))
+    rad_sample <- purrr::safely(.f = function(x) gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/individuals/INDIVIDUALS")))
     rad_markers <- purrr::safely(.f = function(x) gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/markers.meta/VARIANT_ID")))
 
     w.s <-  rad_sample(data)
