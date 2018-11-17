@@ -13,6 +13,7 @@ clean_ind_names(x)
 function to clean individual's name
 that interfere with some packages
 or codes. \code{_} and \code{:} are changed to a dash \code{-}.
+Whitespaces are removed.
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and might be of interest for users.
 }

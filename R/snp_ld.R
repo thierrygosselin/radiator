@@ -57,7 +57,8 @@
 #' Default: \code{maf.data = NULL}.
 #'
 #' @param ld.threshold (optional, double) The threshold to prune SNP based on
-#' Long Distance Linkage Disequilibrium.
+#' Long Distance Linkage Disequilibrium. The argument ld.threshold is
+#' the absolute value of measurement.
 #' Default: \code{ld.threshold = NULL}.
 
 #' @param filename (optional, character) File name prefix for file written in
@@ -103,6 +104,15 @@
 #' The function will use \emph{SNPRelate::snpgdsLDpruning}
 #' to prune the dataset. SNPs in LD are selected randomly.
 #' Default: \code{long.ld.missing = FALSE}.
+#' \item \code{ld.method}: (optional, character) The values available are
+#' \code{"composite"}, for LD composite measure, \code{"r"} for R coefficient
+#' (by EM algorithm assuming HWE, it could be negative), \code{"r2"} for r^2,
+#' \code{"dprime"} for D',
+#' \code{"corr"} for correlation coefficient. The method corr and composite are
+#' equivalent when SNPs are coded based on the presence of the alternate allele
+#' (\code{0, 1, 2}).
+#' Default: \code{ld.method = "r2"}.
+#'
 #' \item \code{keep.gds} (logical) Default: \code{keep.gds = FALSE}, when the input data is a
 #' tidy data frame of genotypes, the GDS file
 #' generated for the long distance LD is removed after completion. With GDS input,
@@ -179,15 +189,18 @@ snp_ld <- function(
 
   # # testing
   # data <- res$vcf.connection
+  # data <- radiator::read_rad(data = "prep.vcf/radiator_20181116@1157.gds")
+  # radiator::write_rad(data = res.ld$data.gds)
   # snp.ld = "maf"
   # maf.data = NULL
-  # ld.threshold = 0.8
+  # ld.threshold = 0.9
   # filename = NULL
   # parallel.core = parallel::detectCores() - 1
   # # ...
   # keep.gds <- TRUE
   # ld.figures <- TRUE
   # long.ld.missing = TRUE
+  # ld.method = "r2"
   # verbose = TRUE
 
   timing <- proc.time()
@@ -197,7 +210,7 @@ snp_ld <- function(
 
   # dotslist -------------------------------------------------------------------
   radiator.dots <- list(...)
-  want <- c("long.ld.missing", "keep.gds", "ld.figures", "path.folder")
+  want <- c("long.ld.missing", "keep.gds", "ld.figures", "path.folder", "ld.method")
   unknowned_param <- setdiff(names(radiator.dots), want)
 
   if (length(unknowned_param) > 0) {
@@ -206,10 +219,22 @@ snp_ld <- function(
   }
 
   long.ld.missing <- radiator.dots[["long.ld.missing"]]
+  ld.method <- radiator.dots[["ld.method"]]
   keep.gds <- radiator.dots[["keep.gds"]]
   ld.figures <- radiator.dots[["ld.figures"]]
   path.folder <- radiator.dots[["path.folder"]]
 
+  if (is.null(ld.method)) {
+    ld.method <- "r2"
+  } else {
+    ld.method <- match.arg(ld.method, c("composite", "r", "r2","dprime", "corr"))
+  }
+  if (ld.method == "r2") {
+    r2 <- TRUE
+    ld.method <- "r"
+  } else {
+    r2 <- FALSE
+  }
   if (is.null(long.ld.missing)) long.ld.missing <- FALSE
   if (is.null(keep.gds)) keep.gds <- FALSE
   if (is.null(ld.figures)) ld.figures <- TRUE
@@ -583,7 +608,7 @@ snp_ld <- function(
     chrom.tick <- dplyr::distinct(markers, CHROM) %>%
       dplyr::mutate(
         CHROM_TICK = stringi::stri_join(seq(from = 1, to = n(), by = 1), n(), sep = "/")
-        )
+      )
 
     ld.sample <- dplyr::sample_frac(tbl = chrom.tick, size = 0.2) %>%
       dplyr::select(CHROM) %>%
@@ -600,6 +625,7 @@ snp_ld <- function(
       purrr::flatten_int(.)
 
     n.markers <- length(variant.id.select)
+
     # LONG LD with MISSING -----------------------------------------------------
     if (long.ld.missing) {
       if (verbose) message("Long distance LD pruning with missing data")
@@ -629,6 +655,8 @@ snp_ld <- function(
                              x = res.ld$data.gds,
                              data.type = data.type,
                              ld.threshold = ld.threshold,
+                             ld.method = ld.method,
+                             r2 = r2,
                              parallel.core = parallel.core,
                              ld.figures = ld.figures,
                              verbose = verbose)
@@ -666,7 +694,7 @@ snp_ld <- function(
       n.before <- nrow(markers)
       n.after <- nrow(res.ld$whitelist.snp.ld)
       if (verbose) message("\nNumber of SNPs (before / blacklisted / after) pruning for long distance LD: ",
-              n.before, " / ", n.before - n.after, " / ", n.after)
+                           n.before, " / ", n.before - n.after, " / ", n.after)
 
       # updating the GDS object ------------------------------------------------
       if (data.type == "tbl_df") {
@@ -703,11 +731,32 @@ snp_ld <- function(
         }
 
         if (verbose) message("Generating figures...")
+
+        if (r2){
+          ld.title <- expression(paste("Long distance linkage disequilibrium (", r^2, ")"))
+        } else {
+          if (ld.method == "r") {
+            ld.title <- "Long distance linkage disequilibrium (r)"
+          }
+
+          if (ld.method == "dprime") {
+            ld.title <- "Long distance linkage disequilibrium (D')"
+          }
+
+          if (ld.method == "corr") {
+            ld.title <- "Long distance linkage disequilibrium (corr)"
+          }
+
+          if (ld.method == "composite") {
+            ld.title <- "Long distance linkage disequilibrium (composite)"
+          }
+        }
+
         res.ld$ld.boxplot <- boxplot_stats(
           data = res.ld$ld.summary,
           title = stringi::stri_join("Markers long distance linkage disequilibrium (LD)\nOutlier high: ", round(res.ld$ld.summary$OUTLIERS_HIGH, 2)),
           x.axis.title = NULL,
-          y.axis.title = "Long distance linkage disequilibrium (r)",
+          y.axis.title = ld.title,
           bp.filename = stringi::stri_join(path.folder, "/snp.long.ld.boxplot_", file.date, ".pdf"))
       }#End ld.figures
     } else {
@@ -775,7 +824,7 @@ snp_ld <- function(
         remove.monosnp = TRUE,
         maf = NaN,
         missing.rate = NaN,
-        method = "r",
+        method = ld.method,
         ld.threshold = ld.threshold,
         num.thread = 1,
         verbose = FALSE) %>%
@@ -799,7 +848,7 @@ snp_ld <- function(
       n.before <- nrow(markers)
       n.after <- nrow(res.ld$whitelist.snp.ld)
       if (verbose) message("\nNumber of SNPs (before / blacklisted / after) pruning for long distance LD: ",
-              n.before, " / ", n.before - n.after, " / ", n.after)
+                           n.before, " / ", n.before - n.after, " / ", n.after)
       # updating the GDS object ------------------------------------------------
       if (data.type == "tbl_df") {
         data <- dplyr::filter(data, MARKERS %in% res.ld$whitelist.snp.ld$MARKERS)
@@ -957,6 +1006,8 @@ ld_pruning <- function(
 #' @param x The GDS object.
 #' @param data.type The type of dataset.
 #' @param ld.threshold The LD threshold.
+#' @param ld.method The method to compute LD.
+#' @param r2 (logical)
 #' @param parallel.core The number of CPU.
 #' @param verbose (logical, optional) Default: \code{verbose = TRUE}.
 #' @return A list with blacklisted SNPs.
@@ -969,6 +1020,8 @@ ld_chrom_missing <- function(chrom.select,
                              x,
                              data.type,
                              ld.threshold,
+                             ld.method = "r2",
+                             r2,
                              parallel.core = parallel::detectCores() - 1,
                              ld.figures = TRUE,
                              verbose = TRUE) {
@@ -997,7 +1050,7 @@ ld_chrom_missing <- function(chrom.select,
       sample.id = w.s,
       slide = -1,
       mat.trim = FALSE,
-      method = "r", #composite and corr option are the same with 0, 1, 2 gt coding
+      method = ld.method,
       num.thread = parallel.core.temp,
       with.id = TRUE,
       verbose = FALSE) %$%
@@ -1008,7 +1061,7 @@ ld_chrom_missing <- function(chrom.select,
     # work on the output -------------------------------------------------------
     # Fill with NA the diagonal and the lower triangle...
     res.chrom[lower.tri(res.chrom, diag = TRUE)] <- rlang::na_dbl
-
+    if (r2) res.chrom <- res.chrom^2 #r^2 used here...
     # Figures ------------------------------------------------------------------
     if (ld.figures && unique(chrom.select$LD_SUBSAMPLE)) {
       ld.markers$fig.data <- as.vector(res.chrom) %>% magrittr::extract(!is.na(.))

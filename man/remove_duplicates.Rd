@@ -14,8 +14,8 @@ ld_pruning(ld.tibble = NULL, stats = NULL, ld.threshold = 0.8,
   verbose = TRUE)
 
 ld_chrom_missing(chrom.select, x, data.type, ld.threshold,
-  parallel.core = parallel::detectCores() - 1, ld.figures = TRUE,
-  verbose = TRUE)
+  ld.method = "r2", r2, parallel.core = parallel::detectCores() - 1,
+  ld.figures = TRUE, verbose = TRUE)
 }
 \arguments{
 \item{data}{(path) The individual's pairwise data.
@@ -45,6 +45,10 @@ Default: \code{ld.threshold = 0.8}.}
 \item{x}{The GDS object.}
 
 \item{data.type}{The type of dataset.}
+
+\item{ld.method}{The method to compute LD.}
+
+\item{r2}{(logical)}
 
 \item{parallel.core}{The number of CPU.}
 

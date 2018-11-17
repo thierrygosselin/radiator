@@ -45,7 +45,8 @@ the MAF is calculated only for locus with multiple SNPs .
 Default: \code{maf.data = NULL}.}
 
 \item{ld.threshold}{(optional, double) The threshold to prune SNP based on
-Long Distance Linkage Disequilibrium.
+Long Distance Linkage Disequilibrium. The argument ld.threshold is
+the absolute value of measurement.
 Default: \code{ld.threshold = NULL}.}
 
 \item{parallel.core}{(optional) The number of core used for parallel
@@ -118,6 +119,15 @@ missingness between markers is not an issue, use \code{long.ld.missing = FALSE}.
 The function will use \emph{SNPRelate::snpgdsLDpruning}
 to prune the dataset. SNPs in LD are selected randomly.
 Default: \code{long.ld.missing = FALSE}.
+\item \code{ld.method}: (optional, character) The values available are
+\code{"composite"}, for LD composite measure, \code{"r"} for R coefficient
+(by EM algorithm assuming HWE, it could be negative), \code{"r2"} for r^2,
+\code{"dprime"} for D',
+\code{"corr"} for correlation coefficient. The method corr and composite are
+equivalent when SNPs are coded based on the presence of the alternate allele
+(\code{0, 1, 2}).
+Default: \code{ld.method = "r2"}.
+
 \item \code{keep.gds} (logical) Default: \code{keep.gds = FALSE}, when the input data is a
 tidy data frame of genotypes, the GDS file
 generated for the long distance LD is removed after completion. With GDS input,
