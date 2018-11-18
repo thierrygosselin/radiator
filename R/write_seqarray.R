@@ -350,7 +350,7 @@ write_seqarray <- function(
 
   if (verbose) {
     if (big.vcf > 500000000) message("Large vcf file may take several minutes...")
-    if (big.vcf > 5000000000) message("    you actually have time for a coffee!")
+    if (big.vcf > 5000000000) message("    you actually have time for a coffee!\n")
   }
 
   # Filename -------------------------------------------------------------------
@@ -381,24 +381,11 @@ write_seqarray <- function(
   filename.short <- filename
   filename <- file.path(path.folder, filename)
 
-  # Filter parameter file ------------------------------------------------------
-  filters.parameters.path <- stringi::stri_join(
-    path.folder, "/filters_parameters_", file.date, ".tsv")
-  filters.parameters <- tibble::data_frame(
-    FILTERS = as.character(),
-    PARAMETERS = as.character(),
-    VALUES = as.integer(),
-    BEFORE = as.character(),
-    AFTER = as.character(),
-    BLACKLIST = as.integer(),
-    UNITS = as.character(),
-    COMMENTS = as.character()) %>%
-    readr::write_tsv(
-      x = .,
-      path = filters.parameters.path,
-      append = FALSE,
-      col_names = TRUE)
-  if (verbose) message("Generated a filters parameters file: filters_parameters_", file.date, ".tsv")
+  # Filter parameter file: initiate --------------------------------------------
+  filters.parameters <- update_parameters(initiate = TRUE,
+                                          path.folder = path.folder,
+                                          file.date = file.date,
+                                          verbose = verbose)
 
   # Read vcf -------------------------------------------------------------------
   timing.vcf <- proc.time()
@@ -532,9 +519,11 @@ write_seqarray <- function(
       # the param file is updated after markers metadata below
     }
 
-    SeqArray::seqSetFilter(object = res$vcf.connection,
-                           sample.id = strata$INDIVIDUALS,
-                           verbose = FALSE)
+    # SeqArray::seqSetFilter(object = res$vcf.connection,
+    #                        sample.id = strata$INDIVIDUALS,
+    #                        verbose = FALSE)
+
+    sync_gds(gds = res$vcf.connection, samples = strata$INDIVIDUALS)
 
     res$individuals <- strata
     gdsfmt::add.gdsn(
@@ -722,48 +711,20 @@ write_seqarray <- function(
 
   # update filter param ----------------------------------------------------------
   # The original VCF's values
-
-  info.new <- data_info(res$markers.meta) # updating parameters
-  info.new$n.pop <- 0L
-  info.new$n.ind <- n.ind
-
-  filters.parameters <- tibble::data_frame(
-    FILTERS = "vcf",
-    PARAMETERS = "original values in vcf",
-    VALUES = "",
-    BEFORE = paste(info.new$n.ind, info.new$n.pop, info.new$n.chrom, info.new$n.locus, info.new$n.snp, sep = " / "),
-    AFTER = paste(info.new$n.ind, info.new$n.pop, info.new$n.chrom, info.new$n.locus, info.new$n.snp, sep = " / "),
-    BLACKLIST = "0 / 0 / 0 / 0 / 0",
-    UNITS = "individuals / strata / chrom / locus / markers",
-    COMMENTS = "the vcf is not population-wise"
-  ) %>%
-    readr::write_tsv(x = .,
-                     path = filters.parameters.path, append = TRUE,
-                     col_names = FALSE)
-  # update info
-  info <- info.new
-
+  filters.parameters <- update_parameters(
+    parameter.obj = filters.parameters,
+    gds.obj = res,
+    filter.name = "vcf",
+    param.name = "original values in vcf",
+    values = "")
 
   if (blacklist.strata != 0 && strata) {
-    info.new <- data_info(res$markers.meta) # updating parameters
-    info.new$n.pop <- length(unique(res$individuals$STRATA))
-    info.new$n.ind <- length(unique(res$individuals$INDIVIDUALS))
-
-    filters.parameters <- tibble::data_frame(
-      FILTERS = "vcf",
-      PARAMETERS = "with strata included",
-      VALUES = "",
-      BEFORE = paste(info$n.ind, info$n.pop, info.new$n.chrom, info.new$n.locus, info.new$n.snp, sep = " / "),
-      AFTER = paste(info.new$n.ind, info.new$n.pop, info.new$n.chrom, info.new$n.locus, info.new$n.snp, sep = " / "),
-      BLACKLIST = paste(info$n.ind - info.new$n.ind, 0L, 0L, 0L, 0L, sep = " / "),
-      UNITS = "individuals / strata / chrom / locus / markers",
-      COMMENTS = ""
-    ) %>%
-      readr::write_tsv(x = .,
-                       path = filters.parameters.path, append = TRUE,
-                       col_names = FALSE)
-    # update info
-    info <- info.new
+    filters.parameters <- update_parameters(
+      parameter.obj = filters.parameters,
+      gds.obj = res,
+      filter.name = "vcf",
+      param.name = "original values in vcf + strata",
+      values = "")
   }
 
   # PRE-FILTERING --------------------------------------------------------------
@@ -829,30 +790,18 @@ write_seqarray <- function(
                            variant.id = variant.select,
                            verbose = FALSE)
 
+
     if (length(SeqArray::seqGetData(res$vcf.connection, "variant.id")) == 0) {
       stop("No markers left in the dataset, check whitelist...")
     }
 
     # update filter param ----------------------------------------------------------
-    info.new <- data_info(res$markers.meta) # updating parameters
-    info.new$n.pop <- length(unique(res$individuals$STRATA))
-    info.new$n.ind <- length(unique(res$individuals$INDIVIDUALS))
-
-    filters.parameters <- tibble::data_frame(
-      FILTERS = "whitelist markers",
-      PARAMETERS = "whitelist.markers",
-      VALUES = nrow.after,
-      BEFORE = paste(info$n.ind, info$n.pop, info$n.chrom, info$n.locus, info$n.snp, sep = " / "),
-      AFTER = paste(info.new$n.ind, info.new$n.pop, info.new$n.chrom, info.new$n.locus, info.new$n.snp, sep = " / "),
-      BLACKLIST = paste(info$n.ind - info.new$n.ind, info$n.pop - info.new$n.pop, info$n.chrom - info.new$n.chrom, info$n.locus - info.new$n.locus, info$n.snp - info.new$n.snp, sep = " / "),
-      UNITS = "individuals / strata / chrom / locus / markers",
-      COMMENTS = ""
-    ) %>%
-      readr::write_tsv(x = .,
-                       path = filters.parameters.path, append = TRUE,
-                       col_names = FALSE)
-    # update info
-    info <- info.new
+    filters.parameters <- update_parameters(
+      parameter.obj = filters.parameters,
+      gds.obj = res,
+      filter.name = "whitelist markers",
+      param.name = "whitelist.markers",
+      values = nrow.after)
   }# End whitelist markers
 
   # Scan and filter with FILTER column ---------------------------------------
@@ -877,30 +826,19 @@ write_seqarray <- function(
     n.markers.after <- nrow(res$markers.meta)
     n.markers <- stringi::stri_join(n.markers.before, n.markers.before - n.markers.after, n.markers.after, sep = " / ")
     if (verbose) message("    Number of SNPs before / blacklisted / after: ", n.markers)
-    SeqArray::seqSetFilter(object = res$vcf.connection,
-                           variant.id = res$markers.meta$VARIANT_ID,
-                           verbose = FALSE)
+    # SeqArray::seqSetFilter(object = res$vcf.connection,
+    #                        variant.id = res$markers.meta$VARIANT_ID,
+    #                        verbose = FALSE)
+    sync_gds(gds = res$vcf.connection, markers = res$markers.meta$VARIANT_ID)
+
 
     # update filter param ----------------------------------------------------------
-    info.new <- data_info(res$markers.meta) # updating parameters
-    info.new$n.pop <- length(unique(res$individuals$STRATA))
-    info.new$n.ind <- length(unique(res$individuals$INDIVIDUALS))
-
-    filters.parameters <- tibble::data_frame(
-      FILTERS = "vcf filter column",
-      PARAMETERS = "PASS or not",
-      VALUES = "",
-      BEFORE = paste(info$n.ind, info$n.pop, info$n.chrom, info$n.locus, info$n.snp, sep = " / "),
-      AFTER = paste(info.new$n.ind, info.new$n.pop, info.new$n.chrom, info.new$n.locus, info.new$n.snp, sep = " / "),
-      BLACKLIST = paste(info$n.ind - info.new$n.ind, info$n.pop - info.new$n.pop, info$n.chrom - info.new$n.chrom, info$n.locus - info.new$n.locus, info$n.snp - info.new$n.snp, sep = " / "),
-      UNITS = "individuals / strata / chrom / locus / markers",
-      COMMENTS = ""
-    ) %>%
-      readr::write_tsv(x = .,
-                       path = filters.parameters.path, append = TRUE,
-                       col_names = FALSE)
-    # update info
-    info <- info.new
+    filters.parameters <- update_parameters(
+      parameter.obj = filters.parameters,
+      gds.obj = res,
+      filter.name = "vcf filter column",
+      param.name = "PASS or not",
+      values = "")
   }
   filter.check.unique <- NULL
   res$markers.meta %<>% dplyr::select(-FILTER)
@@ -917,9 +855,11 @@ write_seqarray <- function(
     }
 
     if (filter.strands == "best.stats") {
-      SeqArray::seqSetFilter(object = res$vcf.connection,
-                             variant.id = blacklist.strands$VARIANT_ID,
-                             verbose = FALSE)
+      # SeqArray::seqSetFilter(object = res$vcf.connection,
+      #                        variant.id = blacklist.strands$VARIANT_ID,
+      #                        verbose = FALSE)
+      sync_gds(gds = res$vcf.connection, markers = blacklist.strands$VARIANT_ID)
+
 
       blacklist.strands <- SeqArray::seqAlleleCount(
         gdsfile = res$vcf.connection,
@@ -978,30 +918,19 @@ write_seqarray <- function(
         compress = "ZIP_RA",
         closezip = TRUE)
 
-      SeqArray::seqSetFilter(object = res$vcf.connection,
-                             variant.id = res$markers.meta$VARIANT_ID,
-                             verbose = FALSE)
+      # SeqArray::seqSetFilter(object = res$vcf.connection,
+      #                        variant.id = res$markers.meta$VARIANT_ID,
+      #                        verbose = FALSE)
+      sync_gds(gds = res$vcf.connection, markers = res$markers.meta$VARIANT_ID)
+
 
       # update filter param ----------------------------------------------------------
-      info.new <- data_info(res$markers.meta) # updating parameters
-      info.new$n.pop <- length(unique(res$individuals$STRATA))
-      info.new$n.ind <- length(unique(res$individuals$INDIVIDUALS))
-
-      filters.parameters <- tibble::data_frame(
-        FILTERS = "duplicated markers on different strands",
-        PARAMETERS = "filter.strands",
-        VALUES = filter.strands,
-        BEFORE = paste(info$n.ind, info$n.pop, info$n.chrom, info$n.locus, info$n.snp, sep = " / "),
-        AFTER = paste(info.new$n.ind, info.new$n.pop, info.new$n.chrom, info.new$n.locus, info.new$n.snp, sep = " / "),
-        BLACKLIST = paste(info$n.ind - info.new$n.ind, info$n.pop - info.new$n.pop, info$n.chrom - info.new$n.chrom, info$n.locus - info.new$n.locus, info$n.snp - info.new$n.snp, sep = " / "),
-        UNITS = "individuals / strata / chrom / locus / markers",
-        COMMENTS = ""
-      ) %>%
-        readr::write_tsv(x = .,
-                         path = filters.parameters.path, append = TRUE,
-                         col_names = FALSE)
-      # update info
-      info <- info.new
+      filters.parameters <- update_parameters(
+        parameter.obj = filters.parameters,
+        gds.obj = res,
+        filter.name = "duplicated markers on different strands",
+        param.name = "filter.strands",
+        values = filter.strands)
     }
   }
 
@@ -1191,31 +1120,20 @@ write_seqarray <- function(
         #     compress = "ZIP_RA",
         #     closezip = TRUE)
         # }
-        SeqArray::seqSetFilter(
-          object = res$vcf.connection,
-          sample.id = res$individuals$INDIVIDUALS,
-          verbose = FALSE)
+        # SeqArray::seqSetFilter(
+        #   object = res$vcf.connection,
+        #   sample.id = res$individuals$INDIVIDUALS,
+        #   verbose = FALSE)
+        sync_gds(gds = res$vcf.connection, samples = res$individuals$INDIVIDUALS)
+
 
         # update filter param ----------------------------------------------------------
-        info.new <- data_info(res$markers.meta) # updating parameters
-        info.new$n.pop <- length(unique(res$individuals$STRATA))
-        info.new$n.ind <- length(unique(res$individuals$INDIVIDUALS))
-
-        filters.parameters <- tibble::data_frame(
-          FILTERS = "Filter individuals based on missingness (with outlier stats or values)",
-          PARAMETERS = "filter.individuals.missing",
-          VALUES = filter.individuals.missing,
-          BEFORE = paste(info$n.ind, info$n.pop, info$n.chrom, info$n.locus, info$n.snp, sep = " / "),
-          AFTER = paste(info.new$n.ind, info.new$n.pop, info.new$n.chrom, info.new$n.locus, info.new$n.snp, sep = " / "),
-          BLACKLIST = paste(info$n.ind - info.new$n.ind, info$n.pop - info.new$n.pop, info$n.chrom - info.new$n.chrom, info$n.locus - info.new$n.locus, info$n.snp - info.new$n.snp, sep = " / "),
-          UNITS = "individuals / strata / chrom / locus / markers",
-          COMMENTS = ""
-        ) %>%
-          readr::write_tsv(x = .,
-                           path = filters.parameters.path, append = TRUE,
-                           col_names = FALSE)
-        # update info
-        info <- info.new
+        filters.parameters <- update_parameters(
+          parameter.obj = filters.parameters,
+          gds.obj = res,
+          filter.name = "Filter individuals based on missingness (with outlier stats or values)",
+          param.name = "filter.individuals.missing",
+          values = filter.individuals.missing)
       }
     }#filter.individuals.missing
     blacklist.id <- NULL
@@ -1288,10 +1206,12 @@ write_seqarray <- function(
     # test <- res$markers.meta
 
     # sync GDS with sample -----------------------------------------------------
-    SeqArray::seqSetFilter(
-      object = res$vcf.connection,
-      sample.id = res$individuals$INDIVIDUALS,
-      verbose = FALSE)
+    # SeqArray::seqSetFilter(
+    #   object = res$vcf.connection,
+    #   sample.id = res$individuals$INDIVIDUALS,
+    #   verbose = FALSE)
+    sync_gds(gds = res$vcf.connection, samples = res$individuals$INDIVIDUALS)
+
 
     # COMMON MARKERS -----------------------------------------------------------
     # Remove markers not in common if option selected
@@ -1304,7 +1224,7 @@ write_seqarray <- function(
       not.in.common <- nrow(not.common.markers)
 
       if (not.in.common > 0) {
-        message("    number of markers not in common between strata blacklisted: ", not.in.common)
+        message("    number of markers blacklisted: ", not.in.common)
         # update the blacklist
         res$blacklist.markers <- dplyr::bind_rows(
           res$blacklist.markers,
@@ -1318,34 +1238,23 @@ write_seqarray <- function(
           replace = TRUE,
           compress = "ZIP_RA",
           closezip = TRUE)
-        SeqArray::seqSetFilter(object = res$vcf.connection,
-                               variant.id = res$markers.meta$VARIANT_ID,
-                               verbose = FALSE)
+        # SeqArray::seqSetFilter(object = res$vcf.connection,
+        #                        variant.id = res$markers.meta$VARIANT_ID,
+        #                        verbose = FALSE)
+        sync_gds(gds = res$vcf.connection, markers = res$markers.meta$VARIANT_ID)
+
         n.markers <- length(res$markers.meta$VARIANT_ID)
 
-        # update filter param ----------------------------------------------------------
-        info.new <- data_info(res$markers.meta) # updating parameters
-        info.new$n.pop <- length(unique(res$individuals$STRATA))
-        info.new$n.ind <- length(unique(res$individuals$INDIVIDUALS))
-
-        filters.parameters <- tibble::data_frame(
-          FILTERS = "Filter for common markers",
-          PARAMETERS = "common.markers",
-          VALUES = common.markers,
-          BEFORE = paste(info$n.ind, info$n.pop, info$n.chrom, info$n.locus, info$n.snp, sep = " / "),
-          AFTER = paste(info.new$n.ind, info.new$n.pop, info.new$n.chrom, info.new$n.locus, info.new$n.snp, sep = " / "),
-          BLACKLIST = paste(info$n.ind - info.new$n.ind, info$n.pop - info.new$n.pop, info$n.chrom - info.new$n.chrom, info$n.locus - info.new$n.locus, info$n.snp - info.new$n.snp, sep = " / "),
-          UNITS = "individuals / strata / chrom / locus / markers",
-          COMMENTS = ""
-        ) %>%
-          readr::write_tsv(x = .,
-                           path = filters.parameters.path, append = TRUE,
-                           col_names = FALSE)
-        # update info
-        info <- info.new
       } else {
         message("    all markers in common between strata")
       }
+      # update filter param ----------------------------------------------------------
+      filters.parameters <- update_parameters(
+        parameter.obj = filters.parameters,
+        gds.obj = res,
+        filter.name = "Filter for common markers",
+        param.name = "common.markers",
+        values = common.markers)
       not.in.common <- not.common.markers <- NULL
     }
 
@@ -1375,33 +1284,21 @@ write_seqarray <- function(
           compress = "ZIP_RA",
           closezip = TRUE)
 
-        SeqArray::seqSetFilter(object = res$vcf.connection,
-                               variant.id = res$markers.meta$VARIANT_ID,
-                               verbose = FALSE)
+        # SeqArray::seqSetFilter(object = res$vcf.connection,
+        #                        variant.id = res$markers.meta$VARIANT_ID,
+        #                        verbose = FALSE)
+        sync_gds(gds = res$vcf.connection, markers = res$markers.meta$VARIANT_ID)
+
         n.markers <- length(res$markers.meta$VARIANT_ID)
-
-        # update filter param ----------------------------------------------------------
-        info.new <- data_info(res$markers.meta) # updating parameters
-        info.new$n.pop <- length(unique(res$individuals$STRATA))
-        info.new$n.ind <- length(unique(res$individuals$INDIVIDUALS))
-
-        filters.parameters <- tibble::data_frame(
-          FILTERS = "Filter for low minor allele count",
-          PARAMETERS = "filter.mac",
-          VALUES = filter.mac,
-          BEFORE = paste(info$n.ind, info$n.pop, info$n.chrom, info$n.locus, info$n.snp, sep = " / "),
-          AFTER = paste(info.new$n.ind, info.new$n.pop, info.new$n.chrom, info.new$n.locus, info.new$n.snp, sep = " / "),
-          BLACKLIST = paste(info$n.ind - info.new$n.ind, info$n.pop - info.new$n.pop, info$n.chrom - info.new$n.chrom, info$n.locus - info.new$n.locus, info$n.snp - info.new$n.snp, sep = " / "),
-          UNITS = "individuals / strata / chrom / locus / markers",
-          COMMENTS = ""
-        ) %>%
-          readr::write_tsv(x = .,
-                           path = filters.parameters.path, append = TRUE,
-                           col_names = FALSE)
-        # update info
-        info <- info.new
       }
       blacklist.mac <- NULL
+      # update filter param ----------------------------------------------------------
+      filters.parameters <- update_parameters(
+        parameter.obj = filters.parameters,
+        gds.obj = res,
+        filter.name = "Filter for low minor allele count",
+        param.name = "filter.mac",
+        values = filter.mac)
     }
     # test <- res$markers.meta
 
@@ -1467,34 +1364,22 @@ write_seqarray <- function(
             compress = "ZIP_RA",
             closezip = TRUE)
 
-          SeqArray::seqSetFilter(object = res$vcf.connection,
-                                 variant.id = res$markers.meta$VARIANT_ID,
-                                 verbose = FALSE)
+          # SeqArray::seqSetFilter(object = res$vcf.connection,
+          #                        variant.id = res$markers.meta$VARIANT_ID,
+          #                        verbose = FALSE)
+          sync_gds(gds = res$vcf.connection, markers = res$markers.meta$VARIANT_ID)
+
 
         }
         blacklist.coverage <- NULL
-
-        # update filter param ----------------------------------------------------------
-        info.new <- data_info(res$markers.meta) # updating parameters
-        info.new$n.pop <- length(unique(res$individuals$STRATA))
-        info.new$n.ind <- length(unique(res$individuals$INDIVIDUALS))
-
-        filters.parameters <- tibble::data_frame(
-          FILTERS = "Filter for low or high coverage markers",
-          PARAMETERS = "filter.coverage.outliers: low / high",
-          VALUES = paste(res$stats$coverage.stats$OUTLIERS_LOW[1], res$stats$coverage.stats$OUTLIERS_HIGH[1], sep = " / "),
-          BEFORE = paste(info$n.ind, info$n.pop, info$n.chrom, info$n.locus, info$n.snp, sep = " / "),
-          AFTER = paste(info.new$n.ind, info.new$n.pop, info.new$n.chrom, info.new$n.locus, info.new$n.snp, sep = " / "),
-          BLACKLIST = paste(info$n.ind - info.new$n.ind, info$n.pop - info.new$n.pop, info$n.chrom - info.new$n.chrom, info$n.locus - info.new$n.locus, info$n.snp - info.new$n.snp, sep = " / "),
-          UNITS = "individuals / strata / chrom / locus / markers",
-          COMMENTS = ""
-        ) %>%
-          readr::write_tsv(x = .,
-                           path = filters.parameters.path, append = TRUE,
-                           col_names = FALSE)
-        # update info
-        info <- info.new
       }
+      # update filter param ----------------------------------------------------------
+      filters.parameters <- update_parameters(
+        parameter.obj = filters.parameters,
+        gds.obj = res,
+        filter.name = "Filter for low or high coverage markers",
+        param.name = "filter.coverage.outliers: low / high",
+        values = paste(res$stats$coverage.stats$OUTLIERS_LOW[1], res$stats$coverage.stats$OUTLIERS_HIGH[1], sep = " / "))
       coverage.info <- NULL
     }
 
@@ -1559,31 +1444,20 @@ write_seqarray <- function(
           compress = "ZIP_RA",
           closezip = TRUE)
 
-        SeqArray::seqSetFilter(object = res$vcf.connection,
-                               variant.id = res$markers.meta$VARIANT_ID,
-                               verbose = FALSE)
+        # SeqArray::seqSetFilter(object = res$vcf.connection,
+        #                        variant.id = res$markers.meta$VARIANT_ID,
+        #                        verbose = FALSE)
+        sync_gds(gds = res$vcf.connection, markers = res$markers.meta$VARIANT_ID)
+
       }
       blacklist.markers.missing <- NULL
       # update filter param ----------------------------------------------------------
-      info.new <- data_info(res$markers.meta) # updating parameters
-      info.new$n.pop <- length(unique(res$individuals$STRATA))
-      info.new$n.ind <- length(unique(res$individuals$INDIVIDUALS))
-
-      filters.parameters <- tibble::data_frame(
-        FILTERS = "Filter markers based on missingness",
-        PARAMETERS = "filter.markers.missing",
-        VALUES = filter.markers.missing,
-        BEFORE = paste(info$n.ind, info$n.pop, info$n.chrom, info$n.locus, info$n.snp, sep = " / "),
-        AFTER = paste(info.new$n.ind, info.new$n.pop, info.new$n.chrom, info.new$n.locus, info.new$n.snp, sep = " / "),
-        BLACKLIST = paste(info$n.ind - info.new$n.ind, info$n.pop - info.new$n.pop, info$n.chrom - info.new$n.chrom, info$n.locus - info.new$n.locus, info$n.snp - info.new$n.snp, sep = " / "),
-        UNITS = "individuals / strata / chrom / locus / markers",
-        COMMENTS = ""
-      ) %>%
-        readr::write_tsv(x = .,
-                         path = filters.parameters.path, append = TRUE,
-                         col_names = FALSE)
-      # update info
-      info <- info.new
+      filters.parameters <- update_parameters(
+        parameter.obj = filters.parameters,
+        gds.obj = res,
+        filter.name = "Filter markers based on missingness",
+        param.name = "filter.markers.missing",
+        values = filter.markers.missing)
     }
     # test <- res$markers.meta
 
@@ -1677,31 +1551,20 @@ write_seqarray <- function(
             compress = "ZIP_RA",
             closezip = TRUE)
 
-          SeqArray::seqSetFilter(object = res$vcf.connection,
-                                 variant.id = res$markers.meta$VARIANT_ID,
-                                 verbose = FALSE)
+          # SeqArray::seqSetFilter(object = res$vcf.connection,
+          #                        variant.id = res$markers.meta$VARIANT_ID,
+          #                        verbose = FALSE)
+          sync_gds(gds = res$vcf.connection, markers = res$markers.meta$VARIANT_ID)
+
         }
         blacklist.snp.read.position <- NULL
         # update filter param ----------------------------------------------------------
-        info.new <- data_info(res$markers.meta) # updating parameters
-        info.new$n.pop <- length(unique(res$individuals$STRATA))
-        info.new$n.ind <- length(unique(res$individuals$INDIVIDUALS))
-
-        filters.parameters <- tibble::data_frame(
-          FILTERS = "Filter SNPs based on position on read",
-          PARAMETERS = "filter.snp.read.position",
-          VALUES = paste(filter.snp.read.position, sep = " / "),
-          BEFORE = paste(info$n.ind, info$n.pop, info$n.chrom, info$n.locus, info$n.snp, sep = " / "),
-          AFTER = paste(info.new$n.ind, info.new$n.pop, info.new$n.chrom, info.new$n.locus, info.new$n.snp, sep = " / "),
-          BLACKLIST = paste(info$n.ind - info.new$n.ind, info$n.pop - info.new$n.pop, info$n.chrom - info.new$n.chrom, info$n.locus - info.new$n.locus, info$n.snp - info.new$n.snp, sep = " / "),
-          UNITS = "individuals / strata / chrom / locus / markers",
-          COMMENTS = ""
-        ) %>%
-          readr::write_tsv(x = .,
-                           path = filters.parameters.path, append = TRUE,
-                           col_names = FALSE)
-        # update info
-        info <- info.new
+        filters.parameters <- update_parameters(
+          parameter.obj = filters.parameters,
+          gds.obj = res,
+          filter.name = "Filter SNPs based on position on read",
+          param.name = "filter.snp.read.position",
+          values = paste(filter.snp.read.position, sep = " / "))
       }
       # test <- res$markers.meta
     }
@@ -1778,38 +1641,27 @@ write_seqarray <- function(
           compress = "ZIP_RA",
           closezip = TRUE)
 
-        SeqArray::seqSetFilter(object = res$vcf.connection,
-                               variant.id = res$markers.meta$VARIANT_ID,
-                               verbose = FALSE)
+        sync_gds(gds = res$vcf.connection, markers = res$markers.meta$VARIANT_ID)
+        # SeqArray::seqSetFilter(object = res$vcf.connection,
+        #                        variant.id = res$markers.meta$VARIANT_ID,
+        #                        verbose = FALSE)
       }
       blacklist.snp.ld <- filter.ld <- NULL
 
       # sync GDS with sample -----------------------------------------------------
-      SeqArray::seqSetFilter(
-        object = res$vcf.connection,
-        sample.id = res$individuals$INDIVIDUALS,
-        verbose = FALSE)
+      # SeqArray::seqSetFilter(
+      #   object = res$vcf.connection,
+      #   sample.id = res$individuals$INDIVIDUALS,
+      #   verbose = FALSE)
+      sync_gds(gds = res$vcf.connection, samples = res$individuals$INDIVIDUALS)
 
       # update filter param ----------------------------------------------------------
-      info.new <- data_info(res$markers.meta) # updating parameters
-      info.new$n.pop <- length(unique(res$individuals$STRATA))
-      info.new$n.ind <- length(unique(res$individuals$INDIVIDUALS))
-
-      filters.parameters <- tibble::data_frame(
-        FILTERS = "Filter for short and long LD",
-        PARAMETERS = "filter.short.ld / filter.long.ld / long.ld.missing",
-        VALUES = paste(filter.short.ld, filter.long.ld, long.ld.missing, sep = " / "),
-        BEFORE = paste(info$n.ind, info$n.pop, info$n.chrom, info$n.locus, info$n.snp, sep = " / "),
-        AFTER = paste(info.new$n.ind, info.new$n.pop, info.new$n.chrom, info.new$n.locus, info.new$n.snp, sep = " / "),
-        BLACKLIST = paste(info$n.ind - info.new$n.ind, info$n.pop - info.new$n.pop, info$n.chrom - info.new$n.chrom, info$n.locus - info.new$n.locus, info$n.snp - info.new$n.snp, sep = " / "),
-        UNITS = "individuals / strata / chrom / locus / markers",
-        COMMENTS = ""
-      ) %>%
-        readr::write_tsv(x = .,
-                         path = filters.parameters.path, append = TRUE,
-                         col_names = FALSE)
-      # update info
-      info <- info.new
+      filters.parameters <- update_parameters(
+        parameter.obj = filters.parameters,
+        gds.obj = res,
+        filter.name = "Filter for short and long LD",
+        param.name = "filter.short.ld / filter.long.ld / long.ld.missing / ld.method",
+        values = paste(filter.short.ld, filter.long.ld, long.ld.missing, ld.method, sep = " / "))
     }
 
     # For summary at the end of the function:
@@ -1839,6 +1691,10 @@ write_seqarray <- function(
     replace = TRUE,
     compress = "ZIP_RA",
     closezip = TRUE)
+
+  sync_gds(gds = res$vcf.connection, samples = res$individuals$INDIVIDUALS,
+           markers = res$markers.meta$VARIANT_ID)
+
 
 
   # RESULTS --------------------------------------------------------------------
@@ -2136,3 +1992,31 @@ missing_per_pop <- function(
     tidyr::nest(data = ., .key = MISSING_POP)
   return(res)
 }#End missing_per_pop
+
+
+# Sync GDS
+#' @title sync_gds
+#' @description Synchronize gds with samples and markers
+#' @rdname sync_gds
+#' @keywords internal
+#' @export
+sync_gds <- function(gds, samples = NULL, markers = NULL, verbose = FALSE) {
+  SeqArray::seqSetFilter(
+    object = gds,sample.id = samples, variant.id = markers, verbose = verbose)
+}#End sync_gds
+
+
+# summarize GDS
+#' @title summary_gds
+#' @description Summary of gds object: number of samples and markers
+#' @rdname summary_gds
+#' @keywords internal
+#' @export
+summary_gds <- function(gds) {
+  message("GDS summary: ")
+  check <- SeqArray::seqGetFilter(gds)
+  message("    number of samples: ", length(check$sample.sel[check$sample.sel]))
+  message("    number of markers: ", length(check$variant.sel[check$variant.sel]))
+}
+
+

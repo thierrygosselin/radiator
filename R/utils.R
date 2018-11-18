@@ -579,3 +579,99 @@ markers_genotyped_helper <- function(x, y, overall.only = FALSE) {
   return(plot.markers.geno.threshold)
 }#End markers_genotyped_helper
 
+
+#' @title update_parameters
+#' @description Generate or update a filters parameters file and object.
+#' Used internally in radiator. Not usefull for users.
+#' @rdname update_parameters
+#' @export
+#' @keywords internal
+update_parameters <- function(
+  parameter.obj = NULL,
+  gds.obj = NULL,
+  filter.name = "",
+  param.name = "",
+  values = paste(NULL, NULL, sep = " / "),
+  units = "individuals / strata / chrom / locus / markers",
+  comments = "",
+  path.folder = NULL,
+  file.date = NULL,
+  initiate = FALSE,
+  verbose = TRUE
+) {
+  res <- list()# initiate the list to store the results
+  if (is.null(file.date)) file.date <- format(Sys.time(), "%Y%m%d@%H%M")
+  if (!initiate) {
+    if (is.null(parameter.obj$filters.parameters.path)) {
+      initiate <- TRUE
+      generate.param <- TRUE
+      if (is.null(path.folder)) path.folder <- getwd()
+    } else {
+      generate.param <- TRUE
+    }
+  } else {
+    if (is.null(path.folder)) path.folder <- getwd()
+    generate.param <- FALSE
+  }
+
+  if (initiate) {
+    filters.parameters.name <- stringi::stri_join("filters_parameters_", file.date, ".tsv")
+    res$filters.parameters.path <- file.path(path.folder, filters.parameters.name)
+    res$filters.parameters <- tibble::tibble(
+      FILTERS = as.character(),
+      PARAMETERS = as.character(),
+      VALUES = as.character(),
+      BEFORE = as.character(),
+      AFTER = as.character(),
+      BLACKLIST = as.integer(),
+      UNITS = as.character(),
+      COMMENTS = as.character()) %>%
+      readr::write_tsv(
+        x = .,
+        path = res$filters.parameters.path,
+        append = FALSE,
+        col_names = TRUE)
+    if (verbose) message("Generated a filters parameters file: ", filters.parameters.name)
+  }#End initiate
+
+
+  if (generate.param) {
+    if (is.null(gds.obj)) stop("GDS object required")
+    if (is.null(parameter.obj$info)) {
+      info <- data_info(gds.obj$markers.meta)
+      if (is.null(gds.obj$individuals$STRATA)) {
+        info$n.pop <- 0L
+      } else{
+        info$n.pop <- length(unique(gds.obj$individuals$STRATA))
+      }
+      info$n.ind <- length(unique(gds.obj$individuals$INDIVIDUALS))
+    } else {
+      info <- parameter.obj$info
+    }
+    info.new <- data_info(gds.obj$markers.meta) # updating parameters
+    if (is.null(gds.obj$individuals$STRATA)) {
+      info.new$n.pop <- 0L
+    } else{
+      info.new$n.pop <- length(unique(gds.obj$individuals$STRATA))
+    }
+    info.new$n.ind <- length(unique(gds.obj$individuals$INDIVIDUALS))
+
+    res$filters.parameters <- tibble::tibble(
+      FILTERS = filter.name,
+      PARAMETERS = param.name,
+      VALUES = values,
+      BEFORE = paste(info$n.ind, info$n.pop, info$n.chrom, info$n.locus, info$n.snp, sep = " / "),
+      AFTER = paste(info.new$n.ind, info.new$n.pop, info.new$n.chrom, info.new$n.locus, info.new$n.snp, sep = " / "),
+      BLACKLIST = paste(info$n.ind - info.new$n.ind, info$n.pop - info.new$n.pop, info$n.chrom - info.new$n.chrom, info$n.locus - info.new$n.locus, info$n.snp - info.new$n.snp, sep = " / "),
+      UNITS = units, COMMENTS = comments
+    ) %>%
+      readr::write_tsv(x = ., path = parameter.obj$filters.parameters.path,
+                       append = TRUE, col_names = FALSE)
+    # update info
+    res$info <- info.new
+    res$filters.parameters.path <-parameter.obj$filters.parameters.path
+    if (verbose) message("Filters parameters file: updated")
+  }#End generate.param
+
+  return(res)
+}#End update_parameters

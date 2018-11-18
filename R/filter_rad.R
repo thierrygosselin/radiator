@@ -651,10 +651,9 @@ filter_rad <- function(
       if (interactive.filter) {
         message("2. Heterozygous genotypes coverage: REF/ALT alleles below ", threshold.low.coverage, " reads")
       }
-      gl_relative <- function(x) x / max(x)
+      gl_relative <- function(x) x / max(x, na.rm = TRUE)
 
-      input <- suppressWarnings(
-        radiator::write_rad(data = input, path = file.path(path.folder.coverage, "temp.coverage.rad")) %>%
+      input <- suppressWarnings(radiator::write_rad(data = input, path = file.path(path.folder.coverage, "temp.coverage.rad")) %>%
           dplyr::select(MARKERS, INDIVIDUALS, GT_BIN, READ_DEPTH, ALLELE_REF_DEPTH, ALLELE_ALT_DEPTH) %>%
           dplyr::group_by(MARKERS) %>%
           dplyr::mutate(
@@ -667,7 +666,32 @@ filter_rad <- function(
           dplyr::ungroup(.) %>%
           dplyr::filter(
             GT_BIN == 1,
-            ALLELE_REF_DEPTH <= threshold.low.coverage | ALLELE_ALT_DEPTH <= threshold.low.coverage) %>%
+            ALLELE_REF_DEPTH <= threshold.low.coverage | ALLELE_ALT_DEPTH <= threshold.low.coverage))
+
+      ref.coverage.problem <- dplyr::filter(input, is.na(ALLELE_REF_DEPTH))
+      alt.coverage.problem <- dplyr::filter(input, is.na(ALLELE_ALT_DEPTH))
+
+      if (nrow(ref.coverage.problem) > 0) {
+        message("\nProblem detected")
+        message("    missing REF allele depth info")
+        message("    number of genotypes with problem: ", nrow(ref.coverage.problem))
+        message("    correcting problem by using read depth - ALT read depth info to recover the REF depth...\n\n")
+        input %<>% dplyr::mutate(
+          ALLELE_REF_DEPTH = dplyr::if_else(is.na(ALLELE_REF_DEPTH),
+                                             READ_DEPTH - ALLELE_ALT_DEPTH, ALLELE_REF_DEPTH))
+      }
+
+      if (nrow(alt.coverage.problem) > 0) {
+        message("\nProblem detected")
+        message("    missing ALT allele depth info")
+        message("    number of genotypes with problem: ", nrow(alt.coverage.problem))
+        message("    correcting problem by using read depth - REF read depth info to recover the ALT depth...\n\n")
+        input %<>% dplyr::mutate(
+          ALLELE_ALT_DEPTH = dplyr::if_else(is.na(ALLELE_ALT_DEPTH),
+                                            READ_DEPTH - ALLELE_REF_DEPTH, ALLELE_ALT_DEPTH))
+      }
+
+      suppressWarnings(input %<>%
           dplyr::group_by(MARKERS) %>%
           dplyr::mutate(NUMBER_INDIVIDUALS = length(INDIVIDUALS)) %>%
           dplyr::ungroup(.) %>%
@@ -698,7 +722,8 @@ filter_rad <- function(
                         ALLELE_ALT_DEPTH, GL, NUMBER_INDIVIDUALS,
                         GENOTYPED_PROP_MARKERS, GENOTYPED_PROP_INDIVIDUALS) %>%
           dplyr::mutate(GL = log10(GL)) %>%
-          dplyr::arrange(GL))
+          dplyr::arrange(GL)
+        )
 
       plot.gl.violinplot <- input %>%
         dplyr::select(GT_BIN, ALLELE_REF_DEPTH, ALLELE_ALT_DEPTH, GL) %>%
@@ -820,7 +845,7 @@ filter_rad <- function(
         message("    Below this threshold, heterozygous genotypes are erased: ")
         # threshold.gl <- as.double(readLines(n = 1))
         threshold.gl <- interactive_question(
-          x = "Enter value: ", minmax = c(-1, 0))
+          x = "    Enter value: ", minmax = c(-1, 0))
       }
 
 
