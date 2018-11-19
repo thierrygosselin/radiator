@@ -291,7 +291,7 @@ filter_rad <- function(
 
 
   # Move some files generated during import ------------------------------------
-  if (verbose) cat("\n### 00: Imports ############################################\n")
+  if (verbose) cat("\n### 00: Imports #######################################################\n")
   folder.extension <- stringi::stri_join("00_Imports_", file.date, sep = "")
   path.folder.import <- file.path(path.folder, folder.extension)
   dir.create(path.folder.import)
@@ -1813,8 +1813,7 @@ filter_rad <- function(
     }
 
 
-    if (!is.null(nrow(blacklist.ind.het)) &&
-        nrow(blacklist.ind.het > 0)) {
+    if (!is.null(nrow(blacklist.ind.het)) && nrow(blacklist.ind.het) > 0) {
       n.ind.blacklisted <- length(blacklist.ind.het$INDIVIDUALS)
       message("Filter individual's heterozygosity: ", n.ind.blacklisted, " individual(s) blacklisted")
       mixed.genome.folder <- list.files(path = path.folder, pattern = "detect_mixed_genomes", full.names = TRUE)

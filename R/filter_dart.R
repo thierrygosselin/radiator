@@ -2272,8 +2272,7 @@ on the number of genotyped individuals per pop ? (overall or pop)")
     }
 
 
-    if (!is.null(nrow(blacklist.ind.het)) &&
-        nrow(blacklist.ind.het > 0)) {
+    if (!is.null(nrow(blacklist.ind.het)) && nrow(blacklist.ind.het) > 0) {
       n.ind.blacklisted <- length(blacklist.ind.het$INDIVIDUALS)
       message("Filter individual's heterozygosity: ", n.ind.blacklisted, " individual(s) blacklisted")
       mixed.genome.folder <- list.files(path = path.folder, pattern = "detect_mixed_genomes", full.names = TRUE)
