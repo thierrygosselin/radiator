@@ -44,11 +44,9 @@
 tidy_genlight <- function(data, verbose = FALSE) {
 
   if (!"adegenet" %in% utils::installed.packages()[,"Package"]) {
-    stop('Please install SeqArray for this option:\n
-         devtools::install_github("zhengxwen/SeqArray")
-         or the bioconductor version:
-         source("https://bioconductor.org/biocLite.R")
-         biocLite("SeqArray")')
+    stop('Please install adegenet for this option:\n
+         install.packages("adegenet")
+         ')
   }
 
   ## test

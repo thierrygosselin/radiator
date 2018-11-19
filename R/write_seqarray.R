@@ -157,6 +157,7 @@
 
 #' @examples
 #' \dontrun{
+#' #require(SeqVarTools)
 #' # with built-in defaults:
 #'  prep.data <- radiator::write_seqarray(data = "populations.snps.vcf")
 #'
@@ -219,25 +220,12 @@ write_seqarray <- function(
 
   res <- list() #store the results
   timing.import <- proc.time()
-  # Check that SeqArray is installed
-  if (!"SeqArray" %in% utils::installed.packages()[,"Package"]) {
-    stop('Please install SeqArray for this option:\n
-         devtools::install_github("zhengxwen/SeqArray")
-         or the bioconductor version:
-         source("https://bioconductor.org/biocLite.R")
-         biocLite("SeqArray")')
-  }
-
+  # Check that SeqVarTools is installed (it requires automatically: SeqArray and gdsfmt)
   if (!"SeqVarTools" %in% utils::installed.packages()[,"Package"]) {
     stop('Please install SeqVarTools for this option:\n
-         source("https://bioconductor.org/biocLite.R")
-         biocLite("SeqVarTools")')
-  }
-
-  if (!"gdsfmt" %in% utils::installed.packages()[,"Package"]) {
-    stop('Please install gdsfmt for this option:\n
-         source("https://bioconductor.org/biocLite.R")
-         biocLite("gdsfmt")')
+       install.packages("BiocManager")
+       BiocManager::install("SeqVarTools")
+       ')
   }
 
   # Checking for missing and/or default arguments ------------------------------

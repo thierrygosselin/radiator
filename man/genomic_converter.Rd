@@ -317,6 +317,7 @@ information on Variant Call Format specifications}.
 \examples{
 \dontrun{
 # The simplest form of the function:
+require(SeqVarTools) # when using vcf as input file
 snowcrab <- genomic_converter(
     data = "batch_1.vcf",
     output = c("genlight", "genepop"),

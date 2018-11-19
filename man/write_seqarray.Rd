@@ -166,6 +166,7 @@ If the supplied directory doesn't exist, it's created.
 }
 \examples{
 \dontrun{
+#require(SeqVarTools)
 # with built-in defaults:
  prep.data <- radiator::write_seqarray(data = "populations.snps.vcf")
 

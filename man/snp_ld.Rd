@@ -144,8 +144,8 @@ If the supplied directory doesn't exist, it's created.
 \dontrun{
 #require(SNPRelate)
 #To install SNPRelate:
-#source("https://bioconductor.org/biocLite.R")
-#biocLite("SNPRelate")
+#install.packages("BiocManager")
+#BiocManager::install ("SNPRelate")
 #library(radiator)
 data <- radiator::tidy_vcf(
 data = "my.vcf", strata = "my.strata.tsv",

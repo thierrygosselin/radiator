@@ -40,8 +40,8 @@ The function requires \href{https://github.com/zhengxwen/SNPRelate}{SNPRelate}
 to prepare the data for LDna.
 
 To install SNPRelate:
-source("https://bioconductor.org/biocLite.R")
-biocLite("SNPRelate").
+install.packages("BiocManager")
+BiocManager::install("SNPRelate")
 
 To install LDna:
 devtools::install_github("petrikemppainen/LDna")

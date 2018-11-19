@@ -193,22 +193,23 @@ tidy_vcf <- function(
   # Check that SeqArray is installed
   if (!"SeqArray" %in% utils::installed.packages()[,"Package"]) {
     stop('Please install SeqArray for this option:\n
-         devtools::install_github("zhengxwen/SeqArray")
-         or the bioconductor version:
-         source("https://bioconductor.org/biocLite.R")
-         biocLite("SeqArray")')
+         install.packages("BiocManager")
+         BiocManager::install ("SeqArray")
+         ')
   }
 
   if (!"SeqVarTools" %in% utils::installed.packages()[,"Package"]) {
     stop('Please install SeqVarTools for this option:\n
-         source("https://bioconductor.org/biocLite.R")
-         biocLite("SeqVarTools")')
+         install.packages("BiocManager")
+         BiocManager::install ("SeqVarTools")
+         ')
   }
 
   if (!"gdsfmt" %in% utils::installed.packages()[,"Package"]) {
     stop('Please install gdsfmt for this option:\n
-         source("https://bioconductor.org/biocLite.R")
-         biocLite("gdsfmt")')
+         install.packages("BiocManager")
+         BiocManager::install ("gdsfmt")
+         ')
   }
 
   # dotslist -------------------------------------------------------------------

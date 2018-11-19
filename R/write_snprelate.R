@@ -47,8 +47,9 @@ write_snprelate <- function(data, biallelic = TRUE, filename = NULL, verbose = T
   # Check that snprelate is installed
   if (!requireNamespace("SNPRelate", quietly = TRUE)) {
     stop('To install SNPRelate:\n
-         source("https://bioconductor.org/biocLite.R")
-         biocLite("SNPRelate")')
+        install.packages("BiocManager")
+        BiocManager::install("SNPRelate")
+         ')
   }
 
   # Checking for missing and/or default arguments ------------------------------

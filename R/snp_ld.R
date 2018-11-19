@@ -149,8 +149,8 @@
 #' \dontrun{
 #' #require(SNPRelate)
 #' #To install SNPRelate:
-#' #source("https://bioconductor.org/biocLite.R")
-#' #biocLite("SNPRelate")
+#' #install.packages("BiocManager")
+#' #BiocManager::install ("SNPRelate")
 #' #library(radiator)
 #' data <- radiator::tidy_vcf(
 #' data = "my.vcf", strata = "my.strata.tsv",
@@ -290,8 +290,9 @@ snp_ld <- function(
       # Check that snprelate is installed
       if (!requireNamespace("SNPRelate", quietly = TRUE)) {
         stop('To install SNPRelate:\n
-         source("https://bioconductor.org/biocLite.R")
-         biocLite("SNPRelate")')
+             install.packages("BiocManager")
+             BiocManager::install ("SNPRelate")
+            ')
       }
       # Check if data is biallelic -------------------------------------------------
       biallelic <- radiator::detect_biallelic_markers(data = data)

@@ -50,9 +50,10 @@ write_gds <- function(data, filename = NULL, verbose = TRUE) {
 
   # Check that snprelate is installed
   if (!requireNamespace("gdsfmt", quietly = TRUE)) {
-    stop('To install gdsfmt:\n
-         source("https://bioconductor.org/biocLite.R")
-         biocLite("gdsfmt")')
+    stop('Please install gdsfmt for this option:\n
+       install.packages("BiocManager")
+       BiocManager::install ("gdsfmt")
+       ')
   }
 
   # Checking for missing and/or default arguments ------------------------------

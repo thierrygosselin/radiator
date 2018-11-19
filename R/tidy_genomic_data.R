@@ -328,6 +328,7 @@
 
 #' @examples
 #' \dontrun{
+#' require(SeqVarTools) # when using vcf as input file
 #' tidy.vcf <- tidy_genomic_data(
 #' data = "batch_1.vcf",
 #' whitelist.markers = "whitelist.vcf.txt",
