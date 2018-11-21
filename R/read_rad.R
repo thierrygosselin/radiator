@@ -187,9 +187,9 @@ read_rad <- function(
 write_rad <- function(data, path) {
 
   # detect format---------------------------------------------------------------
-  data.type <- detect_genomic_format(data)
+  data.type <- class(data)
 
-  if (data.type == "SeqVarGDSClass") {
+  if (unique(data.type == "SeqVarGDSClass")) {
     rad_sample <- purrr::safely(.f = function(x) gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/STRATA/INDIVIDUALS")))
     rad_markers <- purrr::safely(.f = function(x) gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/markers.meta/VARIANT_ID")))
 

@@ -189,9 +189,9 @@ write_seqarray <- function(
   ...
 ) {
 
-  ##Test
+  # #Test
   # data = "populations.snps.vcf"
-  # strata <- "spis-popmap-448samples.tsv"
+  # strata <- NULL
   # filename <- NULL
   # vcf.stats <- TRUE
   # parallel.core <- parallel::detectCores() - 1
@@ -387,10 +387,14 @@ write_seqarray <- function(
   if (!is.null(detect.source$markers.info)) markers.info <- detect.source$markers.info
   if (!is.null(detect.source$overwrite.metadata)) overwrite.metadata <- detect.source$overwrite.metadata
 
+  # for small VCF SeqArray not that good with parallel...
+  parallel.temp <- parallel.core
+  if (big.vcf < 10000000) parallel.temp <- 1
+
   res$vcf.connection <- SeqArray::seqVCF2GDS(
     vcf.fn = data,
     out.fn = filename,
-    parallel = parallel.core,
+    parallel = parallel.temp,
     storage.option = "ZIP_RA",
     verbose = FALSE,
     header = check.header,
@@ -399,7 +403,7 @@ write_seqarray <- function(
   ) %>%
     SeqArray::seqOpen(gds.fn = ., readonly = FALSE)
 
-  check.header <- detect.source <- NULL
+  parallel.temp <- check.header <- detect.source <- NULL
 
   # Summary --------------------------------------------------------------------
   # vcf.sum <- SeqArray::seqSummary(res$vcf.connection, verbose = FALSE)
@@ -523,15 +527,7 @@ write_seqarray <- function(
       closezip = TRUE)
 
     strata <- TRUE
-    # # Add STRATA to GDS
-    # gdsfmt::add.gdsn(
-    #   node = radiator.gds,
-    #   name = "STRATA",
-    #   val = strata,
-    #   # val = strata$STRATA,
-    #   replace = TRUE,
-    #   compress = "ZIP_RA",
-    #   closezip = TRUE)
+
   } else {
     strata <- FALSE
     blacklist.strata <- 0L
@@ -697,7 +693,7 @@ write_seqarray <- function(
     compress = "ZIP_RA",
     closezip = TRUE)
 
-  # update filter param ----------------------------------------------------------
+  # update filter param --------------------------------------------------------
   # The original VCF's values
   filters.parameters <- update_parameters(
     parameter.obj = filters.parameters,
@@ -706,6 +702,10 @@ write_seqarray <- function(
     param.name = "original values in vcf",
     values = "")
 
+  # Generate a blacklist of markers to store info ------------------------------
+  res$blacklist.markers <- tibble::tibble(MARKERS = character(0), FILTER = character(0))
+
+
   if (blacklist.strata != 0 && strata) {
     filters.parameters <- update_parameters(
       parameter.obj = filters.parameters,
@@ -713,14 +713,45 @@ write_seqarray <- function(
       filter.name = "vcf",
       param.name = "original values in vcf + strata",
       values = "")
+
+    # Check for monomorphic markers --------------------------------------------
+   mono <- filter_monomorphic(data = res$vcf.connection, verbose = TRUE)
+    if (nrow(mono$blacklist.monomorphic.markers) > 0) {
+      res$blacklist.markers %<>% dplyr::bind_rows(dplyr::filter(
+        res$markers.meta,
+        VARIANT_ID %in% mono$blacklist.monomorphic.markers$VARIANT_ID) %>%
+          dplyr::select(MARKERS)
+        )
+      res$markers.meta %<>% dplyr::filter(VARIANT_ID %in% mono$whitelist.polymorphic.markers$VARIANT_ID)
+      # check.bk <- res$markers.meta
+      # check <- mono$whitelist.polymorphic.markers
+      # sync GDS
+      sync_gds(gds = res$vcf.connection,
+               samples = res$individuals$INDIVIDUALS,
+               markers = res$markers.meta$VARIANT_ID)
+
+      # Update markers meta in GDS
+      suppressWarnings(gdsfmt::add.gdsn(
+        node = radiator.gds,
+        name = "markers.meta",
+        val = res$markers.meta,
+        replace = TRUE,
+        compress = "ZIP_RA",
+        closezip = TRUE))
+      # update filter param --------------------------------------------------
+      filters.parameters <- update_parameters(
+        parameter.obj = filters.parameters,
+        gds.obj = res,
+        filter.name = "Filter monomorphic markers",
+        param.name = "automatically triggered",
+        values = "")
+    }
+    mono <- NULL
   }
 
   # PRE-FILTERING --------------------------------------------------------------
   # whitelist of markers, the filter column in the vcf and blacklisted strands
   # The order here doesnt matter
-
-  # Generate a blacklist of markers to store info ----------------------------
-  res$blacklist.markers <- tibble::tibble(MARKERS = character(0), FILTER = character(0))
 
   # Filter with whitelist of markers--------------------------------------------
   if (!is.null(whitelist.markers)) {
@@ -1097,23 +1128,8 @@ write_seqarray <- function(
           compress = "ZIP_RA",
           closezip = TRUE)
 
-        # if (!strata) {
-        #   strata %<>% dplyr::filter(!INDIVIDUALS %in% blacklist.id$INDIVIDUALS)
-        #   gdsfmt::add.gdsn(
-        #     node = radiator.gds,
-        #     name = "STRATA",
-        #     val = strata,
-        #     # val = strata$STRATA,
-        #     replace = TRUE,
-        #     compress = "ZIP_RA",
-        #     closezip = TRUE)
-        # }
-        # SeqArray::seqSetFilter(
-        #   object = res$vcf.connection,
-        #   sample.id = res$individuals$INDIVIDUALS,
-        #   verbose = FALSE)
         sync_gds(gds = res$vcf.connection, samples = res$individuals$INDIVIDUALS)
-
+        # summary_gds(res$vcf.connection)
 
         # update filter param ----------------------------------------------------------
         filters.parameters <- update_parameters(
@@ -1122,6 +1138,39 @@ write_seqarray <- function(
           filter.name = "Filter individuals based on missingness (with outlier stats or values)",
           param.name = "filter.individuals.missing",
           values = filter.individuals.missing)
+
+        # Check for monomorphic markers --------------------------------------------
+        mono <- filter_monomorphic(data = res$vcf.connection, verbose = TRUE)
+        # summary_gds(res$vcf.connection)
+        if (nrow(mono$blacklist.monomorphic.markers) > 0) {
+          res$blacklist.markers %<>% dplyr::bind_rows(dplyr::filter(
+            res$markers.meta,
+            VARIANT_ID %in% mono$blacklist.monomorphic.markers$VARIANT_ID) %>%
+              dplyr::select(MARKERS)
+          )
+          res$markers.meta %<>% dplyr::filter(VARIANT_ID %in% mono$whitelist.polymorphic.markers$VARIANT_ID)
+          # sync GDS
+          sync_gds(gds = res$vcf.connection,
+                   samples = res$individuals$INDIVIDUALS,
+                   markers = res$markers.meta$VARIANT_ID)
+
+          # Update markers meta in GDS
+          suppressWarnings(gdsfmt::add.gdsn(
+            node = radiator.gds,
+            name = "markers.meta",
+            val = res$markers.meta,
+            replace = TRUE,
+            compress = "ZIP_RA",
+            closezip = TRUE))
+          # update filter param --------------------------------------------------
+          filters.parameters <- update_parameters(
+            parameter.obj = filters.parameters,
+            gds.obj = res,
+            filter.name = "Filter monomorphic markers",
+            param.name = "automatically triggered",
+            values = "")
+        }
+        mono <- NULL
       }
     }#filter.individuals.missing
     blacklist.id <- NULL
@@ -2007,4 +2056,29 @@ summary_gds <- function(gds) {
   message("    number of markers: ", length(check$variant.sel[check$variant.sel]))
 }
 
-
+# get the markers meta node
+#' @title radiator_gds_markers_meta
+#' @description Get the markers meta node in radiator GDS
+#' @rdname radiator_gds_markers_meta
+#' @keywords internal
+#' @export
+radiator_gds_markers_meta <- function(gds, path = "radiator/markers.meta/MARKERS") {
+  gds.index <- gdsfmt::index.gdsn(node = gds, path = path, silent = TRUE)
+  # number.nodes <- gdsfmt::cnt.gdsn(gds.index)
+  # markers.meta.cn <- gdsfmt::ls.gdsn(gds.index)
+  if (!is.null(gds.index)) {
+    gds.markers.meta <- tibble::tibble(
+      MARKERS = character(0),
+      CHROM = character(0),
+      LOCUS = character(0),
+      POS = character(0))
+    gds.markers.meta$MARKERS <- gdsfmt::read.gdsn(gds.index)
+    gds.markers.meta$CHROM <- gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = gds, path = "radiator/markers.meta/CHROM"))
+    gds.markers.meta$LOCUS <- gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = gds, path = "radiator/markers.meta/LOCUS"))
+    gds.markers.meta$POS <- gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = gds, path = "radiator/markers.meta/POS"))
+  } else {
+    gds.markers.meta <- NULL
+  }
+  gds.index <- NULL
+  return(gds.markers.meta)
+}#END radiator_gds_markers_meta

@@ -441,9 +441,9 @@ interactive_question <- function(x, answer.opt = NULL, minmax = NULL) {
 #' @rdname check_header_source
 #' @keywords internal
 #' @export
-check_header_source <- function(vcf) {
+check_header_source <- function(data) {
 
-  check.header <- SeqArray::seqVCF_Header(vcf)
+  check.header <- SeqArray::seqVCF_Header(data)
   problematic.id <- c("AD", "AO", "QA", "GL")
   problematic.id <- purrr::keep(.x = problematic.id, .p = problematic.id %in% check.header$format$ID)
   for (p in problematic.id) {

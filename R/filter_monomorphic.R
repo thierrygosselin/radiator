@@ -1,10 +1,14 @@
-# Discard monomorphic markers
+# Filter monomorphic markers
 
-#' @name discard_monomorphic_markers
+#' @name filter_monomorphic
 
-#' @title Discard monomorphic markers
+#' @title Filter monomorphic markers
 
-#' @description Discard monomorphic markers.
+#' @description Filter monomorphic markers. This filter will remove from the dataset
+#' markers with just one genotype coding
+#' (e.g. all homozygotes for REF or ALT, but also all heterozygotes).
+#'
+#'
 #' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 #' and might be of interest for users.
 
@@ -12,24 +16,29 @@
 #' a tidy data frame in wide or long format in the working directory.
 #' \emph{How to get a tidy data frame ?}
 #' Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
+#' The function can also use a Genomic Data Structure (GDS) object generated from
+#' \pkg{radiator} \code{\link{write_seqarray}}, \code{\link{tidy_vcf}},
+#' \code{\link{tidy_genomic_data}}.
 
 
 #' @param verbose (optional, logical) \code{verbose = TRUE} to be chatty
 #' during execution.
 #' Default: \code{verbose = FALSE}.
 
-#' @return A list with the filtered input file and the blacklist of markers removed.
+#' @return A list with the filtered input file, whitelist and blacklist of markers removed.
 
 #' @export
-#' @rdname discard_monomorphic_markers
+#' @rdname filter_monomorphic
 #' @importFrom dplyr select mutate group_by ungroup rename tally filter semi_join n_distinct
 #' @importFrom stringi stri_replace_all_fixed stri_join
 #' @importFrom tibble has_name
 
+#' @seealso \code{\link{write_seqarray}}, \code{\link{tidy_vcf}},
+#' \code{\link{tidy_genomic_data}}
+
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
-discard_monomorphic_markers <- function(data, verbose = FALSE) {
-  message("\n\nDeprecated function, update your code to use: filter_monomorphic\n\n")
+filter_monomorphic <- function(data, verbose = FALSE) {
 
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) stop("Input file missing")
@@ -38,6 +47,12 @@ discard_monomorphic_markers <- function(data, verbose = FALSE) {
   data.type <- radiator::detect_genomic_format(data)
 
   if (data.type == "SeqVarGDSClass") {
+    if (!"SeqVarTools" %in% utils::installed.packages()[,"Package"]) {
+      stop('Please install SeqVarTools for this option:\n
+           install.packages("BiocManager")
+           BiocManager::install("SeqVarTools")
+           ')
+    }
     if (verbose) message("Scanning for monomorphic markers...")
     # radiator::summary_gds(gds = data)
     # radiator::sync_gds(gds = data, samples = NULL, markers = NULL)
@@ -48,11 +63,12 @@ discard_monomorphic_markers <- function(data, verbose = FALSE) {
     n.markers.removed <- length(mono.markers)
 
     if (n.markers.removed > 0) {
-      whitelist.polymorphic.markers <- markers[-mono.markers]
+      whitelist.polymorphic.markers <- tibble::tibble(VARIANT_ID = markers[-mono.markers])
       n.markers.after <- n.markers.before - n.markers.removed
-      radiator::sync_gds(gds = data, markers = whitelist.polymorphic.markers)
+      radiator::sync_gds(gds = data, markers = whitelist.polymorphic.markers$VARIANT_ID)
     } else {
-      whitelist.polymorphic.markers <- markers
+      mono.markers <- tibble::tibble(VARIANT_ID = integer(0))
+      whitelist.polymorphic.markers <- tibble::tibble(VARIANT_ID = markers)
       n.markers.after <- n.markers.before
     }
 
@@ -140,5 +156,5 @@ discard_monomorphic_markers <- function(data, verbose = FALSE) {
   }
 
   return(res)
-} # end discard mono markers
+}#End filter_monomorphic
 

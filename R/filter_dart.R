@@ -242,7 +242,7 @@ filter_dart <- function(
   # imputation.method = NULL
   # hierarchical.levels = "strata"
   # num.tree = 50
-  # # filename = NULL
+  # filename = NULL
   # verbose = TRUE
   # parallel.core = parallel::detectCores() - 1
 

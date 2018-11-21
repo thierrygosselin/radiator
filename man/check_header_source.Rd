@@ -4,7 +4,7 @@
 \alias{check_header_source}
 \title{Check the vcf header and detect vcf source}
 \usage{
-check_header_source(vcf)
+check_header_source(data)
 }
 \description{
 Check the vcf header and detect vcf source
