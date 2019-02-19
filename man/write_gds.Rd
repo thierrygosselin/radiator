@@ -4,7 +4,8 @@
 \alias{write_gds}
 \title{Write a GDS object from a tidy data frame}
 \usage{
-write_gds(data, filename = NULL, verbose = TRUE)
+write_gds(data, source = NULL, filename = NULL, open = TRUE,
+  verbose = TRUE)
 }
 \arguments{
 \item{data}{A tidy data frame object in the global environment or
@@ -12,22 +13,40 @@ a tidy data frame in wide or long format in the working directory.
 \emph{How to get a tidy data frame ?}
 Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.}
 
+\item{source}{(optional, character) The name of the software that
+generated the data. e.g. \code{source = "Stacks v.2.2"}.
+Default: \code{source = NULL}.}
+
 \item{filename}{(optional) The file name of the Genomic Data Structure (GDS) file.
-radiator will append \code{.gds} to the filename.
+radiator will append \code{.gds.rad} to the filename.
 If filename chosen is already present in the
-working directory, the default \code{radiator_datetime.gds} is chosen.
+working directory, the default \code{radiator_datetime.gds.rad} is chosen.
 Default: \code{filename = NULL}.}
+
+\item{open}{(optional, logical) Open or not the radiator connection.
+Default: \code{open = TRUE}.}
 
 \item{verbose}{(optional, logical) When \code{verbose = TRUE}
 the function is a little more chatty during execution.
 Default: \code{verbose = TRUE}.}
 }
+\value{
+An object in the global environment of class \code{SeqVarGDSClass} and
+a file in the working directory.
+}
 \description{
-Write a Genomic Data Structure (GDS) file
+Write a Genomic Data Structure (GDS) file format
 \href{http://zhengxwen.github.io/gdsfmt}{gdsfmt}
-object from a tidy data frame.
+and object of class \code{SeqVarGDSClass} from a tidy data frame.
+
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and might be of interest for users.
+}
+\examples{
+\dontrun{
+require(SeqVarTools)
+data.gds <- radiator::write_gds(data = "shark.rad")
+}
 }
 \references{
 Zheng X, Levine D, Shen J, Gogarten SM, Laurie C, Weir BS.

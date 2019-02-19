@@ -36,7 +36,7 @@ private_haplotypes <- function(data, strata = NULL, verbose = TRUE) {
   options(width = 70)
   res <- list()
 
-  if (missing(data)) stop("Input file missing")
+  if (missing(data)) rlang::abort("Input file missing")
 
   if (!is.null(strata)) {
     if (is.vector(strata)) {

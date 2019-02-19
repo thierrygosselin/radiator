@@ -29,10 +29,10 @@
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 discard_monomorphic_markers <- function(data, verbose = FALSE) {
-  message("\n\nDeprecated function, update your code to use: filter_monomorphic\n\n")
+  message("\n\nDeprecated function, update your code to use: filter_monomorphic function or filter.monomorphic argument\n\n")
 
   # Checking for missing and/or default arguments ------------------------------
-  if (missing(data)) stop("Input file missing")
+  if (missing(data)) rlang::abort("Input file missing")
 
   # Detect format --------------------------------------------------------------
   data.type <- radiator::detect_genomic_format(data)

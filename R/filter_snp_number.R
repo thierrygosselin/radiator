@@ -8,16 +8,19 @@
 #' assembly artifacts or bad assembly parameters.
 #' This filter is population-agnostic, but still requires a strata
 #' file if a vcf file is used as input.
+#'
+#' \strong{Filter targets}: Markers
+#'
+#' \strong{Statistics}: The number of SNPs per locus.
+
 
 # Most arguments are inherited from tidy_genomic_data
-#' @inheritParams tidy_genomic_data
+#' @inheritParams read_strata
+#' @inheritParams radiator_common_arguments
 
-#' @param interactive.filter (optional, logical) Do you want the filtering session to
-#' be interactive. With default: \code{interactive.filter == TRUE}, the user is
-#' asked to see figures of distribution before making filtering decisions.
-
-#' @param max.snp.number (integer) This is best decided after viewing the figures.
+#' @param filter.snp.number (integer) This is best decided after viewing the figures.
 #' If the argument is set to 2, locus with 3 and more SNPs will be blacklisted.
+#' Default: \code{filter.snp.number = NULL}.
 
 #' @param filename (optional) Name of the filtered tidy data frame file
 #' written to the working directory (ending with \code{.tsv})
@@ -74,245 +77,368 @@
 #' }
 
 filter_snp_number <- function(
-  data,
-  vcf.metadata = FALSE,
   interactive.filter = TRUE,
-  max.snp.number,
-  filename = NULL,
-  blacklist.id = NULL,
-  blacklist.genotype = NULL,
-  whitelist.markers = NULL,
-  monomorphic.out = TRUE,
-  max.marker = NULL,
-  snp.ld = NULL,
-  common.markers = FALSE,
+  data,
   strata = NULL,
-  pop.levels = NULL,
-  pop.labels = NULL,
-  pop.select = NULL,
-  parallel.core = parallel::detectCores() - 1
+  filter.snp.number = NULL,
+  filename = NULL,
+  parallel.core = parallel::detectCores() - 1,
+  verbose = TRUE,
+  ...
 ) {
-  cat("#######################################################################\n")
-  cat("#################### radiator::filter_snp_number ######################\n")
-  cat("#######################################################################\n")
-  opt.change <- getOption("width")
-  options(width = 70)
-  timing <- proc.time()
 
-  # list to store results
-  res <- list()
+  # interactive.filter <- TRUE
+  # data <- gds
+  # path.folder <- "testing_snp_number"
+  # force.stats <- TRUE
+  # parameters <- NULL
+  # filename <- NULL
+  # filter.snp.number <- NULL
+  # parallel.core <- parallel::detectCores() - 1
+  # verbose = TRUE
 
-  # manage missing arguments -----------------------------------------------------
-  if (missing(data)) stop("Input file missing")
+  if (!is.null(filter.snp.number) || interactive.filter) {
+    if (interactive.filter) verbose <- TRUE
+    if (verbose) {
+      cat("################################################################################\n")
+      cat("############################ radiator::filter_snp_number #######################\n")
+      cat("################################################################################\n")
+    }
+    # Cleanup-------------------------------------------------------------------
+    file.date <- format(Sys.time(), "%Y%m%d@%H%M")
+    if (verbose) message("Execution date/time: ", file.date)
+    old.dir <- getwd()
+    opt.change <- getOption("width")
+    options(width = 70)
+    timing <- proc.time()# for timing
+    # res <- list()
+    #back to the original directory and options
+    on.exit(setwd(old.dir), add = TRUE)
+    on.exit(options(width = opt.change), add = TRUE)
+    on.exit(timing <- proc.time() - timing, add = TRUE)
+    on.exit(if (verbose) message("\nComputation time, overall: ", round(timing[[3]]), " sec"), add = TRUE)
+    on.exit(if (verbose) cat("######################### completed filter_snp_number ##########################\n"), add = TRUE)
 
-  if (!is.null(pop.levels) & is.null(pop.labels)) {
-    pop.levels <- stringi::stri_replace_all_fixed(pop.levels, pattern = " ", replacement = "_", vectorize_all = FALSE)
-    pop.labels <- pop.levels
+    # Function call and dotslist -------------------------------------------------
+    rad.dots <- radiator_dots(
+      fd = rlang::fn_fmls_names(),
+      args.list = as.list(environment()),
+      dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
+      keepers = c("path.folder", "parameters", "internal"),
+      verbose = verbose
+    )
+
+    # Checking for missing and/or default arguments ------------------------------
+    if (missing(data)) rlang::abort("data is missing")
+
+    # Folders---------------------------------------------------------------------
+    path.folder <- generate_folder(
+      f = path.folder,
+      rad.folder = "filter_snp_number",
+      internal = internal,
+      file.date = file.date,
+      verbose = verbose)
+
+    # write the dots file
+    write_rad(
+      data = rad.dots,
+      path = path.folder,
+      filename = stringi::stri_join("radiator_filter_snp_number_args_", file.date, ".tsv"),
+      tsv = TRUE,
+      internal = internal,
+      verbose = verbose
+    )
+
+    # Message about steps taken during the process ---------------------------------
+    if (interactive.filter) {
+      message("Interactive mode: on")
+      message("2 steps to visualize and filter the data based on the number of SNP on the read/locus:")
+      message("Step 1. Impact of SNP number per read/locus (on individual genotypes and locus/snp number potentially filtered)")
+      message("Step 2. Choose the filtering thresholds")
+    }
+
+    # File type detection----------------------------------------------------------
+    data.type <- radiator::detect_genomic_format(data)
+    if (!data.type %in% c("tbl_df", "fst.file", "SeqVarGDSClass", "gds.file")) {
+      rlang::abort("Input not supported for this function: read function documentation")
+    }
+
+
+    if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
+      if (!"SeqVarTools" %in% utils::installed.packages()[,"Package"]) {
+        rlang::abort('Please install SeqVarTools for this option:\n
+             install.packages("BiocManager")
+             BiocManager::install("SeqVarTools")')
+      }
+
+      if (data.type == "gds.file") {
+        data <- radiator::read_rad(data, verbose = verbose)
+        data.type <- "SeqVarGDSClass"
+      }
+    } else {
+      if (is.vector(data)) data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
+      data.type <- "tbl_df"
+    }
+
+    # Filter parameter file: initiate ------------------------------------------
+    filters.parameters <- update_parameters(
+      generate = TRUE,
+      initiate = TRUE,
+      update = FALSE,
+      parameter.obj = parameters,
+      data = data,
+      path.folder = path.folder,
+      file.date = file.date,
+      verbose = verbose)
+
+    # Whitelist and blacklist --------------------------------------------------
+    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "COL")
+    if (data.type == "SeqVarGDSClass") {
+      wl <- bl <- extract_markers_metadata(gds = data)
+    } else {
+      wl <- bl <- dplyr::select(data, dplyr::one_of(want))
+    }
+    # Check that required info is present in data: snp and locus
+    if (!tibble::has_name(wl, "LOCUS") || !tibble::has_name(wl, "POS")) {
+      problem.data <- "This filter requires dataset with SNP (POS) and LOCUS information (columns)"
+      message("\n\n", problem.data)
+      readr::write_lines(
+        x = problem.data,
+        path = file.path(path.folder, "README"))
+      return(data)
+    }
+
+    # Generate snp per locus stats----------------------------------------------
+    if (verbose) message("Generating statistics")
+    if (data.type == "SeqVarGDSClass") {
+      wl <- generate_markers_stats(
+        gds = data,
+        snp.per.locus = TRUE,
+        missing = FALSE, coverage = FALSE,
+        allele.coverage = FALSE,
+        mac = FALSE, heterozygosity = FALSE,
+        snp.position.read = FALSE,
+        force.stats = force.stats,
+        path.folder = path.folder,
+        file.date = file.date,
+        plot = FALSE,
+        parallel.core = parallel.core
+      )
+      stats <- wl$stats
+      wl <- wl$info
+    } else {
+      wl %<>%
+        dplyr::group_by(LOCUS) %>%
+        dplyr::mutate(SNP_PER_LOCUS = n()) %>%
+        dplyr::ungroup(.)
+      stats <- tibble_stats(
+        x = wl$SNP_PER_LOCUS,
+        group = "SNPs per locus")
+    }
+
+    if (tibble::has_name(wl, "COL")) {
+      read.length <- max(wl$COL)
+      if (verbose) message("\nWith max read length taken from data: ", read.length)
+
+      if (verbose) message("    The max number of SNP per locus correspond to:")
+      if (verbose) message("    1 SNP per ", round(read.length / stats[[6]]), " bp\n")
+    } else {
+      read.length <- NULL
+    }
+
+
+    # Generate box plot ---------------------------------------------------------
+    snp.per.locus.fig <- boxplot_stats(
+      data = stats,
+      title =  "Number of SNPs per locus",
+      subtitle = if (!is.null(read.length)) {
+        stringi::stri_join("Read length (max): ", read.length, " bp", "\nOutlier: ", ceiling(stats[[9]]))
+      } else {
+        stringi::stri_join("\nOutlier: ", ceiling(stats[[9]]))
+      },
+      x.axis.title = NULL,
+      y.axis.title = "Number of SNPs per locus",
+      bp.filename = stringi::stri_join("snp_per_locus_", file.date, ".pdf"),
+      path.folder = path.folder)
+
+
+    # Distribution -------------------------------------------------------------
+    d.plot <- wl %>%
+      dplyr::distinct(LOCUS, SNP_PER_LOCUS) %>%
+      ggplot2::ggplot(data = ., ggplot2::aes(factor(SNP_PER_LOCUS))) +
+      ggplot2::geom_bar() +
+      ggplot2::labs(x = "Number of SNPs per locus") +
+      ggplot2::labs(y = "Distribution (number of locus)") +
+      ggplot2::geom_vline(ggplot2::aes(xintercept = as.numeric(ceiling(stats[[9]]))), color = "yellow") +
+      ggplot2::theme_bw()+
+      ggplot2::theme(
+        axis.title.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
+        axis.title.y = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
+        legend.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
+        legend.text = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
+        strip.text.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"))
+    print(d.plot)
+
+    # save
+    d.plot.filename <- stringi::stri_join("snp_per_locus_distribution_", file.date, ".pdf")
+
+    ggplot2::ggsave(
+      filename = file.path(path.folder, d.plot.filename),
+      plot = d.plot,
+      width = 20, height = 10, dpi = 300, units = "cm", useDingbats = FALSE)
+
+
+    # Helper table -------------------------------------------------------------
+    if (verbose) message("Generating helper table...")
+    how_many_markers <- function(threshold, x) {
+      nrow(dplyr::filter(x, SNP_PER_LOCUS > threshold))
+    }#End how_many_markers
+
+    snp.range <- stats[[2]]:stats[[6]]
+    n.markers <- nrow(wl)
+
+    helper.table <- tibble::tibble(SNP_PER_LOCUS = snp.range) %>%
+      dplyr::mutate(
+        BLACKLISTED_MARKERS = purrr::map_int(
+          .x = snp.range, .f = how_many_markers, x = wl),
+        WHITELISTED_MARKERS = n.markers - BLACKLISTED_MARKERS
+      ) %>%
+      readr::write_tsv(
+        x = .,
+        path = file.path(path.folder, "snp.per.locus.helper.table.tsv"))
+
+    # figures
+    markers.plot <- ggplot2::ggplot(
+      data = helper.table  %<>% tidyr::gather(
+        data = .,
+        key = LIST, value = MARKERS, -SNP_PER_LOCUS),
+      ggplot2::aes(x = SNP_PER_LOCUS, y = MARKERS)) +
+      ggplot2::geom_line() +
+      ggplot2::geom_point(size = 2, shape = 21, fill = "white") +
+      ggplot2::geom_vline(ggplot2::aes(xintercept = as.numeric(ceiling(stats[[9]]))), color = "yellow") +
+      ggplot2::scale_x_continuous(name = "Number of SNPs per locus allowed", breaks = snp.range) +
+      ggplot2::scale_y_continuous(name = "Number of markers") +
+      ggplot2::theme_bw()+
+      ggplot2::theme(
+        axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+        axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+        axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica")#, angle = 90, hjust = 1, vjust = 0.5)
+      ) +
+      ggplot2::facet_grid(LIST ~. , scales = "free", space = "free")
+    print(markers.plot)
+
+    # save
+    ggplot2::ggsave(
+      filename = file.path(path.folder, "snp.per.locus.helper.plot.pdf"),
+      plot = markers.plot,
+      width = 20 + (stats[[6]] / 10),
+      height = 15,
+      dpi = 300,
+      units = "cm",
+      useDingbats = FALSE)
+    helper.table <- markers.plot <- NULL
+    if (verbose) message("Files written: helper tables and plots")
+
+    # Step 2. Thresholds selection ---------------------------------------------
+    if (interactive.filter) {
+      max.allowed <- stats[[6]]
+      if (verbose) message("\nStep 2. Filtering markers based on the maximum of SNPs per locus\n")
+
+      filter.snp.number <- interactive_question(
+        x = "Do you still want to blacklist markers? (y/n):",
+        answer.opt = c("y", "n"))
+
+      if (filter.snp.number == "y") {
+        outlier.stats <- interactive_question(
+          x = "Do you want to remove markers based on the outlier statistics or not (y/n) ?
+          (n: next question will be to enter your own threshold)", answer.opt = c("y", "n"))
+        if (outlier.stats == "y") {
+          filter.snp.number <- "outliers"
+        } else {
+          filter.snp.number <- interactive_question(
+            x = "Enter the maximum number of SNP per locus allowed:", minmax = c(1, max.allowed))
+        }
+        outlier.stats <- NULL
+      } else {
+        filter.snp.number <- NULL
+      }
+    }
+
+    # Filtering ----------------------------------------------------------------
+    if (!purrr::is_double(filter.snp.number)) {
+      out.high <- round(stats$OUTLIERS_HIGH[stats$GROUP == "SNPs per locus"])
+      message("\nRemoving outliers markers based on the number of SNPs per locus statistic: ", out.high)
+      filter.snp.number <- out.high
+    } else {
+      message("\nRemoving markers based on on the number of SNPs per locus statistic: ", filter.snp.number)
+    }
+
+
+    # Whitelist and Blacklist of markers
+    wl %<>% dplyr::filter(SNP_PER_LOCUS <= filter.snp.number) %>%
+      readr::write_tsv(
+        x = .,
+        path = file.path(path.folder, "whitelist.snp.per.locus.tsv"),
+        append = FALSE, col_names = TRUE)
+    bl %<>% dplyr::setdiff(wl) %>%
+      readr::write_tsv(
+        x = .,
+        path = file.path(path.folder, "blacklist.snp.per.locus.tsv"),
+        append = FALSE, col_names = TRUE)
+    # saving whitelist and blacklist
+    if (verbose) message("File written: whitelist.markers.genotyping.tsv")
+    if (verbose) message("File written: blacklist.markers.genotyping.tsv")
+
+    if (data.type == "SeqVarGDSClass") {
+      sync_gds(gds = data, markers = wl$VARIANT_ID)
+
+      # Update GDS
+      radiator.gds <- gdsfmt::index.gdsn(
+        node = data, path = "radiator", silent = TRUE)
+
+      # Update metadata
+      gdsfmt::add.gdsn(
+        node = radiator.gds,
+        name = "markers.meta",
+        val = wl,
+        replace = TRUE,
+        compress = "ZIP_RA",
+        closezip = TRUE)
+
+      # update blacklist.markers
+      if (nrow(bl) > 0) {
+        bl %<>% dplyr::select(MARKERS) %>%
+          dplyr::mutate(FILTER = "filter.snp.number")
+        bl.gds <- update_bl_markers(gds = radiator.gds, update = bl)
+      }
+    } else {
+      # Apply the filter to the tidy data
+      data  %<>% dplyr::filter(MARKERS %in% wl$MARKERS)
+    }
+
+    # Update parameters --------------------------------------------------------
+    filters.parameters <- update_parameters(
+      generate = FALSE,
+      initiate = FALSE,
+      update = TRUE,
+      parameter.obj = filters.parameters,
+      data = data,
+      filter.name = "Filter markers snp number",
+      param.name = "filter.snp.number",
+      values = filter.snp.number,
+      path.folder = path.folder,
+      file.date = file.date,
+      verbose = verbose)
+
+    # Return -----------------------------------------------------------------------
+    if (verbose) {
+      cat("################################### RESULTS ####################################\n")
+      message("Filter SNPs per locus threshold: ", filter.snp.number)
+      message("Number of individuals / strata / chrom / locus / SNP:")
+      message("    Before: ", filters.parameters$filters.parameters$BEFORE)
+      message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
+      message("    After: ", filters.parameters$filters.parameters$AFTER)
+    }
   }
-  if (!is.null(pop.labels) & is.null(pop.levels)) stop("pop.levels is required if you use pop.labels")
-
-  if (!is.null(pop.labels)) {
-    if (length(pop.labels) != length(pop.levels)) stop("pop.labels and pop.levels must have the same length (number of groups)")
-    pop.labels <- stringi::stri_replace_all_fixed(pop.labels, pattern = " ", replacement = "_", vectorize_all = FALSE)
-  }
-
-  if (!is.null(pop.select)) {
-    pop.select <- stringi::stri_replace_all_fixed(pop.select, pattern = " ", replacement = "_", vectorize_all = FALSE)
-  }
-  # Message about steps taken during the process ---------------------------------
-  if (interactive.filter) {
-    message("Interactive mode: on")
-    message("2 steps to visualize and filter the data based on the number of SNP on the read/locus:")
-    message("Step 1. Impact of SNP number per read/locus (on individual genotypes and locus/snp number potentially filtered)")
-    message("Step 2. Choose the filtering thresholds")
-
-    # Folder -------------------------------------------------------------------
-    # Date and time
-    file.date <- stringi::stri_replace_all_fixed(
-      Sys.time(),
-      pattern = " EDT", replacement = "") %>%
-      stringi::stri_replace_all_fixed(
-        str = .,
-        pattern = c("-", " ", ":"), replacement = c("", "@", ""),
-        vectorize_all = FALSE) %>%
-      stringi::stri_sub(str = ., from = 1, to = 13)
-    folder.extension <- stringi::stri_join("filter_snp_number_", file.date, sep = "")
-    path.folder <- stringi::stri_join(getwd(),"/", folder.extension, sep = "")
-    dir.create(file.path(path.folder))
-
-    message("Folder created: \n", folder.extension)
-    file.date <- NULL #unused object
-  } else {
-    path.folder <- getwd()
-  }
-
-  # Filter parameter file ------------------------------------------------------
-  message("Parameters used in this run will be store in a file")
-  filters.parameters <- list.files(path = getwd(), pattern = "filters_parameters.tsv", full.names = TRUE)
-  if (length(filters.parameters) == 0) {
-    filters.parameters <- tibble::data_frame(FILTERS = as.character(), PARAMETERS = as.character(), VALUES = as.integer(), BEFORE = as.character(), AFTER = as.character(), BLACKLIST = as.integer(), UNITS = as.character(), COMMENTS = as.character())
-    readr::write_tsv(x = filters.parameters, path = "filters_parameters.tsv", append = FALSE, col_names = TRUE)
-    message("Created a file to store filters parameters: filters_parameters.tsv")
-  } else {
-    message("Using the filters parameters file found in the directory: \nfilters_parameters.tsv")
-  }
-
-  # File type detection----------------------------------------------------------
-  data.type <- radiator::detect_genomic_format(data)
-
-  # import data ----------------------------------------------------------------
-  message("Importing data ...")
-  input <- radiator::tidy_genomic_data(
-    data = data,
-    vcf.metadata = vcf.metadata,
-    blacklist.id = blacklist.id,
-    blacklist.genotype = blacklist.genotype,
-    whitelist.markers = whitelist.markers,
-    monomorphic.out = monomorphic.out,
-    max.marker = max.marker,
-    snp.ld = snp.ld,
-    common.markers = common.markers,
-    strata = strata,
-    pop.levels = pop.levels,
-    pop.labels = pop.labels,
-    pop.select = pop.select,
-    parallel.core = parallel.core,
-    filename = NULL
-  )
-
-  # Check that required info is present in data: snp and locus
-
-  locus.check <- tibble::has_name(input, "LOCUS")
-  snp.check <- tibble::has_name(input, "POS")
-  if (!locus.check || !snp.check) stop("This filter requires SNP (POS) and LOCUS information (columns) in the dataset (e.g. found in VCF files)")
-
-  snp.before <- as.integer(dplyr::n_distinct(input$MARKERS))
-  locus.before <- as.integer(dplyr::n_distinct(input$LOCUS))
-
-  # create a strata.df
-  strata.df <- input %>%
-    dplyr::select(INDIVIDUALS, POP_ID) %>%
-    dplyr::distinct(INDIVIDUALS, .keep_all = TRUE)
-  pop.levels <- levels(input$POP_ID)
-  pop.labels <- pop.levels
-
-  # some stats
-  ind.total <- dplyr::n_distinct(input$INDIVIDUALS) # total number of individuals
-  pop.number <- dplyr::n_distinct(input$POP_ID) # number of pop
-
-  # prepare the info
-  res$snp.num.markers <- dplyr::distinct(.data = input, LOCUS, POS) %>%
-    dplyr::group_by(LOCUS) %>%
-    dplyr::tally(.) %>%
-    dplyr::rename(SNP_NUMBER = n)
-
-  res$number.snp.reads.plot <- ggplot2::ggplot(res$snp.num.markers,
-                                           ggplot2::aes(factor(SNP_NUMBER))) +
-    ggplot2::geom_bar() +
-    ggplot2::labs(x = "Number of SNP per locus/reads") +
-    ggplot2::labs(y = "Distribution (number of locus)") +
-    ggplot2::theme(
-      axis.title.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      axis.title.y = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      legend.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      legend.text = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      strip.text.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"))
-
-  if (interactive.filter) {
-    print(res$number.snp.reads.plot)
-    message("Based on the plot, choose the threshold in maximum number of SNP per locus allowed (an integer): ")
-    max.snp.number <- as.integer(readLines(n = 1))
-  }
-
-  # save
-  ggplot2::ggsave(stringi::stri_join(path.folder, "/number.snp.locus.plot.pdf"), width = 20, height = 10, dpi = 600, units = "cm", useDingbats = FALSE)
-  ggplot2::ggsave(stringi::stri_join(path.folder, "/number.snp.locus.plot.png"), width = 20, height = 10, dpi = 300, units = "cm")
-  message("2 versions (pdf and png) of the histogram of the number of SNP per locus were saved in this directory: \n", path.folder)
-
-
-  # Filtering ------------------------------------------------------------------
-  message("Filtering data...")
-  res$whitelist.markers <- res$snp.num.markers %>%
-    dplyr::filter(SNP_NUMBER <= max.snp.number) %>%
-    dplyr::select(LOCUS) %>%
-    dplyr::arrange(LOCUS)
-
-  # Apply the filter to the tidy data
-  res$tidy.filtered.snp.number <- suppressWarnings(
-    dplyr::semi_join(input, res$whitelist.markers, by = "LOCUS"))
-
-  # saving whitelist
-  message("Writing the whitelist of markers in your working directory\nwhitelist.markers.snp.number.tsv")
-
-  if (tibble::has_name(res$tidy.filtered.snp.number, "CHROM")) {
-    res$whitelist.markers <- dplyr::ungroup(res$tidy.filtered.snp.number) %>%
-      dplyr::select(MARKERS, CHROM, LOCUS, POS) %>%
-      dplyr::distinct(CHROM, LOCUS, POS, .keep_all = TRUE)
-  } else {
-    res$whitelist.markers <- dplyr::ungroup(res$tidy.filtered.snp.number) %>%
-      dplyr::distinct(MARKERS)
-  }
-  readr::write_tsv(res$whitelist.markers, stringi::stri_join(path.folder, "/whitelist.markers.snp.number.tsv"), append = FALSE, col_names = TRUE)
-
-  # saving blacklist
-  if (tibble::has_name(res$tidy.filtered.snp.number, "CHROM")) {
-    res$blacklist.markers <- dplyr::ungroup(input) %>%
-      dplyr::select(MARKERS, CHROM, LOCUS, POS) %>%
-      dplyr::distinct(CHROM, LOCUS, POS, .keep_all = TRUE) %>%
-      dplyr::anti_join(res$whitelist.markers, by = c("CHROM", "LOCUS", "POS"))
-  } else {
-    res$blacklist.markers <- dplyr::ungroup(input) %>%
-      dplyr::distinct(MARKERS) %>%
-      dplyr::anti_join(res$whitelist.markers, by = "MARKERS")
-  }
-  if (length(res$blacklist.markers$MARKERS) > 0) {
-    message("Writing the blacklist of markers in your working directory\nblacklist.markers.snp.number.tsv")
-    readr::write_tsv(res$blacklist.markers, stringi::stri_join(path.folder, "/blacklist.markers.snp.number.tsv"), append = FALSE, col_names = TRUE)
-  }
-
-  input <- NULL
-
-  # Update filters.parameters SNP ----------------------------------------------
-  snp.after <- as.integer(dplyr::n_distinct(res$tidy.filtered.snp.number$MARKERS))
-  snp.blacklist <- as.integer(snp.before - snp.after)
-  locus.after <- as.integer(dplyr::n_distinct(res$tidy.filtered.snp.number$LOCUS))
-  locus.blacklist <- as.integer(locus.before - locus.after)
-
-  markers.before <- stringi::stri_join(snp.before, locus.before, sep = "/")
-  markers.after <- stringi::stri_join(snp.after, locus.after, sep = "/")
-  markers.blacklist <- stringi::stri_join(snp.blacklist, locus.blacklist, sep = "/")
-
-  res$filters.parameters <- tibble::data_frame(
-    FILTERS = c("SNP number per locus"),
-    PARAMETERS = c("max.snp.number"),
-    VALUES = c(stringi::stri_join("<=", max.snp.number)),
-    BEFORE = c(markers.before),
-    AFTER = c(markers.after),
-    BLACKLIST = c(markers.blacklist),
-    UNITS = c("SNP/LOCUS"),
-    COMMENTS = c("")
-  )
-  readr::write_tsv(x = res$filters.parameters, path = "filters_parameters.tsv", append = TRUE, col_names = FALSE)
-
-  # saving tidy data
-  if (!is.null(filename)) {
-    message("Writing the filtered tidy data set in your working directory...")
-    # if (!is.null(save.feather)) {
-    # feather::write_feather(filter, stri_replace_all_fixed(filename, pattern = ".tsv", replacement = "_feather.tsv", vectorize_all = TRUE))
-    # } else {
-    readr::write_tsv(res$tidy.filtered.snp.number,
-                     filename, append = FALSE, col_names = TRUE)
-    # }
-  }
-
-
-  # results --------------------------------------------------------------------
-  cat("############################### RESULTS ###############################\n")
-    message("The number of markers blacklisted (SNP/LOCUS): ", markers.blacklist)
-    message("The number of markers before -> after filter_snp_number (SNP/LOCUS)")
-    message(markers.before, " -> ", markers.after)
-    timing <- proc.time() - timing
-    message("\nComputation time: ", round(timing[[3]]), " sec")
-    cat("############################## completed ##############################\n")
-  return(res)
-}
+  return(data)
+} #End filter_snp_number

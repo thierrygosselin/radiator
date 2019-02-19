@@ -4,16 +4,19 @@
 \alias{filter_hwe}
 \title{Filter markers based on Hardy-Weinberg Equilibrium}
 \usage{
-filter_hwe(interactive.filter = TRUE, data, strata = NULL,
-  hw.pop.threshold = NULL, midp.threshold = "****", filename = NULL,
-  blacklist.id = NULL, whitelist.markers = NULL, pop.levels = NULL,
-  pop.labels = NULL, pop.select = NULL,
-  parallel.core = parallel::detectCores() - 1, verbose = TRUE)
+filter_hwe(interactive.filter = TRUE, filter.hwe = TRUE, data,
+  strata = NULL, hw.pop.threshold = NULL, midp.threshold = "****",
+  filename = NULL, parallel.core = parallel::detectCores() - 1,
+  verbose = TRUE, ...)
 }
 \arguments{
 \item{interactive.filter}{(optional, logical) Do you want the filtering session to
-be interactive. With default: \code{interactive.filter == TRUE}, the user is
-asked to see figures of distribution before making decisions for filtering.}
+be interactive. Figures of distribution are shown before asking for filtering
+thresholds.
+Default: \code{interactive.filter = TRUE}.}
+
+\item{filter.hwe}{(optional, logical) Used inside radiator pipeline.
+Default: \code{filter.hwe = TRUE}.}
 
 \item{data}{A tidy data frame object in the global environment or
 a tidy data frame in wide or long format in the working directory.
@@ -22,23 +25,7 @@ Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.}
 
 \item{strata}{(optional)
 The strata file is a tab delimited file with a minimum of 2 columns headers:
-\code{INDIVIDUALS} and \code{STRATA}.
-If a \code{strata} file is specified with all file formats that don't
-require it, the strata argument will have precedence on the population
-groupings used internally in those file formats. For file formats without
-population/strata groupings (e.g. vcf, haplotype files) if no strata file is
-provided, 1 pop/strata grouping will automatically be created.
-For vcf and haplotypes file, the strata can also be used as a whitelist of id.
-Samples not in the strata file will be discarded from the data set.
-The \code{STRATA} column can be any hierarchical grouping.
-To create a strata file see \code{\link[radiator]{individuals2strata}}.
-If you have already run
-\href{http://catchenlab.life.illinois.edu/stacks/}{stacks} on your data,
-the strata file is similar to a stacks \emph{population map file},
-make sure you
-have the required column names (\code{INDIVIDUALS} and \code{STRATA}).
-The strata column is cleaned of a white spaces that interfere with some
-packages or codes: space is changed to an underscore \code{_}.
+\code{INDIVIDUALS} and \code{STRATA}. Documented in \code{\link{read_strata}}.
 Default: \code{strata = NULL}.}
 
 \item{hw.pop.threshold}{(integer, optional)
@@ -63,61 +50,17 @@ the folder created in the working directory. The file extension appended to
 the \code{filename} provided is \code{.rad}.
 Default: \code{filename = NULL}.}
 
-\item{blacklist.id}{(optional) A blacklist with individual ID and
-a column header 'INDIVIDUALS'. The blacklist is an object in your
-global environment or a file in the working directory
-(e.g. "blacklist.txt"). \code{_} and \code{:} in individual's names
-are changed to a dash \code{-}.
-Default: \code{blacklist.id = NULL}.}
-
-\item{whitelist.markers}{(optional) A whitelist containing CHROM (character
-or integer) and/or LOCUS (integer) and/or
-POS (integer) columns header. To filter by chromosome and/or locus and/or by snp.
-The whitelist is an object in your
-global environment or a file in the working directory (e.g. "whitelist.txt").
-Note that \emph{de novo} CHROM column with 'un' need to be changed to 1.
-In the VCF, the column ID is the LOCUS identification (VCF generated from
-stacks have the SNP position on the read embedded in the ID,
-so the ID = no longer represent the LOCUS). Marker names are cleaned of
-separators that interfere with some packages or codes:
-\code{/}, \code{:}, \code{-} and \code{.} are changed to an underscore
-\code{_}.
-Default \code{whitelist.markers = NULL} for no whitelist of markers.}
-
-\item{pop.levels}{(optional, string) This refers to the levels in a factor. In this
-case, the id of the pop.
-Use this argument to have the pop ordered your way instead of the default
-alphabetical or numerical order. e.g. \code{pop.levels = c("QUE", "ONT", "ALB")}
-instead of the default \code{pop.levels = c("ALB", "ONT", "QUE")}.
-White spaces in population names are replaced by underscore.
-Default: \code{pop.levels = NULL}.}
-
-\item{pop.labels}{(optional, string) Use this argument to rename/relabel
-your pop or combine your pop. e.g. To combine \code{"QUE"} and \code{"ONT"}
-into a new pop called \code{"NEW"}:
-(1) First, define the levels for your pop with \code{pop.levels} argument:
-\code{pop.levels = c("QUE", "ONT", "ALB")}.
-(2) then, use \code{pop.labels} argument:
-\code{pop.labels = c("NEW", "NEW", "ALB")}.
-To rename \code{"QUE"} to \code{"TAS"}:
-\code{pop.labels = c("TAS", "ONT", "ALB")}.
-Default: \code{pop.labels = NULL}. If you find this too complicated,
-there is also the \code{strata} argument that can do the same thing,
-see below.
-White spaces in population names are replaced by underscore.}
-
-\item{pop.select}{(string, optional) Selected list of populations for
-the analysis. e.g. \code{pop.select = c("QUE", "ONT")} to select \code{QUE}
-and \code{ONT} population samples (out of 20 pops).
-Default: \code{pop.select = NULL}}
-
 \item{parallel.core}{(optional) The number of core used for parallel
 execution during import.
-Default: \code{parallel::detectCores() - 1}.}
+Default: \code{parallel.core = parallel::detectCores() - 1}.}
 
 \item{verbose}{(optional, logical) When \code{verbose = TRUE}
 the function is a little more chatty during execution.
 Default: \code{verbose = TRUE}.}
+
+\item{...}{(optional) Advance mode that allows to pass further arguments
+for fine-tuning the function. Also used for legacy arguments (see details or
+special section)}
 }
 \value{
 A list in the global environment objects:

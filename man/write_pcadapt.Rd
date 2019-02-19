@@ -5,9 +5,8 @@
 \title{Write a \href{https://github.com/bcm-uga/pcadapt}{pcadapt}
 file from a tidy data frame}
 \usage{
-write_pcadapt(data, pop.select = NULL, snp.ld = NULL,
-  maf.thresholds = NULL, filename = NULL,
-  parallel.core = parallel::detectCores() - 1)
+write_pcadapt(data, pop.select = NULL, filename = NULL,
+  parallel.core = parallel::detectCores() - 1, ...)
 }
 \arguments{
 \item{data}{A tidy data frame object in the global environment or
@@ -15,66 +14,10 @@ a tidy data frame in wide or long format in the working directory.
 \emph{How to get a tidy data frame ?}
 Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.}
 
-\item{pop.select}{(string, optional) Selected list of populations for
+\item{pop.select}{(optional, string) Selected list of populations for
 the analysis. e.g. \code{pop.select = c("QUE", "ONT")} to select \code{QUE}
 and \code{ONT} population samples (out of 20 pops).
 Default: \code{pop.select = NULL}}
-
-\item{snp.ld}{(optional) \strong{For data with locus and SNP info, like VCF and DArT file}.
-SNP short distance linkage disequilibrium pruning. With anonymous markers from
-RADseq/GBS de novo discovery, you can minimize linkage disequilibrium (LD) by
-choosing among these 5 options:
-\enumerate{
-\item \code{snp.ld = "random"} for a random selection of 1 SNP on the read,
-\item \code{snp.ld = "first"} for the first one on the read...,
-\item \code{snp.ld = "last"} for the last SNP on the read and
-\item \code{snp.ld = "middle"} for locus with > 2 SNPs/read the option to select at random
-one SNP between the first and the last SNP on the read. If the locus as <= 2
-SNPs on the read, the first one is selected. Note that for that last option,
-the numbers are reported.
-\item \code{snp.ld = "maf"} will select the SNP on the locus with the maximum global
-Minor Allele Frequency (MAF).
-}
-For long distance linkage disequilibrium pruning, see details below.
-Default: \code{snp.ld = NULL}, for no pruning.}
-
-\item{maf.thresholds}{(optional) Use for minor allele frequency (maf) or count (mac)
-filter. Default: \code{maf.thresholds = NULL}, for no filtering.
-
-String with 5 values.
-For example using SNP and frequency approach: \code{maf.thresholds = c("SNP", 0.001, "OR", 0.001, 1)}.
-For example using locus and count approach: \code{maf.thresholds = c("locus", 3, "OR", 6, 1)}.
-\enumerate{
-\item maf approach (character: "SNP"/"locus"):
-MAF filtering is conducted by SNPs or locus.
-\code{"SNP"}: will consider all the SNPs on the same locus/read as independent
-and will be filtered independently of their locus id.
-\code{"locus"}: looks at the minimum MAF found on the
-read/locus. Using this option will discard all the markers/snp on
-that read based on the thresholds chosen. For the locus approach to work, your dataset
-requires SNP and Locus info (e.g. from a VCF file).
-
-\item local threshold (double or integer): For a frequency threshold use
-a double (e.g. 0.05). For a count threshold, use an integer
-(e.g. 3 for the number of alternate allele required in a population). This
-threshold is applied by population.
-Not sure about the threshold to use, choose the interactive mode argument.
-
-\item operator (character: "OR" / "AND"):
-To consider both the local \code{"AND"} the global thresholds, use \code{"AND"}.
-To consider the local \code{"OR"} the global thresholds, use \code{"OR"}.
-
-\item global threshold (double or integer): For a frequency threshold
-use a double (e.g. 0.02). For a count threshold, use an integer
-(e.g. 6 for the number of alternate allele required). This threshold is
-applied at the dataset level (no population).
-Not sure about the threshold to use, choose the interactive mode argument.
-
-\item maf pop num threshold (integer)
-The number of pop required to pass the thresholds
-to keep the marker. Usually, I always use \code{1}, for 1 pop is required to
-pass thresholds and keep the marker.
-}}
 
 \item{filename}{(optional) The file name prefix for the pcadapt file
 written to the working directory. With default: \code{filename = NULL},
@@ -82,7 +25,9 @@ the date and time is appended to \code{radiator_pcadapt_}.}
 
 \item{parallel.core}{(optional) The number of core used for parallel
 execution during import.
-Default: \code{parallel::detectCores() - 1}.}
+Default: \code{parallel.core = parallel::detectCores() - 1}.}
+
+\item{...}{(optional) To pass further arguments for fine-tuning the function.}
 }
 \value{
 A pcadapt file is written in the working directory a genotype matrix
@@ -95,26 +40,40 @@ file from a tidy data frame. The data is biallelic.
 Used internally in
 \href{https://github.com/thierrygosselin/radiator}{radiator}
 and might be of interest for users.
-
-Also integrated in this function:
+}
+\details{
+\emph{Integrated filters:}
 \enumerate{
-\item \emph{pop.select: } to choose population to include in the pcadapt file.
-\item \emph{maf: } evaluate the impact of Minor Allele Frequency on
-genome scans with radiator maf module related arguments.
-\item \emph{snp.ld: } SNPs on the same locus should not be considered
-independant (short linkage disequilibrium) and the snp.ld argument
-integrated here give users the ability to adress this quickly before
-running a genome scan.
 \item by defaults only markers found in common between populations are used
+(See advance section).
 \item by defaults monomorphic markers are automatically removed before
 generating the pcadapt file.
 }
 }
-\details{
-\emph{Integrated filters:} Only markers found in common between
-populations are used and monomorphic markers are automatically removed
-before generating pcadapt file.
+\section{Advance mode}{
+
+
+\emph{dots-dots-dots ...} allows to pass several arguments for fine-tuning the function:
+\enumerate{
+\item \strong{Filtering for linkage disequilibrium}: 3 arguments
+\code{filter.long.ld, long.ld.missing, ld.method}
+described in \code{\link{filter_ld}} are available.
+Reducing linkage before running genome scan is essential. At least start by
+removing SNPs on the same RADseq locus (short linkage disequilibrium).
+
+\item \strong{Filtering markers with low Minor Allele Count} : use the argument
+\code{filter.mac} to evaluate the impact of MAC/MAF on genome scans.
+The function \code{\link{filter_mac}} is called.
+
+\item Turning off the filter that keeps markers in common between strata:
+This is not recommended, but users who wants to explore the impact of such filtering
+and know the biais it can potentially generate can use the argument
+\code{filter.common.markers}.
+The function \code{\link{filter_common_markers}} is called.
+Default: \code{filter.common.markers = NULL}
 }
+}
+
 \references{
 Luu, K., Bazin, E., & Blum, M. G. (2017).
 pcadapt: an R package to perform genome scans for selection based on principal component analysis.

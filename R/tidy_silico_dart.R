@@ -78,15 +78,15 @@ tidy_silico_dart <- function(
   message("Importing silico DArT data...")
 
   # Checking for missing and/or default arguments ------------------------------
-  if (missing(data)) stop("Input file missing")
-  if (missing(strata)) stop("strata file missing")
+  if (missing(data)) rlang::abort("Input file missing")
+  if (missing(strata)) rlang::abort("strata file missing")
 
   # Check that DArT file as good target id written -----------------------------
   target.id <- radiator::extract_dart_target_id(data, write = FALSE)
   n.ind.dart <- nrow(target.id)
   if (verbose) message("Number of individuals in DArT file: ", n.ind.dart)
   if (nrow(target.id) != length(unique(target.id$TARGET_ID))) {
-    stop("\nnon unique target id are used in the DArT file...
+    rlang::abort("\nnon unique target id are used in the DArT file...
          What you want are different target ids at the end of the row
          that contains AlleleID, AlleleSequence.
          Edit manually before trying again
@@ -107,7 +107,7 @@ tidy_silico_dart <- function(
   # Check DArT format file -----------------------------------------------------
   dart.check <- check_dart(data)
   if (!dart.check$data.type %in% c("dart", "silico.dart")) {
-    stop("\nContact author to show your silico DArT data, problems during import")
+    rlang::abort("\nContact author to show your silico DArT data, problems during import")
   } else {
     skip.number <- dart.check$skip.number
   }
@@ -137,7 +137,7 @@ tidy_silico_dart <- function(
       readr::write_tsv(
         x = strata.id.check,
         path = problem.filename)
-      stop("\nSome of the samples in the strata are not found in the DArT file.
+      rlang::abort("\nSome of the samples in the strata are not found in the DArT file.
 For more info: ", problem.filename)
     }
     message("\nCaution: you've chosen to tidy a subsample of your DArT file.
@@ -145,7 +145,7 @@ DArT statistics generated for all samples might not apply...\n")
     strata.id.check <- NULL
   } else {
     if (!identical(sort(target.id$TARGET_ID), sort(strata.df$TARGET_ID))) {
-      stop("\nThe DArT and strata files don't have the same TARGET_IDs")
+      rlang::abort("\nThe DArT and strata files don't have the same TARGET_IDs")
     }
   }
   target.id <- NULL
@@ -155,7 +155,7 @@ DArT statistics generated for all samples might not apply...\n")
 
   if (duplicate.id.strata > 0) {
     message("Duplicated individuals names found in the strata.\n   number of duplicate names = ", duplicate.id.strata, "\n")
-    stop("\nFix the strata with unique names and\nverify the DArT file for the same issue, adjust accordingly...")
+    rlang::abort("\nFix the strata with unique names and\nverify the DArT file for the same issue, adjust accordingly...")
   }
 
   # Import data ---------------------------------------------------------------

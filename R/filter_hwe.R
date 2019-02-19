@@ -28,9 +28,8 @@
 #' \emph{How to get a tidy data frame ?}
 #' Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
 
-#' @param interactive.filter (optional, logical) Do you want the filtering session to
-#' be interactive. With default: \code{interactive.filter == TRUE}, the user is
-#' asked to see figures of distribution before making decisions for filtering.
+#' @param filter.hwe (optional, logical) Used inside radiator pipeline.
+#' Default: \code{filter.hwe = TRUE}.
 
 #' @param hw.pop.threshold (integer, optional)
 #' Remove markers that have a certain number of pops in Hardy-Weinberg
@@ -38,6 +37,8 @@
 #' With default, all populations in dataset need to be in HWD before discarding
 #' the marker.
 #' Default: \code{hw.pop.threshold = NULL}.
+
+#' @inheritParams radiator_common_arguments
 
 
 #' @param midp.threshold (character, optional)
@@ -56,6 +57,8 @@
 #' Default: \code{filename = NULL}.
 
 #' @inheritParams tidy_genomic_data
+#' @inheritParams read_strata
+#' @inheritParams radiator_common_arguments
 
 #' @rdname filter_hwe
 #' @export
@@ -63,7 +66,7 @@
 #' @importFrom stringi stri_join stri_replace_all_fixed stri_sub stri_detect_fixed
 #' @importFrom dplyr select distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join funs case_when
 #' @importFrom readr write_tsv
-#' @importFrom tibble data_frame has_name
+#' @importFrom tibble tibble has_name
 
 #' @details
 #' \strong{Interactive version}
@@ -245,577 +248,614 @@
 
 filter_hwe <- function(
   interactive.filter = TRUE,
+  filter.hwe = TRUE,
   data,
   strata = NULL,
   hw.pop.threshold = NULL,
   midp.threshold = "****",
   filename = NULL,
-  blacklist.id = NULL,
-  whitelist.markers = NULL,
-  pop.levels = NULL,
-  pop.labels = NULL,
-  pop.select = NULL,
   parallel.core = parallel::detectCores() - 1,
-  verbose = TRUE
+  verbose = TRUE,
+  ...
 ) {
+  if (interactive.filter || filter.hwe) {
+    if (interactive.filter) verbose <- TRUE
+    # # Testing
+    # interactive.filter = TRUE
+    # filter.hwe <- TRUE
+    # data <- gds
+    # strata = NULL
+    # hw.pop.threshold = NULL
+    # midp.threshold = "****"
+    # filename = NULL
+    # parallel.core = parallel::detectCores() - 1
+    # verbose = TRUE
+    # path.folder <- wf
+    # parameters = filters.parameters
 
-  # # Testing
-  # interactive.filter = TRUE
-  # strata = NULL
-  # hw.pop.threshold = NULL
-  # midp.threshold = "****"
-  # filename = NULL
-  # blacklist.id = NULL
-  # whitelist.markers = NULL
-  # pop.levels = NULL
-  # pop.labels = NULL
-  # pop.select = NULL
-  # parallel.core = parallel::detectCores() - 1
-  # verbose = TRUE
-
-  # required package
-  if (!requireNamespace("HardyWeinberg", quietly = TRUE)) {
-    stop("HardyWeinberg package needed for this function to work
-         Install with install.packages('HardyWeinberg')", call. = FALSE)
-  }
-
-  if (!requireNamespace("ggtern", quietly = TRUE)) {
-    stop("ggtern package needed for this function to draw ternary plots
-         Install with install.packages('ggtern')", call. = FALSE)
-  }
-  if (verbose) {
-    cat("#######################################################################\n")
-    cat("####################### radiator::filter_hwe ##########################\n")
-    cat("#######################################################################\n")
-  }
-  opt.change <- getOption("width")
-  options(width = 70)
-  timing <- proc.time()
-  res <- list()
-
-  # manage missing arguments -----------------------------------------------------
-  if (missing(data)) stop("Input file missing")
-
-  # Message about steps taken during the process ---------------------------------
-  if (interactive.filter) {
-    message("Interactive mode: on")
-    if (!is.null(hw.pop.threshold)) {
-      message("Disabling hw.pop.threshold value")
-      message("   you'll have to enter the value manually after visualization")
+    # required package
+    if (!requireNamespace("HardyWeinberg", quietly = TRUE)) {
+      rlang::abort("HardyWeinberg package needed for this function to work
+         Install with install.packages('HardyWeinberg')")
     }
-  }
-  # folder ---------------------------------------------------------------------
-  # Get date and time to have unique filenaming
-  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
-  folder.extension <- stringi::stri_join("filter_hwe_", file.date, sep = "")
-  path.folder <- file.path(getwd(), folder.extension)
-  dir.create(path.folder)
-  if (verbose) message(stringi::stri_join("Folder created: ", folder.extension))
-  file.date <- NULL #unused object
 
-  # Filter parameter file ------------------------------------------------------
-  message("Parameters used in this run are stored in a file")
-  filters.parameters.path <- list.files(
-    path = getwd(), pattern = "filters_parameters.tsv", full.names = TRUE)
-  if (length(filters.parameters.path) == 0) {
-    filters.parameters.path <- file.path(path.folder, "filters_parameters.tsv")
-    filters.parameters <- tibble::data_frame(
-      FILTERS = as.character(),
-      PARAMETERS = as.character(),
-      VALUES = as.integer(),
-      BEFORE = as.character(),
-      AFTER = as.character(),
-      BLACKLIST = as.integer(),
-      UNITS = as.character(),
-      COMMENTS = as.character()) %>%
-      readr::write_tsv(x = .,
-                       path = filters.parameters.path,
-                       append = FALSE, col_names = TRUE)
-    message("    File written: filters_parameters.tsv")
-  } else {
-    message("    Using the filters parameters file: filters_parameters.tsv")
-  }
-  # File type detection----------------------------------------------------------
-  data.type <- radiator::detect_genomic_format(data)
-
-  if (data.type %in% c("tbl_df", "fst.file")) {
-    message("    using tidy data frame of genotypes as input")
-    message("    skipping all filters")
-
-    if (data.type == "fst.file") {
-      data <- radiator::read_rad(data)
+    if (!requireNamespace("ggtern", quietly = TRUE)) {
+      rlang::abort("ggtern package needed for this function to draw ternary plots
+         Install with install.packages('ggtern')")
     }
-  } else {
-    data <- radiator::tidy_genomic_data(
-      data = data,
-      vcf.metadata = TRUE,
-      blacklist.id = blacklist.id,
-      blacklist.genotype = NULL,
-      whitelist.markers = whitelist.markers,
-      strata = strata,
-      pop.levels = pop.levels,
-      pop.labels = pop.labels,
-      pop.select = pop.select,
-      filename = NULL,
-      parallel.core = parallel.core,
-      verbose = FALSE
+    if (verbose) {
+      cat("################################################################################\n")
+      cat("############################# radiator::filter_hwe #############################\n")
+      cat("################################################################################\n")
+    }
+    # Cleanup---------------------------------------------------------------------
+    file.date <- format(Sys.time(), "%Y%m%d@%H%M")
+    if (verbose) message("Execution date/time: ", file.date)
+    old.dir <- getwd()
+    opt.change <- getOption("width")
+    options(width = 70)
+    timing <- proc.time()# for timing
+    res <- list()
+    #back to the original directory and options
+    on.exit(setwd(old.dir), add = TRUE)
+    on.exit(options(width = opt.change), add = TRUE)
+    on.exit(timing <- proc.time() - timing, add = TRUE)
+    on.exit(if (verbose) message("\nComputation time, overall: ", round(timing[[3]]), " sec"), add = TRUE)
+    on.exit(if (verbose) cat("############################# completed filter_hwe #############################\n"), add = TRUE)
+
+    # Function call and dotslist -------------------------------------------------
+    rad.dots <- radiator_dots(
+      fd = rlang::fn_fmls_names(),
+      args.list = as.list(environment()),
+      dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
+      keepers = c("path.folder", "parameters", "internal"),
+      verbose = verbose
     )
-  }
 
-  # create a strata.df
-  strata <- data %>%
-    dplyr::select(INDIVIDUALS, POP_ID) %>%
-    dplyr::distinct(INDIVIDUALS, .keep_all = TRUE)
+    # Checking for missing and/or default arguments ------------------------------
+    if (missing(data)) rlang::abort("data is missing")
 
-  if (is.factor(strata$POP_ID)) {
-    pop.id.levels <- levels(strata$POP_ID)
-  } else {
-    pop.id.levels <- unique(strata$POP_ID)
-  }
+    # Message about steps taken during the process ---------------------------------
+    if (interactive.filter) {
+      message("Interactive mode: on")
+      if (!is.null(hw.pop.threshold)) {
+        message("Disabling hw.pop.threshold value")
+        message("   you'll have to enter the value manually after visualization")
+      }
+    }
+    # Folders---------------------------------------------------------------------
+    path.folder <- generate_folder(
+      f = path.folder,
+      rad.folder = "filter_hwe",
+      internal = internal,
+      file.date = file.date,
+      verbose = verbose)
 
-  # Check that at least 10 ind/pop ---------------------------------------------
-  pop.removed <- dplyr::group_by(strata, POP_ID) %>%
-    dplyr::tally(.) %>%
-    dplyr::filter(n < 10) %>%
-    dplyr::distinct(POP_ID) %>%
-    dplyr::mutate(POP_ID = as.character(POP_ID)) %>%
-    purrr::flatten_chr(.)
+    # write the dots file
+    write_rad(
+      data = rad.dots,
+      path = path.folder,
+      filename = stringi::stri_join("radiator_filter_hwe_args_", file.date, ".tsv"),
+      tsv = TRUE,
+      internal = internal,
+      verbose = verbose
+    )
 
-  if (length(pop.removed) > 0) {
-    message("\n\nStrata removed from analysis because n < 10: ", stringi::stri_join(pop.removed, collapse = ", "))
+    # Filter parameter file: initiate ------------------------------------------
+    filters.parameters <- update_parameters(
+      generate = TRUE,
+      initiate = TRUE,
+      update = FALSE,
+      parameter.obj = parameters,
+      data = data,
+      path.folder = path.folder,
+      file.date = file.date,
+      verbose = verbose)
 
-    if (length(pop.removed) == length(pop.id.levels)) {
-      message("\n\nAll strata were removed. Stopping analysis. Returning original data.\n\n")
-      run.analysis <- FALSE
+    # File type detection----------------------------------------------------------
+    data.type <- radiator::detect_genomic_format(data)
 
-      res$hw.pop.threshold <- NULL
-      res$midp.threshold <- NULL
-      res$tidy.hw.filtered <- data
-      options(width = opt.change)
-      cat("############################## completed ##############################\n")
-      return(res)
+    if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
+      if (data.type == "gds.file") {
+        data <- radiator::read_rad(data, verbose = verbose)
+      }
+      gds.bk <- data
+      data <- gds2tidy(gds = data, parallel.core = parallel.core)
+      data.type <- "tbl_df"
     } else {
-      run.analysis <- TRUE
-      message("    Note: removed strata are included back in datasets at the end\n\n")
-      data.temp <- dplyr::filter(data, POP_ID %in% pop.removed)
-      data <- dplyr::filter(data, !POP_ID %in% pop.removed)
-      data$POP_ID <- droplevels(data$POP_ID)
-      strata <- dplyr::filter(strata, !POP_ID %in% pop.removed)
+      gds.bk <- NULL
     }
 
-  } else {
-    data.temp <- NULL
-    run.analysis <- TRUE
-  }
 
-  if (run.analysis) {
-    # Check that data is biallelic -----------------------------------------------
-    biallelic <- radiator::detect_biallelic_markers(data, parallel.core = parallel.core)
-    if (!biallelic) stop("This filter requires bi-allelic data")
+    if (data.type %in% c("tbl_df", "fst.file")) {
+      message("    using tidy data frame of genotypes as input")
+      message("    skipping all filters")
 
-    # prepare filter, table and figure--------------------------------------------
-    if (verbose) message("Summarizing data")
-    sample.size <- dplyr::n_distinct(data$INDIVIDUALS)
-
-    want <- c("MARKERS", "POP_ID", "N", "MISSING", "HOM_REF", "HET", "HOM_ALT", "READ_DEPTH")
-    data.sum <- suppressWarnings(
-      summarise_genotypes(data, path.folder = path.folder) %>%
-        dplyr::select(dplyr::one_of(want)) %>%
-        dplyr::rename(AA = HOM_REF, AB = HET, BB = HOM_ALT))
-    pop.levels <- levels(data.sum$POP_ID)
-    n.pop <- length(pop.levels)
-    if (verbose) message("File written: genotypes.summary.tsv")
-
-    # HWE analysis ---------------------------------------------------------------
-    # data.bk <- data
-    # data <- data.bk
-    data.sum <- hwe_analysis(x = data.sum, parallel.core = parallel.core) %>%
-      dplyr::mutate(
-        POP_ID = factor(POP_ID, levels = pop.levels),
-        GROUPINGS = factor(
-          x = GROUPINGS,
-          levels = c("monomorphic", "hwe", "*", "**", "***", "****", "*****"),
-          labels = c("monomorphic", "hwe",
-                     "midp <= 0.05 (*)",
-                     "midp <= 0.01 (**)",
-                     "midp <= 0.001 (***)",
-                     "midp <= 0.0001 (****)",
-                     "midp <= 0.00001 (*****)")),
-        MISSING_PROP = MISSING / (MISSING + N)
-      )
-    # Step 1. Impact of population threshold on marker discovery------------------
-    prop_join <- function(x, y) {
-      stringi::stri_join(x, " (", round(x / y, 3), ")")
-    }
-
-    hwe.pop.sum <- data.sum %>%
-      dplyr::group_by(POP_ID) %>%
-      dplyr::summarise(
-        MARKERS_TOTAL = length(MARKERS),
-        MONOMORPHIC = length(MARKERS[MONO]),
-        HWE = length(MARKERS[HWE & !is.na(HWE)]),
-        `HWD*` = length(MARKERS[`*` & !is.na(`*`)]),
-        `HWD**` = length(MARKERS[`**` & !is.na(`**`)]),
-        `HWD***` = length(MARKERS[`***` & !is.na(`***`)]),
-        `HWD****` = length(MARKERS[`****` & !is.na(`****`)]),
-        `HWD*****` = length(MARKERS[`****` & !is.na(`*****`)])
-      ) %>%
-      dplyr::ungroup(.) %>%
-      readr::write_tsv(x = ., path = file.path(path.folder, "hw.pop.sum.tsv"))
-    if (verbose) message("File written: hw.pop.sum.tsv")
-
-    hwd.markers.pop.sum <- data.sum %>%
-      dplyr::filter(!HWE, POP_ID != "OVERALL") %>%
-      dplyr::select(POP_ID, MARKERS, `*`, `**`, `***`, `****`, `*****`) %>%
-      data.table::as.data.table(.) %>%
-      data.table::melt.data.table(
-        data = ., id.vars = c("MARKERS", "POP_ID"),
-        variable.name = "SIGNIFICANCE", value.name = "VALUE",
-        variable.factor = FALSE) %>%
-      tibble::as_data_frame(.) %>%
-      dplyr::mutate(
-        SIGNIFICANCE = factor(SIGNIFICANCE,
-                              levels = c("*", "**", "***", "****", "*****"))) %>%
-      dplyr::filter(VALUE) %>%
-      dplyr::group_by(MARKERS, SIGNIFICANCE) %>%
-      dplyr::tally(.) %>%
-      dplyr::rename(N_POP_HWD = n) #%>%dplyr::mutate(N_POP_HWD = n.pop -1 - N_POP_HWD)# To get the tolerance to...
-
-    hwd.levels <- sort(unique(hwd.markers.pop.sum$N_POP_HWD))
-    n.markers <- dplyr::n_distinct(data$MARKERS)
-    `Exact test mid p-value` <- NULL
-
-    overall <- data.sum %>%
-      dplyr::filter(!HWE, POP_ID == "OVERALL") %>%
-      dplyr::select(POP_ID, MARKERS, `*`, `**`, `***`, `****`, `*****`) %>%
-      data.table::as.data.table(.) %>%
-      data.table::melt.data.table(
-        data = ., id.vars = c("MARKERS", "POP_ID"),
-        variable.name = "SIGNIFICANCE", value.name = "VALUE",
-        variable.factor = FALSE) %>%
-      tibble::as_data_frame(.) %>%
-      dplyr::mutate(SIGNIFICANCE = factor(
-        x = SIGNIFICANCE,
-        levels = c("*", "**", "***", "****", "*****"))) %>%
-      dplyr::filter(VALUE) %>%
-      dplyr::group_by(MARKERS, SIGNIFICANCE) %>%
-      dplyr::tally(.) %>%
-      dplyr::rename(N_POP_HWD = n) %>%
-      dplyr::group_by(SIGNIFICANCE, N_POP_HWD) %>%
-      dplyr::tally(.) %>%
-      dplyr::ungroup(.) %>%
-      dplyr::mutate(N_POP_HWD = "OVERALL")
-
-    hwd.helper.table.long <- hwd.markers.pop.sum %>%
-      dplyr::group_by(SIGNIFICANCE, N_POP_HWD) %>%
-      dplyr::tally(.) %>%
-      dplyr::ungroup(.) %>%
-      dplyr::mutate(N_POP_HWD = as.character(N_POP_HWD)) %>%
-      dplyr::bind_rows(overall) %>%
-      dplyr::mutate(
-        N_POP_HWD = factor(
-          x = N_POP_HWD, levels = c("OVERALL", hwd.levels))
-      ) %>%
-      tidyr::complete(
-        data = .,
-        SIGNIFICANCE, N_POP_HWD,
-        fill = list(n = 0))
-
-    overall <- NULL
-
-    hwd.helper.table <- hwd.helper.table.long %>%
-      dplyr::group_by(N_POP_HWD) %>%
-      tidyr::spread(data = ., key = SIGNIFICANCE, value = n) %>%
-      dplyr::filter(N_POP_HWD != 0) %>%
-      dplyr::ungroup(.) %>%
-      readr::write_tsv(x = ., path = file.path(path.folder, "hwd.helper.table.tsv"))
-
-    hwd.helper.table.long <- hwd.helper.table.long %>%
-      dplyr::rename(`Exact test mid p-value` = SIGNIFICANCE)
-
-    # dot plot with thresholds ---------------------------------------------------
-    #Function to replace plyr::round_any
-    rounder <- function(x, accuracy, f = round) {
-      f(x / accuracy) * accuracy
-    }
-
-    max.markers <- max(hwd.helper.table.long$n)
-    if (max.markers >= 1000) {
-      y.breaks.by <- rounder(max.markers/10, 100, ceiling)
-      y.breaks.max <- rounder(max.markers, 1000, ceiling)
-      y.breaks <- seq(0, y.breaks.max, by = y.breaks.by)
+      if (data.type == "fst.file") {
+        data <- radiator::read_rad(data)
+      }
     } else {
-      y.breaks.by <- rounder(max.markers/10, 10, ceiling)
-      y.breaks.max <- rounder(max.markers, 100, ceiling)
-      y.breaks <- seq(0, y.breaks.max, by = y.breaks.by)
-    }
-
-    plot.hwd.thresholds <- ggplot2::ggplot(
-      data = hwd.helper.table.long,
-      ggplot2::aes(x = N_POP_HWD, y = n, colour = `Exact test mid p-value`, group = `Exact test mid p-value`)) +
-      ggplot2::geom_point(size = 2, shape = 21, fill = "white") +
-      ggplot2::geom_line() +
-      # ggplot2::scale_x_continuous(name = "Number of populations in HWD", breaks = 1:n.pop - 1) +
-      ggplot2::scale_y_continuous(name = "Number of markers blacklisted", breaks = y.breaks, limits = c(0, y.breaks.max)) +
-      ggplot2::labs(
-        x = "Number of populations in HWD",
-        title = "Number of markers blacklisted based on the number of populations in HWD\nand mid p-value thresholds") +
-      ggplot2::theme(
-        plot.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold", hjust = 0.5),
-        axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-        axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-        axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica"),# , angle = 90, hjust = 1, vjust = 0.5),
-        strip.text.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold")
+      data <- radiator::tidy_genomic_data(
+        data = data,
+        vcf.metadata = TRUE,
+        blacklist.genotype = NULL,
+        strata = strata,
+        filename = NULL,
+        parallel.core = parallel.core,
+        verbose = FALSE
       )
-    # plot.hwd.thresholds
-    if (interactive.filter) print(plot.hwd.thresholds)
-
-    ggplot2::ggsave(
-      limitsize = FALSE,
-      plot = plot.hwd.thresholds,
-      filename = file.path(path.folder, "hwd.plot.blacklist.markers.pdf"),
-      width = n.pop * 5, height = 10,
-      dpi = 300, units = "cm", useDingbats = FALSE)
-    hwd.helper.table.long <- NULL
-    if (verbose) message("Plot written: hwd.plot.blacklist.markers.pdf")
-
-    # if (interactive.filter) {
-    #   message("Step 1. Ternary plot visualization")
-    # }
-    # HardyWeinberg::HWTernaryPlot(
-    # X = dplyr::filter(data, POP_ID == "ATL") %>%
-    # dplyr::select(AA, AB, BB) %>% as.matrix, n = sample.size,
-    # region = 1,
-    # hwcurve = TRUE,
-    # verbose = TRUE)
-
-    # testing with duplicated info removed
-    # data.dup <- data2 %>%
-    #   dplyr::distinct(MARKERS, AA, AB, BB)
-
-    # ternary plot -----------------------------------------------------------------
-    # library(ggtern)
-    num.groups <- dplyr::n_distinct(data.sum$GROUPINGS)
-    if (num.groups == 7) group_colors <- c("grey", "green", "yellow", "orange",
-                                           "orangered", "red", "darkred")
-    if (num.groups == 6) group_colors <- c("green", "yellow", "orange",
-                                           "orangered", "red", "darkred")
-
-    # HW Parabola
-    parabola <- tibble::tibble(p = seq(0, 1, by = 0.005)) %>%
-      dplyr::mutate(AA = p^2, AB = 2 * p * (1 - p), BB = (1 - p)^2, p = NULL)
-    sample.size <- data.sum %>% dplyr::group_by(POP_ID) %>%
-      dplyr::summarise(NN = 2* max(N, na.rm = TRUE))
-
-    hw_parabola <- function(x, sample.size, parabola) {
-      pop <- unique(x)
-      pop.size <- sample.size$NN[sample.size$POP_ID == pop]
-      parabola <- parabola %>%
-        dplyr::mutate(
-          POP_ID = pop,
-          NN = pop.size,
-          AA = AA * NN,
-          AB = AB * NN,
-          BB = BB * NN,
-          NN = NULL,
-          GROUPINGS = "hwe",
-          MISSING_PROP = 0)
-      return(parabola)
     }
 
-    hw.parabola <- purrr::map_df(.x = pop.levels, .f = hw_parabola,
-                                 sample.size = sample.size, parabola = parabola) %>%
-      dplyr::mutate(POP_ID = factor(POP_ID, pop.levels))
-    parabola <- sample.size <- NULL
+    # create a strata.df
+    strata <- data %>%
+      dplyr::select(INDIVIDUALS, POP_ID) %>%
+      dplyr::distinct(INDIVIDUALS, .keep_all = TRUE)
 
-    # plot.tern <- ggtern::ggtern(
-    #   data = data.sum,
-    #   ggtern::aes(AA, AB, BB, color = GROUPINGS, size = MISSING_PROP)) +
-    #   ggplot2::scale_color_manual(name = "Exact test mid p-value", values = group_colors) +
-    #   ggplot2::scale_size_continuous(name = "Missing genotypes proportion") +
-    #   ggplot2::geom_point(alpha = 0.4) +
-    #   ggplot2::geom_line(data = hw.parabola, ggplot2::aes(x = AA, y = AB),
-    #                      linetype = 2, size = 0.6, colour = "black") +
-    #   ggplot2::labs(
-    #     x = "AA", y = "AB", z = "BB",
-    #     title = "Hardy-Weinberg Equilibrium ternary plots",
-    #     subtitle = "genotypes frequencies shown for AA: REF/REF, AB: REF/ALT and BB: ALT/ALT"
-    #   ) +
-    #   ggplot2::theme(
-    #     plot.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold", hjust = 0.5),
-    #     plot.subtitle = ggplot2::element_text(size = 10, family = "Helvetica", hjust = 0.5)
-    #   ) +
-    #   ggtern::theme_rgbw() +
-    #   ggtern::theme_nogrid_minor() +
-    #   ggtern::theme_nogrid_major() +
-    #   ggplot2::facet_wrap(~ POP_ID)
-    # # plot.tern
-    # ggtern::ggsave(
-    #   limitsize = FALSE,
-    #   plot = plot.tern,
-    #   # filename = file.path(path.folder, "hwe.ternary.plots.read.depth.pdf"),
-    #   filename = file.path(path.folder, "hwe.ternary.plots.missing.data.pdf"),
-    #   width = n.pop * 5, height = n.pop * 4,
-    #   dpi = 300, units = "cm", useDingbats = FALSE)
-    # hw.parabola <- NULL
-    # if (verbose) message("Plot written: hwe.ternary.plots.missing.data.pdf")
+    if (is.factor(strata$POP_ID)) {
+      pop.id.levels <- levels(strata$POP_ID)
+    } else {
+      pop.id.levels <- unique(strata$POP_ID)
+    }
 
-    plot.tern <- "temporarily out of order"
+    # Check that at least 10 ind/pop ---------------------------------------------
+    pop.removed <- dplyr::group_by(strata, POP_ID) %>%
+      dplyr::tally(.) %>%
+      dplyr::filter(n < 10) %>%
+      dplyr::distinct(POP_ID) %>%
+      dplyr::mutate(POP_ID = as.character(POP_ID)) %>%
+      purrr::flatten_chr(.)
 
-    # Manhattan plot -------------------------------------------------------------
-    data.sum.man <- dplyr::mutate(data.sum, X = "x") %>% dplyr::filter(MID_P_VALUE < 0.05)
-    # rounder <- function(x, accuracy, f = round) {
-    #   f(x / accuracy) * accuracy
-    # }
-    # y.breaks.by <- rounder(max(data.sum$MID_P_VALUE, na.rm = TRUE)/10, 0.001, ceiling)
-    # y.breaks.max <- rounder(max(data.sum$MID_P_VALUE, na.rm = TRUE), 0.001, ceiling) + (y.breaks.by / 2)
-    # y.breaks.min <- rounder(min(data.sum$MID_P_VALUE, na.rm = TRUE), 0.001, ceiling) - (y.breaks.by / 2)
-    # y.breaks <- seq(y.breaks.min, y.breaks.max, by = y.breaks.by)
+    if (length(pop.removed) > 0) {
+      message("\n\nStrata removed from analysis because n < 10: ", stringi::stri_join(pop.removed, collapse = ", "))
 
-    num.groups <- dplyr::n_distinct(data.sum.man$GROUPINGS)
-    if (num.groups == 5) group_colors <- c("yellow", "orange", "orangered", "red", "darkred")
-    if (num.groups == 4) group_colors <- c("yellow", "orange", "orangered", "red")
-
-    hw.manhattan <- ggplot2::ggplot(
-      data = data.sum.man,
-      ggplot2::aes(x = X, y = MID_P_VALUE, color = GROUPINGS, size = MISSING_PROP)) +
-      ggplot2::geom_jitter(alpha = 0.5) +
-      ggplot2::scale_color_manual(name = "Exact test mid p-value", values = group_colors) +
-      ggplot2::scale_size_continuous(name = "Missing genotypes proportion") +
-      ggplot2::labs(
-        y = "Markers mid p-value",
-        title = "Manhanttan plot of markers in Hardy-Weinberg disequilibrium"
-      ) +
-      ggplot2::theme(
-        panel.grid.major.x = ggplot2::element_blank(),
-        plot.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold", hjust = 0.5),
-        plot.subtitle = ggplot2::element_text(size = 10, family = "Helvetica", hjust = 0.5),
-        axis.line.x = ggplot2::element_blank(),
-        axis.title.x = ggplot2::element_blank(),
-        axis.text.x = ggplot2::element_blank(),
-        axis.ticks.x = ggplot2::element_blank(),
-        axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-        axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
-      ) +
-      ggplot2::theme_bw() +
-      ggplot2::facet_grid(GROUPINGS ~ POP_ID, scales = "free")
-
-    # if (interactive.filter) print(hw.manhattan)
-    ggplot2::ggsave(
-      filename = file.path(path.folder, "hwe.manhattan.plot.pdf"),
-      plot = hw.manhattan,
-      width = 5 * n.pop, height = 30,
-      dpi = 600, units = "cm", useDingbats = FALSE, limitsize = FALSE)
-    if (verbose) message("Plot written: hwe.manhattan.plot.pdf")
-
-    # continue with filters or not ------
-    hw.q <- "\nDo you want to continue with the filtering ? (y/n):"
-    do.hw <- interactive_question(x = hw.q, answer.opt = c("y", "n"))
-
-    if (do.hw == "y") {
-
-      # generate the blacklist/whitelist -------------------------------------------
-      # Generate blacklist of markers with the 4 significance groups
-      # threshold (integer) The number of outlier pop you tolerate to deviate from HWE.
-      # e.g. if \code{threshold = 2}, blacklist of markers out of HWE in more than (>=)
-      # 2 populations will be generated for all significance groupings.
-
-      #leave user with this figure before choosing threshold
-
-      if (is.null(hw.pop.threshold)) hw.pop.threshold <- n.pop - 1
-      if (interactive.filter) {
-        # message("\nBased on figures and tables enter the hw.pop.threshold (integer): ")
-        # message("    an integer (e.g. 4):")
-        # hw.pop.threshold <- as.numeric(readLines(n = 1))
-        hw.pop.threshold <- interactive_question(
-          x = "\nBased on figures and tables enter the hw.pop.threshold (integer): ", minmax = c(0, 100000000))
+      if (length(pop.removed) == length(pop.id.levels)) {
+        message("\n\nAll strata were removed. Stopping analysis. Returning original data.\n\n")
+        run.analysis <- FALSE
+        return(data)
+      } else {
+        run.analysis <- TRUE
+        message("    Note: removed strata are included back in datasets at the end\n\n")
+        data.temp <- dplyr::filter(data, POP_ID %in% pop.removed)
+        data <- dplyr::filter(data, !POP_ID %in% pop.removed)
+        data$POP_ID <- droplevels(data$POP_ID)
+        strata <- dplyr::filter(strata, !POP_ID %in% pop.removed)
       }
 
-      # hw.pop.threshold <- 8
-      # Generating blacklists, whitelists and filtered tidy data -------------------
-      if (verbose) message("\nGenerating blacklists, whitelists and filtered tidy data")
-      output.message <- blacklist_hw(
-        x = hwd.markers.pop.sum,
-        unfiltered.data = data,
-        data.temp = data.temp,
-        hw.pop.threshold = hw.pop.threshold,
-        path.folder = path.folder,
-        filters.parameters.path = filters.parameters.path,
-        pop.id.levels = pop.id.levels) %>%
-        dplyr::select(-FILTERS, -COMMENTS)
+    } else {
+      data.temp <- NULL
+      run.analysis <- TRUE
+    }
 
-      res = list(path.folder = path.folder,
-                 hw.pop.threshold = hw.pop.threshold,
-                 plot.hwd.thresholds = plot.hwd.thresholds,
-                 plot.tern = plot.tern,
-                 hw.manhattan = hw.manhattan,
-                 hwe.pop.sum = hwe.pop.sum)
+    # run.analysis  --------------------------------------------------------------
+    if (run.analysis) {
+      # Check that data is biallelic
+      biallelic <- radiator::detect_biallelic_markers(data, parallel.core = parallel.core)
+      if (!biallelic) rlang::abort("This filter requires bi-allelic data")
 
-      # Choosing the last dataset --------------------------------------------------
-      no.file <- TRUE
-      while (no.file) {
+      # prepare filter, table and figure------------------------------------------
+      if (verbose) message("Summarizing data")
+      sample.size <- length(unique(data$INDIVIDUALS))
+      want <- c("MARKERS", "POP_ID", "N", "MISSING", "HOM_REF", "HET", "HOM_ALT", "READ_DEPTH")
+      data.sum <- suppressWarnings(
+        summarise_genotypes(data, path.folder = path.folder) %>%
+          dplyr::select(dplyr::one_of(want)) %>%
+          dplyr::rename(AA = HOM_REF, AB = HET, BB = HOM_ALT))
+      if (is.factor(data.sum$POP_ID)) {
+        pop.levels <- levels(data.sum$POP_ID)
+      } else {
+        pop.levels <- unique(data.sum$POP_ID)
+      }
+      n.pop <- length(pop.levels)
+      if (verbose) message("File written: genotypes.summary.tsv")
+
+      # HWE analysis -------------------------------------------------------------
+      data.sum <- hwe_analysis(x = data.sum, parallel.core = parallel.core) %>%
+        dplyr::mutate(
+          POP_ID = factor(POP_ID, levels = pop.levels),
+          GROUPINGS = factor(
+            x = GROUPINGS,
+            levels = c("monomorphic", "hwe", "*", "**", "***", "****", "*****"),
+            labels = c("monomorphic", "hwe",
+                       "midp <= 0.05 (*)",
+                       "midp <= 0.01 (**)",
+                       "midp <= 0.001 (***)",
+                       "midp <= 0.0001 (****)",
+                       "midp <= 0.00001 (*****)")),
+          MISSING_PROP = MISSING / (MISSING + N)
+        )
+      # Step 1. Impact of population threshold on marker discovery------------------
+      prop_join <- function(x, y) {
+        stringi::stri_join(x, " (", round(x / y, 3), ")")
+      }
+
+      hwe.pop.sum <- data.sum %>%
+        dplyr::group_by(POP_ID) %>%
+        dplyr::summarise(
+          MARKERS_TOTAL = length(MARKERS),
+          MONOMORPHIC = length(MARKERS[MONO]),
+          HWE = length(MARKERS[HWE & !is.na(HWE)]),
+          `HWD*` = length(MARKERS[`*` & !is.na(`*`)]),
+          `HWD**` = length(MARKERS[`**` & !is.na(`**`)]),
+          `HWD***` = length(MARKERS[`***` & !is.na(`***`)]),
+          `HWD****` = length(MARKERS[`****` & !is.na(`****`)]),
+          `HWD*****` = length(MARKERS[`****` & !is.na(`*****`)])
+        ) %>%
+        dplyr::ungroup(.) %>%
+        readr::write_tsv(x = ., path = file.path(path.folder, "hw.pop.sum.tsv"))
+      if (verbose) message("File written: hw.pop.sum.tsv")
+
+      hwd.markers.pop.sum <- data.sum %>%
+        dplyr::filter(!HWE, POP_ID != "OVERALL") %>%
+        dplyr::select(POP_ID, MARKERS, `*`, `**`, `***`, `****`, `*****`) %>%
+        data.table::as.data.table(.) %>%
+        data.table::melt.data.table(
+          data = ., id.vars = c("MARKERS", "POP_ID"),
+          variable.name = "SIGNIFICANCE", value.name = "VALUE",
+          variable.factor = FALSE) %>%
+        tibble::as_tibble(.) %>%
+        dplyr::mutate(
+          SIGNIFICANCE = factor(SIGNIFICANCE,
+                                levels = c("*", "**", "***", "****", "*****"))) %>%
+        dplyr::filter(VALUE) %>%
+        dplyr::group_by(MARKERS, SIGNIFICANCE) %>%
+        dplyr::tally(.) %>%
+        dplyr::rename(N_POP_HWD = n) #%>%dplyr::mutate(N_POP_HWD = n.pop -1 - N_POP_HWD)# To get the tolerance to...
+
+      hwd.levels <- sort(unique(hwd.markers.pop.sum$N_POP_HWD))
+      n.markers <- dplyr::n_distinct(data$MARKERS)
+      `Exact test mid p-value` <- NULL
+
+      overall <- data.sum %>%
+        dplyr::filter(!HWE, POP_ID == "OVERALL") %>%
+        dplyr::select(POP_ID, MARKERS, `*`, `**`, `***`, `****`, `*****`) %>%
+        data.table::as.data.table(.) %>%
+        data.table::melt.data.table(
+          data = ., id.vars = c("MARKERS", "POP_ID"),
+          variable.name = "SIGNIFICANCE", value.name = "VALUE",
+          variable.factor = FALSE) %>%
+        tibble::as_tibble(.) %>%
+        dplyr::mutate(SIGNIFICANCE = factor(
+          x = SIGNIFICANCE,
+          levels = c("*", "**", "***", "****", "*****"))) %>%
+        dplyr::filter(VALUE) %>%
+        dplyr::group_by(MARKERS, SIGNIFICANCE) %>%
+        dplyr::tally(.) %>%
+        dplyr::rename(N_POP_HWD = n) %>%
+        dplyr::group_by(SIGNIFICANCE, N_POP_HWD) %>%
+        dplyr::tally(.) %>%
+        dplyr::ungroup(.) %>%
+        dplyr::mutate(N_POP_HWD = "OVERALL")
+
+      hwd.helper.table.long <- hwd.markers.pop.sum %>%
+        dplyr::group_by(SIGNIFICANCE, N_POP_HWD) %>%
+        dplyr::tally(.) %>%
+        dplyr::ungroup(.) %>%
+        dplyr::mutate(N_POP_HWD = as.character(N_POP_HWD)) %>%
+        dplyr::bind_rows(overall) %>%
+        dplyr::mutate(
+          N_POP_HWD = factor(
+            x = N_POP_HWD, levels = c("OVERALL", hwd.levels))
+        ) %>%
+        tidyr::complete(
+          data = .,
+          SIGNIFICANCE, N_POP_HWD,
+          fill = list(n = 0))
+
+      overall <- NULL
+
+      hwd.helper.table <- hwd.helper.table.long %>%
+        dplyr::group_by(N_POP_HWD) %>%
+        tidyr::spread(data = ., key = SIGNIFICANCE, value = n) %>%
+        dplyr::filter(N_POP_HWD != 0) %>%
+        dplyr::ungroup(.) %>%
+        readr::write_tsv(x = ., path = file.path(path.folder, "hwd.helper.table.tsv"))
+
+      hwd.helper.table.long <- hwd.helper.table.long %>%
+        dplyr::rename(`Exact test mid p-value` = SIGNIFICANCE)
+
+      # dot plot with thresholds ---------------------------------------------------
+      #Function to replace packageplyr round_any
+      rounder <- function(x, accuracy, f = round) {
+        f(x / accuracy) * accuracy
+      }
+
+      max.markers <- max(hwd.helper.table.long$n)
+      if (max.markers >= 1000) {
+        y.breaks.by <- rounder(max.markers/10, 100, ceiling)
+        y.breaks.max <- rounder(max.markers, 1000, ceiling)
+        y.breaks <- seq(0, y.breaks.max, by = y.breaks.by)
+      } else {
+        y.breaks.by <- rounder(max.markers/10, 10, ceiling)
+        y.breaks.max <- rounder(max.markers, 100, ceiling)
+        y.breaks <- seq(0, y.breaks.max, by = y.breaks.by)
+      }
+
+      plot.hwd.thresholds <- ggplot2::ggplot(
+        data = hwd.helper.table.long,
+        ggplot2::aes(x = N_POP_HWD, y = n, colour = `Exact test mid p-value`, group = `Exact test mid p-value`)) +
+        ggplot2::geom_point(size = 2, shape = 21, fill = "white") +
+        ggplot2::geom_line() +
+        # ggplot2::scale_x_continuous(name = "Number of populations in HWD", breaks = 1:n.pop - 1) +
+        ggplot2::scale_y_continuous(name = "Number of markers blacklisted", breaks = y.breaks, limits = c(0, y.breaks.max)) +
+        ggplot2::labs(
+          x = "Number of populations in HWD",
+          title = "Number of markers blacklisted based on the number of populations in HWD\nand mid p-value thresholds") +
+        ggplot2::theme(
+          plot.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold", hjust = 0.5),
+          axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+          axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+          axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica"),# , angle = 90, hjust = 1, vjust = 0.5),
+          strip.text.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold")
+        )
+      # plot.hwd.thresholds
+      if (interactive.filter) print(plot.hwd.thresholds)
+
+      ggplot2::ggsave(
+        limitsize = FALSE,
+        plot = plot.hwd.thresholds,
+        filename = file.path(path.folder, "hwd.plot.blacklist.markers.pdf"),
+        width = n.pop * 5, height = 10,
+        dpi = 300, units = "cm", useDingbats = FALSE)
+      hwd.helper.table.long <- NULL
+      if (verbose) message("Plot written: hwd.plot.blacklist.markers.pdf")
+
+      # if (interactive.filter) {
+      #   message("Step 1. Ternary plot visualization")
+      # }
+      # HardyWeinberg::HWTernaryPlot(
+      # X = dplyr::filter(data, POP_ID == "ATL") %>%
+      # dplyr::select(AA, AB, BB) %>% as.matrix, n = sample.size,
+      # region = 1,
+      # hwcurve = TRUE,
+      # verbose = TRUE)
+
+      # testing with duplicated info removed
+      # data.dup <- data2 %>%
+      #   dplyr::distinct(MARKERS, AA, AB, BB)
+
+      # ternary plot -----------------------------------------------------------------
+      # library(ggtern)
+      num.groups <- dplyr::n_distinct(data.sum$GROUPINGS)
+      if (num.groups == 7) group_colors <- c("grey", "green", "yellow", "orange",
+                                             "orangered", "red", "darkred")
+      if (num.groups == 6) group_colors <- c("green", "yellow", "orange",
+                                             "orangered", "red", "darkred")
+
+      # HW Parabola
+      parabola <- tibble::tibble(p = seq(0, 1, by = 0.005)) %>%
+        dplyr::mutate(AA = p^2, AB = 2 * p * (1 - p), BB = (1 - p)^2, p = NULL)
+      sample.size <- data.sum %>% dplyr::group_by(POP_ID) %>%
+        dplyr::summarise(NN = 2* max(N, na.rm = TRUE))
+
+      hw_parabola <- function(x, sample.size, parabola) {
+        pop <- unique(x)
+        pop.size <- sample.size$NN[sample.size$POP_ID == pop]
+        parabola <- parabola %>%
+          dplyr::mutate(
+            POP_ID = pop,
+            NN = pop.size,
+            AA = AA * NN,
+            AB = AB * NN,
+            BB = BB * NN,
+            NN = NULL,
+            GROUPINGS = "hwe",
+            MISSING_PROP = 0)
+        return(parabola)
+      }
+
+      hw.parabola <- purrr::map_df(.x = pop.levels, .f = hw_parabola,
+                                   sample.size = sample.size, parabola = parabola) %>%
+        dplyr::mutate(POP_ID = factor(POP_ID, pop.levels))
+      parabola <- sample.size <- NULL
+
+      plot.tern <- ggtern::ggtern(
+        data = data.sum,
+        ggtern::aes(AA, AB, BB, color = GROUPINGS, size = MISSING_PROP)) +
+        ggplot2::scale_color_manual(name = "Exact test mid p-value", values = group_colors) +
+        ggplot2::scale_size_continuous(name = "Missing genotypes proportion") +
+        ggplot2::geom_point(alpha = 0.4) +
+        ggplot2::geom_line(data = hw.parabola, ggplot2::aes(x = AA, y = AB),
+                           linetype = 2, size = 0.6, colour = "black") +
+        ggplot2::labs(
+          x = "AA", y = "AB", z = "BB",
+          title = "Hardy-Weinberg Equilibrium ternary plots",
+          subtitle = "genotypes frequencies shown for AA: REF/REF, AB: REF/ALT and BB: ALT/ALT"
+        ) +
+        ggplot2::theme(
+          plot.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold", hjust = 0.5),
+          plot.subtitle = ggplot2::element_text(size = 10, family = "Helvetica", hjust = 0.5)
+        ) +
+        ggtern::theme_rgbw() +
+        ggtern::theme_nogrid_minor() +
+        ggtern::theme_nogrid_major() +
+        ggplot2::facet_wrap(~ POP_ID)
+      # plot.tern
+      ggtern::ggsave(
+        limitsize = FALSE,
+        plot = plot.tern,
+        # filename = file.path(path.folder, "hwe.ternary.plots.read.depth.pdf"),
+        filename = file.path(path.folder, "hwe.ternary.plots.missing.data.pdf"),
+        width = n.pop * 5, height = n.pop * 4,
+        dpi = 300, units = "cm", useDingbats = FALSE)
+      hw.parabola <- NULL
+      if (verbose) message("Plot written: hwe.ternary.plots.missing.data.pdf")
+
+      # plot.tern <- "temporarily out of order"
+
+      # Manhattan plot -------------------------------------------------------------
+      data.sum.man <- dplyr::mutate(data.sum, X = "x") %>% dplyr::filter(MID_P_VALUE < 0.05)
+      # rounder <- function(x, accuracy, f = round) {
+      #   f(x / accuracy) * accuracy
+      # }
+      # y.breaks.by <- rounder(max(data.sum$MID_P_VALUE, na.rm = TRUE)/10, 0.001, ceiling)
+      # y.breaks.max <- rounder(max(data.sum$MID_P_VALUE, na.rm = TRUE), 0.001, ceiling) + (y.breaks.by / 2)
+      # y.breaks.min <- rounder(min(data.sum$MID_P_VALUE, na.rm = TRUE), 0.001, ceiling) - (y.breaks.by / 2)
+      # y.breaks <- seq(y.breaks.min, y.breaks.max, by = y.breaks.by)
+
+      num.groups <- dplyr::n_distinct(data.sum.man$GROUPINGS)
+      if (num.groups == 5) group_colors <- c("yellow", "orange", "orangered", "red", "darkred")
+      if (num.groups == 4) group_colors <- c("yellow", "orange", "orangered", "red")
+
+      hw.manhattan <- ggplot2::ggplot(
+        data = data.sum.man,
+        ggplot2::aes(x = X, y = MID_P_VALUE, color = GROUPINGS, size = MISSING_PROP)) +
+        ggplot2::geom_jitter(alpha = 0.5) +
+        ggplot2::scale_color_manual(name = "Exact test mid p-value", values = group_colors) +
+        ggplot2::scale_size_continuous(name = "Missing genotypes proportion") +
+        ggplot2::labs(
+          y = "Markers mid p-value",
+          title = "Manhanttan plot of markers in Hardy-Weinberg disequilibrium"
+        ) +
+        ggplot2::theme(
+          panel.grid.major.x = ggplot2::element_blank(),
+          plot.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold", hjust = 0.5),
+          plot.subtitle = ggplot2::element_text(size = 10, family = "Helvetica", hjust = 0.5),
+          axis.line.x = ggplot2::element_blank(),
+          axis.title.x = ggplot2::element_blank(),
+          axis.text.x = ggplot2::element_blank(),
+          axis.ticks.x = ggplot2::element_blank(),
+          axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+          axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
+        ) +
+        ggplot2::theme_bw() +
+        ggplot2::facet_grid(GROUPINGS ~ POP_ID, scales = "free")
+
+      # if (interactive.filter) print(hw.manhattan)
+      ggplot2::ggsave(
+        filename = file.path(path.folder, "hwe.manhattan.plot.pdf"),
+        plot = hw.manhattan,
+        width = 5 * n.pop, height = 30,
+        dpi = 600, units = "cm", useDingbats = FALSE, limitsize = FALSE)
+      if (verbose) message("Plot written: hwe.manhattan.plot.pdf")
+
+      # continue with filters or not ------
+      if (interactive.filter) {
+        hw.q <- "\nDo you want to continue with the filtering ? (y/n):"
+        do.hw <- interactive_question(x = hw.q, answer.opt = c("y", "n"))
+      } else {
+        do.hw <- "y"
+      }
+
+
+      if (do.hw == "y") {
+
+        # generate the blacklist/whitelist -------------------------------------------
+        # Generate blacklist of markers with the 4 significance groups
+        # threshold (integer) The number of outlier pop you tolerate to deviate from HWE.
+        # e.g. if \code{threshold = 2}, blacklist of markers out of HWE in more than (>=)
+        # 2 populations will be generated for all significance groupings.
+
+        #leave user with this figure before choosing threshold
+
+        if (is.null(hw.pop.threshold)) hw.pop.threshold <- n.pop - 1
         if (interactive.filter) {
-          message("\nChoosing the final filtered dataset")
-          message("   the tidy data object associated with this filter...")
-          # message("   choose the mid p-value threshold (one of: *, **, ***, **** or *****)")
-          # midp.threshold <- as.character(readLines(n = 1))
-          midp.threshold <- interactive_question(
-            x = "   choose the mid p-value threshold (one of: *, **, ***, **** or *****)", answer.opt = c("*", "**", "***", "****", "*****"))
-
+          hw.pop.threshold <- interactive_question(
+            x = "\nBased on figures and tables enter the hw.pop.threshold (integer): ",
+            minmax = c(0, 100000000))
         }
-        midp.threshold <- dplyr::case_when(
-          midp.threshold == "*****" ~ 0.00001,
-          midp.threshold == "****" ~ 0.0001,
-          midp.threshold == "***" ~ 0.001,
-          midp.threshold == "**" ~ 0.01,
-          midp.threshold == "*" ~ 0.05) %>%
-          format(., scientific = FALSE)
 
-        # path.folder <- yft.hw$path.folder
-        data.filtered.name <- list.files(
+        # hw.pop.threshold <- 8
+        # Generating blacklists, whitelists and filtered tidy data -------------------
+        if (verbose) message("\nGenerating blacklists, whitelists and filtered tidy data...")
+        blacklist_hw(
+          x = hwd.markers.pop.sum,
+          unfiltered.data = data,
+          data.temp = data.temp,
+          hw.pop.threshold = hw.pop.threshold,
+          path.folder = path.folder,
+          pop.id.levels = pop.id.levels)
+
+        # Choosing the last dataset --------------------------------------------
+        no.file <- TRUE
+        while (no.file) {
+          if (interactive.filter) {
+            message("\nChoosing the final filtered dataset")
+            message("   the tidy data object associated with this filter...")
+            midp.threshold <- interactive_question(
+              x = "   choose the mid p-value threshold (one of: *, **, ***, **** or *****)", answer.opt = c("*", "**", "***", "****", "*****"))
+
+          }
+          midp.threshold <- dplyr::case_when(
+            midp.threshold == "*****" ~ 0.00001,
+            midp.threshold == "****" ~ 0.0001,
+            midp.threshold == "***" ~ 0.001,
+            midp.threshold == "**" ~ 0.01,
+            midp.threshold == "*" ~ 0.05) %>%
+            format(., scientific = FALSE)
+
+          # path.folder <- yft.hw$path.folder
+          data.filtered.name <- list.files(
+            path = path.folder,
+            pattern = stringi::stri_join("tidy.filtered.hwe.", midp.threshold),
+            full.names = FALSE)
+          if (length(data.filtered.name) == 0) {
+            message("No file associated with this threshold, choose again")
+            no.file <- TRUE
+          } else {
+            no.file <- FALSE
+          }
+        }
+        message("\nFinal filtered tidy dataset: \n", data.filtered.name)
+        message("\nUsing hw.pop.threshold/midp.threshold: ", hw.pop.threshold, "/", midp.threshold)
+
+        data <- list.files(
           path = path.folder,
           pattern = stringi::stri_join("tidy.filtered.hwe.", midp.threshold),
-          full.names = FALSE)
-        if (length(data.filtered.name) == 0) {
-          message("No file associated with this threshold, choose again")
-          no.file <- TRUE
-        } else {
-          no.file <- FALSE
+          full.names = TRUE) %>%
+          radiator::read_rad(data = .)
+      }
+
+      # GDS ----------------------------------------------------------------------
+      if (!is.null(gds.bk)) {
+        # convert back or filter the gds....
+        bl <- wl <- extract_markers_metadata(gds = gds.bk)
+
+        wl %<>% dplyr::filter(MARKERS %in% unique(data$MARKERS))
+
+        data <- gds.bk
+        gds.bk <- NULL
+        update_radiator_gds(
+          gds = data,
+          node.name = "markers.meta",
+          value = wl,
+          sync = TRUE)
+
+        # update blacklist.markers
+        bl %<>% dplyr::setdiff(wl)
+        if (nrow(bl) > 0) {
+          bl %<>% dplyr::select(MARKERS) %>%
+            dplyr::mutate(FILTER = "filter.hwe")
+          bl.gds <- update_bl_markers(gds = data, update = bl)
         }
       }
+    }#End run.analysis
 
-      res$midp.threshold  <- midp.threshold
+    # Update parameters --------------------------------------------------------
+    filters.parameters <- update_parameters(
+      generate = FALSE,
+      initiate = FALSE,
+      update = TRUE,
+      parameter.obj = filters.parameters,
+      data = data,
+      filter.name = "Filter HWE",
+      param.name = paste0("hw.pop.threshold / midp.threshold"),
+      values = stringi::stri_join(hw.pop.threshold, midp.threshold,
+                                  collapse = " / ", ignore_null = FALSE),
+      path.folder = path.folder,
+      file.date = file.date,
+      verbose = verbose)
 
-      message("\nFinal filtered tidy dataset: \n", data.filtered.name)
-      message("\nUsing hw.pop.threshold/midp.threshold: ", hw.pop.threshold, "/", midp.threshold)
-
-      res$tidy.hw.filtered <- list.files(
-        path = path.folder,
-        pattern = stringi::stri_join("tidy.filtered.hwe.", midp.threshold),
-        full.names = TRUE) %>%
-        radiator::read_rad(data = .)
-    } else {
-      res$hw.pop.threshold <- NULL
-      res$midp.threshold <- NULL
-      res$tidy.hw.filtered <- data
-    }
-    # results --------------------------------------------------------------------
+    # Return ---------------------------------------------------------------------
     if (verbose) {
-      cat("############################### RESULTS ###############################\n")
-      if (do.hw == "y") {
-        message("with hw.pop.threshold: ", "> ", hw.pop.threshold)
-        # message("The number of markers (SNP/LOCUS) before -> blacklisted -> after the HWE filter:\n", markers.before, " -> ", markers.after)
-
-        print(output.message)
-      }
-
-      timing <- proc.time() - timing
-      message("\nComputation time: ", round(timing[[3]]), " sec")
-      cat("############################## completed ##############################\n")
+      message("Filter HWE: ", stringi::stri_join(hw.pop.threshold, " / ", midp.threshold,
+                                                 ignore_null = FALSE))
+      message("Number of individuals / strata / chrom / locus / SNP:")
+      message("    Before: ", filters.parameters$filters.parameters$BEFORE)
+      message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
+      message("    After: ", filters.parameters$filters.parameters$AFTER)
     }
-    options(width = opt.change)
-    return(res)
-  }#here
+  }
+  return(data)
 }# End filter_hwe
 
 # Internal nested functions ----------------------------------------------------
@@ -862,7 +902,7 @@ hwe_analysis <- function(x, parallel.core = parallel::detectCores() - 1) {
         hw.res,
         dplyr::bind_cols(
           markers,
-          tibble::data_frame(
+          tibble::tibble(
             MID_P_VALUE = HardyWeinberg::HWExactStats(
               X = hw.poly, plinkcode = TRUE, midp = TRUE)
           )
@@ -909,26 +949,29 @@ hwe_analysis <- function(x, parallel.core = parallel::detectCores() - 1) {
 #' @export
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
-blacklist_hw <- function(x, unfiltered.data, data.temp, hw.pop.threshold, path.folder = NULL,
-                         filters.parameters.path, pop.id.levels) {
+blacklist_hw <- function(
+  x,
+  unfiltered.data,
+  data.temp,
+  hw.pop.threshold,
+  path.folder = NULL,
+  # filters.parameters.path,
+  pop.id.levels
+) {
   if (is.null(path.folder)) path.folder <- getwd()
 
   x <- dplyr::ungroup(x) %>%
     dplyr::filter(N_POP_HWD == hw.pop.threshold)
 
-  bl_map <- function(x, unfiltered.data, hw.pop.threshold,
-                     path.folder, filters.parameters.path) {
+  bl_map <- function(
+    x,
+    unfiltered.data,
+    hw.pop.threshold,
+    path.folder#filters.parameters.path
+  ) {
 
     if (nrow(x) > 0) {
       significance.group <- unique(x$SIGNIFICANCE)
-      # significance.group <-  "****"
-      # system.time(significance.group1 <- stringi::stri_replace_all_regex(
-      #   str = significance.group,
-      #   pattern = c("^\\*\\*\\*\\*$", "^\\*\\*\\*$", "^\\*\\*$","^\\*$"),
-      #   replacement = c("0.0001", "0.001", "0.01", "0.05"),
-      #   vectorize_all = FALSE
-      # ))
-
       significance.group <- dplyr::case_when(
         significance.group == "*****" ~ 0.00001,
         significance.group == "****" ~ 0.0001,
@@ -990,13 +1033,13 @@ blacklist_hw <- function(x, unfiltered.data, data.temp, hw.pop.threshold, path.f
             readr::write_tsv(x = ., path = whitelist.filename))
       }
 
-      fil.param <- update_filter_parameter(
-        filter = "HWE",
-        unfiltered = unfiltered.data,
-        filtered = whitelist,
-        parameter = "hw.pop.threshold/mid.p.value",
-        threshold = stringi::stri_join(hw.pop.threshold, significance.group, sep = "/"),
-        param.path = filters.parameters.path)
+      # fil.param <- update_filter_parameter(
+      #   filter = "HWE",
+      #   unfiltered = unfiltered.data,
+      #   filtered = whitelist,
+      #   parameter = "hw.pop.threshold/mid.p.value",
+      #   threshold = stringi::stri_join(hw.pop.threshold, significance.group, sep = "/"),
+      #   param.path = filters.parameters.path)
     }
   }#End bl_map
   split(x = x, f = x$SIGNIFICANCE) %>%
@@ -1004,11 +1047,9 @@ blacklist_hw <- function(x, unfiltered.data, data.temp, hw.pop.threshold, path.f
       .x = ., .f = bl_map,
       unfiltered.data = unfiltered.data,
       hw.pop.threshold = hw.pop.threshold,
-      path.folder = path.folder,
-      filters.parameters.path = filters.parameters.path)
-  fil.param <- readr::read_tsv(file = filters.parameters.path, col_types = "cccccccc") %>%
-    dplyr::filter(FILTERS == "HWE")
-  return(fil.param)
+      path.folder = path.folder)
+
+  return(message("done!"))
 }#End blacklist_hw
 
 #' @title update filter parameter file
@@ -1040,7 +1081,7 @@ update_filter_parameter <- function(filter, unfiltered,
   markers.after <- stringi::stri_join(snp.after, locus.after, sep = "/")
   markers.blacklist <- stringi::stri_join(snp.blacklist, locus.blacklist, sep = "/")
 
-  filters.parameters <- tibble::data_frame(
+  filters.parameters <- tibble::tibble(
     FILTERS = filter,
     PARAMETERS = parameter,
     VALUES = threshold,

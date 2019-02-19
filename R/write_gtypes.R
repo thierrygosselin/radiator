@@ -1,9 +1,9 @@
 # write a strataG gtypes object from a tidy data frame
 
 #' @name write_gtypes
-#' @title Write a \code{\link[strataG]{gtypes}} object from a tidy data frame
+#' @title Write a \href{https://github.com/EricArcher/}{strataG} object from a tidy data frame
 
-#' @description Write a \code{\link[strataG]{gtypes}} object from a tidy data frame.
+#' @description Write a\href{https://github.com/EricArcher/}{strataG} object from a tidy data frame.
 #' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 #' and might be of interest for users.
 
@@ -12,7 +12,7 @@
 #' \emph{How to get a tidy data frame ?}
 #' Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
 
-#' @return An object of the class \code{\link[strataG]{gtypes}} is returned.
+#' @return An object of the class \href{https://github.com/EricArcher/}{strataG} is returned.
 
 
 
@@ -29,7 +29,7 @@
 #' @importFrom utils installed.packages
 
 
-#' @seealso \code{strataG.devel} is available on github \url{https://github.com/EricArcher/}
+#' @seealso \href{https://github.com/EricArcher/}{strataG}
 
 #' @references Archer FI, Adams PE, Schneiders BB.
 #' strataG: An r package for manipulating, summarizing and analysing population
@@ -41,21 +41,17 @@
 write_gtypes <- function(data) {
   # Check that strataG is installed --------------------------------------------
   if (!"strataG" %in% utils::installed.packages()[,"Package"]) {
-    stop("Please install strataG for this output option:\n
+    rlang::abort("Please install strataG for this output option:\n
 devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
   }
   # Checking for missing and/or default arguments ------------------------------
-  if (missing(data)) stop("Input file missing")
+  if (missing(data)) rlang::abort("Input file missing")
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {
     data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
   }
 
-  # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-  if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
-    data <- dplyr::rename(.data = data, MARKERS = LOCUS)
-  }
 
   data <- dplyr::select(.data = data, POP_ID, INDIVIDUALS, MARKERS, GT) %>%
     dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS) %>%
@@ -104,7 +100,7 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
   if (is.null(res$error)) {
     res <- res$result
   } else {
-    stop("strataG package must be installed and loaded: library('strataG')")
+    rlang::abort("strataG package must be installed and loaded: library('strataG')")
   }
 
   return(res)

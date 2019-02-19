@@ -4,13 +4,22 @@
 \alias{write_genind}
 \title{Write a genind object from a tidy data frame}
 \usage{
-write_genind(data)
+write_genind(data, write = FALSE, verbose = FALSE)
 }
 \arguments{
 \item{data}{A tidy data frame object in the global environment or
 a tidy data frame in wide or long format in the working directory.
 \emph{How to get a tidy data frame ?}
 Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.}
+
+\item{write}{(logical, optional) To write in the working directory the genind
+object. The file is written with \code{radiator_genind_DATE@TIME.RData} and
+can be open with load or readRDS.
+Default: \code{write = FALSE}.}
+
+\item{verbose}{(optional, logical) When \code{verbose = TRUE}
+the function is a little more chatty during execution.
+Default: \code{verbose = TRUE}.}
 }
 \description{
 Write a genind object from a tidy data frame.

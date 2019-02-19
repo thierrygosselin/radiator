@@ -9,9 +9,8 @@
 #' @param adjust.bin Adjust GGPLOT2 bin size (0 to 1).
 #' @export
 #' @rdname plot_density_distribution_coverage
-#' @import ggplot2
-#' @import dplyr
-#' @import readr
+#' @keywords internal
+
 
 plot_density_distribution_coverage <- function(data, aes.colour, adjust.bin) {
 
@@ -40,6 +39,7 @@ plot_density_distribution_coverage <- function(data, aes.colour, adjust.bin) {
 #' @param data Coverage summary file.
 #' @export
 #' @rdname plot_boxplot_coverage
+#' @keywords internal
 
 plot_boxplot_coverage <- function(data) {
 
@@ -99,6 +99,7 @@ plot_boxplot_coverage <- function(data) {
 #' (read depth ALT allele - read depth REF allele)/(read depth ALT allele + read depth REF allele).
 #' @export
 #' @rdname plot_coverage_imbalance_diagnostic
+#' @keywords internal
 
 
 plot_coverage_imbalance_diagnostic <- function(tidy.vcf.file, pop.levels, read.depth.threshold, aes.colour, adjust.bin) {
@@ -184,6 +185,7 @@ plot_coverage_imbalance_diagnostic <- function(tidy.vcf.file, pop.levels, read.d
 #' Save the figure with : \code{ggsave("figure name.pdf", width = 40, height = 20, dpi = 600, units = "cm", useDingbats = F)}.
 #' @seealso \link{tidy_genomic_data} and  \link{summary_stats_vcf_tidy}
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
+#' @keywords internal
 
 plot_density_distribution_maf <- function(data, maf.group, aes.colour = ggplot2::aes(y = ..scaled.., color = POP_ID), adjust.bin = 1, x.title) {
 
@@ -231,6 +233,7 @@ plot_density_distribution_maf <- function(data, maf.group, aes.colour = ggplot2:
 #' @param x.title Title of the x-axis.
 #' @export
 #' @rdname plot_density_distribution_het
+#' @keywords internal
 
 plot_density_distribution_het <- function(data, pop.levels, het.group, aes.colour, adjust.bin, x.title){
 
@@ -292,6 +295,7 @@ plot_density_distribution_het <- function(data, pop.levels, het.group, aes.colou
 #' @param after.filter.data Data set after filter.
 #' @export
 #' @rdname plot_snp_number_loci
+#' @keywords internal
 
 plot_snp_number_loci <- function(before.filter.data, after.filter.data) {
 
@@ -350,6 +354,7 @@ plot_snp_number_loci <- function(before.filter.data, after.filter.data) {
 #' @param y.title Title of the Y-axis.
 #' @export
 #' @rdname plot_snp_position_read
+#' @keywords internal
 
 
 
@@ -387,6 +392,7 @@ plot_snp_position_read <- function(data, aes.colour, y.title) {
 #' @param y.title Title of the y-axis.
 #' @export
 #' @rdname plot_distribution_diversity
+# @keywords internal
 
 plot_distribution_diversity <- function(data, aes.x, aes.colour, x.title, y.title) {
 
@@ -424,6 +430,7 @@ plot_distribution_diversity <- function(data, aes.x, aes.colour, x.title, y.titl
 #' @param y.title Title of the y-axis.
 #' @export
 #' @rdname plot_boxplot_diversity
+# @keywords internal
 plot_boxplot_diversity <- function(data, aes.x.y, y.title) {
   ggplot2::ggplot(data, aes.x.y) +
     ggplot2::geom_violin(trim = F) +

@@ -11,10 +11,16 @@
 #' \emph{How to get a tidy data frame ?}
 #' Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
 #' \strong{The genotypes are biallelic.}
+#' @inheritParams tidy_genomic_data
 
 #' @param biallelic (logical, optional) If you already know that the data is
 #' biallelic use this argument to speed up the function.
 #' Default: \code{biallelic = TRUE}.
+
+#' @param write (logical, optional) To write in the working directory the genlight
+#' object. The file is written with \code{radiator_genlight_DATE@TIME.RData} and
+#' can be open with load or readRDS.
+#' Default: \code{write = FALSE}.
 
 #' @export
 #' @rdname write_genlight
@@ -36,26 +42,21 @@
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 
-write_genlight <- function(data, biallelic = TRUE) {
+write_genlight <- function(data, biallelic = TRUE, write = FALSE, verbose = FALSE) {
   # Checking for missing and/or default arguments ------------------------------
   if (!requireNamespace("adegenet", quietly = TRUE)) {
-    stop("adegenet needed for this function to work
-         Install with install.packages('adegenet')", call. = FALSE)
+    rlang::abort("adegenet needed for this function to work
+         Install with install.packages('adegenet')")
   }
 
-  if (missing(data)) stop("Input file missing")
+  if (missing(data)) rlang::abort("Input file missing")
 
   # Import data ---------------------------------------------------------------
-    input <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-
-  # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-  if (tibble::has_name(input, "LOCUS") && !tibble::has_name(input, "MARKERS")) {
-    input <- dplyr::rename(.data = input, MARKERS = LOCUS)
-  }
+  if (is.vector(data)) input <- radiator::tidy_wide(data = data, import.metadata = TRUE)
 
   # Detect if biallelic data
   if (is.null(biallelic)) biallelic <- radiator::detect_biallelic_markers(data = input)
-  if (!biallelic) stop("genlight object requires biallelic genotypes")
+  if (!biallelic) rlang::abort("genlight object requires biallelic genotypes")
 
   # data = input
   input %<>% dplyr::arrange(MARKERS, CHROM, LOCUS, POS, POP_ID, INDIVIDUALS)
@@ -103,5 +104,12 @@ write_genlight <- function(data, biallelic = TRUE) {
   # adegenet::nPop(genlight.object)
   # adegenet::NA.posi(genlight.object)
 
+  if (write) {
+      filename.temp <- generate_filename(extension = "genlight")
+      filename.short <- filename.temp$filename.short
+      filename.genlight <- filename.temp$filename
+      saveRDS(object = genlight.object, file = filename.genlight)
+      if (verbose) message("File written: ", filename.short)
+  }
   return(genlight.object)
 } # End write_genlight

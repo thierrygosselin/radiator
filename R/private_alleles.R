@@ -47,8 +47,8 @@ private_alleles <- function(data, strata = NULL) {
   options(width = 70)
 
   # Import data ---------------------------------------------------------------
-  if (missing(data)) stop("Input file missing")
-  if (missing(strata)) stop("Strata file missing")
+  if (missing(data)) rlang::abort("Input file missing")
+  if (missing(strata)) rlang::abort("Strata file missing")
 
   if (is.vector(data)) {
     data <- radiator::tidy_wide(data = data, import.metadata = TRUE)

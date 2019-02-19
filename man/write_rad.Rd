@@ -4,12 +4,44 @@
 \alias{write_rad}
 \title{Write tidy genomic data file or close GDS file}
 \usage{
-write_rad(data, path)
+write_rad(data, path = NULL, filename = NULL, tsv = FALSE,
+  internal = FALSE, append = FALSE, col.names = TRUE,
+  write.message = "standard", verbose = FALSE)
 }
 \arguments{
 \item{data}{An object in the global environment: tidy data frame or GDS connection file}
 
-\item{path}{(optional) For tidy data frame, the path to write the data on disk.}
+\item{path}{(optional) For tidy data frame, the path to write the data on disk.
+Default: \code{path = NULL}.}
+
+\item{filename}{(optional) Name of the file (when using tsv files).
+Default: \code{filename = NULL}.}
+
+\item{tsv}{(optinal, logical) To trigger saving using \code{readr::write_tsv}.
+Default: \code{tsv = FALSE}.}
+
+\item{internal}{(optional, logical) This is used inside radiator internal code and it stops
+from writting the file.
+Default: \code{internal = FALSE}.}
+
+\item{append}{(optional, logical) If \code{FALSE}, will overwrite existing file.
+If \code{TRUE}, will append to existing file.
+In both cases, if file does not exist a new file is created.
+Default: \code{append = FALSE}.}
+
+\item{col.names}{(optional, logical) Write columns names at the top of the file?
+Must be either TRUE or FALSE.
+Default: \code{col.names = TRUE}.}
+
+\item{write.message}{(optional, character) Print a message in the console
+after writting file.
+With \code{write.message = NULL}, nothing is printed in the console.
+Default: \code{write.message = "standard"}. This will print
+\code{message("File written: ", folder_short(filename))}.}
+
+\item{verbose}{(optional, logical) \code{verbose = TRUE} to be chatty
+during execution.
+Default: \code{verbose = FALSE}.}
 }
 \value{
 A file written in the working directory or nothing if it's a GDS connection file.

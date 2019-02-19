@@ -15,7 +15,7 @@
 #' Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
 
 #' @param pop.levels (optional, string) A character string with your populations ordered.
-#' Default: \code{pop.levels = NULL}.
+#' Default: \code{pop.levels = NULL}. Described in \code{\link{read_strata}}.
 
 #' @param genepop.header The first line of the Genepop file.
 #' Default: \code{genepop.header = NULL} will use "radiator genepop with date".
@@ -76,7 +76,7 @@ write_genepop <- function(
   # markers.line = TRUE
   # filename = NULL
   # Checking for missing and/or default arguments ******************************
-  if (missing(data)) stop("Input file missing")
+  if (missing(data)) rlang::abort("Input file missing")
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {

@@ -46,3 +46,4 @@ tidy.vcf.file, pop.levels, read.depth.threshold, aes.colour, adjust.bin)
 Use ( fig + facet_grid(GROUP_GL ~ GROUP_COVERAGE)). The ratio is calculated :
 (read depth ALT allele - read depth REF allele)/(read depth ALT allele + read depth REF allele).
 }
+\keyword{internal}

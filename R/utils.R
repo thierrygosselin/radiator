@@ -1,3 +1,24 @@
+# radiator package startup message ---------------------------------------------
+#' @importFrom utils packageDescription
+#' @importFrom stringi stri_join
+
+.onAttach <- function(libname, pkgname) {
+  radiator.version <- utils::packageDescription("radiator", fields = "Version")
+  radiator.build <- utils::packageDescription("radiator", fields = "Built")
+  startup.message <- stringi::stri_join(
+    "******************************* IMPORTANT NOTICE *******************************\n",
+    "radiator v.", radiator.version, " was modified heavily.\n",
+    "Read functions documentation and available vignettes.\n\n",
+    "For reproducibility:\n",
+    "    radiator version: ", radiator.version,"\n",
+    "    radiator build date: ", radiator.build,"\n",
+    "    Keep zenodo DOI.\n",
+    "********************************************************************************",
+    sep = "")
+  packageStartupMessage(startup.message)
+}
+
+# magrittr ---------------------------------------------------------------------
 #' @title Forward-pipe operator
 #' @description magrittr forward-pipe operator
 #' @name %>%
@@ -30,12 +51,7 @@ NULL
 #' @usage lhs \%<>\% rhs
 NULL
 
-
-# .onUnload <- function(libpath) {
-#   library.dynam.unload("radiator", libpath)
-# }
-
-
+# split_vec_row ----------------------------------------------------------------
 #' @title split_vec_row
 #' @description Split input into chunk for parallel processing
 #' @rdname split_vec_row
@@ -51,7 +67,7 @@ split_vec_row <- function(x, cpu.rounds, parallel.core = parallel::detectCores()
   return(split.vec)
 }#End split_vec_row
 
-
+# replace_by_na ----------------------------------------------------------------
 #' @title replace_by_na
 #' @description Fast removal of NA
 #' @rdname replace_by_na
@@ -61,6 +77,7 @@ replace_by_na <- function(data, what = ".") {
   replace(data, which(data == what), NA)
 }#End replace_by_na
 
+# separate_gt ------------------------------------------------------------------
 #' @title separate_gt
 #' @description Separate genotype field
 #' @rdname separate_gt
@@ -105,184 +122,110 @@ separate_gt <- function(
   return(res)
 }#End separate_gt
 
-
-#' @title compute_maf
-#' @description Compute MAF
-#' @rdname compute_maf
-#' @keywords internal
+# melt the dist matrice into a tibble df --------------------------------------
+#' @title distance2tibble
+#' @description melt the distance matrix into a tibble
+#' @rdname distance2tibble
 #' @export
-compute_maf <- function(x, biallelic) {
-  if (tibble::has_name(x, "GT_BIN") && biallelic) {
-    x <- x %>%
-      dplyr::group_by(MARKERS, POP_ID) %>%
-      dplyr::summarise(
-        NN = as.numeric(2 * n()),
-        PP = as.numeric(2 * length(GT_BIN[GT_BIN == 0])),
-        PQ = as.numeric(length(GT_BIN[GT_BIN == 1])),
-        QQ = as.numeric(2 * length(GT_BIN[GT_BIN == 2]))
-      ) %>%
-      # need this step because seen cases where the minor allele is not minor
-      dplyr::mutate(
-        PP = PP + PQ,
-        QQ = QQ + PQ,
-        PQ = NULL) %>%
-      dplyr::group_by(MARKERS) %>%
-      dplyr::mutate(
-        NN_G = sum(NN),
-        PP_G = sum(PP),
-        QQ_G = sum(QQ)) %>%
-      dplyr::group_by(MARKERS, POP_ID) %>%
-      dplyr::mutate(
-        ALT = dplyr::if_else(PP_G < QQ_G, PP, QQ),
-        MAF_LOCAL = (ALT / NN),
-        PP = NULL,
-        # QQ = NULL,
-        NN = NULL) %>%
-      dplyr::group_by(MARKERS) %>%
-      dplyr::mutate(
-        ALT = dplyr::if_else(PP_G < QQ_G, PP_G, QQ_G),
-        MAF_GLOBAL = (ALT / NN_G),
-        ALT = NULL,
-        PP_G = NULL,
-        # QQ_G = NULL,
-        NN_G = NULL) %>%
-      dplyr::ungroup(.) %>%
-      dplyr::rename(ALT_LOCAL = QQ, ALT_GLOBAL = QQ_G)
-  } else {
-    if (!tibble::has_name(x, "GT_VCF_NUC")) {
-      x <- x %>%
-        dplyr::select(MARKERS,POP_ID, INDIVIDUALS, GT) %>%
-        dplyr::mutate(
-          A1 = stringi::stri_sub(GT, 1, 3),
-          A2 = stringi::stri_sub(GT, 4,6)
-        ) %>%
-        dplyr::select(MARKERS, POP_ID, INDIVIDUALS, A1, A2) %>%
-        tidyr::gather(data = ., key = ALLELES, value = GT, -c(MARKERS, INDIVIDUALS, POP_ID))
+#' @keywords internal
+distance2tibble <- function(
+  x,
+  remove.diag = TRUE,
+  na.diag = FALSE,
+  remove.lower = TRUE,
+  relative = TRUE,
+  pop.levels = NULL,
+  distance.class.double = TRUE
+) {
+  # x <- dist.computation
+  x <- as.matrix(x)
+  if (remove.diag || na.diag) diag(x) <- NA
+  if (remove.lower) x[lower.tri(x)] <- NA
+  x <- dplyr::bind_cols(tibble::tibble(ID1 = rownames(x)),
+                        tibble::as_tibble(x)) %>%
+    data.table::as.data.table(.) %>%
+    data.table::melt.data.table(
+      data = ., id.vars = "ID1", variable.name = "ID2", value.name = "DISTANCE",
+      variable.factor = FALSE) %>%
+    tibble::as_tibble(.)
 
-      maf.local <- x %>%
-        dplyr::group_by(MARKERS, POP_ID, GT) %>%
-        dplyr::tally(.) %>%
-        dplyr::ungroup(.) %>%
-        tidyr::complete(data = ., POP_ID, tidyr::nesting(MARKERS, GT), fill = list(n = 0)) %>%
-        dplyr::group_by(MARKERS, POP_ID) %>%
-        dplyr::mutate(n.al.tot = sum(n)) %>%
-        dplyr::filter(n == min(n)) %>%
-        dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-        dplyr::summarise(MAF_LOCAL = n / n.al.tot, ALT_LOCAL = n) %>%
-        dplyr::ungroup(.) %>%
-        dplyr::select(MARKERS, POP_ID, MAF_LOCAL, ALT_LOCAL)
+  if (!na.diag) x  %<>% dplyr::filter(!is.na(DISTANCE))
 
-      x <- x %>%
-        dplyr::group_by(MARKERS, GT) %>%
-        dplyr::tally(.) %>%
-        dplyr::group_by(MARKERS) %>%
-        dplyr::mutate(n.al.tot = sum(n)) %>%
-        dplyr::filter(n == min(n)) %>%
-        dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-        dplyr::summarise(MAF_GLOBAL = n / n.al.tot, ALT_GLOBAL = n) %>%
-        dplyr::ungroup(.) %>%
-        dplyr::select(MARKERS, MAF_GLOBAL, ALT_GLOBAL) %>%
-        dplyr::left_join(maf.local, by = c("MARKERS")) %>%
-        dplyr::select(MARKERS, POP_ID, MAF_LOCAL, ALT_LOCAL, MAF_GLOBAL, ALT_GLOBAL)
-      maf.local <- NULL
-    } else {
-      x <- x %>%
-        dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT_VCF_NUC) %>%
-        tidyr::separate(
-          data = .,
-          col = GT_VCF_NUC, into = c("A1", "A2"),
-          sep = "/",
-          extra = "drop", remove = TRUE
-        ) %>%
-        tidyr::gather(
-          data = ., key = ALLELE_GROUP, value = HAPLOTYPES,
-          -dplyr::one_of(c("MARKERS", "INDIVIDUALS", "POP_ID"))) %>%
-        dplyr::select(-ALLELE_GROUP) %>%
-        dplyr::group_by(MARKERS, HAPLOTYPES, POP_ID) %>%
-        dplyr::tally(.) %>%
-        dplyr::ungroup(.) %>%
-        tidyr::complete(data = ., POP_ID, tidyr::nesting(MARKERS, HAPLOTYPES), fill = list(n = 0)) %>%
-        dplyr::group_by(MARKERS, POP_ID) %>%
-        dplyr::mutate(N_LOCAL = sum(n)) %>%
-        dplyr::group_by(MARKERS) %>%
-        dplyr::mutate(N_GLOBAL = sum(n)) %>%
-        dplyr::arrange(MARKERS, POP_ID) %>%
-        dplyr::group_by(MARKERS, POP_ID, HAPLOTYPES) %>%
-        dplyr::mutate(MAF_LOCAL = n / N_LOCAL) %>%
-        dplyr::group_by(MARKERS, HAPLOTYPES) %>%
-        dplyr::mutate(
-          ALT_GLOBAL = sum(n),
-          MAF_GLOBAL = ALT_GLOBAL / N_GLOBAL,
-          N_LOCAL = NULL,
-          N_GLOBAL = NULL
-        ) %>%
-        dplyr::rename(ALT_LOCAL = n) %>%
-        dplyr::ungroup(.)
-
-      ref.info <- dplyr::distinct(x, MARKERS, HAPLOTYPES, MAF_GLOBAL) %>%
-        dplyr::group_by(MARKERS) %>%
-        dplyr::filter(MAF_GLOBAL == max(MAF_GLOBAL)) %>%
-        dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-        dplyr::ungroup(.) %>%
-        dplyr::mutate(REF = rep("REF", n()), MAF_GLOBAL = NULL) %>%
-        dplyr::bind_rows(
-          dplyr::distinct(x, MARKERS, HAPLOTYPES, MAF_GLOBAL) %>%
-            dplyr::group_by(MARKERS) %>%
-            dplyr::filter(MAF_GLOBAL == min(MAF_GLOBAL)) %>%
-            dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-            dplyr::ungroup(.) %>%
-            dplyr::mutate(REF = rep("MAF", n()), MAF_GLOBAL = NULL)
-        )
-
-      x <- dplyr::left_join(x, ref.info, by = c("MARKERS", "HAPLOTYPES")) %>%
-        dplyr::mutate(REF = stringi::stri_replace_na(REF, replacement = "ALT"))
-      ref.info <- NULL
-    }
+  if (distance.class.double) {
+    x %<>% dplyr::mutate(DISTANCE = as.double(as.character(DISTANCE)))
   }
-  return(x)
-}#End compute_maf
 
-# update data.info
+  x %<>% dplyr::arrange(DISTANCE)
+
+  if (relative) {
+    x  %<>% dplyr::mutate(DISTANCE_RELATIVE = DISTANCE/max(DISTANCE))
+  }
+  if (!is.null(pop.levels)) {
+    x  %<>% dplyr::mutate(
+      ID1 = factor(x = ID1, levels = pop.levels, ordered = TRUE),
+      ID2 = factor(x = ID2, levels = pop.levels, ordered = TRUE),
+    )
+  }
+
+  return(x)
+}#End distance2tibble
+
+# update data.info -------------------------------------------------------------
 #' @title data_info
 #' @description function generate tidy data main info
 #' @rdname data_info
 #' @keywords internal
 #' @export
 data_info <- function(x, print.info = FALSE) {
+  res <- list()
 
-  if (tibble::has_name(x, "POP_ID")) {
-    x.pop.ind <- dplyr::distinct(x, POP_ID, INDIVIDUALS)
-    n.pop <- dplyr::n_distinct(x.pop.ind$POP_ID)
-    n.ind <- dplyr::n_distinct(x.pop.ind$INDIVIDUALS)
+  data.type <- class(x)[1]
+
+  if (data.type == "tbl_df") {
+    if (rlang::has_name(x, "POP_ID") || rlang::has_name(x, "STRATA")) {
+
+      if (rlang::has_name(x, "POP_ID")) {
+        res$n.pop <- length(unique(x$POP_ID))
+      } else {
+        res$n.pop <- length(unique(x$STRATA))
+      }
+    } else {
+      res$n.pop <- NA_integer_
+    }
+
+    if (rlang::has_name(x, "INDIVIDUALS")) {
+      res$n.ind <- length(unique(x$INDIVIDUALS))
+    } else {
+      res$n.ind <- NA_integer_
+    }
+
+
+    if (rlang::has_name(x, "MARKERS")) {
+      res$n.snp <- length(unique(x$MARKERS))
+    } else {
+      res$n.snp <- NA_integer_
+    }
+
+    if (rlang::has_name(x, "LOCUS")) {
+      res$n.locus <- length(unique(x$LOCUS))
+    } else {
+      res$n.locus <- NA_integer_
+    }
+
+    if (rlang::has_name(x, "CHROM")) {
+      res$n.chrom <- length(unique(x$CHROM))
+    } else {
+      res$n.chrom <- NA_integer_
+    }
   } else {
-    n.pop <- NA_integer_
-    n.ind <- NA_integer_
-  }
-  if (tibble::has_name(x, "MARKERS")) {
-    n.snp <- dplyr::n_distinct(x$MARKERS)
-  } else {
-    n.snp <- NA_integer_
+    res$n.chrom <- length(unique(gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/markers.meta/CHROM", silent = TRUE))))
+    res$n.locus <- length(unique(gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/markers.meta/LOCUS", silent = TRUE))))
+    res$n.snp <- length(unique(gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/markers.meta/MARKERS", silent = TRUE))))
+    res$n.pop <- length(unique(gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/individuals/STRATA", silent = TRUE))))
+    res$n.ind <- length(unique(gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/individuals/INDIVIDUALS", silent = TRUE))))
+    res[is.null(res)] <- NA_integer_
   }
 
-  if (tibble::has_name(x, "LOCUS")) {
-    n.locus <- dplyr::n_distinct(x$LOCUS)
-  } else {
-    n.locus <- NA_integer_
-  }
-
-  if (tibble::has_name(x, "CHROM")) {
-    n.chrom <- dplyr::n_distinct(x$CHROM)
-  } else {
-    n.chrom <- NA_integer_
-  }
-
-  res <- list(
-    n.pop = n.pop,
-    n.ind = n.ind,
-    n.chrom = n.chrom,
-    n.locus = n.locus,
-    n.snp = n.snp
-  )
   if (print.info) {
     message("Number of chrom: ", res$n.chrom)
     message("Number of locus: ", res$n.locus)
@@ -293,8 +236,7 @@ data_info <- function(x, print.info = FALSE) {
   return(res)
 }
 
-
-# update ind_total_reads
+# count ind_total_reads -------------------------------------------------------
 #' @title ind_total_reads
 #' @description Counts the total number of reads per samples
 #' @rdname ind_total_reads
@@ -370,7 +312,7 @@ ind_total_reads <- function(x, path.folder = NULL) {
 }#End ind_coverage
 
 
-# interactive_question
+# interactive_question ---------------------------------------------------------
 #' @title interactive_question
 #' @description Ask to enter a word or number
 #' @rdname interactive_question
@@ -434,42 +376,7 @@ interactive_question <- function(x, answer.opt = NULL, minmax = NULL) {
   return(answer)
 }#End interactive_question
 
-
-# check_header_source
-#' @title Check the vcf header and detect vcf source
-#' @description Check the vcf header and detect vcf source
-#' @rdname check_header_source
-#' @keywords internal
-#' @export
-check_header_source <- function(data) {
-
-  check.header <- SeqArray::seqVCF_Header(data)
-  problematic.id <- c("AD", "AO", "QA", "GL")
-  problematic.id <- purrr::keep(.x = problematic.id, .p = problematic.id %in% check.header$format$ID)
-  for (p in problematic.id) {
-    check.header$format[check.header$format$ID == p, "Number"] <- "."
-  }
-  # check.header$format
-
-  check.source <- check.header$header$value[check.header$header$id == "source"]
-  is.stacks <- stringi::stri_detect_fixed(str = check.source, pattern = "Stacks")
-  if (is.stacks) {
-    stacks.2 <- keep.stacks.gl <- stringi::stri_detect_fixed(
-      str = check.source,
-      pattern = "Stacks v2")
-    if (!keep.stacks.gl) {
-      check.header$format <- dplyr::filter(check.header$format, ID != "GL")
-    }
-    markers.info <- NULL
-    overwrite.metadata <- NULL
-  } else {
-    stacks.2 <- FALSE
-    markers.info <- NULL
-    overwrite.metadata <- NULL
-  }
-  return(res = list(source = stacks.2, check.header = check.header, markers.info = markers.info, overwrite.metadata = overwrite.metadata))
-}#End check_header_source
-
+# markers_genotyped_helper------------------------------------------------------
 #' @title markers_genotyped_helper
 #' @description Help individual's genotyped threshold
 #' @rdname markers_genotyped_helper
@@ -539,12 +446,12 @@ markers_genotyped_helper <- function(x, y, overall.only = FALSE) {
     threshold.helper.pop <- mean.pop <- threshold.helper.overall <- x <- y <- NULL
   } else {
     threshold.helper <- threshold.helper.overall %>%
-        dplyr::mutate(
-          GENOTYPED_THRESHOLD = as.numeric(GENOTYPED_THRESHOLD)
-        )
+      dplyr::mutate(
+        GENOTYPED_THRESHOLD = as.numeric(GENOTYPED_THRESHOLD)
+      )
     threshold.helper.overall <- x <- y <- NULL
   }
-  #Function to replace plyr::round_any
+  #Function to replace package plyr round_any
   rounder <- function(x, accuracy, f = round) {
     f(x / accuracy) * accuracy
   }
@@ -579,16 +486,24 @@ markers_genotyped_helper <- function(x, y, overall.only = FALSE) {
   return(plot.markers.geno.threshold)
 }#End markers_genotyped_helper
 
-
+# update_parameters-------------------------------------------------------------
 #' @title update_parameters
 #' @description Generate or update a filters parameters file and object.
-#' Used internally in radiator. Not usefull for users.
+#' Used internally in radiator, not usefull outside the package.
 #' @rdname update_parameters
 #' @export
 #' @keywords internal
+
+# Note to myself: might be able to increase timing here by reading a whitelist
+# instead of markers.meta for gds file...
+# Then figure out what to do with individuals and strata...
+
 update_parameters <- function(
+  generate = FALSE,
+  initiate = FALSE,
+  update = TRUE,
   parameter.obj = NULL,
-  gds.obj = NULL,
+  data = NULL,
   filter.name = "",
   param.name = "",
   values = paste(NULL, NULL, sep = " / "),
@@ -596,27 +511,28 @@ update_parameters <- function(
   comments = "",
   path.folder = NULL,
   file.date = NULL,
-  initiate = FALSE,
+  internal = FALSE,
   verbose = TRUE
 ) {
   res <- list()# initiate the list to store the results
   if (is.null(file.date)) file.date <- format(Sys.time(), "%Y%m%d@%H%M")
-  if (!initiate) {
-    if (is.null(parameter.obj$filters.parameters.path)) {
-      initiate <- TRUE
-      generate.param <- TRUE
-      if (is.null(path.folder)) path.folder <- getwd()
-    } else {
-      generate.param <- TRUE
-    }
-  } else {
-    if (is.null(path.folder)) path.folder <- getwd()
-    generate.param <- FALSE
-  }
 
-  if (initiate) {
+  # check for existing file
+  if (is.null(path.folder)) path.folder <- getwd()
+  if (!is.null(parameter.obj) && generate && initiate) generate <- FALSE
+  if (is.null(parameter.obj) && update) rlang::abort("parameter.obj = NULL not accepted")
+  # if (generate && initiate) {
+  #   verbose.on <- FALSE
+  # } else {
+  #   verbose.on <- TRUE
+  # }
+  # if (internal) verbose <- verbose.on <- FALSE
+  if (internal) verbose <- FALSE
+
+  # GENERATE filters parameters file
+  if (generate) {
     filters.parameters.name <- stringi::stri_join("filters_parameters_", file.date, ".tsv")
-    res$filters.parameters.path <- file.path(path.folder, filters.parameters.name)
+    parameter.obj$filters.parameters.path <- res$filters.parameters.path <- file.path(path.folder, filters.parameters.name)
     res$filters.parameters <- tibble::tibble(
       FILTERS = as.character(),
       PARAMETERS = as.character(),
@@ -625,36 +541,31 @@ update_parameters <- function(
       AFTER = as.character(),
       BLACKLIST = as.integer(),
       UNITS = as.character(),
-      COMMENTS = as.character()) %>%
-      readr::write_tsv(
-        x = .,
-        path = res$filters.parameters.path,
-        append = FALSE,
-        col_names = TRUE)
-    if (verbose) message("Generated a filters parameters file: ", filters.parameters.name)
+      COMMENTS = as.character())
+
+    write_rad(
+      data = res$filters.parameters,
+      filename = res$filters.parameters.path,
+      tsv = TRUE,
+      internal = internal,
+      append = FALSE,
+      write.message = NULL,
+      verbose = verbose)
+    if (verbose) message("Filters parameters file generated: ", filters.parameters.name)
+  }#End generate
+
+  # INITIATE filters parameters file
+  if (initiate) {
+    if (is.null(data)) rlang::abort("GDS or tidy data object required")
+    res$info <- parameter.obj$info <- data_info(data)
+    res$filters.parameters.path <- parameter.obj$filters.parameters.path
   }#End initiate
 
-
-  if (generate.param) {
-    if (is.null(gds.obj)) stop("GDS object required")
-    if (is.null(parameter.obj$info)) {
-      info <- data_info(gds.obj$markers.meta)
-      if (is.null(gds.obj$individuals$STRATA)) {
-        info$n.pop <- 0L
-      } else{
-        info$n.pop <- length(unique(gds.obj$individuals$STRATA))
-      }
-      info$n.ind <- length(unique(gds.obj$individuals$INDIVIDUALS))
-    } else {
-      info <- parameter.obj$info
-    }
-    info.new <- data_info(gds.obj$markers.meta) # updating parameters
-    if (is.null(gds.obj$individuals$STRATA)) {
-      info.new$n.pop <- 0L
-    } else{
-      info.new$n.pop <- length(unique(gds.obj$individuals$STRATA))
-    }
-    info.new$n.ind <- length(unique(gds.obj$individuals$INDIVIDUALS))
+  # UPDATE filters parameters file
+  if (update) {
+    if (is.null(data)) rlang::abort("GDS or tidy data object required")
+    info <- parameter.obj$info
+    info.new <- data_info(data) # updating parameters
 
     res$filters.parameters <- tibble::tibble(
       FILTERS = filter.name,
@@ -663,15 +574,621 @@ update_parameters <- function(
       BEFORE = paste(info$n.ind, info$n.pop, info$n.chrom, info$n.locus, info$n.snp, sep = " / "),
       AFTER = paste(info.new$n.ind, info.new$n.pop, info.new$n.chrom, info.new$n.locus, info.new$n.snp, sep = " / "),
       BLACKLIST = paste(info$n.ind - info.new$n.ind, info$n.pop - info.new$n.pop, info$n.chrom - info.new$n.chrom, info$n.locus - info.new$n.locus, info$n.snp - info.new$n.snp, sep = " / "),
-      UNITS = units, COMMENTS = comments
-    ) %>%
-      readr::write_tsv(x = ., path = parameter.obj$filters.parameters.path,
-                       append = TRUE, col_names = FALSE)
+      UNITS = units,
+      COMMENTS = comments
+    )
+
+    write_rad(
+      data = res$filters.parameters,
+      filename = parameter.obj$filters.parameters.path,
+      tsv = TRUE,
+      internal = internal,
+      append = TRUE, col.names = FALSE,
+      write.message = NULL,
+      verbose = verbose)
     # update info
     res$info <- info.new
     res$filters.parameters.path <-parameter.obj$filters.parameters.path
+  }#End update
+
+  # messages
+  if (initiate && update) {
+    # if (verbose && verbose.on) message("Filters parameters file: initiated and updated")
+    if (verbose) message("Filters parameters file: initiated and updated")
+  }
+
+  if (initiate && !update) {
+    # if (verbose && verbose.on) message("Filters parameters file: initiated")
+    if (verbose) message("Filters parameters file: initiated")
+  }
+
+  if (!initiate && update) {
+    # if (verbose && verbose.on) message("Filters parameters file: updated")
     if (verbose) message("Filters parameters file: updated")
-  }#End generate.param
+  }
 
   return(res)
 }#End update_parameters
+
+# tibble_stats-----------------------------------------------------------------
+#' @title tibble_stats
+#' @description Generate a tibble of statistics
+#' @rdname tibble_stats
+#' @keywords internal
+#' @export
+tibble_stats <- function(x, group, subsample = NULL) {
+  if (is.null(subsample)) subsample <- 1L
+  Q <- stats::quantile(x, probs = c(0.25, 0.75), na.rm = TRUE)
+  res <- tibble::tibble(
+    GROUP = group,
+    MIN = min(x, na.rm = TRUE),
+    # Q25 = stats::quantile(x, 0.25, na.rm = TRUE),
+    Q25 = Q[1],
+    MEDIAN = stats::median(x, na.rm = TRUE),
+    Q75 = Q[2],
+    MAX = max(x, na.rm = TRUE),
+    IQR = abs(diff(Q)),
+    # IQR = stats::IQR(depth, na.rm = TRUE),
+    OUTLIERS_LOW = Q25 - (1.5 * IQR),
+    OUTLIERS_HIGH =  Q75 + (1.5 * IQR)) %>%
+    dplyr::mutate_if(.tbl = ., .predicate = is.integer, .funs = as.numeric) %>%
+    dplyr::mutate(
+      OUTLIERS_LOW = dplyr::if_else(OUTLIERS_LOW < MIN, MIN, OUTLIERS_LOW),
+      OUTLIERS_HIGH = dplyr::if_else(OUTLIERS_HIGH > MAX, MAX, OUTLIERS_HIGH),
+      SUBSAMPLE = subsample
+    )
+  Q <- NULL
+  return(res)
+}#End tibble_stats
+
+# boxplot_stats-----------------------------------------------------------------
+# boxplot of stats
+#' @title boxplot_stats
+#' @description Generate a boxplot
+#' @rdname boxplot_stats
+#' @keywords internal
+#' @export
+boxplot_stats <- function(
+  data,
+  title,
+  subtitle = NULL,
+  x.axis.title = NULL,
+  y.axis.title,
+  facet.columns = FALSE,
+  facet.rows = FALSE,
+  bp.filename = NULL,
+  path.folder = NULL
+) {
+  # data <- test
+  # x.axis.title = NULL
+  # x.axis.title <- "SNP position on the read groupings"
+  # title <- "Individual's QC stats"
+  # subtitle = "testing"
+  # y.axis.title <- "Statistics"
+  # y.axis.title <- "SNP position (base pair)"
+  # bp.filename <- "vcf.snp.position.read.pdf"
+  # bp.filename <- "test.pdf"
+  # facet.columns = TRUE
+  # facet.rows = FALSE
+  # path.folder = NULL
+
+  if (is.null(path.folder)) path.folder <- getwd()
+
+  n.group <- dplyr::n_distinct(data$GROUP)
+  element.text <- ggplot2::element_text(size = 10,
+                                        family = "Helvetica", face = "bold")
+
+  if (facet.columns) {
+    data <- dplyr::mutate(data, X = "1")
+    fig.boxplot <- ggplot2::ggplot(data = data, ggplot2::aes(X))
+  } else {
+    fig.boxplot <- ggplot2::ggplot(data = data, ggplot2::aes(GROUP))
+  }
+
+
+  fig.boxplot <- fig.boxplot +
+    ggplot2::geom_boxplot(
+      ggplot2::aes(ymin = OUTLIERS_LOW, lower = Q25, middle = MEDIAN, upper = Q75,
+                   ymax = OUTLIERS_HIGH), stat = "identity") +
+    ggplot2::labs(y = y.axis.title, title = title)
+
+  if (!is.null(subtitle)) fig.boxplot <- fig.boxplot + ggplot2::labs(subtitle = subtitle)
+
+  # Draw upper outliers
+  if (facet.columns) {
+    fig.boxplot <- fig.boxplot +
+      ggplot2::geom_segment(
+        ggplot2::aes(
+          x = "1", xend = "1",
+          y = OUTLIERS_HIGH, yend = MAX),
+        linetype = "dashed")
+  } else {
+    fig.boxplot <- fig.boxplot +
+      ggplot2::geom_segment(
+        ggplot2::aes(
+          x = GROUP, xend = GROUP,
+          y = OUTLIERS_HIGH, yend = MAX),
+        linetype = "dashed")
+  }
+
+  # Draw lower outliers
+  if (facet.columns) {
+    fig.boxplot <- fig.boxplot +
+      ggplot2::geom_segment(
+        ggplot2::aes(
+          x = "1", xend = "1",
+          y = OUTLIERS_LOW, yend = MIN),
+        linetype = "dashed")
+  } else {
+    fig.boxplot <- fig.boxplot +
+      ggplot2::geom_segment(
+        ggplot2::aes(
+          x = GROUP, xend = GROUP,
+          y = OUTLIERS_LOW, yend = MIN),
+        linetype = "dashed")
+  }
+
+  fig.boxplot <- fig.boxplot +
+    ggplot2::theme(
+      plot.title = ggplot2::element_text(size = 12, family = "Helvetica",
+                                         face = "bold", hjust = 0.5),
+      legend.position = "none",
+      axis.title.y = element.text,
+      axis.text.y = element.text
+    ) +
+    ggplot2::theme_bw()
+
+  if (is.null(x.axis.title)) {
+    fig.boxplot <- fig.boxplot +
+      ggplot2::theme(
+        axis.title.x = ggplot2::element_blank(),
+        axis.text.x = ggplot2::element_blank(),
+        axis.ticks.x = ggplot2::element_blank()
+      )
+  } else {
+    fig.boxplot <- fig.boxplot +
+      ggplot2::xlab(x.axis.title) +
+      ggplot2::theme(
+        axis.title.x = element.text,
+        # axis.text.x = ggplot2::element_blank(),
+        axis.ticks.x = ggplot2::element_blank()
+      )
+  }
+
+  if (!is.null(subtitle)) {
+    fig.boxplot <- fig.boxplot +
+      ggplot2::theme(
+        plot.subtitle = ggplot2::element_text(size = 10, family = "Helvetica"))
+  }
+
+  if (facet.columns) {
+    fig.boxplot <- fig.boxplot + ggplot2::facet_grid(GROUP ~ ., scales = "free")
+    n.facet <- n.group * 2
+    width <- 10
+    height <- 10 + (4 * n.group)
+  }
+
+  # else {
+  # width <-  10 + (5 * n.group) + 1
+  # height <-  10
+  # }
+
+  if (facet.rows) {
+    fig.boxplot <- fig.boxplot + ggplot2::facet_grid(FACET_ROWS ~ ., scales = "free")
+    n.facet <- n.group * 2
+    width <- 10
+    height <- 10 + (4 * n.group)
+  }
+
+  if (!facet.rows && !facet.columns) {
+    width <-  10 + (5 * n.group) + 1
+    height <-  10
+  }
+
+  print(fig.boxplot)
+  if (!is.null(bp.filename)) {
+    suppressMessages(ggplot2::ggsave(
+      filename = file.path(path.folder, bp.filename),
+      plot = fig.boxplot,
+      width = width,
+      height = height,
+      dpi = 300, units = "cm", useDingbats = FALSE))
+  }
+  return(fig.boxplot)
+}#Endboxplot_stats
+
+
+# generate_squeleton_folders----------------------------------------------------
+#' @title generate_squeleton_folders
+#' @description Generate squeleton folders
+#' @keywords internal
+#' @export
+generate_squeleton_folders <- function(
+  fp = 0L,
+  path.folder = NULL,
+  interactive.filter = TRUE,
+  ...
+) {
+
+  # test
+  # fp = 0L
+  # file.date <- format(Sys.time(), "%Y%m%d@%H%M")
+  # interactive.filter = TRUE
+
+  if (is.null(path.folder)) path.folder <- getwd()
+  folders.labels <- c(
+    "filter_dart_reproducibility",
+    "filter_individuals", "filter_individuals", "filter_individuals",
+    "filter_common_markers",
+    "filter_mac",
+    "filter_coverage",
+    "filter_genotyping",
+    "filter_snp_position_read",
+    "filter_snp_number",
+    "filter_ld", "filter_ld",
+    "detect_mixed_genomes",
+    "detect_duplicate_genomes",
+    "filter_hwe")
+
+  if (!interactive.filter) {
+    get.filters <- ls(envir = as.environment(1))
+    need <- c(
+      "filter.reproducibility",
+      "filter.individuals.missing",
+      "filter.individuals.heterozygosity",
+      "filter.individuals.coverage.total",
+      "filter.common.markers",
+      "filter.mac",
+      "filter.coverage",
+      "filter.genotyping",
+      "filter.snp.position.read",
+      "filter.snp.number",
+      "filter.short.ld",
+      "filter.long.ld",
+      "detect.mixed.genomes",
+      "detect.duplicate.genomes",
+      "filter.hwe")
+    folders <- purrr::keep(.x = get.filters, .p = get.filters %in% need)
+    wanted_filters <- function(x) {
+      !is.null(rlang::eval_tidy(rlang::parse_expr(x)))
+    }
+    folders <- purrr::keep(.x = folders, .p = wanted_filters)
+    folders <- factor(
+      x = folders,
+      levels = need,
+      labels = folders.labels,
+      ordered = TRUE
+    ) %>%
+      droplevels(.) %>%
+      unique %>%
+      sort %>%
+      as.character
+  } else {
+    folders <- unique(folders.labels)
+  }
+
+  folders <- c("radiator", folders)
+
+  res <- list()
+  fp.loop <- fp
+  temp <- NULL
+  for (f in folders) {
+    # message("Processing: ", f)
+    temp <- folder_prefix(
+      prefix.number = fp.loop,
+      prefix.name = f,
+      path.folder = path.folder)
+    res[[f]] <- temp$folder.prefix
+    fp.loop <- temp$prefix.number
+  }
+  return(res)
+}#End generate_squeleton_folders
+# generate_filename-------------------------------------------------------------
+#' @title Filename radiator
+#' @description Generate a filename object
+#' @name generate_filename
+#' @rdname generate_filename
+#' @keywords internal
+#' @export
+generate_filename <- function(
+  name.shortcut = NULL,
+  path.folder = getwd(),
+  date = TRUE,
+  extension = c(
+    "tsv", "gds.rad", "rad", "gds", "gen", "dat",
+    "genind", "genlight", "gtypes", "vcf", "colony",
+    "bayescan", "gsisim", "hierfstat", "hzar", "ldna",
+    "pcadapt", "related", "stockr", "structure", "arlequin"
+  )
+) {
+
+  # date and time-
+  if (date) {
+    file.date <- stringi::stri_join("_", format(Sys.time(), "%Y%m%d@%H%M"))
+  } else {
+    file.date <- ""
+  }
+
+  # path.folder
+  if (!dir.exists(path.folder)) dir.create(path.folder)
+
+  # Extension
+  want <- c("tsv", "gds.rad", "rad", "gds", "gen", "dat", "genind", "genlight", "gtypes",
+            "vcf", "colony", "bayescan", "gsisim", "hierfstat", "hzar", "ldna",
+            "pcadapt", "plink", "related", "stockr", "structure", "arlequin")
+  extension <- match.arg(extension, want)
+
+  # note to myself: currently excluded output : "fineradstructure", "maverick", "plink", "betadiv"
+
+
+  # with same extension
+  # extension <- "tsv"
+  if (extension %in% c("tsv", "gds.rad", "rad", "gds", "vcf", "colony", "ldna")) {
+    extension <- stringi::stri_join(file.date, ".", extension)
+  }
+
+
+  # Radiator saveRDS
+  # extension <- "genind"
+  if (extension %in% c("genind", "genlight", "gtypes", "stockr")) {
+    extension <- stringi::stri_join("_", extension, file.date, ".RData")
+  }
+
+  # Radiator tsv
+  if (extension %in% c("tsv")) {
+    extension <- stringi::stri_join("_", extension, file.date, ".tsv")
+  }
+
+  # Radiator txt
+  if (extension %in% c("bayescan", "pcadapt", "related")) {
+    extension <- stringi::stri_join("_", extension, file.date, ".txt")
+  }
+
+  # Radiator csv
+  if (extension %in% c("hzar", "arlequin")) {
+    extension <- stringi::stri_join("_", extension, file.date, ".csv")
+  }
+
+  # custom
+  if (extension == "gen") extension <- stringi::stri_join("_genepop", file.date, ".gen")
+  if (extension == "dat") extension <- stringi::stri_join("_fstat", file.date, ".dat")
+  if (extension == "hierfstat") extension <- stringi::stri_join("_hierfstat", file.date, ".dat")
+  if (extension == "structure") extension <- stringi::stri_join("_structure", file.date, ".str")
+
+  # Filename
+  if (is.null(name.shortcut)) {
+    filename <- stringi::stri_join("radiator", extension)
+  } else {
+    filename.problem <- file.exists(stringi::stri_join(name.shortcut, extension))
+    if (filename.problem) {
+      filename <- stringi::stri_join(filename, "_radiator", extension)
+    } else {
+      filename <- stringi::stri_join(name.shortcut, extension)
+    }
+    filename.problem <- file.exists(filename)
+    if (filename.problem) {
+      filename <- stringi::stri_join("duplicated_", filename)
+    }
+  }
+
+
+  # Include path.folder in returned object
+  return(res = list(filename.short = filename, filename = file.path(path.folder, filename)))
+}#End generate_filename
+
+# folder_short------------------------------------------------------------------
+#' @title folder_short
+#' @description Extract the short name of the folder generated by radiator
+#' @name folder_short
+#' @param f Folder name
+#' @rdname folder_short
+# @keywords internal
+#' @export
+#' @rdname folder_short
+#' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
+folder_short <- function(f) {
+
+  # remove / if found last
+  if (stringi::stri_sub(str = f, from = -1, length = 1) == "/") {
+    f <- stringi::stri_replace_last_regex(
+      str = f,
+      pattern = "[/$]",
+      replacement = "")
+  }
+
+  # detect the presence of /
+  if (stringi::stri_detect_fixed(str = f, pattern = "/")) {
+    f %<>% stringi::stri_sub(
+      str = .,
+      from = stringi::stri_locate_last_fixed(
+        str = .,
+        pattern = "/")[2] + 1,
+      to = stringi::stri_length(str = .)
+    )
+  }
+  return(f)
+}#End folder_short
+
+# generate_folder---------------------------------------------------------------
+
+#' @title generate_folder
+#' @description Generate a folder based on ...
+#' @name generate_folder
+#' @rdname generate_folder
+#' @param rad.folder Name of the rad folder
+#' @param internal (optional, logical) Is the function internal or not
+#' @param file.date The file date included
+#' @inheritParams radiator_common_arguments
+#' @inheritParams folder_short
+#' @export
+#' @rdname generate_folder
+#' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
+
+generate_folder <- function(f, rad.folder = NULL, internal = FALSE, file.date = NULL, verbose = FALSE) {
+
+  if (internal) {
+    rad.folder <- NULL
+  }
+  if (!is.null(rad.folder)) f <- rad_folder(rad.folder, f)
+
+
+  f.temp <- f
+  if (is.null(file.date)) {
+    file.date <- format(Sys.time(), "%Y%m%d@%H%M")# Date and time
+  }
+
+  if (is.null(f)) {
+    f <- getwd()
+  } else {
+    #working directory in the path?
+    wd.present <- TRUE %in% unique(stringi::stri_detect_fixed(str = f, pattern = c(getwd(), paste0(getwd(), "/"))))
+    date.present <- TRUE %in% unique(stringi::stri_detect_fixed(str = f, pattern = "@"))
+    if (!date.present) f <- stringi::stri_join(f, file.date, sep = "_")
+    if (!wd.present) f <- file.path(getwd(), f)
+    if (verbose && !identical(f.temp, f)) message("Folder created: ", folder_short(f))
+  }
+  if (!dir.exists(f)) dir.create(f)
+  return(f)
+}#End generate_folder
+
+# folder_prefix-----------------------------------------------------------------
+#' @title folder_prefix
+#' @description Generate a seq and folder prefix
+#' @name folder_prefix
+#' @rdname folder_prefix
+#' @keywords internal
+#' @export
+folder_prefix <- function(
+  prefix.number = NULL,
+  prefix.name = NULL,
+  path.folder = NULL
+) {
+  if (is.null(path.folder)) {
+    path.folder <- getwd()
+  } else {
+    if (stringi::stri_sub(str = path.folder, from = -1, length = 1) == "/") {
+      path.folder <- stringi::stri_replace_last_regex(
+        str = path.folder,
+        pattern = "[/$]",
+        replacement = "")
+    }
+  }
+
+  if (is.null(prefix.number)) {
+    prefix.number <- 0L
+  } else {
+    if (is.list(prefix.number)) {
+      prefix.number <- as.integer(prefix.number$prefix.number) + 1L
+    } else {
+      prefix.number <- as.integer(prefix.number) + 1L
+    }
+  }
+
+  if (is.null(prefix.name)) {
+    folder.prefix <- stringi::stri_join(
+      stringi::stri_pad_left(
+        str = prefix.number, width = 2, pad = 0
+      ), "_"
+    )
+  } else {
+    folder.prefix <- stringi::stri_join(
+      stringi::stri_pad_left(
+        str = prefix.number, width = 2, pad = 0
+      ),
+      prefix.name,
+      sep = "_"
+    )
+  }
+  folder.prefix <- file.path(path.folder, folder.prefix)
+  res = list(prefix.number = prefix.number, folder.prefix = folder.prefix)
+}#End folder_prefix
+# rad_folder--------------------------------------------------------------------
+#' @title rad_folder
+#' @description Generate the rad folders
+#' @param path.folder path of the folder
+#' @inheritParams folder_short
+# @keywords internal
+#' @export
+#' @rdname rad_folder
+#' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
+
+rad_folder <- function(f, path.folder = NULL) {
+  if (is.null(path.folder)) path.folder <- getwd()
+  folder.prefix <- file.path(path.folder, stringi::stri_join(
+    stringi::stri_pad_left(
+      str = length(list.dirs(path = path.folder, full.names = FALSE)[-1]) + 1L, width = 2, pad = 0
+    ), "_", f))
+  return(folder.prefix)
+}#End rad_folder
+
+#' @title rad_write
+#' @description Generate the rad folders
+#' @keywords internal
+#' @export
+
+
+
+# tidy2wide --------------------------------------------------------------------
+#' @title tidy2wide
+#' @description tidy2wide
+#' @keywords internal
+#' @export
+tidy2wide <- function(x = NULL, gds = NULL, individuals = NULL, markers = NULL, tidy = TRUE, wide = TRUE, wide.markers = TRUE) {
+  res <- list()
+  if (is.null(markers) && !is.null(gds)) {
+    markers <- extract_markers_metadata(gds = gds, markers.meta.select = "MARKERS") %$% MARKERS
+  }
+  if (is.null(individuals) && !is.null(gds)) {
+    individuals <- extract_individuals(gds = gds, ind.field.select = "INDIVIDUALS") %$% INDIVIDUALS
+  }
+
+  n.markers <- length(markers)
+  n.ind <- length(individuals)
+
+  res$data.tidy <- suppressWarnings(
+    tibble::as_tibble(
+      matrix(data = NA, nrow = n.markers, ncol = n.ind)
+    ) %>%
+      magrittr::set_colnames(x = ., value = individuals) %>%
+      magrittr::set_rownames(x = ., value = markers) %>%
+      data.table::as.data.table(x = ., keep.rownames = "MARKERS") %>%
+      data.table::melt.data.table(
+        data = .,
+        id.vars = "MARKERS",
+        variable.name = "INDIVIDUALS",
+        value.name = "GT",
+        variable.factor = FALSE) %>%
+      tibble::as_tibble(.) %>%
+      dplyr::select(-GT) %>%
+      dplyr::mutate(
+        MARKERS = factor(x = MARKERS,
+                         levels = markers, ordered = TRUE),
+        INDIVIDUALS = factor(x = INDIVIDUALS,
+                             levels = individuals,
+                             ordered = TRUE)) %>%
+      dplyr::arrange(MARKERS, INDIVIDUALS) %>%
+      dplyr::bind_cols(x)
+  )
+
+  if (wide) {
+    if (wide.markers) {
+      res$data.wide <- data.table::as.data.table(res$data.tidy) %>%
+        data.table::dcast.data.table(
+          data = .,
+          formula = INDIVIDUALS ~ MARKERS,
+          value.var = names(x)
+        ) %>%
+        tibble::as_data_frame(.)
+    } else {
+      res$data.wide <- data.table::as.data.table(res$data.tidy) %>%
+        data.table::dcast.data.table(
+          data = .,
+          formula = MARKERS ~ INDIVIDUALS,
+          value.var = names(x)
+        ) %>%
+        tibble::as_data_frame(.)
+    }
+  }
+  if (!tidy) res$data.tidy <- NULL
+  return(res)
+}# End tidy2wide

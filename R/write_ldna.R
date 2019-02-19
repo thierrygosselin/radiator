@@ -81,7 +81,7 @@ write_ldna <- function(data,
 
   # Check that snprelate is installed
   if (!requireNamespace("SNPRelate", quietly = TRUE)) {
-    stop('To install SNPRelate:\n
+    rlang::abort('To install SNPRelate:\n
          source("https://bioconductor.org/biocLite.R")
          biocLite("SNPRelate")')
   }
@@ -92,7 +92,7 @@ write_ldna <- function(data,
   unknowned_param <- setdiff(names(radiator.dots), want)
 
   if (length(unknowned_param) > 0) {
-    stop("Unknowned \"...\" parameters ",
+    rlang::abort("Unknowned \"...\" parameters ",
          stringi::stri_join(unknowned_param, collapse = " "))
   }
 
@@ -102,7 +102,7 @@ write_ldna <- function(data,
   if (is.null(keep.gds)) keep.gds <- FALSE
 
   # Checking for missing and/or default arguments ------------------------------
-  if (missing(data)) stop("Input file missing")
+  if (missing(data)) rlang::abort("Input file missing")
 
   # Filename -------------------------------------------------------------------
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
@@ -128,7 +128,7 @@ write_ldna <- function(data,
 
   # Check if data is biallelic -------------------------------------------------
   biallelic <- radiator::detect_biallelic_markers(data = data)
-  if (!biallelic) stop("LDna requires biallelic genotypes")
+  if (!biallelic) rlang::abort("LDna requires biallelic genotypes")
 
   # Generating SNPRelate data --------------------------------------------------
   message("Generating SNPRelate data")

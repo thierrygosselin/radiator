@@ -2,7 +2,7 @@
 % Please edit documentation in R/clean.R
 \name{clean_markers_names}
 \alias{clean_markers_names}
-\title{Clean marker's name}
+\title{Clean marker's names for radiator and other packages}
 \usage{
 clean_markers_names(x)
 }

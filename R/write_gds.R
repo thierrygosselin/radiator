@@ -2,9 +2,10 @@
 
 #' @name write_gds
 #' @title Write a GDS object from a tidy data frame
-#' @description Write a Genomic Data Structure (GDS) file
+#' @description Write a Genomic Data Structure (GDS) file format
 #' \href{http://zhengxwen.github.io/gdsfmt}{gdsfmt}
-#' object from a tidy data frame.
+#' and object of class \code{SeqVarGDSClass} from a tidy data frame.
+#'
 #' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 #' and might be of interest for users.
 
@@ -13,16 +14,27 @@
 #' \emph{How to get a tidy data frame ?}
 #' Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
 
+#' @param source (optional, character) The name of the software that
+#' generated the data. e.g. \code{source = "Stacks v.2.2"}.
+#' Default: \code{source = NULL}.
+
 #' @param filename (optional) The file name of the Genomic Data Structure (GDS) file.
-#' radiator will append \code{.gds} to the filename.
+#' radiator will append \code{.gds.rad} to the filename.
 #' If filename chosen is already present in the
-#' working directory, the default \code{radiator_datetime.gds} is chosen.
+#' working directory, the default \code{radiator_datetime.gds.rad} is chosen.
 #' Default: \code{filename = NULL}.
+
+#' @param open (optional, logical) Open or not the radiator connection.
+#' Default: \code{open = TRUE}.
 
 #' @inheritParams tidy_genomic_data
 
+#' @return An object in the global environment of class \code{SeqVarGDSClass} and
+#' a file in the working directory.
+
 #' @export
 #' @rdname write_gds
+
 
 #' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join
 #' @importFrom stringi stri_replace_all_fixed
@@ -38,190 +50,104 @@
 #' data format for WGS variant calls.
 #' Bioinformatics.
 
+#' @examples
+#' \dontrun{
+#' require(SeqVarTools)
+#' data.gds <- radiator::write_gds(data = "shark.rad")
+#' }
+
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 
-write_gds <- function(data, filename = NULL, verbose = TRUE) {
+write_gds <- function(
+  data,
+  source = NULL,
+  filename = NULL,
+  open = TRUE,
+  verbose = TRUE
+  ) {
   timing <- proc.time()
 
   ## testing
   # filename = NULL
   # verbose = TRUE
 
-  # Check that snprelate is installed
-  if (!requireNamespace("gdsfmt", quietly = TRUE)) {
-    stop('Please install gdsfmt for this option:\n
-       install.packages("BiocManager")
-       BiocManager::install ("gdsfmt")
-       ')
+  # Check that SeqVarTools is installed (it requires automatically: SeqArray and gdsfmt)
+  if (!"SeqVarTools" %in% utils::installed.packages()[,"Package"]) {
+    rlang::abort('Please install SeqVarTools for this option:\n
+         install.packages("BiocManager")
+         BiocManager::install("SeqVarTools")
+         ')
   }
 
   # Checking for missing and/or default arguments ------------------------------
-  if (missing(data)) stop("Input file missing")
-
-  # Filename -------------------------------------------------------------------
-  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
-  if (is.null(filename)) {
-    filename <- stringi::stri_join("radiator_", file.date, ".gds")
-  } else {
-    filename.problem <- file.exists(stringi::stri_join(filename, ".gds"))
-    if (filename.problem) {
-      filename <- stringi::stri_join(filename, "_", file.date, ".gds")
-    } else {
-      filename <- stringi::stri_join(filename, ".gds")
-    }
-  }
-
-  radiator.temp.file <- stringi::stri_join("radiator_temp_", file.date)
+  if (missing(data)) rlang::abort("Input file missing")
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {
     data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
   }
 
+  biallelic <- radiator::detect_biallelic_markers(data)
+  if (!biallelic) rlang::abort("Biallelic data required")
+
   # GDS prep -------------------------------------------------------------------
-  if (verbose) message("Generating GDS format...")
-
-  # Generate GDS format --------------------------------------------------------
+  if (verbose) message("Generating radiator GDS format...")
   n.markers <- length(unique(data$MARKERS))
-  SNPRelate::snpgdsCreateGeno(
-    gds.fn = radiator.temp.file,
-    genmat = suppressWarnings(
-      dplyr::select(.data = data, MARKERS, INDIVIDUALS, GT_BIN) %>%
-        dplyr::group_by(MARKERS) %>%
-        tidyr::spread(data = ., key = INDIVIDUALS, value = GT_BIN) %>%
-        dplyr::arrange(MARKERS) %>%
-        tibble::column_to_rownames(df = ., var = "MARKERS") %>%
-        data.matrix(.)),
-    sample.id = unique(data$INDIVIDUALS),
-    snp.id = dplyr::distinct(.data = data, MARKERS) %>%
-      dplyr::arrange(MARKERS) %>%
-      purrr::flatten_chr(.),
-    snp.rs.id = NULL,
-    snp.chromosome = if (tibble::has_name(data, "CHROM")) {
-      dplyr::select(data, MARKERS, CHROM) %>%
-        dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-        dplyr::arrange(MARKERS) %>%
-        dplyr::select(-MARKERS) %>%
-        purrr::flatten_chr(.)
-    } else {
-      rep(1L, n.markers)
-    },
-    snp.position = NULL,
-    snp.allele = if (tibble::has_name(data, "REF")) {
-      dplyr::select(data, MARKERS, REF, ALT) %>%
-        dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-        dplyr::arrange(MARKERS) %>%
-        dplyr::mutate(REF_ALT = stringi::stri_join(REF, ALT, sep = "/")) %>%
-        dplyr::select(REF_ALT) %>%
-        purrr::flatten_chr(.)
-    } else {
-      rep("NA", n.markers)
-    },
-    snpfirstdim = TRUE,
-    compress.annotation = "ZIP_RA",
-    compress.geno = ""
+  n.ind <- length(unique(data$INDIVIDUALS))
+
+  strata <-
+    suppressWarnings(
+      data %>%
+        dplyr::select(INDIVIDUALS, dplyr::one_of(c("STRATA", "POP_ID", "TARGET_ID")))
+    )
+  if (tibble::has_name(strata, "POP_ID")) strata  %<>% dplyr::rename(STRATA = POP_ID)
+
+  want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF",
+  "ALT", "CALL_RATE", "REP_AVG", "AVG_COUNT_REF",
+  "AVG_COUNT_SNP", "SEQUENCE")
+  markers.meta <-
+    suppressWarnings(
+      data %>%
+    dplyr::select(
+      dplyr::one_of(want))
+    )
+  if (ncol(markers.meta) == 0) markers.meta <- NULL
+
+  want <- c(
+    "GT", "GT_VCF", "GT_VCF_NUC",
+    "READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH",
+    "GQ",
+    "GL_HOM_REF", "GL_HET", "GL_HOM_ALT",
+    "DP", "AD", "GL", "PL", "HQ", "GOF", "NR", "NV", "RO", "QR", "AO", "QA")
+  genotypes.meta <-
+    suppressWarnings(
+      data %>%
+        dplyr::select(
+          dplyr::one_of(want))
+    )
+  want <- NULL
+  if (ncol(genotypes.meta) == 0) genotypes.meta <- NULL
+
+  data.gds <- radiator_gds(
+    genotypes.df = data,
+    strata = strata,
+    biallelic = TRUE,
+    markers.meta = markers.meta,
+    genotypes.meta = genotypes.meta,
+    filename = filename,
+    source = source,
+    verbose = verbose
   )
+  markers.meta <- genotypes.meta <- data <- strata <- NULL
 
-  # check <- SNPRelate::snpgdsOpen(radiator.temp.file)
-  # check
-  # SNPRelate::snpgdsClose(check)
+  # RETURN ---------------------------------------------------------------------
+  if (verbose) message("Number of individuals: ", n.ind)
+  if (verbose) message("Number of markers: ", n.markers)
 
-  data.gds <- SeqArray::seqSNP2GDS(
-    gds.fn = radiator.temp.file,
-    out.fn = filename,
-    storage.option = "ZIP_RA",
-    major.ref = TRUE, verbose = FALSE) %>%
-    SeqArray::seqOpen(gds.fn = ., readonly = FALSE)
-
-  file.remove(radiator.temp.file)
-  n.ind <- length(SeqArray::seqGetData(data.gds, "sample.id"))
-  n.markers <- length(SeqArray::seqGetData(data.gds, "variant.id"))
-
-  # generate a radiator folder inside the gds file -----------------------------
-  radiator.gds <- gdsfmt::addfolder.gdsn(
-    node = data.gds,
-    name = "radiator",
-    replace = TRUE)
-  # Add STRATA to GDS ----------------------------------------------------------
-  gdsfmt::add.gdsn(
-    node = radiator.gds,
-    name = "STRATA",
-    val = dplyr::distinct(data, POP_ID, INDIVIDUALS) %>%
-      dplyr::select(POP_ID),
-    replace = TRUE,
-    compress = "ZIP_RA",
-    closezip = TRUE)
-
-  # ADD MARKERS META to GDS ----------------------------------------------------
-  gdsfmt::add.gdsn(
-    node = radiator.gds,
-    name = "markers.meta",
-    val = tibble::add_column(
-      .data = suppressWarnings(
-        dplyr::select(
-          data,
-          dplyr::one_of(c("MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF", "ALT")))) %>%
-        dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-        dplyr::mutate(MARKERS = as.character(MARKERS)),
-      VARIANT_ID = SeqArray::seqGetData(data.gds, "variant.id"),.before = 1),
-    replace = TRUE,
-    compress = "ZIP_RA",
-    closezip = TRUE)
-
-  suppressWarnings(data %<>% dplyr::select(
-    -dplyr::one_of(c("MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF", "ALT"))))
-
-  # Add genotypes metadata  ----------------------------------------------------
-  if (TRUE %in% tibble::has_name(data, c("ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH", "READ_DEPTH", "GL_HOM_REF",
-                                         "GL_HET", "GL_HOM_ALT", "GQ"))) {
-    gdsfmt::add.gdsn(
-      node = radiator.gds,
-      name = "genotypes.meta",
-      val = suppressWarnings(
-        dplyr::select(
-          data,
-          dplyr::one_of(
-            c("ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH", "READ_DEPTH", "GL_HOM_REF",
-              "GL_HET", "GL_HOM_ALT", "GQ")))),
-      replace = TRUE,
-      compress = "ZIP_RA",
-      closezip = TRUE)
-  }
-  data <- NULL
-
-  # Add to GDS if we're dealing with de novo data or not -----------------------
-  vcf.locus <- SeqArray::seqGetData(data.gds, "annotation/id")
-  sample.size <- min(length(unique(vcf.locus)), 100)
-  gdsfmt::add.gdsn(
-    node = radiator.gds,
-    name = "reference.genome",
-    val = sample(x = unique(vcf.locus), size = sample.size, replace = FALSE) %>%
-      stringi::stri_detect_regex(str = ., pattern = "[^[:alnum:]]+") %>%
-      unique,
-    replace = FALSE,
-    compress = "ZIP_RA",
-    closezip = TRUE)
-  sample.size <- vcf.locus <- NULL
-
-  # bi- or multi-alllelic VCF ------------------------------------------------
-  if (max(unique(SeqArray::seqNumAllele(gdsfile = data.gds))) - 1 > 1) {
-    biallelic <- FALSE
-    if (verbose) message("data is multi-allelic")
-  } else {
-    biallelic <- TRUE
-    if (verbose) message("data is biallelic")
-  }
-
-  # add biallelic info to GDS
-  gdsfmt::add.gdsn(
-    node = radiator.gds,
-    name = "biallelic",
-    val = biallelic,
-    replace = FALSE,
-    compress = "ZIP_RA",
-    closezip = TRUE)
   timing <- proc.time() - timing
   if (verbose) message("\nConversion time: ", round(timing[[3]]), " sec\n")
+
+  if (open) data.gds <- read_rad(data.gds, verbose = FALSE)
   return(data.gds)
 } # End write_gds

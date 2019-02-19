@@ -51,7 +51,7 @@ write_betadiv <- function(data) {
   # We split the alleles here to prep for MAF
   # need to compute REF/ALT allele for non VCF file
   if (!tibble::has_name(data, "GT_VCF")) {
-    ref.change <- radiator::change_alleles(data = data)$input
+    ref.change <- radiator::calibrate_alleles(data = data)$input
     data <- dplyr::left_join(data, ref.change, by = c("MARKERS", "INDIVIDUALS"))
   }
 

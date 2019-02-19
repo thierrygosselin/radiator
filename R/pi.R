@@ -16,15 +16,16 @@
 
 
 #' @inheritParams tidy_genomic_data
+#' @inheritParams radiator_common_arguments
 
-#' @param monomorphic.out (optional) Set by default to remove
-#' monomorphic markers that might have avoided filters.
-#' Default: \code{monomorphic.out = TRUE}.
+#@param monomorphic.out (optional) Set by default to remove
+# monomorphic markers that might have avoided filters.
+# Default: \code{monomorphic.out = TRUE}.
 
-#' @param common.markers (optional) Logical. The argument for common markers
-#' between populations is set by default to maximize genome coverage of
-#' individuals and populations.
-#' Default: \code{common.markers = FALSE}
+# @param common.markers (optional) Logical. The argument for common markers
+# between populations is set by default to maximize genome coverage of
+# individuals and populations.
+# Default: \code{common.markers = FALSE}
 
 #' @param read.length (number) The length in nucleotide of your reads
 #' (e.g. \code{read.length = 100}).
@@ -75,21 +76,12 @@ pi <- function(
   data,
   strata,
   read.length,
-  monomorphic.out = TRUE,
-  common.markers = FALSE,
-  pop.levels = NULL,
-  pop.labels = NULL,
-  pop.select = NULL,
-  blacklist.id = NULL,
-  blacklist.genotype = NULL,
-  whitelist.markers = NULL,
-  max.marker = NULL,
-  snp.ld = NULL,
-  parallel.core = parallel::detectCores() - 1
+  parallel.core = parallel::detectCores() - 1,
+  ...
 ) {
   if (!requireNamespace("stringdist", quietly = TRUE)) {
-    stop("stringdist needed for this function to work
-         Install with install.packages('stringdist')", call. = FALSE)
+    rlang::abort("stringdist needed for this function to work
+         Install with install.packages('stringdist')")
   }
 
   cat("#######################################################################\n")
@@ -99,16 +91,16 @@ pi <- function(
   res <- list() # to store results
 
   # manage missing arguments -----------------------------------------------------
-  if (missing(data)) stop("Input file missing")
-  if (missing(read.length)) stop("read.length argument is required")
+  if (missing(data)) rlang::abort("Input file missing")
+  if (missing(read.length)) rlang::abort("read.length argument is required")
   if (!is.null(pop.levels) & is.null(pop.labels)) {
     pop.levels <- stringi::stri_replace_all_fixed(
       pop.levels, pattern = " ", replacement = "_", vectorize_all = FALSE)
     pop.labels <- pop.levels
   }
-  if (!is.null(pop.labels) & is.null(pop.levels)) stop("pop.levels is required if you use pop.labels")
+  if (!is.null(pop.labels) & is.null(pop.levels)) rlang::abort("pop.levels is required if you use pop.labels")
   if (!is.null(pop.labels)) {
-    if (length(pop.labels) != length(pop.levels)) stop("pop.labels and pop.levels must have the same length (number of groups)")
+    if (length(pop.labels) != length(pop.levels)) rlang::abort("pop.labels and pop.levels must have the same length (number of groups)")
     pop.labels <- stringi::stri_replace_all_fixed(pop.labels, pattern = " ", replacement = "_", vectorize_all = FALSE)
   }
 
@@ -125,7 +117,6 @@ pi <- function(
     blacklist.genotype = blacklist.genotype,
     whitelist.markers = whitelist.markers,
     monomorphic.out = monomorphic.out,
-    max.marker = max.marker,
     snp.ld = snp.ld,
     common.markers = common.markers,
     strata = strata,

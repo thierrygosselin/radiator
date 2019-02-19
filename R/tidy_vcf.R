@@ -70,7 +70,7 @@
 #' e.g. you only wnat AD and PL, \code{vcf.metadata = c("AD", "PL")}.
 #' If yours is not in the list, submit a request.
 #' Default: \code{vcf.metadata = TRUE}.
-#' \item \code{common.markers}: (logical) Default: code{common.markers = TRUE}.
+#' \item \code{filter.common.markers}: (logical) Default: code{filter.common.markers = TRUE}.
 #' Detailed in \code{\link[radiator]{tidy_genomic_data}}.
 #' \item \code{filter.mac}: (integer) To blacklist markers below a specific MAC
 #' (calculated overall).
@@ -88,11 +88,11 @@
 #' or \emph{de novo} assembly with undocumented or poorly selected
 #' mismatch threshold.
 #' \item \code{filter.short.ld}: this is the \code{snp.ld} argument
-#' in \code{\link[radiator]{snp_ld}}
+#' in \code{\link[radiator]{filter_ld}}
 #' \item \code{filter.long.ld}: this is the \code{ld.threshold} argument
-#' in \code{\link[radiator]{snp_ld}}
+#' in \code{\link[radiator]{filter_ld}}
 #' \item \code{long.ld.missing}: this is the \code{long.ld.missing} argument
-#' in \code{\link[radiator]{snp_ld}}
+#' in \code{\link[radiator]{filter_ld}}
 #' \item \code{filter.individuals.missing}: (double) Use this argument to
 #' blacklist individuals with too many missing data.
 #' e.g. \code{filter.individuals.missing = 0.7}, will remove individuals with >
@@ -107,6 +107,15 @@
 #' (used internally in radiator). Default: \code{path.folder = getwd()}.
 #' If the supplied directory doesn't exist, it's created.
 #' }
+#'
+#' @section VCF file format version:
+#'
+#' If you need a different file format version than the current one, just change
+#' the version inside the newly created VCF, that should do the trick.
+#' \href{https://vcftools.github.io/specs.html}{For more
+#' information on Variant Call Format specifications}.
+#'
+#'
 #' @examples
 #' \dontrun{
 #' # very basic with built-in defaults (not recommended):
@@ -118,7 +127,7 @@
 #' strata = "strata_salamander.tsv",
 #' vcf.stats = TRUE,
 #' filter.individuals.missing = "outlier",
-#' common.markers = TRUE,
+#' filter.common.markers = TRUE,
 #' filter.strands = FALSE,
 #' filter.mac = 4,
 #' filter.markers.missing = 50,
@@ -140,6 +149,9 @@
 
 #' @seealso \code{\link[radiator]{write_seqarray}}
 
+#' @references Danecek P, Auton A, Abecasis G et al. (2011)
+#' The variant call format and VCFtools.
+#' Bioinformatics, 27, 2156-2158.
 
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
@@ -165,7 +177,7 @@ tidy_vcf <- function(
   # filename = NULL
 
   # filter.individuals.missing = "outlier"
-  # common.markers = TRUE
+  # filter.common.markers = TRUE
   # filter.strands = FALSE
   # filter.mac = 4
   # filter.coverage.outliers = TRUE
@@ -213,16 +225,26 @@ tidy_vcf <- function(
   }
 
   # dotslist -------------------------------------------------------------------
-  dotslist <- list(...)
-  want <- c("whitelist.markers", "blacklist.id", "pop.select",
-            "pop.levels", "pop.labels",
-            "filter.snp.read.position", "filter.mac",
-            "filter.coverage.outliers", "filter.markers.missing", "filter.short.ld",
-            "filter.long.ld", "long.ld.missing", "ld.method",
-            "filter.individuals.missing", "common.markers",
-            "filter.strands", "path.folder",
-            "ref.calibration", "gt.vcf.nuc", "gt.vcf", "gt", "gt.bin", "vcf.stats",
-            "filename", "keep.gds", "vcf.metadata")
+  dotslist <- rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE)
+  want <- c(
+    "whitelist.markers", "blacklist.id",
+    "blacklist.genotype",
+    "pop.select", "pop.levels", "pop.labels",
+    "filter.snp.read.position",
+    "filter.mac", "maf.thresholds",
+    "filter.coverage.outliers",
+    "filter.markers.missing",
+    "filter.short.ld", "filter.long.ld", "long.ld.missing", "ld.method",
+    "filter.individuals.missing",
+    "filter.common.markers",
+    "filter.monomorphic",
+    "filter.strands",
+    "path.folder",
+    "ref.calibration", "gt.vcf.nuc", "gt.vcf", "gt", "gt.bin",
+    "filename",
+    "keep.gds",
+    "vcf.metadata", "vcf.stats"
+    )
   unknowned_param <- setdiff(names(dotslist), want)
 
   if (length(unknowned_param) > 0) {
@@ -231,12 +253,12 @@ tidy_vcf <- function(
   }
 
   radiator.dots <- dotslist[names(dotslist) %in% want]
+
   whitelist.markers <- radiator.dots[["whitelist.markers"]]
   blacklist.id <- radiator.dots[["blacklist.id"]]
   pop.select <- radiator.dots[["pop.select"]]
   pop.levels <- radiator.dots[["pop.levels"]]
   pop.labels <- radiator.dots[["pop.labels"]]
-
   filter.snp.read.position <- radiator.dots[["filter.snp.read.position"]]
   filter.mac <- radiator.dots[["filter.mac"]]
   filter.coverage.outliers <- radiator.dots[["filter.coverage.outliers"]]
@@ -254,7 +276,7 @@ tidy_vcf <- function(
 
   # markers.info <- radiator.dots[["markers.info"]]
   filter.individuals.missing <- radiator.dots[["filter.individuals.missing"]]
-  common.markers <- radiator.dots[["common.markers"]]
+  filter.common.markers <- radiator.dots[["filter.common.markers"]]
   filter.strands <- radiator.dots[["filter.strands"]]
   path.folder <- radiator.dots[["path.folder"]]
 
@@ -286,7 +308,7 @@ tidy_vcf <- function(
   if (is.null(filter.strands)) filter.strands <- "blacklist"
   if (is.null(long.ld.missing)) long.ld.missing <- FALSE
   if (is.null(filter.coverage.outliers)) filter.coverage.outliers <- FALSE
-  if (is.null(common.markers)) common.markers <- TRUE
+  if (is.null(filter.common.markers)) filter.common.markers <- TRUE
 
   if (!gt.vcf.nuc && !gt) {
     stop("At least one of gt.vcf.nuc or gt must be TRUE")
@@ -323,7 +345,7 @@ tidy_vcf <- function(
     parallel.core = parallel.core,
     keep.gds = keep.gds,
     filter.individuals.missing = filter.individuals.missing,
-    common.markers = common.markers,
+    filter.common.markers = filter.common.markers,
     filter.strands = filter.strands,
     filter.mac = filter.mac,
     filter.coverage.outliers = filter.coverage.outliers,
@@ -609,7 +631,7 @@ tidy_vcf <- function(
 
     if (ref.calibration) {
       if (verbose) message("\nCalculating REF/ALT alleles...")
-      data$tidy.data <- radiator::change_alleles(
+      data$tidy.data <- radiator::calibrate_alleles(
         data = data$tidy.data,
         biallelic = biallelic,
         parallel.core = parallel.core,

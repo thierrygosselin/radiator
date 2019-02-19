@@ -10,6 +10,7 @@
 #' @param filename (optional) Name of the file written to the working directory.
 #' @rdname summary_stats_vcf_tidy
 #' @export
+#' @keywords internal
 
 summary_stats_vcf_tidy <- function(data, filename = NULL) {
   cat("#######################################################################\n")
@@ -18,7 +19,7 @@ summary_stats_vcf_tidy <- function(data, filename = NULL) {
   timing <- proc.time()
 
   # Checking for missing and/or default arguments-------------------------------
-  if (missing(data)) stop("Input file missing")
+  if (missing(data)) rlang::abort("Input file missing")
 
   vcf.summary <- data %>%
     dplyr::filter(GT_VCF != "./.") %>%
@@ -59,50 +60,6 @@ summary_stats_vcf_tidy <- function(data, filename = NULL) {
   return(vcf.summary)
 }#End summary_stats_vcf_tidy
 
-# #' @title Summary statistics of a tidy VCF by population
-# #' @description Summarise the tidy VCF.
-# #' The populations summary on :  frequency of the REF
-# #' and the ALT alleles, the observed and the expected heterozygosity
-# #' and the inbreeding coefficient. The Global MAF of Loci,
-# #' with STACKS GBS/RAD loci = read or de novo haplotypes,
-# #' is included and repeated over SNP.
-#
-# #' @param filename (optional) Name of the file written to the working directory.
-# #' @param data The tidy VCF file created with tidy_genomic_data.
-#
-# #' @rdname summary_stats_pop
-# #' @export
-
-# summary_stats_pop <- function(data, filename = NULL) {
-
-
-#   N <- HET_O <- HET_E <- FREQ_REF <- FIS <- NULL
-#
-#   vcf.summary <- data %>%
-#     dplyr::group_by(POP_ID) %>%
-#     dplyr::summarise(
-#       SNP = length(unique(POS)),
-#       LOCUS = length(unique(LOCUS)),
-#       N = max(N, na.rm = TRUE),
-#       FREQ_REF = mean(FREQ_REF, na.rm = TRUE),
-#       HET_O = mean(HET_O, na.rm = TRUE),
-#       HET_E = mean(HET_E, na.rm = TRUE),
-#       FIS = mean(FIS, na.rm = TRUE)
-#     ) %>%
-#     dplyr::select(POP_ID, N, SNP, LOCUS, FREQ_REF, HET_O, HET_E, FIS)
-#
-#
-#   if (!is.null(filename)) {
-#     message("Saving the file in your working directory...")
-#     readr::write_tsv(vcf.summary, filename, append = FALSE, col_names = TRUE)
-#     saving <- paste("Saving was selected, the filename:", filename, sep = " ")
-#   } else {
-#     saving <- "Saving was not selected"
-#   }
-#   return(vcf.summary)
-# }#End summary_stats_pop
-
-
 #' @title Table of low coverage genotypes
 #' @description This function create a table summary of the genotypes
 #' below a user-define threshold.
@@ -131,6 +88,7 @@ summary_stats_vcf_tidy <- function(data, filename = NULL) {
 #' @importFrom tidyr spread
 #' @rdname table_low_coverage_summary
 #' @export
+#' @keywords internal
 
 
 table_low_coverage_summary <- function(
@@ -269,6 +227,7 @@ Written in the directory:
 #'
 #' @export
 #' @rdname summary_genotype_likelihood
+#' @keywords internal
 
 summary_genotype_likelihood <- function(
   data,
@@ -276,7 +235,7 @@ summary_genotype_likelihood <- function(
   gl.approach = "haplotype",
   folder = NULL
 ){
-  if (missing(data)) stop("missing input file")
+  if (missing(data)) rlang::abort("missing input file")
 
   if (gl.approach == "haplotype") {
     message("Approach: haplotype")
@@ -293,7 +252,7 @@ summary_genotype_likelihood <- function(
   input <- radiator::tidy_wide(data = data, import.metadata = TRUE)
 
   if (!tibble::has_name(input, "GL") & !tibble::has_name(input, "PL") ) {
-    stop("GL or PL information is required")
+    rlang::abort("GL or PL information is required")
   }
 
   pop.levels <- levels(input$POP_ID)
@@ -403,9 +362,9 @@ fis_summary <- function(
   timing <- proc.time()
 
   # Checking for missing and/or default arguments-------------------------------
-  if (missing(data)) stop("Input file missing")
+  if (missing(data)) rlang::abort("Input file missing")
   if (!is.null(pop.levels) & is.null(pop.labels)) pop.labels <- pop.levels
-  if (!is.null(pop.labels) & is.null(pop.levels)) stop("pop.levels is required if you use pop.labels")
+  if (!is.null(pop.labels) & is.null(pop.levels)) rlang::abort("pop.levels is required if you use pop.labels")
 
 
   # Import data ---------------------------------------------------------------

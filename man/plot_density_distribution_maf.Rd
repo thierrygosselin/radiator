@@ -35,3 +35,4 @@ Save the figure with : \code{ggsave("figure name.pdf", width = 40, height = 20, 
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}
 }
+\keyword{internal}

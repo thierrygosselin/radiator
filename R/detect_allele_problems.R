@@ -14,6 +14,11 @@
 #' representation of allelic copies and unequal coverage and ii) type I error
 #' during genotyping of heterozygote with low coverage data.
 
+#' @param data A tidy data frame object in the global environment or
+#' a tidy data frame in wide or long format in the working directory.
+#' \emph{How to get a tidy data frame ?}
+#' Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
+
 #' @inheritParams tidy_genomic_data
 
 #' @param allele.threshold (integer) Threshold of alternate allele copies.
@@ -22,7 +27,10 @@
 #' minor allele frequency. Summary statistics for this blacklist will be calculated.
 #' See details for more info.
 
-
+#' @param ... (optional) Advance mode that allows to pass further arguments
+#' for fine-tuning the function (see details).
+#'
+#'
 #' @return A list with summary, plot and blacklist.
 #' Summary statistics for the blacklisted markers are generated and include
 #' coverage and genotype likelihood information.
@@ -86,13 +94,13 @@
 #' @examples
 #' \dontrun{
 #' problem <- detect_allele_problems(
-#' data = "batch_1.vcf",
-#' strata = "strata.salmon.tsv",
-#' allele.threshold = 3
-#' )
+#'         data = salamander,
+#'         strata = "strata.salmon.tsv",
+#'         allele.threshold = 3)
+#'
 #' # The default with this function:
-#' # monomorphic.out = TRUE # = discarded
-#' # common.markers = TRUE # markers not in common between pop are discarded
+#' # filter.monomorphic = TRUE # = discarded
+#' # filter.common.markers = TRUE # markers not in common between pop are discarded
 #' }
 
 #' @export
@@ -110,21 +118,14 @@
 detect_allele_problems <- function(
   data,
   allele.threshold = 3,
-  whitelist.markers = NULL,
-  monomorphic.out = TRUE,
-  blacklist.genotype = NULL,
-  snp.ld = NULL,
-  common.markers = TRUE,
-  maf.thresholds = NULL,
-  max.marker = NULL,
-  blacklist.id = NULL,
-  pop.levels = NULL,
-  pop.labels = NULL,
-  strata = NULL,
-  pop.select = NULL,
-  filename = NULL,
-  verbose = FALSE
+  verbose = TRUE,
+  ...
 ) {
+
+  # test
+  data <- "/Users/thierry/Dropbox/r_packages/package_testing/carol/p1.mac4.r0.8/filtered_carol/corals_20181120@1828_filtered.rad"
+  allele.threshold = 3
+  verbose = FALSE
 
   cat("#######################################################################\n")
   cat("################## radiator::detect_allele_problems ###################\n")
@@ -132,66 +133,23 @@ detect_allele_problems <- function(
   timing <- proc.time()
 
   # Checking for missing and/or default arguments-------------------------------
-  if (missing(data)) stop("Input file missing")
-  if (!is.null(pop.levels) & is.null(pop.labels)) pop.labels <- pop.levels
-  if (!is.null(pop.labels) & is.null(pop.levels)) stop("pop.levels is required if you use pop.labels")
-
+  if (missing(data)) rlang::abort("Input file missing")
 
 
   # Import data ---------------------------------------------------------------
-  input <- radiator::tidy_genomic_data(
-    data = data,
-    vcf.metadata = TRUE, #defautl because we need the metadata info
-    blacklist.id = blacklist.id,
-    blacklist.genotype = blacklist.genotype,
-    whitelist.markers = whitelist.markers,
-    monomorphic.out = monomorphic.out,
-    max.marker = max.marker,
-    snp.ld = snp.ld,
-    common.markers = common.markers,
-    maf.thresholds = maf.thresholds,
-    strata = strata,
-    pop.levels = pop.levels,
-    pop.labels = pop.labels,
-    pop.select = pop.select,
-    filename = NULL
-  )
-
-  input$GT <- stringi::stri_replace_all_fixed(
-    str = input$GT,
-    pattern = c("/", ":", "_", "-", "."),
-    replacement = c("", "", "", "", ""),
-    vectorize_all = FALSE
-  )
-
-  pop.levels <- levels(input$POP_ID)
-  pop.labels <- pop.levels
-
-  # check genotype column naming
-  if (tibble::has_name(input, "GENOTYPE")) {
-    colnames(input) <- stringi::stri_replace_all_fixed(
-      str = colnames(input),
-      pattern = "GENOTYPE",
-      replacement = "GT",
-      vectorize_all = FALSE)
-  }
-
-  # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-  if (tibble::has_name(input, "LOCUS") && !tibble::has_name(input, "MARKERS")) {
-    input <- dplyr::rename(.data = input, MARKERS = LOCUS)
-  }
+  if (is.vector(data)) data <- radiator::tidy_wide(data, import.metadata = TRUE)
 
   # Check that coverage info is there
-  if (!tibble::has_name(input, "READ_DEPTH")) stop("This function requires read depth metadata")
-  if (!tibble::has_name(input, "ALLELE_ALT_DEPTH")) stop("This function requires allele depth metadata")
-  if (!(tibble::has_name(input, "GL") | tibble::has_name(input, "PL"))) stop("This function requires genotype likelihood metadata")
+  if (!tibble::has_name(data, "READ_DEPTH")) rlang::abort("This function requires read depth metadata")
+  if (!tibble::has_name(data, "ALLELE_ALT_DEPTH")) rlang::abort("This function requires allele depth metadata")
+  if (!(tibble::has_name(data, "GL") | tibble::has_name(data, "PL"))) rlang::abort("This function requires genotype likelihood metadata")
 
 
   message("\nComputing allele count...")
 
   # Allele count ---------------------------------------------------------------
   # For each marker, count the number of alternate allele
-  allele.count <- input %>%
+  allele.count <- data %>%
     dplyr::filter(GT_BIN %in% c(1,2)) %>%
     dplyr::group_by(MARKERS) %>%
     dplyr::summarise(n = sum(GT_BIN, na.rm = TRUE))
@@ -199,7 +157,7 @@ detect_allele_problems <- function(
   # test
   # test <- dplyr::filter(.data = allele.count, n == 1) %>%
   # dplyr::select(MARKERS) %>%
-  # dplyr::inner_join(input, by = "MARKERS")
+  # dplyr::inner_join(data, by = "MARKERS")
 
   # Histogram of allele counts--------------------------------------------------
   alt.allele.count.plot <- ggplot2::ggplot(allele.count, ggplot2::aes(n)) +
@@ -222,8 +180,8 @@ detect_allele_problems <- function(
   blacklist <- dplyr::filter(.data = allele.count, n <= allele.threshold) %>%
     dplyr::select(ALLELE_COPIES = n, MARKERS)
 
-  if (tibble::has_name(input, "GL")) {
-    input.info.needed <- input %>%
+  if (tibble::has_name(data, "GL")) {
+    data.info.needed <- data %>%
       dplyr::select(MARKERS, CHROM, LOCUS, POS, REF, ALT, READ_DEPTH, ALLELE_REF_DEPTH, ALLELE_ALT_DEPTH, GL) %>%
       dplyr::group_by(MARKERS, CHROM, LOCUS, POS, REF, ALT) %>%
       dplyr::summarise(
@@ -241,8 +199,8 @@ detect_allele_problems <- function(
         GL_MAX = max(GL, na.rm = TRUE)
       )
   }
-  if (tibble::has_name(input, "PL")) {
-    input.info.needed <- input %>%
+  if (tibble::has_name(data, "PL")) {
+    data.info.needed <- data %>%
       dplyr::select(MARKERS, CHROM, LOCUS, POS, REF, ALT, READ_DEPTH, ALLELE_REF_DEPTH, ALLELE_ALT_DEPTH, PROB_HOM_REF, PROB_HET, PROB_HOM_ALT) %>%
       dplyr::group_by(MARKERS, CHROM, LOCUS, POS, REF, ALT) %>%
       dplyr::summarise(
@@ -261,11 +219,11 @@ detect_allele_problems <- function(
       )
   }
 
-  blacklist.summary <- dplyr::left_join(blacklist, input.info.needed, by = "MARKERS") %>%
+  blacklist.summary <- dplyr::left_join(blacklist, data.info.needed, by = "MARKERS") %>%
     dplyr::arrange(ALLELE_COPIES, CHROM, LOCUS, POS)
-  input.info.needed <- NULL
+  data.info.needed <- NULL
 
-  allele.summary <- dplyr::left_join(blacklist, input, by = "MARKERS") %>%
+  allele.summary <- dplyr::left_join(blacklist, data, by = "MARKERS") %>%
     dplyr::filter(GT_BIN %in% c(1, 2)) %>%
     dplyr::select(-GT) %>%
     dplyr::left_join(

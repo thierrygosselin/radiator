@@ -4,34 +4,89 @@
 \alias{separate_markers}
 \title{Separate markers column into chrom, locus and pos}
 \usage{
-separate_markers(data, sep = "__")
+separate_markers(data, sep = "__", markers.meta.lists.only = FALSE,
+  markers.meta.all.only = FALSE, generate.markers.metadata = TRUE,
+  generate.ref.alt = FALSE, biallelic = NULL,
+  parallel.core = parallel::detectCores() - 1, verbose = TRUE)
 }
 \arguments{
 \item{data}{An object with a column named \code{MARKERS}.
-If \code{CHROM}, \code{LOCUS}, \code{POS} are already present,
-the columns are removed before separating the \code{MARKERS} column.
-The data can be whitelists and blacklists of markers or datasets.}
+If \code{CHROM}, \code{LOCUS}, \code{POS} are already present, the function
+returns the dataset untouched.
+The data can be whitelists and blacklists of markers or tidy datasets or
+radiator GDS object.}
 
 \item{sep}{(optional, character) Separator used to identify the different
 field in the \code{MARKERS} column.
+
+When the \code{MARKERS} column doesn't have separator and the function is used
+to generate markers metadata column:
+\code{"CHROM", "LOCUS", "POS", "REF", "ALT"}, use \code{sep = NULL}.
 Default: \code{sep = "__"}.}
+
+\item{markers.meta.lists.only}{(logical, optional)
+Allows to keep only the markers metadata:
+\code{"VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS"}, useful for whitelist
+or blacklist.
+Default: \code{markers.meta.lists.only = FALSE}}
+
+\item{markers.meta.all.only}{(logica, optionall)
+Allows to keep all available markers metadata:
+\code{"VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF", "ALT"},
+useful inside radiator.
+Default: \code{markers.meta.all.only = FALSE}}
+
+\item{generate.markers.metadata}{(logical, optional)
+Generate missing markers metadata when missing.
+\code{"CHROM", "LOCUS", "POS"}.
+Default: \code{generate.markers.metadata = TRUE}}
+
+\item{generate.ref.alt}{(logical, optional) Generate missing REF/ALT alleles
+with: REF = A and ALT = C (for biallelic datasets, only).
+It is turned off automatically
+when argument \code{markers.meta.lists.only = TRUE} and
+on automatically when argument \code{markers.meta.all.only = TRUE}
+Default: \code{generate.ref.alt = FALSE}}
+
+\item{biallelic}{(logical) Speed up the function execution by entering
+if the dataset is biallelic or not. Used internally for verification, before
+generating REF/ALT info.
+By default, the function calls \code{\link{detect_biallelic_markers}}.
+The argument is required if \code{data} is a tidy dataset and not just
+a whitelist/blacklist.
+Default: \code{biallelic = NULL}}
+
+\item{parallel.core}{(optional) The number of core used for parallel
+execution during import.
+Default: \code{parallel.core = parallel::detectCores() - 1}.}
+
+\item{verbose}{(optional, logical) When \code{verbose = TRUE}
+the function is a little more chatty during execution.
+Default: \code{verbose = TRUE}.}
 }
 \value{
 The same data in the global environment, with 3 new columns:
-\code{CHROM}, \code{LOCUS}, \code{POS}
+\code{CHROM}, \code{LOCUS}, \code{POS}. Additionnal columns may be genrated,
+see arguments documentation.
 }
 \description{
 Radiator uses unique marker names by combining
 \code{CHROM}, \code{LOCUS}, \code{POS} columns, with double underscore
-separators, into \code{MARKERS = CHROM__LOCUS__POS}. All the info is kept most
-of the time, but in case user need to get back to the original metadata the
-function provides an easy wau to do it.
+separators, into \code{MARKERS = CHROM__LOCUS__POS}.
+
+
+Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
+and might be of interest for users who need to get back to the original metadata the
+function provides an easy way to do it.
 }
 \examples{
 \dontrun{
 whitelist <- radiator::separate_markers(data = whitelist.markers)
 tidy.data <- radiator::separate_markers(data = bluefintuna.data)
-}#' @export
+}
+}
+\seealso{
+\code{\link{detect_biallelic_markers}} and \code{\link{generate_markers_metadata}}
 }
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}

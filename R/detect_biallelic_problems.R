@@ -46,7 +46,7 @@ detect_biallelic_problems <- function(data, verbose = TRUE, parallel.core = para
   opt.change <- getOption("width")
   options(width = 70)
   # Checking for missing and/or default arguments ------------------------------
-  if (missing(data)) stop("Input file missing")
+  if (missing(data)) rlang::abort("Input file missing")
   res <- list()
   # Get data and time and generate a filename
   # in case problematic markers are found and printed
@@ -57,7 +57,7 @@ detect_biallelic_problems <- function(data, verbose = TRUE, parallel.core = para
   if (is.vector(data)) {
     data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
   }
-  if (!tibble::has_name(data, "GT_VCF_NUC")) stop("Tidy dataset requires nuclotides in genotypes: GT_VCF_NUC")
+  if (!tibble::has_name(data, "GT_VCF_NUC")) rlang::abort("Tidy dataset requires nuclotides in genotypes: GT_VCF_NUC")
 
   # Check data ----------------------------------------------------------
   message("Generating statistics...")

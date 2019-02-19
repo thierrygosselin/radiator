@@ -48,7 +48,7 @@ write_maverick <- function(
   unknowned_param <- setdiff(names(dotslist), want)
 
   if (length(unknowned_param) > 0) {
-    stop("Unknowned \"...\" parameters ",
+    rlang::abort("Unknowned \"...\" parameters ",
          stringi::stri_join(unknowned_param, collapse = " "))
   }
 
@@ -58,7 +58,7 @@ write_maverick <- function(
 
 
   # Checking for missing and/or default arguments ******************************
-  if (missing(data)) stop("Input file missing")
+  if (missing(data)) rlang::abort("Input file missing")
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {

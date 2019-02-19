@@ -1,14 +1,12 @@
 Package: radiator
 Type: Package
 Title: RADseq Data Exploration, Manipulation and Visualization using R
-Version: 0.0.21
-Date: 2018-11-14
+Version: 1.0.0
+Date: 2019-02-19
 Encoding: UTF-8
 Authors@R: c(
   person("Thierry", "Gosselin", email = "thierrygosselin@icloud.com", role = c("aut", "cre")),
-  person("Manuel", "Lamothe", role = "ctb"),
-  person("Anne-Laure", "Ferchaud", role = "ctb"),
-  person("Laura", "Benestan", role = "ctb"))
+  person("Manuel", "Lamothe", role = "ctb"))
 Maintainer: Thierry Gosselin <thierrygosselin@icloud.com>
 Description: radiator: an R package for RADseq Data Exploration, Manipulation and Visualization.
 Depends:

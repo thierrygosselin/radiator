@@ -5,20 +5,17 @@
 \title{Detect heterozygotes outliers and estimate miscall rate}
 \usage{
 detect_het_outliers(data, nreps = 2000, burn.in = NULL,
-  blacklist.id = NULL, whitelist.markers = NULL,
-  blacklist.markers = NULL, monomorphic.out = TRUE,
-  max.marker = NULL, snp.ld = NULL, common.markers = TRUE,
-  strata = NULL, pop.levels = NULL, pop.labels = NULL,
-  pop.select = NULL, filename = NULL,
-  parallel.core = parallel::detectCores() - 1)
+  strata = NULL, filename = NULL,
+  parallel.core = parallel::detectCores() - 1, ...)
 }
 \arguments{
-\item{data}{12 options: VCF (SNPs or Haplotypes,
-to make the vcf population ready, see details below),
+\item{data}{12 options for input: VCFs (SNPs or Haplotypes,
+to make the vcf population ready),
 plink, stacks haplotype file, genind (library(adegenet)),
 genlight (library(adegenet)), gtypes (library(strataG)), genepop, DArT,
-and a data frame in long/tidy or wide format.
-\emph{See details} of \code{\link[radiator]{tidy_genomic_data}}.}
+and a data frame in long/tidy or wide format. To verify that radiator detect
+your file format use \code{\link{detect_genomic_format}} (see example below).
+Documented in \strong{Input genomic datasets} of \code{\link{tidy_genomic_data}}.}
 
 \item{nreps}{(integer, optional) The number of MCMC sweeps to do.
 Default: \code{nreps = 2000}.}
@@ -32,111 +29,10 @@ to average the heterozygote miscall rate.
 e.g. of common value \code{burn.in = 500}.
 With default: \code{burn.in = NULL}.}
 
-\item{blacklist.id}{(optional) A blacklist with individual ID and
-a column header 'INDIVIDUALS'. The blacklist is an object in your
-global environment or a file in the working directory
-(e.g. "blacklist.txt"). \code{_} and \code{:} in individual's names
-are changed to a dash \code{-}.
-Default: \code{blacklist.id = NULL}.}
-
-\item{whitelist.markers}{(optional) A whitelist containing CHROM (character
-or integer) and/or LOCUS (integer) and/or
-POS (integer) columns header. To filter by chromosome and/or locus and/or by snp.
-The whitelist is an object in your
-global environment or a file in the working directory (e.g. "whitelist.txt").
-Note that \emph{de novo} CHROM column with 'un' need to be changed to 1.
-In the VCF, the column ID is the LOCUS identification (VCF generated from
-stacks have the SNP position on the read embedded in the ID,
-so the ID = no longer represent the LOCUS). Marker names are cleaned of
-separators that interfere with some packages or codes:
-\code{/}, \code{:}, \code{-} and \code{.} are changed to an underscore
-\code{_}.
-Default \code{whitelist.markers = NULL} for no whitelist of markers.}
-
-\item{blacklist.markers}{(optional) Path to a file with markers to blacklist
-before generating the miscall rate. Usefull to test the impact of different
-HWE thresholds rapidly...
-Default: \code{blacklist.markers = NULL}.}
-
-\item{monomorphic.out}{(optional) Should the monomorphic
-markers present in the dataset be filtered out ?
-Default: \code{monomorphic.out = TRUE}.}
-
-\item{max.marker}{(integer, optional) For large PLINK files,
-useful to subsample marker number. e.g. if the data set
-contains 200 000 markers and \code{max.marker = 10000}, 10000 markers are
-subsampled randomly from the 200000 markers. If you need specific markers,
-use \code{whitelist.markers} argument.
-Default: \code{max.marker = NULL}.}
-
-\item{snp.ld}{(optional) \strong{For data with locus and SNP info, like VCF and DArT file}.
-SNP short distance linkage disequilibrium pruning. With anonymous markers from
-RADseq/GBS de novo discovery, you can minimize linkage disequilibrium (LD) by
-choosing among these 5 options:
-\enumerate{
-\item \code{snp.ld = "random"} for a random selection of 1 SNP on the read,
-\item \code{snp.ld = "first"} for the first one on the read...,
-\item \code{snp.ld = "last"} for the last SNP on the read and
-\item \code{snp.ld = "middle"} for locus with > 2 SNPs/read the option to select at random
-one SNP between the first and the last SNP on the read. If the locus as <= 2
-SNPs on the read, the first one is selected. Note that for that last option,
-the numbers are reported.
-\item \code{snp.ld = "maf"} will select the SNP on the locus with the maximum global
-Minor Allele Frequency (MAF).
-}
-For long distance linkage disequilibrium pruning, see details below.
-Default: \code{snp.ld = NULL}, for no pruning.}
-
-\item{common.markers}{(optional) Logical. Default: \code{common.markers = TRUE},
-will only keep markers in common (genotyped) between all the populations.}
-
-\item{strata}{(optional)
-The strata file is a tab delimited file with a minimum of 2 columns headers:
-\code{INDIVIDUALS} and \code{STRATA}.
-If a \code{strata} file is specified with all file formats that don't
-require it, the strata argument will have precedence on the population
-groupings used internally in those file formats. For file formats without
-population/strata groupings (e.g. vcf, haplotype files) if no strata file is
-provided, 1 pop/strata grouping will automatically be created.
-For vcf and haplotypes file, the strata can also be used as a whitelist of id.
-Samples not in the strata file will be discarded from the data set.
-The \code{STRATA} column can be any hierarchical grouping.
-To create a strata file see \code{\link[radiator]{individuals2strata}}.
-If you have already run
-\href{http://catchenlab.life.illinois.edu/stacks/}{stacks} on your data,
-the strata file is similar to a stacks \emph{population map file},
-make sure you
-have the required column names (\code{INDIVIDUALS} and \code{STRATA}).
-The strata column is cleaned of a white spaces that interfere with some
-packages or codes: space is changed to an underscore \code{_}.
-Default: \code{strata = NULL}.}
-
-\item{pop.levels}{(optional, string) This refers to the levels in a factor. In this
-case, the id of the pop.
-Use this argument to have the pop ordered your way instead of the default
-alphabetical or numerical order. e.g. \code{pop.levels = c("QUE", "ONT", "ALB")}
-instead of the default \code{pop.levels = c("ALB", "ONT", "QUE")}.
-White spaces in population names are replaced by underscore.
-Default: \code{pop.levels = NULL}.}
-
-\item{pop.labels}{(optional, string) Use this argument to rename/relabel
-your pop or combine your pop. e.g. To combine \code{"QUE"} and \code{"ONT"}
-into a new pop called \code{"NEW"}:
-(1) First, define the levels for your pop with \code{pop.levels} argument:
-\code{pop.levels = c("QUE", "ONT", "ALB")}.
-(2) then, use \code{pop.labels} argument:
-\code{pop.labels = c("NEW", "NEW", "ALB")}.
-To rename \code{"QUE"} to \code{"TAS"}:
-\code{pop.labels = c("TAS", "ONT", "ALB")}.
-Default: \code{pop.labels = NULL}. If you find this too complicated,
-there is also the \code{strata} argument that can do the same thing,
-see below.
-White spaces in population names are replaced by underscore.}
-
-\item{pop.select}{(string, optional) Selected list of populations for
-the analysis. e.g. \code{pop.select = c("QUE", "ONT")} to select \code{QUE}
-and \code{ONT} population samples (out of 20 pops).
-Default: \code{pop.select = NULL}}
+\item{strata}{(path or object) The strata file or object.
+Additional documentation is available in \code{\link{read_strata}}.
+Use that function to whitelist/blacklist populations/individuals.
+Option to set \code{pop.levels/pop.labels} is also available.}
 
 \item{filename}{(optional) The function uses \code{\link[fst]{write.fst}},
 to write the tidy data frame in
@@ -147,7 +43,9 @@ in the global environment only (i.e. not written in the working directory...).}
 
 \item{parallel.core}{(optional) The number of core used for parallel
 execution during import.
-Default: \code{parallel::detectCores() - 1}.}
+Default: \code{parallel.core = parallel::detectCores() - 1}.}
+
+\item{...}{(optional) To pass further arguments for fine-tuning the function.}
 }
 \value{
 A folder generated automatically with date and time,

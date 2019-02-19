@@ -7,7 +7,13 @@
 detect_genomic_format(data)
 }
 \arguments{
-\item{data}{A genomic data set in the global environment}
+\item{data}{12 options for input: VCFs (SNPs or Haplotypes,
+to make the vcf population ready),
+plink, stacks haplotype file, genind (library(adegenet)),
+genlight (library(adegenet)), gtypes (library(strataG)), genepop, DArT,
+and a data frame in long/tidy or wide format. To verify that radiator detect
+your file format use \code{\link{detect_genomic_format}} (see example below).
+Documented in \strong{Input genomic datasets} of \code{\link{tidy_genomic_data}}.}
 }
 \value{
 One of these file format:
@@ -28,6 +34,12 @@ One of these file format:
 }
 \description{
 Detect file format of genomic data set.
+}
+\examples{
+\dontrun{
+#To verify your file is detected by radiator as the correct format:
+radiator::detect_genomic_format(data = "populations.snps.vcf")
+}
 }
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}

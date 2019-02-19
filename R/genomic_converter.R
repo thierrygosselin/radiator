@@ -8,32 +8,33 @@
 #' reality of GBS/RADseq data while maintaining a reproducible workflow.
 #'
 #' \itemize{
-#'   \item \strong{Input file:} 12 file formats are supported (see \code{data} argument below)
-#'   \item \strong{Filters:} genotypes, markers, individuals and populations can be
-#'   filtered and/or selected in several ways using blacklist,
-#'   whitelist and other arguments
-#'   \item \strong{Imputations:} Map-independent imputation of missing genotype/alleles
-#'   using Random Forest or the most frequent category.
+#'   \item \strong{Input file:} 13 file formats are supported (see \code{data} argument below)
+#'   \item \strong{Filters:} see \emph{Advance mode} section below for ways to
+#'   use blacklist and whitelist related arguments.
+#'   For best results with unfiltered datasets, use \code{\link{filter_rad}}
+#'   (\code{genomic_converter} is included in that function!).
+#'   \item \strong{Imputations:} deprecated module no longer available
+#'   in \emph{genomic_converter} (see \emph{Life cycle} section below).
 #'   \item \strong{Parallel:} Some parts of the function are designed to be conduncted on multiple CPUs
-#'   \item \strong{Output:} 18 output file formats are supported (see \code{output} argument below)
+#'   \item \strong{Output:} 24 output file formats are supported (see \code{output} argument below)
 #' }
 
-#' @param output 23 genomic data formats can be exported: tidy (by default),
-#' genind, genlight, vcf (for file format version, see details below), plink, genepop,
-#' structure, arlequin, hierfstat, gtypes (strataG), bayescan, betadiv, pcadapt,
-#' hzar, fineradstructure, related, snprelate (for SNPRelate's GDS, see details)
-#' and maverick.
+#' @param output 24 genomic data formats can be exported: tidy (by default),
+#' genepop, genind, genlight, vcf (for file format version, see details below),
+#' plink, structure, arlequin, hierfstat, gtypes (strataG), bayescan, betadiv,
+#' pcadapt, hzar, fineradstructure, related, seqarray, snprelate and maverick.
 #' Use a character string,
 #' e.g. \code{output = c("genind", "genepop", "structure")}, to have preferred
-#' output formats generated. The tidy format is generated automatically.
+#' output formats generated. With default, only the tidy format is generated.
 #' Default: \code{output = NULL}.
 
 #' @param filename (optional) The filename prefix for the object in the global environment
 #' or the working directory. Default: \code{filename = NULL}. A default name will be used,
 #' customized with the output file(s) selected.
 
-
 #' @inheritParams tidy_genomic_data
+#' @inheritParams radiator_common_arguments
+#' @inheritParams read_strata
 #' @inheritParams write_genepop
 #' @inheritParams write_genind
 #' @inheritParams write_genlight
@@ -48,35 +49,106 @@
 #' @inheritParams write_hzar
 #' @inheritParams write_fineradstructure
 #' @inheritParams write_related
+#' @inheritParams write_snprelate
 #' @inheritParams write_stockr
-#' @inheritParams write_stockr
-#' @inheritParams radiator_imputations_module
-# @inheritParams write_snprelate
 
 
-#' @details
+#' @section Input genomic datasets:
+#' \enumerate{
+#' \item GDS file or object, must end with \code{.gds} or \code{.rad}:
+#' documented in \code{\link{write_seqarray}}
 #'
+#' \item VCF files must end with \code{.vcf}: documented in \code{\link{tidy_vcf}}
 #'
-#' \strong{Advance mode, using \emph{dots-dots-dots ...}}
-#' Currently all the advanced arguments are linked to using VCF files and
-#' described in \pkg{radiator} \code{\link{tidy_vcf}} and \code{\link{write_seqarray}}
+#' \item PLINK files must end with \code{.tped}: documented in \code{\link{tidy_plink}}
 #'
-#' \strong{Input files:} Look into \pkg{radiator} \code{\link{tidy_genomic_data}}
-#' details section.
+#' \item genind object from
+#' \href{https://github.com/thibautjombart/adegenet}{adegenet}:
+#' documented in \code{\link{tidy_genind}}.
 #'
+#' \item genlight object from
+#' \href{https://github.com/thibautjombart/adegenet}{adegenet}:
+#' documented in \code{\link{tidy_genlight}}.
 #'
-#' \strong{Imputations details:}
+#' \item gtypes object from
+#' \href{https://github.com/EricArcher/strataG}{strataG}:
+#' documented in \code{\link{tidy_gtypes}}.
 #'
-#' The imputations using Random Forest requires more time to compute and can take several
-#' minutes and hours depending on the size of the dataset and polymorphism of
-#' the species used. e.g. with a low polymorphic taxa, and a data set
-#' containing 30\% missing data, 5 000 haplotypes loci and 500 individuals
-#' will require 15 min.
+#' \item dart data from \href{http://www.diversityarrays.com}{DArT}:
+#' documented in \code{\link{tidy_dart}}.
 #'
+#' \item genepop file must end with \code{.gen}, documented in \code{\link{tidy_genepop}}.
 #'
-#' \strong{VCF file format version:}
+#' \item fstat file must end with \code{.dat}, documented in \code{\link{tidy_fstat}}.
 #'
-#' If you need a different file format version than the current one, just change
+#' \item haplotype file created in STACKS (e.g. \code{data = "batch_1.haplotypes.tsv"}).
+#' To make the haplotype file population ready, you need the \code{strata} argument.
+#'
+#' \item Data frames: documented in \code{\link{tidy_wide}}.
+#' }
+
+#' @section Advance mode:
+#'
+#' \emph{dots-dots-dots ...} allows to pass several arguments for fine-tuning the function:
+#' \enumerate{
+#'
+#' \item{path.folder: } use this argument to specify an output folder.
+#' Default: \code{path.folder = "radiator_genomic_converter"}.
+#'
+#' \item \code{vcf.metadata} (optional, logical or string).
+#' Default: \code{vcf.metadata = TRUE}. Documented in \code{\link{tidy_vcf}}.
+#'
+#' \item \code{vcf.stats} (optional, logical).
+#' Default: \code{vcf.stats = TRUE}.
+#' Documented in \code{\link{tidy_vcf}}.
+#'
+#' \item \code{whitelist.markers} (optional) Default \code{whitelist.markers = NULL}.
+#' Documented in \code{\link{read_whitelist}}.
+#'
+#' \item \code{filter.common.markers} (optional, logical).
+#' Default: \code{filter.common.markers = TRUE}.
+#' By defaults, only common markers are kept in the dataset.
+#' Documented in \code{\link{filter_common_markers}}.
+#'
+#' \item \code{filter.monomorphic} (logical, optional)
+#' Default: \code{filter.monomorphic = TRUE}.
+#' By defaults, only polymorphic markers across strata are kept in the dataset.
+#' Documented in \code{\link{filter_monomorphic}}.
+#'
+#' \item \emph{individuals to blacklist ? } Use the strata file for this.
+#' Documented in \code{\link{read_strata}}.
+#'
+#' \item \code{keep.allele.names} argument used when tidying genind object.
+#' Documented in \code{\link{tidy_genind}}.
+#' Default: \code{keep.allele.names = FALSE}.
+#' }
+
+#' @section Life cycle:
+#'
+#' Map-independent imputation of missing genotype is avaible in my other R
+#' package called \href{https://github.com/thierrygosselin/grur}{grur}.
+#'
+#' Use \href{https://github.com/thierrygosselin/grur}{grur} to :
+#' \enumerate{
+#' \item \strong{Visualize your missing data: } before imputing your genotypes,
+#' visualize your missing data.
+#' Several visual tools are available inside \href{https://github.com/thierrygosselin/grur}{grur} to
+#' help you decide the best strategy after.
+#' \item \strong{Optimize: }
+#' use \href{https://github.com/thierrygosselin/grur}{grur} imputation module
+#' and other functions to optimize the imputations of your dataset.
+#' You need to test arguments. Failing to conduct tests and adjust imputations arguments
+#' will \strong{generate artifacts} and/or \strong{exacerbate bias}.
+#' Using defaults is not optional here...
+#' \item \strong{genomic_converter: }
+#' use the output argument inside \href{https://github.com/thierrygosselin/grur}{grur}
+#' imputation module to generate the required formats.
+#' }
+
+
+#' @section VCF file format version:
+#'
+#' If you need a different VCF file format version than the current one, just change
 #' the version inside the newly created VCF, that should do the trick.
 #' \href{https://vcftools.github.io/specs.html}{For more
 #' information on Variant Call Format specifications}.
@@ -97,25 +169,19 @@
 
 #' @examples
 #' \dontrun{
+#' #To verify your file is detected by radiator as the correct format:
+#' radiator::detect_genomic_format(data = "populations.snps.vcf")
+#'
 #' # The simplest form of the function:
 #' require(SeqVarTools) # when using vcf as input file
 #' snowcrab <- genomic_converter(
-#'     data = "batch_1.vcf",
-#'     output = c("genlight", "genepop"),
-#'     strata = "snowcrab.strata.tsv"
-#'     )
-#' # With imputations using random forest:
-#' snowcrab <- genomic_converter(
-#'     data = "batch_1.vcf",
-#'     output = c("genlight", "genepop"),
-#'     strata = "snowcrab.strata.tsv",
-#'     imputation.method = "rf"
-#'     )
+#'                    data = "populations.snps.vcf", strata = "snowcrab.strata.tsv",
+#'                    output = c("genlight", "genepop"))
 #'
 #' #Get the content of the object created using:
 #' names(snowcrab)
 #' #To isolate the genlight object (without imputation):
-#' genlight.no.imputation <- snowcrab$genlight.no.imputation
+#' genlight <- snowcrab$genlight
 #' }
 
 #' @references Catchen JM, Amores A, Hohenlohe PA et al. (2011)
@@ -132,15 +198,6 @@
 #' @references Jombart T, Ahmed I (2011) adegenet 1.3-1:
 #' new tools for the analysis of genome-wide SNP data.
 #' Bioinformatics, 27, 3070-3071.
-
-#' @references Ishwaran H. and Kogalur U.B. (2015). Random Forests for Survival,
-#'  Regression and Classification (RF-SRC), R package version 1.6.1.
-
-#' @references Ishwaran H. and Kogalur U.B. (2007). Random survival forests
-#' for R. R News 7(2), 25-31.
-
-#' @references Ishwaran H., Kogalur U.B., Blackstone E.H. and Lauer M.S. (2008).
-#' Random survival forests. Ann. Appl. Statist. 2(3), 841-860.
 
 #' @references Lamy T, Legendre P, Chancerelle Y, Siu G, Claudet J (2015)
 #' Understanding the Spatio-Temporal Response of Coral Reef Fish Communities to
@@ -198,301 +255,203 @@
 #' Subpopulations (K) in Structured Populations.
 #' Genetics, 203, genetics.115.180992-1839.
 
+#' @references Zheng X, Gogarten S, Lawrence M, Stilp A, Conomos M, Weir BS,
+#' Laurie C, Levine D (2017). SeqArray -- A storage-efficient high-performance
+#' data format for WGS variant calls.
+#' Bioinformatics.
 
 #' @seealso \code{beta.div} is available on Pierre Legendre web site \url{http://adn.biol.umontreal.ca/~numericalecology/Rcode/}
-#' \code{randomForestSRC} is available on CRAN \url{http://cran.r-project.org/web/packages/randomForestSRC/}
-#' and github \url{https://github.com/ehrlinger/randomForestSRC}
+#'
+#'
+#' \code{\link{detect_genomic_format}}
+#'
+#'
+#' \code{\link{tidy_genomic_data}}
+#'
+#' \href{https://github.com/thierrygosselin/grur}{grur}
+#'
+#' \code{\link{read_strata}}
 
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 genomic_converter <- function(
   data,
-  output = NULL,
-  vcf.metadata = FALSE,
-  filename = NULL,
-  blacklist.id = NULL,
-  blacklist.genotype = NULL,
-  whitelist.markers = NULL,
-  monomorphic.out = TRUE,
-  snp.ld = NULL,
-  common.markers = TRUE,
-  maf.thresholds = NULL,
-  max.marker = NULL,
   strata = NULL,
-  pop.levels = NULL,
-  pop.labels = NULL,
-  pop.select = NULL,
-  imputation.method = NULL,
-  hierarchical.levels = "strata",
-  num.tree = 50,
-  pred.mean.matching = 0,
-  random.seed = NULL,
+  output = NULL,
+  filename = NULL,
   parallel.core = parallel::detectCores() - 1,
   verbose = TRUE,
   ...
 ) {
 
-  # Testing
+  ## Testing
   # data
-  # output = NULL
-  # vcf.metadata = FALSE
-  # filename = NULL
-  # blacklist.id = NULL
-  # blacklist.genotype = NULL
-  # whitelist.markers = NULL
-  # monomorphic.out = TRUE
-  # snp.ld = NULL
-  # common.markers = TRUE
-  # maf.thresholds = NULL
-  # max.marker = NULL
   # strata = NULL
-  # pop.levels = NULL
-  # pop.labels = NULL
-  # pop.select = NULL
-  # imputation.method = NULL
-  # hierarchical.levels = "strata"
-  # num.tree = 50
-  # pred.mean.matching = 0
-  # random.seed = NULL
+  # output = "genind"
+  # filename = NULL
   # parallel.core = parallel::detectCores() - 1
   # verbose = TRUE
-  # write.tidy <- TRUE
+  ## dots dots dots
+  # path.folder <- NULL
   # keep.allele.names <- FALSE
-  # markers.info <- NULL
+  # vcf.metadata = TRUE
+  # vcf.stats <- TRUE
+  # whitelist.markers = NULL
+  # filter.monomorphic = TRUE
+  # filter.common.markers <- TRUE
 
-  #
-  if (verbose) {
-    cat("#######################################################################\n")
-    cat("##################### radiator::genomic_converter #####################\n")
-    cat("#######################################################################\n")
-    # Check that strataG is installed
-    if ("gtypes" %in% output) {
-      if (!"strataG" %in% utils::installed.packages()[,"Package"]) {
-        stop("Please install strataG for this output option:\n
-devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
-      }
+
+  # Check for specific format vs package required-----------------------------
+  if ("gtypes" %in% output) {
+    if (!"strataG" %in% utils::installed.packages()[,"Package"]) {
+      rlang::abort("Please install strataG for this output option:\n
+           devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
     }
-
-    # Check that snprelate is installed
-    # if ("snprelate" %in% output) {
-    #   if (!"SNPRelate" %in% utils::installed.packages()[,"Package"]) {
-    #     stop("Please install SNPRelate:\n
-    #        github::zhengxwen/SNPRelate")
-    #   }
-    # }
-
-    # Checking for missing and/or default arguments-------------------------------
-    if (missing(data)) stop("Input file missing")
-    if (!is.null(pop.levels) & is.null(pop.labels)) pop.labels <- pop.levels
-    if (!is.null(pop.labels) & is.null(pop.levels)) stop("pop.levels is required if you use pop.labels")
-
-    message("Function arguments and values:")
-    message("Working directory: ", getwd())
-
-    if (is.vector(data)) {
-      message("Input file: ", data)
-    } else {
-      message("Input file: from global environment")
-    }
-
-    if (is.null(strata)) {
-      message("Strata: no")
-    } else {
-      message("Strata: ", strata)
-    }
-
-    if (is.null(pop.levels)) {
-      message("Population levels: no")
-    } else {
-      message("Population levels: ", stringi::stri_join(pop.levels, collapse = ", "))
-    }
-
-    if (is.null(pop.levels)) {
-      message("Population labels: no")
-    } else {
-      message(stringi::stri_join("Population labels: ", stringi::stri_join(pop.labels, collapse = ", ")))
-    }
-
-    if (is.null(output)) {
-      message("Output format(s): tidy")
-    } else {
-      message(stringi::stri_join("Output format(s): tidy, ", stringi::stri_join(output, collapse = ", ")))
-    }
-
-    if (is.null(filename)) {
-      message("Filename prefix: no")
-    } else {
-      message("Filename prefix: ", filename, "\n")
-    }
-
-
-    message("Filters: ")
-    if (is.null(blacklist.id)) {
-      message("Blacklist of individuals: no")
-    } else {
-      message("Blacklist of individuals: ", blacklist.id)
-    }
-
-    if (is.null(blacklist.genotype)) {
-      message("Blacklist of genotypes: no")
-    } else {
-      message("Blacklist of genotypes: ", blacklist.genotype)
-    }
-
-    if (is.null(whitelist.markers)) {
-      message("Whitelist of markers: no")
-    } else {
-      if (is.vector(whitelist.markers)) {
-        message("Whitelist of markers: ", whitelist.markers)
-      } else {
-        message("Whitelist of markers: ", nrow(whitelist.markers))
-      }
-    }
-
-    message("monomorphic.out: ", monomorphic.out)
-    if (is.null(snp.ld)) {
-      message("snp.ld: no")
-    } else {
-      message("snp.ld: ", snp.ld)
-    }
-    message("common.markers: ", common.markers)
-    if (is.null(max.marker)) {
-      message("max.marker: no")
-    } else {
-      message("max.marker: ", max.marker)
-    }
-
-    if (is.null(pop.select)) {
-      message("pop.select: no")
-    } else {
-      message(stringi::stri_join("pop.select: ", stringi::stri_join(pop.select, collapse = ", ")))
-    }
-    if (is.null(maf.thresholds)) {
-      message("maf.thresholds: no")
-    } else {
-      message("maf approach: ", maf.thresholds[1])
-      message("maf local and/or global: ", maf.thresholds[2], " ", maf.thresholds[3], " ", maf.thresholds[4])
-      message("maf.pop.num.threshold: ", maf.thresholds[5])
-    }
-
-    message(stringi::stri_join("\n", "Imputations options:"))
-    if (is.null(imputation.method)) {
-      message("imputation.method: no")
-    } else {
-      message("imputation.method: ", imputation.method)
-      message("hierarchical.levels: ", hierarchical.levels)
-    }
-    message("\nparallel.core: ", parallel.core, "\n")
-    cat("#######################################################################\n")
   }
-  timing <- proc.time()
+
+  if ("genlight" %in% output && !requireNamespace("adegenet", quietly = TRUE)) {
+    rlang::abort("adegenet needed for this function to work
+         Install with install.packages('adegenet')")
+  }
+
+  if ("seqarray" %in% output && !"SeqVarTools" %in% utils::installed.packages()[,"Package"]) {
+    rlang::abort('Please install SeqVarTools for this option:\n
+         install.packages("BiocManager")
+         BiocManager::install("SeqVarTools")
+         ')
+  }
+
+  if ("snprelate" %in% output && !requireNamespace("SNPRelate", quietly = TRUE)) {
+    rlang::abort('To install SNPRelate:\n
+         install.packages("BiocManager")
+         BiocManager::install("SNPRelate")
+         ')
+  }
+
+
+  if (verbose) {
+    cat("################################################################################\n")
+    cat("########################## radiator::genomic_converter #########################\n")
+    cat("################################################################################\n")
+  }
+
+  # Cleanup---------------------------------------------------------------------
+  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
+  if (verbose) message("Execution date/time: ", file.date)
+  old.dir <- getwd()
   opt.change <- getOption("width")
   options(width = 70)
+  timing <- proc.time()# for timing
+  res <- list()
+  #back to the original directory and options
+  on.exit(setwd(old.dir), add = TRUE)
+  on.exit(options(width = opt.change), add = TRUE)
+  on.exit(timing <- proc.time() - timing, add = TRUE)
+  on.exit(message("\nComputation time, overall: ", round(timing[[3]]), " sec"), add = TRUE)
+  on.exit(cat("######################### genomic_converter completed ##########################\n"), add = TRUE)
 
-  # dotslist -------------------------------------------------------------------
-  dotslist <- list(...)
-  want <- c("keep.allele.names", "write.tidy")
-  unknowned_param <- setdiff(names(dotslist), want)
+  # Function call and dotslist -------------------------------------------------
+  rad.dots <- radiator_dots(
+    fd = rlang::fn_fmls_names(),
+    args.list = as.list(environment()),
+    dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
+    keepers = c("path.folder", "keep.allele.names",
+                "whitelist.markers", "filter.common.markers",
+                "filter.monomorphic", "vcf.metadata", "vcf.stats", "parameters"),
+    deprecated = c("maf.thresholds", "common.markers",
+                   "max.marker","monomorphic.out", "snp.ld", "filter.call.rate",
+                   "filter.markers.coverage", "filter.markers.missing",
+                   "number.snp.reads",
+                   "mixed.genomes.analysis", "duplicate.genomes.analysis",
+                   "maf.data",
+                   "hierarchical.levels", "imputation.method",
+                   "pred.mean.matching", "num.tree")
+  )
+  dots.filename <- stringi::stri_join("radiator_genomic_converter_args_", file.date, ".tsv")
 
-  if (length(unknowned_param) > 0) {
-    stop("Unknowned \"...\" parameters ",
-         stringi::stri_join(unknowned_param, collapse = " "))
-  }
-
-  radiator.dots <- dotslist[names(dotslist) %in% want]
-  keep.allele.names <- radiator.dots[["keep.allele.names"]]
-  if (is.null(keep.allele.names)) keep.allele.names <- FALSE
-  write.tidy <- radiator.dots[["write.tidy"]]
-  if (is.null(write.tidy)) write.tidy <- TRUE
-
+  # Checking for missing and/or default arguments ------------------------------
+  if (missing(data)) rlang::abort("data is missing")
 
   # Filename -------------------------------------------------------------------
-  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
-
   if (is.null(filename)) {
     filename <- stringi::stri_join("radiator_data_", file.date)
 
-    if (!is.null(imputation.method)) {
-      filename.imp <- stringi::stri_join("radiator_data_imputed_", file.date)
-    }
+    # if (!is.null(imputation.method)) {
+    #   filename.imp <- stringi::stri_join("radiator_data_imputed_", file.date)
+    # }
   } else {
     filename.problem <- file.exists(filename)
     if (filename.problem) {
       filename <- stringi::stri_join(filename, "_", file.date)
     }
-    if (!is.null(imputation.method)) {
-      filename.imp <- stringi::stri_join(filename, "_imputed")
-    }
+    # if (!is.null(imputation.method)) {
+    #   filename.imp <- stringi::stri_join(filename, "_imputed")
+    # }
   }
+
+  # Folders---------------------------------------------------------------------
+  if (!is.null(path.folder) && path.folder == getwd()) {
+    rad.folder.name <- rad_folder("radiator_genomic_converter", path.folder)
+  } else {
+    rad.folder.name <- path.folder
+  }
+  path.folder <- generate_folder(
+    f = rad.folder.name,
+    file.date = file.date,
+    verbose = verbose)
+
+  # write the dots file
+  readr::write_tsv(x = rad.dots, path = file.path(path.folder, dots.filename))
+  if (verbose) message("File written: ", dots.filename)
 
   # File type detection --------------------------------------------------------
   data.type <- detect_genomic_format(data = data)
 
-  # Strata argument required for VCF and haplotypes files-----------------------
-  # if (data.type == "vcf.file" & is.null(strata)) stop("strata argument is required")
-  if (data.type == "haplo.file" & is.null(strata)) stop("strata argument is required")
-
   # Import----------------------------------------------------------------------
   if (verbose) message("\nImporting data\n")
-  input <- radiator::tidy_genomic_data(
+  input <- tidy_genomic_data(
     data = data,
-    vcf.metadata = vcf.metadata,
-    blacklist.id = blacklist.id,
-    blacklist.genotype = blacklist.genotype,
-    whitelist.markers = whitelist.markers,
-    monomorphic.out = monomorphic.out,
-    max.marker = max.marker,
-    snp.ld = snp.ld,
-    common.markers = common.markers,
-    maf.thresholds = maf.thresholds,
     strata = strata,
-    pop.levels = pop.levels,
-    pop.labels = pop.labels,
-    pop.select = pop.select,
-    filename = NULL,
-    verbose = FALSE,
+    filename = filename,
+    parallel.core = parallel.core,
+    verbose = verbose,
+    whitelist.markers = whitelist.markers,
+    vcf.metadata = vcf.metadata,
+    vcf.stats = vcf.stats,
     keep.allele.names = keep.allele.names,
-    vcf.stats = TRUE,
-    gt.vcf.nuc = TRUE,
-    gt.vcf = TRUE,
-    gt = TRUE,
-    gt.bin = TRUE,
-    keep.gds = FALSE
+    filter.common.markers = filter.common.markers,
+    filter.monomorphic = filter.monomorphic,
+    path.folder = path.folder,
+    parameters = parameters
   )
+
+  #   gt.vcf.nuc = TRUE,
+  #   gt.vcf = TRUE,
+  #   gt = TRUE,
+  #   gt.bin = TRUE,
+  #   keep.gds = FALSE
 
   if(verbose) message("\nPreparing data for output\n")
 
-  input$GT <- stringi::stri_replace_all_fixed(
-    str = input$GT,
-    pattern = c("/", ":", "_", "-", "."),
-    replacement = c("", "", "", "", ""),
-    vectorize_all = FALSE
-  )
-
-  # create a strata.df
-  # strata.df <- input %>%
-  #   distinct(INDIVIDUALS, POP_ID)
-  # # strata <- strata.df
-  if (!is.null(strata)) {
-    pop.levels <- levels(input$POP_ID)
-    pop.labels <- pop.levels
+  if (!is.null(strata) || rlang::has_name(input, "POP_ID")) {
+    if (is.factor(input$POP_ID)) {
+      pop.levels <- levels(input$POP_ID)
+    } else {
+      pop.levels <- unique(input$POP_ID)
+    }
   }
-
-
-  # prepare output res list
-  res <- list()
 
   # Biallelic detection --------------------------------------------------------
   biallelic <- radiator::detect_biallelic_markers(data = input, verbose = verbose)
 
   if (!biallelic && "genlight" %in% output || !biallelic && "plink" %in% output) {
-    stop("output chosen doesn't work with multi-allelic data")
+    rlang::abort("output chosen doesn't work with multi-allelic data")
   }
 
   # overide genind when marker number > 20K ------------------------------------
   if ("genind" %in% output & biallelic) {
     # detect the number of marker
-    marker.number <- dplyr::n_distinct(input$MARKERS)
+    marker.number <- length(unique(input$MARKERS))
     if (marker.number > 20000) {
 
       # When genlight is also selected, remove automatically
@@ -521,74 +480,73 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
   }
 
   # Imputations-----------------------------------------------------------------
-  if (!is.null(imputation.method)) {
-
-    input.imp <- radiator::radiator_imputations_module(
-      data = input,
-      imputation.method = imputation.method,
-      hierarchical.levels = hierarchical.levels,
-      num.tree = num.tree,
-      pred.mean.matching = pred.mean.matching,
-      random.seed = random.seed,
-      verbose = verbose,
-      parallel.core = parallel.core,
-      filename = NULL
-    ) %>%
-      dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS)
-  } # End imputations
+  # if (!is.null(imputation.method)) {
+  #   input.imp <- radiator::radiator_imputations_module(
+  #     data = input,
+  #     imputation.method = imputation.method,
+  #     hierarchical.levels = hierarchical.levels,
+  #     num.tree = num.tree,
+  #     pred.mean.matching = pred.mean.matching,
+  #     random.seed = random.seed,
+  #     verbose = verbose,
+  #     parallel.core = parallel.core,
+  #     filename = NULL
+  #   ) %>%
+  #     dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS)
+  # } # End imputations
 
   # OUTPUT ---------------------------------------------------------------------
 
   # GENEPOP --------------------------------------------------------------------
   if ("genepop" %in% output) {
-    if (verbose) message("Generating genepop file without imputation")
+    if (verbose) message("Generating genepop file")
     radiator::write_genepop(
       data = input,
       pop.levels = pop.levels,
       filename = filename
     )
 
-    if (!is.null(imputation.method)) {
-      if (verbose) message("Generating genepop file WITH imputations")
-      radiator::write_genepop(
-        data = input.imp,
-        pop.levels = pop.levels,
-        filename = filename.imp
-      )
-    }
+    # if (!is.null(imputation.method)) {
+    #   if (verbose) message("Generating genepop file WITH imputations")
+    #   radiator::write_genepop(
+    #     data = input.imp,
+    #     pop.levels = pop.levels,
+    #     filename = filename.imp
+    #   )
+    # }
   } # end genepop output
 
   # hierfstat --------------------------------------------------------------------
   if ("hierfstat" %in% output) {
-    if (verbose) message("Generating hierfstat file without imputation")
-    res$hierfstat.no.imputation <- radiator::write_hierfstat(
+    if (verbose) message("Generating hierfstat file")
+    res$hierfstat <- radiator::write_hierfstat(
       data = input,
       filename = filename
     )
 
-    if (!is.null(imputation.method)) {
-      if (verbose) message("Generating hierfstat file WITH imputations")
-      res$hierfstat.imputed <- radiator::write_hierfstat(
-        data = input.imp,
-        filename = filename.imp
-      )
-    }
+    # if (!is.null(imputation.method)) {
+    #   if (verbose) message("Generating hierfstat file WITH imputations")
+    #   res$hierfstat.imputed <- radiator::write_hierfstat(
+    #     data = input.imp,
+    #     filename = filename.imp
+    #   )
+    # }
   } # end hierfstat output
 
   # strataG --------------------------------------------------------------------
   if ("gtypes" %in% output) {
-    if (verbose) message("Generating strataG gtypes object without imputation")
-    res$gtypes.no.imputation <- radiator::write_gtypes(data = input)
+    if (verbose) message("Generating strataG gtypes object")
+    res$gtypes <- radiator::write_gtypes(data = input)
 
-    if (!is.null(imputation.method)) {
-      if (verbose) message("Generating strataG gtypes object WITH imputations")
-      res$gtypes.imputed <- radiator::write_gtypes(data = input.imp)
-    }
+    # if (!is.null(imputation.method)) {
+    #   if (verbose) message("Generating strataG gtypes object WITH imputations")
+    #   res$gtypes.imputed <- radiator::write_gtypes(data = input.imp)
+    # }
   } # end strataG output
 
   # structure --------------------------------------------------------------------
   if ("structure" %in% output) {
-    if (verbose) message("Generating structure file without imputation")
+    if (verbose) message("Generating structure file")
     radiator::write_structure(
       data = input,
       pop.levels = pop.levels,
@@ -596,286 +554,277 @@ devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
       filename = filename
     )
 
-    if (!is.null(imputation.method)) {
-      if (verbose) message("Generating structure file WITH imputations")
-      radiator::write_structure(
-        data = input.imp,
-        pop.levels = pop.levels,
-        markers.line = TRUE,
-        filename = filename.imp
-      )
-    }
+    # if (!is.null(imputation.method)) {
+    #   if (verbose) message("Generating structure file WITH imputations")
+    #   radiator::write_structure(
+    #     data = input.imp,
+    #     pop.levels = pop.levels,
+    #     markers.line = TRUE,
+    #     filename = filename.imp
+    #   )
+    # }
   } # end structure output
 
   # betadiv --------------------------------------------------------------------
   if ("betadiv" %in% output) {
-    if (!biallelic) stop("betadiv output is currently implemented for biallelic data only")
-    if (verbose) message("Generating betadiv object without imputation")
-    res$betadiv.no.imputation <- radiator::write_betadiv(data = input)
+    if (!biallelic) rlang::abort("betadiv output is currently implemented for biallelic data only")
+    if (verbose) message("Generating betadiv object")
+    res$betadiv <- radiator::write_betadiv(data = input)
 
-    if (!is.null(imputation.method)) {
-      if (verbose) message("Generating betadiv object WITH imputations")
-      res$betadiv.imputed <- radiator::write_betadiv(data = input.imp)
-    }
+    # if (!is.null(imputation.method)) {
+    #   if (verbose) message("Generating betadiv object WITH imputations")
+    #   res$betadiv.imputed <- radiator::write_betadiv(data = input.imp)
+    # }
   } # end betadiv output
 
   # arlequin --------------------------------------------------------------------
   if ("arlequin" %in% output) {
-    if (verbose) message("Generating arlequin file without imputation")
+    if (verbose) message("Generating arlequin file")
     radiator::write_arlequin(
       data = input,
       pop.levels = pop.levels,
       filename = filename
     )
 
-    if (!is.null(imputation.method)) {
-      if (verbose) message("Generating arlequin file WITH imputations")
-      radiator::write_arlequin(
-        data = input.imp,
-        pop.levels = pop.levels,
-        filename = filename.imp
-      )
-    }
+    # if (!is.null(imputation.method)) {
+    #   if (verbose) message("Generating arlequin file WITH imputations")
+    #   radiator::write_arlequin(
+    #     data = input.imp,
+    #     pop.levels = pop.levels,
+    #     filename = filename.imp
+    #   )
+    # }
   } # end arlequin output
 
   # GENIND ---------------------------------------------------------------------
   if ("genind" %in% output) {
-    if (verbose) message("Generating adegenet genind object without imputation")
-    res$genind.no.imputation <- radiator::write_genind(data = input)
+    if (verbose) message("Generating adegenet genind object")
+    res$genind <- radiator::write_genind(data = input, write = TRUE)
 
-    if (!is.null(imputation.method)) {
-      if (verbose) message("Generating adegenet genind object WITH imputations")
-      res$genind.imputed <- radiator::write_genind(data = input.imp)
-    }
+    # if (!is.null(imputation.method)) {
+    #   if (verbose) message("Generating adegenet genind object WITH imputations")
+    #   res$genind.imputed <- radiator::write_genind(data = input.imp)
+    # }
   } # end genind
 
   # GENLIGHT -------------------------------------------------------------------
   if ("genlight" %in% output) {
-    if (verbose) message("Generating adegenet genlight object without imputation")
-    res$genlight.no.imputation <- radiator::write_genlight(data = input,
-                                                           biallelic = TRUE)
+    if (verbose) message("Generating adegenet genlight object")
+    res$genlight <- radiator::write_genlight(
+      data = input, biallelic = TRUE, write = TRUE)
 
-    if (!is.null(imputation.method)) {
-      if (verbose) message("Generating adegenet genlight object WITH imputations")
-      res$genlight.imputed <- radiator::write_genlight(data = input.imp,
-                                                       biallelic = TRUE)
-    }
+    # if (!is.null(imputation.method)) {
+    #   if (verbose) message("Generating adegenet genlight object WITH imputations")
+    #   res$genlight.imputed <- radiator::write_genlight(data = input.imp,
+    #                                                    biallelic = TRUE)
+    # }
   } # end genlight output
 
   # VCF ------------------------------------------------------------------------
   if ("vcf" %in% output) {
-    if (!biallelic) stop("vcf output is currently implemented for biallelic data only")
-    if (verbose) message("Generating VCF file without imputation")
+    if (!biallelic) rlang::abort("vcf output is currently implemented for biallelic data only")
+    if (verbose) message("Generating VCF file")
     radiator::write_vcf(
       data = input,
       filename = filename
     )
 
-    if (!is.null(imputation.method)) {
-      if (verbose) message("Generating VCF file WITH imputations")
-      radiator::write_vcf(
-        data = input.imp,
-        filename = filename.imp
-      )
-    }
+    # if (!is.null(imputation.method)) {
+    #   if (verbose) message("Generating VCF file WITH imputations")
+    #   radiator::write_vcf(
+    #     data = input.imp,
+    #     filename = filename.imp
+    #   )
+    # }
   } # end vcf output
 
   # PLINK ----------------------------------------------------------------------
   if ("plink" %in% output) {
-    if (verbose) message("Generating PLINK tped/tfam files without imputation")
+    if (verbose) message("Generating PLINK tped/tfam files")
     radiator::write_plink(
       data = input,
       filename = filename
     )
 
-    if (!is.null(imputation.method)) {
-      if (verbose) message("Generating PLINK tped/tfam files WITH imputations")
-      radiator::write_plink(
-        data = input.imp,
-        filename = filename.imp
-      )
-    }
+    # if (!is.null(imputation.method)) {
+    #   if (verbose) message("Generating PLINK tped/tfam files WITH imputations")
+    #   radiator::write_plink(
+    #     data = input.imp,
+    #     filename = filename.imp
+    #   )
+    # }
   } # end plink output
 
 
   # SNPRelate ------------------------------------------------------------------
-  # if ("snprelate" %in% output) {
-  #   if (verbose) message("Generating SNPRelate object without imputation")
-  #   res$snprelate.no.imputation <- radiator::write_snprelate(data = input,
-  #                                                            biallelic = TRUE)
-  #   if (!is.null(imputation.method)) {
-  #     if (verbose) message("Generating SNPRelate object WITH imputations")
-  #     res$snprelate.imputed <- radiator::write_snprelate(data = input.imp,
-  #                                                        biallelic = TRUE)
-  #   }
-  # }
+  if ("snprelate" %in% output) {
+    if (verbose) message("Generating SNPRelate object")
+    res$snprelate <- radiator::write_snprelate(
+      data = input,
+      biallelic = TRUE,
+      filename = filename,
+      verbose = verbose
+    )
+    # if (!is.null(imputation.method)) {
+    #   if (verbose) message("Generating SNPRelate object WITH imputations")
+    #   res$snprelate.imputed <- radiator::write_snprelate(
+    #     data = input.imp,
+    #     biallelic = TRUE,
+    #     filename = filename.imp,
+    #     verbose = verbose
+    #   )
+    # }
+  }
 
   # bayescan -------------------------------------------------------------------
   if ("bayescan" %in% output) {
-    if (verbose) message("Generating BayeScan object without imputation")
-    res$bayescan.no.imputation <- radiator::write_bayescan(
+    if (verbose) message("Generating BayeScan object")
+    res$bayescan <- radiator::write_bayescan(
       data = input,
       pop.select = pop.select,
       snp.ld = snp.ld,
       filename = filename)
-    if (!is.null(imputation.method)) {
-      if (verbose) message("Generating BayeScan object WITH imputations")
-      res$bayescan.imputed <- radiator::write_bayescan(
-        data = input.imp,
-        pop.select = pop.select,
-        snp.ld = snp.ld,
-        filename = filename.imp)
-    }
+    # if (!is.null(imputation.method)) {
+    #   if (verbose) message("Generating BayeScan object WITH imputations")
+    #   res$bayescan.imputed <- radiator::write_bayescan(
+    #     data = input.imp,
+    #     pop.select = pop.select,
+    #     snp.ld = snp.ld,
+    #     filename = filename.imp)
+    # }
   }
 
   # pcadapt -------------------------------------------------------------------
   if ("pcadapt" %in% output) {
-    if (verbose) message("Generating pcadapt file and object without imputation")
-    res$pcadapt.no.imputation <- radiator::write_pcadapt(
+    if (verbose) message("Generating pcadapt file and object")
+    res$pcadapt <- radiator::write_pcadapt(
       data = input,
-      pop.select = pop.select,
-      snp.ld = snp.ld,
-      maf.thresholds = maf.thresholds,
       filename = filename,
       parallel.core = parallel.core
     )
 
-    if (!is.null(imputation.method)) {
-      if (verbose) message("Generating pcadapt file and object WITH imputations")
-      res$pcadapt.imputed <- radiator::write_pcadapt(
-        data = input.imp,
-        pop.select = pop.select,
-        snp.ld = snp.ld,
-        maf.thresholds = maf.thresholds,
-        filename = filename.imp,
-        parallel.core = parallel.core
-      )
-    }
+    # if (!is.null(imputation.method)) {
+    #   if (verbose) message("Generating pcadapt file and object WITH imputations")
+    #   res$pcadapt.imputed <- radiator::write_pcadapt(
+    #     data = input.imp,
+    #     filename = filename.imp,
+    #     parallel.core = parallel.core
+    #   )
+    # }
   }
 
 
   # hzar -------------------------------------------------------------------
   if ("hzar" %in% output) {
-    if (verbose) message("Generating HZAR file without imputation")
-    res$hzar.no.imputation <- radiator::write_hzar(
+    if (verbose) message("Generating HZAR file")
+    res$hzar <- radiator::write_hzar(
       data = input,
       distance = NULL,
       filename = filename,
       parallel.core = parallel.core
     )
 
-    if (!is.null(imputation.method)) {
-      if (verbose) message("Generating HZAR file WITH imputations")
-      res$hzar.imputed <- radiator::write_hzar(
-        data = input.imp,
-        distance = NULL,
-        filename = filename.imp,
-        parallel.core = parallel.core
-      )
-    }
+    # if (!is.null(imputation.method)) {
+    #   if (verbose) message("Generating HZAR file WITH imputations")
+    #   res$hzar.imputed <- radiator::write_hzar(
+    #     data = input.imp,
+    #     distance = NULL,
+    #     filename = filename.imp,
+    #     parallel.core = parallel.core
+    #   )
+    # }
   }
 
   # fineradstructure -----------------------------------------------------------
   if ("fineradstructure" %in% output) {
-    if (verbose) message("Generating fineradstructure file without imputation")
-    res$fineradstructure.no.imputation <- radiator::write_fineradstructure(
+    if (verbose) message("Generating fineradstructure file")
+    res$fineradstructure <- radiator::write_fineradstructure(
       data = input, filename = filename)
 
-    if (!is.null(imputation.method)) {
-      if (verbose) message("Generating fineradstructure file WITH imputations")
-      res$fineradstructure.imputed <- radiator::write_fineradstructure(
-        data = input.imp, filename = filename.imp)
-    }
+    # if (!is.null(imputation.method)) {
+    #   if (verbose) message("Generating fineradstructure file WITH imputations")
+    #   res$fineradstructure.imputed <- radiator::write_fineradstructure(
+    #     data = input.imp, filename = filename.imp)
+    # }
   }
 
   # related --------------------------------------------------------------------
   if ("related" %in% output) {
-    if (verbose) message("Generating related file without imputation")
-    res$related.no.imputation <- radiator::write_related(
+    if (verbose) message("Generating related file")
+    res$related <- radiator::write_related(
       data = input, filename = filename, parallel.core = parallel.core)
 
-    if (!is.null(imputation.method)) {
-      if (verbose) message("Generating related file WITH imputations")
-      res$related.imputed <- radiator::write_related(
-        data = input.imp, filename = filename.imp, parallel.core = parallel.core)
-    }
+    # if (!is.null(imputation.method)) {
+    #   if (verbose) message("Generating related file WITH imputations")
+    #   res$related.imputed <- radiator::write_related(
+    #     data = input.imp, filename = filename.imp, parallel.core = parallel.core)
+    # }
   }
 
   # stockr --------------------------------------------------------------------
   if ("stockr" %in% output) {
-    if (verbose) message("Generating stockR file without imputation")
-    res$stockr.no.imputation <- radiator::write_stockr(data = input)
+    if (verbose) message("Generating stockR file")
+    res$stockr <- radiator::write_stockr(data = input)
 
-    if (!is.null(imputation.method)) {
-      if (verbose) message("Generating stockR file WITH imputations")
-      res$stockr.imputed <- radiator::write_stockr(data = input.imp)
-    }
+    # if (!is.null(imputation.method)) {
+    #   if (verbose) message("Generating stockR file WITH imputations")
+    #   res$stockr.imputed <- radiator::write_stockr(data = input.imp)
+    # }
   }
 
   # structure --------------------------------------------------------------------
   if ("maverick" %in% output) {
-    if (verbose) message("Generating MavericK files without imputation")
+    if (verbose) message("Generating MavericK files")
     radiator::write_maverick(
       data = input,
       filename = filename
     )
 
-    if (!is.null(imputation.method)) {
-      if (verbose) message("Generating MavericK files WITH imputations")
-      radiator::write_maverick(
-        data = input.imp,
-        filename = filename.imp
-      )
-    }
+    # if (!is.null(imputation.method)) {
+    #   if (verbose) message("Generating MavericK files WITH imputations")
+    #   radiator::write_maverick(
+    #     data = input.imp,
+    #     filename = filename.imp
+    #   )
+    # }
   } # end MavericK output
 
   # dadi -----------------------------------------------------------------------
-  # not yet implemented, use vcf2dadi
+  if ("dadi" %in% output) message("Under construction, use radiator::vcf2dadi")
 
   # Writing tidy on disk -------------------------------------------------------
-  if (write.tidy) {
-    tidy.name <- stringi::stri_join(filename, ".rad")
-    message("\nWriting tidy data set:\n", tidy.name)
-    write_rad(data = input, path = tidy.name)
-  }
+    # tidy.name <- stringi::stri_join(filename, ".rad")
+    # message("\nWriting tidy data set:\n", tidy.name)
+    # write_rad(data = input, path = tidy.name)
 
-  if (!is.null(imputation.method)) {
-    tidy.name.imp <- stringi::stri_join(filename.imp, ".rad")
-    message("\nWriting tidy data set:\n", tidy.name)
-    write_rad(data = input.imp, path = tidy.name.imp)
-  }
+  # if (!is.null(imputation.method)) {
+  #   tidy.name.imp <- stringi::stri_join(filename.imp, ".rad")
+  #   message("\nWriting tidy data set:\n", tidy.name)
+  #   write_rad(data = input.imp, path = tidy.name.imp)
+  # }
   # outout results -------------------------------------------------------------
-  n.markers <- dplyr::n_distinct(input$MARKERS)
+  n.markers <- length(unique(input$MARKERS))
   if (tibble::has_name(input, "CHROM")) {
-    n.chromosome <- dplyr::n_distinct(input$CHROM)
+    n.chromosome <- length(unique(input$CHROM))
   } else {
     n.chromosome <- "no chromosome info"
   }
-  n.individuals <- dplyr::n_distinct(input$INDIVIDUALS)
-  if (!is.null(strata)) n.pop <- dplyr::n_distinct(input$POP_ID)
+  n.individuals <- length(unique(input$INDIVIDUALS))
+  if (!is.null(strata)) n.pop <- length(unique(input$POP_ID))
 
   if (verbose) {
-    cat("############################### RESULTS ###############################\n")
+    cat("################################### RESULTS ####################################\n")
     message("Data format of input: ", data.type)
     if (biallelic) {
       message("Biallelic data")
     } else{
       message("Multiallelic data")
     }
-    if (common.markers) {
-      message("Number of common markers: ", n.markers)
-    } else {
-      message("Number of markers: ", n.markers)
-    }
+    message("Number of markers: ", n.markers)
     message("Number of chromosome/contig/scaffold: ", n.chromosome)
     message("Number of individuals ", n.individuals)
     if (!is.null(strata))  message("Number of populations ", n.pop)
-    timing <- proc.time() - timing
-    message("\nComputation time: ", round(timing[[3]]), " sec")
-    cat("################ radiator::genomic_converter completed ################\n")
   }
   res$tidy.data <- input
-  if (!is.null(imputation.method)) res$tidy.data.imp <- input.imp
-  input.imp <- input <- NULL
   return(res)
 } # end genomic_converter

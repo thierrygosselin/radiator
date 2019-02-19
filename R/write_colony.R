@@ -1,12 +1,10 @@
 # From STACKS haplotypes file write COLONY input files to the working directory
 
 #' @name write_colony
-#' @title Write a \code{COLONY} input file from 9 genomic formats
+#' @title Write a \code{COLONY} input file
 #' @description Write a \code{COLONY} input file from several genomic formats,
 #' look into \pkg{radiator} \code{\link{tidy_genomic_data}} for supported input
 #' files.
-
-#' @inheritParams tidy_genomic_data
 
 #' @param sample.markers (number) \code{COLONY} can take a long time to run,
 #' use a random subsample of your markers to speed test \code{COLONY}
@@ -48,24 +46,18 @@
 #' \strong{This require manual curation, for the file to work directly with \code{COLONY}}.
 #' Default = \code{print.all.colony.opt = FALSE}.
 
-
-#' @inheritParams radiator_imputations_module
+#' @inheritParams read_strata
+# @inheritParams radiator_imputations_module
+#' @inheritParams tidy_genomic_data
 
 #' @param filename Name of the acronym for filenaming in the working directory.
-
+#' @param random.seed (integer, optional) For reproducibility, set an integer
+#' that will be used inside the function that requires randomness. With default,
+#' a random number is generated and printed in the appropriate output.
+#' Default: \code{random.seed = NULL}.
 
 #' @note
-#'
-#' \code{common.markers} argument should be left to the default:  \code{common.markers = TRUE}.
-#'
-#'
-#' \code{monomorphic.out} argument should be left to the default:  \code{monomorphic.out = TRUE}.
-#'
-#'
-#' \strong{using a VCF with several SNP per haplotypes/read for input?}
-#'
-#' Please consider keeping just 1 SNP per read, \code{COLONY} doesn't like this
-#' kind of linkage... use the argument \code{snp.ld}.
+#' By default, the function uses common markers between groupings and removes monomorphic markers.
 
 #' @details \strong{It is highly recommended to read (twice!) the user guide distributed with
 #' \code{COLONY} to find out the details for input and output of the software.}
@@ -75,15 +67,7 @@
 #' But to ease the process, all the required options to properly run \code{COLONY}
 #' will be printed in the file written in your working directory.
 #' Change the values accordingly and wisely.
-#'
-#'
-#' \strong{Imputations}
-#' The imputations using Random Forest requires more time to compute
-#' and can take several minutes and hours depending on the size of
-#' the dataset and polymorphism of the species used. e.g. with a
-#' low polymorphic taxa, and a data set containing 30\% missing data,
-#' 5 000 haplotypes loci and 500 individuals will require 15 min.
-#' For details about imputations, look into \pkg{radiator} \code{\link{radiator_imputations_module}}
+
 
 #' @return A \code{COLONY} file in your working directory (2 if you selected imputations arguments...)
 
@@ -99,18 +83,6 @@
 #' @importFrom parallel detectCores
 #' @importFrom purrr flatten_chr
 
-#' @references Catchen JM, Amores A, Hohenlohe PA et al. (2011)
-#' Stacks: Building and Genotyping Loci De Novo From Short-Read Sequences.
-#' G3, 1, 171-182.
-#' @references Catchen JM, Hohenlohe PA, Bassham S, Amores A, Cresko WA (2013)
-#' Stacks: an analysis tool set for population genomics.
-#' Molecular Ecology, 22, 3124-3140.
-#' @references Ishwaran H. and Kogalur U.B. (2015). Random Forests for Survival,
-#'  Regression and Classification (RF-SRC), R package version 1.6.1.
-#' @references Ishwaran H. and Kogalur U.B. (2007). Random survival forests
-#' for R. R News 7(2), 25-31.
-#' @references Ishwaran H., Kogalur U.B., Blackstone E.H. and Lauer M.S. (2008).
-#' Random survival forests. Ann. Appl. Statist. 2(3), 841--860.
 #' @references Jones OR, Wang J (2010) COLONY: a program for parentage and
 #' sibship inference from multilocus genotype data.
 #' Molecular Ecology Resources, 10, 551–555.
@@ -120,34 +92,27 @@
 
 #' @seealso \code{COLONY} is available on Jinliang Wang web site
 #' \url{http://www.zsl.org/science/software/colony}
-#'
-#' \code{randomForestSRC} is available on
-#' CRAN \url{http://cran.r-project.org/web/packages/randomForestSRC/}
-#' and github \url{https://github.com/ehrlinger/randomForestSRC}
 
 #' @examples
 #' \dontrun{
 #' # Simplest way to run the function:
 #' colony.file <- radiator::write_colony(
-#' data = "batch_1.vcf",
-#' strata = "strata.treefrog.tsv"
+#'     data = "batch_1.vcf",
+#'     strata = "strata.treefrog.tsv"
 #' )
 #'
 #' # With imputations and a STACKS haplotypes file:
 #' colony.file <- radiator::write_colony(
-#' data = "batch_1.haplotypes.tsv",
-#' strata = "strata.treefrog.tsv",
-#' imputation.method = "rf"
+#'     data = "batch_1.haplotypes.tsv",
+#'     strata = "strata.treefrog.tsv",
+#'     imputation.method = "rf"
 #' )
 #'
 #' # Now using a whitelist of markers and keeping only the first SNP on each read:
 #' colony.file <- radiator::write_colony(
-#' data = "batch_1.haplotypes.tsv",
-#' strata = "strata.treefrog.tsv",
-#' whitelist.markers = "whitelist.vcf.txt",
-#' snp.ld = "first",
-#' common.markers = TRUE, # this is also a default...
-#' monomorphic.out = TRUE # this is also a default...
+#'     data = "batch_1.haplotypes.tsv",
+#'     strata = "strata.treefrog.tsv",
+#'     whitelist.markers = "whitelist.vcf.txt"
 #' )
 #' }
 
@@ -157,16 +122,6 @@
 write_colony <- function(
   data,
   strata = NULL,
-  pop.levels = NULL,
-  pop.labels = NULL,
-  blacklist.id = NULL,
-  blacklist.genotype = NULL,
-  whitelist.markers = NULL,
-  monomorphic.out = TRUE,
-  snp.ld = NULL,
-  common.markers = TRUE,
-  maf.thresholds = NULL,
-  max.marker = NULL,
   sample.markers = NULL,
   pop.select = NULL,
   allele.freq = NULL,
@@ -179,14 +134,11 @@ write_colony <- function(
   allelic.dropout = 0,
   error.rate = 0.02,
   print.all.colony.opt = FALSE,
-  imputation.method = NULL,
-  hierarchical.levels = "populations",
-  num.tree = 50,
-  pred.mean.matching = 0,
   random.seed = NULL,
   verbose = FALSE,
   parallel.core = parallel::detectCores() - 1,
-  filename = NULL
+  filename = NULL,
+  ...
 ) {
   cat("#######################################################################\n")
   cat("######################## radiator::write_colony #######################\n")
@@ -194,11 +146,65 @@ write_colony <- function(
   timing <- proc.time()
 
   # Checking for missing and/or default arguments-------------------------------
-  if (missing(data)) stop("Input file missing")
+  if (missing(data)) rlang::abort("Input file missing")
   if (!is.null(pop.levels) & is.null(pop.labels)) pop.labels <- pop.levels
-  if (!is.null(pop.labels) & is.null(pop.levels)) stop("pop.levels is required if you use pop.labels")
+  if (!is.null(pop.labels) & is.null(pop.levels)) rlang::abort("pop.levels is required if you use pop.labels")
+
+
+  # dotslist -------------------------------------------------------------------
+  dotslist <- rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE)
+  want <- c(
+    "whitelist.markers", "blacklist.id",
+    "pop.levels", "pop.labels",
+    "filter.mac",
+    "filter.short.ld", "filter.long.ld", "long.ld.missing", "ld.method", "snp.ld",
+    "filter.common.markers", "common.markers",
+    "path.folder",
+    "filter.common.markers", "filter.monomorphic"
+  )
+  unknowned_param <- setdiff(names(dotslist), want)
+
+  if (length(unknowned_param) > 0) {
+    rlang::abort("Unknowned \"...\" parameters ",
+         stringi::stri_join(unknowned_param, collapse = " "))
+  }
+
+  radiator.dots <- dotslist[names(dotslist) %in% want]
+  # argument <- radiator.dots[["argument"]]
+
+  whitelist.markers <- radiator.dots[["whitelist.markers"]]
+  blacklist.id <- radiator.dots[["blacklist.id"]]
+
+  pop.levels <- radiator.dots[["pop.levels"]]
+  pop.labels <- radiator.dots[["pop.labels"]]
+  pop.select <- radiator.dots[["pop.select"]]
+
+  filter.mac <- radiator.dots[["filter.mac"]]
+
+  filter.short.ld <- radiator.dots[["filter.short.ld"]]
+  filter.long.ld <- radiator.dots[["filter.long.ld"]]
+  long.ld.missing <- radiator.dots[["long.ld.missing"]]
+  if (is.null(long.ld.missing)) long.ld.missing <- FALSE
+  ld.method <- radiator.dots[["ld.method"]]
+  if (is.null(ld.method)) ld.method <- "r2"
+
+  filter.common.markers <- radiator.dots[["filter.common.markers"]]
+  if (is.null(filter.common.markers)) filter.common.markers <- TRUE
+
+  filter.monomorphic <- radiator.dots[["filter.monomorphic"]]
+  if (is.null(filter.monomorphic)) filter.monomorphic <- TRUE
+
+  path.folder <- radiator.dots[["path.folder"]]
+  if (is.null(path.folder)) {
+    path.folder <- getwd()
+  } else {
+    if (!dir.exists(path.folder)) dir.create(path.folder)
+  }
+
+
 
   # Filename -------------------------------------------------------------------
+  imputation.method <- NULL
   # Get date and time to have unique filenaming
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
 
@@ -224,7 +230,7 @@ write_colony <- function(
   message(paste("File type: ", data.type))
 
   # Strata argument required for VCF and haplotypes files
-  if (data.type == "vcf.file" & is.null(strata)) stop("strata argument is required")
+  if (data.type == "vcf.file" & is.null(strata)) rlang::abort("strata argument is required")
 
   message("Importing data...")
   if (data.type == "tbl_df") {
@@ -239,13 +245,13 @@ write_colony <- function(
         data = data,
         vcf.metadata = FALSE,
         blacklist.id = blacklist.id,
-        blacklist.genotype = blacklist.genotype,
         whitelist.markers = whitelist.markers,
         monomorphic.out = TRUE,
-        max.marker = max.marker,
-        snp.ld = snp.ld,
-        common.markers = TRUE,
-        maf.thresholds = maf.thresholds,
+        filter.short.ld = filter.short.ld,
+        filter.long.ld = filter.long.ld,
+        long.ld.missing = long.ld.missing,
+        filter.common.markers = TRUE,
+        filter.mac = filter.mac,
         strata = strata,
         pop.levels = pop.levels,
         pop.labels = pop.labels,
@@ -281,23 +287,23 @@ write_colony <- function(
   radiator_colony(data = input, filename = filename)
 
   # Imputations-----------------------------------------------------------------
-  if (!is.null(imputation.method)) {
-    message("\nMap-independent imputations...\n\n")
-    input.imp <- radiator::radiator_imputations_module(
-      data = dplyr::select(.data = input, MARKERS, POP_ID, INDIVIDUALS, GT),
-      imputation.method = imputation.method,
-      hierarchical.levels = hierarchical.levels,
-      num.tree = num.tree,
-      pred.mean.matching = pred.mean.matching,
-      random.seed = random.seed,
-      verbose = verbose,
-      parallel.core = parallel.core,
-      filename = NULL
-    )
-    message("\n\nGenerating COLONY file WITH imputations...\n")
-    radiator_colony(data = input.imp, filename = filename.imp)
-
-  } # End imputations
+  # if (!is.null(imputation.method)) {
+  #   message("\nMap-independent imputations...\n\n")
+  #   input.imp <- radiator::radiator_imputations_module(
+  #     data = dplyr::select(.data = input, MARKERS, POP_ID, INDIVIDUALS, GT),
+  #     imputation.method = imputation.method,
+  #     hierarchical.levels = hierarchical.levels,
+  #     num.tree = num.tree,
+  #     pred.mean.matching = pred.mean.matching,
+  #     random.seed = random.seed,
+  #     verbose = verbose,
+  #     parallel.core = parallel.core,
+  #     filename = NULL
+  #   )
+  #   message("\n\nGenerating COLONY file WITH imputations...\n")
+  #   radiator_colony(data = input.imp, filename = filename.imp)
+  #
+  # } # End imputations
 
   message("COLONY file(s) written in the working directory")
   res <- "COLONY file(s) written in the working directory"

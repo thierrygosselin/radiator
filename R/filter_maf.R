@@ -1,6 +1,6 @@
 # Minor Allele Frequency
 #' @name filter_maf
-#' @title MAF filter
+#' @title MAF/MAC filter
 #' @description Minor Allele Filter.
 #' Remove markers based on Minor/Alternate Allele Frequency (MAF) or Count (MAC).
 #'
@@ -12,13 +12,108 @@
 #' be interactive. With default: \code{interactive.filter == TRUE}, figures and
 #' tables are shown before making decisions for filtering.
 
+#' @param maf.thresholds (optional, string) 5 values required in the string.
+#'
+#' Example using maf.thresholds with SNP and frequency approach:
+#' \code{maf.thresholds = c("SNP", 0.001, "OR", 0.001, 1)}.
+#'
+#' Example using maf.thresholds with locus and count approach:
+#' \code{maf.thresholds = c("locus", 3, "OR", 6, 1)}.
+#'
+#'
+#' \enumerate{
+#' \item \code{maf approach} (character: "SNP"/"locus"):
+#' MAF filtering is conducted by SNPs or locus.
+#' \code{"SNP"}: will consider all the SNPs on the same locus/read as independent
+#' and will be filtered independently of their locus id.
+#' \code{"locus"}: looks at the minimum MAF found on the
+#' read/locus. Using this option will discard all the markers/snp on
+#' that read based on the thresholds chosen. For the locus approach to work, your dataset
+#' requires SNP and Locus info (e.g. from a VCF file).
+#'
+#' \item \code{local} threshold (double or integer): For a frequency threshold use
+#' a double (e.g. 0.05). For a count threshold, use an integer
+#' (e.g. 3 for the number of alternate allele required in a population). This
+#' threshold is applied by population.
+#' Not sure about the threshold to use, choose the interactive mode argument.
+#'
+#' \item \code{operator} (character: "OR" / "AND"):
+#' To consider both the local \code{"AND"} the global thresholds, use \code{"AND"}.
+#' To consider the local \code{"OR"} the global thresholds, use \code{"OR"}.
+#'
+#' \item \code{global} threshold (double or integer): For a frequency threshold
+#' use a double (e.g. 0.02). For a count threshold, use an integer
+#' (e.g. 6 for the number of alternate allele required). This threshold is
+#' applied at the dataset level (no population).
+#' Not sure about the threshold to use, choose the interactive mode argument.
+#'
+#'\item \code{maf pop num threshold} (integer)
+#'The number of pop required to pass the thresholds
+#' to keep the marker. Usually, I always use \code{1}, for 1 pop is required to
+#' pass thresholds and keep the marker.
+#' }
+
+
 #' @param filename (optional, character) Write to folder the MAF filtered
 #' tidy dataset. The name will be appended \code{.rad}. With default, the filtered
 #' data is only in the global environment.
 #' Default: \code{filename = NULL}.
 
-#' @param ... (optional) To pass further arguments for fine-tuning the filter with
-#' whitelist and blacklists (see details below).
+#' @param ... (optional) To pass further arguments for fine-tuning the function
+#' and legacy arguments (see Life cycle section below).
+
+#' @section Life cycle:
+#'
+#' The \strong{maf.thresholds} arguments used in the past in several of
+#' radiator functions
+#' is still available inside \code{filter_maf} arguments.
+#' But it is in evaluation mode and the function will probaly be deprecated in
+#' future releases. The arguments are complicated to use and
+#' most RADseq datesets encountered so far are better filtered
+#' using \code{\link{filter_mac}}.
+
+#' @section MAC or MAF ?:
+#' Using count or frequency to remove a SNPs ? The preferred choice in radiator
+#' as changed from frequency to count, because we think the filtering should not
+#' alter the spectrum and this is only achieved if the same criteria is applied
+#' for each SNP.
+#'
+#'
+#' Even small differences in missing data between RADseq markers
+#' generates differences in MAF frequency thresholds applied.
+#'
+#' Example with a datset consisting of N = 36 individuals and 3 SNPs
+#' with varying level of missing genotypes:
+#'
+#' \itemize{
+#' \item \code{SNP number : number samples genotypes : REF/ALT counts}
+#' \item SNP1 : 36 : 69/3
+#' \item SNP2 : 30 : 65/3
+#' \item SNP3 : 24 : 45/3
+#' }
+#'
+#' Each SNPs have the same alternate allele count, corresponding to
+#' 2 individuals with the polymorphism: 1 homozygote + 1 heterozygote.
+#' Applying a MAF threshold of
+#' 0.05 would mean that SNP3 would be blacklisted
+#' (\code{24 * 2 * 0.05 = 2.4 alt alleles required to pass}).
+#'
+#'
+#' \strong{Using count instead of frequency allows each RADseq markers,
+#' with varying missing data, to be treated equally.}
+
+
+#' @section Interactive version:
+#'
+#' To help choose a threshold for the local and global MAF
+#' use the interactive version.
+#'
+#' 2 steps in the interactive version:
+#'
+#' Step 1. Global and Local MAF visualization and helper table.
+#'
+#' Step 2. Filtering markers based on the different MAF arguments
+
 
 #' @rdname filter_maf
 #' @export
@@ -30,23 +125,6 @@
 #' @importFrom tibble data_frame has_name
 #' @importFrom tidyr complete gather unite spread nesting
 #' @importFrom fst read.fst
-
-#' @details To help choose a threshold for the local and global MAF
-#' use the interactive version.
-#'
-#' 2 steps in the interactive version:
-#'
-#' Step 1. Global and Local MAF visualization and helper table.
-#'
-#' Step 2. Filtering markers based on the different MAF arguments
-#'
-#'
-#' \strong{... :dot dot dot arguments}
-#'
-#' The arguments listed here are available to tailor your dataset prior to MAF filtering.
-#' The description of these arguments are found in
-#' \code{\link[radiator]{tidy_genomic_data}}: \code{whitelist.markers,
-#' blacklist.id, blacklist.genotype, pop.levels, pop.labels, vcf.metadata, module}.
 
 
 #' @return With \code{interactive.filter = FALSE}, a list in the global environment,
@@ -85,28 +163,26 @@
 
 #' @examples
 #' \dontrun{
+
 #' # The minumum
-#' library(radiator)
 #' turtle.maf <- radiator::filter_maf(
-#' data = "turtle.vcf",
-#' strata = "turtle.strata.tsv")
-#' #This will use the default: interactive version,
-#'
-#'
-#' #With default interactive.filter = TRUE, a list is created and to view the filtered tidy data:
+#'         data = "turtle.vcf",
+#'         strata = "turtle.strata.tsv")
+#' # This will use the default: interactive version,
+#' # a list is created and to view the filtered tidy data:
 #' tidy.data <- turtle.maf$tidy.filtered.maf
 #'
 #' # The remaining argument are used in tidy_genomic_data during import and allow
 #' # the user to apply some filtering or selection before doing the MAF filtering.
 #'
 #' # If I want to filter Alternate alleles based on count.
-#' library(radiator)
 #' turtle.maf <- radiator::filter_maf(
-#' data = "turtle.vcf",
-#' strata = "turtle.strata.tsv",
-#' maf.thresholds = c("SNP", 3, "OR", "5", 1),
-#' filename = "turtle.maf")
-#' # This will remove monomorphic markers (by default monomorphic.out = TRUE)
+#'         data = "turtle.vcf",
+#'         strata = "turtle.strata.tsv",
+#'         maf.thresholds = c("SNP", 3, "OR", "5", 1),
+#'         filename = "turtle.maf")
+#'
+#' # This will remove monomorphic markers (by default filter.monomorphic = TRUE)
 #' # it will use the SNP approache (SNPs are considered independent and
 #' # filtered independent)
 #' # I keep markers if: they have a local count of 3 alternate allele OR global
@@ -119,14 +195,10 @@
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 filter_maf <- function(
+  interactive.filter = TRUE,
   data,
   strata = NULL,
-  interactive.filter = TRUE,
   maf.thresholds = NULL,
-  monomorphic.out = TRUE,
-  common.markers = FALSE,
-  snp.ld = NULL,
-  pop.select = NULL,
   filename = NULL,
   parallel.core = parallel::detectCores() - 1,
   verbose = TRUE,
@@ -137,7 +209,7 @@ filter_maf <- function(
   # strata = NULL
   # interactive.filter = TRUE
   # maf.thresholds = NULL
-  # monomorphic.out = TRUE
+  # filter.monomorphic = TRUE
   # common.markers = FALSE
   # snp.ld = NULL
   # pop.select = NULL
@@ -156,25 +228,27 @@ filter_maf <- function(
     timing <- proc.time()
 
     # manage missing argument -----------------------------------------------------
-    if (missing(data)) stop("Input file missing")
+    if (missing(data)) rlang::abort("Input file missing")
     if (!interactive.filter) {
-      if (length(maf.thresholds) < 5) stop("Please read MAF related arguments in the function documentation")
+      if (length(maf.thresholds) < 5) rlang::abort("Please read MAF related arguments in the function documentation")
     }
     # dot dot dot ----------------------------------------------------------------
     dotslist <- list(...)
     unknowned_param <- setdiff(
       names(dotslist),
       c("whitelist.markers", "blacklist.id", "blacklist.genotype", "pop.levels",
-        "pop.labels", "vcf.metadata"))
+        "pop.labels", "vcf.metadata", "filter.short.ld", "filter.monomorphic",
+        "filter.common.markers"))
 
     if (length(unknowned_param) > 0) {
-      stop("Unknowned \"...\" parameters to filter_maf: ",
+      rlang::abort("Unknowned \"...\" parameters to filter_maf: ",
            stringi::stri_join(unknowned_param, collapse = " "))
     }
     radiator.dots <- dotslist[
       names(dotslist) %in%
         c("whitelist.markers", "blacklist.id", "blacklist.genotype", "pop.levels",
-          "pop.labels", "vcf.metadata")
+          "pop.labels", "vcf.metadata", "filter.short.ld", "filter.monomorphic",
+          "filter.common.markers")
       ]
 
     if (!is.null(radiator.dots[["whitelist.markers"]])) {
@@ -210,6 +284,10 @@ filter_maf <- function(
     } else {
       vcf.metadata = FALSE
     }
+    filter.short.ld <- radiator.dots[["filter.short.ld"]]
+    filter.monomorphic <- radiator.dots[["filter.monomorphic"]]
+    filter.common.markers <- radiator.dots[["filter.common.markers"]]
+
     # whitelist.markers <- blacklist.id <- blacklist.genotype <- pop.levels <- pop.labels <- vcf.metadata <- NULL
 
     # Check pop.levels, pop.labels and pop.select---------------------------------
@@ -279,7 +357,7 @@ filter_maf <- function(
     # import data --------------------------------------------------------------
     if (verbose) message("Importing data ...")
     if (is.null(blacklist.id) && is.null(blacklist.genotype) && is.null(whitelist.markers) &&
-        !monomorphic.out && is.null(snp.ld) && !common.markers && is.null(pop.select)) {
+        !filter.monomorphic && is.null(filter.short.ld) && !filter.common.markers && is.null(pop.select)) {
       if (data.type %in% c("tbl_df", "fst.file")) {
         skip.import <- TRUE
       } else {
@@ -307,8 +385,8 @@ filter_maf <- function(
         blacklist.id = blacklist.id,
         blacklist.genotype = blacklist.genotype,
         whitelist.markers = whitelist.markers,
-        monomorphic.out = monomorphic.out,
-        snp.ld = snp.ld,
+        filter.monomorphic = filter.monomorphic,
+        filter.short.ld = filter.short.ld,
         common.markers = common.markers,
         strata = strata,
         pop.levels = pop.levels,
@@ -526,7 +604,7 @@ maf.approach = \"SNP\" : SNPs on the same locus/read are considered independent.
         x = "\nChoose the maf.approach (SNP/locus): ", answer.opt = c("SNP", "locus"))
 
 
-      # if (!maf.approach %in% c("SNP", "locus")) stop("maf.approach: SNP or locus")
+      # if (!maf.approach %in% c("SNP", "locus")) rlang::abort("maf.approach: SNP or locus")
     }
 
     if (maf.approach == "locus") {
@@ -582,7 +660,7 @@ because LOCUS and POS (SNP) info is not available")
       maf.operator <- interactive_question(
         x = "    Choose the maf.operator (AND/OR): ", answer.opt = c("AND", "OR"))
 
-      # if (!maf.operator %in% c("OR", "AND")) stop("maf.operator: either OR/AND")
+      # if (!maf.operator %in% c("OR", "AND")) rlang::abort("maf.operator: either OR/AND")
     }
 
     # maf.pop.num.threshold
@@ -796,7 +874,7 @@ because LOCUS and POS (SNP) info is not available")
             dplyr::summarise(GT_VCF_NUC = stringi::stri_join(HAPLOTYPES, collapse = "/")) %>%
             dplyr::mutate(GT_VCF_NUC = stringi::stri_replace_na(str = GT_VCF_NUC, replacement = "./.")) %>%
             dplyr::ungroup(.) %>%
-            change_alleles(data = ., biallelic = FALSE, parallel.core = parallel.core)
+            calibrate_alleles(data = ., biallelic = FALSE, parallel.core = parallel.core)
 
           filter <- filter$input %>%
             dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT_VCF_NUC, REF, ALT, GT, GT_VCF) %>%

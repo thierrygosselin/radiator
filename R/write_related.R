@@ -56,20 +56,14 @@ write_related <- function(
 ) {
 
   # Checking for missing and/or default arguments ******************************
-  if (missing(data)) stop("Input file missing")
+  if (missing(data)) rlang::abort("Input file missing")
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {
     data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
   }
 
-  # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-  if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
-    data <- dplyr::rename(.data = data, MARKERS = LOCUS)
-  }
-
   # Format for related package -------------------------------------------------
-
   data <- dplyr::select(.data = data, INDIVIDUALS, MARKERS, GT) %>%
     separate_gt(x = .,
     sep = 3, gt = "GT", gather = TRUE,
@@ -99,7 +93,7 @@ write_related <- function(
     if (filename.problem) {
       filename <- stringi::stri_join(filename, "_related_", file.date, ".txt")
     } else {
-      filename <- stringi::stri_join(filename, "_related", ".gen")
+      filename <- stringi::stri_join(filename, "_related", ".txt")
     }
   }
   readr::write_delim(x = data, path = filename, delim = " ", col_names = FALSE)

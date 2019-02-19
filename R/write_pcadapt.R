@@ -11,36 +11,48 @@
 #' \href{https://github.com/thierrygosselin/radiator}{radiator}
 #' and might be of interest for users.
 #'
-#' Also integrated in this function:
-#' \enumerate{
-#' \item \emph{pop.select: } to choose population to include in the pcadapt file.
-#' \item \emph{maf: } evaluate the impact of Minor Allele Frequency on
-#' genome scans with radiator maf module related arguments.
-#' \item \emph{snp.ld: } SNPs on the same locus should not be considered
-#' independant (short linkage disequilibrium) and the snp.ld argument
-#' integrated here give users the ability to adress this quickly before
-#' running a genome scan.
-#' \item by defaults only markers found in common between populations are used
-#' \item by defaults monomorphic markers are automatically removed before
-#' generating the pcadapt file.
-#' }
-
 
 #' @param data A tidy data frame object in the global environment or
 #' a tidy data frame in wide or long format in the working directory.
 #' \emph{How to get a tidy data frame ?}
 #' Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
 
+#' @inheritParams read_strata
 #' @inheritParams tidy_genomic_data
 
 #' @param filename (optional) The file name prefix for the pcadapt file
 #' written to the working directory. With default: \code{filename = NULL},
 #' the date and time is appended to \code{radiator_pcadapt_}.
 
-#' @details \emph{Integrated filters:} Only markers found in common between
-#' populations are used and monomorphic markers are automatically removed
-#' before generating pcadapt file.
+#' @details \emph{Integrated filters:}
+#' \enumerate{
+#' \item by defaults only markers found in common between populations are used
+#' (See advance section).
+#' \item by defaults monomorphic markers are automatically removed before
+#' generating the pcadapt file.
+#' }
 
+#' @section Advance mode:
+#'
+#' \emph{dots-dots-dots ...} allows to pass several arguments for fine-tuning the function:
+#' \enumerate{
+#' \item \strong{Filtering for linkage disequilibrium}: 3 arguments
+#' \code{filter.long.ld, long.ld.missing, ld.method}
+#' described in \code{\link{filter_ld}} are available.
+#' Reducing linkage before running genome scan is essential. At least start by
+#' removing SNPs on the same RADseq locus (short linkage disequilibrium).
+#'
+#' \item \strong{Filtering markers with low Minor Allele Count} : use the argument
+#' \code{filter.mac} to evaluate the impact of MAC/MAF on genome scans.
+#' The function \code{\link{filter_mac}} is called.
+#'
+#' \item Turning off the filter that keeps markers in common between strata:
+#' This is not recommended, but users who wants to explore the impact of such filtering
+#' and know the biais it can potentially generate can use the argument
+#' \code{filter.common.markers}.
+#' The function \code{\link{filter_common_markers}} is called.
+#' Default: \code{filter.common.markers = NULL}
+#' }
 
 #' @return A pcadapt file is written in the working directory a genotype matrix
 #' object is also generated in the global environment.
@@ -67,24 +79,47 @@
 write_pcadapt <- function(
   data,
   pop.select = NULL,
-  snp.ld = NULL,
-  maf.thresholds = NULL,
   filename = NULL,
-  parallel.core = parallel::detectCores() - 1
+  parallel.core = parallel::detectCores() - 1,
+  ...
 ) {
 
   message("Generating pcadapt file...")
   # Checking for missing and/or default arguments ------------------------------
-  if (missing(data)) stop("Input file is missing")
+  if (missing(data)) rlang::abort("Input file is missing")
+
+  # dotslist -------------------------------------------------------------------
+  dotslist <- rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE)
+  want <- c("filter.common.markers", "filter.mac", "filter.short.ld",
+            "filter.long.ld", "long.ld.missing", "ld.method")
+
+  unknowned_param <- setdiff(names(dotslist), want)
+
+  if (length(unknowned_param) > 0) {
+    rlang::abort("Unknowned \"...\" parameters ",
+         stringi::stri_join(unknowned_param, collapse = " "))
+  }
+
+  radiator.dots <- dotslist[names(dotslist) %in% want]
+
+
+  # argument <- radiator.dots[["argument"]]
+  filter.mac <- radiator.dots[["filter.mac"]]
+  filter.short.ld <- radiator.dots[["filter.short.ld"]]
+  filter.long.ld <- radiator.dots[["filter.long.ld"]]
+  long.ld.missing <- radiator.dots[["long.ld.missing"]]
+  if (is.null(long.ld.missing)) long.ld.missing <- FALSE
+  ld.method <- radiator.dots[["ld.method"]]
+  if (is.null(ld.method)) ld.method <- "r2"
+  filter.common.markers <- radiator.dots[["filter.common.markers"]]
+  if (is.null(filter.common.markers)) filter.common.markers <- TRUE
+  if (!filter.common.markers) {
+    message("Not recommended: I hope you really know what you're doing with pcadapt")
+  }
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {
     data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-  }
-
-  # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-  if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
-    data <- dplyr::rename(.data = data, MARKERS = LOCUS)
   }
 
   # pop.select -----------------------------------------------------------------
@@ -95,38 +130,38 @@ write_pcadapt <- function(
   }
 
   # Keeping common markers -----------------------------------------------------
-  data <- radiator::keep_common_markers(data = data, verbose = TRUE)$input
+  if (filter.common.markers) {
+    data <- radiator::filter_common_markers(data = data, verbose = TRUE, internal = TRUE)
+  }
 
   # Removing monomorphic markers -----------------------------------------------
-  data <- radiator::discard_monomorphic_markers(data = data, verbose = TRUE)$input
+  data <- radiator::filter_monomorphic(data = data, verbose = TRUE, internal = TRUE)
 
   # detect biallelic markers ---------------------------------------------------
   biallelic <- radiator::detect_biallelic_markers(data = data)
 
   if (!biallelic) {
-    stop("\npcadapt only work with biallelic dataset")
+    rlang::abort("\npcadapt only work with biallelic dataset")
   }
 
-  # Linkage disequilibrium -----------------------------------------------------
-  if (!is.null(snp.ld)) {
-    if (tibble::has_name(data, "LOCUS") && tibble::has_name(data, "POS")) {
-      message("Short distance linkage disequilibrium pruning")
-      message("    snp.ld: ", snp.ld)
-      data <- radiator::snp_ld(data = data, snp.ld = snp.ld)
-    }
-  }
-
-
-  # MAF ------------------------------------------------------------------------
-  if (!is.null(maf.thresholds)) { # with MAF
-    data <- radiator::filter_maf(
+  # MAC ------------------------------------------------------------------------
+  if (!is.null(filter.mac)) { # with MAF
+    data <- radiator::filter_mac(
       data = data,
       interactive.filter = FALSE,
-      maf.thresholds = maf.thresholds,
+      filter.mac = filter.mac,
       parallel.core = parallel.core,
-      verbose = FALSE)$tidy.filtered.maf
-  } # End of MAF filters
+      verbose = FALSE) %$% input
+  } # End of MAC filters
 
+  # Linkage disequilibrium -----------------------------------------------------
+  data <- filter_ld(
+    data = data,
+    filter.short.ld = filter.short.ld,
+    filter.long.ld = filter.long.ld,
+    long.ld.missing = long.ld.missing,
+    ld.method =ld.method
+    )
   # Biallelic and GT_BIN -------------------------------------------------------
 
   n.ind <- dplyr::n_distinct(data$INDIVIDUALS)
@@ -134,11 +169,11 @@ write_pcadapt <- function(
   n.markers <- dplyr::n_distinct(data$MARKERS)
 
 
-  if (!tibble::has_name(data, "GT_BIN")) {
-    data <- radiator::change_alleles(
+  if (!rlang::has_name(data, "GT_BIN")) {
+    data <- radiator::calibrate_alleles(
       data = dplyr::select(data, MARKERS, INDIVIDUALS, POP_ID, GT),
       biallelic = TRUE,
-      parallel.core = parallel.core, verbose = TRUE)$input
+      parallel.core = parallel.core, verbose = TRUE) %$% input
   }
 
 

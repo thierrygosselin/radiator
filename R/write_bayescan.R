@@ -14,6 +14,7 @@
 #' \emph{How to get a tidy data frame ?}
 #' Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
 
+#' @inheritParams read_strata
 #' @inheritParams tidy_genomic_data
 
 #' @param filename (optional) The file name prefix for the bayescan file
@@ -46,27 +47,34 @@
 #' local adaptation in high-altitude populations of a small rodent (Microtus arvalis).
 #' Molecular Ecology 20: 1450-1462
 
+#' @details \emph{Integrated filters:}
+#' \enumerate{
+#' \item by defaults only markers found in common between populations are used
+#' \item by defaults monomorphic markers are automatically removed before
+#' generating the dataset.
+#' }
+
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 
 write_bayescan <- function(
   data,
   pop.select = NULL,
-  snp.ld = NULL,
   filename = NULL,
-  parallel.core = parallel::detectCores() - 1
+  parallel.core = parallel::detectCores() - 1,
+  ...
   ) {
 
   message("Generating BayeScan file...")
   # Checking for missing and/or default arguments ------------------------------
-  if (missing(data)) stop("Input file is missing")
+  if (missing(data)) rlang::abort("Input file is missing")
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {
     data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
   }
   # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-  if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
+  if (rlang::has_name(data, "LOCUS") && !rlang::has_name(data, "MARKERS")) {
     data <- dplyr::rename(.data = data, MARKERS = LOCUS)
   }
 
@@ -78,10 +86,10 @@ write_bayescan <- function(
   }
 
   # Keeping common markers -----------------------------------------------------
-  data <- radiator::keep_common_markers(data = data, verbose = TRUE)$input
+  data <- radiator::filter_common_markers(data = data, verbose = TRUE, internal = TRUE)
 
   # Removing monomorphic markers -----------------------------------------------
-  data <- radiator::discard_monomorphic_markers(data = data, verbose = TRUE)$input
+  data <- radiator::filter_monomorphic(data = data, verbose = TRUE, internal = TRUE)
 
   # detect biallelic markers ---------------------------------------------------
   biallelic <- radiator::detect_biallelic_markers(data = data)
@@ -89,7 +97,7 @@ write_bayescan <- function(
   if (!biallelic) {
     want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS", "POP_ID", "GT_VCF_NUC", "GT")
     data <- suppressWarnings(dplyr::select(data, dplyr::one_of(want)))
-    if (tibble::has_name(data, "GT_VCF_NUC")) {
+    if (rlang::has_name(data, "GT_VCF_NUC")) {
       want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS", "POP_ID", "GT_VCF_NUC")
       data <- suppressWarnings(dplyr::select(data, dplyr::one_of(want))) %>%
         dplyr::rename(GT_HAPLO = GT_VCF_NUC)
@@ -99,25 +107,16 @@ write_bayescan <- function(
         dplyr::rename(GT_HAPLO = GT)
     }
 
-    data <- radiator::change_alleles(
+    data <- radiator::calibrate_alleles(
         biallelic = FALSE,
         data = data,
         parallel.core = parallel.core, verbose = TRUE)$input
   }
 
-  # Linkage disequilibrium -----------------------------------------------------
-  if (!is.null(snp.ld)) {
-    if (tibble::has_name(data, "LOCUS") && tibble::has_name(data, "POS")) {
-      message("Short distance linkage disequilibrium pruning")
-      message("    snp.ld: ", snp.ld)
-      data <- radiator::snp_ld(data = data, snp.ld = snp.ld)
-    }
-  }
-
   # Biallelic and GT_BIN -------------------------------------------------------
   if (biallelic) {
     data <- dplyr::select(data, MARKERS, INDIVIDUALS, POP_ID, GT)
-    data <- radiator::change_alleles(
+    data <- radiator::calibrate_alleles(
       data = data,
       biallelic = TRUE,
       parallel.core = parallel.core, verbose = TRUE)$input

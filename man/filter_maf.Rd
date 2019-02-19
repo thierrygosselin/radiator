@@ -2,55 +2,41 @@
 % Please edit documentation in R/filter_maf.R
 \name{filter_maf}
 \alias{filter_maf}
-\title{MAF filter}
+\title{MAF/MAC filter}
 \usage{
-filter_maf(data, strata = NULL, interactive.filter = TRUE,
-  maf.thresholds = NULL, monomorphic.out = TRUE,
-  common.markers = FALSE, snp.ld = NULL, pop.select = NULL,
-  filename = NULL, parallel.core = parallel::detectCores() - 1,
-  verbose = TRUE, ...)
+filter_maf(interactive.filter = TRUE, data, strata = NULL,
+  maf.thresholds = NULL, filename = NULL,
+  parallel.core = parallel::detectCores() - 1, verbose = TRUE, ...)
 }
 \arguments{
-\item{data}{12 options: VCF (SNPs or Haplotypes,
-to make the vcf population ready, see details below),
-plink, stacks haplotype file, genind (library(adegenet)),
-genlight (library(adegenet)), gtypes (library(strataG)), genepop, DArT,
-and a data frame in long/tidy or wide format.
-\emph{See details} of \code{\link[radiator]{tidy_genomic_data}}.}
-
-\item{strata}{(optional)
-The strata file is a tab delimited file with a minimum of 2 columns headers:
-\code{INDIVIDUALS} and \code{STRATA}.
-If a \code{strata} file is specified with all file formats that don't
-require it, the strata argument will have precedence on the population
-groupings used internally in those file formats. For file formats without
-population/strata groupings (e.g. vcf, haplotype files) if no strata file is
-provided, 1 pop/strata grouping will automatically be created.
-For vcf and haplotypes file, the strata can also be used as a whitelist of id.
-Samples not in the strata file will be discarded from the data set.
-The \code{STRATA} column can be any hierarchical grouping.
-To create a strata file see \code{\link[radiator]{individuals2strata}}.
-If you have already run
-\href{http://catchenlab.life.illinois.edu/stacks/}{stacks} on your data,
-the strata file is similar to a stacks \emph{population map file},
-make sure you
-have the required column names (\code{INDIVIDUALS} and \code{STRATA}).
-The strata column is cleaned of a white spaces that interfere with some
-packages or codes: space is changed to an underscore \code{_}.
-Default: \code{strata = NULL}.}
-
 \item{interactive.filter}{(optional, logical) Do you want the filtering session to
 be interactive. With default: \code{interactive.filter == TRUE}, figures and
 tables are shown before making decisions for filtering.}
 
-\item{maf.thresholds}{(optional) Use for minor allele frequency (maf) or count (mac)
-filter. Default: \code{maf.thresholds = NULL}, for no filtering.
+\item{data}{12 options for input: VCFs (SNPs or Haplotypes,
+to make the vcf population ready),
+plink, stacks haplotype file, genind (library(adegenet)),
+genlight (library(adegenet)), gtypes (library(strataG)), genepop, DArT,
+and a data frame in long/tidy or wide format. To verify that radiator detect
+your file format use \code{\link{detect_genomic_format}} (see example below).
+Documented in \strong{Input genomic datasets} of \code{\link{tidy_genomic_data}}.}
 
-String with 5 values.
-For example using SNP and frequency approach: \code{maf.thresholds = c("SNP", 0.001, "OR", 0.001, 1)}.
-For example using locus and count approach: \code{maf.thresholds = c("locus", 3, "OR", 6, 1)}.
+\item{strata}{(optional)
+The strata file is a tab delimited file with a minimum of 2 columns headers:
+\code{INDIVIDUALS} and \code{STRATA}. Documented in \code{\link{read_strata}}.
+Default: \code{strata = NULL}.}
+
+\item{maf.thresholds}{(optional, string) 5 values required in the string.
+
+Example using maf.thresholds with SNP and frequency approach:
+\code{maf.thresholds = c("SNP", 0.001, "OR", 0.001, 1)}.
+
+Example using maf.thresholds with locus and count approach:
+\code{maf.thresholds = c("locus", 3, "OR", 6, 1)}.
+
+
 \enumerate{
-\item maf approach (character: "SNP"/"locus"):
+\item \code{maf approach} (character: "SNP"/"locus"):
 MAF filtering is conducted by SNPs or locus.
 \code{"SNP"}: will consider all the SNPs on the same locus/read as independent
 and will be filtered independently of their locus id.
@@ -59,57 +45,27 @@ read/locus. Using this option will discard all the markers/snp on
 that read based on the thresholds chosen. For the locus approach to work, your dataset
 requires SNP and Locus info (e.g. from a VCF file).
 
-\item local threshold (double or integer): For a frequency threshold use
+\item \code{local} threshold (double or integer): For a frequency threshold use
 a double (e.g. 0.05). For a count threshold, use an integer
 (e.g. 3 for the number of alternate allele required in a population). This
 threshold is applied by population.
 Not sure about the threshold to use, choose the interactive mode argument.
 
-\item operator (character: "OR" / "AND"):
+\item \code{operator} (character: "OR" / "AND"):
 To consider both the local \code{"AND"} the global thresholds, use \code{"AND"}.
 To consider the local \code{"OR"} the global thresholds, use \code{"OR"}.
 
-\item global threshold (double or integer): For a frequency threshold
+\item \code{global} threshold (double or integer): For a frequency threshold
 use a double (e.g. 0.02). For a count threshold, use an integer
 (e.g. 6 for the number of alternate allele required). This threshold is
 applied at the dataset level (no population).
 Not sure about the threshold to use, choose the interactive mode argument.
 
-\item maf pop num threshold (integer)
+\item \code{maf pop num threshold} (integer)
 The number of pop required to pass the thresholds
 to keep the marker. Usually, I always use \code{1}, for 1 pop is required to
 pass thresholds and keep the marker.
 }}
-
-\item{monomorphic.out}{(optional) Should the monomorphic
-markers present in the dataset be filtered out ?
-Default: \code{monomorphic.out = TRUE}.}
-
-\item{common.markers}{(optional) Logical. Default: \code{common.markers = TRUE},
-will only keep markers in common (genotyped) between all the populations.}
-
-\item{snp.ld}{(optional) \strong{For data with locus and SNP info, like VCF and DArT file}.
-SNP short distance linkage disequilibrium pruning. With anonymous markers from
-RADseq/GBS de novo discovery, you can minimize linkage disequilibrium (LD) by
-choosing among these 5 options:
-\enumerate{
-\item \code{snp.ld = "random"} for a random selection of 1 SNP on the read,
-\item \code{snp.ld = "first"} for the first one on the read...,
-\item \code{snp.ld = "last"} for the last SNP on the read and
-\item \code{snp.ld = "middle"} for locus with > 2 SNPs/read the option to select at random
-one SNP between the first and the last SNP on the read. If the locus as <= 2
-SNPs on the read, the first one is selected. Note that for that last option,
-the numbers are reported.
-\item \code{snp.ld = "maf"} will select the SNP on the locus with the maximum global
-Minor Allele Frequency (MAF).
-}
-For long distance linkage disequilibrium pruning, see details below.
-Default: \code{snp.ld = NULL}, for no pruning.}
-
-\item{pop.select}{(string, optional) Selected list of populations for
-the analysis. e.g. \code{pop.select = c("QUE", "ONT")} to select \code{QUE}
-and \code{ONT} population samples (out of 20 pops).
-Default: \code{pop.select = NULL}}
 
 \item{filename}{(optional, character) Write to folder the MAF filtered
 tidy dataset. The name will be appended \code{.rad}. With default, the filtered
@@ -118,14 +74,14 @@ Default: \code{filename = NULL}.}
 
 \item{parallel.core}{(optional) The number of core used for parallel
 execution during import.
-Default: \code{parallel::detectCores() - 1}.}
+Default: \code{parallel.core = parallel::detectCores() - 1}.}
 
 \item{verbose}{(optional, logical) When \code{verbose = TRUE}
 the function is a little more chatty during execution.
 Default: \code{verbose = TRUE}.}
 
-\item{...}{(optional) To pass further arguments for fine-tuning the filter with
-whitelist and blacklists (see details below).}
+\item{...}{(optional) To pass further arguments for fine-tuning the function
+and legacy arguments (see Life cycle section below).}
 }
 \value{
 With \code{interactive.filter = FALSE}, a list in the global environment,
@@ -168,7 +124,53 @@ Remove markers based on Minor/Alternate Allele Frequency (MAF) or Count (MAC).
 Most arguments are inherited from
 \code{\link[radiator]{tidy_genomic_data}}.
 }
-\details{
+\section{Life cycle}{
+
+
+The \strong{maf.thresholds} arguments used in the past in several of
+radiator functions
+is still available inside \code{filter_maf} arguments.
+But it is in evaluation mode and the function will probaly be deprecated in
+future releases. The arguments are complicated to use and
+most RADseq datesets encountered so far are better filtered
+using \code{\link{filter_mac}}.
+}
+
+\section{MAC or MAF ?}{
+
+Using count or frequency to remove a SNPs ? The preferred choice in radiator
+as changed from frequency to count, because we think the filtering should not
+alter the spectrum and this is only achieved if the same criteria is applied
+for each SNP.
+
+
+Even small differences in missing data between RADseq markers
+generates differences in MAF frequency thresholds applied.
+
+Example with a datset consisting of N = 36 individuals and 3 SNPs
+with varying level of missing genotypes:
+
+\itemize{
+\item \code{SNP number : number samples genotypes : REF/ALT counts}
+\item SNP1 : 36 : 69/3
+\item SNP2 : 30 : 65/3
+\item SNP3 : 24 : 45/3
+}
+
+Each SNPs have the same alternate allele count, corresponding to
+2 individuals with the polymorphism: 1 homozygote + 1 heterozygote.
+Applying a MAF threshold of
+0.05 would mean that SNP3 would be blacklisted
+(\code{24 * 2 * 0.05 = 2.4 alt alleles required to pass}).
+
+
+\strong{Using count instead of frequency allows each RADseq markers,
+with varying missing data, to be treated equally.}
+}
+
+\section{Interactive version}{
+
+
 To help choose a threshold for the local and global MAF
 use the interactive version.
 
@@ -177,39 +179,29 @@ use the interactive version.
 Step 1. Global and Local MAF visualization and helper table.
 
 Step 2. Filtering markers based on the different MAF arguments
-
-
-\strong{... :dot dot dot arguments}
-
-The arguments listed here are available to tailor your dataset prior to MAF filtering.
-The description of these arguments are found in
-\code{\link[radiator]{tidy_genomic_data}}: \code{whitelist.markers,
-blacklist.id, blacklist.genotype, pop.levels, pop.labels, vcf.metadata, module}.
 }
+
 \examples{
 \dontrun{
 # The minumum
-library(radiator)
 turtle.maf <- radiator::filter_maf(
-data = "turtle.vcf",
-strata = "turtle.strata.tsv")
-#This will use the default: interactive version,
-
-
-#With default interactive.filter = TRUE, a list is created and to view the filtered tidy data:
+        data = "turtle.vcf",
+        strata = "turtle.strata.tsv")
+# This will use the default: interactive version,
+# a list is created and to view the filtered tidy data:
 tidy.data <- turtle.maf$tidy.filtered.maf
 
 # The remaining argument are used in tidy_genomic_data during import and allow
 # the user to apply some filtering or selection before doing the MAF filtering.
 
 # If I want to filter Alternate alleles based on count.
-library(radiator)
 turtle.maf <- radiator::filter_maf(
-data = "turtle.vcf",
-strata = "turtle.strata.tsv",
-maf.thresholds = c("SNP", 3, "OR", "5", 1),
-filename = "turtle.maf")
-# This will remove monomorphic markers (by default monomorphic.out = TRUE)
+        data = "turtle.vcf",
+        strata = "turtle.strata.tsv",
+        maf.thresholds = c("SNP", 3, "OR", "5", 1),
+        filename = "turtle.maf")
+
+# This will remove monomorphic markers (by default filter.monomorphic = TRUE)
 # it will use the SNP approache (SNPs are considered independent and
 # filtered independent)
 # I keep markers if: they have a local count of 3 alternate allele OR global

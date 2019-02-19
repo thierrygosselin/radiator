@@ -19,3 +19,4 @@ and the inbreeding coefficient. The Global MAF of Loci,
 with STACKS GBS/RAD loci = read or de novo haplotypes,
 is included and repeated over SNP.
 }
+\keyword{internal}

@@ -28,17 +28,31 @@ Default: \code{filename = NULL}.}
 the function is a little more chatty during execution.
 Default: \code{verbose = TRUE}.}
 }
+\value{
+An object in the global environment of class
+\code{"SNPGDSFileClass", "gds.class"} and
+a file in the working directory.
+}
 \description{
 Write a \href{https://github.com/zhengxwen/SNPRelate}{SNPRelate}
 object from a tidy data frame.
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and might be of interest for users.
 }
+\examples{
+\dontrun{
+require(SNPRelate)
+data.gds <- radiator::write_snprelate(data = "shark.rad")
+}
+}
 \references{
 Zheng X, Levine D, Shen J, Gogarten SM, Laurie C, Weir BS.
 A high-performance computing toolset for relatedness and principal component
 analysis of SNP data. Bioinformatics. 2012;28: 3326-3328.
 doi:10.1093/bioinformatics/bts606
+}
+\seealso{
+\href{https://github.com/zhengxwen/SNPRelate}{SNPRelate}
 }
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}

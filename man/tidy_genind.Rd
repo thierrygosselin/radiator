@@ -4,7 +4,8 @@
 \alias{tidy_genind}
 \title{Tidy a genind object to a tidy dataframe}
 \usage{
-tidy_genind(data, keep.allele.names = FALSE)
+tidy_genind(data, keep.allele.names = FALSE, tidy = TRUE, gds = TRUE,
+  write = FALSE, verbose = FALSE)
 }
 \arguments{
 \item{data}{A genind object in the global environment.}
@@ -15,9 +16,25 @@ Requires the alleles to be numeric. To have this argument in
 \pkg{radiator} \code{\link{genomic_converter}}
 use it at the end. \code{...} in those function looks for it.
 Default: \code{keep.allele.names = FALSE}.}
+
+\item{tidy}{(logical) Generate a tidy dataset.
+Default: \code{tidy = TRUE}.}
+
+\item{gds}{(optional, logical) To write a radiator gds object.
+Currently, for biallelic datasets only.
+Default: \code{gds = TRUE}.}
+
+\item{write}{(optional, logical) To write in the working directory the tidy
+data. The file is written with \code{radiator_genind_DATE@TIME.rad}.
+Default: \code{write = FALSE}.}
+
+\item{verbose}{(optional, logical) When \code{verbose = TRUE}
+the function is a little more chatty during execution.
+Default: \code{verbose = TRUE}.}
 }
 \description{
-Tidy genind object to a tidy dataframe.
+Tidy genind object from
+\href{https://github.com/thibautjombart/adegenet}{adegenet} to a tidy dataframe.
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and might be of interest for users.
 }

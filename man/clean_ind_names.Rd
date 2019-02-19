@@ -2,7 +2,7 @@
 % Please edit documentation in R/clean.R
 \name{clean_ind_names}
 \alias{clean_ind_names}
-\title{clean individual's name}
+\title{Clean individual's names for radiator and other packages}
 \usage{
 clean_ind_names(x)
 }

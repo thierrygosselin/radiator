@@ -9,7 +9,7 @@ write_seqarray(data, strata = NULL, filename = NULL,
   verbose = TRUE, ...)
 }
 \arguments{
-\item{data}{(character string) The VCF SNPs are biallelic or haplotypes.
+\item{data}{(path, character) The VCF markers are biallelic SNPs or haplotypes.
 To make the VCF population-ready, you have to use \code{strata} argument.
 
 \itemize{
@@ -28,36 +28,20 @@ separated into "LOCUS", "COL", "STRANDS".
 
 \item{strata}{(optional)
 The strata file is a tab delimited file with a minimum of 2 columns headers:
-\code{INDIVIDUALS} and \code{STRATA}.
-If a \code{strata} file is specified with all file formats that don't
-require it, the strata argument will have precedence on the population
-groupings used internally in those file formats. For file formats without
-population/strata groupings (e.g. vcf, haplotype files) if no strata file is
-provided, 1 pop/strata grouping will automatically be created.
-For vcf and haplotypes file, the strata can also be used as a whitelist of id.
-Samples not in the strata file will be discarded from the data set.
-The \code{STRATA} column can be any hierarchical grouping.
-To create a strata file see \code{\link[radiator]{individuals2strata}}.
-If you have already run
-\href{http://catchenlab.life.illinois.edu/stacks/}{stacks} on your data,
-the strata file is similar to a stacks \emph{population map file},
-make sure you
-have the required column names (\code{INDIVIDUALS} and \code{STRATA}).
-The strata column is cleaned of a white spaces that interfere with some
-packages or codes: space is changed to an underscore \code{_}.
+\code{INDIVIDUALS} and \code{STRATA}. Documented in \code{\link{read_strata}}.
 Default: \code{strata = NULL}.}
 
 \item{filename}{(optional) The file name of the Genomic Data Structure (GDS) file.
-radiator will append \code{.gds} to the filename.
-If filename chosen is already present in the
-working directory, the default \code{radiator_datetime.gds} is chosen.
+radiator will append \code{.gds.rad} to the filename.
+If the filename chosen exists in the working directory,
+the default \code{radiator_datetime.gds} is chosen.
 Default: \code{filename = NULL}.}
 
 \item{vcf.stats}{(optional, logical) Generates individuals and markers
-important statistics helpful for filtering.
+statistics helpful for filtering.
 These are very fast to generate and because computational
 cost is minimal, even for huge VCFs, the default is \code{vcf.stats = TRUE}.
-Starts: individual's missing genotype proportion, averaged heterozygosity,
+Individual's missing genotype proportion, averaged heterozygosity,
 total coverage, mean genotype coverage and marker's metadata
 along count for ref and alt alleles and mean
 coverage is generated and written in the working directory.
@@ -65,14 +49,13 @@ Default: \code{vcf.stats = TRUE}.}
 
 \item{parallel.core}{(optional) The number of core used for parallel
 execution during import.
-Default: \code{parallel::detectCores() - 1}.}
+Default: \code{parallel.core = parallel::detectCores() - 1}.}
 
 \item{verbose}{(optional, logical) When \code{verbose = TRUE}
 the function is a little more chatty during execution.
 Default: \code{verbose = TRUE}.}
 
-\item{...}{(optional) Advance mode that allows to pass further arguments
-for fine-tuning the function (see details).}
+\item{...}{(optional) To pass further arguments for fine-tuning the function.}
 }
 \value{
 The function returns a list with:
@@ -93,7 +76,16 @@ VCF \code{INDIVIDUALS_VCF} and corrected for use in radiator \code{INDIVIDUALS}
 }
 \description{
 Write a SeqArray \href{http://zhengxwen.github.io/SeqArray/}{SeqArray}
-file (Zheng et al. 2017) from a vcf file and generate a connection object.
+object of class \code{SeqVarGDSClass} (Zheng et al. 2017)
+from a vcf file and generate a connection object with the
+Genomic Data Structure (GDS) file format
+\href{http://zhengxwen.github.io/gdsfmt}{gdsfmt}
+
+The function as an advance mode that allows various filtering arguments to
+be used. Handy to prune the dataset based on various QCs but also to
+remove artifacts, duplicated information and thus lower the overall noise in
+the VCF.
+
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and might be of interest for users.
 }
@@ -104,9 +96,22 @@ A vcf file of 21 GB with ~2 millions SNPs take about ~5 min with 7 CPU.
 After the file is generated, you can close your computer and
 come back to it a month later and it's now a matter of sec to open a connection.
 
+
+\strong{markers heterozygosity and inbreeding coefficient}:
+The heterozygosity statistics (het obs and Fis) presented in this function
+are calculated globally across strata, without the possibility to filter out
+markers. We think this filtering for these statistics are best
+addressed in \code{\link{filter_het}}, \code{\link{filter_fis}} and
+\code{\link{filter_hwe}}, after outlier individuals and
+markers (for other stats) are blacklisted. Why ? The reason is that an excess of
+heterozygotes and negative Fis values are not a bad thing \emph{per se}.
+Genomic regions under balancing selection may contain such markers and
+statistics.
+
+
 \strong{Advance mode, using \emph{dots-dots-dots ...}}
 \enumerate{
-\item \code{whitelist.markers}: detailed in \code{\link[radiator]{tidy_genomic_data}}.
+\item \code{whitelist.markers}: detailed in \code{\link[radiator]{filter_whitelist}}.
 \item \code{blacklist.id}: detailed in \code{\link[radiator]{tidy_genomic_data}}.
 \item \code{pop.select}: detailed in \code{\link[radiator]{tidy_genomic_data}}.
 \item \code{pop.levels}: detailed in \code{\link[radiator]{tidy_genomic_data}}.
@@ -118,29 +123,30 @@ and duplicated markers are kept (not recommended, but here for testing purposes)
 \code{"best.stats"}: will keep only one, based on the best statistics
 (MAC and missingness). \code{"blacklist"}: discard all duplicated markers.
 Default (\code{filter.strands = "blacklist"}).
-\item \code{common.markers}: (logical) Default: code{common.markers = TRUE}.
-Detailed in \code{\link[radiator]{tidy_genomic_data}}.
-\item \code{filter.mac}: (integer) To blacklist markers below a specific MAC
-(calculated overall).
-\item \code{filter.coverage.outliers}: (logical) To blacklist markers with low and
-high coverage based on outlier statistics.
-\item \code{filter.markers.missing}: (integer) To blacklist markers with too
-many missing data. e.g. \code{filter.markers.missing = 10}, will only keep
+\item \code{filter.common.markers}: (logical) Default: \code{filter.common.markers = TRUE}.
+Documented in \code{\link{filter_common_markers}}.
+\item \code{filter.mac}: (integer) Default: code{filter.mac = NULL}.
+To blacklist markers below a specific Minor Allele Count (calculated overall/global).
+Documented in \code{\link{filter_mac}}.
+
+\item \code{filter.coverage}: (optional, string)
+Default: code{filter.coverage = NULL}. To blacklist markers based on mean coverage.
+Documented in \code{\link{filter_coverage}}.
+
+\item \code{filter.genotyping}: (integer) To blacklist markers with too
+many missing data. e.g. \code{filter.genotyping = 10}, will only keep
 markers with missing rate <= to 10 percent.
-\item \code{filter.snp.read.position}: 3 options available, \code{"outliers", "q75", "iqr"}.
+\item \code{filter.snp.position.read}: 3 options available, \code{"outliers", "q75", "iqr"}.
 This argument will blacklist markers based on it's position on the read.
-\code{filter.snp.read.position = "outliers"}, will remove markers based
+\code{filter.snp.position.read = "outliers"}, will remove markers based
 on outlier statistics of the position on the reads. e.g. if majority of SNPs
 are found between 10 and 90 pb, and very few above and below, those markers are
 discarded. Use this function argument with dataset with problematic assembly,
 or \emph{de novo} assembly with undocumented or poorly selected
 mismatch threshold.
-\item \code{filter.short.ld}: this is the \code{snp.ld} argument
-in \code{\link[radiator]{snp_ld}}
-\item \code{filter.long.ld}: this is the \code{ld.threshold} argument
-in \code{\link[radiator]{snp_ld}}
-\item \code{long.ld.missing}: this is the \code{long.ld.missing} argument
-in \code{\link[radiator]{snp_ld}}
+\item \code{filter.short.ld}: Described in \code{\link[radiator]{filter_ld}}
+\item \code{filter.long.ld}: Described in  \code{\link[radiator]{filter_ld}}
+\item \code{long.ld.missing}: Described in \code{\link[radiator]{filter_ld}}
 \item \code{ld.method}: (optional, character) The values available are
 \code{"composite"}, for LD composite measure, \code{"r"} for R coefficient
 (by EM algorithm assuming HWE, it could be negative), \code{"r2"} for r^2,
@@ -162,6 +168,17 @@ Using, \code{markers.info = character(0)} will not import INFO variables.
 \item \code{path.folder}: to write ouput in a specific path
 (used internally in radiator). Default: \code{path.folder = getwd()}.
 If the supplied directory doesn't exist, it's created.
+\item \code{random.seed}: (integer, optional) For reproducibility, set an integer
+that will be used inside codes that uses randomness. With default,
+a random number is generated, printed and written in the directory.
+Default: \code{random.seed = NULL}.
+\item \code{subsample.markers.stats}: By default, when no filters are
+requested and that the number of markers is > 200K,
+0.2 of markers are randomly selected to generate the
+statistics (individuals and markers). This is an all-around and
+reliable number.
+In doubt, overwrite this value by using 1 (all markers selected) and
+expect a small computational cost.
 }
 }
 \examples{
@@ -176,11 +193,11 @@ prep.data <- radiator::write_seqarray(
     strata = "strata_salamander.tsv",
     vcf.stats = TRUE,
     filter.individuals.missing = "outlier",
-    common.markers = TRUE,
+    filter.common.markers = TRUE,
     filter.strands = "blacklist",
     filter.mac = 4,
-    filter.markers.missing = 50,
-    filter.snp.read.position = "outliers",
+    filter.genotyping = 50,
+    filter.snp.position.read = "outliers",
     filter.short.ld = "maf",
     filter.long.ld = NULL,
     vcf.metadata = TRUE,
@@ -199,7 +216,7 @@ The variant call format and VCFtools.
 Bioinformatics, 27, 2156-2158.
 }
 \seealso{
-\code{\link{snp_ld}} and \code{\link[radiator]{tidy_genomic_data}}
+\code{\link{filter_ld}} and \code{\link[radiator]{tidy_genomic_data}}
 }
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}

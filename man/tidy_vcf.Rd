@@ -26,28 +26,12 @@ separated into "LOCUS", "COL", "STRANDS".}
 
 \item{strata}{(optional)
 The strata file is a tab delimited file with a minimum of 2 columns headers:
-\code{INDIVIDUALS} and \code{STRATA}.
-If a \code{strata} file is specified with all file formats that don't
-require it, the strata argument will have precedence on the population
-groupings used internally in those file formats. For file formats without
-population/strata groupings (e.g. vcf, haplotype files) if no strata file is
-provided, 1 pop/strata grouping will automatically be created.
-For vcf and haplotypes file, the strata can also be used as a whitelist of id.
-Samples not in the strata file will be discarded from the data set.
-The \code{STRATA} column can be any hierarchical grouping.
-To create a strata file see \code{\link[radiator]{individuals2strata}}.
-If you have already run
-\href{http://catchenlab.life.illinois.edu/stacks/}{stacks} on your data,
-the strata file is similar to a stacks \emph{population map file},
-make sure you
-have the required column names (\code{INDIVIDUALS} and \code{STRATA}).
-The strata column is cleaned of a white spaces that interfere with some
-packages or codes: space is changed to an underscore \code{_}.
+\code{INDIVIDUALS} and \code{STRATA}. Documented in \code{\link{read_strata}}.
 Default: \code{strata = NULL}.}
 
 \item{parallel.core}{(optional) The number of core used for parallel
 execution during import.
-Default: \code{parallel::detectCores() - 1}.}
+Default: \code{parallel.core = parallel::detectCores() - 1}.}
 
 \item{verbose}{(optional, logical) When \code{verbose = TRUE}
 the function is a little more chatty during execution.
@@ -98,7 +82,7 @@ the tidy data file. radiator is currently keeping/cleaning only these metadata:
 e.g. you only wnat AD and PL, \code{vcf.metadata = c("AD", "PL")}.
 If yours is not in the list, submit a request.
 Default: \code{vcf.metadata = TRUE}.
-\item \code{common.markers}: (logical) Default: code{common.markers = TRUE}.
+\item \code{filter.common.markers}: (logical) Default: code{filter.common.markers = TRUE}.
 Detailed in \code{\link[radiator]{tidy_genomic_data}}.
 \item \code{filter.mac}: (integer) To blacklist markers below a specific MAC
 (calculated overall).
@@ -116,11 +100,11 @@ discarded. Use this function argument with dataset with problematic assembly,
 or \emph{de novo} assembly with undocumented or poorly selected
 mismatch threshold.
 \item \code{filter.short.ld}: this is the \code{snp.ld} argument
-in \code{\link[radiator]{snp_ld}}
+in \code{\link[radiator]{filter_ld}}
 \item \code{filter.long.ld}: this is the \code{ld.threshold} argument
-in \code{\link[radiator]{snp_ld}}
+in \code{\link[radiator]{filter_ld}}
 \item \code{long.ld.missing}: this is the \code{long.ld.missing} argument
-in \code{\link[radiator]{snp_ld}}
+in \code{\link[radiator]{filter_ld}}
 \item \code{filter.individuals.missing}: (double) Use this argument to
 blacklist individuals with too many missing data.
 e.g. \code{filter.individuals.missing = 0.7}, will remove individuals with >
@@ -136,6 +120,15 @@ Using, \code{markers.info = character(0)} will not import INFO variables.
 If the supplied directory doesn't exist, it's created.
 }
 }
+\section{VCF file format version}{
+
+
+If you need a different file format version than the current one, just change
+the version inside the newly created VCF, that should do the trick.
+\href{https://vcftools.github.io/specs.html}{For more
+information on Variant Call Format specifications}.
+}
+
 \examples{
 \dontrun{
 # very basic with built-in defaults (not recommended):
@@ -147,7 +140,7 @@ data = "populations.snps.vcf",
 strata = "strata_salamander.tsv",
 vcf.stats = TRUE,
 filter.individuals.missing = "outlier",
-common.markers = TRUE,
+filter.common.markers = TRUE,
 filter.strands = FALSE,
 filter.mac = 4,
 filter.markers.missing = 50,
@@ -166,6 +159,11 @@ bl <- prep.data$blacklist.markers
 # or get the numbers associated with the filters applied:
  bl.numbers <- dplyr::count(prep.data$blacklist.markers, FILTER)
 }
+}
+\references{
+Danecek P, Auton A, Abecasis G et al. (2011)
+The variant call format and VCFtools.
+Bioinformatics, 27, 2156-2158.
 }
 \seealso{
 \code{\link[radiator]{write_seqarray}}

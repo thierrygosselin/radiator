@@ -39,7 +39,7 @@
 write_hierfstat <- function(data, filename = NULL) {
 
   # Checking for missing and/or default arguments ------------------------------
-  if (missing(data)) stop("Input file necessary to write the hierfstat file is missing")
+  if (missing(data)) rlang::abort("Input file necessary to write the hierfstat file is missing")
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {

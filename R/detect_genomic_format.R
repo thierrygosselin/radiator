@@ -3,7 +3,13 @@
 #' @name detect_genomic_format
 #' @title Used internally in radiator to detect the file format
 #' @description Detect file format of genomic data set.
-#' @param data A genomic data set in the global environment
+#' @param data 12 options for input: VCFs (SNPs or Haplotypes,
+#' to make the vcf population ready),
+#' plink, stacks haplotype file, genind (library(adegenet)),
+#' genlight (library(adegenet)), gtypes (library(strataG)), genepop, DArT,
+#' and a data frame in long/tidy or wide format. To verify that radiator detect
+#' your file format use \code{\link{detect_genomic_format}} (see example below).
+#' Documented in \strong{Input genomic datasets} of \code{\link{tidy_genomic_data}}.
 
 #' @return One of these file format:
 #' \itemize{
@@ -26,6 +32,11 @@
 #' @importFrom tibble has_name
 # @keywords internal
 #' @export
+#' @examples
+#' \dontrun{
+#' #To verify your file is detected by radiator as the correct format:
+#' radiator::detect_genomic_format(data = "populations.snps.vcf")
+#' }
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 detect_genomic_format <- function(data){
@@ -35,7 +46,7 @@ detect_genomic_format <- function(data){
       data.type <- "tbl_df" #"df.file"
     } else {
       data.type <- class(data)[1]
-      if (!data.type %in% c("genind", "genlight", "gtypes", "SeqVarGDSClass")) stop("Input file not recognised")
+      if (!data.type %in% c("genind", "genlight", "gtypes", "SeqVarGDSClass")) rlang::abort("Input file not recognised")
     }
   } else {
     data.type <- readChar(con = data, nchars = 16L, useBytes = TRUE)
@@ -50,7 +61,7 @@ detect_genomic_format <- function(data){
       data.type <- "plink.file"
       # message("File type: PLINK")
       if (!file.exists(stringi::stri_replace_all_fixed(str = data, pattern = ".tped", replacement = ".tfam", vectorize_all = FALSE))) {
-        stop("Missing tfam file with the same prefix as your tped")
+        rlang::abort("Missing tfam file with the same prefix as your tped")
       }
       return(data.type)
     }

@@ -82,7 +82,7 @@
 tidy_fstat <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
 
   # Checking for missing and/or default arguments-------------------------------
-  if (missing(data)) stop("fstat file missing")
+  if (missing(data)) rlang::abort("fstat file missing")
 
 
   # Import data ------------------------------------------------------------------

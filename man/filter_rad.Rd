@@ -5,301 +5,36 @@
 \title{Pipeline to filter RADseq data.}
 \usage{
 filter_rad(interactive.filter = TRUE, data, strata = NULL,
-  output = NULL, pop.levels = NULL, blacklist.id = NULL,
-  pop.select = NULL, monomorphic.out = TRUE, common.markers = TRUE,
-  filter.markers.coverage = NULL, erase.genotypes = NULL,
-  filter.individuals.missing = NULL, filter.markers.missing = NULL,
-  maf.thresholds = NULL, number.snp.reads = NULL, snp.ld = "maf",
-  mixed.genomes.analysis = TRUE, ind.heterozygosity.threshold = NULL,
-  duplicate.genomes.analysis = c(TRUE, FALSE), hw.pop.threshold = 0,
-  midp.threshold = "****", imputation.method = NULL,
-  hierarchical.levels = "strata", num.tree = 50, filename = NULL,
-  verbose = TRUE, parallel.core = parallel::detectCores() - 1, ...)
+  output = NULL, filename = NULL, verbose = TRUE,
+  parallel.core = parallel::detectCores() - 1, ...)
 }
 \arguments{
 \item{interactive.filter}{(optional, logical) Do you want the filtering session to
-be interactive. The user is asked to see figures of distribution before
-making decisions for filtering. If you opt for this, fill the arguments:
-\code{data, strata, output},
-optionally fill these ones \code{pop.levels, blacklist.id, pop.select,
-monomorphic.out, common.markers}, the rest are not necessary.
+be interactive. Figures of distribution are shown before asking for filtering
+thresholds.
 Default: \code{interactive.filter = TRUE}.}
 
-\item{data}{12 options: VCF (SNPs or Haplotypes,
-to make the vcf population ready, see details below),
+\item{data}{12 options for input: VCFs (SNPs or Haplotypes,
+to make the vcf population ready),
 plink, stacks haplotype file, genind (library(adegenet)),
 genlight (library(adegenet)), gtypes (library(strataG)), genepop, DArT,
-and a data frame in long/tidy or wide format.
-\emph{See details} of \code{\link[radiator]{tidy_genomic_data}}.}
+and a data frame in long/tidy or wide format. To verify that radiator detect
+your file format use \code{\link{detect_genomic_format}} (see example below).
+Documented in \strong{Input genomic datasets} of \code{\link{tidy_genomic_data}}.}
 
 \item{strata}{(optional)
 The strata file is a tab delimited file with a minimum of 2 columns headers:
-\code{INDIVIDUALS} and \code{STRATA}.
-If a \code{strata} file is specified with all file formats that don't
-require it, the strata argument will have precedence on the population
-groupings used internally in those file formats. For file formats without
-population/strata groupings (e.g. vcf, haplotype files) if no strata file is
-provided, 1 pop/strata grouping will automatically be created.
-For vcf and haplotypes file, the strata can also be used as a whitelist of id.
-Samples not in the strata file will be discarded from the data set.
-The \code{STRATA} column can be any hierarchical grouping.
-To create a strata file see \code{\link[radiator]{individuals2strata}}.
-If you have already run
-\href{http://catchenlab.life.illinois.edu/stacks/}{stacks} on your data,
-the strata file is similar to a stacks \emph{population map file},
-make sure you
-have the required column names (\code{INDIVIDUALS} and \code{STRATA}).
-The strata column is cleaned of a white spaces that interfere with some
-packages or codes: space is changed to an underscore \code{_}.
+\code{INDIVIDUALS} and \code{STRATA}. Documented in \code{\link{read_strata}}.
 Default: \code{strata = NULL}.}
 
-\item{output}{23 genomic data formats can be exported: tidy (by default),
-genind, genlight, vcf (for file format version, see details below), plink, genepop,
-structure, arlequin, hierfstat, gtypes (strataG), bayescan, betadiv, pcadapt,
-hzar, fineradstructure, related, snprelate (for SNPRelate's GDS, see details)
-and maverick.
+\item{output}{24 genomic data formats can be exported: tidy (by default),
+genepop, genind, genlight, vcf (for file format version, see details below),
+plink, structure, arlequin, hierfstat, gtypes (strataG), bayescan, betadiv,
+pcadapt, hzar, fineradstructure, related, seqarray, snprelate and maverick.
 Use a character string,
 e.g. \code{output = c("genind", "genepop", "structure")}, to have preferred
-output formats generated. The tidy format is generated automatically.
+output formats generated. With default, only the tidy format is generated.
 Default: \code{output = NULL}.}
-
-\item{pop.levels}{(optional, string) This refers to the levels in a factor. In this
-case, the id of the pop.
-Use this argument to have the pop ordered your way instead of the default
-alphabetical or numerical order. e.g. \code{pop.levels = c("QUE", "ONT", "ALB")}
-instead of the default \code{pop.levels = c("ALB", "ONT", "QUE")}.
-White spaces in population names are replaced by underscore.
-Default: \code{pop.levels = NULL}.}
-
-\item{blacklist.id}{(optional) A blacklist with individual ID and
-a column header 'INDIVIDUALS'. The blacklist is an object in your
-global environment or a file in the working directory
-(e.g. "blacklist.txt"). \code{_} and \code{:} in individual's names
-are changed to a dash \code{-}.
-Default: \code{blacklist.id = NULL}.}
-
-\item{pop.select}{(string, optional) Selected list of populations for
-the analysis. e.g. \code{pop.select = c("QUE", "ONT")} to select \code{QUE}
-and \code{ONT} population samples (out of 20 pops).
-Default: \code{pop.select = NULL}}
-
-\item{monomorphic.out}{(optional) Should the monomorphic
-markers present in the dataset be filtered out ?
-Default: \code{monomorphic.out = TRUE}.}
-
-\item{common.markers}{(optional) Logical. Default: \code{common.markers = TRUE},
-will only keep markers in common (genotyped) between all the populations.}
-
-\item{filter.markers.coverage}{(optional, string, numerical) Filter the lower and
-upper bound of locus/read coverage. The locus/read coverage combines the markers
-average count for REF and ALT allele (respectively the \code{AvgCountRef} and
-\code{AvgCountSnp} info). These markers statistics are generated by DArT.
-If you have count data, use \code{erase.genotypes} argument below instead.
-Default: \code{filter.markers.coverage = NULL}.
-e.g to keep markers with coverage inbetween 7 and 200,
-use : \code{filter.markers.coverage = c(7, 200)}.}
-
-\item{erase.genotypes}{(optional, string, numerical) DArT file with count
-data is required for this argument to work. With count data, genotype,
-REF and ALT coverage information is available and is better suited than
-\code{filter.markers.coverage} to remove/erase data based on coverage info.
-This function argument requires 3 values in the string:
-\enumerate{
-\item threshold.low.coverage: threshold for the minimum read coverage. Under this threshold,
-genotypes are erased. e.g. 7
-\item threshold.gl: threshold that applies only for heterozygous genotypes.
-Using the \code{threshold.low.coverage} doesn't guarantees that REF and ALT
-allele have adequate coverage. This threshold does.
-A genotype likelihood value is generated based
-on the departure of equal coverage between REF and ALT allele, number of samples
-sharing the heterozygous genotype for the locus, missing data for the locus
-and individual. Below the genotype likelihood threshold value,
-the heterozygous genotypes are erased. e.g. if an heterozygous genotype for a
-marker as REF/ALT coverage of 100/3 with only 1 sample sharing this info and
-this sample has 50% missing data and the marker missingness is averaged, the
-GL value will be extremely low compared to another heterozygous genotype with
-50/50 of coverage and 10 samples sharing the same genotype...
-\item threshold.high.coverage: threshold that allows to erase genotypes with
-very high coverage
-}
-e.g. of values: \code{erase.genotypes = c(7, -0.25, 200)}.
-However, using the \code{interactive.filter = TRUE} is highly recommended to
-visualize data before choosing values.
-Default: \code{erase.genotypes = NULL}.}
-
-\item{filter.individuals.missing}{(optional, double) New argument to blacklist
-individuals with too many missing genotypes. Below the threshold, individuals
-are blacklisted. e.g. 0.80 will blacklist individuals with more than 20% missing
-genotypes.
-Default: \code{filter.individuals.missing = NULL}.}
-
-\item{filter.markers.missing}{(optional, string) Similar to call rate, but
-more adapted to the data. 3 values are required in the string, corresponding
-to the \code{\link[radiator]{filter_individual}} module of radiator.
-First value is the approach to count genotyped individuals per markers, \code{"overall"}
-or by \code{"pop"}. Second value is the percent threshold for the marker, with
-\code{70}, 70 percent of genotyped individuals are required to keep the marker.
-The last threshold is the number of problematic population that are allowed to skip
-the threshold. In doubt, use the interactive mode that take step by step these
-arguments. e.g to keep individuals genotyped at >= 70 percent for the markers,
-without considering the population info and allowing 1 population to be problematic for the
-threshold, use: \code{c("overall", 70, 1)}.
-Default: \code{filter.markers.missing = NULL}.}
-
-\item{maf.thresholds}{(optional) Use for minor allele frequency (maf) or count (mac)
-filter. Default: \code{maf.thresholds = NULL}, for no filtering.
-
-String with 5 values.
-For example using SNP and frequency approach: \code{maf.thresholds = c("SNP", 0.001, "OR", 0.001, 1)}.
-For example using locus and count approach: \code{maf.thresholds = c("locus", 3, "OR", 6, 1)}.
-\enumerate{
-\item maf approach (character: "SNP"/"locus"):
-MAF filtering is conducted by SNPs or locus.
-\code{"SNP"}: will consider all the SNPs on the same locus/read as independent
-and will be filtered independently of their locus id.
-\code{"locus"}: looks at the minimum MAF found on the
-read/locus. Using this option will discard all the markers/snp on
-that read based on the thresholds chosen. For the locus approach to work, your dataset
-requires SNP and Locus info (e.g. from a VCF file).
-
-\item local threshold (double or integer): For a frequency threshold use
-a double (e.g. 0.05). For a count threshold, use an integer
-(e.g. 3 for the number of alternate allele required in a population). This
-threshold is applied by population.
-Not sure about the threshold to use, choose the interactive mode argument.
-
-\item operator (character: "OR" / "AND"):
-To consider both the local \code{"AND"} the global thresholds, use \code{"AND"}.
-To consider the local \code{"OR"} the global thresholds, use \code{"OR"}.
-
-\item global threshold (double or integer): For a frequency threshold
-use a double (e.g. 0.02). For a count threshold, use an integer
-(e.g. 6 for the number of alternate allele required). This threshold is
-applied at the dataset level (no population).
-Not sure about the threshold to use, choose the interactive mode argument.
-
-\item maf pop num threshold (integer)
-The number of pop required to pass the thresholds
-to keep the marker. Usually, I always use \code{1}, for 1 pop is required to
-pass thresholds and keep the marker.
-}}
-
-\item{number.snp.reads}{(optional, integer) This filter removes outlier markers
-with too many SNP number per locus/read.
-Having a higher than "normal" SNP number is usually the results of
-assembly artifacts or bad assembly parameters.
-This filter is population-agnostic. This is best decide after viewing the figures,
-with the interactive mode.
-If the argument is set to \code{number.snp.reads = 2},
-locus with 3 and more SNPs will be blacklisted.
-Default: \code{number.snp.reads = NULL}.}
-
-\item{snp.ld}{(optional) \strong{For data with locus and SNP info, like VCF and DArT file}.
-SNP short distance linkage disequilibrium pruning. With anonymous markers from
-RADseq/GBS de novo discovery, you can minimize linkage disequilibrium (LD) by
-choosing among these 5 options:
-\enumerate{
-\item \code{snp.ld = "random"} for a random selection of 1 SNP on the read,
-\item \code{snp.ld = "first"} for the first one on the read...,
-\item \code{snp.ld = "last"} for the last SNP on the read and
-\item \code{snp.ld = "middle"} for locus with > 2 SNPs/read the option to select at random
-one SNP between the first and the last SNP on the read. If the locus as <= 2
-SNPs on the read, the first one is selected. Note that for that last option,
-the numbers are reported.
-\item \code{snp.ld = "maf"} will select the SNP on the locus with the maximum global
-Minor Allele Frequency (MAF).
-}
-For long distance linkage disequilibrium pruning, see details below.
-Default: \code{snp.ld = NULL}, for no pruning.}
-
-\item{mixed.genomes.analysis}{(optional, logical) Highlight outliers individual's
-observed heterozygosity for a quick
-diagnostic of mixed samples or poor polymorphism discovery due to DNA quality,
-sequencing effort, etc.
-See this function for more info: \code{\link[radiator]{detect_mixed_genomes}}.
-Default: \code{detect_mixed_genomes = TRUE}.}
-
-\item{ind.heterozygosity.threshold}{(string, double, optional)
-Blacklist individuals based on observed heterozygosity (averaged across markers).
-
-
-The string contains 2 thresholds values (min and max).
-The values are proportions (0 to 1), where 0 turns off the min threshold and
-1 turns off the max threshold.
-Individuals with mean observed heterozygosity higher (>) or lower (<)
-than the thresholds will be blacklisted.
-
-Default: \code{ind.heterozygosity.threshold = NULL} will turn off completely
-the filter and the function will only output the plots and table of heterozygosity.}
-
-\item{duplicate.genomes.analysis}{(optional, string) Detect duplicate individuals.
-The function can compute two methods (distance or genome pairwise similarity)
-to highligh potential duplicate individuals.
-See this function for more info: \code{\link[radiator]{detect_duplicate_genomes}}.
-The string required to run the analysis as 2 values:
-\enumerate{
-\item TRUE/FALSE to run the analysis;
-\item Computes pairwise genome similarity (TRUE/FALSE),
-with FALSE just the distance measure is used.
-The pairwise genome similarity is longer to run, but is better because it
-integrates markers in common/missing data.
-Using \code{interactive.filter = TRUE}, can overide this value,
-you can opt in for the pairwise genome similarity after viewing the figures
-used with distance measure... handy!
-}
-Default: \code{detect_duplicate_genomes = c(TRUE, FALSE)}.}
-
-\item{hw.pop.threshold}{(integer, optional)
-Remove markers that have a certain number of pops in Hardy-Weinberg
-disequilibrium.
-With default, all populations in dataset need to be in HWD before discarding
-the marker.
-Default: \code{hw.pop.threshold = NULL}.}
-
-\item{midp.threshold}{(character, optional)
-By default the function generates blacklists/whitelists of markers and
-filtered tidy datasets for the 5 mid p-value.
-However, to get a final filtered object associated with the output of the
-function, user need to choose one
-of the 5 mid p-value \code{"*", "**", "***", "****", "*****"}.
-With default, a very conservative mid p-value threshold (= 0.0001) is selected.
-Default: \code{midp.threshold = "****"}.}
-
-\item{imputation.method}{(character, optional)
-Methods available for map-independent imputations of missing genotype
-(see details for more info):
-
-\enumerate{
-\item \code{imputation.method = "max"} Strawman imputation,
-the most frequently observed genotypes (ties are broken at random).
-
-\item \code{imputation.method = "rf"} On-the-fly-imputations using
-Random Forests algorithm.
-
-\item \code{imputation.method = "rf_pred"} Random Forests algorithm is used
-as a prediction problem.
-
-\item \code{imputation.method = "boost"} extreme gradient boosting trees.
-
-\item \code{imputation.method = "mca"} Multiple Correspondence Analysis (in devel).
-
-\code{imputation.method = NULL} the function will stop.
-Default: \code{imputation.method = NULL}.
-}}
-
-\item{hierarchical.levels}{(character, optional) \code{c("global", "strata")}.
-Should the imputations be computed by markers globally or by strata.
-Historically, this was \code{"populations"}.
-
-Note that imputing genotype globally in conjunction with
-\code{imputation.method = "max"} can potentially create huge bias.
-e.g. by introducing foreign genotypes/haplotypes in some populations
-(see note for more info).
-Default: \code{hierarchical.levels = "strata"}.}
-
-\item{num.tree}{(integer, optional) The number of trees to grow
-when \code{imputation.method = "rf"} or \code{imputation.method = "rf_pred"}.
-Default: \code{num.tree = 50}.}
 
 \item{filename}{(optional) The filename prefix for the objet in the global environment
 or the working directory. Default: \code{filename = NULL}. A default name will be used,
@@ -311,7 +46,7 @@ Default: \code{verbose = TRUE}.}
 
 \item{parallel.core}{(optional) The number of core used for parallel
 execution during import.
-Default: \code{parallel::detectCores() - 1}.}
+Default: \code{parallel.core = parallel::detectCores() - 1}.}
 
 \item{...}{(optional) To pass further argument for fine-tuning the function.}
 }
@@ -346,5 +81,6 @@ shark <- radiator::filter_rad(
 }
 }
 \author{
-Thierry Gosselin \email{thierrygosselin@icloud.com} and Peter Grewe \email{peter.grewe@csiro.au}
+Thierry Gosselin \email{thierrygosselin@icloud.com} and
+Peter Grewe \email{peter.grewe@csiro.au}
 }

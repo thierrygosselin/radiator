@@ -5,8 +5,8 @@
 \title{Write a \href{http://cmpg.unibe.ch/software/BayeScan/}{BayeScan}
 file from a tidy data frame}
 \usage{
-write_bayescan(data, pop.select = NULL, snp.ld = NULL,
-  filename = NULL, parallel.core = parallel::detectCores() - 1)
+write_bayescan(data, pop.select = NULL, filename = NULL,
+  parallel.core = parallel::detectCores() - 1, ...)
 }
 \arguments{
 \item{data}{A tidy data frame object in the global environment or
@@ -14,28 +14,10 @@ a tidy data frame in wide or long format in the working directory.
 \emph{How to get a tidy data frame ?}
 Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.}
 
-\item{pop.select}{(string, optional) Selected list of populations for
+\item{pop.select}{(optional, string) Selected list of populations for
 the analysis. e.g. \code{pop.select = c("QUE", "ONT")} to select \code{QUE}
 and \code{ONT} population samples (out of 20 pops).
 Default: \code{pop.select = NULL}}
-
-\item{snp.ld}{(optional) \strong{For data with locus and SNP info, like VCF and DArT file}.
-SNP short distance linkage disequilibrium pruning. With anonymous markers from
-RADseq/GBS de novo discovery, you can minimize linkage disequilibrium (LD) by
-choosing among these 5 options:
-\enumerate{
-\item \code{snp.ld = "random"} for a random selection of 1 SNP on the read,
-\item \code{snp.ld = "first"} for the first one on the read...,
-\item \code{snp.ld = "last"} for the last SNP on the read and
-\item \code{snp.ld = "middle"} for locus with > 2 SNPs/read the option to select at random
-one SNP between the first and the last SNP on the read. If the locus as <= 2
-SNPs on the read, the first one is selected. Note that for that last option,
-the numbers are reported.
-\item \code{snp.ld = "maf"} will select the SNP on the locus with the maximum global
-Minor Allele Frequency (MAF).
-}
-For long distance linkage disequilibrium pruning, see details below.
-Default: \code{snp.ld = NULL}, for no pruning.}
 
 \item{filename}{(optional) The file name prefix for the bayescan file
 written to the working directory. With default: \code{filename = NULL},
@@ -43,7 +25,9 @@ the date and time is appended to \code{radiator_bayescan_}.}
 
 \item{parallel.core}{(optional) The number of core used for parallel
 execution during import.
-Default: \code{parallel::detectCores() - 1}.}
+Default: \code{parallel.core = parallel::detectCores() - 1}.}
+
+\item{...}{(optional) To pass further arguments for fine-tuning the function.}
 }
 \value{
 A bayescan file is written in the working directory.
@@ -53,6 +37,14 @@ Write a \href{http://cmpg.unibe.ch/software/BayeScan/}{BayeScan}
 file from a tidy data frame. The data is bi- or multi-allelic.
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and might be of interest for users.
+}
+\details{
+\emph{Integrated filters:}
+\enumerate{
+\item by defaults only markers found in common between populations are used
+\item by defaults monomorphic markers are automatically removed before
+generating the dataset.
+}
 }
 \references{
 Foll, M and OE Gaggiotti (2008) A genome scan method to identify

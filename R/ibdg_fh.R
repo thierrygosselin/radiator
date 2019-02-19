@@ -35,18 +35,10 @@
 #' \href{https://github.com/thierrygosselin/stackr}{stackr} \emph{summary_haplotypes}
 #' function and \href{https://github.com/thierrygosselin/grur}{grur}
 #' \emph{missing_visualization} functions.
-#' See \strong{note} below for the equations.
+#' See theory below for the equations.
 
 #' @inheritParams tidy_genomic_data
-
-#' @param monomorphic.out (optional) Set by default to remove
-#' monomorphic markers that might have avoided filters.
-#' Default: \code{monomorphic.out = TRUE}.
-
-#' @param common.markers (optional) Logical. The argument for common markers
-#' between populations is set by default to maximize genome coverage of
-#' individuals and populations.
-#' Default: \code{common.markers = FALSE}
+#' @param ... (optional) To pass further arguments for fine-tuning the function.
 
 #' @param filename (optional) Name of the tidy data set,
 #' written to the working directory.
@@ -59,7 +51,7 @@
 #' The first table, \code{$fh}, gives the individual's value
 #' while the second table, \code{$fh.stats}, show the population and overall averaged.
 
-#' @note
+#' @section Theory:
 #'
 #' \strong{Modified FH:}
 #' \deqn{F_{h_i} = \frac{\overline{Het}_{obs_{ij}} - \overline{Het}_{exp_j}}{\sum_{i}snp_{ij} - \overline{Het}_{exp_j}}}
@@ -70,6 +62,20 @@
 #' \strong{Population expected Heterozygosity (under Hardy-Weinberg) and
 #' tailored by averaging for each individual using his genotyped markers:}
 #' \deqn{\overline{Het}_{exp_j} = \frac{\sum_jHet_{exp_j}}{\sum_j{snp_j}}}
+
+#' @section Advance mode:
+#'
+#' \emph{dots-dots-dots ...} allows to pass several arguments for fine-tuning the function.
+#' These arguments are described in \code{\link{tidy_genomic_data}}.
+#' \itemize{
+#' \item filter.monomorphic = TRUE (default)
+#' \item filter.common.markers = FALSE. The argument for common markers
+#' between populations is set by default to maximize genome coverage of
+#' individuals and populations.
+#' }
+
+
+
 
 
 #' @examples
@@ -115,18 +121,9 @@
 ibdg_fh <- function(
   data,
   strata = NULL,
-  monomorphic.out = TRUE,
-  common.markers = FALSE,
-  pop.levels = NULL,
-  pop.labels = NULL,
-  pop.select = NULL,
-  blacklist.id = NULL,
-  blacklist.genotype = NULL,
-  whitelist.markers = NULL,
-  max.marker = NULL,
-  snp.ld = NULL,
   filename = NULL,
-  verbose = TRUE
+  verbose = TRUE,
+  ...
 ) {
   if (verbose) {
     cat("#######################################################################\n")
@@ -136,29 +133,25 @@ ibdg_fh <- function(
   }
   # manage missing arguments -----------------------------------------------------
   if (missing(data)) stop("Input file missing")
-  if (!is.null(pop.levels) & is.null(pop.labels)) pop.labels <- pop.levels
-  if (!is.null(pop.labels) & is.null(pop.levels)) stop("pop.levels is required if you use pop.labels")
 
   # store function call
   function.call <- match.call()
 
   # import data ----------------------------------------------------------------
   input <- radiator::tidy_genomic_data(
-    data = data,
-    vcf.metadata = FALSE,
-    blacklist.id = blacklist.id,
-    blacklist.genotype = blacklist.genotype,
-    whitelist.markers = whitelist.markers,
-    monomorphic.out = monomorphic.out,
-    max.marker = max.marker,
-    snp.ld = snp.ld,
-    common.markers = common.markers,
-    strata = strata,
-    pop.select = pop.select,
-    pop.levels = pop.labels,
-    pop.labels = pop.labels,
-    filename = filename,
-    verbose = FALSE
+    data = data, strata = strata,
+    filename = filename, verbose = FALSE,
+    rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE)
+    # vcf.metadata = FALSE,
+    # blacklist.id = blacklist.id,
+    # blacklist.genotype = blacklist.genotype,
+    # whitelist.markers = whitelist.markers,
+    # monomorphic.out = monomorphic.out,
+    # snp.ld = snp.ld,
+    # common.markers = common.markers,
+    # pop.select = pop.select,
+    # pop.levels = pop.labels,
+    # pop.labels = pop.labels,
   )
 
   if (!"MARKERS" %in% colnames(input) & "LOCUS" %in% colnames(input)) {

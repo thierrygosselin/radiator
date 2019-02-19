@@ -17,12 +17,13 @@
 #' e.g. of common value \code{burn.in = 500}.
 #' With default: \code{burn.in = NULL}.
 
+#' @inheritParams read_strata
 #' @inheritParams tidy_genomic_data
 
-#' @param blacklist.markers (optional) Path to a file with markers to blacklist
-#' before generating the miscall rate. Usefull to test the impact of different
-#' HWE thresholds rapidly...
-#' Default: \code{blacklist.markers = NULL}.
+# @param blacklist.markers (optional) Path to a file with markers to blacklist
+# before generating the miscall rate. Usefull to test the impact of different
+# HWE thresholds rapidly...
+# Default: \code{blacklist.markers = NULL}.
 
 #' @details
 #' \strong{Before using the function:}
@@ -110,19 +111,10 @@ detect_het_outliers <- function (
   data,
   nreps = 2000,
   burn.in = NULL,
-  blacklist.id = NULL,
-  whitelist.markers = NULL,
-  blacklist.markers = NULL,
-  monomorphic.out = TRUE,
-  max.marker = NULL,
-  snp.ld = NULL,
-  common.markers = TRUE,
   strata = NULL,
-  pop.levels = NULL,
-  pop.labels = NULL,
-  pop.select = NULL,
   filename = NULL,
-  parallel.core = parallel::detectCores() - 1
+  parallel.core = parallel::detectCores() - 1,
+  ...
 ) {
   opt.change <- getOption("width")
   options(width = 70)
@@ -170,37 +162,39 @@ detect_het_outliers <- function (
     # Remove blacklisted markers -------------------------------------------------
     # Note to myself: I think this argument is useful because it allows to test
     # quickly the impact of different HWE thresholds.
-    if (!is.null(blacklist.markers)) {
-      message("Removing markers in the blacklist")
-      blacklist.markers <- readr::read_tsv(
-        file = blacklist.markers,
-        col_types = readr::cols(.default = readr::col_character()))
-      res$input <- dplyr::filter(res$input, !MARKERS %in% blacklist.markers$MARKERS)
-    }
+    # if (!is.null(blacklist.markers)) {
+    #   message("Removing markers in the blacklist")
+    #   blacklist.markers <- readr::read_tsv(
+    #     file = blacklist.markers,
+    #     col_types = readr::cols(.default = readr::col_character()))
+    #   res$input <- dplyr::filter(res$input, !MARKERS %in% blacklist.markers$MARKERS)
+    # }
 
-    # because this step skip the import and filter process we include monomorphic filter
-    mono.out <- discard_monomorphic_markers(res$input, verbose = TRUE)
-    mono.markers <- mono.out$blacklist.monomorphic.markers
-    if (nrow(mono.markers) > 0) {
-      res$input <- mono.out$input
-      readr::write_tsv(mono.markers, file.path(path.folder, "blacklist.monomorphic.markers.tsv"))
-    }
-    mono.out <- mono.markers <- NULL
+    # # because this step skip the import and filter process we include monomorphic filter
+    # mono.out <- discard_monomorphic_markers(res$input, verbose = TRUE)
+    # mono.markers <- mono.out$blacklist.monomorphic.markers
+    # if (nrow(mono.markers) > 0) {
+    #   res$input <- mono.out$input
+    #   readr::write_tsv(mono.markers, file.path(path.folder, "blacklist.monomorphic.markers.tsv"))
+    # }
+    # mono.out <- mono.markers <- NULL
+
+    # Keeping common markers -----------------------------------------------------
+    res$input <- radiator::filter_common_markers(data = res$input, verbose = TRUE) %$% input
+
+
+    # Removing monomorphic markers -----------------------------------------------
+    res$input <- radiator::filter_monomorphic(data = res$input, verbose = TRUE) %$% input
+
+
   } else {
     res$input <- radiator::tidy_genomic_data(
       data = data,
       vcf.metadata = FALSE,
-      blacklist.id = blacklist.id,
-      blacklist.genotype = NULL,
-      whitelist.markers = whitelist.markers,
-      monomorphic.out = monomorphic.out,
-      max.marker = max.marker,
-      snp.ld = snp.ld,
-      common.markers = common.markers,
+      filter.monomorphic = TRUE,
+      filter.common.markers = TRUE,
       strata = strata,
-      pop.levels = pop.levels,
-      pop.labels = pop.labels,
-      pop.select = pop.select,
+      # pop.select = pop.select,
       filename = filename,
       parallel.core = parallel.core,
       verbose = FALSE
@@ -305,7 +299,7 @@ summarise_genotypes <- function(data, path.folder = NULL) {
   want <- c("MARKERS", "POP_ID", "INDIVIDUALS", "GT_BIN", "READ_DEPTH")
   data <- suppressWarnings(dplyr::select(data, dplyr::one_of(want))) #%>% dplyr::filter(!is.na(GT_BIN))
 
-  n.pop <- dplyr::n_distinct(data$POP_ID)
+  n.pop <- length(unique(data$POP_ID))
   if (is.factor(data$POP_ID)) {
     pop.levels <- c(levels(data$POP_ID), "OVERALL")
   } else {
@@ -344,7 +338,7 @@ summarise_genotypes <- function(data, path.folder = NULL) {
         GT_BIN == 0 ~ "HOM_REF",
         GT_BIN == 1 ~ "HET",
         GT_BIN == 2 ~ "HOM_ALT",
-          is.na(GT_BIN) ~ "MISSING")
+        is.na(GT_BIN) ~ "MISSING")
     ) %>%
     dplyr::group_by(MARKERS, POP_ID, GT_BIN) %>%
     dplyr::tally(.) %>%
@@ -371,7 +365,7 @@ summarise_genotypes <- function(data, path.folder = NULL) {
     dplyr::arrange(MARKERS, POP_ID)
   pop <- NULL
 
-  data <- data %>%
+  data  %<>%
     dplyr::mutate(
       FREQ_ALT = ((HOM_ALT * 2) + HET) / (2 * N),
       FREQ_REF = 1 - FREQ_ALT,
@@ -390,9 +384,11 @@ summarise_genotypes <- function(data, path.folder = NULL) {
       HOM_ALT_Z_SCORE = (HOM_ALT - N_HOM_ALT_EXP) / sqrt(N * FREQ_HOM_ALT_E * (1 - FREQ_HOM_ALT_E))
     ) %>%
     dplyr::bind_cols(rd) %>%
-    dplyr::mutate(POP_ID = factor(POP_ID, levels = pop.levels, ordered = TRUE)) %>%
-    readr::write_tsv(x = ., path = file.path(path.folder, "genotypes.summary.tsv"))
+    dplyr::mutate(POP_ID = factor(POP_ID, levels = pop.levels, ordered = TRUE))
+
   rd <- NULL
+
+  readr::write_tsv(x = data, path = file.path(path.folder, "genotypes.summary.tsv"))
   return(data)
 }#End summarise_genotypes
 

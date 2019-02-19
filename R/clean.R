@@ -1,4 +1,4 @@
-#' @title Clean marker's name
+#' @title Clean marker's names for radiator and other packages
 #' @description Function to clean marker's name
 #' of weird separators
 #' that interfere with some packages
@@ -18,7 +18,7 @@ clean_markers_names <- function(x) {
     vectorize_all = FALSE)
 }#End clean_markers_names
 
-#' @title clean individual's name
+#' @title Clean individual's names for radiator and other packages
 #' @description function to clean individual's name
 #' that interfere with some packages
 #' or codes. \code{_} and \code{:} are changed to a dash \code{-}.
@@ -37,7 +37,7 @@ clean_ind_names <- function(x) {
     vectorize_all = FALSE)
 }#End clean_ind_names
 
-#' @title Clean population's name
+#' @title Clean population's names for radiator and other packages
 #' @description Function to clean pop's name
 #' that interfere with some packages
 #' or codes. Space is changed to an underscore \code{_}.

@@ -4,14 +4,15 @@
 \alias{update_parameters}
 \title{update_parameters}
 \usage{
-update_parameters(parameter.obj = NULL, gds.obj = NULL,
-  filter.name = "", param.name = "", values = paste(NULL, NULL, sep =
-  " / "), units = "individuals / strata / chrom / locus / markers",
+update_parameters(generate = FALSE, initiate = FALSE, update = TRUE,
+  parameter.obj = NULL, data = NULL, filter.name = "",
+  param.name = "", values = paste(NULL, NULL, sep = " / "),
+  units = "individuals / strata / chrom / locus / markers",
   comments = "", path.folder = NULL, file.date = NULL,
-  initiate = FALSE, verbose = TRUE)
+  internal = FALSE, verbose = TRUE)
 }
 \description{
 Generate or update a filters parameters file and object.
-Used internally in radiator. Not usefull for users.
+Used internally in radiator, not usefull outside the package.
 }
 \keyword{internal}

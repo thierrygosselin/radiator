@@ -7,9 +7,9 @@
 diagnostic_maf(data, group.rank, filename = NULL)
 }
 \arguments{
-\item{data}{A file in the working directory or object in the global environment 
-in wide or long (tidy) formats. To import, the function uses 
-\href{https://github.com/thierrygosselin/radiator}{radiator} 
+\item{data}{A file in the working directory or object in the global environment
+in wide or long (tidy) formats. To import, the function uses
+\href{https://github.com/thierrygosselin/radiator}{radiator}
 \code{\link[radiator]{tidy_wide}}.
 \emph{See details of this function for more info}.}
 

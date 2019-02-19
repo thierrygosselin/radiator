@@ -152,7 +152,7 @@
 tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
 
   # Checking for missing and/or default arguments-------------------------------
-  if (missing(data)) stop("genepop file missing")
+  if (missing(data)) rlang::abort("genepop file missing")
 
   # Import data ------------------------------------------------------------------
   if (is.vector(data)) {
@@ -352,7 +352,7 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
     unique(.)
 
   if (length(gt.coding) != 1) {
-    stop("Mixed genotype codings are not supported:
+    rlang::abort("Mixed genotype codings are not supported:
   use 1, 2 or 3 characters/numbers for alleles")
   }
 

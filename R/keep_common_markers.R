@@ -35,18 +35,25 @@
 # @importFrom UpSetR upset
 
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
+#' @section Life cycle:
+#'
+#' As of radiator v.0.0.22, keep.common.markers function is deprecated and was replaced by
+#' \code{\link{filter_common_markers}} in an effort to have more meaningful functions names.
 
 keep_common_markers <- function(data, plot = FALSE, verbose = FALSE) {
 
+  message("\n\nDeprecated function, update your code to use: filter_common_markers\n\n")
+
+
   if (plot) {
     if (!requireNamespace("UpSetR", quietly = TRUE)) {
-      stop("UpSetR needed for this function to work
-         Install with install.packages('UpSetR')", call. = FALSE)
+      rlang::abort("UpSetR needed for this function to work
+         Install with install.packages('UpSetR')")
     }
   }
 
   # Checking for missing and/or default arguments ------------------------------
-  if (missing(data)) stop("Input file missing")
+  if (missing(data)) rlang::abort("Input file missing")
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {

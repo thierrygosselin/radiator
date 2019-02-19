@@ -37,7 +37,7 @@
 write_fineradstructure <- function(data, filename = NULL) {
 
   # Checking for missing and/or default arguments ******************************
-  if (missing(data)) stop("Input file missing")
+  if (missing(data)) rlang::abort("Input file missing")
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {
@@ -46,7 +46,7 @@ write_fineradstructure <- function(data, filename = NULL) {
 
   #Check the required columns --------------------------------------------------
   if (!tibble::has_name(data, "GT_VCF_NUC")) {
-    stop("Wrong genotype format: nucleotide information is required\ntry running the function radiator::tidy_genomic_data")
+    rlang::abort("Wrong genotype format: nucleotide information is required\ntry running the function radiator::tidy_genomic_data")
   }
 
   # Filename -------------------------------------------------------------------

@@ -30,6 +30,13 @@ Keep markers in common between all populations.
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and might be of interest for users.
 }
+\section{Life cycle}{
+
+
+As of radiator v.0.0.22, keep.common.markers function is deprecated and was replaced by
+\code{\link{filter_common_markers}} in an effort to have more meaningful functions names.
+}
+
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}
 }

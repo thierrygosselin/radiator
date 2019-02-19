@@ -12,8 +12,8 @@
 #' \emph{How to get a tidy data frame ?}
 #' Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
 
-#' @param pop.levels (optional, string) A character string with your populations ordered.
-#' Default: \code{pop.levels = NULL}.
+#' @inheritParams read_strata
+
 
 #' @param markers.line (optional, logical) In the structure
 #' file, you can write the markers on a single line separated by
@@ -55,7 +55,7 @@ write_structure <- function(
 ) {
 
   # Checking for missing and/or default arguments ******************************
-  if (missing(data)) stop("Input file missing")
+  if (missing(data)) rlang::abort("Input file missing")
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {

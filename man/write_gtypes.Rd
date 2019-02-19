@@ -2,7 +2,7 @@
 % Please edit documentation in R/write_gtypes.R
 \name{write_gtypes}
 \alias{write_gtypes}
-\title{Write a \code{\link[strataG]{gtypes}} object from a tidy data frame}
+\title{Write a \href{https://github.com/EricArcher/}{strataG} object from a tidy data frame}
 \usage{
 write_gtypes(data)
 }
@@ -13,10 +13,10 @@ a tidy data frame in wide or long format in the working directory.
 Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.}
 }
 \value{
-An object of the class \code{\link[strataG]{gtypes}} is returned.
+An object of the class \href{https://github.com/EricArcher/}{strataG} is returned.
 }
 \description{
-Write a \code{\link[strataG]{gtypes}} object from a tidy data frame.
+Write a\href{https://github.com/EricArcher/}{strataG} object from a tidy data frame.
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and might be of interest for users.
 }
@@ -27,7 +27,7 @@ genetic data.
 Molecular Ecology Resources. 2017; 17: 5-11. doi:10.1111/1755-0998.12559
 }
 \seealso{
-\code{strataG.devel} is available on github \url{https://github.com/EricArcher/}
+\href{https://github.com/EricArcher/}{strataG}
 }
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}

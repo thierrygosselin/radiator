@@ -4,13 +4,6 @@
 
 #' @inheritParams tidy_genomic_data
 
-#' @param monomorphic.out (optional) Set by default to remove
-#' monomorphic markers that might have avoided filters.
-#' Default: \code{monomorphic.out = TRUE}.
-
-#' @param common.markers (optional) Logical. The argument for common markers
-#' between populations is set by default to keep markers in common between all populations.
-#' Default: \code{common.markers = TRUE}
 
 #' @return A list is created with 3 objects:
 #' betaiovl: Average \eqn{\beta_i} over loci,
@@ -49,16 +42,6 @@
 betas_estimator <- function(
   data,
   strata = NULL,
-  monomorphic.out = TRUE,
-  common.markers = TRUE,
-  pop.levels = NULL,
-  pop.labels = NULL,
-  pop.select = NULL,
-  blacklist.id = NULL,
-  blacklist.genotype = NULL,
-  whitelist.markers = NULL,
-  max.marker = NULL,
-  snp.ld = NULL,
   filename = NULL,
   verbose = FALSE
 ) {
@@ -69,44 +52,17 @@ betas_estimator <- function(
     timing <- proc.time()
   }
   # manage missing arguments -----------------------------------------------------
-  if (missing(data)) stop("Input file missing")
-  if (!is.null(pop.levels) & is.null(pop.labels)) pop.labels <- pop.levels
-  if (!is.null(pop.labels) & is.null(pop.levels)) stop("pop.levels is required if you use pop.labels")
+  if (missing(data)) rlang::abort("Input file missing")
 
   # import data ----------------------------------------------------------------
-  # if (is.vector(data)) {
-  input <- radiator::tidy_genomic_data(
-    data = data,
-    vcf.metadata = FALSE,
-    blacklist.id = blacklist.id,
-    blacklist.genotype = blacklist.genotype,
-    whitelist.markers = whitelist.markers,
-    monomorphic.out = monomorphic.out,
-    max.marker = max.marker,
-    snp.ld = snp.ld,
-    common.markers = common.markers,
-    strata = strata,
-    pop.select = pop.select,
-    filename = filename
-  )
-
-  # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-  if (tibble::has_name(input, "LOCUS") && !tibble::has_name(input, "MARKERS")) {
-    input <- dplyr::rename(.data = input, MARKERS = LOCUS)
-  }
-
-  # population names if pop.levels/pop.labels were request
-  input <- radiator::change_pop_names(data = input, pop.levels = pop.labels, pop.labels = pop.labels)
-
-  # Detect if biallelic --------------------------------------------------------
-  # biallelic <- radiator::detect_biallelic_markers(input)
+  if (is.vector(data)) data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
 
   # BETAS computations ----------------------------------------------------------
   message("Beta computation ...")
-  if (tibble::has_name(input, "GT_VCF")) {
+  if (tibble::has_name(data, "GT_VCF")) {
     message("Warning: implementation is not working yet for haplotype vcf file")
     # option 2 using list-columns
-    betas.prep <- dplyr::filter(.data = input, GT_VCF != "./.") %>%
+    betas.prep <- dplyr::filter(.data = data, GT_VCF != "./.") %>%
       dplyr::group_by(MARKERS, POP_ID) %>%
       dplyr::summarise(
         N = n(),
@@ -153,7 +109,7 @@ betas_estimator <- function(
 
     betas.prep <- NULL
   } else {
-    betas.prep <- dplyr::select(.data = input, MARKERS, POP_ID, INDIVIDUALS, GT) %>%
+    betas.prep <- dplyr::select(.data = data, MARKERS, POP_ID, INDIVIDUALS, GT) %>%
       dplyr::filter(GT != "000000") %>%
       dplyr::mutate(
         A1 = stringi::stri_sub(GT, 1, 3),
@@ -268,7 +224,7 @@ betas_estimator <- function(
 # }
 #
 # #
-# betas <- input %>%
+# betas <- data %>%
 #   dplyr::filter(GT_VCF != "./.") %>%
 #   dplyr::group_by(MARKERS, POP_ID) %>%
 #   dplyr::summarise(

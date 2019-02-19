@@ -45,7 +45,7 @@ write_arlequin <- function(
 ) {
 
   # Checking for missing and/or default arguments ******************************
-  if (missing(data)) stop("Input file missing")
+  if (missing(data)) rlang::abort("Input file missing")
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {
@@ -93,14 +93,7 @@ write_arlequin <- function(
 
   # Write the file in arlequin format -----------------------------------------
   # date & time
-  file.date <- stringi::stri_replace_all_fixed(
-    Sys.time(),
-    pattern = " EDT", replacement = "") %>%
-    stringi::stri_replace_all_fixed(
-      str = .,
-      pattern = c("-", " ", ":"), replacement = c("", "@", ""),
-      vectorize_all = FALSE) %>%
-    stringi::stri_sub(str = ., from = 1, to = 13)
+  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
 
   # Filename
   if (is.null(filename)) {
@@ -157,4 +150,5 @@ write_arlequin <- function(
     write(paste("\"", pop.name, "\"", sep = ""), file = filename.connection, append = TRUE)
   }
   write(paste("}"), file = filename.connection, append = TRUE)
+  invisible(data)
 } # end write_arlequin

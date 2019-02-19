@@ -55,25 +55,25 @@ write_hzar <- function(
 
 
   # Checking for missing and/or default arguments ------------------------------
-  if (missing(data)) stop("Input file is missing")
+  if (missing(data)) rlang::abort("Input file is missing")
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {
-    input <- radiator::tidy_wide(data = data, import.metadata = TRUE)
+    data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
   } else {
-    input <- data
+    data <- data
   }
 
   # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-  if (tibble::has_name(input, "LOCUS") && !tibble::has_name(input, "MARKERS")) {
-    input <- dplyr::rename(.data = input, MARKERS = LOCUS)
+  if (rlang::has_name(data, "LOCUS") && !rlang::has_name(data, "MARKERS")) {
+    data <- dplyr::rename(.data = data, MARKERS = LOCUS)
   }
 
   # Keeping common markers -----------------------------------------------------
-  input <- radiator::keep_common_markers(data = input, verbose = TRUE)$input
+  data <- radiator::filter_common_markers(data = data, verbose = TRUE, internal = TRUE)
 
   # Removing monomorphic markers -----------------------------------------------
-  input <- radiator::discard_monomorphic_markers(data = input, verbose = TRUE)$input
+  data <- radiator::filter_monomorphic(data = data, verbose = TRUE, internal = TRUE)
 
   # detect biallelic markers ---------------------------------------------------
   # biallelic <- radiator::detect_biallelic_markers(data = input)
@@ -91,7 +91,7 @@ write_hzar <- function(
     # check same pop_id
     pop.distance <- dplyr::distinct(distances, POP_ID)
     if (!identical(unique(input$POP_ID), pop.distance$POP_ID)) {
-      stop("Populations in `distances` file doesn't match populations in `input` file")
+      rlang::abort("Populations in `distances` file doesn't match populations in `input` file")
     }
   }
   message("Generating HZAR file...")

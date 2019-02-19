@@ -39,3 +39,4 @@ Table 2: summary of coverage imbalance between alleles in the heterozygotes.
 0/1 : heterozygote with coverage REF > ALT allele.
 1/0 : heterozygote with coverage REF < ALT allele.
 }
+\keyword{internal}

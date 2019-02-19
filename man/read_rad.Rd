@@ -5,7 +5,8 @@
 \title{Read radiator file ending .rad or .gds}
 \usage{
 read_rad(data, columns = NULL, from = 1, to = NULL,
-  as.data.table = FALSE, old_format = FALSE)
+  as.data.table = FALSE, old.format = FALSE, allow.dup = FALSE,
+  check = TRUE, verbose = FALSE)
 }
 \arguments{
 \item{data}{A file in the working directory ending with .rad or .gds,
@@ -27,9 +28,21 @@ Any keys set on dataset \code{x} before writing will be retained.
 This allows for storage of sorted datasets.
 Default: \code{as.data.table = TRUE}.}
 
-\item{old_format}{(optional, logical) For fst file. Use \code{TRUE} to read fst
+\item{old.format}{(optional, logical) For fst file. Use \code{TRUE} to read fst
 files generated with a fst package version lower than v.0.8.0
-Default: \code{old_format = FALSE}.}
+Default: \code{old.format = FALSE}.}
+
+\item{allow.dup}{(optional, logical) To allow the opening of a GDS file with
+read-only mode when it has been opened in the same R session.
+Default: \code{allow.dup = FALSE}.}
+
+\item{check}{(optional, logical) Verify that GDS number of samples and markers
+match.
+Default: \code{check = TRUE}.}
+
+\item{verbose}{(optional, logical) \code{verbose = TRUE} to be chatty
+during execution.
+Default: \code{verbose = FALSE}.}
 }
 \value{
 A radiator tidy data frame or

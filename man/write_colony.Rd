@@ -2,191 +2,36 @@
 % Please edit documentation in R/write_colony.R
 \name{write_colony}
 \alias{write_colony}
-\title{Write a \code{COLONY} input file from 9 genomic formats}
+\title{Write a \code{COLONY} input file}
 \usage{
-write_colony(data, strata = NULL, pop.levels = NULL,
-  pop.labels = NULL, blacklist.id = NULL, blacklist.genotype = NULL,
-  whitelist.markers = NULL, monomorphic.out = TRUE, snp.ld = NULL,
-  common.markers = TRUE, maf.thresholds = NULL, max.marker = NULL,
-  sample.markers = NULL, pop.select = NULL, allele.freq = NULL,
-  inbreeding = 0, mating.sys.males = 0, mating.sys.females = 0,
-  clone = 0, run.length = 2, analysis = 1, allelic.dropout = 0,
+write_colony(data, strata = NULL, sample.markers = NULL,
+  pop.select = NULL, allele.freq = NULL, inbreeding = 0,
+  mating.sys.males = 0, mating.sys.females = 0, clone = 0,
+  run.length = 2, analysis = 1, allelic.dropout = 0,
   error.rate = 0.02, print.all.colony.opt = FALSE,
-  imputation.method = NULL, hierarchical.levels = "populations",
-  num.tree = 50, pred.mean.matching = 0, random.seed = NULL,
-  verbose = FALSE, parallel.core = parallel::detectCores() - 1,
-  filename = NULL)
+  random.seed = NULL, verbose = FALSE,
+  parallel.core = parallel::detectCores() - 1, filename = NULL, ...)
 }
 \arguments{
-\item{data}{12 options: VCF (SNPs or Haplotypes,
-to make the vcf population ready, see details below),
+\item{data}{12 options for input: VCFs (SNPs or Haplotypes,
+to make the vcf population ready),
 plink, stacks haplotype file, genind (library(adegenet)),
 genlight (library(adegenet)), gtypes (library(strataG)), genepop, DArT,
-and a data frame in long/tidy or wide format.
-\emph{See details} of \code{\link[radiator]{tidy_genomic_data}}.}
+and a data frame in long/tidy or wide format. To verify that radiator detect
+your file format use \code{\link{detect_genomic_format}} (see example below).
+Documented in \strong{Input genomic datasets} of \code{\link{tidy_genomic_data}}.}
 
-\item{strata}{(optional)
-The strata file is a tab delimited file with a minimum of 2 columns headers:
-\code{INDIVIDUALS} and \code{STRATA}.
-If a \code{strata} file is specified with all file formats that don't
-require it, the strata argument will have precedence on the population
-groupings used internally in those file formats. For file formats without
-population/strata groupings (e.g. vcf, haplotype files) if no strata file is
-provided, 1 pop/strata grouping will automatically be created.
-For vcf and haplotypes file, the strata can also be used as a whitelist of id.
-Samples not in the strata file will be discarded from the data set.
-The \code{STRATA} column can be any hierarchical grouping.
-To create a strata file see \code{\link[radiator]{individuals2strata}}.
-If you have already run
-\href{http://catchenlab.life.illinois.edu/stacks/}{stacks} on your data,
-the strata file is similar to a stacks \emph{population map file},
-make sure you
-have the required column names (\code{INDIVIDUALS} and \code{STRATA}).
-The strata column is cleaned of a white spaces that interfere with some
-packages or codes: space is changed to an underscore \code{_}.
-Default: \code{strata = NULL}.}
-
-\item{pop.levels}{(optional, string) This refers to the levels in a factor. In this
-case, the id of the pop.
-Use this argument to have the pop ordered your way instead of the default
-alphabetical or numerical order. e.g. \code{pop.levels = c("QUE", "ONT", "ALB")}
-instead of the default \code{pop.levels = c("ALB", "ONT", "QUE")}.
-White spaces in population names are replaced by underscore.
-Default: \code{pop.levels = NULL}.}
-
-\item{pop.labels}{(optional, string) Use this argument to rename/relabel
-your pop or combine your pop. e.g. To combine \code{"QUE"} and \code{"ONT"}
-into a new pop called \code{"NEW"}:
-(1) First, define the levels for your pop with \code{pop.levels} argument:
-\code{pop.levels = c("QUE", "ONT", "ALB")}.
-(2) then, use \code{pop.labels} argument:
-\code{pop.labels = c("NEW", "NEW", "ALB")}.
-To rename \code{"QUE"} to \code{"TAS"}:
-\code{pop.labels = c("TAS", "ONT", "ALB")}.
-Default: \code{pop.labels = NULL}. If you find this too complicated,
-there is also the \code{strata} argument that can do the same thing,
-see below.
-White spaces in population names are replaced by underscore.}
-
-\item{blacklist.id}{(optional) A blacklist with individual ID and
-a column header 'INDIVIDUALS'. The blacklist is an object in your
-global environment or a file in the working directory
-(e.g. "blacklist.txt"). \code{_} and \code{:} in individual's names
-are changed to a dash \code{-}.
-Default: \code{blacklist.id = NULL}.}
-
-\item{blacklist.genotype}{(optional) Useful to erase genotype with below
-average quality, e.g. genotype with more than 2 alleles in diploid likely
-sequencing errors or genotypes with poor genotype likelihood or coverage.
-The blacklist has a minimum of 2 column headers (markers and individuals).
-Markers can be 1 column (CHROM or LOCUS or POS),
-a combination of 2 (e.g. CHROM and POS or CHROM and LOCUS or LOCUS and POS) or
-all 3 (CHROM, LOCUS, POS). The markers columns must be designated: CHROM (character
-or integer) and/or LOCUS (integer) and/or POS (integer). The id column designated
-INDIVIDUALS (character) columns header.
-The blacklist is an object in your global environment or
-a file in the working directory (e.g. "blacklist.genotype.txt").
-For de novo VCF, CHROM column
-with 'un' need to be changed to 1.
-Marker names are cleaned of
-separators that interfere with some packages or codes:
-\code{/}, \code{:}, \code{-} and \code{.} are changed to an underscore
-\code{_}.
-Ids are also cleaned of separators that interfere with some packages or codes:
-\code{_} and \code{:} are changed to a dash \code{-}.
-Default: \code{blacklist.genotype = NULL} for no blacklist of
-genotypes to erase.}
-
-\item{whitelist.markers}{(optional) A whitelist containing CHROM (character
-or integer) and/or LOCUS (integer) and/or
-POS (integer) columns header. To filter by chromosome and/or locus and/or by snp.
-The whitelist is an object in your
-global environment or a file in the working directory (e.g. "whitelist.txt").
-Note that \emph{de novo} CHROM column with 'un' need to be changed to 1.
-In the VCF, the column ID is the LOCUS identification (VCF generated from
-stacks have the SNP position on the read embedded in the ID,
-so the ID = no longer represent the LOCUS). Marker names are cleaned of
-separators that interfere with some packages or codes:
-\code{/}, \code{:}, \code{-} and \code{.} are changed to an underscore
-\code{_}.
-Default \code{whitelist.markers = NULL} for no whitelist of markers.}
-
-\item{monomorphic.out}{(optional) Should the monomorphic
-markers present in the dataset be filtered out ?
-Default: \code{monomorphic.out = TRUE}.}
-
-\item{snp.ld}{(optional) \strong{For data with locus and SNP info, like VCF and DArT file}.
-SNP short distance linkage disequilibrium pruning. With anonymous markers from
-RADseq/GBS de novo discovery, you can minimize linkage disequilibrium (LD) by
-choosing among these 5 options:
-\enumerate{
-\item \code{snp.ld = "random"} for a random selection of 1 SNP on the read,
-\item \code{snp.ld = "first"} for the first one on the read...,
-\item \code{snp.ld = "last"} for the last SNP on the read and
-\item \code{snp.ld = "middle"} for locus with > 2 SNPs/read the option to select at random
-one SNP between the first and the last SNP on the read. If the locus as <= 2
-SNPs on the read, the first one is selected. Note that for that last option,
-the numbers are reported.
-\item \code{snp.ld = "maf"} will select the SNP on the locus with the maximum global
-Minor Allele Frequency (MAF).
-}
-For long distance linkage disequilibrium pruning, see details below.
-Default: \code{snp.ld = NULL}, for no pruning.}
-
-\item{common.markers}{(optional) Logical. Default: \code{common.markers = TRUE},
-will only keep markers in common (genotyped) between all the populations.}
-
-\item{maf.thresholds}{(optional) Use for minor allele frequency (maf) or count (mac)
-filter. Default: \code{maf.thresholds = NULL}, for no filtering.
-
-String with 5 values.
-For example using SNP and frequency approach: \code{maf.thresholds = c("SNP", 0.001, "OR", 0.001, 1)}.
-For example using locus and count approach: \code{maf.thresholds = c("locus", 3, "OR", 6, 1)}.
-\enumerate{
-\item maf approach (character: "SNP"/"locus"):
-MAF filtering is conducted by SNPs or locus.
-\code{"SNP"}: will consider all the SNPs on the same locus/read as independent
-and will be filtered independently of their locus id.
-\code{"locus"}: looks at the minimum MAF found on the
-read/locus. Using this option will discard all the markers/snp on
-that read based on the thresholds chosen. For the locus approach to work, your dataset
-requires SNP and Locus info (e.g. from a VCF file).
-
-\item local threshold (double or integer): For a frequency threshold use
-a double (e.g. 0.05). For a count threshold, use an integer
-(e.g. 3 for the number of alternate allele required in a population). This
-threshold is applied by population.
-Not sure about the threshold to use, choose the interactive mode argument.
-
-\item operator (character: "OR" / "AND"):
-To consider both the local \code{"AND"} the global thresholds, use \code{"AND"}.
-To consider the local \code{"OR"} the global thresholds, use \code{"OR"}.
-
-\item global threshold (double or integer): For a frequency threshold
-use a double (e.g. 0.02). For a count threshold, use an integer
-(e.g. 6 for the number of alternate allele required). This threshold is
-applied at the dataset level (no population).
-Not sure about the threshold to use, choose the interactive mode argument.
-
-\item maf pop num threshold (integer)
-The number of pop required to pass the thresholds
-to keep the marker. Usually, I always use \code{1}, for 1 pop is required to
-pass thresholds and keep the marker.
-}}
-
-\item{max.marker}{(integer, optional) For large PLINK files,
-useful to subsample marker number. e.g. if the data set
-contains 200 000 markers and \code{max.marker = 10000}, 10000 markers are
-subsampled randomly from the 200000 markers. If you need specific markers,
-use \code{whitelist.markers} argument.
-Default: \code{max.marker = NULL}.}
+\item{strata}{(path or object) The strata file or object.
+Additional documentation is available in \code{\link{read_strata}}.
+Use that function to whitelist/blacklist populations/individuals.
+Option to set \code{pop.levels/pop.labels} is also available.}
 
 \item{sample.markers}{(number) \code{COLONY} can take a long time to run,
 use a random subsample of your markers to speed test \code{COLONY}
 e.g. \code{sample.markers = 500} to use only 500 randomly chosen markers.
 Default: \code{sample.markers = NULL}, will use all markers.}
 
-\item{pop.select}{(string, optional) Selected list of populations for
+\item{pop.select}{(optional, string) Selected list of populations for
 the analysis. e.g. \code{pop.select = c("QUE", "ONT")} to select \code{QUE}
 and \code{ONT} population samples (out of 20 pops).
 Default: \code{pop.select = NULL}}
@@ -234,53 +79,9 @@ Default:\code{error.rate = 0.02}.}
 \strong{This require manual curation, for the file to work directly with \code{COLONY}}.
 Default = \code{print.all.colony.opt = FALSE}.}
 
-\item{imputation.method}{(character, optional)
-Methods available for map-independent imputations of missing genotype
-(see details for more info):
-
-\enumerate{
-\item \code{imputation.method = "max"} Strawman imputation,
-the most frequently observed genotypes (ties are broken at random).
-
-\item \code{imputation.method = "rf"} On-the-fly-imputations using
-Random Forests algorithm.
-
-\item \code{imputation.method = "rf_pred"} Random Forests algorithm is used
-as a prediction problem.
-
-\item \code{imputation.method = "boost"} extreme gradient boosting trees.
-
-\item \code{imputation.method = "mca"} Multiple Correspondence Analysis (in devel).
-
-\code{imputation.method = NULL} the function will stop.
-Default: \code{imputation.method = NULL}.
-}}
-
-\item{hierarchical.levels}{(character, optional) \code{c("global", "strata")}.
-Should the imputations be computed by markers globally or by strata.
-Historically, this was \code{"populations"}.
-
-Note that imputing genotype globally in conjunction with
-\code{imputation.method = "max"} can potentially create huge bias.
-e.g. by introducing foreign genotypes/haplotypes in some populations
-(see note for more info).
-Default: \code{hierarchical.levels = "strata"}.}
-
-\item{num.tree}{(integer, optional) The number of trees to grow
-when \code{imputation.method = "rf"} or \code{imputation.method = "rf_pred"}.
-Default: \code{num.tree = 50}.}
-
-\item{pred.mean.matching}{(integer, optional) Used in conjunction with
-random Forests (\code{imputation.method = "rf_pred"}).
-Number of candidate non-missing
-value to sample from during the predictive mean matching step.
-A fast k-nearest neighbor searching algorithms is used with this approach.
-\code{pred.mean.matching = 3} will use 3 neighbors.
-Default: \code{pred.mean.matching = 0}, avoids this step.}
-
 \item{random.seed}{(integer, optional) For reproducibility, set an integer
-that will be used to initialize the random generator. With default,
-a random number is generated.
+that will be used inside the function that requires randomness. With default,
+a random number is generated and printed in the appropriate output.
 Default: \code{random.seed = NULL}.}
 
 \item{verbose}{(optional, logical) When \code{verbose = TRUE}
@@ -289,9 +90,11 @@ Default: \code{verbose = TRUE}.}
 
 \item{parallel.core}{(optional) The number of core used for parallel
 execution during import.
-Default: \code{parallel::detectCores() - 1}.}
+Default: \code{parallel.core = parallel::detectCores() - 1}.}
 
 \item{filename}{Name of the acronym for filenaming in the working directory.}
+
+\item{...}{(optional) To pass further arguments for fine-tuning the function.}
 }
 \value{
 A \code{COLONY} file in your working directory (2 if you selected imputations arguments...)
@@ -310,72 +113,34 @@ Not all options are provided here.
 But to ease the process, all the required options to properly run \code{COLONY}
 will be printed in the file written in your working directory.
 Change the values accordingly and wisely.
-
-
-\strong{Imputations}
-The imputations using Random Forest requires more time to compute
-and can take several minutes and hours depending on the size of
-the dataset and polymorphism of the species used. e.g. with a
-low polymorphic taxa, and a data set containing 30\% missing data,
-5 000 haplotypes loci and 500 individuals will require 15 min.
-For details about imputations, look into \pkg{radiator} \code{\link{radiator_imputations_module}}
 }
 \note{
-\code{common.markers} argument should be left to the default:  \code{common.markers = TRUE}.
-
-
-\code{monomorphic.out} argument should be left to the default:  \code{monomorphic.out = TRUE}.
-
-
-\strong{using a VCF with several SNP per haplotypes/read for input?}
-
-Please consider keeping just 1 SNP per read, \code{COLONY} doesn't like this
-kind of linkage... use the argument \code{snp.ld}.
+By default, the function uses common markers between groupings and removes monomorphic markers.
 }
 \examples{
 \dontrun{
 # Simplest way to run the function:
 colony.file <- radiator::write_colony(
-data = "batch_1.vcf",
-strata = "strata.treefrog.tsv"
+    data = "batch_1.vcf",
+    strata = "strata.treefrog.tsv"
 )
 
 # With imputations and a STACKS haplotypes file:
 colony.file <- radiator::write_colony(
-data = "batch_1.haplotypes.tsv",
-strata = "strata.treefrog.tsv",
-imputation.method = "rf"
+    data = "batch_1.haplotypes.tsv",
+    strata = "strata.treefrog.tsv",
+    imputation.method = "rf"
 )
 
 # Now using a whitelist of markers and keeping only the first SNP on each read:
 colony.file <- radiator::write_colony(
-data = "batch_1.haplotypes.tsv",
-strata = "strata.treefrog.tsv",
-whitelist.markers = "whitelist.vcf.txt",
-snp.ld = "first",
-common.markers = TRUE, # this is also a default...
-monomorphic.out = TRUE # this is also a default...
+    data = "batch_1.haplotypes.tsv",
+    strata = "strata.treefrog.tsv",
+    whitelist.markers = "whitelist.vcf.txt"
 )
 }
 }
 \references{
-Catchen JM, Amores A, Hohenlohe PA et al. (2011)
-Stacks: Building and Genotyping Loci De Novo From Short-Read Sequences.
-G3, 1, 171-182.
-
-Catchen JM, Hohenlohe PA, Bassham S, Amores A, Cresko WA (2013)
-Stacks: an analysis tool set for population genomics.
-Molecular Ecology, 22, 3124-3140.
-
-Ishwaran H. and Kogalur U.B. (2015). Random Forests for Survival,
- Regression and Classification (RF-SRC), R package version 1.6.1.
-
-Ishwaran H. and Kogalur U.B. (2007). Random survival forests
-for R. R News 7(2), 25-31.
-
-Ishwaran H., Kogalur U.B., Blackstone E.H. and Lauer M.S. (2008).
-Random survival forests. Ann. Appl. Statist. 2(3), 841--860.
-
 Jones OR, Wang J (2010) COLONY: a program for parentage and
 sibship inference from multilocus genotype data.
 Molecular Ecology Resources, 10, 551–555.
@@ -386,10 +151,6 @@ Parentage Assignment from Multilocus Marker Data. Genetics, 191, 183–194.
 \seealso{
 \code{COLONY} is available on Jinliang Wang web site
 \url{http://www.zsl.org/science/software/colony}
-
-\code{randomForestSRC} is available on
-CRAN \url{http://cran.r-project.org/web/packages/randomForestSRC/}
-and github \url{https://github.com/ehrlinger/randomForestSRC}
 }
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}

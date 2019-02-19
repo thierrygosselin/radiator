@@ -22,7 +22,7 @@ the date and time is appended to \code{radiator_hzar_}.}
 
 \item{parallel.core}{(optional) The number of core used for parallel
 execution during import.
-Default: \code{parallel::detectCores() - 1}.}
+Default: \code{parallel.core = parallel::detectCores() - 1}.}
 }
 \value{
 A HZAR file is written in the working directory.

@@ -26,3 +26,4 @@ e.g. aes(y = ..scaled.., color = GROUP).}
 Create density distribution of the observed heterozygosity
 summary statistics.
 }
+\keyword{internal}

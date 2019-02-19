@@ -4,29 +4,31 @@
 \alias{filter_het}
 \title{Heterozygosity filter}
 \usage{
-filter_het(data, interactive.filter = TRUE,
+filter_het(interactive.filter = TRUE, data, strata = NULL,
   ind.heterozygosity.threshold = NULL, het.approach = c("SNP",
   "overall"), het.threshold = 1, het.dif.threshold = 1,
   outlier.pop.threshold = 1, helper.tables = FALSE,
-  coverage.info = FALSE, filename = NULL, vcf.metadata = TRUE,
-  blacklist.id = NULL, blacklist.genotype = NULL,
-  whitelist.markers = NULL, monomorphic.out = TRUE,
-  max.marker = NULL, snp.ld = NULL, common.markers = FALSE,
-  strata = NULL, pop.levels = NULL, pop.labels = NULL,
-  pop.select = NULL, parallel.core = parallel::detectCores() - 1)
+  coverage.info = FALSE, filename = NULL,
+  parallel.core = parallel::detectCores() - 1, ...)
 }
 \arguments{
-\item{data}{12 options: VCF (SNPs or Haplotypes,
-to make the vcf population ready, see details below),
-plink, stacks haplotype file, genind (library(adegenet)),
-genlight (library(adegenet)), gtypes (library(strataG)), genepop, DArT,
-and a data frame in long/tidy or wide format.
-\emph{See details} of \code{\link[radiator]{tidy_genomic_data}}.}
-
 \item{interactive.filter}{(optional, logical) Do you want the filtering session to
 be interactive. With the default, the user is asked to see figures of
 distribution before making decisions for filtering with heterozygosity statistics.
 Default: \code{interactive.filter == TRUE}.}
+
+\item{data}{12 options for input: VCFs (SNPs or Haplotypes,
+to make the vcf population ready),
+plink, stacks haplotype file, genind (library(adegenet)),
+genlight (library(adegenet)), gtypes (library(strataG)), genepop, DArT,
+and a data frame in long/tidy or wide format. To verify that radiator detect
+your file format use \code{\link{detect_genomic_format}} (see example below).
+Documented in \strong{Input genomic datasets} of \code{\link{tidy_genomic_data}}.}
+
+\item{strata}{(optional)
+The strata file is a tab delimited file with a minimum of 2 columns headers:
+\code{INDIVIDUALS} and \code{STRATA}. Documented in \code{\link{read_strata}}.
+Default: \code{strata = NULL}.}
 
 \item{ind.heterozygosity.threshold}{(string, double, optional)
 Blacklist individuals based on observed heterozygosity (averaged across markers).
@@ -95,144 +97,11 @@ the folder created in the working directory. The file extension appended to
 the \code{filename} provided is \code{.rad}.
 Default: \code{filename = NULL}.}
 
-\item{vcf.metadata}{(optional, logical or string) For VCF files only.
-With \code{logical, TRUE/FALSE}, \code{vcf.metadata = FALSE}, only the genotype
-information is kept (GT field). With \code{vcf.metadata = TRUE},
-all the metadata contained in the \code{FORMAT} field will be kept in
-the tidy data file. radiator is currently keeping/cleaning only these metadata:
-\code{"DP", "AD", "GL", "PL", "GQ", "HQ", "GOF", "NR", "NV"}.
-If you need different one, submit a request.
-With \code{string}, explicitely ask for a particular FORMAT field you want
-to keep (except the GT field that is always imported).
-e.g. \code{vcf.metadata = "PL"} or \code{vcf.metadata = c("DP", "GL")}.
-Default: \code{vcf.metadata = TRUE}.}
-
-\item{blacklist.id}{(optional) A blacklist with individual ID and
-a column header 'INDIVIDUALS'. The blacklist is an object in your
-global environment or a file in the working directory
-(e.g. "blacklist.txt"). \code{_} and \code{:} in individual's names
-are changed to a dash \code{-}.
-Default: \code{blacklist.id = NULL}.}
-
-\item{blacklist.genotype}{(optional) Useful to erase genotype with below
-average quality, e.g. genotype with more than 2 alleles in diploid likely
-sequencing errors or genotypes with poor genotype likelihood or coverage.
-The blacklist has a minimum of 2 column headers (markers and individuals).
-Markers can be 1 column (CHROM or LOCUS or POS),
-a combination of 2 (e.g. CHROM and POS or CHROM and LOCUS or LOCUS and POS) or
-all 3 (CHROM, LOCUS, POS). The markers columns must be designated: CHROM (character
-or integer) and/or LOCUS (integer) and/or POS (integer). The id column designated
-INDIVIDUALS (character) columns header.
-The blacklist is an object in your global environment or
-a file in the working directory (e.g. "blacklist.genotype.txt").
-For de novo VCF, CHROM column
-with 'un' need to be changed to 1.
-Marker names are cleaned of
-separators that interfere with some packages or codes:
-\code{/}, \code{:}, \code{-} and \code{.} are changed to an underscore
-\code{_}.
-Ids are also cleaned of separators that interfere with some packages or codes:
-\code{_} and \code{:} are changed to a dash \code{-}.
-Default: \code{blacklist.genotype = NULL} for no blacklist of
-genotypes to erase.}
-
-\item{whitelist.markers}{(optional) A whitelist containing CHROM (character
-or integer) and/or LOCUS (integer) and/or
-POS (integer) columns header. To filter by chromosome and/or locus and/or by snp.
-The whitelist is an object in your
-global environment or a file in the working directory (e.g. "whitelist.txt").
-Note that \emph{de novo} CHROM column with 'un' need to be changed to 1.
-In the VCF, the column ID is the LOCUS identification (VCF generated from
-stacks have the SNP position on the read embedded in the ID,
-so the ID = no longer represent the LOCUS). Marker names are cleaned of
-separators that interfere with some packages or codes:
-\code{/}, \code{:}, \code{-} and \code{.} are changed to an underscore
-\code{_}.
-Default \code{whitelist.markers = NULL} for no whitelist of markers.}
-
-\item{monomorphic.out}{(optional) Should the monomorphic
-markers present in the dataset be filtered out ?
-Default: \code{monomorphic.out = TRUE}.}
-
-\item{max.marker}{(integer, optional) For large PLINK files,
-useful to subsample marker number. e.g. if the data set
-contains 200 000 markers and \code{max.marker = 10000}, 10000 markers are
-subsampled randomly from the 200000 markers. If you need specific markers,
-use \code{whitelist.markers} argument.
-Default: \code{max.marker = NULL}.}
-
-\item{snp.ld}{(optional) \strong{For data with locus and SNP info, like VCF and DArT file}.
-SNP short distance linkage disequilibrium pruning. With anonymous markers from
-RADseq/GBS de novo discovery, you can minimize linkage disequilibrium (LD) by
-choosing among these 5 options:
-\enumerate{
-\item \code{snp.ld = "random"} for a random selection of 1 SNP on the read,
-\item \code{snp.ld = "first"} for the first one on the read...,
-\item \code{snp.ld = "last"} for the last SNP on the read and
-\item \code{snp.ld = "middle"} for locus with > 2 SNPs/read the option to select at random
-one SNP between the first and the last SNP on the read. If the locus as <= 2
-SNPs on the read, the first one is selected. Note that for that last option,
-the numbers are reported.
-\item \code{snp.ld = "maf"} will select the SNP on the locus with the maximum global
-Minor Allele Frequency (MAF).
-}
-For long distance linkage disequilibrium pruning, see details below.
-Default: \code{snp.ld = NULL}, for no pruning.}
-
-\item{common.markers}{(optional) Logical. Default: \code{common.markers = TRUE},
-will only keep markers in common (genotyped) between all the populations.}
-
-\item{strata}{(optional)
-The strata file is a tab delimited file with a minimum of 2 columns headers:
-\code{INDIVIDUALS} and \code{STRATA}.
-If a \code{strata} file is specified with all file formats that don't
-require it, the strata argument will have precedence on the population
-groupings used internally in those file formats. For file formats without
-population/strata groupings (e.g. vcf, haplotype files) if no strata file is
-provided, 1 pop/strata grouping will automatically be created.
-For vcf and haplotypes file, the strata can also be used as a whitelist of id.
-Samples not in the strata file will be discarded from the data set.
-The \code{STRATA} column can be any hierarchical grouping.
-To create a strata file see \code{\link[radiator]{individuals2strata}}.
-If you have already run
-\href{http://catchenlab.life.illinois.edu/stacks/}{stacks} on your data,
-the strata file is similar to a stacks \emph{population map file},
-make sure you
-have the required column names (\code{INDIVIDUALS} and \code{STRATA}).
-The strata column is cleaned of a white spaces that interfere with some
-packages or codes: space is changed to an underscore \code{_}.
-Default: \code{strata = NULL}.}
-
-\item{pop.levels}{(optional, string) This refers to the levels in a factor. In this
-case, the id of the pop.
-Use this argument to have the pop ordered your way instead of the default
-alphabetical or numerical order. e.g. \code{pop.levels = c("QUE", "ONT", "ALB")}
-instead of the default \code{pop.levels = c("ALB", "ONT", "QUE")}.
-White spaces in population names are replaced by underscore.
-Default: \code{pop.levels = NULL}.}
-
-\item{pop.labels}{(optional, string) Use this argument to rename/relabel
-your pop or combine your pop. e.g. To combine \code{"QUE"} and \code{"ONT"}
-into a new pop called \code{"NEW"}:
-(1) First, define the levels for your pop with \code{pop.levels} argument:
-\code{pop.levels = c("QUE", "ONT", "ALB")}.
-(2) then, use \code{pop.labels} argument:
-\code{pop.labels = c("NEW", "NEW", "ALB")}.
-To rename \code{"QUE"} to \code{"TAS"}:
-\code{pop.labels = c("TAS", "ONT", "ALB")}.
-Default: \code{pop.labels = NULL}. If you find this too complicated,
-there is also the \code{strata} argument that can do the same thing,
-see below.
-White spaces in population names are replaced by underscore.}
-
-\item{pop.select}{(string, optional) Selected list of populations for
-the analysis. e.g. \code{pop.select = c("QUE", "ONT")} to select \code{QUE}
-and \code{ONT} population samples (out of 20 pops).
-Default: \code{pop.select = NULL}}
-
 \item{parallel.core}{(optional) The number of core used for parallel
 execution during import.
-Default: \code{parallel::detectCores() - 1}.}
+Default: \code{parallel.core = parallel::detectCores() - 1}.}
+
+\item{...}{(optional) To pass further arguments for fine-tuning the function.}
 }
 \value{
 The function returns inside the global environment a list with

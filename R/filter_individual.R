@@ -12,6 +12,8 @@
 
 # Most arguments are inherited from tidy_genomic_data
 #' @inheritParams tidy_genomic_data
+#' @inheritParams read_strata
+#' @inheritParams radiator_common_arguments
 
 #' @param interactive.filter (optional, logical) Do you want the filtering session to
 #' be interactive. With default: \code{interactive.filter == TRUE}, the user is
@@ -127,26 +129,16 @@
 #' }
 
 filter_individual <- function(
-  data,
-  vcf.metadata = FALSE,
   interactive.filter = TRUE,
+  data,
+  strata = NULL,
   ind.approach = "pop",
   ind.threshold = 0.5,
   prob.pop.threshold = 0,
   percent = FALSE,
   filename = NULL,
-  blacklist.id = NULL,
-  blacklist.genotype = NULL,
-  whitelist.markers = NULL,
-  monomorphic.out = TRUE,
-  max.marker = NULL,
-  snp.ld = NULL,
-  common.markers = FALSE,
-  strata = NULL,
-  pop.levels = NULL,
-  pop.labels = NULL,
-  pop.select = NULL,
-  parallel.core = parallel::detectCores() - 1
+  parallel.core = parallel::detectCores() - 1,
+  ...
 ) {
   cat("#######################################################################\n")
   cat("##################### radiator::filter_individual #######################\n")
@@ -155,16 +147,16 @@ filter_individual <- function(
   options(width = 70)
   timing <- proc.time()
   # manage missing arguments -----------------------------------------------------
-  if (missing(data)) stop("Input file missing")
+  if (missing(data)) rlang::abort("Input file missing")
   if (!is.null(pop.levels) & is.null(pop.labels)) {
     pop.levels <- stringi::stri_replace_all_fixed(pop.levels, pattern = " ", replacement = "_", vectorize_all = FALSE)
     pop.labels <- pop.levels
   }
 
-  if (!is.null(pop.labels) & is.null(pop.levels)) stop("pop.levels is required if you use pop.labels")
+  if (!is.null(pop.labels) & is.null(pop.levels)) rlang::abort("pop.levels is required if you use pop.labels")
 
   if (!is.null(pop.labels)) {
-    if (length(pop.labels) != length(pop.levels)) stop("pop.labels and pop.levels must have the same length (number of groups)")
+    if (length(pop.labels) != length(pop.levels)) rlang::abort("pop.labels and pop.levels must have the same length (number of groups)")
     pop.labels <- stringi::stri_replace_all_fixed(pop.labels, pattern = " ", replacement = "_", vectorize_all = FALSE)
   }
 
@@ -328,7 +320,7 @@ filter_individual <- function(
   # Set the breaks for the figure
   max.markers <- dplyr::n_distinct(input$MARKERS)
 
-  #Function to replace plyr::round_any
+  #Function to replace packageplyr round_any
   rounder <- function(x, accuracy, f = round) {
     f(x / accuracy) * accuracy
   }

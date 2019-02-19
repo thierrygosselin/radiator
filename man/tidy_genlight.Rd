@@ -4,10 +4,21 @@
 \alias{tidy_genlight}
 \title{Tidy a genlight object to a tidy dataframe}
 \usage{
-tidy_genlight(data, verbose = FALSE)
+tidy_genlight(data, tidy = TRUE, gds = TRUE, write = FALSE,
+  verbose = FALSE)
 }
 \arguments{
 \item{data}{A genlight object in the global environment.}
+
+\item{tidy}{(logical) Generate a tidy dataset.
+Default: \code{tidy = TRUE}.}
+
+\item{gds}{(optional, logical) To write a radiator gds object.
+Default: \code{gds = TRUE}.}
+
+\item{write}{(optional, logical) To write in the working directory the tidy
+data. The file is written with \code{radiator_genlight_DATE@TIME.rad}.
+Default: \code{write = FALSE}.}
 
 \item{verbose}{(optional, logical) When \code{verbose = TRUE}
 the function is a little more chatty during execution.
@@ -21,7 +32,7 @@ and might be of interest for users.
 \details{
 A string of the same dimension is generated when genlight:
 \enumerate{
-\item \code{is.null(genlight@pop)}: pop1 will be integrated
+\item \code{is.null(genlight@pop)}: pop will be integrated
 in the tidy dataset.
 \item \code{is.null(data@chromosome)}: CHROM1 will be integrated
 in the tidy dataset.

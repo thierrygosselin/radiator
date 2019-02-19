@@ -12,6 +12,12 @@
 #' a tidy data frame in wide or long format in the working directory.
 #' \emph{How to get a tidy data frame ?}
 #' Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
+#' @inheritParams tidy_genomic_data
+
+#' @param write (logical, optional) To write in the working directory the genind
+#' object. The file is written with \code{radiator_genind_DATE@TIME.RData} and
+#' can be open with load or readRDS.
+#' Default: \code{write = FALSE}.
 
 #' @export
 #' @rdname write_genind
@@ -33,10 +39,10 @@
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 
-write_genind <- function(data) {
+write_genind <- function(data, write = FALSE, verbose = FALSE) {
 
   # Checking for missing and/or default arguments ******************************
-  if (missing(data)) stop("Input file missing")
+  if (missing(data)) rlang::abort("Input file missing")
 
   # Import data ---------------------------------------------------------------
   want <- c("MARKERS", "POP_ID", "INDIVIDUALS", "REF", "ALT", "GT", "GT_BIN")
@@ -198,5 +204,14 @@ write_genind <- function(data) {
     hierarchy = NULL
   )
   data <- NULL
+
+  if (write) {
+    filename.temp <- generate_filename(extension = "genind")
+    filename.short <- filename.temp$filename.short
+    filename.genind <- filename.temp$filename
+    saveRDS(object = res, file = filename.genind)
+    if (verbose) message("File written: ", filename.short)
+  }
+
   return(res)
 } # End write_genind

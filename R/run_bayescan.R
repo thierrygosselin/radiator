@@ -209,11 +209,11 @@ run_bayescan <- function(
 
   # check BayeScan install -----------------------------------------------------
   if (!file.exists(bayescan.path)) {
-    stop("Path to BayeScan install is not valid")
+    rlang::abort("Path to BayeScan install is not valid")
   }
 
-  if (missing(data)) stop("Input file missing")
-  if (missing(pr_odds)) stop("Prior odds for the neutral model is missing.
+  if (missing(data)) rlang::abort("Input file missing")
+  if (missing(pr_odds)) rlang::abort("Prior odds for the neutral model is missing.
                              No shortcut with default here, sorry.
                              Please read the BayeScan manual...")
   # logs files and folder ----------------------------------------------------
@@ -233,7 +233,7 @@ run_bayescan <- function(
     data.type <- radiator::detect_genomic_format(data = data)
     if (is.vector(data)) {
       if (data.type != "fst.file") {
-        stop("Using subsample argument requires a tidy data frame saved by
+        rlang::abort("Using subsample argument requires a tidy data frame saved by
              radiator::tidy_genomic_data function")
       } else {
         data <- radiator::tidy_genomic_data(
@@ -250,7 +250,7 @@ run_bayescan <- function(
       want.more <- c("MARKERS", "INDIVIDUALS", "POP_ID")
       want.more.check <- isTRUE(unique(want.more %in% columns.tidy))
       is.tidy <- isTRUE(unique(c(want.check, want.more.check)))
-      if (!is.tidy) stop("A tidy data frame object required")
+      if (!is.tidy) rlang::abort("A tidy data frame object required")
     }
 
     ind.pop.df <- dplyr::distinct(.data = data, POP_ID, INDIVIDUALS)

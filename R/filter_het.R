@@ -28,6 +28,8 @@
 
 # Most arguments are inherited from tidy_genomic_data
 #' @inheritParams tidy_genomic_data
+#' @inheritParams radiator_common_arguments
+#' @inheritParams read_strata
 
 #' @param interactive.filter (optional, logical) Do you want the filtering session to
 #' be interactive. With the default, the user is asked to see figures of
@@ -207,8 +209,9 @@
 
 
 filter_het <- function(
-  data,
   interactive.filter = TRUE,
+  data,
+  strata = NULL,
   ind.heterozygosity.threshold = NULL,
   het.approach = c("SNP", "overall"),
   het.threshold = 1,
@@ -217,19 +220,13 @@ filter_het <- function(
   helper.tables = FALSE,
   coverage.info = FALSE,
   filename = NULL,
-  vcf.metadata = TRUE,
-  blacklist.id = NULL,
-  blacklist.genotype = NULL,
-  whitelist.markers = NULL,
-  monomorphic.out = TRUE,
-  max.marker = NULL,
-  snp.ld = NULL,
-  common.markers = FALSE,
-  strata = NULL,
-  pop.levels = NULL,
-  pop.labels = NULL,
-  pop.select = NULL,
-  parallel.core = parallel::detectCores() - 1
+  # blacklist.id = NULL,
+  # whitelist.markers = NULL,
+  # pop.levels = NULL,
+  # pop.labels = NULL,
+  # pop.select = NULL,
+  parallel.core = parallel::detectCores() - 1,
+  ...
 ) {
   cat("#######################################################################\n")
   cat("######################### radiator::filter_het ##########################\n")
@@ -239,16 +236,16 @@ filter_het <- function(
   timing <- proc.time()
 
   # manage missing arguments -----------------------------------------------------
-  if (missing(data)) stop("Input file missing")
+  if (missing(data)) rlang::abort("Input file missing")
   if (!is.null(pop.levels) & is.null(pop.labels)) {
     pop.levels <- stringi::stri_replace_all_fixed(pop.levels, pattern = " ", replacement = "_", vectorize_all = FALSE)
     pop.labels <- pop.levels
   }
 
-  if (!is.null(pop.labels) & is.null(pop.levels)) stop("pop.levels is required if you use pop.labels")
+  if (!is.null(pop.labels) & is.null(pop.levels)) rlang::abort("pop.levels is required if you use pop.labels")
 
   if (!is.null(pop.labels)) {
-    if (length(pop.labels) != length(pop.levels)) stop("pop.labels and pop.levels must have the same length (number of groups)")
+    if (length(pop.labels) != length(pop.levels)) rlang::abort("pop.labels and pop.levels must have the same length (number of groups)")
     pop.labels <- stringi::stri_replace_all_fixed(pop.labels, pattern = " ", replacement = "_", vectorize_all = FALSE)
   }
 
@@ -304,7 +301,6 @@ filter_het <- function(
     blacklist.genotype = blacklist.genotype,
     whitelist.markers = whitelist.markers,
     monomorphic.out = monomorphic.out,
-    max.marker = max.marker,
     snp.ld = snp.ld,
     common.markers = common.markers,
     strata = strata,
@@ -336,7 +332,7 @@ filter_het <- function(
 
   # double check the approach vs the file used
   if (!tibble::has_name(input, "CHROM") & het.approach[1] == "haplotype") {
-    stop("The haplotype approach during HET filtering requires LOCUS and SNP
+    rlang::abort("The haplotype approach during HET filtering requires LOCUS and SNP
 information")
   }
 

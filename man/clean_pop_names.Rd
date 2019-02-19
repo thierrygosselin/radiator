@@ -2,7 +2,7 @@
 % Please edit documentation in R/clean.R
 \name{clean_pop_names}
 \alias{clean_pop_names}
-\title{Clean population's name}
+\title{Clean population's names for radiator and other packages}
 \usage{
 clean_pop_names(x)
 }

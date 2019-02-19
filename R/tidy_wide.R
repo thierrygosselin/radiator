@@ -26,7 +26,6 @@
 #' @rdname tidy_wide
 #' @importFrom stringi stri_replace_all_fixed stri_pad_left
 #' @importFrom dplyr mutate select
-#' @importFrom tibble as_data_frame has_name
 #' @importFrom tidyr gather spread
 
 #' @details \strong{Input data:}
@@ -80,7 +79,7 @@
 tidy_wide <- function(data, import.metadata = FALSE) {
 
   # Checking for missing and/or default arguments-------------------------------
-  if (missing(data)) stop("Input file argument is missing")
+  if (missing(data)) rlang::abort("Input file argument is missing")
 
   if (is.vector(data)) {# for file in the working directory
     if (stringi::stri_detect_fixed(
@@ -94,7 +93,7 @@ tidy_wide <- function(data, import.metadata = FALSE) {
 
   # Determine long (tidy) or wide dataset
   if (!"MARKERS" %in% colnames(data) && !"LOCUS" %in% colnames(data)) {
-    if (tibble::has_name(data, "POP_ID")) {
+    if (rlang::has_name(data, "POP_ID")) {
       data <- tidyr::gather(data = data, key = MARKERS, value = GT, -c(POP_ID, INDIVIDUALS))
     } else {
       data <- tidyr::gather(data = data, key = MARKERS, value = GT, -INDIVIDUALS)
@@ -102,12 +101,12 @@ tidy_wide <- function(data, import.metadata = FALSE) {
   }
 
   # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-  if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
+  if (rlang::has_name(data, "LOCUS") && !rlang::has_name(data, "MARKERS")) {
     data <- dplyr::rename(.data = data, MARKERS = LOCUS)
   }
 
   # reproducibility for old format
-  if (tibble::has_name(data, "GENOTYPE")) {
+  if (rlang::has_name(data, "GENOTYPE")) {
     colnames(data) <- stringi::stri_replace_all_fixed(
       str = colnames(data),
       pattern = "GENOTYPE",
@@ -122,7 +121,7 @@ tidy_wide <- function(data, import.metadata = FALSE) {
   }
 
   # Remove unwanted sep in the genotypes (if found)
-  if (tibble::has_name(data, "GT")) {
+  if (rlang::has_name(data, "GT")) {
     gt.sep <- unique(
       stringi::stri_detect_fixed(
         str = sample(x = data$GT, size = 5, replace = FALSE),
@@ -141,12 +140,12 @@ tidy_wide <- function(data, import.metadata = FALSE) {
   }
 
   # clean markers names
-  if (tibble::has_name(data, "MARKERS")) {
+  if (rlang::has_name(data, "MARKERS")) {
     data$MARKERS <- clean_markers_names(data$MARKERS)
   }
 
   data$INDIVIDUALS <- clean_ind_names(data$INDIVIDUALS)# clean id names
-  if (tibble::has_name(data, "POP_ID"))   data$POP_ID <- clean_pop_names(data$POP_ID)# clean pop id
+  if (rlang::has_name(data, "POP_ID"))   data$POP_ID <- clean_pop_names(data$POP_ID)# clean pop id
   data <- dplyr::ungroup(data) # Make sure no data groupings exists
   return(data)
 }#End tidy_wide

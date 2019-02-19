@@ -14,7 +14,7 @@ a tidy data frame in wide or long format in the working directory.
 Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.}
 
 \item{pop.levels}{(optional, string) A character string with your populations ordered.
-Default: \code{pop.levels = NULL}.}
+Default: \code{pop.levels = NULL}. Described in \code{\link{read_strata}}.}
 
 \item{genepop.header}{The first line of the Genepop file.
 Default: \code{genepop.header = NULL} will use "radiator genepop with date".}

@@ -24,7 +24,7 @@ To read the data back into R, use readRDS("filename.ldna.rds").}
 
 \item{parallel.core}{(optional) The number of core used for parallel
 execution during import.
-Default: \code{parallel::detectCores() - 1}.}
+Default: \code{parallel.core = parallel::detectCores() - 1}.}
 
 \item{...}{(optional) To pass further argument for fine-tuning the
 function (see details).}

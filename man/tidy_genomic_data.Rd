@@ -4,193 +4,22 @@
 \alias{tidy_genomic_data}
 \title{Transform common genomic dataset format in a tidy data frame}
 \usage{
-tidy_genomic_data(data, vcf.metadata = TRUE, whitelist.markers = NULL,
-  monomorphic.out = TRUE, blacklist.genotype = NULL, snp.ld = NULL,
-  common.markers = TRUE, maf.thresholds = NULL, max.marker = NULL,
-  blacklist.id = NULL, pop.levels = NULL, pop.labels = NULL,
-  strata = NULL, pop.select = NULL, filename = NULL,
+tidy_genomic_data(data, strata = NULL, filename = NULL,
   parallel.core = parallel::detectCores() - 1, verbose = TRUE, ...)
 }
 \arguments{
-\item{data}{12 options: VCF (SNPs or Haplotypes,
-to make the vcf population ready, see details below),
+\item{data}{12 options for input: VCFs (SNPs or Haplotypes,
+to make the vcf population ready),
 plink, stacks haplotype file, genind (library(adegenet)),
 genlight (library(adegenet)), gtypes (library(strataG)), genepop, DArT,
-and a data frame in long/tidy or wide format.
-\emph{See details} of \code{\link[radiator]{tidy_genomic_data}}.}
-
-\item{vcf.metadata}{(optional, logical or string) For VCF files only.
-With \code{logical, TRUE/FALSE}, \code{vcf.metadata = FALSE}, only the genotype
-information is kept (GT field). With \code{vcf.metadata = TRUE},
-all the metadata contained in the \code{FORMAT} field will be kept in
-the tidy data file. radiator is currently keeping/cleaning only these metadata:
-\code{"DP", "AD", "GL", "PL", "GQ", "HQ", "GOF", "NR", "NV"}.
-If you need different one, submit a request.
-With \code{string}, explicitely ask for a particular FORMAT field you want
-to keep (except the GT field that is always imported).
-e.g. \code{vcf.metadata = "PL"} or \code{vcf.metadata = c("DP", "GL")}.
-Default: \code{vcf.metadata = TRUE}.}
-
-\item{whitelist.markers}{(optional) A whitelist containing CHROM (character
-or integer) and/or LOCUS (integer) and/or
-POS (integer) columns header. To filter by chromosome and/or locus and/or by snp.
-The whitelist is an object in your
-global environment or a file in the working directory (e.g. "whitelist.txt").
-Note that \emph{de novo} CHROM column with 'un' need to be changed to 1.
-In the VCF, the column ID is the LOCUS identification (VCF generated from
-stacks have the SNP position on the read embedded in the ID,
-so the ID = no longer represent the LOCUS). Marker names are cleaned of
-separators that interfere with some packages or codes:
-\code{/}, \code{:}, \code{-} and \code{.} are changed to an underscore
-\code{_}.
-Default \code{whitelist.markers = NULL} for no whitelist of markers.}
-
-\item{monomorphic.out}{(optional) Should the monomorphic
-markers present in the dataset be filtered out ?
-Default: \code{monomorphic.out = TRUE}.}
-
-\item{blacklist.genotype}{(optional) Useful to erase genotype with below
-average quality, e.g. genotype with more than 2 alleles in diploid likely
-sequencing errors or genotypes with poor genotype likelihood or coverage.
-The blacklist has a minimum of 2 column headers (markers and individuals).
-Markers can be 1 column (CHROM or LOCUS or POS),
-a combination of 2 (e.g. CHROM and POS or CHROM and LOCUS or LOCUS and POS) or
-all 3 (CHROM, LOCUS, POS). The markers columns must be designated: CHROM (character
-or integer) and/or LOCUS (integer) and/or POS (integer). The id column designated
-INDIVIDUALS (character) columns header.
-The blacklist is an object in your global environment or
-a file in the working directory (e.g. "blacklist.genotype.txt").
-For de novo VCF, CHROM column
-with 'un' need to be changed to 1.
-Marker names are cleaned of
-separators that interfere with some packages or codes:
-\code{/}, \code{:}, \code{-} and \code{.} are changed to an underscore
-\code{_}.
-Ids are also cleaned of separators that interfere with some packages or codes:
-\code{_} and \code{:} are changed to a dash \code{-}.
-Default: \code{blacklist.genotype = NULL} for no blacklist of
-genotypes to erase.}
-
-\item{snp.ld}{(optional) \strong{For data with locus and SNP info, like VCF and DArT file}.
-SNP short distance linkage disequilibrium pruning. With anonymous markers from
-RADseq/GBS de novo discovery, you can minimize linkage disequilibrium (LD) by
-choosing among these 5 options:
-\enumerate{
-\item \code{snp.ld = "random"} for a random selection of 1 SNP on the read,
-\item \code{snp.ld = "first"} for the first one on the read...,
-\item \code{snp.ld = "last"} for the last SNP on the read and
-\item \code{snp.ld = "middle"} for locus with > 2 SNPs/read the option to select at random
-one SNP between the first and the last SNP on the read. If the locus as <= 2
-SNPs on the read, the first one is selected. Note that for that last option,
-the numbers are reported.
-\item \code{snp.ld = "maf"} will select the SNP on the locus with the maximum global
-Minor Allele Frequency (MAF).
-}
-For long distance linkage disequilibrium pruning, see details below.
-Default: \code{snp.ld = NULL}, for no pruning.}
-
-\item{common.markers}{(optional) Logical. Default: \code{common.markers = TRUE},
-will only keep markers in common (genotyped) between all the populations.}
-
-\item{maf.thresholds}{(optional) Use for minor allele frequency (maf) or count (mac)
-filter. Default: \code{maf.thresholds = NULL}, for no filtering.
-
-String with 5 values.
-For example using SNP and frequency approach: \code{maf.thresholds = c("SNP", 0.001, "OR", 0.001, 1)}.
-For example using locus and count approach: \code{maf.thresholds = c("locus", 3, "OR", 6, 1)}.
-\enumerate{
-\item maf approach (character: "SNP"/"locus"):
-MAF filtering is conducted by SNPs or locus.
-\code{"SNP"}: will consider all the SNPs on the same locus/read as independent
-and will be filtered independently of their locus id.
-\code{"locus"}: looks at the minimum MAF found on the
-read/locus. Using this option will discard all the markers/snp on
-that read based on the thresholds chosen. For the locus approach to work, your dataset
-requires SNP and Locus info (e.g. from a VCF file).
-
-\item local threshold (double or integer): For a frequency threshold use
-a double (e.g. 0.05). For a count threshold, use an integer
-(e.g. 3 for the number of alternate allele required in a population). This
-threshold is applied by population.
-Not sure about the threshold to use, choose the interactive mode argument.
-
-\item operator (character: "OR" / "AND"):
-To consider both the local \code{"AND"} the global thresholds, use \code{"AND"}.
-To consider the local \code{"OR"} the global thresholds, use \code{"OR"}.
-
-\item global threshold (double or integer): For a frequency threshold
-use a double (e.g. 0.02). For a count threshold, use an integer
-(e.g. 6 for the number of alternate allele required). This threshold is
-applied at the dataset level (no population).
-Not sure about the threshold to use, choose the interactive mode argument.
-
-\item maf pop num threshold (integer)
-The number of pop required to pass the thresholds
-to keep the marker. Usually, I always use \code{1}, for 1 pop is required to
-pass thresholds and keep the marker.
-}}
-
-\item{max.marker}{(integer, optional) For large PLINK files,
-useful to subsample marker number. e.g. if the data set
-contains 200 000 markers and \code{max.marker = 10000}, 10000 markers are
-subsampled randomly from the 200000 markers. If you need specific markers,
-use \code{whitelist.markers} argument.
-Default: \code{max.marker = NULL}.}
-
-\item{blacklist.id}{(optional) A blacklist with individual ID and
-a column header 'INDIVIDUALS'. The blacklist is an object in your
-global environment or a file in the working directory
-(e.g. "blacklist.txt"). \code{_} and \code{:} in individual's names
-are changed to a dash \code{-}.
-Default: \code{blacklist.id = NULL}.}
-
-\item{pop.levels}{(optional, string) This refers to the levels in a factor. In this
-case, the id of the pop.
-Use this argument to have the pop ordered your way instead of the default
-alphabetical or numerical order. e.g. \code{pop.levels = c("QUE", "ONT", "ALB")}
-instead of the default \code{pop.levels = c("ALB", "ONT", "QUE")}.
-White spaces in population names are replaced by underscore.
-Default: \code{pop.levels = NULL}.}
-
-\item{pop.labels}{(optional, string) Use this argument to rename/relabel
-your pop or combine your pop. e.g. To combine \code{"QUE"} and \code{"ONT"}
-into a new pop called \code{"NEW"}:
-(1) First, define the levels for your pop with \code{pop.levels} argument:
-\code{pop.levels = c("QUE", "ONT", "ALB")}.
-(2) then, use \code{pop.labels} argument:
-\code{pop.labels = c("NEW", "NEW", "ALB")}.
-To rename \code{"QUE"} to \code{"TAS"}:
-\code{pop.labels = c("TAS", "ONT", "ALB")}.
-Default: \code{pop.labels = NULL}. If you find this too complicated,
-there is also the \code{strata} argument that can do the same thing,
-see below.
-White spaces in population names are replaced by underscore.}
+and a data frame in long/tidy or wide format. To verify that radiator detect
+your file format use \code{\link{detect_genomic_format}} (see example below).
+Documented in \strong{Input genomic datasets} of \code{\link{tidy_genomic_data}}.}
 
 \item{strata}{(optional)
 The strata file is a tab delimited file with a minimum of 2 columns headers:
-\code{INDIVIDUALS} and \code{STRATA}.
-If a \code{strata} file is specified with all file formats that don't
-require it, the strata argument will have precedence on the population
-groupings used internally in those file formats. For file formats without
-population/strata groupings (e.g. vcf, haplotype files) if no strata file is
-provided, 1 pop/strata grouping will automatically be created.
-For vcf and haplotypes file, the strata can also be used as a whitelist of id.
-Samples not in the strata file will be discarded from the data set.
-The \code{STRATA} column can be any hierarchical grouping.
-To create a strata file see \code{\link[radiator]{individuals2strata}}.
-If you have already run
-\href{http://catchenlab.life.illinois.edu/stacks/}{stacks} on your data,
-the strata file is similar to a stacks \emph{population map file},
-make sure you
-have the required column names (\code{INDIVIDUALS} and \code{STRATA}).
-The strata column is cleaned of a white spaces that interfere with some
-packages or codes: space is changed to an underscore \code{_}.
+\code{INDIVIDUALS} and \code{STRATA}. Documented in \code{\link{read_strata}}.
 Default: \code{strata = NULL}.}
-
-\item{pop.select}{(string, optional) Selected list of populations for
-the analysis. e.g. \code{pop.select = c("QUE", "ONT")} to select \code{QUE}
-and \code{ONT} population samples (out of 20 pops).
-Default: \code{pop.select = NULL}}
 
 \item{filename}{(optional) The function uses \code{\link[fst]{write.fst}},
 to write the tidy data frame in
@@ -201,13 +30,13 @@ in the global environment only (i.e. not written in the working directory...).}
 
 \item{parallel.core}{(optional) The number of core used for parallel
 execution during import.
-Default: \code{parallel::detectCores() - 1}.}
+Default: \code{parallel.core = parallel::detectCores() - 1}.}
 
 \item{verbose}{(optional, logical) When \code{verbose = TRUE}
 the function is a little more chatty during execution.
 Default: \code{verbose = TRUE}.}
 
-\item{...}{(optional) To pass further argument for fine-tuning the function.}
+\item{...}{(optional) To pass further arguments for fine-tuning the function.}
 }
 \value{
 The output in your global environment is a tidy data frame.
@@ -220,7 +49,8 @@ To read the file back in R use \code{\link[fst]{read.fst}}.
 \description{
 Transform genomic data set produced by massive parallel
 sequencing pipeline (e.g.GBS/RADseq,
-SNP chip, DArT, etc) into a tidy format. The use of blacklist and whitelist along
+SNP chip, DArT, etc) into a tidy format.
+The use of blacklist and whitelist along
 several filtering options are available to prune the dataset.
 Several arguments are available to make your data population-wise and easily
 rename the pop id.
@@ -228,145 +58,89 @@ Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and \href{https://github.com/thierrygosselin/assigner}{assigner}
 and might be of interest for users.
 }
-\details{
-\strong{Advance mode, using \emph{dots-dots-dots ...}}
-Currently all the advanced arguments are linked to using VCF files and
-described in \pkg{radiator} \code{\link{tidy_vcf}} and \code{\link{write_seqarray}}
+\section{Input genomic datasets}{
 
-
-\strong{Long distance SNP linkage disequilibrium pruning}
-If you have markers position on a genome or a linkage map,
-you can go further in removing linked markers by using
-\href{https://github.com/zhengxwen/SNPRelate}{SNPRelate} or
-\href{http://pngu.mgh.harvard.edu/~purcell/plink/}{PLINK}, \emph{linkage
-disequilibrium based SNP pruning} option.
-
-\strong{Input files:}
 \enumerate{
-\item VCF files: Biallelic and haplotypes files are imported.
-To make the VCF population-ready, you have to use \code{strata} argument.
-\strong{GATK VCF files:} Some VCF have an \code{ID} column filled with \code{.},
-the LOCUS information is all contained along the linkage group in the
-\code{CHROM} column. To make it work with
-\href{https://github.com/thierrygosselin/radiator}{radiator},
-the \code{ID} column is filled with the \code{POS} column info.
-\strong{platypus VCF files:} Some VCF files don't have an ID filed with values,
-here the same thing as GATK VCF files above is done.
-\strong{stacks VCF files:} with \emph{de novo} approaches, the CHROM column is
-filled with "1", the LOCUS column correspond to the CHROM section in stacks VCF and
-the COL column is POS -1. With a reference genome, the ID column in stacks VCF is
-separated into "LOCUS", "COL", "STRANDS".
+\item VCF files must end with \code{.vcf}: documented in \code{\link{tidy_vcf}}
+
+\item PLINK files must end with \code{.tped}: documented in \code{\link{tidy_plink}}
+
+\item genind object from
+\href{https://github.com/thibautjombart/adegenet}{adegenet}:
+documented in \code{\link{tidy_genind}}.
+
+\item genlight object from
+\href{https://github.com/thibautjombart/adegenet}{adegenet}:
+documented in \code{\link{tidy_genlight}}.
+
+\item gtypes object from
+\href{https://github.com/EricArcher/strataG}{strataG}:
+documented in \code{\link{tidy_gtypes}}.
+
+\item dart data from \href{http://www.diversityarrays.com}{DArT}:
+documented in \code{\link{tidy_dart}}.
+
+\item genepop file must end with \code{.gen}, documented in \code{\link{tidy_genepop}}.
+
+\item fstat file must end with \code{.dat}, documented in \code{\link{tidy_fstat}}.
 
 \item haplotype file created in STACKS (e.g. \code{data = "batch_1.haplotypes.tsv"}).
 To make the haplotype file population ready, you need the \code{strata} argument.
 
-\item Data frame
-To discriminate the long from the wide format,
-the function \pkg{radiator} \code{\link[radiator]{tidy_wide}} searches
-for \code{MARKERS or LOCUS} in column names (TRUE = long format).
-The data frame is tab delimitted.
-\strong{Wide format:}
-The wide format cannot store metadata info.
-The wide format starts with these 2 id columns:
-\code{INDIVIDUALS}, \code{POP_ID} (that refers to any grouping of individuals),
-the remaining columns are the markers in separate columns storing genotypes.
-
-\strong{Long/Tidy format:}
-The long format is considered to be a tidy data frame and can store metadata info.
-(e.g. from a VCF see \pkg{radiator} \code{\link[radiator]{tidy_genomic_data}}). A minimum of 4 columns
-are required in the long format: \code{INDIVIDUALS}, \code{POP_ID},
-\code{MARKERS or LOCUS} and \code{GT}. The rest are considered metata info.
-
-\strong{2 genotypes formats are available:}
-6 characters no separator: e.g. \code{001002 of 111333} (for heterozygote individual).
-6 characters WITH separator: e.g. \code{001/002 of 111/333} (for heterozygote individual).
-The separator can be any of these: \code{"/", ":", "_", "-", "."}.
-
-\emph{How to get a tidy data frame ?}
-\pkg{radiator} \code{\link[radiator]{tidy_genomic_data}} can transform 11 genomic
-data formats in a tidy data frame.
-
-\item PLINK file in
-\code{tped/tfam} format (e.g. \code{data =  "data.assignment.tped"}).
-The \code{tfam} file is found based on the name prefix of the supplied
-\code{tped} file. The first 2 columns of the \code{tfam} file will be used
-for the \code{strata} (population identification), unless the \code{strata}
-argument is provided.
-Columns 1, 3 and 4 of the \code{tped} are discarded. The remaining columns
-correspond to the genotype in the format \code{01/04}
-where \code{A = 01, C = 02, G = 03 and T = 04}. For \code{A/T} format, use
-PLINK or bash to convert.
-Use \href{http://vcftools.sourceforge.net/}{VCFTOOLS} with \code{--plink-tped}
-to convert very large VCF file. For \code{.ped} file conversion to
-\code{.tped} use \href{http://pngu.mgh.harvard.edu/~purcell/plink/}{PLINK}
-with \code{--recode transpose}
-
-\item \code{\link[adegenet]{genind}} object from \code{\link[adegenet]{adegenet}}.
-
-\item \code{\link[adegenet]{genlight}} object from \code{\link[adegenet]{adegenet}}.
-
-\item \code{\link[strataG]{gtypes}} object from \code{\link[strataG]{strataG}}.
-
-\item \href{http://www.diversityarrays.com}{DArT} file.
-
-\item genepop data file must end with \code{.gen},
-e.g. \code{data = "kiwi_data.gen"}. For now, the function can only use
-genepop files with alleles encoded with 3 digits.
-
-\item fstat file must end with \code{.dat}, but currently not used (contact author).
+\item Data frames: documented in \code{\link{tidy_wide}}
 }
 }
+
+\section{Advance mode}{
+
+
+\emph{dots-dots-dots ...} allows to pass several arguments for fine-tuning the function:
+\enumerate{
+
+
+\item \code{vcf.metadata} (optional, logical or string).
+Default: \code{vcf.metadata = TRUE}. Documented in \code{\link{tidy_vcf}}.
+
+
+\item \code{vcf.stats} (optional, logical).
+Default: \code{vcf.stats = TRUE}.
+Documented in \code{\link{tidy_vcf}}.
+
+
+\item \code{whitelist.markers} (optional, path or object) To keep only markers in a whitelist.
+Default \code{whitelist.markers = NULL}.
+Documented in \code{\link{read_whitelist}}.
+
+\item \code{blacklist.id} (optional) Default: \code{blacklist.id = NULL}.
+Ideally, managed in the strata file.
+Documented in \code{\link{read_strata}} and \code{\link{read_blacklist_id}}.
+
+\item \code{filter.common.markers} (optional, logical).
+Default: \code{filter.common.markers = TRUE},
+Documented in \code{\link{filter_common_markers}}.
+
+\item \code{filter.monomorphic} (logical, optional) Should the monomorphic
+markers present in the dataset be filtered out ?
+Default: \code{filter.monomorphic = TRUE}.
+Documented in \code{\link{filter_monomorphic}}.
+}
+}
+
 \examples{
 \dontrun{
-require(SeqVarTools) # when using vcf as input file
+#To verify your file is detected by radiator as the correct format:
+radiator::detect_genomic_format(data = "populations.snps.vcf")
+
+
+# using VCF file as input
+require(SeqVarTools)
 tidy.vcf <- tidy_genomic_data(
-data = "batch_1.vcf",
-whitelist.markers = "whitelist.vcf.txt",
-snp.ld = NULL,
-common.markers = TRUE,
-blacklist.id = "blacklist.id.treefrog.tsv",
-strata = "strata.treefrog.tsv",
-pop.levels = c("PAN", "COS")
-)
+   data = "populations.snps.vcf", strata = "strata.treefrog.tsv",
+   whitelist.markers = "whitelist.vcf.txt")
 }
 }
-\references{
-Catchen JM, Amores A, Hohenlohe PA et al. (2011)
-Stacks: Building and Genotyping Loci De Novo From Short-Read Sequences.
-G3, 1, 171-182.
-
-Catchen JM, Hohenlohe PA, Bassham S, Amores A, Cresko WA (2013)
-Stacks: an analysis tool set for population genomics.
-Molecular Ecology, 22, 3124-3140.
-
-Danecek P, Auton A, Abecasis G et al. (2011)
-The variant call format and VCFtools.
-Bioinformatics, 27, 2156-2158.
-
-Purcell S, Neale B, Todd-Brown K, Thomas L, Ferreira MAR,
-Bender D, et al.
-PLINK: a tool set for whole-genome association and population-based linkage
-analyses.
-American Journal of Human Genetics. 2007: 81: 559–575. doi:10.1086/519795
-
-Jombart T, Devillard S, Balloux F.
-Discriminant analysis of principal components: a new method for the analysis
-of genetically structured populations.
-BMC Genet. 2010:11: 94. doi:10.1186/1471-2156-11-94
-
-Jombart T, Ahmed I. adegenet 1.3-1: new tools for the analysis
-of genome-wide SNP data.
-Bioinformatics. 2011:27: 3070–3071. doi:10.1093/bioinformatics/btr521
-
-Raymond M. & Rousset F, (1995).
-GENEPOP (version 1.2): population genetics software for exact tests
-and ecumenicism.
-J. Heredity, 86:248-249
-
-Archer FI, Adams PE, Schneiders BB.
-strataG: An r package for manipulating, summarizing and analysing population
-genetic data.
-Molecular Ecology Resources. 2016. doi:10.1111/1755-0998.12559
+\seealso{
+\code{\link{detect_genomic_format}} and \code{\link{genomic_converter}}
 }
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}

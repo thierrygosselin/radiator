@@ -4,7 +4,8 @@
 \alias{write_genlight}
 \title{Write a genlight object from a tidy data frame}
 \usage{
-write_genlight(data, biallelic = TRUE)
+write_genlight(data, biallelic = TRUE, write = FALSE,
+  verbose = FALSE)
 }
 \arguments{
 \item{data}{A tidy data frame object in the global environment or
@@ -16,6 +17,15 @@ Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
 \item{biallelic}{(logical, optional) If you already know that the data is
 biallelic use this argument to speed up the function.
 Default: \code{biallelic = TRUE}.}
+
+\item{write}{(logical, optional) To write in the working directory the genlight
+object. The file is written with \code{radiator_genlight_DATE@TIME.RData} and
+can be open with load or readRDS.
+Default: \code{write = FALSE}.}
+
+\item{verbose}{(optional, logical) When \code{verbose = TRUE}
+the function is a little more chatty during execution.
+Default: \code{verbose = TRUE}.}
 }
 \description{
 Write a genlight object from a tidy data frame.

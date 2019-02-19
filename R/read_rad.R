@@ -28,9 +28,18 @@
 #' Any keys set on dataset \code{x} before writing will be retained.
 #' This allows for storage of sorted datasets.
 #' Default: \code{as.data.table = TRUE}.
-#' @param old_format (optional, logical) For fst file. Use \code{TRUE} to read fst
+#' @param old.format (optional, logical) For fst file. Use \code{TRUE} to read fst
 #' files generated with a fst package version lower than v.0.8.0
-#' Default: \code{old_format = FALSE}.
+#' Default: \code{old.format = FALSE}.
+#' @param allow.dup (optional, logical) To allow the opening of a GDS file with
+#' read-only mode when it has been opened in the same R session.
+#' Default: \code{allow.dup = FALSE}.
+#' @param check (optional, logical) Verify that GDS number of samples and markers
+#' match.
+#' Default: \code{check = TRUE}.
+#' @param verbose (optional, logical) \code{verbose = TRUE} to be chatty
+#' during execution.
+#' Default: \code{verbose = FALSE}.
 
 #' @details For GDS file system, \strong{read_rad} will open the GDS connection file
 #' set the filters (variants and samples) based on the info found in the file.
@@ -56,14 +65,17 @@ read_rad <- function(
   columns = NULL,
   from = 1, to = NULL,
   as.data.table = FALSE,
-  old_format = FALSE) {
+  old.format = FALSE,
+  allow.dup = FALSE,
+  check = TRUE,
+  verbose = FALSE) {
 
   ## TEST
   # columns = NULL
   # from = 1
   # to = NULL
   # as.data.table = FALSE
-  # old_format = FALSE
+  # old.format = FALSE
 
   # detect format---------------------------------------------------------------
   data.type <- detect_genomic_format(data)
@@ -88,7 +100,7 @@ read_rad <- function(
       # return(data.safe$result)
       data <- fst::read_fst(
         path = data, columns = columns, from = from, to = to,
-        as.data.table = as.data.table, old_format = old_format) %>%
+        as.data.table = as.data.table, old_format = old.format) %>%
         tibble::as_data_frame(.)
       return(data)
     } else {
@@ -97,7 +109,7 @@ read_rad <- function(
       data.old <- NULL
       data <- fst::read_fst(
         path = data, columns = columns, from = from, to = to,
-        as.data.table = as.data.table, old_format = old_format) %>%
+        as.data.table = as.data.table, old_format = old.format) %>%
         tibble::as_data_frame(.)
       message("\nThis .rad file was created with an earlier version of the fst package")
       message("A new version with the same name was written")
@@ -106,12 +118,19 @@ read_rad <- function(
 
   # GDS file -------------------------------------------------------------------
   if (data.type == "gds.file") {
-    message("Opening GDS file connection")
-    data <- SeqArray::seqOpen(gds.fn = data, readonly = FALSE)
+    if (verbose) message("Opening GDS file connection")
+
+    if (allow.dup) {
+      data <- SeqArray::seqOpen(gds.fn = data, readonly = TRUE, allow.duplicate = TRUE)
+    } else {
+      data <- SeqArray::seqOpen(gds.fn = data, readonly = FALSE)
+    }
+
 
     rad_sample <- purrr::safely(.f = function(x) gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/individuals/INDIVIDUALS")))
     rad_markers <- purrr::safely(.f = function(x) gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/markers.meta/VARIANT_ID")))
 
+    # Note to myself: just use , silent = TRUE and it will return null if doesnt work..
     w.s <-  rad_sample(data)
     if (!is.null(w.s$error)) {
       w.s <- SeqArray::seqGetData(gdsfile = data, var.name = "sample.id")
@@ -126,21 +145,23 @@ read_rad <- function(
       w.m <- w.m$result
     }
 
-    message("Setting filters to:")
-    message("    number of samples: ", length(w.s))
-    message("    number of markers: ", length(w.m))
+    if (verbose) message("Setting filters to:")
+    if (verbose) message("    number of samples: ", length(w.s))
+    if (verbose) message("    number of markers: ", length(w.m))
     SeqArray::seqSetFilter(object = data,
                            variant.id = w.m,
-                           sample.id = w.s,
+                           sample.id = as.character(w.s),
                            verbose = FALSE)
 
     # Checks--------------------------------------------------------------------
-    check <- SeqArray::seqGetFilter(data)
-    if (length(check$sample.sel[check$sample.sel]) != length(w.s)) {
-      stop("Number of samples don't match, contact author")
-    }
-    if (length(check$variant.sel[check$variant.sel]) != length(w.m)) {
-      stop("Number of markers don't match, contact author")
+    if (check) {
+      check <- SeqArray::seqGetFilter(data)
+      if (length(check$sample.sel[check$sample.sel]) != length(w.s)) {
+        rlang::abort("Number of samples don't match, contact author")
+      }
+      if (length(check$variant.sel[check$variant.sel]) != length(w.m)) {
+        rlang::abort("Number of markers don't match, contact author")
+      }
     }
   }#End gds.file
   return(data)
@@ -164,9 +185,38 @@ read_rad <- function(
 #' and might be of interest for users.
 
 #' @param data An object in the global environment: tidy data frame or GDS connection file
-#'
+
 #' @param path (optional) For tidy data frame, the path to write the data on disk.
-#'
+#' Default: \code{path = NULL}.
+
+#' @param filename (optional) Name of the file (when using tsv files).
+#' Default: \code{filename = NULL}.
+
+#' @param tsv (optinal, logical) To trigger saving using \code{readr::write_tsv}.
+#' Default: \code{tsv = FALSE}.
+
+#' @param internal (optional, logical) This is used inside radiator internal code and it stops
+#' from writting the file.
+#' Default: \code{internal = FALSE}.
+
+#' @param append (optional, logical) If \code{FALSE}, will overwrite existing file.
+#' If \code{TRUE}, will append to existing file.
+#' In both cases, if file does not exist a new file is created.
+#' Default: \code{append = FALSE}.
+
+#' @param col.names (optional, logical) Write columns names at the top of the file?
+#' Must be either TRUE or FALSE.
+#' Default: \code{col.names = TRUE}.
+
+#' @param write.message (optional, character) Print a message in the console
+#' after writting file.
+#' With \code{write.message = NULL}, nothing is printed in the console.
+#' Default: \code{write.message = "standard"}. This will print
+#' \code{message("File written: ", folder_short(filename))}.
+
+#' @param verbose (optional, logical) \code{verbose = TRUE} to be chatty
+#' during execution.
+#' Default: \code{verbose = FALSE}.
 
 #' @return A file written in the working directory or nothing if it's a GDS connection file.
 #' @export
@@ -184,44 +234,72 @@ read_rad <- function(
 #' }
 
 
-write_rad <- function(data, path) {
+write_rad <- function(
+  data,
+  path = NULL,
+  filename = NULL,
+  tsv = FALSE,
+  internal = FALSE,
+  append = FALSE,
+  col.names = TRUE,
+  write.message = "standard",
+  verbose = FALSE
+) {
 
-  # detect format---------------------------------------------------------------
-  data.type <- class(data)
+  if (!internal) {
+    if (tsv) {
+      # write the dots file
+      if (!is.null(path)) {
+        path.filename <- file.path(path, filename)
+      } else {
+        path.filename <- filename
+      }
+      readr::write_tsv(x = data, path = path.filename, append = append, col_names = col.names)
 
-  if (unique(data.type == "SeqVarGDSClass")) {
-    rad_sample <- purrr::safely(.f = function(x) gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/STRATA/INDIVIDUALS")))
-    rad_markers <- purrr::safely(.f = function(x) gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/markers.meta/VARIANT_ID")))
+      if (!is.null(write.message) && verbose) {
+        if (write.message == "standard") {
+          message("File written: ", folder_short(filename))
+        } else {
+          write.message
+        }
+      }
 
-    w.s <-  rad_sample(data)
-    if (!is.null(w.s$error)) {
-      w.s <- SeqArray::seqGetData(gdsfile = data, var.name = "sample.id")
     } else {
-      w.s <- w.s$result
-    }
+      # detect format---------------------------------------------------------------
+      data.type <- class(data)
 
-    w.m <- rad_markers(data)
-    if (!is.null(w.m$error)) {
-      w.m <- SeqArray::seqGetData(gdsfile = data, var.name = "variant.id")
-    } else {
-      w.m <- w.m$result
-    }
+      if (unique(data.type) == "SeqVarGDSClass") {
+        rad_sample <- purrr::safely(.f = function(x) gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/individuals/INDIVIDUALS")))
+        rad_markers <- purrr::safely(.f = function(x) gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/markers.meta/VARIANT_ID")))
 
-    message("Setting filters to:")
-    message("    number of samples: ", length(w.s))
-    message("    number of markers: ", length(w.m))
-    SeqArray::seqSetFilter(object = data,
-                           variant.id = w.m,
-                           sample.id = w.s,
-                           verbose = FALSE)
-    message("Closing connection with GDS file:\n", data$filename)
-    SeqArray::seqClose(data)
-  } else {
-    if (missing(path)) stop("The function requires the path for the file")
-    tibble::as_data_frame(data) %>%
-      fst::write_fst(x = ., path = path, compress = 85)
+        w.s <-  rad_sample(data)
+        if (!is.null(w.s$error)) {
+          w.s <- SeqArray::seqGetData(gdsfile = data, var.name = "sample.id")
+        } else {
+          w.s <- w.s$result
+        }
+
+        w.m <- rad_markers(data)
+        if (!is.null(w.m$error)) {
+          w.m <- SeqArray::seqGetData(gdsfile = data, var.name = "variant.id")
+        } else {
+          w.m <- w.m$result
+        }
+
+        if (verbose) message("Setting filters to:")
+        if (verbose) message("    number of samples: ", length(w.s))
+        if (verbose) message("    number of markers: ", length(w.m))
+        SeqArray::seqSetFilter(object = data,
+                               variant.id = w.m,
+                               sample.id = as.character(w.s),
+                               verbose = FALSE)
+        if (verbose) message("Closing connection with GDS file:\n", data$filename)
+        SeqArray::seqClose(data)
+      } else {
+        if (is.null(path)) rlang::abort("The function requires the path of the file")
+        tibble::as_data_frame(data) %>%
+          fst::write_fst(x = ., path = path, compress = 85)
+      }
+    }
   }
-
-
-
 }#End write_rad

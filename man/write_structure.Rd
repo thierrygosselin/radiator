@@ -13,7 +13,12 @@ a tidy data frame in wide or long format in the working directory.
 \emph{How to get a tidy data frame ?}
 Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.}
 
-\item{pop.levels}{(optional, string) A character string with your populations ordered.
+\item{pop.levels}{(optional, string) This refers to the levels in a factor. In this
+case, the id of the pop.
+Use this argument to have the pop ordered your way instead of the default
+alphabetical or numerical order. e.g. \code{pop.levels = c("QUE", "ONT", "ALB")}
+instead of the default \code{pop.levels = c("ALB", "ONT", "QUE")}.
+White spaces in population names are replaced by underscore.
 Default: \code{pop.levels = NULL}.}
 
 \item{markers.line}{(optional, logical) In the structure

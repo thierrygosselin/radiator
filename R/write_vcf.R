@@ -53,14 +53,9 @@ write_vcf <- function(data, pop.info = FALSE, filename = NULL) {
     data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
   }
 
-  # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-  if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
-    data <- dplyr::rename(.data = data, MARKERS = LOCUS)
-  }
-
   # REF/ALT Alleles and VCF genotype format ------------------------------------
   if (!tibble::has_name(data, "GT_VCF")) {
-    ref.change <- radiator::change_alleles(data = data)$input
+    ref.change <- radiator::calibrate_alleles(data = data)$input
     data <- dplyr::left_join(data, ref.change, by = c("MARKERS", "INDIVIDUALS"))
   }
 

@@ -81,7 +81,7 @@ write_gsi_sim <- function(
   # filename = "gsi_sim.unname.txt"
 
   # Checking for missing and/or default arguments ******************************
-  if (missing(data)) stop("Input file necessary to write the gsi_sim file is missing")
+  if (missing(data)) rlang::abort("Input file necessary to write the gsi_sim file is missing")
 
   # POP_ID in gsi_sim does not like spaces, we need to remove space in everything touching POP_ID...
   # pop.levels, pop.labels, pop.select, strata, etc

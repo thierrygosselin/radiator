@@ -38,12 +38,10 @@ write_plink <- function(data, filename = NULL) {
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {
-    input <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-  } else {
-    input <- data
+    data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
   }
 
-  tped <- input %>%
+  tped <- data %>%
     dplyr::arrange(INDIVIDUALS) %>%
     dplyr::mutate(
       COL1 = rep("0", n()),
@@ -67,7 +65,7 @@ write_plink <- function(data, filename = NULL) {
     tidyr::spread(data = ., key = INDIVIDUALS_ALLELES, value = GENOTYPE) %>%
     dplyr::arrange(MARKERS)
 
-  tfam <- dplyr::distinct(.data = input, POP_ID, INDIVIDUALS) %>%
+  tfam <- dplyr::distinct(.data = data, POP_ID, INDIVIDUALS) %>%
     dplyr::arrange(INDIVIDUALS) %>%
     dplyr::mutate(
       COL3 = rep("0",n()),
