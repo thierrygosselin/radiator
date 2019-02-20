@@ -181,7 +181,7 @@ tidy_genlight <- function(
             vectorize_all = FALSE
           ),
           INDIVIDUALS = radiator::clean_ind_names(INDIVIDUALS),
-          POP_ID = radiator::clean_pop_names(POP_ID)
+          POP_ID = radiator::clean_pop_names(STRATA)
         ) %>%
         dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS) %>%
         dplyr::select(dplyr::one_of(want)))
