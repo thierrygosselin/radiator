@@ -193,7 +193,6 @@ filter_coverage <- function(
       data <- radiator::read_rad(data, verbose = verbose)
       data.type <- "SeqVarGDSClass"
     }
-    # markers.file <- stringi::stri_join("markers_coverage_", file.date, ".tsv")
 
     # Filter parameter file: initiate ------------------------------------------
     filters.parameters <- radiator_parameters(
@@ -223,7 +222,6 @@ filter_coverage <- function(
       snp.position.read = FALSE,
       force.stats = force.stats,
       path.folder = path.folder,
-      # filename = markers.file,
       file.date = file.date,
       parallel.core = parallel.core
     )
@@ -239,21 +237,21 @@ filter_coverage <- function(
       VARIANT_ID %>%
       as.integer
 
-    temp <- generate_markers_stats(
-      gds = data,
-      missing = FALSE,
-      heterozygosity = FALSE,
-      snp.per.locus = FALSE,
-      snp.position.read = FALSE,
-      force.stats = TRUE,
-      path.folder = path.folder,
-      filename = "markers_coverage_no_outliers",
-      fig.filename = "markers_coverage_qc_no_outliers",
-      subsample = variant.wo.out,
-      file.date = file.date,
-      parallel.core = parallel.core
-    )
-    variant.wo.out <- temp <- NULL
+    # temp <- generate_markers_stats(
+    #   gds = data,
+    #   missing = FALSE,
+    #   heterozygosity = FALSE,
+    #   snp.per.locus = FALSE,
+    #   snp.position.read = FALSE,
+    #   force.stats = TRUE,
+    #   path.folder = path.folder,
+    #   filename = "markers_coverage_no_outliers",
+    #   fig.filename = "markers_coverage_qc_no_outliers",
+    #   subsample = variant.wo.out,
+    #   file.date = file.date,
+    #   parallel.core = parallel.core
+    # )
+    # variant.wo.out <- temp <- NULL
     # check <- temp$info
     # min(check$COVERAGE_MEAN)
     # max(check$COVERAGE_MEAN)
@@ -274,7 +272,6 @@ filter_coverage <- function(
           cov.low <- out.low
           cov.high <- out.high
           filter.coverage <- c(cov.low, cov.high)
-          # if (verbose) message("\nRemoving outliers markers based on mean coverage statistics: ", cov.low, " / ", cov.high)
         } else {
           rlang::abort("Unknown mean coverage thresholds used")
         }
@@ -445,19 +442,6 @@ filter_coverage <- function(
       value = wl,
       sync = TRUE
     )
-    # sync_gds(gds = data, markers = wl$VARIANT_ID)
-    #
-    # radiator.gds <- gdsfmt::index.gdsn(
-    #   node = data, path = "radiator", silent = TRUE)
-    #
-    # # Update metadata
-    # gdsfmt::add.gdsn(
-    #   node = radiator.gds,
-    #   name = "markers.meta",
-    #   val = wl,
-    #   replace = TRUE,
-    #   compress = "ZIP_RA",
-    #   closezip = TRUE)
 
     # update blacklist.markers
     if (nrow(bl) > 0) {
@@ -481,20 +465,13 @@ filter_coverage <- function(
       file.date = file.date,
       verbose = verbose)
 
-    # if (filters.parameters$filters.parameters$BLACKLIST == 0) {
-    #   file.remove(path.folder)
-    #   if (verbose) message("Folder removed: ", folder_short(path.folder))
-    # }
-
     # results --------------------------------------------------------------------
-    if (verbose) {
-      cat("################################### RESULTS ####################################\n")
-      message("Filter mean coverage thresholds: ", paste(filter.coverage, collapse = " / "))
-      message("Number of individuals / strata / chrom / locus / SNP:")
-      message("    Before: ", filters.parameters$filters.parameters$BEFORE)
-      message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-      message("    After: ", filters.parameters$filters.parameters$AFTER)
-    }
+    if (verbose) cat("################################### RESULTS ####################################\n")
+    message("Filter mean coverage thresholds: ", paste(filter.coverage, collapse = " / "))
+    message("Number of individuals / strata / chrom / locus / SNP:")
+    if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
+    message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
+    if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
   }
   return(data)
 }#End filter_coverage
