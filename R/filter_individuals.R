@@ -113,6 +113,7 @@ filter_individuals <- function(
 
     # Function call and dotslist -------------------------------------------------
     rad.dots <- radiator_dots(
+      func.name = as.list(sys.call())[[1]],
       fd = rlang::fn_fmls_names(),
       args.list = as.list(environment()),
       dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
@@ -169,7 +170,7 @@ filter_individuals <- function(
 
 
     # Filter parameter file: generate and initiate -------------------------------
-    filters.parameters <- update_parameters(
+    filters.parameters <- radiator_parameters(
       generate = TRUE,
       initiate = TRUE,
       update = FALSE,
@@ -180,6 +181,8 @@ filter_individuals <- function(
       verbose = verbose)
 
     # stats  ---------------------------------------------------------------------
+    check.mono <- FALSE
+
     # Step 1. Visuals ----------------------------------------------------------
     if (interactive.filter) message("\nStep 1. Visualization of samples QC\n")
     if (is.null(id.stats)) {
@@ -254,6 +257,7 @@ The maximum amount of missingness you tolerate for a sample:", minmax = c(0, 1))
         dplyr::mutate(FILTER = "filter.individuals.missing")
       n.bl <- nrow(bl)
       if (n.bl > 0) {
+        check.mono <- TRUE
         if (verbose) message("    number of individuals blacklisted based on missing genotypes: ", n.bl)
         bl.filename <- stringi::stri_join("blacklist.individuals.missing_", file.date, ".tsv")
         readr::write_tsv(x = bl, path = file.path(path.folder, bl.filename))
@@ -262,41 +266,28 @@ The maximum amount of missingness you tolerate for a sample:", minmax = c(0, 1))
         id.stats$info  %<>%
           dplyr::filter(!INDIVIDUALS %in% bl$INDIVIDUALS)
 
-        radiator.gds <- gdsfmt::index.gdsn(
-          node = data, path = "radiator", silent = TRUE)
-
-        # update the GDS
-        gdsfmt::add.gdsn(
-          node = radiator.gds,
-          name = "individuals",
-          val = id.stats$info,
-          replace = TRUE,
-          compress = "ZIP_RA",
-          closezip = TRUE)
-
-        sync_gds(gds = data, samples = id.stats$info$INDIVIDUALS)
-
-        # Filter parameter file: update
-        filters.parameters <- update_parameters(
-          generate = FALSE,
-          initiate = FALSE,
-          update = TRUE,
-          parameter.obj = filters.parameters,
-          data = data,
-          filter.name = "Filter individuals based on missingness (with outlier stats or values)",
-          param.name = "filter.individuals.missing",
-          values = filter.individuals.missing,
-          path.folder = path.folder,
-          file.date = file.date,
-          verbose = verbose)
-
-        if (verbose) {
-          message("Number of individuals / strata / chrom / locus / SNP:")
-          message("    Before: ", filters.parameters$filters.parameters$BEFORE)
-          message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-          message("    After: ", filters.parameters$filters.parameters$AFTER)
-        }
+        update_radiator_gds(gds = data, node.name = "individuals", value = id.stats$info, sync = TRUE)
       }
+      # Filter parameter file: update
+      filters.parameters <- radiator_parameters(
+        generate = FALSE,
+        initiate = FALSE,
+        update = TRUE,
+        parameter.obj = filters.parameters,
+        data = data,
+        filter.name = "Filter individuals based on missingness (with outlier stats or values)",
+        param.name = "filter.individuals.missing",
+        values = filter.individuals.missing,
+        path.folder = path.folder,
+        file.date = file.date,
+        verbose = verbose)
+
+      message("Filter individuals based on missingness:")
+      message("Number of individuals / strata / chrom / locus / SNP:")
+      if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
+      message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
+      if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
+
     }#End filter.individuals.missing
 
     # Step 3. Heterozygosity------------------------------------------------------------
@@ -349,6 +340,8 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
         dplyr::mutate(FILTER = "filter.individuals.heterozygosity")
       n.bl <- nrow(bl)
       if (n.bl > 0) {
+        check.mono <- TRUE
+
         if (verbose) message("    number of individuals blacklisted based on heterozygosity: ", n.bl)
         bl.filename <- stringi::stri_join("blacklist.individuals.heterozygosity_", file.date, ".tsv")
         readr::write_tsv(x = bl, path = file.path(path.folder, bl.filename))
@@ -357,43 +350,27 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
           dplyr::filter(!INDIVIDUALS %in% bl$INDIVIDUALS)
 
         update_radiator_gds(gds = data, node.name = "individuals", value = id.stats$info, sync = TRUE)
-
-
-        # radiator.gds <- gdsfmt::index.gdsn(
-        #   node = data, path = "radiator", silent = TRUE)
-        #
-        # # update the GDS
-        # gdsfmt::add.gdsn(
-        #   node = radiator.gds,
-        #   name = "individuals",
-        #   val = id.stats$info,
-        #   replace = TRUE,
-        #   compress = "ZIP_RA",
-        #   closezip = TRUE)
-
-        # sync_gds(gds = data, samples = id.stats$info$INDIVIDUALS)
-
-        # Filter parameter file: update
-        filters.parameters <- update_parameters(
-          generate = FALSE,
-          initiate = FALSE,
-          update = TRUE,
-          parameter.obj = filters.parameters,
-          data = data,
-          filter.name = "Filter individuals based on heterozygosity (with outlier stats or values)",
-          param.name = "filter.individuals.heterozygosity",
-          values = paste(het.low, het.high, collapse = " / "),
-          path.folder = path.folder,
-          file.date = file.date,
-          verbose = verbose)
-
-        if (verbose) {
-          message("Number of individuals / strata / chrom / locus / SNP:")
-          message("    Before: ", filters.parameters$filters.parameters$BEFORE)
-          message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-          message("    After: ", filters.parameters$filters.parameters$AFTER)
-        }
       }
+      # Filter parameter file: update
+      filters.parameters <- radiator_parameters(
+        generate = FALSE,
+        initiate = FALSE,
+        update = TRUE,
+        parameter.obj = filters.parameters,
+        data = data,
+        filter.name = "Filter individuals based on heterozygosity (with outlier stats or values)",
+        param.name = "filter.individuals.heterozygosity",
+        values = paste(het.low, het.high, collapse = " / "),
+        path.folder = path.folder,
+        file.date = file.date,
+        verbose = verbose)
+
+      message("Filter individuals based on heterozygosity:")
+      message("Number of individuals / strata / chrom / locus / SNP:")
+      if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
+      message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
+      if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
+
     }#End filter.individuals.heterozygosity
 
     # Step 4. Coverage total--------------------------------------------------------------
@@ -446,6 +423,7 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
           dplyr::mutate(FILTER = "filter.individuals.coverage.total")
         n.bl <- nrow(bl)
         if (n.bl > 0) {
+          check.mono <- TRUE
           if (verbose) message("    number of individuals blacklisted based on total coverage: ", n.bl)
           bl.filename <- stringi::stri_join("blacklist.individuals.coverate.total_", file.date, ".tsv")
           readr::write_tsv(x = bl, path = file.path(path.folder, bl.filename))
@@ -453,54 +431,41 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
           id.stats$info  %<>%
             dplyr::filter(!INDIVIDUALS %in% bl$INDIVIDUALS)
 
-          radiator.gds <- gdsfmt::index.gdsn(
-            node = data, path = "radiator", silent = TRUE)
-
-          # update the GDS
-          gdsfmt::add.gdsn(
-            node = radiator.gds,
-            name = "individuals",
-            val = id.stats$info,
-            replace = TRUE,
-            compress = "ZIP_RA",
-            closezip = TRUE)
-
-          sync_gds(gds = data, samples = id.stats$info$INDIVIDUALS)
-
-          # Filter parameter file: update
-          filters.parameters <- update_parameters(
-            generate = FALSE,
-            initiate = FALSE,
-            update = TRUE,
-            parameter.obj = filters.parameters,
-            data = data,
-            filter.name = "Filter individuals based on total coverage (with outlier stats or values)",
-            param.name = "filter.individuals.coverage.total",
-            values = paste(cov.low, cov.high, collapse = " / "),
-            path.folder = path.folder,
-            file.date = file.date,
-            verbose = verbose)
-
-          if (verbose) {
-            cat("################################### RESULTS ####################################\n")
-            message("Filter individuals:")
-            message("Number of individuals / strata / chrom / locus / SNP:")
-            message("    Before: ", filters.parameters$filters.parameters$BEFORE)
-            message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-            message("    After: ", filters.parameters$filters.parameters$AFTER)
-          }
+          update_radiator_gds(gds = data, node.name = "individuals", value = id.stats$info, sync = TRUE)
         }
+        # Filter parameter file: update
+        filters.parameters <- radiator_parameters(
+          generate = FALSE,
+          initiate = FALSE,
+          update = TRUE,
+          parameter.obj = filters.parameters,
+          data = data,
+          filter.name = "Filter individuals based on total coverage (with outlier stats or values)",
+          param.name = "filter.individuals.coverage.total",
+          values = paste(cov.low, cov.high, collapse = " / "),
+          path.folder = path.folder,
+          file.date = file.date,
+          verbose = verbose)
+
+        message("Filter individuals based on total coverage:")
+        message("Number of individuals / strata / chrom / locus / SNP:")
+        if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
+        message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
+        if (verbose)message("    After: ", filters.parameters$filters.parameters$AFTER)
 
       }#End coverage total
     }
+
     # MONOMORPHIC MARKERS --------------------------------------------------
-    data <- filter_monomorphic(
-      data = data,
-      parallel.core = parallel.core,
-      verbose = verbose,
-      parameters = filters.parameters,
-      path.folder = path.folder,
-      internal = TRUE)
-  }
+    if (check.mono) {
+      data <- filter_monomorphic(
+        data = data,
+        parallel.core = parallel.core,
+        verbose = FALSE,
+        parameters = filters.parameters,
+        path.folder = path.folder,
+        internal = TRUE)
+    }
+  }#before this one
   return(data)
 }#End filter_individuals

@@ -206,6 +206,7 @@ filter_ld <- function(
 
     # Function call and dotslist -------------------------------------------------
     rad.dots <- radiator_dots(
+      func.name = as.list(sys.call())[[1]],
       fd = rlang::fn_fmls_names(),
       args.list = as.list(environment()),
       dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
@@ -311,8 +312,8 @@ filter_ld <- function(
         dplyr::arrange(LOCUS, MARKERS)
     }
 
-    # Filter parameter file: initiate ------------------------------------------
-    filters.parameters <- update_parameters(
+    # radiator_parameters: initiate ------------------------------------------
+    filters.parameters <- radiator_parameters(
       generate = TRUE,
       initiate = TRUE,
       update = FALSE,
@@ -611,26 +612,34 @@ filter_ld <- function(
           data <- dplyr::filter(data, MARKERS %in% wl$MARKERS)
         } else {
           # updating the GDS object
-          sync_gds(gds = data, markers = wl$VARIANT_ID)
+          update_radiator_gds(
+            gds = data,
+            node.name = "markers.meta",
+            value = wl,
+            sync = TRUE
+          )
 
-          # Update GDS
-          radiator.gds <- gdsfmt::index.gdsn(
-            node = data, path = "radiator", silent = TRUE)
 
-          # Update metadata
-          gdsfmt::add.gdsn(
-            node = radiator.gds,
-            name = "markers.meta",
-            val = wl,
-            replace = TRUE,
-            compress = "ZIP_RA",
-            closezip = TRUE)
+          # sync_gds(gds = data, markers = wl$VARIANT_ID)
+          #
+          # # Update GDS
+          # radiator.gds <- gdsfmt::index.gdsn(
+          #   node = data, path = "radiator", silent = TRUE)
+          #
+          # # Update metadata
+          # gdsfmt::add.gdsn(
+          #   node = radiator.gds,
+          #   name = "markers.meta",
+          #   val = wl,
+          #   replace = TRUE,
+          #   compress = "ZIP_RA",
+          #   closezip = TRUE)
 
           # update blacklist.markers
           if (nrow(bl) > 0) {
             bl %<>% dplyr::select(MARKERS) %>%
               dplyr::mutate(FILTER = "filter.short.ld")
-            bl.gds <- update_bl_markers(gds = radiator.gds, update = bl)
+            bl.gds <- update_bl_markers(gds = data, update = bl)
           }
         }
         # if (verbose) message("    Filtering the dataset to minimize LD by keeping only 1 SNP per locus")
@@ -643,8 +652,8 @@ filter_ld <- function(
       locus.stats <- mac.data <- NULL
 
 
-      # Update parameters --------------------------------------------------------
-      filters.parameters <- update_parameters(
+      # radiator_parameters --------------------------------------------------------
+      filters.parameters <- radiator_parameters(
         generate = FALSE,
         initiate = FALSE,
         update = TRUE,
@@ -798,7 +807,7 @@ filter_ld <- function(
           if (nrow(bl) > 0) {
             bl %<>% dplyr::select(MARKERS) %>%
               dplyr::mutate(FILTER = "filter.long.ld")
-            bl.gds <- update_bl_markers(gds = radiator.gds, update = bl)
+            bl.gds <- update_bl_markers(gds = data, update = bl)
           }
         }
 
@@ -848,33 +857,39 @@ filter_ld <- function(
         if (data.type == "tbl_df") {
           data <- dplyr::filter(data, MARKERS %in% wl$MARKERS)
         } else {
-          # updating the GDS object
-          sync_gds(gds = data, markers = wl$VARIANT_ID)
-
-          # Update GDS
-          radiator.gds <- gdsfmt::index.gdsn(
-            node = data, path = "radiator", silent = TRUE)
-
-          # Update metadata
-          gdsfmt::add.gdsn(
-            node = radiator.gds,
-            name = "markers.meta",
-            val = wl,
-            replace = TRUE,
-            compress = "ZIP_RA",
-            closezip = TRUE)
+          update_radiator_gds(
+            gds = data,
+            node.name = "markers.meta",
+            value = wl,
+            sync = TRUE
+          )
+          # # updating the GDS object
+          # sync_gds(gds = data, markers = wl$VARIANT_ID)
+          #
+          # # Update GDS
+          # radiator.gds <- gdsfmt::index.gdsn(
+          #   node = data, path = "radiator", silent = TRUE)
+          #
+          # # Update metadata
+          # gdsfmt::add.gdsn(
+          #   node = radiator.gds,
+          #   name = "markers.meta",
+          #   val = wl,
+          #   replace = TRUE,
+          #   compress = "ZIP_RA",
+          #   closezip = TRUE)
 
           # update blacklist.markers
           if (nrow(bl) > 0) {
             bl %<>% dplyr::select(MARKERS) %>%
               dplyr::mutate(FILTER = "filter.long.ld")
-            bl.gds <- update_bl_markers(gds = radiator.gds, update = bl)
+            bl.gds <- update_bl_markers(gds = data, update = bl)
           }
         }
       }# End ld pruning with SNPRelate
 
-      # Update parameters --------------------------------------------------------
-      filters.parameters <- update_parameters(
+      # radiator_parameters --------------------------------------------------------
+      filters.parameters <- radiator_parameters(
         generate = FALSE,
         initiate = FALSE,
         update = TRUE,
@@ -1062,7 +1077,7 @@ ld_missing <- function(
     parallel.core = parallel::detectCores() - 1,
     verbose = TRUE
   ) {
-
+    # x <- chrom.ld[[2]]
     ld.markers <- list()# to store results
     chrom.name <- unique(x$CHROM)
     chrom.snp.n <- length(x$VARIANT_ID)
@@ -1077,7 +1092,7 @@ ld_missing <- function(
     w.m <- SeqArray::seqGetData(gdsfile = data, var.name = "variant.id")
     w.s <- SeqArray::seqGetData(gdsfile = data, var.name = "sample.id")
 
-
+    all.missing <- FALSE # by default
     if (chrom.snp.n > 1) {
       # Adjusting the parallel.core argument ---------------------------------
       # SNPRelate doesnt like when lower than number of markers used...
@@ -1086,32 +1101,37 @@ ld_missing <- function(
         parallel.core.temp <- parallel.core
       }
 
-      if (nrow(x) > 1) {
+      # R2 is handled in radiator, not SNPRelate...
+      if (ld.method == "r2") {
+        ld.m <- "r"
+      } else {
+        ld.m <- ld.method
+      }
 
-        # R2 is handled in radiator, not SNPRelate...
-        if (ld.method == "r2") {
-          ld.m <- "r"
-        } else {
-          ld.m <- ld.method
-        }
+      res.chrom <- SNPRelate::snpgdsLDMat(
+        gdsobj = data,
+        snp.id = x$VARIANT_ID,
+        sample.id = w.s,
+        slide = -1,
+        mat.trim = FALSE,
+        method = ld.m,
+        num.thread = parallel.core.temp,
+        with.id = TRUE,
+        verbose = FALSE) %$%
+        LD %>%
+        magrittr::set_colnames(x = ., x$MARKERS) %>%
+        magrittr::set_rownames(x = ., x$MARKERS)
 
-        res.chrom <- SNPRelate::snpgdsLDMat(
-          gdsobj = data,
-          snp.id = x$VARIANT_ID,
-          sample.id = w.s,
-          slide = -1,
-          mat.trim = FALSE,
-          method = ld.m,
-          num.thread = parallel.core.temp,
-          with.id = TRUE,
-          verbose = FALSE) %$%
-          LD %>%
-          magrittr::set_colnames(x = ., x$MARKERS) %>%
-          magrittr::set_rownames(x = ., x$MARKERS)
+      # skip <- anyNA(res.chrom)
+      # test <- res.chrom[anyNA(res.chrom)]
 
-        # work on the output -------------------------------------------------------
-        # Fill with NA the diagonal and the lower triangle...
-        res.chrom[lower.tri(res.chrom, diag = TRUE)] <- rlang::na_dbl
+      # work on the output -------------------------------------------------------
+      # Fill with NA the diagonal and the lower triangle...
+      res.chrom[lower.tri(res.chrom, diag = TRUE)] <- rlang::na_dbl
+
+      all.missing <- all(is.na(res.chrom))
+      if (!all.missing) {
+
         if (ld.method == "r2") {
           res.chrom <- res.chrom^2 #r^2 used here...
         }
@@ -1134,8 +1154,6 @@ ld_missing <- function(
           dplyr::mutate(GENOTYPED_PROP = 1 - MISSING_PROP, MISSING_PROP = NULL)
 
         # Pruning the SNPs -------------------------------------------------------
-        # if (verbose) message("Pruning markers in long distance LD...")
-
         # These LD values are not used anyway during the pruning
         if (!is.null(ld.threshold)) {
           if (length(ld.threshold) == 1) {
@@ -1146,49 +1164,63 @@ ld_missing <- function(
         res.chrom <- res.chrom[rowSums(res.chrom, na.rm = TRUE) > 0, colSums(res.chrom, na.rm = TRUE) > 0, drop = FALSE]
 
         if (length(res.chrom) >= 1) {
-          res.chrom <- ld2df(x = res.chrom)
-          ld.markers$blacklist.markers <- purrr::map_dfr(
-            .x = ld.threshold,
-            .f = ld_pruning,
-            ld.tibble = res.chrom,
-            stats = markers.missing
-          )
-          # ld.markers$blacklist.markers <- ld_pruning(
-          #   ld.tibble = res.chrom,
-          #   ld.threshold = ld.threshold,
-          #   stats = markers.missing
-          # )
-          snp.blacklist <- length(ld.markers$blacklist.markers$MARKERS)
+          res.chrom <- ld2df(x = res.chrom) %>%
+            dplyr::filter(!is.na(LD))
+
+          if (nrow(res.chrom) > 0) {
+            ld.markers$blacklist.markers <- purrr::map_dfr(
+              .x = ld.threshold,
+              .f = ld_pruning,
+              ld.tibble = res.chrom,
+              stats = markers.missing
+            )
+            snp.blacklist <- length(ld.markers$blacklist.markers$MARKERS)
+          } else {
+            if (verbose) message("    SNPs blacklisted: 0")
+            ld.markers$blacklist.markers <- NULL
+            snp.blacklist <- 0L
+          }
         } else {
           if (verbose) message("    SNPs blacklisted: 0")
           ld.markers$blacklist.markers <- NULL
           snp.blacklist <- 0L
         }
-      } else {
-        if (verbose) message("    SNPs blacklisted: 0")
-        ld.markers$blacklist.markers <- NULL
-        snp.blacklist <- 0L
-      }
 
-      # chrom stats ----------------------------------------------------------------
-      if (length(ld.threshold) == 1) {
-        ld.markers$chrom.ld.stats <- tibble::tibble(
-          CHROM = chrom.name,
-          NUMBER_SNP = chrom.snp.n,
-          NUMBER_SNP_BLACKLISTED = snp.blacklist,
-          LD_THRESHOLD = ld.threshold)
-      } else {
-        ld.markers$chrom.ld.stats <- ld.markers$blacklist.markers %>%
-          dplyr::group_by(LD_THRESHOLD) %>%
-          dplyr::tally(.) %>%
-          dplyr::mutate(
+
+        # chrom stats ----------------------------------------------------------------
+        n.threshold <- length(ld.threshold)
+        if (n.threshold == 1) {
+          ld.markers$chrom.ld.stats <- tibble::tibble(
             CHROM = chrom.name,
             NUMBER_SNP = chrom.snp.n,
-            NUMBER_SNP_BLACKLISTED = n,
-            n = NULL
-          )
-      }
-    } else {
+            NUMBER_SNP_BLACKLISTED = snp.blacklist,
+            LD_THRESHOLD = ld.threshold)
+        } else if (!is.null(ld.markers$blacklist.markers)) {
+          ld.markers$chrom.ld.stats <- ld.markers$blacklist.markers %>%
+            dplyr::group_by(LD_THRESHOLD) %>%
+            dplyr::tally(.) %>%
+            dplyr::mutate(
+              CHROM = chrom.name,
+              NUMBER_SNP = chrom.snp.n,
+              NUMBER_SNP_BLACKLISTED = n,
+              n = NULL
+            )
+        } else {
+          ld.markers$chrom.ld.stats <- tibble::tibble(
+            CHROM = rep(chrom.name, n.threshold),
+            NUMBER_SNP = rep(chrom.snp.n, n.threshold),
+            NUMBER_SNP_BLACKLISTED = rep(0L, n.threshold),
+            LD_THRESHOLD = ld.threshold)
+        }
+      }#skip
+    }
+
+    # When number of snp per chrom is 1 or with prob SNPRelate that
+    if (all.missing || chrom.snp.n == 1) {
+      if (verbose) message("    SNPs blacklisted: 0")
+      ld.markers$blacklist.markers <- NULL
+      snp.blacklist <- 0L
+      # want here
       n.threshold <- length(ld.threshold)
       ld.markers$blacklist.markers <- NULL
       if (n.threshold == 1) {
@@ -1236,11 +1268,7 @@ ld_missing <- function(
   # stats ------------------------------------------------------------------
   chrom.stats <- purrr::map_dfr(.x = chrom.ld, .f = "chrom.ld.stats") %>%
     dplyr::mutate(PROP_BLACKLISTED = round(NUMBER_SNP_BLACKLISTED / NUMBER_SNP, 2)) %>%
-    readr::write_tsv(
-      x = .,
-      path = stringi::stri_join(
-        path.folder,
-        "/snp.ld.chrom.stats_", file.date, ".tsv"))
+    readr::write_tsv(x = ., path = file.path(path.folder, "snp.ld.chrom.stats.tsv"))
 
   # figure: distribution number of SNPs per scaffolds/chrom ----------------
   if (n.chrom > 1) {
@@ -1266,10 +1294,8 @@ ld_missing <- function(
       ggplot2::facet_grid(~ LD_THRESHOLD)
     print(d.plot)
     # save
-    d.plot.filename <- stringi::stri_join("snp.number.per.chromosome_", file.date, ".pdf")
-
     ggplot2::ggsave(
-      filename = file.path(path.folder, d.plot.filename),
+      filename = file.path(path.folder, "snp.number.per.chromosome.pdf"),
       plot = d.plot,
       width = 30, height = 10, dpi = 300, units = "cm", useDingbats = FALSE)
   }
@@ -1342,7 +1368,7 @@ ld_missing <- function(
       x.axis.title = NULL,
       y.axis.title = ld.title,
       path.folder = path.folder,
-      bp.filename = stringi::stri_join("snp.long.ld.boxplot_", file.date, ".pdf"))
+      bp.filename = "snp.long.ld.boxplot.pdf")
   }#End ld.figures
   return(wl.bl.ld)
 }#End ld_missing

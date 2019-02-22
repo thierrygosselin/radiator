@@ -126,7 +126,7 @@ tidy_genind <- function(
 
     if (biallelic && A2) {
       # changed adegenet::indNames to rownames(data@tab) to lower dependencies
-      data <- tibble::as_data_frame(data@tab) %>%
+      data <- tibble::as_tibble(data@tab) %>%
         tibble::add_column(.data = ., INDIVIDUALS = rownames(data@tab), .before = 1) %>%
         tibble::add_column(.data = ., POP_ID = data@pop) %>%
         dplyr::select(POP_ID, INDIVIDUALS, dplyr::ends_with(match = ".A2")) %>%
@@ -138,7 +138,7 @@ tidy_genind <- function(
           variable.name = "MARKERS",
           value.name = "GT_BIN"
         ) %>%
-        tibble::as_data_frame(.) %>%
+        tibble::as_tibble(.) %>%
         dplyr::mutate(
           MARKERS = stringi::stri_replace_all_fixed(
             str = MARKERS, pattern = ".A2", replacement = "", vectorize_all = FALSE),
@@ -150,7 +150,7 @@ tidy_genind <- function(
 
       if (keep.allele.names) {
         message("Alleles names are kept if all numeric and padded with 0 if length < 3")
-        data <- tibble::as_data_frame(data@tab) %>%
+        data <- tibble::as_tibble(data@tab) %>%
           tibble::add_column(.data = ., INDIVIDUALS = rownames(data@tab), .before = 1) %>%
           tibble::add_column(.data = ., POP_ID = data@pop) %>%
           # tidyr::gather(data = ., key = MARKERS_ALLELES, value = COUNT, -c(POP_ID, INDIVIDUALS)) %>%
@@ -161,7 +161,7 @@ tidy_genind <- function(
             variable.name = "MARKERS_ALLELES",
             value.name = "COUNT"
           ) %>%
-          tibble::as_data_frame(.) %>%
+          tibble::as_tibble(.) %>%
           dplyr::filter(COUNT > 0 | is.na(COUNT)) %>%
           tidyr::separate(data = ., col = MARKERS_ALLELES, into = c("MARKERS", "ALLELES"), sep = "\\.")
 
@@ -183,7 +183,7 @@ tidy_genind <- function(
 
       } else {
         message("Alleles names for each markers will be converted to factors and padded with 0")
-        data <- tibble::as_data_frame(data@tab) %>%
+        data <- tibble::as_tibble(data@tab) %>%
           tibble::add_column(.data = ., INDIVIDUALS = rownames(data@tab), .before = 1) %>%
           tibble::add_column(.data = ., POP_ID = data@pop) %>%
           # tidyr::gather(data = ., key = MARKERS_ALLELES, value = COUNT, -c(POP_ID, INDIVIDUALS)) %>%
@@ -194,7 +194,7 @@ tidy_genind <- function(
             variable.name = "MARKERS_ALLELES",
             value.name = "COUNT"
           ) %>%
-          tibble::as_data_frame(.) %>%
+          tibble::as_tibble(.) %>%
           dplyr::filter(COUNT > 0 | is.na(COUNT)) %>%
           tidyr::separate(data = ., col = MARKERS_ALLELES, into = c("MARKERS", "ALLELES"), sep = "\\.") %>%
           dplyr::mutate(

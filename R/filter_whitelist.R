@@ -130,6 +130,7 @@ filter_whitelist <- function(
 
     # Function call and dotslist -------------------------------------------------
     rad.dots <- radiator_dots(
+      func.name = as.list(sys.call())[[1]],
       fd = rlang::fn_fmls_names(),
       args.list = as.list(environment()),
       dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
@@ -210,7 +211,7 @@ filter_whitelist <- function(
     }
 
     # Filter parameter file: generate and initiate -----------------------------
-    filters.parameters <- update_parameters(
+    filters.parameters <- radiator_parameters(
       generate = TRUE,
       initiate = TRUE,
       update = FALSE,
@@ -280,7 +281,7 @@ filter_whitelist <- function(
     } # End GDS
 
     # Filter parameter file: update --------------------------------------------
-    filters.parameters <- update_parameters(
+    filters.parameters <- radiator_parameters(
       generate = FALSE,
       initiate = FALSE,
       update = TRUE,

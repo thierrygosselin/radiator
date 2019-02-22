@@ -5,7 +5,7 @@
 \title{generate_folder}
 \usage{
 generate_folder(f, rad.folder = NULL, internal = FALSE,
-  file.date = NULL, verbose = FALSE)
+  file.date = NULL, prefix_int = TRUE, verbose = FALSE)
 }
 \arguments{
 \item{f}{Folder name}
@@ -15,6 +15,9 @@ generate_folder(f, rad.folder = NULL, internal = FALSE,
 \item{internal}{(optional, logical) Is the function internal or not}
 
 \item{file.date}{The file date included}
+
+\item{prefix_int}{Use an integer prefix padded left with 0.
+Default: \code{prefix_int = TRUE}.}
 
 \item{verbose}{(optional, logical) When \code{verbose = TRUE}
 the function is a little more chatty during execution.

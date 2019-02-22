@@ -139,6 +139,7 @@ filter_coverage <- function(
 
     # Function call and dotslist -----------------------------------------------
     rad.dots <- radiator_dots(
+      func.name = as.list(sys.call())[[1]],
       fd = rlang::fn_fmls_names(),
       args.list = as.list(environment()),
       dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
@@ -195,7 +196,7 @@ filter_coverage <- function(
     # markers.file <- stringi::stri_join("markers_coverage_", file.date, ".tsv")
 
     # Filter parameter file: initiate ------------------------------------------
-    filters.parameters <- update_parameters(
+    filters.parameters <- radiator_parameters(
       generate = TRUE,
       initiate = TRUE,
       update = FALSE,
@@ -358,8 +359,8 @@ filter_coverage <- function(
         ggplot2::theme(
           axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
           axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-          axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica") #angle = 90, hjust = 1, vjust = 0.5),
-          # strip.text.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold")
+          # axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica") #angle = 90, hjust = 1, vjust = 0.5),
+          axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica", angle = 90, hjust = 1, vjust = 0.5)
         ) +
         ggplot2::theme_bw()+
         ggplot2::facet_grid(LIST ~ ., scales = "free", space = "free")
@@ -437,31 +438,37 @@ filter_coverage <- function(
     if (verbose) message("File written: blacklist.markers.coverage.tsv")
 
     # Filtering ----------------------------------------------------------------
-    sync_gds(gds = data, markers = wl$VARIANT_ID)
-
     # Update GDS
-    radiator.gds <- gdsfmt::index.gdsn(
-      node = data, path = "radiator", silent = TRUE)
-
-    # Update metadata
-    gdsfmt::add.gdsn(
-      node = radiator.gds,
-      name = "markers.meta",
-      val = wl,
-      replace = TRUE,
-      compress = "ZIP_RA",
-      closezip = TRUE)
+    update_radiator_gds(
+      gds = data,
+      node.name = "markers.meta",
+      value = wl,
+      sync = TRUE
+    )
+    # sync_gds(gds = data, markers = wl$VARIANT_ID)
+    #
+    # radiator.gds <- gdsfmt::index.gdsn(
+    #   node = data, path = "radiator", silent = TRUE)
+    #
+    # # Update metadata
+    # gdsfmt::add.gdsn(
+    #   node = radiator.gds,
+    #   name = "markers.meta",
+    #   val = wl,
+    #   replace = TRUE,
+    #   compress = "ZIP_RA",
+    #   closezip = TRUE)
 
     # update blacklist.markers
     if (nrow(bl) > 0) {
       bl %<>% dplyr::select(MARKERS) %>%
         dplyr::mutate(FILTER = "filter.mean.coverage")
-      bl.gds <- update_bl_markers(gds = radiator.gds, update = bl)
+      bl.gds <- update_bl_markers(gds = data, update = bl)
     }
 
 
     # Update parameters --------------------------------------------------------
-    filters.parameters <- update_parameters(
+    filters.parameters <- radiator_parameters(
       generate = FALSE,
       initiate = FALSE,
       update = TRUE,

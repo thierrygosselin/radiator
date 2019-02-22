@@ -195,6 +195,7 @@ filter_rad <- function(
   # erase.genotypes = NULL
   # random.seed = NULL
   # path.folder = NULL
+  # internal = FALSE
 
   if (verbose) {
     cat("################################################################################\n")
@@ -214,8 +215,8 @@ filter_rad <- function(
   on.exit(setwd(old.dir), add = TRUE)
   on.exit(options(width = opt.change), add = TRUE)
   on.exit(timing <- proc.time() - timing, add = TRUE)
-  on.exit(message("\nComputation time, overall: ", round(timing[[3]]), " sec"), add = TRUE)
-  on.exit(cat("################################## completed ###################################\n"), add = TRUE)
+  on.exit(if (verbose) message("\nComputation time, overall: ", round(timing[[3]]), " sec"), add = TRUE)
+  on.exit(if (verbose) cat("############################# completed filter_rad #############################\n"), add = TRUE)
 
   # Required package -----------------------------------------------------------
   if (!"SeqVarTools" %in% utils::installed.packages()[,"Package"] ||
@@ -233,6 +234,7 @@ BiocManager::install("SeqVarTools")
 
   # Function call and dotslist -------------------------------------------------
   rad.dots <- radiator_dots(
+    func.name = as.list(sys.call())[[1]],
     fd = rlang::fn_fmls_names(),
     args.list = as.list(environment()),
     dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
@@ -256,34 +258,45 @@ BiocManager::install("SeqVarTools")
       "write.tidy",
       "dart.sequence",
       "hierarchical.levels", "imputation.method", "pred.mean.matching", "num.tree",
-      "missing.memory")
+      "missing.memory", "internal"),
+    verbose = TRUE
   )
-  dots.filename <- stringi::stri_join("radiator_filter_rad_args_", file.date, ".tsv")
+
+  filter.common.markers.bk <- filter.common.markers
+
 
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("data is missing")
 
   # Folders---------------------------------------------------------------------
+  # wf for working folder
+  # radiator.folder : the 01_radiator folder to put most things...
   wf <- path.folder <- generate_folder(
     f = path.folder,
+    rad.folder = "filter_rad",
+    prefix_int = FALSE,
+    internal = internal,
     file.date = file.date,
     verbose = verbose)
 
-  # generate the folders skeleton filenames
-  fp <- generate_squeleton_folders(
-    fp = 0L,
-    path.folder = path.folder,
-    interactive.filter = interactive.filter
-  )
-  # Start with the first folder
   radiator.folder <- generate_folder(
-    f = file.path(path.folder, "01_radiator"),
+    f = path.folder,
+    rad.folder = "radiator",
+    prefix_int = TRUE,
+    internal = FALSE,
     file.date = file.date,
     verbose = verbose)
 
   # write the dots file
-  readr::write_tsv(x = rad.dots, path = file.path(radiator.folder, dots.filename))
-  if (verbose) message("File written: ", dots.filename)
+  write_rad(
+    data = rad.dots,
+    path = radiator.folder,
+    filename = stringi::stri_join(
+      "radiator_filter_rad_args_", file.date, ".tsv"),
+    tsv = TRUE,
+    internal = internal,
+    verbose = verbose
+  )
 
   # Random seed ----------------------------------------------------------------
   if (is.null(random.seed)) {
@@ -296,7 +309,7 @@ BiocManager::install("SeqVarTools")
   if (verbose) message("File written: random.seed (", random.seed,")")
 
   # Filter parameter file: generate --------------------------------------------
-  filters.parameters <- update_parameters(
+  filters.parameters <- radiator_parameters(
     generate = TRUE,
     initiate = FALSE,
     update = FALSE,
@@ -323,16 +336,21 @@ BiocManager::install("SeqVarTools")
         random.seed = random.seed,
         filter.monomorphic = FALSE,
         filter.common.markers = FALSE,
-        path.folder = radiator.folder)
+        internal = TRUE,
+        filters.parameters = filters.parameters,
+        path.folder = radiator.folder,
+        verbose = TRUE)
       data.type <- "SeqVarGDSClass"
     } else {
       gds <- tidy_dart(
         data = data,
         strata = strata,
         filename = filename,
-        verbose = verbose,
+        verbose = TRUE,
         parallel.core = parallel.core,
-        path.folder = radiator.folder
+        path.folder = radiator.folder,
+        filters.parameters = filters.parameters,
+        internal = FALSE
       )
       data.type <- "SeqVarGDSClass"
     }
@@ -359,11 +377,12 @@ BiocManager::install("SeqVarTools")
   }
 
   source <- extract_source(gds) # to know if dart data or not...
+
   # Filter reproducibility -----------------------------------------------------
   if ("dart" %in% source) {
     gds <- filter_dart_reproducibility(
-      interactive.filter = interactive.filter,
       data = gds,
+      interactive.filter = interactive.filter,
       filter.reproducibility = filter.reproducibility,
       parallel.core = parallel.core,
       verbose = verbose,
@@ -404,8 +423,8 @@ BiocManager::install("SeqVarTools")
 
   # filter.individuals.missing -----------------------------------------------
   gds <- filter_individuals(
-    interactive.filter = interactive.filter,
     data = gds,
+    interactive.filter = interactive.filter,
     filter.individuals.missing = filter.individuals.missing,
     filter.individuals.heterozygosity = filter.individuals.heterozygosity,
     filter.individuals.coverage.total = filter.individuals.coverage.total,
@@ -429,20 +448,19 @@ BiocManager::install("SeqVarTools")
   temp <- NULL
 
   # Filter common markers ----------------------------------------------------
-  if (filter.common.markers || interactive.filter) {
-    gds <- filter_common_markers(
-      data = gds,
-      plot = TRUE,
-      parallel.core = parallel.core,
-      verbose = verbose,
-      parameters = filters.parameters,
-      path.folder = wf)
-  }
+  gds <- filter_common_markers(
+    data = gds,
+    filter.common.markers = filter.common.markers.bk,
+    plot = TRUE,
+    parallel.core = parallel.core,
+    verbose = verbose,
+    parameters = filters.parameters,
+    path.folder = wf)
 
   # Filter MAC------------------------------------------------------------------
   gds <- filter_mac(
-    interactive.filter = interactive.filter,
     data = gds,
+    interactive.filter = interactive.filter,
     filter.mac = filter.mac,
     filename = NULL,
     parallel.core = parallel.core,
@@ -452,8 +470,8 @@ BiocManager::install("SeqVarTools")
 
   # Filter coverage-------------------------------------------------------------
   gds <- filter_coverage(
-    interactive.filter = interactive.filter,
     data = gds,
+    interactive.filter = interactive.filter,
     filter.coverage = filter.coverage,
     filename = NULL,
     parallel.core = parallel.core,
@@ -463,8 +481,8 @@ BiocManager::install("SeqVarTools")
 
   # Filter genotyping---------------------------------------------------------
   gds <- filter_genotyping(
-    interactive.filter = interactive.filter,
     data = gds,
+    interactive.filter = interactive.filter,
     filter.genotyping = filter.genotyping,
     filename = NULL,
     parallel.core = parallel.core,
@@ -474,8 +492,8 @@ BiocManager::install("SeqVarTools")
 
   # Filter SNP position on the read---------------------------------------------
   gds <- filter_snp_position_read(
-    interactive.filter = interactive.filter,
     data = gds,
+    interactive.filter = interactive.filter,
     filter.snp.position.read = filter.snp.position.read,
     filename = NULL,
     parallel.core = parallel.core,
@@ -485,8 +503,8 @@ BiocManager::install("SeqVarTools")
 
   # Filter snp number per locus ------------------------------------------------
   gds <- filter_snp_number(
-    interactive.filter = interactive.filter,
     data = gds,
+    interactive.filter = interactive.filter,
     filter.snp.number = filter.snp.number,
     filename = NULL,
     parallel.core = parallel.core,
@@ -496,8 +514,8 @@ BiocManager::install("SeqVarTools")
 
   # Filter Linkage disequilibrium --------------------------------------------
   gds <- filter_ld(
-    interactive.filter = interactive.filter,
     data = gds,
+    interactive.filter = interactive.filter,
     filter.short.ld = filter.short.ld,
     filter.long.ld = filter.long.ld,
     parallel.core = parallel.core,
@@ -510,8 +528,8 @@ BiocManager::install("SeqVarTools")
 
   # Detect mixed genomes -------------------------------------------------------
   gds <- detect_mixed_genomes(
-    interactive.filter = interactive.filter,
     data = gds,
+    interactive.filter = interactive.filter,
     detect.mixed.genomes = detect.mixed.genomes,
     ind.heterozygosity.threshold = NULL,
     parameters = filters.parameters,
@@ -520,9 +538,9 @@ BiocManager::install("SeqVarTools")
 
   #Detect duplicate genomes ---------------------------------------------------
   gds <- detect_duplicate_genomes(
+    data = gds,
     interactive.filter = interactive.filter,
     detect.duplicate.genomes = detect.duplicate.genomes,
-    data = gds,
     parallel.core = parallel.core,
     verbose = verbose,
     parameters = filters.parameters,
@@ -532,24 +550,28 @@ BiocManager::install("SeqVarTools")
 
   # Filter HWE -----------------------------------------------------------------
   gds <- filter_hwe(
+    data = gds,
     interactive.filter = interactive.filter,
     filter.hwe = filter.hwe,
-    data = gds,
     strata = NULL,
     hw.pop.threshold = hw.pop.threshold,
     midp.threshold = midp.threshold,
     parallel.core = parallel.core,
     parameters = filters.parameters,
     path.folder = wf,
-    verbose = FALSE)
+    verbose = verbose)
 
 
   # FINAL PREP -----------------------------------------------------------------
   # filtered data folder
+  if (verbose) message("\n\nTransferring data to genomic converter...")
   path.folder <- generate_folder(
-    f = rad_folder("filtered", wf),
+    f = wf,
+    rad.folder = "filtered",
+    internal = FALSE,
     file.date = file.date,
     verbose = verbose)
+
 
   # Whitelist
   extract_markers_metadata(gds) %>%
@@ -559,7 +581,7 @@ BiocManager::install("SeqVarTools")
   # blacklist
   bl <- update_bl_markers(gds = gds, extract = TRUE)
   if (nrow(bl) > 0) {
-      readr::write_tsv(x = bl, path = file.path(path.folder, "blacklist.markers.tsv"))
+    readr::write_tsv(x = bl, path = file.path(path.folder, "blacklist.markers.tsv"))
     if (verbose) message("Writing the blacklist of markers: blacklist.markers.tsv")
   }
 
@@ -588,29 +610,21 @@ BiocManager::install("SeqVarTools")
   if (verbose) message("Writing the filtered strata: strata.filtered.tsv")
 
   # genomic_converter-----------------------------------------------------------
-  # if (!is.null(output)) {
-    # save.image(file.path(wf, "testing.filter.rad.coral.RData"))
-    # load("Pocillopora_verrucosa_filter_20190213@1412/testing.filter.rad.coral.RData")
-    # gds <- read_rad(data = "Pocillopora_verrucosa_filter_20190213@1412/01_radiator/radiator_20190213@1412.gds")
-  path.folder <- "/Users/thierry/Dropbox/r_packages/package_testing/carol/Pocillopora verrucosa/Pocillopora_verrucosa_filter_20190213@1412/13_filtered"
-  filename <- "Pocillopora_verrucosa"
-  if (verbose) message("\nData transferred to genomic converter")
-    output <- genomic_converter(
-      data = gds,
-      strata = strata,
-      output = output,
-      parallel.core = parallel.core,
-      filename = filename,
-      verbose = verbose,
-      path.folder = path.folder,
-      parameters = filters.parameters,
-      filter.common.markers = FALSE,
-      filter.monomorphic = FALSE)
-  # }
+  output <- genomic_converter(
+    data = gds,
+    strata = strata,
+    output = output,
+    parallel.core = parallel.core,
+    filename = filename,
+    verbose = FALSE,
+    path.folder = path.folder,
+    parameters = filters.parameters,
+    filter.common.markers = FALSE,
+    filter.monomorphic = FALSE,
+    internal = TRUE)
 
   if (verbose) {
     sum <- summary_gds(gds = gds, verbose = TRUE)
-    cat("############################ FILTER_RAD COMPLETED ##############################\n")
   }
   return(gds)
 }#End filter_rad

@@ -225,7 +225,7 @@ filter_blacklist_genotypes <- function(
 
     # TODO: modify the function to accomodate erasing genotypes...
 
-    # filters.parameters <- update_parameters(
+    # filters.parameters <- radiator_parameters(
     #   generate = TRUE,
     #   initiate = TRUE,
     #   update = FALSE,
@@ -307,7 +307,7 @@ filter_blacklist_genotypes <- function(
 
 
       # Filter parameter file: update --------------------------------------------
-      # filters.parameters <- update_parameters(
+      # filters.parameters <- radiator_parameters(
       #   generate = FALSE,
       #   initiate = FALSE,
       #   update = TRUE,

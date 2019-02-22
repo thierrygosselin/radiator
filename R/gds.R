@@ -482,36 +482,44 @@ extract_individuals <- function(
   verbose = FALSE
 ) {
 
-  # will switch radiator.mode to FALSE if returns null
-  if (radiator.node) {
-    id.index <- gdsfmt::ls.gdsn(gdsfmt::index.gdsn(
-      node = gds, path = "radiator/individuals", silent = TRUE))
-    if (is.null(id.index)) radiator.node <- FALSE
-  }
+  # For SNPRelate data
+  snprelate <- "SNPGDSFileClass" %in% class(gds)[1]
 
-  if (radiator.node) {
-    if (!is.null(ind.field.select)) {
-      id.index %<>% intersect(ind.field.select)
-    }
-
-    id.index %<>% magrittr::set_names(x = ., value = .)
-
-    id.df <- list()
-    id_fields <- function(x, gds, id.df) {
-      id.df[[x]] <- gdsfmt::read.gdsn(
-        gdsfmt::index.gdsn(
-          node = gds,
-          path = stringi::stri_join("radiator/individuals/", x),
-          silent = TRUE))
-    }
-
-    individuals <- purrr::map_df(.x = id.index, .f = id_fields, gds, id.df)
-  }
-
-  if (!radiator.node) {
+  if (snprelate) {
     individuals <- tibble::tibble(
-      INDIVIDUALS = SeqArray::seqGetData(gds, "sample.id")
-    )
+      INDIVIDUALS = gdsfmt::read.gdsn(gdsfmt::index.gdsn(gds, "sample.id")))
+  } else {
+    # will switch radiator.mode to FALSE if returns null
+    if (radiator.node) {
+      id.index <- gdsfmt::ls.gdsn(gdsfmt::index.gdsn(
+        node = gds, path = "radiator/individuals", silent = TRUE))
+      if (is.null(id.index)) radiator.node <- FALSE
+    }
+
+    if (radiator.node) {
+      if (!is.null(ind.field.select)) {
+        id.index %<>% intersect(ind.field.select)
+      }
+
+      id.index %<>% magrittr::set_names(x = ., value = .)
+
+      id.df <- list()
+      id_fields <- function(x, gds, id.df) {
+        id.df[[x]] <- gdsfmt::read.gdsn(
+          gdsfmt::index.gdsn(
+            node = gds,
+            path = stringi::stri_join("radiator/individuals/", x),
+            silent = TRUE))
+      }
+
+      individuals <- purrr::map_df(.x = id.index, .f = id_fields, gds, id.df)
+    }
+
+    if (!radiator.node) {
+      individuals <- tibble::tibble(
+        INDIVIDUALS = SeqArray::seqGetData(gds, "sample.id")
+      )
+    }
   }
 
   return(individuals)
@@ -1569,15 +1577,18 @@ gds2tidy <- function(
   }
 
   if (is.null(markers.meta)) {
-    markers.meta <- extract_markers_metadata(gds = gds, verbose = FALSE)
+    markers.meta <- extract_markers_metadata(gds = gds, verbose = TRUE)
   }
   want <- intersect(c("MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF", "ALT"),
                     names(markers.meta))
+
+  # summary_gds(gds)
   tidy.data <- suppressWarnings(
     SeqArray::seqGetData(
       gdsfile = gds, var.name = "$dosage_alt") %>%
-      magrittr::set_colnames(x = ., value = markers.meta$MARKERS) %>%
-      magrittr::set_rownames(x = ., value = individuals$INDIVIDUALS) %>%
+    # magrittr::set_colnames(x = ., value = markers.meta$VARIANT_ID) %>%
+    magrittr::set_colnames(x = ., value = markers.meta$MARKERS) %>%
+    magrittr::set_rownames(x = ., value = individuals$INDIVIDUALS) %>%
       data.table::as.data.table(x = ., keep.rownames = "INDIVIDUALS") %>%
       data.table::melt.data.table(
         data = .,

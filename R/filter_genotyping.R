@@ -135,10 +135,10 @@ filter_genotyping <- function(
     on.exit(timing <- proc.time() - timing, add = TRUE)
     on.exit(if (verbose) message("\nComputation time, overall: ", round(timing[[3]]), " sec"), add = TRUE)
     on.exit(if (verbose) cat("######################## completed filter_genotyping ###########################\n"), add = TRUE)
-    on.exit(message("\nComputation time, overall: ", round(timing[[3]]), " sec"), add = TRUE)
 
     # Function call and dotslist -------------------------------------------------
     rad.dots <- radiator_dots(
+      func.name = as.list(sys.call())[[1]],
       fd = rlang::fn_fmls_names(),
       args.list = as.list(environment()),
       dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
@@ -194,7 +194,7 @@ filter_genotyping <- function(
     }
 
     # Filter parameter file: initiate ------------------------------------------
-    filters.parameters <- update_parameters(
+    filters.parameters <- radiator_parameters(
       generate = TRUE,
       initiate = TRUE,
       update = FALSE,
@@ -363,31 +363,37 @@ filter_genotyping <- function(
     if (verbose) message("File written: blacklist.markers.genotyping.tsv")
 
     # Filtering ----------------------------------------------------------------
-    sync_gds(gds = data, markers = wl$VARIANT_ID)
-
     # Update GDS
-    radiator.gds <- gdsfmt::index.gdsn(
-      node = data, path = "radiator", silent = TRUE)
+    update_radiator_gds(
+      gds = data,
+      node.name = "markers.meta",
+      value = wl,
+      sync = TRUE
+    )
 
-    # Update metadata
-    gdsfmt::add.gdsn(
-      node = radiator.gds,
-      name = "markers.meta",
-      val = wl,
-      replace = TRUE,
-      compress = "ZIP_RA",
-      closezip = TRUE)
+    # sync_gds(gds = data, markers = wl$VARIANT_ID)
+    # radiator.gds <- gdsfmt::index.gdsn(
+    #   node = data, path = "radiator", silent = TRUE)
+    #
+    # # Update metadata
+    # gdsfmt::add.gdsn(
+    #   node = radiator.gds,
+    #   name = "markers.meta",
+    #   val = wl,
+    #   replace = TRUE,
+    #   compress = "ZIP_RA",
+    #   closezip = TRUE)
 
     # update blacklist.markers
     if (nrow(bl) > 0) {
       bl %<>% dplyr::select(MARKERS) %>%
         dplyr::mutate(FILTER = "filter.genotyping")
-      bl.gds <- update_bl_markers(gds = radiator.gds, update = bl)
+      bl.gds <- update_bl_markers(gds = data, update = bl)
     }
 
 
     # Update parameters --------------------------------------------------------
-    filters.parameters <- update_parameters(
+    filters.parameters <- radiator_parameters(
       generate = FALSE,
       initiate = FALSE,
       update = TRUE,

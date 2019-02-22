@@ -4,7 +4,7 @@
 \alias{folder_prefix}
 \title{folder_prefix}
 \usage{
-folder_prefix(prefix.number = NULL, prefix.name = NULL,
+folder_prefix(prefix_int = NULL, prefix.name = NULL,
   path.folder = NULL)
 }
 \description{

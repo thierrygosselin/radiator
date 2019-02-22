@@ -294,6 +294,7 @@ write_seqarray <- function(
 
   # Function call and dotslist -------------------------------------------------
   rad.dots <- radiator_dots(
+    func.name = as.list(sys.call())[[1]],
     fd = rlang::fn_fmls_names(),
     args.list = as.list(environment()),
     dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
@@ -416,7 +417,7 @@ write_seqarray <- function(
   if (verbose) message("File written: random.seed (", random.seed,")")
 
   # Filter parameter file: generate --------------------------------------------
-  filters.parameters <- update_parameters(
+  filters.parameters <- radiator_parameters(
     generate = TRUE,
     initiate = FALSE,
     update = FALSE,
@@ -699,9 +700,9 @@ write_seqarray <- function(
     compress = "ZIP_RA",
     closezip = TRUE)
 
-  # Filter parameter file: initiate --------------------------------------------
+  # radiator_parameters: initiate --------------------------------------------
   # with original VCF's values
-  filters.parameters <- update_parameters(
+  filters.parameters <- radiator_parameters(
     generate = FALSE,
     initiate = TRUE,
     update = TRUE,
@@ -763,7 +764,7 @@ write_seqarray <- function(
     sync_gds(gds = gds, markers = markers.meta$VARIANT_ID)
 
     # Filter parameter file: update
-    filters.parameters <- update_parameters(
+    filters.parameters <- radiator_parameters(
       generate = FALSE,
       initiate = FALSE,
       update = TRUE,
@@ -853,7 +854,7 @@ write_seqarray <- function(
 
 
       # Filter parameter file: update
-      filters.parameters <- update_parameters(
+      filters.parameters <- radiator_parameters(
         generate = FALSE,
         initiate = FALSE,
         update = TRUE,

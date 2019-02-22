@@ -93,6 +93,7 @@ filter_common_markers <- function(
 
     # Function call and dotslist -------------------------------------------------
     rad.dots <- radiator_dots(
+      func.name = as.list(sys.call())[[1]],
       fd = rlang::fn_fmls_names(),
       args.list = as.list(environment()),
       dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
@@ -146,7 +147,7 @@ filter_common_markers <- function(
       }
 
       # Filter parameter file: generate and initiate -----------------------------
-      filters.parameters <- update_parameters(
+      filters.parameters <- radiator_parameters(
         generate = TRUE,
         initiate = TRUE,
         update = FALSE,
@@ -154,7 +155,7 @@ filter_common_markers <- function(
         data = data,
         path.folder = path.folder,
         file.date = file.date,
-        internal = internal,
+        internal = FALSE,
         verbose = verbose)
       n.pop <- filters.parameters$info$n.pop
 
@@ -198,25 +199,32 @@ filter_common_markers <- function(
 
         wl %<>% dplyr::filter(!MARKERS %in% bl$MARKERS)
 
-        radiator::sync_gds(gds = data, markers = wl$VARIANT_ID, verbose = FALSE)
 
         # Update GDS
-        radiator.gds <- gdsfmt::index.gdsn(
-          node = data, path = "radiator", silent = TRUE)
-
-        # Update metadata
-        gdsfmt::add.gdsn(
-          node = radiator.gds,
-          name = "markers.meta",
-          val = wl,
-          replace = TRUE,
-          compress = "ZIP_RA",
-          closezip = TRUE)
+        update_radiator_gds(
+          gds = data,
+          node.name = "markers.meta",
+          value = wl,
+          sync = TRUE
+        )
+        # radiator::sync_gds(gds = data, markers = wl$VARIANT_ID, verbose = FALSE)
+        #
+        # radiator.gds <- gdsfmt::index.gdsn(
+        #   node = data, path = "radiator", silent = TRUE)
+        #
+        # # Update metadata
+        # gdsfmt::add.gdsn(
+        #   node = radiator.gds,
+        #   name = "markers.meta",
+        #   val = wl,
+        #   replace = TRUE,
+        #   compress = "ZIP_RA",
+        #   closezip = TRUE)
 
         # update blacklist.markers
         bl %<>% dplyr::select(MARKERS) %>%
           dplyr::mutate(FILTER = "filter.common.markers")
-        bl.gds <- update_bl_markers(gds = radiator.gds, update = bl)
+        bl.gds <- update_bl_markers(gds = data, update = bl)
       } else {
         bl <- wl[0,]
         n.markers.after <- n.markers.before
@@ -239,7 +247,7 @@ filter_common_markers <- function(
 
 
       # Filter parameter file: generate and initiate ------------------------------------------
-      filters.parameters <- update_parameters(
+      filters.parameters <- radiator_parameters(
         generate = TRUE,
         initiate = TRUE,
         update = FALSE,
@@ -247,7 +255,7 @@ filter_common_markers <- function(
         data = data,
         path.folder = path.folder,
         file.date = file.date,
-        internal = internal,
+        internal = FALSE,
         verbose = verbose)
 
       n.pop <- filters.parameters$info$n.pop
@@ -309,7 +317,7 @@ filter_common_markers <- function(
     }#End tidy
 
     # Filter parameter file: update --------------------------------------------
-    filters.parameters <- update_parameters(
+    filters.parameters <- radiator_parameters(
       generate = FALSE,
       initiate = FALSE,
       update = TRUE,
@@ -320,19 +328,16 @@ filter_common_markers <- function(
       values = "",
       path.folder = path.folder,
       file.date = file.date,
-      internal = internal,
+      internal = FALSE,
       verbose = verbose)
 
     # Return -----------------------------------------------------------------------
-    if (verbose) {
-      cat("################################### RESULTS ####################################\n")
+      if (verbose) cat("################################### RESULTS ####################################\n")
       message("Filter common markers:")
       message("Number of individuals / strata / chrom / locus / SNP:")
-      message("    Before: ", filters.parameters$filters.parameters$BEFORE)
+      if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
       message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-      message("    After: ", filters.parameters$filters.parameters$AFTER)
-    }
-    # if (verbose) message("\nComputation time: ", round((proc.time() - timing)[[3]]), " sec")
+      if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
   }
   return(data)
 

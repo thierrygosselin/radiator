@@ -81,7 +81,7 @@ read_rad <- function(
   data.type <- detect_genomic_format(data)
 
   # FST FILE -------------------------------------------------------------------
-  if (data.type == "fst.file") {
+  if ("fst.file" %in% data.type) {
 
     # since version 0.8.4 there is a distinction between old and new format...
     # Catch error while reading
@@ -117,7 +117,7 @@ read_rad <- function(
   }#End fst.file
 
   # GDS file -------------------------------------------------------------------
-  if (data.type == "gds.file") {
+  if ("gds.file" %in% data.type) {
     if (verbose) message("Opening GDS file connection")
 
     if (allow.dup) {
@@ -268,7 +268,7 @@ write_rad <- function(
       # detect format---------------------------------------------------------------
       data.type <- class(data)
 
-      if (unique(data.type) == "SeqVarGDSClass") {
+      if ("SeqVarGDSClass" %in% data.type) {
         rad_sample <- purrr::safely(.f = function(x) gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/individuals/INDIVIDUALS")))
         rad_markers <- purrr::safely(.f = function(x) gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/markers.meta/VARIANT_ID")))
 

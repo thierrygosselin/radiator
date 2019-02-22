@@ -169,19 +169,21 @@ tidy_genomic_data <- function(
   on.exit(setwd(old.dir), add = TRUE)
   on.exit(options(width = opt.change), add = TRUE)
   on.exit(timing <- proc.time() - timing, add = TRUE)
-  on.exit(message("\nComputation time, overall: ", round(timing[[3]]), " sec"), add = TRUE)
-  on.exit(cat("######################### tidy_genomic_data completed ##########################\n"), add = TRUE)
+  on.exit(if (verbose) message("\nComputation time, overall: ", round(timing[[3]]), " sec"), add = TRUE)
+  on.exit(if (verbose) cat("######################### tidy_genomic_data completed ##########################\n"), add = TRUE)
 
   # Function call and dotslist -------------------------------------------------
   rad.dots <- radiator_dots(
+    func.name = as.list(sys.call())[[1]],
     fd = rlang::fn_fmls_names(),
     args.list = as.list(environment()),
     dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
     keepers = c("path.folder", "parameters","keep.allele.names", "blacklist.id",
                 "whitelist.markers", "filter.common.markers",
-                "filter.monomorphic", "vcf.metadata", "vcf.stats")
+                "filter.monomorphic", "vcf.metadata", "vcf.stats",
+                "blacklist.genotypes", "internal"),
+    verbose = verbose
   )
-  dots.filename <- stringi::stri_join("radiator_tidy_genomic_data_args_", file.date, ".tsv")
 
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("data is missing")
@@ -191,19 +193,22 @@ tidy_genomic_data <- function(
   }
 
   # Folders---------------------------------------------------------------------
-  if (!is.null(path.folder) && path.folder == getwd()) {
-    rad.folder.name <- rad_folder("radiator", path.folder)
-  } else {
-    rad.folder.name <- path.folder
-  }
   path.folder <- generate_folder(
-    f = rad.folder.name,
+    f = path.folder,
+    rad.folder = "radiator_tidy_genomic",
+    internal = internal,
     file.date = file.date,
     verbose = verbose)
 
   # write the dots file
-  readr::write_tsv(x = rad.dots, path = file.path(path.folder, dots.filename))
-  if (verbose) message("File written: ", dots.filename)
+  write_rad(
+    data = rad.dots,
+    path = path.folder,
+    filename = stringi::stri_join("radiator_tidy_genomic_data_args_", file.date, ".tsv"),
+    tsv = TRUE,
+    internal = internal,
+    verbose = verbose
+  )
 
   # File type detection----------------------------------------------------------
   skip.tidy.wide <- FALSE # initiate for data frame below
@@ -633,12 +638,13 @@ tidy_genomic_data <- function(
     } else{
       message("Multiallelic data")
     }
+
+    message("\nTidy genomic data:")
+    message("    Number of markers: ", n.markers)
+    message("    Number of chromosome/contig/scaffold: ", n.chromosome)
+    message("    Number of individuals: ", n.individuals)
+    if (!is.null(strata)) message("    Number of populations: ", n.pop)
   }
-  message("\nTidy genomic data:")
-  message("    Number of markers: ", n.markers)
-  message("    Number of chromosome/contig/scaffold: ", n.chromosome)
-  message("    Number of individuals: ", n.individuals)
-  if (!is.null(strata)) message("    Number of populations: ", n.pop)
   return(input)
 } # tidy genomic data
 

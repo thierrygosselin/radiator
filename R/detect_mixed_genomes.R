@@ -215,6 +215,7 @@ detect_mixed_genomes <- function(
 
     # Function call and dotslist -------------------------------------------------
     rad.dots <- radiator_dots(
+      func.name = as.list(sys.call())[[1]],
       fd = rlang::fn_fmls_names(),
       args.list = as.list(environment()),
       dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
@@ -253,7 +254,7 @@ detect_mixed_genomes <- function(
       n.pop <- dplyr::n_distinct(data$POP_ID)
 
       # Filter parameter file: generate and initiate -------------------------------
-      filters.parameters <- update_parameters(
+      filters.parameters <- radiator_parameters(
         generate = TRUE,
         initiate = TRUE,
         update = FALSE,
@@ -355,7 +356,7 @@ detect_mixed_genomes <- function(
       }
 
       # Filter parameter file: generate and initiate -------------------------------
-      filters.parameters <- update_parameters(
+      filters.parameters <- radiator_parameters(
         generate = TRUE,
         initiate = TRUE,
         update = FALSE,
@@ -564,8 +565,9 @@ detect_mixed_genomes <- function(
     } else {
       blacklist.ind.het <- "ind.heterozygosity.threshold is necessary to get a blacklist of individuals"
     }
-
+    check.mono <- FALSE
     if (!is.null(nrow(blacklist.ind.het)) && nrow(blacklist.ind.het) > 0) {
+      check.mono <- TRUE
       n.ind.blacklisted <- length(blacklist.ind.het$INDIVIDUALS)
 
       if (data.type == "SeqVarGDSClass") {
@@ -582,42 +584,47 @@ detect_mixed_genomes <- function(
       } else {
         input  %<>% dplyr::filter(!INDIVIDUALS %in% blacklist.ind.het$INDIVIDUALS)
       }
-      # updating parameters
-      filters.parameters <- update_parameters(
-        generate = FALSE,
-        initiate = FALSE,
-        update = TRUE,
-        parameter.obj = filters.parameters,
-        data = data,
-        filter.name = "detect mixed genomes",
-        param.name = "ind.heterozygosity.threshold (min/max)",
-        values = if (!is.null(ind.heterozygosity.threshold)) {
-          paste(threshold.min, threshold.max, collapse = " / ")
-          } else {
-          "not used"
-          },
-        path.folder = path.folder,
-        file.date = file.date,
-        verbose = verbose)
+    }#End blacklisted
 
-      # MONOMORPHIC MARKERS --------------------------------------------------
+
+    # updating parameters
+    filters.parameters <- radiator_parameters(
+      generate = FALSE,
+      initiate = FALSE,
+      update = TRUE,
+      parameter.obj = filters.parameters,
+      data = data,
+      filter.name = "detect mixed genomes",
+      param.name = "ind.heterozygosity.threshold (min/max)",
+      values = if (!is.null(ind.heterozygosity.threshold)) {
+        paste(threshold.min, threshold.max, collapse = " / ")
+      } else {
+        "not used"
+      },
+      path.folder = path.folder,
+      file.date = file.date,
+      verbose = verbose)
+
+    if (verbose) cat("################################### RESULTS ####################################\n")
+    message("Detect mixed genomes: ", paste(threshold.min, threshold.max, collapse = " / "))
+    message("Number of individuals / strata / chrom / locus / SNP:")
+    if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
+    message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
+    if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
+
+
+    # MONOMORPHIC MARKERS --------------------------------------------------
+    if (check.mono) {
       data <- filter_monomorphic(
         data = data,
         parallel.core = parallel.core,
-        verbose = verbose,
+        verbose = FALSE,
         parameters = filters.parameters,
         path.folder = path.folder,
         internal = TRUE)
     }
-    # results --------------------------------------------------------------------
-    if (verbose) {
-      cat("################################### RESULTS ####################################\n")
-      message("Detect mixed genomes: ", paste(threshold.min, threshold.max, collapse = " / "))
-      message("Number of individuals / strata / chrom / locus / SNP:")
-      message("    Before: ", filters.parameters$filters.parameters$BEFORE)
-      message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-      message("    After: ", filters.parameters$filters.parameters$AFTER)
-    }
-  }
+
+
+  }#before this one
   return(data)
 }#End detect_mixed_genomes

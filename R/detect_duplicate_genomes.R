@@ -239,6 +239,7 @@ detect_duplicate_genomes <- function(
 
     # Function call and dotslist -------------------------------------------------
     rad.dots <- radiator_dots(
+      func.name = as.list(sys.call())[[1]],
       fd = rlang::fn_fmls_names(),
       args.list = as.list(environment()),
       dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
@@ -299,7 +300,7 @@ detect_duplicate_genomes <- function(
       data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
 
       # Filter parameter file: generate and initiate
-      filters.parameters <- update_parameters(
+      filters.parameters <- radiator_parameters(
         generate = TRUE,
         initiate = TRUE,
         update = FALSE,
@@ -435,7 +436,7 @@ detect_duplicate_genomes <- function(
                      BiocManager::install("SeqVarTools")')
       }
       # Filter parameter file: generate and initiate
-      filters.parameters <- update_parameters(
+      filters.parameters <- radiator_parameters(
         generate = TRUE,
         initiate = TRUE,
         update = FALSE,
@@ -450,7 +451,8 @@ detect_duplicate_genomes <- function(
         gds = data, # change to data...
         missing = TRUE,
         heterozygosity = FALSE,
-        coverage = FALSE, plot = FALSE,
+        coverage = FALSE,
+        plot = FALSE,
         file.date = file.date,
         parallel.core = parallel.core,
         verbose = FALSE,
@@ -807,20 +809,20 @@ detect_duplicate_genomes <- function(
 
     # Removing duplicates ------------------------------------------------------
     if (blacklist.duplicates || interactive.filter) {
+      check.mono <- FALSE
+
       message("\nInspect tables and figures to decide if some individual(s) need to be blacklisted")
-      # message("Do you need to blacklist individual(s) (y/n): ")
-      # remove.id <- as.character(readLines(n = 1))
       remove.id <- interactive_question(
         x = "    Do you need to blacklist individual(s) (y/n): ", answer.opt = c("y", "n"))
 
       if (remove.id == "y") {
-        message("\nChoose how you want to remove duplicates (manually/threshold):")
+        message("\nRemoving duplicates can be accomplish in 2 ways: using a threshold or manually")
         message("    manually: the function generate a blacklist that you populate")
         message("    threshold: more powerful to fully remove duplicates")
         remove.dup <- interactive_question(
-          x = "    Enter (manually/threshold): ", answer.opt = c("manually", "threshold"))
+          x = "    Do you want to use the threshold method ?(y/n): ", answer.opt = c("y", "n"))
 
-        if (remove.dup == "manually") {
+        if (remove.dup == "n") {
           readr::write_tsv(
             x = tibble::tibble(INDIVIDUALS = as.character()),
             path = file.path(path.folder, "blacklist.id.similar.tsv"),
@@ -837,9 +839,15 @@ detect_duplicate_genomes <- function(
         } else {# with threshold
           # message("Use the distance or genome analysis to blacklist duplicates ? (distance/genome): ")
           # analysis <- as.character(readLines(n = 1))
-          analysis <- interactive_question(
-            x = "\nChoose the analysis method to blacklist duplicates? (distance/genome): ", answer.opt = c("distance", "genome"))
 
+          if (data.type != "SeqVarGDSClass") {
+            analysis <- "distance"
+          } else {
+            analysis <- interactive_question(
+              x = "\nChoose the analysis method to blacklist duplicates? (distance/genome): ",
+              answer.opt = c("distance", "genome")
+            )
+          }
 
           if (analysis == "distance") {
             data.dup <-  "individuals.pairwise.dist.tsv"
@@ -869,9 +877,12 @@ detect_duplicate_genomes <- function(
         }
         n.ind.blacklisted <- nrow(blacklist.id.similar)
       } else {
+        dup.threshold <- 0L
         n.ind.blacklisted <- 0L
       }
+
       if (n.ind.blacklisted > 0) {
+        check.mono <- TRUE
         if (verbose) message("Blacklisted individuals: ", n.ind.blacklisted, " ind.")
         if (verbose) message("    Filtering with blacklist of individuals")
 
@@ -888,41 +899,40 @@ detect_duplicate_genomes <- function(
           update_radiator_gds(gds = data, node.name = "individuals", value = id.info, sync = TRUE)
         }
         blacklist.id.similar <- NULL
-
-        # updating parameters --------------------------------------------------
-        filters.parameters <- update_parameters(
-          generate = FALSE,
-          initiate = FALSE,
-          update = TRUE,
-          parameter.obj = filters.parameters,
-          data = data,
-          filter.name = "detect duplicate genomes",
-          param.name = "dup.threshold",
-          values = dup.threshold,
-          path.folder = path.folder,
-          file.date = file.date,
-          verbose = verbose)
-
-        # MONOMORPHIC MARKERS --------------------------------------------------
-        data <- filter_monomorphic(
-          data = data,
-          parallel.core = parallel.core,
-          verbose = verbose,
-          parameters = filters.parameters,
-          path.folder = path.folder,
-          internal = TRUE)
       }
     }# End blacklist.duplicates
 
+    # updating parameters --------------------------------------------------
+    filters.parameters <- radiator_parameters(
+      generate = FALSE,
+      initiate = FALSE,
+      update = TRUE,
+      parameter.obj = filters.parameters,
+      data = data,
+      filter.name = "detect duplicate genomes",
+      param.name = "dup.threshold",
+      values = dup.threshold,
+      path.folder = path.folder,
+      file.date = file.date,
+      verbose = verbose)
 
     # RESULTS --------------------------------------------------------------------
-    if (verbose) {
-      cat("################################### RESULTS ####################################\n")
-      message("Detect duplicate genomes: ", dup.threshold)
-      message("Number of individuals / strata / chrom / locus / SNP:")
-      message("    Before: ", filters.parameters$filters.parameters$BEFORE)
-      message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-      message("    After: ", filters.parameters$filters.parameters$AFTER)
+    if (verbose) cat("################################### RESULTS ####################################\n")
+    message("Detect duplicate genomes: ", dup.threshold)
+    message("Number of individuals / strata / chrom / locus / SNP:")
+    if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
+    message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
+    if (verbose)message("    After: ", filters.parameters$filters.parameters$AFTER)
+
+    # MONOMORPHIC MARKERS --------------------------------------------------
+    if (check.mono) {
+      data <- filter_monomorphic(
+        data = data,
+        parallel.core = parallel.core,
+        verbose = FALSE,
+        parameters = filters.parameters,
+        path.folder = path.folder,
+        internal = TRUE)
     }
   }
   return(data)
@@ -972,6 +982,7 @@ distance_individuals <- function(
     sample.id <- extract_individuals(
       gds = x,
       ind.field.select = "INDIVIDUALS") %$% INDIVIDUALS
+    # x.bk <- x
     x <- SNPRelate::snpgdsIBS(
       gdsobj = x,
       autosome.only = FALSE,
@@ -981,6 +992,8 @@ distance_individuals <- function(
         gds = x, markers.meta.select = "VARIANT_ID") %$% VARIANT_ID,
       sample.id = sample.id,
       verbose = FALSE) %$% ibs
+
+    # summary_gds(gds = x.bk)
 
     x <- 1 - x
     # magrittr::subtract(1) %>%

@@ -347,17 +347,19 @@ genomic_converter <- function(
   on.exit(setwd(old.dir), add = TRUE)
   on.exit(options(width = opt.change), add = TRUE)
   on.exit(timing <- proc.time() - timing, add = TRUE)
-  on.exit(message("\nComputation time, overall: ", round(timing[[3]]), " sec"), add = TRUE)
-  on.exit(cat("######################### genomic_converter completed ##########################\n"), add = TRUE)
+  on.exit(if (verbose) message("\nComputation time, overall: ", round(timing[[3]]), " sec"), add = TRUE)
+  on.exit(if (verbose) cat("######################### genomic_converter completed ##########################\n"), add = TRUE)
 
   # Function call and dotslist -------------------------------------------------
   rad.dots <- radiator_dots(
+    func.name = as.list(sys.call())[[1]],
     fd = rlang::fn_fmls_names(),
     args.list = as.list(environment()),
     dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
     keepers = c("path.folder", "keep.allele.names",
                 "whitelist.markers", "filter.common.markers",
-                "filter.monomorphic", "vcf.metadata", "vcf.stats", "parameters"),
+                "filter.monomorphic", "vcf.metadata", "vcf.stats",
+                "parameters", "blacklist.genotypes", "internal"),
     deprecated = c("maf.thresholds", "common.markers",
                    "max.marker","monomorphic.out", "snp.ld", "filter.call.rate",
                    "filter.markers.coverage", "filter.markers.missing",
@@ -365,9 +367,9 @@ genomic_converter <- function(
                    "mixed.genomes.analysis", "duplicate.genomes.analysis",
                    "maf.data",
                    "hierarchical.levels", "imputation.method",
-                   "pred.mean.matching", "num.tree")
+                   "pred.mean.matching", "num.tree"),
+    verbose = verbose
   )
-  dots.filename <- stringi::stri_join("radiator_genomic_converter_args_", file.date, ".tsv")
 
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("data is missing")
@@ -390,20 +392,24 @@ genomic_converter <- function(
   }
 
   # Folders---------------------------------------------------------------------
-  if (!is.null(path.folder) && path.folder == getwd()) {
-    rad.folder.name <- rad_folder("radiator_genomic_converter", path.folder)
-  } else {
-    rad.folder.name <- path.folder
-  }
   path.folder <- generate_folder(
-    f = rad.folder.name,
+    f = path.folder,
+    rad.folder = "radiator_genomic_converter",
+    internal = internal,
     file.date = file.date,
     verbose = verbose)
 
   # write the dots file
-  readr::write_tsv(x = rad.dots, path = file.path(path.folder, dots.filename))
-  if (verbose) message("File written: ", dots.filename)
+  write_rad(
+    data = rad.dots,
+    path = path.folder,
+    filename = stringi::stri_join("radiator_genomic_converter_args_", file.date, ".tsv"),
+    tsv = TRUE,
+    internal = internal,
+    verbose = verbose
+  )
 
+  setwd(path.folder)
   # File type detection --------------------------------------------------------
   data.type <- detect_genomic_format(data = data)
 
@@ -422,7 +428,8 @@ genomic_converter <- function(
     filter.common.markers = filter.common.markers,
     filter.monomorphic = filter.monomorphic,
     path.folder = path.folder,
-    parameters = parameters
+    parameters = parameters,
+    internal = internal
   )
 
   #   gt.vcf.nuc = TRUE,
@@ -464,16 +471,20 @@ genomic_converter <- function(
           vectorize_all = FALSE
         )
       } else {
-        message("\nIMPORTANT: you have > 20 000 markers (", marker.number, ")",
-                "\nDo you want the more suitable genlight object instead of the current genind? (y/n):")
+        message("\nIMPORTANT genind object related question...")
+        message("you have > 20 000 markers (", marker.number, ")",
+                "\nDo you want the more suitable genlight object instead ? (y/n):")
         overide.genind <- as.character(readLines(n = 1))
         if (overide.genind == "y") {
+          message("Using genlight object...")
           output <- stringi::stri_replace_all_fixed(
             str = output,
             pattern = "genind",
             replacement = "genlight",
             vectorize_all = FALSE
           )
+        } else {
+          message("Continue working on genind object")
         }
       }
     }
@@ -803,16 +814,16 @@ genomic_converter <- function(
   #   write_rad(data = input.imp, path = tidy.name.imp)
   # }
   # outout results -------------------------------------------------------------
-  n.markers <- length(unique(input$MARKERS))
-  if (tibble::has_name(input, "CHROM")) {
-    n.chromosome <- length(unique(input$CHROM))
-  } else {
-    n.chromosome <- "no chromosome info"
-  }
-  n.individuals <- length(unique(input$INDIVIDUALS))
-  if (!is.null(strata)) n.pop <- length(unique(input$POP_ID))
-
   if (verbose) {
+    n.markers <- length(unique(input$MARKERS))
+    if (tibble::has_name(input, "CHROM")) {
+      n.chromosome <- length(unique(input$CHROM))
+    } else {
+      n.chromosome <- "no chromosome info"
+    }
+    n.individuals <- length(unique(input$INDIVIDUALS))
+    if (!is.null(strata)) n.pop <- length(unique(input$POP_ID))
+
     cat("################################### RESULTS ####################################\n")
     message("Data format of input: ", data.type)
     if (biallelic) {

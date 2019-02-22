@@ -163,78 +163,13 @@ distance2tibble <- function(
   if (!is.null(pop.levels)) {
     x  %<>% dplyr::mutate(
       ID1 = factor(x = ID1, levels = pop.levels, ordered = TRUE),
-      ID2 = factor(x = ID2, levels = pop.levels, ordered = TRUE),
+      ID2 = factor(x = ID2, levels = pop.levels, ordered = TRUE)
     )
   }
 
   return(x)
 }#End distance2tibble
 
-# update data.info -------------------------------------------------------------
-#' @title data_info
-#' @description function generate tidy data main info
-#' @rdname data_info
-#' @keywords internal
-#' @export
-data_info <- function(x, print.info = FALSE) {
-  res <- list()
-
-  data.type <- class(x)[1]
-
-  if (data.type == "tbl_df") {
-    if (rlang::has_name(x, "POP_ID") || rlang::has_name(x, "STRATA")) {
-
-      if (rlang::has_name(x, "POP_ID")) {
-        res$n.pop <- length(unique(x$POP_ID))
-      } else {
-        res$n.pop <- length(unique(x$STRATA))
-      }
-    } else {
-      res$n.pop <- NA_integer_
-    }
-
-    if (rlang::has_name(x, "INDIVIDUALS")) {
-      res$n.ind <- length(unique(x$INDIVIDUALS))
-    } else {
-      res$n.ind <- NA_integer_
-    }
-
-
-    if (rlang::has_name(x, "MARKERS")) {
-      res$n.snp <- length(unique(x$MARKERS))
-    } else {
-      res$n.snp <- NA_integer_
-    }
-
-    if (rlang::has_name(x, "LOCUS")) {
-      res$n.locus <- length(unique(x$LOCUS))
-    } else {
-      res$n.locus <- NA_integer_
-    }
-
-    if (rlang::has_name(x, "CHROM")) {
-      res$n.chrom <- length(unique(x$CHROM))
-    } else {
-      res$n.chrom <- NA_integer_
-    }
-  } else {
-    res$n.chrom <- length(unique(gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/markers.meta/CHROM", silent = TRUE))))
-    res$n.locus <- length(unique(gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/markers.meta/LOCUS", silent = TRUE))))
-    res$n.snp <- length(unique(gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/markers.meta/MARKERS", silent = TRUE))))
-    res$n.pop <- length(unique(gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/individuals/STRATA", silent = TRUE))))
-    res$n.ind <- length(unique(gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/individuals/INDIVIDUALS", silent = TRUE))))
-    res[is.null(res)] <- NA_integer_
-  }
-
-  if (print.info) {
-    message("Number of chrom: ", res$n.chrom)
-    message("Number of locus: ", res$n.locus)
-    message("Number of SNPs: ", res$n.snp)
-    message("Number of populations: ", res$n.pop)
-    message("Number of individuals: ", res$n.ind)
-  }
-  return(res)
-}
 
 # count ind_total_reads -------------------------------------------------------
 #' @title ind_total_reads
@@ -486,11 +421,11 @@ markers_genotyped_helper <- function(x, y, overall.only = FALSE) {
   return(plot.markers.geno.threshold)
 }#End markers_genotyped_helper
 
-# update_parameters-------------------------------------------------------------
-#' @title update_parameters
+# radiator_parameters-------------------------------------------------------------
+#' @title radiator_parameters
 #' @description Generate or update a filters parameters file and object.
 #' Used internally in radiator, not usefull outside the package.
-#' @rdname update_parameters
+#' @rdname radiator_parameters
 #' @export
 #' @keywords internal
 
@@ -498,7 +433,7 @@ markers_genotyped_helper <- function(x, y, overall.only = FALSE) {
 # instead of markers.meta for gds file...
 # Then figure out what to do with individuals and strata...
 
-update_parameters <- function(
+radiator_parameters <- function(
   generate = FALSE,
   initiate = FALSE,
   update = TRUE,
@@ -519,14 +454,12 @@ update_parameters <- function(
 
   # check for existing file
   if (is.null(path.folder)) path.folder <- getwd()
+  if (!is.null(parameter.obj) && generate && !initiate) {
+    generate <- initiate <- update <- FALSE
+    res <- parameter.obj
+  }
   if (!is.null(parameter.obj) && generate && initiate) generate <- FALSE
   if (is.null(parameter.obj) && update) rlang::abort("parameter.obj = NULL not accepted")
-  # if (generate && initiate) {
-  #   verbose.on <- FALSE
-  # } else {
-  #   verbose.on <- TRUE
-  # }
-  # if (internal) verbose <- verbose.on <- FALSE
   if (internal) verbose <- FALSE
 
   # GENERATE filters parameters file
@@ -608,7 +541,72 @@ update_parameters <- function(
   }
 
   return(res)
-}#End update_parameters
+}#End radiator_parameters
+# data.info -------------------------------------------------------------
+#' @title data_info
+#' @description function generate tidy data main info
+#' @rdname data_info
+#' @keywords internal
+#' @export
+data_info <- function(x, print.info = FALSE) {
+  res <- list()
+
+  data.type <- class(x)[1]
+
+  if (data.type == "tbl_df") {
+    if (rlang::has_name(x, "POP_ID") || rlang::has_name(x, "STRATA")) {
+
+      if (rlang::has_name(x, "POP_ID")) {
+        res$n.pop <- length(unique(x$POP_ID))
+      } else {
+        res$n.pop <- length(unique(x$STRATA))
+      }
+    } else {
+      res$n.pop <- NA_integer_
+    }
+
+    if (rlang::has_name(x, "INDIVIDUALS")) {
+      res$n.ind <- length(unique(x$INDIVIDUALS))
+    } else {
+      res$n.ind <- NA_integer_
+    }
+
+
+    if (rlang::has_name(x, "MARKERS")) {
+      res$n.snp <- length(unique(x$MARKERS))
+    } else {
+      res$n.snp <- NA_integer_
+    }
+
+    if (rlang::has_name(x, "LOCUS")) {
+      res$n.locus <- length(unique(x$LOCUS))
+    } else {
+      res$n.locus <- NA_integer_
+    }
+
+    if (rlang::has_name(x, "CHROM")) {
+      res$n.chrom <- length(unique(x$CHROM))
+    } else {
+      res$n.chrom <- NA_integer_
+    }
+  } else {
+    res$n.chrom <- length(unique(gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/markers.meta/CHROM", silent = TRUE))))
+    res$n.locus <- length(unique(gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/markers.meta/LOCUS", silent = TRUE))))
+    res$n.snp <- length(unique(gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/markers.meta/MARKERS", silent = TRUE))))
+    res$n.pop <- length(unique(gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/individuals/STRATA", silent = TRUE))))
+    res$n.ind <- length(unique(gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/individuals/INDIVIDUALS", silent = TRUE))))
+    res[is.null(res)] <- NA_integer_
+  }
+
+  if (print.info) {
+    message("Number of chrom: ", res$n.chrom)
+    message("Number of locus: ", res$n.locus)
+    message("Number of SNPs: ", res$n.snp)
+    message("Number of populations: ", res$n.pop)
+    message("Number of individuals: ", res$n.ind)
+  }
+  return(res)
+}
 
 # tibble_stats-----------------------------------------------------------------
 #' @title tibble_stats
@@ -875,11 +873,11 @@ generate_squeleton_folders <- function(
   for (f in folders) {
     # message("Processing: ", f)
     temp <- folder_prefix(
-      prefix.number = fp.loop,
+      prefix_int = fp.loop,
       prefix.name = f,
       path.folder = path.folder)
     res[[f]] <- temp$folder.prefix
-    fp.loop <- temp$prefix.number
+    fp.loop <- temp$prefix_int
   }
   return(res)
 }#End generate_squeleton_folders
@@ -1018,18 +1016,26 @@ folder_short <- function(f) {
 #' @param rad.folder Name of the rad folder
 #' @param internal (optional, logical) Is the function internal or not
 #' @param file.date The file date included
+#' @inheritParams radiator_folder
 #' @inheritParams radiator_common_arguments
 #' @inheritParams folder_short
 #' @export
 #' @rdname generate_folder
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
-generate_folder <- function(f, rad.folder = NULL, internal = FALSE, file.date = NULL, verbose = FALSE) {
+generate_folder <- function(
+  f,
+  rad.folder = NULL,
+  internal = FALSE,
+  file.date = NULL,
+  prefix_int = TRUE,
+  verbose = FALSE
+  ) {
 
   if (internal) {
     rad.folder <- NULL
   }
-  if (!is.null(rad.folder)) f <- rad_folder(rad.folder, f)
+  if (!is.null(rad.folder)) f <- radiator_folder(rad.folder, f, prefix_int = prefix_int)
 
 
   f.temp <- f
@@ -1059,7 +1065,7 @@ generate_folder <- function(f, rad.folder = NULL, internal = FALSE, file.date = 
 #' @keywords internal
 #' @export
 folder_prefix <- function(
-  prefix.number = NULL,
+  prefix_int = NULL,
   prefix.name = NULL,
   path.folder = NULL
 ) {
@@ -1074,52 +1080,58 @@ folder_prefix <- function(
     }
   }
 
-  if (is.null(prefix.number)) {
-    prefix.number <- 0L
+  if (is.null(prefix_int)) {
+    prefix_int <- 0L
   } else {
-    if (is.list(prefix.number)) {
-      prefix.number <- as.integer(prefix.number$prefix.number) + 1L
+    if (is.list(prefix_int)) {
+      prefix_int <- as.integer(prefix_int$prefix_int) + 1L
     } else {
-      prefix.number <- as.integer(prefix.number) + 1L
+      prefix_int <- as.integer(prefix_int) + 1L
     }
   }
 
   if (is.null(prefix.name)) {
     folder.prefix <- stringi::stri_join(
       stringi::stri_pad_left(
-        str = prefix.number, width = 2, pad = 0
+        str = prefix_int, width = 2, pad = 0
       ), "_"
     )
   } else {
     folder.prefix <- stringi::stri_join(
       stringi::stri_pad_left(
-        str = prefix.number, width = 2, pad = 0
+        str = prefix_int, width = 2, pad = 0
       ),
       prefix.name,
       sep = "_"
     )
   }
   folder.prefix <- file.path(path.folder, folder.prefix)
-  res = list(prefix.number = prefix.number, folder.prefix = folder.prefix)
+  res = list(prefix_int = prefix_int, folder.prefix = folder.prefix)
 }#End folder_prefix
-# rad_folder--------------------------------------------------------------------
-#' @title rad_folder
+# radiator_folder--------------------------------------------------------------------
+#' @title radiator_folder
 #' @description Generate the rad folders
 #' @param path.folder path of the folder
+#' @param prefix_int Use an integer prefix padded left with 0.
+#' Default: \code{prefix_int = TRUE}.
 #' @inheritParams folder_short
 # @keywords internal
 #' @export
-#' @rdname rad_folder
+#' @rdname radiator_folder
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
-rad_folder <- function(f, path.folder = NULL) {
+radiator_folder <- function(f, path.folder = NULL, prefix_int = TRUE) {
   if (is.null(path.folder)) path.folder <- getwd()
-  folder.prefix <- file.path(path.folder, stringi::stri_join(
-    stringi::stri_pad_left(
-      str = length(list.dirs(path = path.folder, full.names = FALSE)[-1]) + 1L, width = 2, pad = 0
-    ), "_", f))
+  if (prefix_int) {
+    f <- stringi::stri_join(stringi::stri_pad_left(
+      str = length(list.dirs(path = path.folder, full.names = FALSE)[-1]) + 1L,
+      width = 2,
+      pad = 0
+    ), "_", f)
+  }
+  folder.prefix <- file.path(path.folder, f)
   return(folder.prefix)
-}#End rad_folder
+}#End radiator_folder
 
 #' @title rad_write
 #' @description Generate the rad folders

@@ -202,6 +202,7 @@ filter_mac <- function(
 
     # Function call and dotslist -------------------------------------------------
     rad.dots <- radiator_dots(
+      func.name = as.list(sys.call())[[1]],
       fd = rlang::fn_fmls_names(),
       args.list = as.list(environment()),
       dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
@@ -273,7 +274,7 @@ filter_mac <- function(
     }
 
     # Filter parameter file: initiate ------------------------------------------
-    filters.parameters <- update_parameters(
+    filters.parameters <- radiator_parameters(
       generate = TRUE,
       initiate = TRUE,
       update = FALSE,
@@ -432,26 +433,33 @@ filter_mac <- function(
     if (data.type == "tbl_df") {
       data %<>% dplyr::filter(MARKERS %in% wl$MARKERS)
     } else {
-      sync_gds(gds = data, markers = wl$VARIANT_ID)
+      update_radiator_gds(
+        gds = data,
+        node.name = "markers.meta",
+        value = wl,
+        sync = TRUE
+      )
 
-      # Update GDS
-      radiator.gds <- gdsfmt::index.gdsn(
-        node = data, path = "radiator", silent = TRUE)
-
-      # Update metadata
-      gdsfmt::add.gdsn(
-        node = radiator.gds,
-        name = "markers.meta",
-        val = wl,
-        replace = TRUE,
-        compress = "ZIP_RA",
-        closezip = TRUE)
+      # sync_gds(gds = data, markers = wl$VARIANT_ID)
+      #
+      # # Update GDS
+      # radiator.gds <- gdsfmt::index.gdsn(
+      #   node = data, path = "radiator", silent = TRUE)
+      #
+      # # Update metadata
+      # gdsfmt::add.gdsn(
+      #   node = radiator.gds,
+      #   name = "markers.meta",
+      #   val = wl,
+      #   replace = TRUE,
+      #   compress = "ZIP_RA",
+      #   closezip = TRUE)
 
       # update blacklist.markers
       if (nrow(bl) > 0) {
         bl %<>% dplyr::select(MARKERS) %>%
           dplyr::mutate(FILTER = "filter.mac")
-        bl.gds <- update_bl_markers(gds = radiator.gds, update = bl)
+        bl.gds <- update_bl_markers(gds = data, update = bl)
       }
     }
 
@@ -464,7 +472,7 @@ filter_mac <- function(
     }
 
     # Update parameters --------------------------------------------------------
-    filters.parameters <- update_parameters(
+    filters.parameters <- radiator_parameters(
       generate = FALSE,
       initiate = FALSE,
       update = TRUE,

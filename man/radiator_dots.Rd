@@ -4,7 +4,8 @@
 \alias{radiator_dots}
 \title{radiator_dots}
 \usage{
-radiator_dots(fd = NULL, args.list = NULL, dotslist = NULL,
+radiator_dots(func.name = as.list(sys.call())[[1]], fd = NULL,
+  args.list = NULL, dotslist = NULL,
   keepers = c("subsample.markers.stats", "force.stats", "id.stats",
   "subsample", "filter.reproducibility", "filter.individuals.missing",
   "filter.individuals.heterozygosity", "filter.individuals.coverage.total",
@@ -27,6 +28,8 @@ radiator_dots(fd = NULL, args.list = NULL, dotslist = NULL,
   "num.tree"), verbose = TRUE)
 }
 \arguments{
+\item{func.name}{Default: \code{as.list(sys.call())[[1]]}.}
+
 \item{fd}{(optional) Default: \code{rlang::fn_fmls_names()}.}
 
 \item{args.list}{(optional) Default:\code{args.list = as.list(environment())}.}

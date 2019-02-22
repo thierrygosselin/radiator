@@ -79,13 +79,15 @@ filter_monomorphic <- function(
     on.exit(if (verbose) message("\nComputation time, overall: ", round(timing[[3]]), " sec"), add = TRUE)
     on.exit(if (verbose) cat("######################## filter_monomorphic completed ##########################\n"), add = TRUE)
 
-    if (verbose) message("\nScanning for monomorphic markers...")
+    # if (verbose) message("\nScanning for monomorphic markers...")
+    message("\nScanning for monomorphic markers...")
 
     # Checking for missing and/or default arguments ------------------------------
     if (missing(data)) rlang::abort("Input file missing")
 
     # Function call and dotslist -------------------------------------------------
     rad.dots <- radiator_dots(
+      func.name = as.list(sys.call())[[1]],
       fd = rlang::fn_fmls_names(),
       args.list = as.list(environment()),
       dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
@@ -108,7 +110,7 @@ filter_monomorphic <- function(
       filename = stringi::stri_join(
         "radiator_filter_monomorphic_args_", file.date, ".tsv"),
       tsv = TRUE,
-      internal = internal,
+      internal = FALSE,
       verbose = verbose
     )
     # Detect format --------------------------------------------------------------
@@ -131,7 +133,7 @@ filter_monomorphic <- function(
       }
 
       # Filter parameter file: generate and initiate -----------------------------
-      filters.parameters <- update_parameters(
+      filters.parameters <- radiator_parameters(
         generate = TRUE,
         initiate = TRUE,
         update = FALSE,
@@ -139,7 +141,7 @@ filter_monomorphic <- function(
         data = data,
         path.folder = path.folder,
         file.date = file.date,
-        internal = internal,
+        internal = FALSE,
         verbose = verbose)
 
       # Scanning for monomorphic markers------------------------------------------
@@ -160,30 +162,37 @@ filter_monomorphic <- function(
           data = bl,
           path = path.folder,
           filename = stringi::stri_join("blacklist.monomorphic.markers_", file.date, ".tsv"),
-          tsv = TRUE, internal = internal, verbose = verbose)
+          tsv = TRUE, internal = FALSE, verbose = verbose)
 
         wl %<>% dplyr::filter(!MARKERS %in% bl$MARKERS)
 
-        radiator::sync_gds(gds = data, markers = wl$VARIANT_ID, verbose = FALSE)
 
         # Update GDS
-        radiator.gds <- gdsfmt::index.gdsn(
-          node = data, path = "radiator", silent = TRUE)
+        update_radiator_gds(
+          gds = data,
+          node.name = "markers.meta",
+          value = wl,
+          sync = TRUE
+        )
 
-        # Update metadata
-        gdsfmt::add.gdsn(
-          node = radiator.gds,
-          name = "markers.meta",
-          val = wl,
-          replace = TRUE,
-          compress = "ZIP_RA",
-          closezip = TRUE)
+        # radiator::sync_gds(gds = data, markers = wl$VARIANT_ID, verbose = FALSE)
+        # radiator.gds <- gdsfmt::index.gdsn(
+        #   node = data, path = "radiator", silent = TRUE)
+        #
+        # # Update metadata
+        # gdsfmt::add.gdsn(
+        #   node = radiator.gds,
+        #   name = "markers.meta",
+        #   val = wl,
+        #   replace = TRUE,
+        #   compress = "ZIP_RA",
+        #   closezip = TRUE)
 
         # update blacklist.markers
         bl %<>% dplyr::select(MARKERS) %>%
           dplyr::mutate(FILTER = "filter.monomorphic")
 
-        bl.gds <- update_bl_markers(gds = radiator.gds, update = bl)
+        bl.gds <- update_bl_markers(gds = data, update = bl)
       } else {
         bl <- wl[0,]
         n.markers.after <- n.markers.before
@@ -194,7 +203,7 @@ filter_monomorphic <- function(
         data = wl,
         path = path.folder,
         filename = stringi::stri_join("whitelist.polymorphic.markers_", file.date, ".tsv"),
-        tsv = TRUE, internal = internal, verbose = verbose)
+        tsv = TRUE, internal = FALSE, verbose = verbose)
 
     } else {# tidy data
       # Import data ---------------------------------------------------------------
@@ -205,7 +214,7 @@ filter_monomorphic <- function(
       data %<>% dplyr::left_join(wl, by = intersect(colnames(data), colnames(wl)))
 
       # Filter parameter file: generate and initiate ------------------------------------------
-      filters.parameters <- update_parameters(
+      filters.parameters <- radiator_parameters(
         generate = TRUE,
         initiate = TRUE,
         update = FALSE,
@@ -213,7 +222,7 @@ filter_monomorphic <- function(
         data = data,
         path.folder = path.folder,
         file.date = file.date,
-        internal = internal,
+        internal = FALSE,
         verbose = verbose)
       if (tibble::has_name(data, "POP_ID")) {
         filters.parameters$info$n.pop <- length(unique(data$POP_ID))
@@ -259,7 +268,7 @@ filter_monomorphic <- function(
           data = bl,
           path = path.folder,
           filename = stringi::stri_join("blacklist.monomorphic.markers_", file.date, ".tsv"),
-          tsv = TRUE, internal = internal, verbose = verbose)
+          tsv = TRUE, internal = FALSE, verbose = verbose)
       } else {
         bl <- wl[0,]
       }
@@ -269,11 +278,11 @@ filter_monomorphic <- function(
         data = wl,
         path = path.folder,
         filename = stringi::stri_join("whitelist.polymorphic.markers_", file.date, ".tsv"),
-        tsv = TRUE, internal = internal, verbose = verbose)
+        tsv = TRUE, internal = FALSE, verbose = verbose)
     }#Tidy data
 
     # Filter parameter file: update --------------------------------------------
-    filters.parameters <- update_parameters(
+    filters.parameters <- radiator_parameters(
       generate = FALSE,
       initiate = FALSE,
       update = TRUE,
@@ -284,7 +293,7 @@ filter_monomorphic <- function(
       values = "",
       path.folder = path.folder,
       file.date = file.date,
-      internal = internal,
+      internal = FALSE,
       verbose = verbose)
 
     if (data.type != "SeqVarGDSClass") {
@@ -297,12 +306,14 @@ filter_monomorphic <- function(
       filters.parameters$info$n.ind <- length(unique(data$INDIVIDUALS))
     }
 
-    if (verbose) {
-      message("Number of individuals / strata / chrom / locus / SNP:")
-      message("    Before: ", filters.parameters$filters.parameters$BEFORE)
-      message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-      message("    After: ", filters.parameters$filters.parameters$AFTER)
-    }
+    # Return -------------------------------------------------------------------
+    if (verbose) cat("################################### RESULTS ####################################\n")
+    message("Filter monomorphic markers")
+    message("Number of individuals / strata / chrom / locus / SNP:")
+    if (verbose)message("    Before: ", filters.parameters$filters.parameters$BEFORE)
+    message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
+    if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
+
   }
   return(data)
 }#End filter_monomorphic
@@ -315,9 +326,12 @@ filter_monomorphic <- function(
 #' @export
 count_monomorphic <- function(x, parallel.core = parallel::detectCores() - 1) {
   variants <- SeqArray::seqGetData(gdsfile = x, var.name = "variant.id")
+  # Function proposed by Xiuwen doesnt work below line 329 it missed some markers
+  # in some datasets...
   mono <- SeqArray::seqApply(gdsfile = x,
                              var.name = "$dosage_alt",
-                             FUN = function(g) all(g == 1L, na.rm = TRUE),
+                             # FUN = function(g) all(g == 1L, na.rm = TRUE),
+                             FUN = function(g) length(unique(g[!is.na(g)])) == 1,
                              margin = "by.variant", as.is = "logical",
                              parallel = parallel.core)
   bl <- variants[mono]

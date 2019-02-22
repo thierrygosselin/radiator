@@ -3,6 +3,7 @@
 #' @description Extract and assign the dots-dots-dots
 #' @name radiator_dots
 #' @rdname radiator_dots
+#' @param func.name Default: \code{as.list(sys.call())[[1]]}.
 #' @param fd (optional) Default: \code{rlang::fn_fmls_names()}.
 #' @param args.list (optional) Default:\code{args.list = as.list(environment())}.
 #' @param dotslist The dots dots dots arguments captured.
@@ -41,6 +42,7 @@
 #' @export
 
 radiator_dots <- function(
+  func.name = as.list(sys.call())[[1]],
   fd = NULL,
   args.list = NULL,
   dotslist = NULL,
@@ -107,7 +109,7 @@ radiator_dots <- function(
     dplyr::mutate(GROUPS = "fct.call.args")#,VALUES = VALUES)
   # print(func.call)
 
-  if (verbose) if (verbose) message("\nFunction call arguments:")
+  if (verbose) if (verbose) message("\n", func.name, " function call arguments:")
   purrr::walk2(
     .x = func.call$ARGUMENTS,
     .y = func.call$VALUES,
@@ -144,7 +146,7 @@ radiator_dots <- function(
 
   # The args present:
   if (rdk) {
-    if (verbose) message("\nArguments inside \"...\" assigned in this function:")
+    if (verbose) message("\nArguments inside \"...\" assigned in ", func.name, ":")
     res.df <- purrr::map2_df(
       .x = names(dots.keepers),
       .y = dots.keepers,
@@ -155,7 +157,7 @@ radiator_dots <- function(
 
   # defaults
   if (rdf) {
-    if (verbose) message("\nDefault \"...\" arguments assigned in this function:")
+    if (verbose) message("\nDefault \"...\" arguments assigned in ", func.name, ":")
     res.df <- purrr::map_df(
       .x = dots.defaults,
       .f = assign_defaults,

@@ -305,6 +305,7 @@ filter_hwe <- function(
 
     # Function call and dotslist -------------------------------------------------
     rad.dots <- radiator_dots(
+      func.name = as.list(sys.call())[[1]],
       fd = rlang::fn_fmls_names(),
       args.list = as.list(environment()),
       dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
@@ -314,6 +315,8 @@ filter_hwe <- function(
 
     # Checking for missing and/or default arguments ------------------------------
     if (missing(data)) rlang::abort("data is missing")
+    if (is.null(midp.threshold)) midp.threshold <- "****"
+
 
     # Message about steps taken during the process ---------------------------------
     if (interactive.filter) {
@@ -342,7 +345,7 @@ filter_hwe <- function(
     )
 
     # Filter parameter file: initiate ------------------------------------------
-    filters.parameters <- update_parameters(
+    filters.parameters <- radiator_parameters(
       generate = TRUE,
       initiate = TRUE,
       update = FALSE,
@@ -831,7 +834,7 @@ filter_hwe <- function(
     }#End run.analysis
 
     # Update parameters --------------------------------------------------------
-    filters.parameters <- update_parameters(
+    filters.parameters <- radiator_parameters(
       generate = FALSE,
       initiate = FALSE,
       update = TRUE,
@@ -846,14 +849,12 @@ filter_hwe <- function(
       verbose = verbose)
 
     # Return ---------------------------------------------------------------------
-    if (verbose) {
       message("Filter HWE: ", stringi::stri_join(hw.pop.threshold, " / ", midp.threshold,
                                                  ignore_null = FALSE))
       message("Number of individuals / strata / chrom / locus / SNP:")
-      message("    Before: ", filters.parameters$filters.parameters$BEFORE)
+      if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
       message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-      message("    After: ", filters.parameters$filters.parameters$AFTER)
-    }
+      if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
   }
   return(data)
 }# End filter_hwe
