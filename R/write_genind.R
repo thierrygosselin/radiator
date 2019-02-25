@@ -8,11 +8,7 @@
 #' and \href{https://github.com/thierrygosselin/assigner}{assigner}
 #' and might be of interest for users.
 
-#' @param data A tidy data frame object in the global environment or
-#' a tidy data frame in wide or long format in the working directory.
-#' \emph{How to get a tidy data frame ?}
-#' Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
-#' @inheritParams tidy_genomic_data
+#' @inheritParams radiator_common_arguments
 
 #' @param write (logical, optional) To write in the working directory the genind
 #' object. The file is written with \code{radiator_genind_DATE@TIME.RData} and
@@ -41,14 +37,28 @@
 
 write_genind <- function(data, write = FALSE, verbose = FALSE) {
 
-  # Checking for missing and/or default arguments ******************************
+  # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("Input file missing")
 
+  # File type detection----------------------------------------------------------
+  data.type <- radiator::detect_genomic_format(data)
+
+
   # Import data ---------------------------------------------------------------
-  want <- c("MARKERS", "POP_ID", "INDIVIDUALS", "REF", "ALT", "GT", "GT_BIN")
-  data <- suppressWarnings(radiator::tidy_wide(data = data, import.metadata = TRUE) %>%
-                             dplyr::select(dplyr::one_of(want)) %>%
-                             dplyr::arrange(POP_ID, INDIVIDUALS))
+
+  if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
+    if (data.type == "gds.file") {
+      data <- radiator::read_rad(data, verbose = verbose)
+    }
+    data <- gds2tidy(gds = data, parallel.core = parallel::detectCores() - 1)
+    data.type <- "tbl_df"
+  } else {
+    want <- c("MARKERS", "POP_ID", "INDIVIDUALS", "REF", "ALT", "GT", "GT_BIN")
+    data <- suppressWarnings(radiator::tidy_wide(data = data, import.metadata = TRUE) %>%
+                               dplyr::select(dplyr::one_of(want)) %>%
+                               dplyr::arrange(POP_ID, INDIVIDUALS))
+  }
+
 
   if (is.factor(data$POP_ID)) {
     pop.levels <- levels(data$POP_ID)

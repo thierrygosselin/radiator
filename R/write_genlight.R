@@ -6,12 +6,7 @@
 #' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 #' and might be of interest for users.
 
-#' @param data A tidy data frame object in the global environment or
-#' a tidy data frame in wide or long format in the working directory.
-#' \emph{How to get a tidy data frame ?}
-#' Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
-#' \strong{The genotypes are biallelic.}
-#' @inheritParams tidy_genomic_data
+#' @inheritParams radiator_common_arguments
 
 #' @param biallelic (logical, optional) If you already know that the data is
 #' biallelic use this argument to speed up the function.
@@ -43,6 +38,7 @@
 
 
 write_genlight <- function(data, biallelic = TRUE, write = FALSE, verbose = FALSE) {
+
   # Checking for missing and/or default arguments ------------------------------
   if (!requireNamespace("adegenet", quietly = TRUE)) {
     rlang::abort("adegenet needed for this function to work
@@ -51,8 +47,22 @@ write_genlight <- function(data, biallelic = TRUE, write = FALSE, verbose = FALS
 
   if (missing(data)) rlang::abort("Input file missing")
 
+  # File type detection----------------------------------------------------------
+  data.type <- radiator::detect_genomic_format(data)
+
   # Import data ---------------------------------------------------------------
-  if (is.vector(data)) input <- radiator::tidy_wide(data = data, import.metadata = TRUE)
+  if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
+    if (data.type == "gds.file") {
+      data <- radiator::read_rad(data, verbose = verbose)
+    }
+    data <- gds2tidy(gds = data, parallel.core = parallel::detectCores() - 1)
+    data.type <- "tbl_df"
+  } else {
+    want <- c("MARKERS", "POP_ID", "INDIVIDUALS", "REF", "ALT", "GT", "GT_BIN")
+    data <- suppressWarnings(radiator::tidy_wide(data = data, import.metadata = TRUE) %>%
+                               dplyr::select(dplyr::one_of(want)) %>%
+                               dplyr::arrange(POP_ID, INDIVIDUALS))
+  }
 
   # Detect if biallelic data
   if (is.null(biallelic)) biallelic <- radiator::detect_biallelic_markers(data = input)
