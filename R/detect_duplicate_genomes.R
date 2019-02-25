@@ -835,7 +835,10 @@ detect_duplicate_genomes <- function(
             x = "    When finished filling the blacklist type `y`:",
             answer.opt = c("y", "Y", "yes", "Yes", "YES"))
 
-          blacklist.id.similar <- readr::read_tsv(file = file.path(path.folder, "blacklist.id.similar.tsv"))
+          blacklist.id.similar <- readr::read_tsv(
+            file = file.path(path.folder, "blacklist.id.similar.tsv"),
+            col_types = "c")
+          dup.threshold <- "blacklist generated manually"
         } else {# with threshold
           # message("Use the distance or genome analysis to blacklist duplicates ? (distance/genome): ")
           # analysis <- as.character(readLines(n = 1))
