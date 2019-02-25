@@ -2,12 +2,12 @@
 
 #' @name filter_rad
 
-#' @title Pipeline to filter RADseq data.
+#' @title one function to rule them all
 
-#' @description Designed for RADseq data. The function import VCF file,
-#' apply filters and generate imputed datasets.
-#' The function uses \code{\link[radiator]{tidy_vcf}} and several \code{filter_}
-#' functions of radiator.
+#' @description Designed for RADseq data, it's radiator integrated pipeline that links
+#' several \code{filter_} functions of \pkg{radiator}.
+#' Rapidly get an idea of what you can and cannot do with your dataset.
+#' Novices, start with this one!
 
 #' @inheritParams genomic_converter
 #' @inheritParams tidy_genomic_data

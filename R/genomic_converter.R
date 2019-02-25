@@ -367,7 +367,9 @@ genomic_converter <- function(
                    "mixed.genomes.analysis", "duplicate.genomes.analysis",
                    "maf.data",
                    "hierarchical.levels", "imputation.method",
-                   "pred.mean.matching", "num.tree"),
+                   "pred.mean.matching", "num.tree", "blacklist.id",
+                   "pop.levels", "pop.labels", "pop.select"
+                   ),
     verbose = verbose
   )
 
@@ -409,7 +411,17 @@ genomic_converter <- function(
     verbose = verbose
   )
 
-  setwd(path.folder)
+  # radiator_parameters---------------------------------------------------------
+  filters.parameters <- radiator_parameters(
+    generate = TRUE,
+    initiate = FALSE,
+    update = FALSE,
+    parameter.obj = parameters,
+    path.folder = path.folder,
+    file.date = file.date,
+    internal = FALSE,
+    verbose = verbose)
+
   # File type detection --------------------------------------------------------
   data.type <- detect_genomic_format(data = data)
 
@@ -420,7 +432,6 @@ genomic_converter <- function(
     strata = strata,
     filename = filename,
     parallel.core = parallel.core,
-    verbose = verbose,
     whitelist.markers = whitelist.markers,
     vcf.metadata = vcf.metadata,
     vcf.stats = vcf.stats,
@@ -428,8 +439,9 @@ genomic_converter <- function(
     filter.common.markers = filter.common.markers,
     filter.monomorphic = filter.monomorphic,
     path.folder = path.folder,
-    parameters = parameters,
-    internal = internal
+    parameters = filters.parameters,
+    internal = TRUE,
+    verbose = FALSE
   )
 
   #   gt.vcf.nuc = TRUE,
@@ -508,6 +520,7 @@ genomic_converter <- function(
 
   # OUTPUT ---------------------------------------------------------------------
 
+  setwd(path.folder)
   # GENEPOP --------------------------------------------------------------------
   if ("genepop" %in% output) {
     if (verbose) message("Generating genepop file")
@@ -669,7 +682,6 @@ genomic_converter <- function(
 
   # SNPRelate ------------------------------------------------------------------
   if ("snprelate" %in% output) {
-    if (verbose) message("Generating SNPRelate object")
     res$snprelate <- radiator::write_snprelate(
       data = input,
       biallelic = TRUE,
@@ -804,9 +816,9 @@ genomic_converter <- function(
   if ("dadi" %in% output) message("Under construction, use radiator::vcf2dadi")
 
   # Writing tidy on disk -------------------------------------------------------
-    # tidy.name <- stringi::stri_join(filename, ".rad")
-    # message("\nWriting tidy data set:\n", tidy.name)
-    # write_rad(data = input, path = tidy.name)
+  # tidy.name <- stringi::stri_join(filename, ".rad")
+  # message("\nWriting tidy data set:\n", tidy.name)
+  # write_rad(data = input, path = tidy.name)
 
   # if (!is.null(imputation.method)) {
   #   tidy.name.imp <- stringi::stri_join(filename.imp, ".rad")
@@ -833,8 +845,8 @@ genomic_converter <- function(
     }
     message("Number of markers: ", n.markers)
     message("Number of chromosome/contig/scaffold: ", n.chromosome)
-    message("Number of individuals ", n.individuals)
-    if (!is.null(strata))  message("Number of populations ", n.pop)
+    if (!is.null(strata))  message("Number of strata: ", n.pop)
+    message("Number of individuals: ", n.individuals)
   }
   res$tidy.data <- input
   return(res)

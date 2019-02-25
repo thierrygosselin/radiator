@@ -99,3 +99,8 @@ packages or codes: space is changed to an underscore \code{_}.
 radiator::read_strata(strata)
 }
 }
+\seealso{
+\code{\link{summary_strata}},
+\code{\link{individuals2strata}}, \code{\link{change_pop_names}},
+\code{\link{join_strata}}, \code{\link{generate_strata}}
+}

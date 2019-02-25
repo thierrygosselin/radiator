@@ -177,6 +177,13 @@ radiator_dots <- function(
           VALUES = "NA", GROUPS = "deprecated..."
         )
     )
+
+    if (verbose) {
+      check.strata <- c("pop.levels", "pop.labels", "pop.select", "blacklist.id")
+      if (TRUE %in% (check.strata %in% names(dots.deprecated))) {
+        message("\nNote: manipulating strata related arguments\nis best done inside the function radiator::read_strata\n")
+      }
+    }
   }
   if (unk) {
     if (verbose) message("\nUnknowned arguments identified inside \"...\": ")

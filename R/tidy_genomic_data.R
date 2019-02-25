@@ -188,9 +188,9 @@ tidy_genomic_data <- function(
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("data is missing")
 
-  if (!gt.vcf.nuc && !gt) {
-    rlang::abort("At least one of gt.vcf.nuc or gt must be TRUE")
-  }
+  # if (!gt.vcf.nuc && !gt) {
+  #   rlang::abort("At least one of gt.vcf.nuc or gt must be TRUE")
+  # }
 
   # Folders---------------------------------------------------------------------
   path.folder <- generate_folder(
@@ -226,6 +226,9 @@ tidy_genomic_data <- function(
     pop.id = TRUE,
     blacklist.id = blacklist.id,
     verbose = verbose) %$% strata
+
+
+  # Import and tidy files ----------------------------------------------------
 
   # GDS file -------------------------------------------------------------------
   if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
@@ -364,10 +367,7 @@ tidy_genomic_data <- function(
 
     # population levels and strata
     if (!is.null(strata)) {
-      if (rlang::has_name(input, "POP_ID")) {
-        input %<>% dplyr::select(-POP_ID)
-      }
-      input %<>% dplyr::left_join(strata.df, by = "INDIVIDUALS")
+      input %<>% join_strata(strata = strata.df)
       check.ref <- TRUE
     }
     # # using pop.levels and pop.labels info if present
@@ -439,20 +439,8 @@ tidy_genomic_data <- function(
       verbose = FALSE,
       parallel.core = parallel.core)
     skip.tidy.wide <- TRUE
-
-    # if (rlang::has_name(strata.df, "NEW_ID")) {
-    #   strata.df <- strata.df %>%
-    #     dplyr::select(-INDIVIDUALS) %>%
-    #     dplyr::rename(INDIVIDUALS = NEW_ID)
-    # }
   }# End dart
 
-  # Import fst.file ------------------------------------------------------------
-  if (data.type == "fst.file") {
-    if (verbose) message("Importing the fst.file as a data frame...")
-    input <- read_rad(data = data)
-    skip.tidy.wide <- TRUE
-  } # End fst.file
 
   # Import GENIND--------------------------------------------------------------
   if (data.type == "genind") { # DATA FRAME OF GENOTYPES
@@ -496,10 +484,18 @@ tidy_genomic_data <- function(
     skip.tidy.wide <- TRUE
   } # End tidy gtypes
 
+  # Import fst.file ------------------------------------------------------------
+  if (data.type == "fst.file") {
+    if (verbose) message("Importing the fst.file...")
+    input <- read_rad(data = data)
+    data.type <- "tbl_df"
+    skip.tidy.wide <- TRUE
+  } # End fst.file
+
   # Import DF-------------------------------------------------------------------
   if (data.type == "tbl_df" || skip.tidy.wide) { # DATA FRAME OF GENOTYPES
-    if (verbose) message("Importing the data frame ...")
     if (!skip.tidy.wide) {
+      if (verbose) message("Importing the data frame ...")
       input <- radiator::tidy_wide(data = data, import.metadata = TRUE)
       data <- NULL
     }
@@ -519,10 +515,7 @@ tidy_genomic_data <- function(
 
     # population levels and strata
     if (!is.null(strata)) {
-      if (rlang::has_name(input, "POP_ID")) {
-        input %<>% dplyr::select(-POP_ID)
-      }
-      input %<>% dplyr::left_join(strata.df, by = "INDIVIDUALS")
+      input  %<>% join_strata(strata = strata.df)
       check.ref <- TRUE
     }
 
@@ -548,8 +541,9 @@ tidy_genomic_data <- function(
 
   # strata integration ---------------------------------------------------------
   if (!is.null(strata)) {
-    strata.df <- dplyr::ungroup(input) %>%
-      dplyr::distinct(POP_ID, INDIVIDUALS)
+    strata.df <-generate_strata(input)
+  } else {
+    filter.common.markers <- FALSE # by default
   }
 
   # Blacklist genotypes --------------------------------------------------------
@@ -578,25 +572,35 @@ tidy_genomic_data <- function(
   #   )
   # }
 
-  # filter.common.markers ------------------------------------------------------
-  if (is.null(strata)) filter.common.markers <- FALSE
-  if (filter.common.markers) {
-    input <- filter_common_markers(
-      data = input,
-      verbose = TRUE,
-      path.folder = path.folder,
-      parameters = parameters)
-  } # End common markers
+  # radiator_parameters-----------------------------------------------------------
+  filters.parameters <- radiator_parameters(
+    generate = TRUE,
+    initiate = TRUE,
+    update = FALSE,
+    parameter.obj = parameters,
+    data = input,
+    path.folder = path.folder,
+    file.date = file.date,
+    internal = FALSE,
+    verbose = verbose)
+
+  # filter_common_markers ------------------------------------------------------
+  input <- filter_common_markers(
+    data = input,
+    filter.common.markers = filter.common.markers,
+    verbose = verbose,
+    path.folder = path.folder,
+    parameters = filters.parameters,
+    internal = TRUE)
 
   # filter_monomorphic----------------------------------------------------------
-  if (filter.monomorphic) {
-    input <- filter_monomorphic(
-      data = input,
-      verbose = TRUE,
-      path.folder = path.folder,
-      parameters = parameters,
-      internal = TRUE)
-  } # End filter.monomorphic
+  input <- filter_monomorphic(
+    data = input,
+    filter.monomorphic = filter.monomorphic,
+    verbose = verbose,
+    path.folder = path.folder,
+    parameters = filters.parameters,
+    internal = TRUE)
 
 
   # Results --------------------------------------------------------------------
@@ -612,10 +616,6 @@ tidy_genomic_data <- function(
     message("\nWriting tidy data set:\n", tidy.name)
     write_rad(data = input, path = file.path(path.folder, tidy.name))
   }
-  # tidy.name <- stringi::stri_join(filename, ".rad")
-  # message("\nWriting tidy data set:\n", tidy.name)
-  # write_rad(data = input, path = tidy.name)
-
   n.markers <- length(unique(input$MARKERS))
   if (rlang::has_name(input, "CHROM")) {
     n.chromosome <- length(unique(input$CHROM))
@@ -642,69 +642,8 @@ tidy_genomic_data <- function(
     message("\nTidy genomic data:")
     message("    Number of markers: ", n.markers)
     message("    Number of chromosome/contig/scaffold: ", n.chromosome)
+    if (!is.null(strata)) message("    Number of strata: ", n.pop)
     message("    Number of individuals: ", n.individuals)
-    if (!is.null(strata)) message("    Number of populations: ", n.pop)
   }
   return(input)
 } # tidy genomic data
-
-
-# Internal nested Function -----------------------------------------------------
-
-#' @title strata_haplo
-#' @description Manage strata
-#' @rdname strata_haplo
-#' @keywords internal
-#' @export
-strata_haplo <- function(strata = NULL, data = NULL, blacklist.id = NULL) {
-
-  if (is.null(strata)) {
-    message("No strata file provided")
-    message("    generating a strata with 1 grouping")
-    if (is.null(data)) rlang::abort("data required to generate strata")
-    strata.df <- readr::read_tsv(
-      file = data,
-      n_max = 1,
-      na = "-",
-      col_names = FALSE,
-      col_types = readr::cols(.default = readr::col_character())) %>%
-      tidyr::gather(data = .,key = DELETE, value = INDIVIDUALS) %>%
-      dplyr::mutate(INDIVIDUALS = clean_ind_names(INDIVIDUALS)) %>%
-      dplyr::select(-DELETE) %>%
-      dplyr::filter(!INDIVIDUALS %in% c("Catalog ID", "Cnt")) %>%
-      dplyr::distinct(INDIVIDUALS) %>%
-      dplyr::mutate(STRATA = rep("pop1", n()))
-  } else {
-    if (is.vector(strata)) {
-      suppressMessages(
-        strata.df <- readr::read_tsv(
-          file = strata, col_names = TRUE,
-          # col_types = col.types
-          col_types = readr::cols(.default = readr::col_character())
-        ))
-    } else {
-      strata.df <- strata
-    }
-  }
-
-  colnames(strata.df) <- stringi::stri_replace_all_fixed(
-    str = colnames(strata.df),
-    pattern = "STRATA",
-    replacement = "POP_ID",
-    vectorize_all = FALSE
-  )
-  # Remove potential whitespace in pop_id
-  strata.df$POP_ID <- clean_pop_names(strata.df$POP_ID)
-  colnames.strata <- colnames(strata.df)
-
-  # clean ids
-  strata.df$INDIVIDUALS <- clean_ind_names(strata.df$INDIVIDUALS)
-
-  # filtering the strata if blacklist id available
-  if (!is.null(blacklist.id)) {
-    strata.df <- dplyr::anti_join(x = strata.df, y = blacklist.id, by = "INDIVIDUALS")
-  }
-
-  strata.df <- dplyr::distinct(strata.df, POP_ID, INDIVIDUALS)
-  return(strata.df)
-}#End strata_haplo

@@ -68,6 +68,9 @@
 #' The strata column is cleaned of a white spaces that interfere with some
 #' packages or codes: space is changed to an underscore \code{_}.
 
+#' @seealso \code{\link{summary_strata}},
+#' \code{\link{individuals2strata}}, \code{\link{change_pop_names}},
+#' \code{\link{join_strata}}, \code{\link{generate_strata}}
 
 #' @rdname read_strata
 #' @export
@@ -83,13 +86,20 @@
 #' radiator::read_strata(strata)
 #' }
 
-read_strata <- function(strata, pop.id = FALSE,
-                        pop.levels = NULL, pop.labels = NULL,
-                        pop.select = NULL, blacklist.id = NULL,
-                        keep.two = TRUE, verbose = FALSE
+read_strata <- function(
+  strata,
+  pop.id = FALSE,
+  pop.levels = NULL,
+  pop.labels = NULL,
+  pop.select = NULL,
+  blacklist.id = NULL,
+  keep.two = TRUE,
+  verbose = FALSE
 ) {
+  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
+
   if (is.null(strata)) {
-    res <- NULL
+    return(res = NULL)
   } else {
     if (verbose) message("Analyzing strata file")
     if (is.vector(strata)) {
@@ -110,8 +120,8 @@ read_strata <- function(strata, pop.id = FALSE,
     strata$INDIVIDUALS <- radiator::clean_ind_names(strata$INDIVIDUALS)
     strata$STRATA <- radiator::clean_pop_names(strata$STRATA)
 
-    if (verbose) message("Number of individuals: ", dplyr::n_distinct(strata$INDIVIDUALS))
-    if (verbose) message("Number of strata: ", dplyr::n_distinct(strata$STRATA))
+    if (verbose) message("    Number of strata: ", length(unique(strata$STRATA)))
+    if (verbose) message("    Number of individuals: ", length(unique(strata$INDIVIDUALS)))
 
     #blacklist.id ----------------------------------------------------------------
     blacklist.id <- read_blacklist_id(blacklist.id, verbose)
@@ -170,6 +180,12 @@ read_strata <- function(strata, pop.id = FALSE,
 
     if (isTRUE(pop.id)) strata %<>% dplyr::rename(POP_ID = STRATA)
 
+
+    if (!is.null(blacklist.id) || !is.null(pop.select)) {
+      strata.fn <- stringi::stri_join("strata_radiator_filtered_", file.date, ".tsv")
+      readr::write_tsv(x = strata, path = strata.fn)
+    }
+
     res = list(
       strata = strata,
       pop.levels = pop.levels,
@@ -186,6 +202,9 @@ read_strata <- function(strata, pop.id = FALSE,
 #' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 #' and might be of interest for users.
 #' @param strata (path or object) The strata file or object.
+#' @seealso \code{\link{read_strata}},
+#' \code{\link{individuals2strata}}, \code{\link{change_pop_names}},
+#' \code{\link{join_strata}}, \code{\link{generate_strata}}
 #' @rdname summary_strata
 #' @export
 #' @return
@@ -210,8 +229,8 @@ summary_strata <- function(strata) {
 
   duplicate.id <- nrow(strata) - length(unique(strata$INDIVIDUALS))
 
-  message("Number of populations: ", dplyr::n_distinct(strata$STRATA))
-  message("Number of individuals: ", dplyr::n_distinct(strata$INDIVIDUALS))
+  message("Number of populations: ", length(unique(strata$STRATA)))
+  message("Number of individuals: ", length(unique(strata$INDIVIDUALS)))
   message("\nNumber of ind/pop:\n", stringi::stri_join(strata.stats$POP_IND, collapse ="\n"))
   message("\nNumber of duplicate id: ", duplicate.id)
 }#End summary_strata
@@ -243,6 +262,10 @@ summary_strata <- function(strata) {
 #' want to save it in the working directory.
 #' Default: \code{filename = NULL}, the starta object is in the global
 #' environment only (i.e. not written in the working directory).
+
+#' @seealso \code{\link{read_strata}}, \code{\link{summary_strata}},
+#' \code{\link{change_pop_names}},
+#' \code{\link{join_strata}}, \code{\link{generate_strata}}
 
 #' @return a strata object and file, if requested. The file is tab delimited
 #' with 2 columns named:
@@ -292,7 +315,6 @@ individuals2strata <- function(
   if (missing(data)) rlang::abort("Input file missing")
   if (missing(strata.start)) rlang::abort("strata.start argument missing")
   if (missing(strata.end)) rlang::abort("strata.end argument missing")
-
   if (is.vector(data)) data <- readr::read_tsv(file = data)
 
   data <- tibble::as_data_frame(data) %>%
@@ -324,6 +346,9 @@ individuals2strata <- function(
 
 #' @inheritParams tidy_genomic_data
 #' @inheritParams read_strata
+#' @seealso \code{\link{read_strata}}, \code{\link{summary_strata}},
+#' \code{\link{individuals2strata}},
+#' \code{\link{join_strata}}, \code{\link{generate_strata}}
 
 #' @rdname change_pop_names
 #' @export
@@ -422,3 +447,150 @@ check_pop_levels <- function(
   if (!is.null(pop.select)) pop.select <- clean_pop_names(pop.select)
   return(res = list(pop.levels = pop.levels, pop.labels = pop.labels, pop.select = pop.select))
 }# end function change_pop_names
+
+
+
+# join_strata ------------------------------------------------------------------
+
+#' @name join_strata
+#' @title Join the strata with the data
+#' @description The function first filters individuals in data then include the
+#' strata.
+#' @param data A tidy dataset object.
+#' Documented in \code{\link[radiator]{tidy_genomic_data}}.
+#' @param strata A strata object.
+#' Documented in \code{\link[radiator]{read_strata}}.
+#' @return The data filtered by the strata by individuals.
+
+#' @examples
+#' \dontrun{
+#' data <- radiator::join_strata(
+#'     data = my_tidy_dataset_object,
+#'     strata = my_strata_object)
+#' }
+
+
+#' @seealso \code{\link{read_strata}}, \code{\link{summary_strata}},
+#' \code{\link{individuals2strata}}, \code{\link{change_pop_names}},
+#' \code{\link{generate_strata}}
+
+
+
+#' @rdname join_strata
+#' @export
+
+#' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
+
+join_strata <- function(data, strata = NULL, verbose = TRUE) {
+  if (is.null(strata)) return(data)
+  if (verbose) message("Synchronizing data and strata...")
+  if (rlang::has_name(data, "POP_ID")) data %<>% dplyr::select(-POP_ID)
+  if (rlang::has_name(data, "STRATA")) data %<>% dplyr::select(-STRATA)
+  strata %<>% dplyr::filter(INDIVIDUALS %in% data$INDIVIDUALS)
+  if (nrow(strata) == 0) {
+    rlang::abort("No more individuals in your data, check data and strata ID names...")
+  }
+
+  data %<>% dplyr::filter(INDIVIDUALS %in% strata$INDIVIDUALS)
+  if (nrow(data) == 0) {
+    rlang::abort("No more individuals in your data, check data and strata ID names...")
+  }
+
+  data %<>% dplyr::left_join(strata, by = "INDIVIDUALS")
+  if (verbose) {
+    if (rlang::has_name(data, "POP_ID")) {
+      message("    Number of strat: ", length(unique(data$POP_ID)))
+    }
+    if (rlang::has_name(data, "STRATA")) {
+      message("    Number of strata: ", length(unique(data$STRATA)))
+    }
+    message("    Number of individuals: ", length(unique(data$INDIVIDUALS)))
+  }
+  return(data)
+}#End join_strata
+
+
+# generate_strata ------------------------------------------------------------------
+
+#' @name generate_strata
+#' @title Generate strata object from the data
+#' @description Generate strata object from the data \code{POP_ID} or \code{STRATA}
+#' with the \code{INDIVIDUALS}.
+
+#' @inheritParams join_strata
+#' @seealso \code{\link{read_strata}}, \code{\link{summary_strata}},
+#' \code{\link{individuals2strata}}, \code{\link{change_pop_names}},
+#' \code{\link{join_strata}}
+
+#' @rdname generate_strata
+#' @export
+
+#' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
+
+generate_strata <- function(data) {
+  data %<>% dplyr::ungroup(.)
+  if (rlang::has_name(data, "POP_ID")) data %<>% dplyr::distinct(POP_ID, INDIVIDUALS)
+  if (rlang::has_name(data, "STRATA")) data %<>% dplyr::distinct(STRATA, INDIVIDUALS)
+  return(data)
+}#End join_strata
+
+
+# strata_haplo -----------------------------------------------------------------
+
+#' @title strata_haplo
+#' @description Manage strata
+#' @rdname strata_haplo
+#' @keywords internal
+#' @export
+strata_haplo <- function(strata = NULL, data = NULL, blacklist.id = NULL) {
+
+  if (is.null(strata)) {
+    message("No strata file provided")
+    message("    generating a strata with 1 grouping")
+    if (is.null(data)) rlang::abort("data required to generate strata")
+    strata.df <- readr::read_tsv(
+      file = data,
+      n_max = 1,
+      na = "-",
+      col_names = FALSE,
+      col_types = readr::cols(.default = readr::col_character())) %>%
+      tidyr::gather(data = .,key = DELETE, value = INDIVIDUALS) %>%
+      dplyr::mutate(INDIVIDUALS = clean_ind_names(INDIVIDUALS)) %>%
+      dplyr::select(-DELETE) %>%
+      dplyr::filter(!INDIVIDUALS %in% c("Catalog ID", "Cnt")) %>%
+      dplyr::distinct(INDIVIDUALS) %>%
+      dplyr::mutate(STRATA = rep("pop1", n()))
+  } else {
+    if (is.vector(strata)) {
+      suppressMessages(
+        strata.df <- readr::read_tsv(
+          file = strata, col_names = TRUE,
+          # col_types = col.types
+          col_types = readr::cols(.default = readr::col_character())
+        ))
+    } else {
+      strata.df <- strata
+    }
+  }
+
+  colnames(strata.df) <- stringi::stri_replace_all_fixed(
+    str = colnames(strata.df),
+    pattern = "STRATA",
+    replacement = "POP_ID",
+    vectorize_all = FALSE
+  )
+  # Remove potential whitespace in pop_id
+  strata.df$POP_ID <- clean_pop_names(strata.df$POP_ID)
+  colnames.strata <- colnames(strata.df)
+
+  # clean ids
+  strata.df$INDIVIDUALS <- clean_ind_names(strata.df$INDIVIDUALS)
+
+  # filtering the strata if blacklist id available
+  if (!is.null(blacklist.id)) {
+    strata.df <- dplyr::anti_join(x = strata.df, y = blacklist.id, by = "INDIVIDUALS")
+  }
+
+  strata.df <- dplyr::distinct(strata.df, POP_ID, INDIVIDUALS)
+  return(strata.df)
+}#End strata_haplo

@@ -63,7 +63,7 @@ write_snprelate <- function(data, biallelic = TRUE, filename = NULL, verbose = T
   # verbose = TRUE
 
 
-  timing <- proc.time()
+  # timing <- proc.time()
   # Check that snprelate is installed
   if (!requireNamespace("SNPRelate", quietly = TRUE)) {
     rlang::abort('To install SNPRelate:\n
@@ -74,20 +74,13 @@ write_snprelate <- function(data, biallelic = TRUE, filename = NULL, verbose = T
 
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("Input file missing")
+  if (verbose) message("Generating SNPRelate object/file...")
 
   # Filename -------------------------------------------------------------------
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
-  if (is.null(filename)) {
-    filename <- stringi::stri_join("radiator_snprelate_", file.date, ".gds.rad")
-  } else {
-    filename.problem <- file.exists(stringi::stri_join(filename, ".gds.rad"))
-    if (filename.problem) {
-      filename <- stringi::stri_join(filename, "_snprelate_", file.date, ".gds.rad")
-    } else {
-      filename <- stringi::stri_join(filename, ".gds.rad")
-    }
-  }
 
+  if (!is.null(filename)) filename <- stringi::stri_join(filename, "_snprelate")
+  filename <- generate_filename(name.shortcut = filename, extension = "gds.rad")
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {
@@ -96,10 +89,6 @@ write_snprelate <- function(data, biallelic = TRUE, filename = NULL, verbose = T
 
   biallelic <- radiator::detect_biallelic_markers(data)
   if (!biallelic) rlang::abort("Biallelic data required")
-
-
-  # GDS prep -------------------------------------------------------------------
-  if (verbose) message("Generating SNPRelate format...")
 
   # Generate GDS format --------------------------------------------------------
   if (!rlang::has_name(data, "POP_ID")) data %<>% dplyr::mutate(POP_ID = "pop")
@@ -155,7 +144,7 @@ write_snprelate <- function(data, biallelic = TRUE, filename = NULL, verbose = T
 
 
   SNPRelate::snpgdsCreateGeno(
-    gds.fn = filename,
+    gds.fn = filename$filename,
     genmat = data,
     sample.id = strata$INDIVIDUALS,
     snp.id = markers.meta$VARIANT_ID,
@@ -167,11 +156,11 @@ write_snprelate <- function(data, biallelic = TRUE, filename = NULL, verbose = T
     compress.annotation = "ZIP_RA",
     compress.geno = ""
   )
-  data <- SNPRelate::snpgdsOpen(filename, readonly = FALSE, allow.fork = TRUE)
+  data <- SNPRelate::snpgdsOpen(filename$filename, readonly = FALSE, allow.fork = TRUE)
 
-  if (verbose) message("SNPRelate GDS: ", filename)
+  if (verbose) message("SNPRelate GDS: ", filename$filename.short)
 
-  timing <- proc.time() - timing
-  if (verbose) message("\nConversion time: ", round(timing[[3]]), " sec\n")
+  # timing <- proc.time() - timing
+  # if (verbose) message("\nConversion time: ", round(timing[[3]]), " sec\n")
   return(data)
 } # End write_snprelate

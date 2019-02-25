@@ -56,6 +56,11 @@ filename = "strata.abalone.tsv"
 )
 }
 }
+\seealso{
+\code{\link{read_strata}}, \code{\link{summary_strata}},
+\code{\link{change_pop_names}},
+\code{\link{join_strata}}, \code{\link{generate_strata}}
+}
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}
 }

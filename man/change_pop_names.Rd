@@ -42,6 +42,11 @@ Transform into a factor the POP_ID column, change names and
 reorder the levels. If the data as \code{STRATA} column instead of a
 \code{POP_ID} column, the function will change the column name.
 }
+\seealso{
+\code{\link{read_strata}}, \code{\link{summary_strata}},
+\code{\link{individuals2strata}},
+\code{\link{join_strata}}, \code{\link{generate_strata}}
+}
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}
 }

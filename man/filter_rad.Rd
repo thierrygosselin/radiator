@@ -2,7 +2,7 @@
 % Please edit documentation in R/filter_rad.R
 \name{filter_rad}
 \alias{filter_rad}
-\title{Pipeline to filter RADseq data.}
+\title{one function to rule them all}
 \usage{
 filter_rad(interactive.filter = TRUE, data, strata = NULL,
   output = NULL, filename = NULL, verbose = TRUE,
@@ -57,10 +57,10 @@ object (see examples). Some output format will write the output file in the
 working directory. The tidy genomic data frame is generated automatically.
 }
 \description{
-Designed for RADseq data. The function import VCF file,
-apply filters and generate imputed datasets.
-The function uses \code{\link[radiator]{tidy_vcf}} and several \code{filter_}
-functions of radiator.
+Designed for RADseq data, it's radiator integrated pipeline that links
+several \code{filter_} functions of \pkg{radiator}.
+Rapidly get an idea of what you can and cannot do with your dataset.
+Novices, start with this one!
 }
 \note{
 The function requires 2 packages (not installed automatically with radiator):

@@ -110,7 +110,7 @@ filter_monomorphic <- function(
       filename = stringi::stri_join(
         "radiator_filter_monomorphic_args_", file.date, ".tsv"),
       tsv = TRUE,
-      internal = FALSE,
+      internal = internal,
       verbose = verbose
     )
     # Detect format --------------------------------------------------------------

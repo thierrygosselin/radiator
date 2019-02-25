@@ -68,6 +68,17 @@ filter_common_markers <- function(
   verbose = FALSE,
   ...
 ) {
+  # Test
+  # filter.common.markers = TRUE
+  # plot = TRUE
+  # parallel.core = parallel::detectCores() - 1
+  # verbose = TRUE
+  # path.folder <- NULL
+  # parameters <- NULL
+  # internal <- FALSE
+
+
+
   if (filter.common.markers) {
     if (verbose) {
       cat("################################################################################\n")
@@ -87,6 +98,8 @@ filter_common_markers <- function(
     on.exit(timing <- proc.time() - timing, add = TRUE)
     on.exit(if (verbose) message("\nComputation time, overall: ", round(timing[[3]]), " sec"), add = TRUE)
     on.exit(if (verbose) cat("####################### filter_common_markers completed ########################\n"), add = TRUE)
+
+    message("\nKeeping only common markers between strata")
 
     # Checking for missing and/or default arguments ------------------------------
     if (missing(data)) rlang::abort("Input file missing")
@@ -195,7 +208,7 @@ filter_common_markers <- function(
           data = bl,
           path = path.folder,
           filename = stringi::stri_join("blacklist.not.common.markers_", file.date, ".tsv"),
-          tsv = TRUE, internal = internal, verbose = verbose)
+          tsv = TRUE, internal = FALSE, verbose = verbose)
 
         wl %<>% dplyr::filter(!MARKERS %in% bl$MARKERS)
 
@@ -234,7 +247,7 @@ filter_common_markers <- function(
         data = wl,
         path = path.folder,
         filename = stringi::stri_join("whitelist.common.markers_", file.date, ".tsv"),
-        tsv = TRUE, internal = internal, verbose = verbose)
+        tsv = TRUE, internal = FALSE, verbose = verbose)
 
     } else {#Tidy data
       # Import data ---------------------------------------------------------------
@@ -301,14 +314,14 @@ filter_common_markers <- function(
           data = bl,
           path = path.folder,
           filename = stringi::stri_join("blacklist.not.common.markers_", file.date, ".tsv"),
-          tsv = TRUE, internal = internal, verbose = verbose)
+          tsv = TRUE, internal = FALSE, verbose = verbose)
 
         wl %<>% dplyr::filter(!MARKERS %in% bl$MARKERS)
         write_rad(
           data = wl,
           path = path.folder,
           filename = stringi::stri_join("whitelist.common.markers_", file.date, ".tsv"),
-          tsv = TRUE, internal = internal, verbose = verbose)
+          tsv = TRUE, internal = FALSE, verbose = verbose)
       } else {
         bl <- wl[0,]
       }
