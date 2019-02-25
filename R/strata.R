@@ -460,6 +460,7 @@ check_pop_levels <- function(
 #' Documented in \code{\link[radiator]{tidy_genomic_data}}.
 #' @param strata A strata object.
 #' Documented in \code{\link[radiator]{read_strata}}.
+#' @inheritParams radiator_common_arguments
 #' @return The data filtered by the strata by individuals.
 
 #' @examples

@@ -12,6 +12,10 @@ Documented in \code{\link[radiator]{tidy_genomic_data}}.}
 
 \item{strata}{A strata object.
 Documented in \code{\link[radiator]{read_strata}}.}
+
+\item{verbose}{(optional, logical) When \code{verbose = TRUE}
+the function is a little more chatty during execution.
+Default: \code{verbose = TRUE}.}
 }
 \value{
 The data filtered by the strata by individuals.
