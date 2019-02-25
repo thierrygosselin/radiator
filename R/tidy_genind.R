@@ -100,7 +100,7 @@ tidy_genind <- function(
     suppressWarnings(
       geno %<>%
         dplyr::select(-MARKERS) %>%
-        tibble::column_to_rownames(df = ., var = "VARIANT_ID")
+        tibble::column_to_rownames(.data = ., var = "VARIANT_ID")
     )
 
     gds.filename <- radiator_gds(

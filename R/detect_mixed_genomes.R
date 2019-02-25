@@ -541,12 +541,12 @@ detect_mixed_genomes <- function(
         threshold.max <- interactive_question(x = mix.text, minmax = c(0, 1))
         ind.heterozygosity.threshold <- as.numeric(c(threshold.min, threshold.max))
       } else {
+        threshold.min <- 0
+        threshold.max <- 1
         ind.heterozygosity.threshold <- NULL
       }
     } else {
       if (!is.null(ind.heterozygosity.threshold)) {
-        # ind.heterozygosity.threshold <- c(0.035, 0.10)
-        # ind.heterozygosity.threshold <- c(0, 0.09)
         threshold.min <- ind.heterozygosity.threshold[1]
         threshold.max <- ind.heterozygosity.threshold[2]
       }
@@ -596,11 +596,7 @@ detect_mixed_genomes <- function(
       data = data,
       filter.name = "detect mixed genomes",
       param.name = "ind.heterozygosity.threshold (min/max)",
-      values = if (!is.null(ind.heterozygosity.threshold)) {
-        paste(threshold.min, threshold.max, collapse = " / ")
-      } else {
-        "not used"
-      },
+      values = paste(threshold.min, threshold.max, collapse = " / "),
       path.folder = path.folder,
       file.date = file.date,
       verbose = verbose)

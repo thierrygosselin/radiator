@@ -48,10 +48,10 @@ write_stockr <- function(data) {
       formula = MARKERS ~ INDIVIDUALS,
       value.var = "GT_BIN"
     ) %>%
-    tibble::as_data_frame(.) %>%
+    tibble::as_tibble(.) %>%
     dplyr::select(MARKERS, strata$INDIVIDUALS) %>%
     tibble::remove_rownames(.) %>%
-    tibble::column_to_rownames(df = ., var = "MARKERS")) %>%
+    tibble::column_to_rownames(.data = ., var = "MARKERS")) %>%
     as.matrix(.)
 
   attr(data,"grps") <- strata$POP_ID

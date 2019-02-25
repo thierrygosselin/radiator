@@ -172,23 +172,10 @@ filter_monomorphic <- function(
           gds = data,
           node.name = "markers.meta",
           value = wl,
-          sync = TRUE
+          sync = TRUE,
+          verbose = verbose
         )
 
-        # radiator::sync_gds(gds = data, markers = wl$VARIANT_ID, verbose = FALSE)
-        # radiator.gds <- gdsfmt::index.gdsn(
-        #   node = data, path = "radiator", silent = TRUE)
-        #
-        # # Update metadata
-        # gdsfmt::add.gdsn(
-        #   node = radiator.gds,
-        #   name = "markers.meta",
-        #   val = wl,
-        #   replace = TRUE,
-        #   compress = "ZIP_RA",
-        #   closezip = TRUE)
-
-        # update blacklist.markers
         bl %<>% dplyr::select(MARKERS) %>%
           dplyr::mutate(FILTER = "filter.monomorphic")
 
@@ -310,7 +297,7 @@ filter_monomorphic <- function(
     if (verbose) cat("################################### RESULTS ####################################\n")
     message("Filter monomorphic markers")
     message("Number of individuals / strata / chrom / locus / SNP:")
-    if (verbose)message("    Before: ", filters.parameters$filters.parameters$BEFORE)
+    if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
     message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
     if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
 

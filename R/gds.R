@@ -355,13 +355,13 @@ update_radiator_gds <- function(
 
 
   if (sync) {
-    message("Synchronizing markers.meta")
+    if (verbose) message("Synchronizing markers.meta")
     if (node.name == "markers.meta") {
       sync_gds(gds = gds, markers = as.integer(value$VARIANT_ID))
     }
 
     if (node.name == "individuals") {
-      message("Synchronizing individuals")
+      if (verbose) message("Synchronizing individuals")
       sync_gds(gds = gds, samples = value$INDIVIDUALS)
     }
   }

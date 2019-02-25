@@ -350,7 +350,7 @@ BiocManager::install("SeqVarTools")
         parallel.core = parallel.core,
         path.folder = radiator.folder,
         filters.parameters = filters.parameters,
-        internal = FALSE
+        internal = TRUE
       )
       data.type <- "SeqVarGDSClass"
     }
@@ -436,7 +436,7 @@ BiocManager::install("SeqVarTools")
     dp = count.data)
 
   # Markers stats ------------------------------------------------------------
-  if (verbose) message("Generating markers stats\n")
+  if (verbose) message("\nGenerating markers stats\n")
   temp <- generate_markers_stats(
     gds = gds,
     path.folder = radiator.folder,
@@ -511,6 +511,8 @@ BiocManager::install("SeqVarTools")
     verbose = verbose,
     parameters = filters.parameters,
     path.folder = wf)
+
+  # return(gds)
 
   # Filter Linkage disequilibrium --------------------------------------------
   gds <- filter_ld(

@@ -297,7 +297,7 @@ summarise_genotypes <- function(data, path.folder = NULL) {
   # data.bk <- data
   # data <- data.bk
   want <- c("MARKERS", "POP_ID", "INDIVIDUALS", "GT_BIN", "READ_DEPTH")
-  data <- suppressWarnings(dplyr::select(data, dplyr::one_of(want))) #%>% dplyr::filter(!is.na(GT_BIN))
+  data <- suppressWarnings(dplyr::select(data, dplyr::one_of(want)))
 
   n.pop <- length(unique(data$POP_ID))
   if (is.factor(data$POP_ID)) {
@@ -310,7 +310,7 @@ summarise_genotypes <- function(data, path.folder = NULL) {
 
   # sum of read depth per pop and overall
   # scaled separately for pop and overall before merging
-  if (tibble::has_name(data, "READ_DEPTH")) {
+  if (rlang::has_name(data, "READ_DEPTH")) {
     rd.pop <- dplyr::select(data, MARKERS, POP_ID, READ_DEPTH) %>%
       dplyr::group_by(MARKERS, POP_ID) %>%
       dplyr::summarise(READ_DEPTH = sum(READ_DEPTH, na.rm = TRUE)) %>%
@@ -348,14 +348,23 @@ summarise_genotypes <- function(data, path.folder = NULL) {
       formula = MARKERS + POP_ID ~ GT_BIN,
       value.var = "n"
     ) %>%
-    tibble::as_data_frame(.) %>%
-    dplyr::mutate_if(.tbl = ., .predicate = is.integer, .funs = replace_zero) %>%
-    dplyr::mutate(N = HOM_REF + HET + HOM_ALT)
+    tibble::as_tibble(.) %>%
+    dplyr::mutate_if(.tbl = ., .predicate = is.integer, .funs = replace_zero)
 
-  if (!tibble::has_name(pop, "MISSING")) {
+  if (!rlang::has_name(pop, "HET")) {
+    pop %<>% dplyr::mutate(HET = 0)
+  }
+  if (!rlang::has_name(pop, "HOM_REF")) {
+    pop %<>% dplyr::mutate(HOM_REF = 0)
+  }
+  if (!rlang::has_name(pop, "HOM_ALT")) {
+    pop %<>% dplyr::mutate(HOM_ALT = 0)
+  }
+  pop %<>% dplyr::mutate(N = HOM_REF + HET + HOM_ALT)
+
+  if (!rlang::has_name(pop, "MISSING")) {
     pop <- dplyr::mutate(pop, MISSING = as.integer("0"))
   }
-
 
   data <- dplyr::bind_rows(
     pop,

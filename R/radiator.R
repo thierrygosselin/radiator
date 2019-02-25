@@ -50,7 +50,8 @@
 #' @importFrom stringi stri_replace_all_fixed stri_join stri_sub stri_replace_na stri_pad_left
 #' @importFrom purrr discard
 #' @importFrom readr read_tsv write_tsv
-#' @importFrom tibble as_data_frame data_frame
+#' @importFrom tibble tibble as_tibble
+#' @importFrom rlang has_name
 #' @importFrom tidyr spread gather unite separate
 #' @importFrom stats IQR
 

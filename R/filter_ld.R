@@ -677,7 +677,43 @@ filter_ld <- function(
     } #End short ld
 
     # Long distance LD pruning ---------------------------------------------------
+    if (interactive.filter) {
+      long.ld <- interactive_question(
+        x = "\nDo you want to continue filtering using long distance ld  ? (y/n):",
+        answer.opt = c("y", "n"))
+      if (long.ld == "y") {
+        interactive.filter <- TRUE
+      } else {
+        interactive.filter <- FALSE
+        filter.long.ld <- NULL
+      }
+    }
     if (interactive.filter || !is.null(filter.long.ld)) {
+      ref.genome <- detect_ref_genome(data = data, verbose = FALSE)
+
+      if (interactive.filter) {
+        message("\nStep 3. Long distance LD pruning selection")
+        message("Pruning method can randomly choose to keep 1 SNP or")
+        message("select the SNP based on missing data statistics")
+        if (!ref.genome) {
+          message("\nNote: with de novo data, using LD with missing stats can take longer to compute")
+          message(    "e.g. with 20 000 SNPs, generating the required stats can take up to 1h")
+        }
+        long.ld.missing <- interactive_question(
+          x = "\nDo you want to use missing data statistics ? (y/n):",
+          answer.opt = c("y", "n"))
+        if (long.ld.missing == "y") {
+          long.ld.missing <- TRUE
+        } else {
+          long.ld.missing <- FALSE
+        }
+
+        if (!long.ld.missing) {
+          filter.long.ld <- interactive_question(
+            x = "\nEnter the filter.long.ld threshold? (double/proportion):", minmax = c(0,1))
+        }
+      }
+
 
       if (data.type == "tbl_df") {# for long distance LD pruning
         # Check if data is biallelic
@@ -707,58 +743,67 @@ filter_ld <- function(
 
       n.chrom <- length(unique(wl$CHROM))
 
+      # if (n.chrom == 1) {
+      #   denovo <- TRUE
+      #   wl.bk <- wl
+      #   # wl.bk -> wl
+      #   # wl is now fake chrom...
+      #
+      #   # generate fake chromosome
+      #   if (long.ld.missing) {
+      #     # sample 100 markers 50 times
+      #     wl <- dplyr::distinct(wl, VARIANT_ID, MARKERS)
+      #
+      #     fake_chrom <- function(iterations, wl, size = 0.005) {
+      #       fake <- dplyr::sample_frac(tbl = wl, size = size) %>%
+      #         dplyr::mutate(
+      #           CHROM = iterations,
+      #           LD_SUBSAMPLE = TRUE
+      #         )
+      #     }
+      #     n.chrom <- 100L # update
+      #     wl <- purrr::map_dfr(
+      #       .x = 1:n.chrom,
+      #       .f = fake_chrom,
+      #       wl = wl,
+      #       size = 0.005)
+      #
+      #     chrom.tick <- dplyr::distinct(wl, CHROM) %>%
+      #       dplyr::mutate(
+      #         CHROM_TICK = stringi::stri_join(seq(from = 1, to = n(), by = 1), n(), sep = "/")
+      #       )
+      #     wl %<>% dplyr::left_join(chrom.tick, by = "CHROM")
+      #   }
+
+      # } else {
+      denovo <- FALSE
+
       chrom.tick <- dplyr::distinct(wl, CHROM) %>%
         dplyr::mutate(
           CHROM_TICK = stringi::stri_join(seq(from = 1, to = n(), by = 1), n(), sep = "/")
         )
 
-      if (n.chrom > 1) {
-        ld.sample <- dplyr::sample_frac(tbl = chrom.tick, size = 0.2) %>%
-          dplyr::select(CHROM) %>%
-          purrr::flatten_chr(.)
-      }
-
-
-      wl %<>% dplyr::left_join(chrom.tick, by = "CHROM")
-
-      if (n.chrom > 1) {
-        wl %<>%
-          dplyr::mutate(
-            LD_SUBSAMPLE = dplyr::if_else(
-              CHROM %in% ld.sample, TRUE, FALSE)
-          )
-      } else {
-        wl %<>% dplyr::mutate(LD_SUBSAMPLE = TRUE)
-      }
-
-      wl %<>% dplyr::arrange(CHROM, VARIANT_ID)
-      chrom.tick <- chrom.tick$CHROM
-      n.markers <- nrow(wl)
+      ld.sample <- dplyr::sample_frac(tbl = chrom.tick, size = 0.2) %>%
+        dplyr::select(CHROM) %>%
+        purrr::flatten_chr(.)
 
       wl %<>%
+        dplyr::left_join(chrom.tick, by = "CHROM") %>%
+        dplyr::mutate(
+          LD_SUBSAMPLE = dplyr::if_else(
+            CHROM %in% ld.sample, TRUE, FALSE)
+        )
+      # }
+      chrom.tick <- chrom.tick$CHROM
+      n.markers <- nrow(wl)
+      wl %<>%
+        dplyr::arrange(CHROM, VARIANT_ID) %>%
         dplyr::mutate(CHROM = factor(x = CHROM, levels = chrom.tick, ordered = TRUE)) %>%
         dplyr::arrange(CHROM)
 
       # reset bl
       bl <- wl
-
-
-      if (interactive.filter) {
-        if (verbose) message("\nStep 3. Long distance LD pruning selection")
-        if (verbose) message("Pruning method can randomly choose to keep 1 SNP or")
-        if (verbose) message("select the SNP based on missing data statistics")
-        if (verbose) message("\nNot sure ?")
-        if (verbose) message("use missing data statistics to guide your choice of threshold")
-
-        long.ld.missing <- interactive_question(
-          x = "\nDo you want to use missing data statistics ? (y/n):",
-          answer.opt = c("y", "n"))
-        if (long.ld.missing == "y") {
-          long.ld.missing <- TRUE
-        } else {
-          long.ld.missing <- FALSE
-        }
-      }
+      ld.sample <- NULL
 
       # LONG LD with MISSING -----------------------------------------------------
       if (long.ld.missing) {
@@ -772,6 +817,7 @@ filter_ld <- function(
           } else {
             filter.long.ld
           },
+          denovo = denovo,
           ld.method = ld.method,
           ld.figures = ld.figures,
           parallel.core = parallel.core,
@@ -783,14 +829,28 @@ filter_ld <- function(
         if (interactive.filter) {
           if (verbose) message("\nStep 4. Threshold selection")
           if (verbose) message("Look at the boxplot, a threshold of 0.2 will blacklist more markers than a threshold of 0.8")
-          filter.long.ld <- interactive_question(
-            x = "\nEnter the final filter.long.ld threshold? (double/proportion):", minmax = c(0,1))
+          if (denovo) {
+            filter.long.ld <- interactive_question(
+              x = "\nEnter the long LD threshold (filter.long.ld threshold, double/proportion):", minmax = c(0,1))
+          } else {
+            filter.long.ld <- interactive_question(
+              x = "\nEnter the final filter.long.ld threshold? (double/proportion):", minmax = c(0,1))
+          }
         }
 
-        if (interactive.filter) message("\nStep 5. Filtering markers based on long distance LD")
-        wl.bl.ld <- magrittr::extract2(wl.bl.ld, as.name(filter.long.ld))
-        wl <- wl.bl.ld %$% wl
-        bl <- wl.bl.ld %$% bl
+        if (denovo) {
+          #Here the blacklist and whitelist
+
+
+
+
+
+        } else {
+          if (interactive.filter) message("\nStep 5. Filtering markers based on long distance LD")
+          wl.bl.ld <- magrittr::extract2(wl.bl.ld, as.name(filter.long.ld))
+          wl <- wl.bl.ld %$% wl
+          bl <- wl.bl.ld %$% bl
+        }
 
         # updating the GDS object ------------------------------------------------
         if (data.type == "tbl_df") {
@@ -835,8 +895,13 @@ filter_ld <- function(
           method = ld.m,
           ld.threshold = filter.long.ld,
           num.thread = 1,# no gain in speed to use more
-          verbose = FALSE) %>%
-          purrr::flatten_int(.)
+          verbose = FALSE)
+
+        # if (is.integer(wl.variant.id)) {
+          # wl.variant.id %<>% purrr::flatten_int(.)
+        # } else {
+          wl.variant.id %<>% purrr::flatten_chr(.)
+        # }
 
         wl %<>% dplyr::filter(VARIANT_ID %in% wl.variant.id)
         readr::write_tsv(
@@ -857,27 +922,13 @@ filter_ld <- function(
         if (data.type == "tbl_df") {
           data <- dplyr::filter(data, MARKERS %in% wl$MARKERS)
         } else {
+          # updating the GDS object
           update_radiator_gds(
             gds = data,
             node.name = "markers.meta",
             value = wl,
             sync = TRUE
           )
-          # # updating the GDS object
-          # sync_gds(gds = data, markers = wl$VARIANT_ID)
-          #
-          # # Update GDS
-          # radiator.gds <- gdsfmt::index.gdsn(
-          #   node = data, path = "radiator", silent = TRUE)
-          #
-          # # Update metadata
-          # gdsfmt::add.gdsn(
-          #   node = radiator.gds,
-          #   name = "markers.meta",
-          #   val = wl,
-          #   replace = TRUE,
-          #   compress = "ZIP_RA",
-          #   closezip = TRUE)
 
           # update blacklist.markers
           if (nrow(bl) > 0) {
@@ -1044,6 +1095,7 @@ ld_pruning <- function(
 #' @param data The GDS object.
 # @param data.type The type of dataset.
 #' @param ld.threshold The LD threshold.
+#' @param denovo de novo data or not ? (logical).
 #' @param ld.method The method to compute LD.
 #' @param ld.figures (logical, optional) Default: \code{ld.figures = TRUE}.
 #' @param path.folder (character) The path to the folder.
@@ -1055,15 +1107,17 @@ ld_pruning <- function(
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 ld_missing <- function(
   wl,
-  # chrom.tick,
   data,
   ld.threshold = seq(0.1, 0.9, by = 0.1),
+  denovo = NULL,
   ld.method = "r2",
   ld.figures = TRUE,
   path.folder = NULL,
   parallel.core = parallel::detectCores() - 1,
   verbose = TRUE
 ) {
+
+  if (is.null(denovo)) denovo <- TRUE
   if (is.null(path.folder)) path.folder <- getwd()
   n.chrom <- length(unique(wl$CHROM))
 
@@ -1071,20 +1125,26 @@ ld_missing <- function(
   ld_m <- function(
     x,
     data,
+    denovo = NULL,
     ld.threshold = seq(0.1, 0.9, by = 0.1),
     ld.method = "r2",
     ld.figures = TRUE,
     parallel.core = parallel::detectCores() - 1,
     verbose = TRUE
   ) {
-    # x <- chrom.ld[[2]]
+    # x <- chrom.ld[[1]]
     ld.markers <- list()# to store results
     chrom.name <- unique(x$CHROM)
     chrom.snp.n <- length(x$VARIANT_ID)
     chrom.tick <- unique(x$CHROM_TICK)
+    if (is.null(denovo)) denovo <- TRUE
 
     if (verbose && length(chrom.name) == 1) {
-      message("Chrom: ", chrom.name, " SNPs number: ", chrom.snp.n, "    (", chrom.tick, ")")
+      if (denovo) {
+        message("Chrom: ", chrom.name, " SNPs number: ", chrom.snp.n, "    (", chrom.tick, ") ", "fake data...")
+      } else {
+        message("Chrom: ", chrom.name, " SNPs number: ", chrom.snp.n, "    (", chrom.tick, ")")
+      }
     }
 
 
@@ -1097,6 +1157,8 @@ ld_missing <- function(
       # Adjusting the parallel.core argument ---------------------------------
       # SNPRelate doesnt like when lower than number of markers used...
       parallel.core.temp <- max(1L, length(x$MARKERS))
+      # parallel.core.temp <- max(1L, n.markers)
+
       if (parallel.core <= parallel.core.temp) {
         parallel.core.temp <- parallel.core
       }
@@ -1107,7 +1169,7 @@ ld_missing <- function(
       } else {
         ld.m <- ld.method
       }
-
+      if (verbose && denovo) message("Linkage Disequilibrium (LD) estimation on genotypes")
       res.chrom <- SNPRelate::snpgdsLDMat(
         gdsobj = data,
         snp.id = x$VARIANT_ID,
@@ -1117,7 +1179,7 @@ ld_missing <- function(
         method = ld.m,
         num.thread = parallel.core.temp,
         with.id = TRUE,
-        verbose = FALSE) %$%
+        verbose = TRUE) %$%
         LD %>%
         magrittr::set_colnames(x = ., x$MARKERS) %>%
         magrittr::set_rownames(x = ., x$MARKERS)
@@ -1140,101 +1202,106 @@ ld_missing <- function(
           ld.markers$fig.data <- as.vector(res.chrom) %>% magrittr::extract(!is.na(.))
         }
 
-
-        # Generate the missingness stats -----------------------------------------
-        markers.missing <- tibble::tibble(
-          MARKERS = x$MARKERS,
-          MISSING_PROP = SeqArray::seqMissing(
-            gdsfile = data,
-            per.variant = TRUE,
-            .progress = TRUE,
-            parallel = parallel.core.temp
-          )
-        ) %>%
-          dplyr::mutate(GENOTYPED_PROP = 1 - MISSING_PROP, MISSING_PROP = NULL)
-
-        # Pruning the SNPs -------------------------------------------------------
-        # These LD values are not used anyway during the pruning
-        if (!is.null(ld.threshold)) {
-          if (length(ld.threshold) == 1) {
-            res.chrom[res.chrom <= ld.threshold] <- rlang::na_dbl
-          }
-        }
-        # remove rows and cols with all missing values
-        res.chrom <- res.chrom[rowSums(res.chrom, na.rm = TRUE) > 0, colSums(res.chrom, na.rm = TRUE) > 0, drop = FALSE]
-
-        if (length(res.chrom) >= 1) {
-          res.chrom <- ld2df(x = res.chrom) %>%
-            dplyr::filter(!is.na(LD))
-
-          if (nrow(res.chrom) > 0) {
-            ld.markers$blacklist.markers <- purrr::map_dfr(
-              .x = ld.threshold,
-              .f = ld_pruning,
-              ld.tibble = res.chrom,
-              stats = markers.missing
+        if (!denovo) {
+          # Generate the missingness stats -----------------------------------------
+          markers.missing <- tibble::tibble(
+            MARKERS = x$MARKERS,
+            MISSING_PROP = SeqArray::seqMissing(
+              gdsfile = data,
+              per.variant = TRUE,
+              .progress = TRUE,
+              parallel = parallel.core.temp
             )
-            snp.blacklist <- length(ld.markers$blacklist.markers$MARKERS)
+          ) %>%
+            dplyr::mutate(GENOTYPED_PROP = 1 - MISSING_PROP, MISSING_PROP = NULL)
+
+          # Pruning the SNPs -------------------------------------------------------
+          # These LD values are not used anyway during the pruning
+          if (!is.null(ld.threshold)) {
+            if (length(ld.threshold) == 1) {
+              res.chrom[res.chrom <= ld.threshold] <- rlang::na_dbl
+            }
+          }
+          # remove rows and cols with all missing values
+          res.chrom <- res.chrom[rowSums(res.chrom, na.rm = TRUE) > 0, colSums(res.chrom, na.rm = TRUE) > 0, drop = FALSE]
+
+          if (length(res.chrom) >= 1) {
+            res.chrom <- ld2df(x = res.chrom)
+
+            if (nrow(res.chrom) > 0) {
+              ld.markers$blacklist.markers <- purrr::map_dfr(
+                .x = ld.threshold,
+                .f = ld_pruning,
+                ld.tibble = res.chrom,
+                stats = markers.missing
+              )
+
+              # test <- ld_pruning(ld.tibble = res.chrom, stats = markers.missing, ld.threshold = 0.9, verbose = TRUE)
+
+              snp.blacklist <- length(ld.markers$blacklist.markers$MARKERS)
+            } else {
+              if (verbose) message("    SNPs blacklisted: 0")
+              ld.markers$blacklist.markers <- NULL
+              snp.blacklist <- 0L
+            }
           } else {
             if (verbose) message("    SNPs blacklisted: 0")
             ld.markers$blacklist.markers <- NULL
             snp.blacklist <- 0L
           }
-        } else {
-          if (verbose) message("    SNPs blacklisted: 0")
-          ld.markers$blacklist.markers <- NULL
-          snp.blacklist <- 0L
+
+
+          # chrom stats ----------------------------------------------------------------
+          n.threshold <- length(ld.threshold)
+          if (n.threshold == 1) {
+            ld.markers$chrom.ld.stats <- tibble::tibble(
+              CHROM = chrom.name,
+              NUMBER_SNP = chrom.snp.n,
+              NUMBER_SNP_BLACKLISTED = snp.blacklist,
+              LD_THRESHOLD = ld.threshold)
+          } else if (!is.null(ld.markers$blacklist.markers)) {
+            ld.markers$chrom.ld.stats <- ld.markers$blacklist.markers %>%
+              dplyr::group_by(LD_THRESHOLD) %>%
+              dplyr::tally(.) %>%
+              dplyr::mutate(
+                CHROM = chrom.name,
+                NUMBER_SNP = chrom.snp.n,
+                NUMBER_SNP_BLACKLISTED = n,
+                n = NULL
+              )
+          } else {
+            ld.markers$chrom.ld.stats <- tibble::tibble(
+              CHROM = rep(chrom.name, n.threshold),
+              NUMBER_SNP = rep(chrom.snp.n, n.threshold),
+              NUMBER_SNP_BLACKLISTED = rep(0L, n.threshold),
+              LD_THRESHOLD = ld.threshold)
+          }
         }
+      }#skip
+    }
 
-
-        # chrom stats ----------------------------------------------------------------
+    if (!denovo) {
+      # When number of snp per chrom is 1 or with prob SNPRelate that
+      if (all.missing || chrom.snp.n == 1) {
+        if (verbose) message("    SNPs blacklisted: 0")
+        ld.markers$blacklist.markers <- NULL
+        snp.blacklist <- 0L
+        # want here
         n.threshold <- length(ld.threshold)
+        ld.markers$blacklist.markers <- NULL
         if (n.threshold == 1) {
           ld.markers$chrom.ld.stats <- tibble::tibble(
             CHROM = chrom.name,
             NUMBER_SNP = chrom.snp.n,
             NUMBER_SNP_BLACKLISTED = snp.blacklist,
             LD_THRESHOLD = ld.threshold)
-        } else if (!is.null(ld.markers$blacklist.markers)) {
-          ld.markers$chrom.ld.stats <- ld.markers$blacklist.markers %>%
-            dplyr::group_by(LD_THRESHOLD) %>%
-            dplyr::tally(.) %>%
-            dplyr::mutate(
-              CHROM = chrom.name,
-              NUMBER_SNP = chrom.snp.n,
-              NUMBER_SNP_BLACKLISTED = n,
-              n = NULL
-            )
         } else {
           ld.markers$chrom.ld.stats <- tibble::tibble(
             CHROM = rep(chrom.name, n.threshold),
-            NUMBER_SNP = rep(chrom.snp.n, n.threshold),
+            NUMBER_SNP = rep(1L, n.threshold),
             NUMBER_SNP_BLACKLISTED = rep(0L, n.threshold),
             LD_THRESHOLD = ld.threshold)
         }
-      }#skip
-    }
-
-    # When number of snp per chrom is 1 or with prob SNPRelate that
-    if (all.missing || chrom.snp.n == 1) {
-      if (verbose) message("    SNPs blacklisted: 0")
-      ld.markers$blacklist.markers <- NULL
-      snp.blacklist <- 0L
-      # want here
-      n.threshold <- length(ld.threshold)
-      ld.markers$blacklist.markers <- NULL
-      if (n.threshold == 1) {
-        ld.markers$chrom.ld.stats <- tibble::tibble(
-          CHROM = chrom.name,
-          NUMBER_SNP = chrom.snp.n,
-          NUMBER_SNP_BLACKLISTED = snp.blacklist,
-          LD_THRESHOLD = ld.threshold)
-      } else {
-        ld.markers$chrom.ld.stats <- tibble::tibble(
-          CHROM = rep(chrom.name, n.threshold),
-          NUMBER_SNP = rep(1L, n.threshold),
-          NUMBER_SNP_BLACKLISTED = rep(0L, n.threshold),
-          LD_THRESHOLD = ld.threshold)
       }
     }
 
@@ -1259,6 +1326,7 @@ ld_missing <- function(
       .x = .,
       .f = ld_m,
       data = data,
+      denovo = denovo,
       ld.threshold = ld.threshold,
       ld.method = ld.method,
       ld.figures = ld.figures,
@@ -1266,12 +1334,18 @@ ld_missing <- function(
       verbose = verbose)
 
   # stats ------------------------------------------------------------------
-  chrom.stats <- purrr::map_dfr(.x = chrom.ld, .f = "chrom.ld.stats") %>%
-    dplyr::mutate(PROP_BLACKLISTED = round(NUMBER_SNP_BLACKLISTED / NUMBER_SNP, 2)) %>%
-    readr::write_tsv(x = ., path = file.path(path.folder, "snp.ld.chrom.stats.tsv"))
+  if (!denovo) {
+    chrom.stats <- purrr::map_dfr(.x = chrom.ld, .f = "chrom.ld.stats") %>%
+      dplyr::mutate(PROP_BLACKLISTED = round(NUMBER_SNP_BLACKLISTED / NUMBER_SNP, 2))
+
+
+    readr::write_tsv(
+      x = chrom.stats,
+      path = file.path(path.folder, "snp.ld.chrom.stats.tsv"))
+  }
 
   # figure: distribution number of SNPs per scaffolds/chrom ----------------
-  if (n.chrom > 1) {
+  if (!denovo) {
     d.plot <- ggplot2::ggplot(
       data = chrom.stats,
       ggplot2::aes(x = NUMBER_SNP)) +
@@ -1301,35 +1375,36 @@ ld_missing <- function(
   }
 
   # Whitelists and blacklists --------------------------------------------
-  ld_wl_bl <- function(x, wl, path.folder, verbose) {
+  if (!denovo) {
+    ld_wl_bl <- function(x, wl, path.folder, verbose) {
 
-    bl.ld <- purrr::map_dfr(.x = chrom.ld, .f = "blacklist.markers")
-    generate_whitelist_ld <- function(bl.ld, wl, path.folder) {
-      bl <- wl
-      wl %<>% dplyr::filter(!MARKERS %in% bl.ld$MARKERS)
-      ld.t <- unique(bl.ld$LD_THRESHOLD)
-      filename <- stringi::stri_join("whitelist.long.ld_", ld.t, ".tsv")
-      readr::write_tsv(
-        x = wl, path = file.path(path.folder, filename),
-        append = FALSE, col_names = TRUE)
+      bl.ld <- purrr::map_dfr(.x = chrom.ld, .f = "blacklist.markers")
+      generate_whitelist_ld <- function(bl.ld, wl, path.folder) {
+        bl <- wl
+        wl %<>% dplyr::filter(!MARKERS %in% bl.ld$MARKERS)
+        ld.t <- unique(bl.ld$LD_THRESHOLD)
+        filename <- stringi::stri_join("whitelist.long.ld_", ld.t, ".tsv")
+        readr::write_tsv(
+          x = wl, path = file.path(path.folder, filename),
+          append = FALSE, col_names = TRUE)
 
-      bl <- dplyr::setdiff(bl, wl)
-      filename <- stringi::stri_join("blacklist.long.ld_", ld.t, ".tsv")
-      readr::write_tsv(
-        x = bl,
-        path = file.path(path.folder, filename),
-        append = FALSE, col_names = TRUE)
-      res = list(wl = wl, bl = bl)
-      return(res)
-    }#End generate_whitelist_ld
+        bl <- dplyr::setdiff(bl, wl)
+        filename <- stringi::stri_join("blacklist.long.ld_", ld.t, ".tsv")
+        readr::write_tsv(
+          x = bl,
+          path = file.path(path.folder, filename),
+          append = FALSE, col_names = TRUE)
+        res = list(wl = wl, bl = bl)
+        return(res)
+      }#End generate_whitelist_ld
 
-    wl.ld <- split(x = bl.ld, f = bl.ld$LD_THRESHOLD) %>%
-      purrr::map(.x = ., .f = generate_whitelist_ld, wl = wl, path.folder = path.folder)
-    if (verbose) message("File written: whitelist(s) and blacklist(s)")
-    return(wl.ld)
-  }#End ld_wl_bl
-
-  wl.bl.ld <- ld_wl_bl(x = chrom.ld, wl = wl, path.folder = path.folder, verbose = verbose)
+      wl.ld <- split(x = bl.ld, f = bl.ld$LD_THRESHOLD) %>%
+        purrr::map(.x = ., .f = generate_whitelist_ld, wl = wl, path.folder = path.folder)
+      if (verbose) message("File written: whitelist(s) and blacklist(s)")
+      return(wl.ld)
+    }#End ld_wl_bl
+    wl.bl.ld <- ld_wl_bl(x = chrom.ld, wl = wl, path.folder = path.folder, verbose = verbose)
+  }
 
   # stats and figures-------------------------------------------------------
   if (ld.figures) {
@@ -1340,6 +1415,7 @@ ld_missing <- function(
                                group = "Long LD")
 
     if (verbose) message("Generating figures...")
+    if (denovo) message("Remember it's fake data...")
 
     if (ld.method == "r2") {
       ld.title <- expression(paste("Long distance linkage disequilibrium (", r^2, ")"))
@@ -1370,5 +1446,11 @@ ld_missing <- function(
       path.folder = path.folder,
       bp.filename = "snp.long.ld.boxplot.pdf")
   }#End ld.figures
-  return(wl.bl.ld)
+  if (!denovo) {
+    return(wl.bl.ld)
+  } else {
+    return(NULL)
+  }
 }#End ld_missing
+
+

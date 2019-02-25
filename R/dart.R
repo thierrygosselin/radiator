@@ -305,7 +305,7 @@ merge_dart <- function(
 
   # Averaging across markers the call rate and other DArT markers metadata statistics
   # Note to myself: Might be easier/faster to use mutate_if
-  if (tibble::has_name(input, "CALL_RATE")) {
+  if (rlang::has_name(input, "CALL_RATE")) {
     message("Averaging across markers the call rate")
     input <- input %>%
       dplyr::group_by(MARKERS) %>%
@@ -313,7 +313,7 @@ merge_dart <- function(
       dplyr::ungroup(.)
   }
 
-  if (tibble::has_name(input, "REP_AVG")) {
+  if (rlang::has_name(input, "REP_AVG")) {
     message("Averaging across markers the REP_AVG")
     input <- input %>%
       dplyr::group_by(MARKERS) %>%
@@ -327,11 +327,11 @@ merge_dart <- function(
     parallel.core = parallel.core,
     verbose = TRUE)$input
 
-  if (tibble::has_name(input, "POLYMORPHIC")) {
+  if (rlang::has_name(input, "POLYMORPHIC")) {
     input <- dplyr::select(input, -POLYMORPHIC)
   }
 
-  if (tibble::has_name(input, "AVG_COUNT_REF")) {
+  if (rlang::has_name(input, "AVG_COUNT_REF")) {
     message("Averaging across markers the coverage for the REF allele")
     input <- input %>%
       dplyr::group_by(MARKERS) %>%
@@ -339,7 +339,7 @@ merge_dart <- function(
       dplyr::ungroup(.)
   }
 
-  if (tibble::has_name(input, "AVG_COUNT_ALT")) {
+  if (rlang::has_name(input, "AVG_COUNT_ALT")) {
     message("Averaging across markers the coverage for the ALT allele")
     input <- input %>%
       dplyr::group_by(MARKERS) %>%
@@ -501,7 +501,7 @@ tidy_dart_metadata <- function(
         col_types = readr::cols(.default = readr::col_character()))
     }
 
-    want <- tibble::data_frame(
+    want <- tibble::tibble(
       INFO = c("ALLELEID", "SNP", "SNPPOSITION", "CALLRATE",
                "AVGCOUNTREF", "AVGCOUNTSNP", "REPAVG"),
       COL_TYPE = c("c", "c", "i", "d", "d", "d", "d"))
@@ -753,7 +753,7 @@ tidy_dart <- function(
   # write.tidy = NULL
   # path.folder = NULL
   # radiator.pipeline = NULL
-
+  # internal <- FALSE
 
   # Cleanup-------------------------------------------------------------------
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
@@ -767,36 +767,46 @@ tidy_dart <- function(
   on.exit(options(width = opt.change), add = TRUE)
   on.exit(timing <- proc.time() - timing, add = TRUE)
   on.exit(if (verbose) message("\nComputation time, overall: ", round(timing[[3]]), " sec"), add = TRUE)
-  on.exit(if (verbose) cat("############################## completed ##############################\n"), add = TRUE)
+  on.exit(if (verbose) cat("############################## completed tidy_dart #############################\n"), add = TRUE)
 
-  if (verbose) cat("#######################################################################\n")
-  if (verbose) cat("######################### radiator::tidy_dart #########################\n")
-  if (verbose) cat("#######################################################################\n")
-
+  if (verbose) {
+    cat("################################################################################\n")
+    cat("############################## radiator::tidy_dart #############################\n")
+    cat("################################################################################\n")
+  }
   # Function call and dotslist -------------------------------------------------
   rad.dots <- radiator_dots(
+    func.name = as.list(sys.call())[[1]],
     fd = rlang::fn_fmls_names(),
     args.list = as.list(environment()),
     dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
     keepers = c("whitelist.markers", "missing.memory", "dart.sequence", "write.tidy",
-                "path.folder"),
+                "path.folder", "internal"),
     verbose = verbose
   )
-  dots.filename <- stringi::stri_join("radiator_tidy_dart_args_", file.date, ".tsv")
 
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("data is missing")
 
-  # Folders---------------------------------------------------------------------
+   # Folders---------------------------------------------------------------------
   path.folder <- generate_folder(
     f = path.folder,
+    rad.folder = "tidy_dart",
+    internal = internal,
     file.date = file.date,
     verbose = verbose)
 
   # write the dots file
-  readr::write_tsv(x = rad.dots, path = file.path(path.folder, dots.filename))
-  if (verbose) message("File written: ", dots.filename)
+  write_rad(
+    data = rad.dots,
+    path = path.folder,
+    filename = stringi::stri_join("radiator_tidy_dart_args_", file.date, ".tsv"),
+    tsv = TRUE,
+    internal = internal,
+    verbose = verbose
+  )
 
+  # Generate filenames ---------------------------------------------------------
   filename.gds <- generate_filename(
     name.shortcut = filename,
     path.folder = path.folder,
@@ -937,7 +947,7 @@ tidy_dart <- function(
               "REPRODUCIBILITY")
     info.type <- c("c", "c", "i", "d", "d", "d", "d", "c", "d", "d")
   }
-  want <- tibble::data_frame(INFO = info, COL_TYPE = info.type) %>%
+  want <- tibble::tibble(INFO = info, COL_TYPE = info.type) %>%
     dplyr::bind_rows(
       dplyr::select(strata.df, INFO = TARGET_ID) %>%
         dplyr::mutate(
@@ -992,7 +1002,7 @@ tidy_dart <- function(
                     "SEQUENCE"),
     vectorize_all = FALSE)
 
-  if (!tibble::has_name(input, "LOCUS") && tibble::has_name(input, "CLONEID")) {
+  if (!rlang::has_name(input, "LOCUS") && rlang::has_name(input, "CLONEID")) {
     colnames(input) <- stringi::stri_replace_all_fixed(
       str = colnames(input),
       pattern = "CLONEID",
@@ -1000,15 +1010,15 @@ tidy_dart <- function(
       vectorize_all = FALSE)
   }
 
-  if (tibble::has_name(input, "LOCUS") && tibble::has_name(input, "CLONEID")) {
+  if (rlang::has_name(input, "LOCUS") && rlang::has_name(input, "CLONEID")) {
     input <- dplyr::select(input, -CLONEID)
   }
 
-  if (!tibble::has_name(input, "LOCUS")) rlang::abort("\nProblem tidying DArT dataset: contact author")
+  if (!rlang::has_name(input, "LOCUS")) rlang::abort("\nProblem tidying DArT dataset: contact author")
 
   # necessary steps...observed with DArT file using ref genome -----------------
   input %<>% dplyr::filter(!is.na(LOCUS))
-  if (tibble::has_name(input, "POS")) {
+  if (rlang::has_name(input, "POS")) {
     input %<>% dplyr::arrange(LOCUS, POS)
   } else {
     input %<>% dplyr::arrange(LOCUS)
@@ -1034,7 +1044,7 @@ tidy_dart <- function(
     remove.list <- c("LOCUS", "SNP", "POS", "CALL_RATE", "AVG_COUNT_REF",
                      "AVG_COUNT_SNP", "REP_AVG")
   }
-  individuals.df <- tibble::data_frame(
+  individuals.df <- tibble::tibble(
     INDIVIDUALS = purrr::discard(.x = colnames(input),
                                  .p = colnames(input) %in% remove.list))
   duplicate.individuals <- length(individuals.df$INDIVIDUALS) - length(unique(individuals.df$INDIVIDUALS))
@@ -1070,34 +1080,39 @@ tidy_dart <- function(
 
   # Whitelist ------------------------------------------------------------------
   if (!is.null(whitelist.markers)) {
-    if (is.vector(whitelist.markers)) {
-      whitelist.markers <- readr::read_tsv(
-        file = whitelist.markers,
-        col_names = TRUE,
-        col_types = readr::cols(.default = readr::col_character()))
-    }
-    columns.names.whitelist <- colnames(whitelist.markers)
-    nrow.before <- nrow(whitelist.markers)
-    whitelist.markers <- dplyr::distinct(whitelist.markers)
-    nrow.after <- nrow(whitelist.markers)
-    duplicate.whitelist.markers <- nrow.before - nrow.after
-    if (duplicate.whitelist.markers > 0) {
-      message("Whitelist of markers with ", duplicate.whitelist.markers, " duplicated identifiers...")
-      message("    Creating unique whitelist")
-      message("    Warning: downstream results might be impacted by this, check how you made your VCF file...")
-    }
-    nrow.before <- duplicate.whitelist.markers <- NULL
+    input <- filter_whitelist(
+      data = input, whitelist.markers = whitelist.markers)
+  }
 
-    whitelist.markers <- dplyr::mutate_all(
-      .tbl = whitelist.markers, .funs = clean_markers_names)
-
-    if (verbose) message("Filtering with whitelist of markers")
-    if (verbose) message("    Whitelisted markers: ", nrow.after)
-    nrow.after <- NULL
-    input <- suppressWarnings(
-      dplyr::semi_join(input, whitelist.markers, by = columns.names.whitelist)
-    )
-  }#End filtering DArT with whitelist of markers
+  # if (!is.null(whitelist.markers)) {
+  #   if (is.vector(whitelist.markers)) {
+  #     whitelist.markers <- readr::read_tsv(
+  #       file = whitelist.markers,
+  #       col_names = TRUE,
+  #       col_types = readr::cols(.default = readr::col_character()))
+  #   }
+  #   columns.names.whitelist <- colnames(whitelist.markers)
+  #   nrow.before <- nrow(whitelist.markers)
+  #   whitelist.markers <- dplyr::distinct(whitelist.markers)
+  #   nrow.after <- nrow(whitelist.markers)
+  #   duplicate.whitelist.markers <- nrow.before - nrow.after
+  #   if (duplicate.whitelist.markers > 0) {
+  #     message("Whitelist of markers with ", duplicate.whitelist.markers, " duplicated identifiers...")
+  #     message("    Creating unique whitelist")
+  #     message("    Warning: downstream results might be impacted by this, check how you made your VCF file...")
+  #   }
+  #   nrow.before <- duplicate.whitelist.markers <- NULL
+  #
+  #   whitelist.markers <- dplyr::mutate_all(
+  #     .tbl = whitelist.markers, .funs = clean_markers_names)
+  #
+  #   if (verbose) message("Filtering with whitelist of markers")
+  #   if (verbose) message("    Whitelisted markers: ", nrow.after)
+  #   nrow.after <- NULL
+  #   input <- suppressWarnings(
+  #     dplyr::semi_join(input, whitelist.markers, by = columns.names.whitelist)
+  #   )
+  # }#End filtering DArT with whitelist of markers
 
   # DArT characteristics--------------------------------------------------------
   # Determine the type of DArT file: 1 or 2-row format (binary)
@@ -1127,7 +1142,7 @@ tidy_dart <- function(
           variable.name = "TARGET_ID", variable.factor = FALSE,
           value.name = "GT"
         ) %>%
-        tibble::as_data_frame(.)
+        tibble::as_tibble(.)
     )
 
     # markers metadata
@@ -1307,12 +1322,12 @@ tidy_dart <- function(
   if (!is.null(write.tidy)) {
     # Strata file to include populations ----------------------------------------
     # To make sure target ids match
-    input <- dplyr::left_join(input, strata.df, by = "TARGET_ID") %>%
+    input %<>% dplyr::left_join(strata.df, by = "TARGET_ID") %>%
       dplyr::select(-TARGET_ID)
     strata.df <- NULL
 
-    if (tibble::has_name(input, "STRATA")) {
-      input <- dplyr::rename(input, POP_ID = STRATA)
+    if (rlang::has_name(input, "STRATA")) {
+      input %<>% dplyr::rename(POP_ID = STRATA)
     }
 
     # Erase genotypes ------------------------------------------------------------
@@ -1321,30 +1336,30 @@ tidy_dart <- function(
       missing <- radiator::read_rad(data = missing.memory) %>%
         dplyr::arrange(MARKERS, INDIVIDUALS)
 
-      input <- dplyr::arrange(input, MARKERS, INDIVIDUALS)
+      input %<>% dplyr::arrange(MARKERS, INDIVIDUALS)
 
       #check identical markers
       same.markers <- identical(unique(missing$MARKERS), unique(input$MARKERS))
       same.individuals<- identical(unique(missing$INDIVIDUALS), unique(input$INDIVIDUALS))
       if (!same.markers || !same.individuals) {
         message("note: data and missing memory don't share all the same markers and/or individuals")
-        input <- dplyr::left_join(input, missing, by = c("MARKERS", "INDIVIDUALS"))
+        input %<>% dplyr::left_join(missing, by = c("MARKERS", "INDIVIDUALS"))
         #%>% dplyr::mutate(ERASE = replace(ERASE, which(is.na(ERASE)), FALSE))
         input$ERASE[is.na(input$ERASE)] <- FALSE # faster
         which.missing <- which(input$ERASE)
-        input <- dplyr::select(input, -ERASE)
+        input %<>% dplyr::select(-ERASE)
       } else {
         which.missing <- which(missing$ERASE)
       }
 
       message("Erasing genotypes and genotypes metadata...")
-      if (tibble::has_name(input, "GT_BIN")) input$GT_BIN[which.missing] <- NA
-      if (tibble::has_name(input, "GT")) input$GT[which.missing] <- "000000"
-      if (tibble::has_name(input, "GT_VCF")) input$GT_VCF[which.missing] <- "./."
-      if (tibble::has_name(input, "GT_VCF_NUC")) input$GT_VCF_NUC[which.missing] <- "./."
-      if (tibble::has_name(input, "READ_DEPTH")) input$READ_DEPTH[which.missing] <- NA
-      if (tibble::has_name(input, "ALLELE_REF_DEPTH")) input$ALLELE_REF_DEPTH[which.missing] <- NA
-      if (tibble::has_name(input, "ALLELE_ALT_DEPTH")) input$ALLELE_ALT_DEPTH[which.missing] <- NA
+      if (rlang::has_name(input, "GT_BIN")) input$GT_BIN[which.missing] <- NA
+      if (rlang::has_name(input, "GT")) input$GT[which.missing] <- "000000"
+      if (rlang::has_name(input, "GT_VCF")) input$GT_VCF[which.missing] <- "./."
+      if (rlang::has_name(input, "GT_VCF_NUC")) input$GT_VCF_NUC[which.missing] <- "./."
+      if (rlang::has_name(input, "READ_DEPTH")) input$READ_DEPTH[which.missing] <- NA
+      if (rlang::has_name(input, "ALLELE_REF_DEPTH")) input$ALLELE_REF_DEPTH[which.missing] <- NA
+      if (rlang::has_name(input, "ALLELE_ALT_DEPTH")) input$ALLELE_ALT_DEPTH[which.missing] <- NA
     }
 
     # Writing tidy data ----------------------------------------------------------
@@ -1398,6 +1413,7 @@ tidy_dart <- function(
       readr::write_tsv(x = ., path = strata.filename$filename)
     if (verbose) message("File written: ", strata.filename$filename.short)
   }
+
   # Results --------------------------------------------------------------------
   if (verbose) {
     n.pop <- length(unique(strata$STRATA))
@@ -1523,7 +1539,7 @@ dart2gt <- function(x, dart.format, write.tidy = "full", gds = FALSE) {
         variable.name = "TARGET_ID", variable.factor = FALSE,
         value.name = "ALLELE_ALT_DEPTH"
       ) %>%
-      tibble::as_data_frame(.) %>%
+      tibble::as_tibble(.) %>%
       dplyr::arrange(MARKERS, TARGET_ID)
 
     x %<>% dplyr::filter(TEMP == 2) %>%
@@ -1536,7 +1552,7 @@ dart2gt <- function(x, dart.format, write.tidy = "full", gds = FALSE) {
         variable.name = "TARGET_ID", variable.factor = FALSE,
         value.name = "ALLELE_REF_DEPTH"
       ) %>%
-      tibble::as_data_frame(.) %>%
+      tibble::as_tibble(.) %>%
       dplyr::arrange(MARKERS, TARGET_ID) %>%
       dplyr::select(ALLELE_REF_DEPTH) %>%
       dplyr::bind_cols(x.alt) %>%

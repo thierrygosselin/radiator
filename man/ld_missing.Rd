@@ -5,8 +5,9 @@
 \title{Prune dataset based on LD and missingness.}
 \usage{
 ld_missing(wl, data, ld.threshold = seq(0.1, 0.9, by = 0.1),
-  ld.method = "r2", ld.figures = TRUE, path.folder = NULL,
-  parallel.core = parallel::detectCores() - 1, verbose = TRUE)
+  denovo = NULL, ld.method = "r2", ld.figures = TRUE,
+  path.folder = NULL, parallel.core = parallel::detectCores() - 1,
+  verbose = TRUE)
 }
 \arguments{
 \item{wl}{The split dataset by chromosome.}
@@ -14,6 +15,8 @@ ld_missing(wl, data, ld.threshold = seq(0.1, 0.9, by = 0.1),
 \item{data}{The GDS object.}
 
 \item{ld.threshold}{The LD threshold.}
+
+\item{denovo}{de novo data or not ? (logical).}
 
 \item{ld.method}{The method to compute LD.}
 

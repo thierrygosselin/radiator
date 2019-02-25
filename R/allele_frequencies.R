@@ -48,7 +48,7 @@ allele_frequencies <- function(data, verbose = TRUE) {
   }
 
   # check genotype column naming
-  if (tibble::has_name(input, "GENOTYPE")) {
+  if (rlang::has_name(input, "GENOTYPE")) {
     colnames(input) <- stringi::stri_replace_all_fixed(
       str = colnames(input),
       pattern = "GENOTYPE",
@@ -57,11 +57,11 @@ allele_frequencies <- function(data, verbose = TRUE) {
   }
 
   # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-  if (tibble::has_name(input, "LOCUS") && !tibble::has_name(input, "MARKERS")) {
+  if (rlang::has_name(input, "LOCUS") && !rlang::has_name(input, "MARKERS")) {
     input <- dplyr::rename(.data = input, MARKERS = LOCUS)
   }
 
-  if (tibble::has_name(input, "CHROM")) {
+  if (rlang::has_name(input, "CHROM")) {
     metadata.markers <- dplyr::distinct(input, MARKERS, CHROM, LOCUS, POS)
     metadata <- TRUE
   } else {
@@ -101,7 +101,7 @@ allele_frequencies <- function(data, verbose = TRUE) {
 
   maf.global <- dplyr::distinct(.data = maf, MARKERS, MAF_GLOBAL)
 
-  if (tibble::has_name(input, "GT_VCF")) {
+  if (rlang::has_name(input, "GT_VCF")) {
 
     freq <- maf %>%
       dplyr::mutate(FREQ_REF = 1 - MAF_LOCAL) %>%
@@ -119,7 +119,7 @@ allele_frequencies <- function(data, verbose = TRUE) {
     freq.mat <- suppressWarnings(
       freq.wide %>%
         tibble::remove_rownames(df = .) %>%
-        tibble::column_to_rownames(df = ., var = "POP_ID") %>%
+        tibble::column_to_rownames(.data = ., var = "POP_ID") %>%
         as.matrix(.)
     )
 

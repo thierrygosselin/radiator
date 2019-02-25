@@ -124,7 +124,7 @@
 #' @importFrom readr write_tsv
 #' @importFrom parallel detectCores
 #' @importFrom purrr flatten map
-#' @importFrom tibble as_tibble has_name remove_rownames column_to_rownames
+#' @importFrom tibble as_tibble remove_rownames column_to_rownames
 #' @importFrom ggplot2 ggplot aes geom_violin geom_boxplot stat_summary labs theme element_blank element_text geom_jitter scale_colour_manual scale_y_reverse theme_light ggsave
 
 
@@ -312,7 +312,7 @@ detect_duplicate_genomes <- function(
 
 
 
-      if (tibble::has_name(data, "GT_BIN")) {
+      if (rlang::has_name(data, "GT_BIN")) {
         gt.field <- "GT_BIN"
       } else {
         gt.field <- "GT"
@@ -322,7 +322,7 @@ detect_duplicate_genomes <- function(
       data <- suppressWarnings(dplyr::select(data, dplyr::one_of(want)))
 
       # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-      if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
+      if (rlang::has_name(data, "LOCUS") && !rlang::has_name(data, "MARKERS")) {
         data <- dplyr::rename(.data = data, MARKERS = LOCUS)
       }
 
@@ -1061,7 +1061,7 @@ genome_similarity <- function(
         ID2_STRATA = unique(data$POP_ID[data$INDIVIDUALS == ID2])
       )
 
-    if (tibble::has_name(data, "GT_BIN")) {
+    if (rlang::has_name(data, "GT_BIN")) {
       # genotypes & markers
       id1.data <- dplyr::filter(.data = data, INDIVIDUALS %in% res$genome.comparison$ID1) %>%
         dplyr::select(-INDIVIDUALS, -POP_ID) %>% dplyr::arrange(MARKERS)
@@ -1243,7 +1243,7 @@ remove_duplicates <- function(
   dup.filtered <- suppressWarnings(suppressMessages(readr::read_tsv(data))) %>%
     dplyr::mutate(ID1 = as.character(ID1), ID2 = as.character(ID2))
 
-  if (tibble::has_name(dup.filtered, "DISTANCE_RELATIVE")) {
+  if (rlang::has_name(dup.filtered, "DISTANCE_RELATIVE")) {
     dup.filtered <- dup.filtered %>%
       dplyr::filter(DISTANCE_RELATIVE < dup.threshold)
   } else {

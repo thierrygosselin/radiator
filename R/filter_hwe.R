@@ -272,6 +272,7 @@ filter_hwe <- function(
     # verbose = TRUE
     # path.folder <- wf
     # parameters = filters.parameters
+    # internal <- FALSE
 
     # required package
     if (!requireNamespace("HardyWeinberg", quietly = TRUE)) {
