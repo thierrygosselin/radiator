@@ -2,23 +2,13 @@
 
 #' @name private_alleles
 #' @title Find private alleles
-#' @description The function uses a tidy genomic data frame
+#' @description The function highlight private alleles by strata, using a GDS or tidy file or object.
 
-#' @param data A tidy data frame object in the global environment or
-#' a tidy data frame in wide or long format in the working directory.
-#' \emph{How to get a tidy data frame ?}
-#' Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
-
-#' @param strata (optional)
-#' The strata file is a tab delimited file (in directory or global environment)
-#' with 2 columns headers:
-#' \code{INDIVIDUALS} and \code{STRATA}.
-#' The \code{STRATA} column can be any hierarchical grouping.
-#' The default uses the grouping in the dataset.
-#' Default: \code{strata = NULL}.
+#' @inheritParams read_strata
+#' @inheritParams radiator_common_arguments
 
 #' @return A list with an object highlighting private alleles by markers and strata and
-#' a second object with private alleles summary by strata.
+#' a second object with private alleles summarized by strata.
 
 #' @examples
 #' \dontrun{
@@ -29,81 +19,128 @@
 
 #' @rdname private_alleles
 #' @export
-#'
-#' @importFrom stringi stri_replace_all_regex stri_join stri_replace_all_fixed
-#' @importFrom dplyr n_distinct select left_join distinct mutate group_by ungroup filter tally arrange rename one_of
-#' @importFrom tidyr gather separate
-#' @importFrom readr write_tsv read_tsv cols col_character
-
 
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
-private_alleles <- function(data, strata = NULL) {
-  cat("#######################################################################\n")
-  cat("####################### radiator::private_alleles #####################\n")
-  cat("#######################################################################\n")
-  timing <- proc.time()
+private_alleles <- function(data, strata = NULL, verbose = TRUE) {
+  if (verbose) {
+    cat("################################################################################\n")
+    cat("########################## radiator::private_alleles ###########################\n")
+    cat("################################################################################\n")
+  }
+
+
+  # Cleanup---------------------------------------------------------------------
+  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
+  if (verbose) message("Execution date/time: ", file.date)
+  old.dir <- getwd()
   opt.change <- getOption("width")
   options(width = 70)
+  timing <- proc.time()# for timing
+  res <- list()
+  #back to the original directory and options
+  on.exit(setwd(old.dir), add = TRUE)
+  on.exit(options(width = opt.change), add = TRUE)
+  on.exit(timing <- proc.time() - timing, add = TRUE)
+  on.exit(if (verbose) message("\nComputation time, overall: ", round(timing[[3]]), " sec"), add = TRUE)
+  on.exit(if (verbose) cat("########################## completed private_alleles ###########################\n"), add = TRUE)
+
+  # Checking for missing and/or default arguments ------------------------------
+  if (missing(data)) rlang::abort("Input file missing")
+
+  # Detect format --------------------------------------------------------------
+  data.type <- radiator::detect_genomic_format(data)
+  if (!data.type %in% c("tbl_df", "fst.file", "SeqVarGDSClass", "gds.file")) {
+    rlang::abort("Input not supported for this function: read function documentation")
+  }
 
   # Import data ---------------------------------------------------------------
-  if (missing(data)) rlang::abort("Input file missing")
-  if (missing(strata)) rlang::abort("Strata file missing")
+  if (verbose) message("Importing data ...")
+  if (data.type %in% c("tbl_df", "fst.file")) {
+    if (is.vector(data)) data <- radiator::tidy_wide(data, import.metadata = TRUE)
+    data.type <- "tbl_df"
 
-  if (is.vector(data)) {
-    data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-  }
-
-  if (!is.null(strata)) {
-    if (is.vector(strata)) {
-      strata <- readr::read_tsv(file = strata,  col_types = readr::cols(.default = readr::col_character()))
+    if (is.null(strata)) {
+      if (rlang::has_name(data, "POP_ID") || rlang::has_name(data, "STRATA")) {
+        if (rlang::has_name(data, "POP_ID")) data %<>% dplyr::rename(STRATA = POP_ID)
+        strata <- generate_strata(data = data)
+      } else {
+        rlang::abort("strata required and if not provided a STRATA or POP_ID column in the data...")
+      }
+    } else {
+      strata <- read_strata(strata = strata) %$% strata
+      data %<>% join_strata(data = ., strata = strata)
     }
 
-    colnames(strata) <- stringi::stri_replace_all_fixed(
-      str = colnames(strata),
-      pattern = "POP_ID",
-      replacement = "STRATA",
-      vectorize_all = FALSE)
+    if (rlang::has_name(data, "GT_VCF_NUC")) {
+      private <- dplyr::filter(data, GT_VCF_NUC != "./.") %>%
+        dplyr::distinct(STRATA, MARKERS, GT_VCF_NUC) %>%
+        separate_gt(x = ., exclude = c("MARKERS", "STRATA")) %>%
+        dplyr::select(-ALLELE_GROUP, ALLELE = HAPLOTYPES) %>%
+        dplyr::distinct(MARKERS, STRATA, ALLELE)
+    } else if (rlang::has_name(data, "GT")) {
+      private <- dplyr::filter(data, GT != "000000") %>%
+        dplyr::distinct(STRATA, MARKERS, GT) %>%
+        separate_gt(x = ., sep = 3, gt = "GT",exclude = c("MARKERS", "STRATA")) %>%
+        dplyr::select(-ALLELE_GROUP, ALLELE = HAPLOTYPES) %>%
+        dplyr::distinct(MARKERS, STRATA, ALLELE)
+    } else {
+      # work with GT_BIN
+      private <- dplyr::filter(data, !is.na(GT_BIN)) %>%
+        dplyr::distinct(STRATA, MARKERS, GT_BIN) %>%
+        dplyr::mutate(
+          ALLELE = dplyr::case_when(
+            GT_BIN == 0 ~ "REFREF",
+            GT_BIN == 1 ~ "REFALT",
+            GT_BIN == 2 ~ "ALTALT"
+          ),
+          GT_BIN = NULL
+        ) %>%
+        separate_gt(x = ., sep = 3, gt = "ALLELE", exclude = c("MARKERS", "STRATA")) %>%
+        dplyr::select(-ALLELE_GROUP, ALLELE = HAPLOTYPES) %>%
+        dplyr::distinct(MARKERS, STRATA, ALLELE)
+    }
+  }
 
-    # Remove potential whitespace in pop_id
-    strata$STRATA <- radiator::clean_pop_names(strata$STRATA)
-
-    # clean ids
-    strata$INDIVIDUALS <- radiator::clean_ind_names(strata$INDIVIDUALS)
-
-    data <- suppressWarnings(
-      dplyr::ungroup(data) %>%
-        dplyr::select(-dplyr::one_of(c("POP_ID", "STRATA"))) %>%
-        dplyr::left_join(strata, by = "INDIVIDUALS")
+  if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
+    if (!"SeqVarTools" %in% utils::installed.packages()[,"Package"]) {
+      rlang::abort('Please install SeqVarTools for this option:\n
+                   install.packages("BiocManager")
+                   BiocManager::install("SeqVarTools")')
+    }
+    if (data.type == "gds.file") {
+      data <- radiator::read_rad(data, verbose = verbose)
+      data.type <- "SeqVarGDSClass"
+    }
+    strata <- extract_individuals(
+      gds = data, ind.field.select = c("INDIVIDUALS", "STRATA")
     )
-  } else {
-    colnames(data) <- stringi::stri_replace_all_fixed(
-      str = colnames(data),
-      pattern = "POP_ID",
-      replacement = "STRATA",
-      vectorize_all = FALSE)
-  }
+    private <- SeqVarTools::getGenotypeAlleles(
+      gdsobj = data, use.names = TRUE) %>%
+      magrittr::set_colnames(
+        x = .,
+        value = extract_markers_metadata(
+          gds = data, markers.meta.select = "MARKERS"
+        ) %$%
+          MARKERS
+      ) %>%
+      tibble::as_tibble(x = ., rownames = "INDIVIDUALS") %>%
+      data.table::as.data.table(.) %>%
+      data.table::melt.data.table(
+        data = .,
+        id.vars = "INDIVIDUALS",
+        variable.name = "MARKERS",
+        value.name = "GT_VCF_NUC",
+        variable.factor = FALSE) %>%
+      tibble::as_tibble(.) %>%
+      separate_gt(x = ., exclude = c("MARKERS", "INDIVIDUALS")) %>%
+      dplyr::select(-ALLELE_GROUP, ALLELE = HAPLOTYPES)
 
-
- data <- dplyr::filter(data, GT != "000000") %>%
-    dplyr::distinct(STRATA, MARKERS, GT, .keep_all = TRUE)
-
-  if (tibble::has_name(data, "GT_VCF_NUC")) {
-    private <- dplyr::distinct(data, STRATA, MARKERS, GT_VCF_NUC) %>%
-      tidyr::separate(data = ., col = GT_VCF_NUC, into = c("A1", "A2"), sep = "/") %>%
-      tidyr::gather(data = ., key = GROUP, value = ALLELE, -c(MARKERS, STRATA)) %>%
-      dplyr::select(-GROUP) %>%
-      dplyr::distinct(MARKERS, STRATA, ALLELE)
-  } else {
-    private <- dplyr::distinct(data, STRATA, MARKERS, GT) %>%
-      dplyr::mutate(
-        A1 = stringi::stri_sub(GT, 1, 3),
-        A2 = stringi::stri_sub(GT, 4, 6)) %>%
-      dplyr::select(-GT) %>%
-      tidyr::gather(data = ., key = GROUP, value = ALLELE, -c(MARKERS, STRATA)) %>%
-      dplyr::select(-GROUP) %>%
+    private %<>%
+      join_strata(data = ., strata = strata, verbose = FALSE) %>%
       dplyr::distinct(MARKERS, STRATA, ALLELE)
   }
+
   data <- NULL
   private.search <- private %>%
     dplyr::group_by(MARKERS, ALLELE) %>%
@@ -124,18 +161,15 @@ private_alleles <- function(data, strata = NULL) {
     dplyr::rename(PRIVATE_ALLELES = n) %>%
     readr::write_tsv(x = ., path = "private.alleles.summary.tsv")
 
- if(nrow(private.summary) > 0) {
-   message("Number of private alleles per strata:")
-   priv.message <- dplyr::mutate(private.summary, PRIVATE = stringi::stri_join(STRATA, PRIVATE_ALLELES, sep = " = "))
-   message(stringi::stri_join(priv.message$PRIVATE, collapse = "\n"))
-   res <- list(private.alleles = private.search, private.alleles.summary = private.summary)
- } else {
-   message("Private allele(s) found: 0")
-   res <- "0 private allele"
- }
+  if(nrow(private.summary) > 0) {
+    message("Number of private alleles per strata:")
+    priv.message <- dplyr::mutate(private.summary, PRIVATE = stringi::stri_join(STRATA, PRIVATE_ALLELES, sep = " = "))
+    message(stringi::stri_join(priv.message$PRIVATE, collapse = "\n"))
+    res <- list(private.alleles = private.search, private.alleles.summary = private.summary)
+  } else {
+    message("Private allele(s) found: 0")
+    res <- "0 private allele"
+  }
 
-  message("\nComputation time: ", round((proc.time() - timing)[[3]]), " sec")
-  cat("############################## completed ##############################\n")
-  options(width = opt.change)
   return(res)
 }#End private_alleles

@@ -484,13 +484,7 @@ write_seqarray <- function(
   radiator.gds <- radiator_gds_skeleton(gds)
 
   # source
-  gdsfmt::add.gdsn(
-    node = radiator.gds,
-    name = "source",
-    val = source,
-    replace = TRUE,
-    compress = "ZIP_RA",
-    closezip = TRUE)
+  update_radiator_gds(gds = gds, node.name = "source", value = source)
 
   # Blacklist of individuals: generate
   bl.i <- update_bl_individuals(gds = gds, generate = TRUE)
@@ -499,14 +493,6 @@ write_seqarray <- function(
 
   # bi- or multi-alllelic VCF --------------------------------------------------
   biallelic <- detect_biallelic_markers(data = gds, verbose = verbose)
-
-  # Strata ---------------------------------------------------------------------
-  strata <- radiator::read_strata(
-    strata = strata,
-    pop.levels = pop.levels,
-    pop.labels = pop.labels,
-    pop.select = pop.select,
-    blacklist.id = blacklist.id) %$% strata
 
   # clean sample id in VCF -----------------------------------------------------
   individuals.vcf <- tibble::tibble(
@@ -517,7 +503,7 @@ write_seqarray <- function(
     if (verbose) message("Cleaning VCF's sample names")
     clean.id.filename <- stringi::stri_join("cleaned.vcf.id.info_", file.date, ".tsv")
     readr::write_tsv(x = individuals.vcf,
-                     path = stringi::stri_join(path.folder, "/", clean.id.filename))
+                     path = file.path(path.folder, clean.id.filename))
     gdsfmt::add.gdsn(
       node = radiator.gds,
       name = "id.clean",
@@ -540,24 +526,27 @@ write_seqarray <- function(
   individuals <- dplyr::select(individuals.vcf, INDIVIDUALS = INDIVIDUALS_CLEAN)
 
   # Add a individuals node
-  gdsfmt::add.gdsn(
-    node = radiator.gds,
-    name = "individuals",
-    val = individuals,
-    replace = TRUE,
-    compress = "ZIP_RA",
-    closezip = TRUE)
-
+  update_radiator_gds(gds = gds, node.name = "individuals", value = individuals)
 
   # Sync id in STRATA and VCF --------------------------------------------------
+  # Strata ---------------------------------------------------------------------
+  strata <- radiator::read_strata(
+    strata = strata,
+    pop.levels = pop.levels,
+    pop.labels = pop.labels,
+    pop.select = pop.select,
+    blacklist.id = blacklist.id) %$% strata
+
   if (!is.null(strata)) {
-    if (verbose) message("Synchronizing VCF's samples and strata...")
+    if (verbose) message("Synchronizing samples in VCF and strata...")
+
+    strata %<>% dplyr::filter(INDIVIDUALS %in% individuals.vcf$INDIVIDUALS_CLEAN)
     bl <- individuals.vcf %>%
       dplyr::filter(!INDIVIDUALS_CLEAN %in% strata$INDIVIDUALS) %>%
       dplyr::select(INDIVIDUALS = INDIVIDUALS_CLEAN) %>%
       dplyr::distinct(INDIVIDUALS) %>%
       dplyr::mutate(FILTER = "blacklisted by strata")
-    strata %<>% dplyr::filter(INDIVIDUALS %in% individuals.vcf$INDIVIDUALS_CLEAN)
+    # strata %<>% dplyr::filter(INDIVIDUALS %in% individuals.vcf$INDIVIDUALS_CLEAN)
     if (nrow(strata) == 0) {
       rlang::abort("No more individuals in your data, check VCF and strata ID names...")
     }
@@ -578,14 +567,7 @@ write_seqarray <- function(
   }
 
   #Update GDS node
-  gdsfmt::add.gdsn(
-    node = radiator.gds,
-    name = "individuals",
-    val = individuals,
-    replace = TRUE,
-    compress = "ZIP_RA",
-    closezip = TRUE)
-
+  update_radiator_gds(gds = gds, node.name = "individuals", value = individuals)
 
   # Markers metadata  ----------------------------------------------------------
   markers.meta <- extract_markers_metadata(
@@ -682,13 +664,14 @@ write_seqarray <- function(
     )
 
   # ADD MARKERS META to GDS
-  suppressWarnings(gdsfmt::add.gdsn(
-    node = radiator.gds,
-    name = "markers.meta",
-    val = markers.meta,
-    replace = TRUE,
-    compress = "ZIP_RA",
-    closezip = TRUE))
+  update_radiator_gds(gds = gds, node.name = "markers.meta", value = markers.meta)
+  # suppressWarnings(gdsfmt::add.gdsn(
+  #   node = radiator.gds,
+  #   name = "markers.meta",
+  #   val = markers.meta,
+  #   replace = TRUE,
+  #   compress = "ZIP_RA",
+  #   closezip = TRUE))
 
   # replace chromosome info in GDS
   # Why ? well snp ld e.g. will otherwise be performed by chromosome and with de novo data = by locus...
@@ -843,15 +826,7 @@ write_seqarray <- function(
       # check <- markers.meta
 
       # Update GDS
-      gdsfmt::add.gdsn(
-        node = radiator.gds,
-        name = "markers.meta",
-        val = markers.meta,
-        replace = TRUE,
-        compress = "ZIP_RA",
-        closezip = TRUE)
-      sync_gds(gds = gds, markers = markers.meta$VARIANT_ID)
-
+      update_radiator_gds(gds = gds, node.name = "markers.meta", value = markers.meta, sync = TRUE)
 
       # Filter parameter file: update
       filters.parameters <- radiator_parameters(

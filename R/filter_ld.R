@@ -1179,7 +1179,7 @@ ld_missing <- function(
         method = ld.m,
         num.thread = parallel.core.temp,
         with.id = TRUE,
-        verbose = TRUE) %$%
+        verbose = FALSE) %$%
         LD %>%
         magrittr::set_colnames(x = ., x$MARKERS) %>%
         magrittr::set_rownames(x = ., x$MARKERS)

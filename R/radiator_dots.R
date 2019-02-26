@@ -70,11 +70,13 @@ radiator_dots <- function(
     "gt", "gt.bin", "gt.vcf", "gt.vcf.nuc",
     "pop.levels", "pop.labels", "pop.select", "blacklist.id",
     "markers.info", "keep.allele.names", "keep.gds", "ref.calibration",
-    "vcf.metadata", "vcf.stats",
+    "vcf.metadata", "vcf.stats", "wide",
     "whitelist.markers",
     "write.tidy",
     "missing.memory",
-    "dart.sequence", "internal", "heatmap.fst"
+    "dart.sequence",
+    "internal",
+    "heatmap.fst"
   ),
   deprecated = c(
     "maf.thresholds",
@@ -88,7 +90,10 @@ radiator_dots <- function(
     "number.snp.reads",
     "mixed.genomes.analysis",
     "duplicate.genomes.analysis",
-    "hierarchical.levels", "imputation.method", "pred.mean.matching", "num.tree"),
+    "hierarchical.levels",
+    "imputation.method",
+    "pred.mean.matching",
+    "num.tree"),
   verbose = TRUE
 ) {
   opt.change <- getOption("width")
@@ -248,7 +253,7 @@ assign_defaults <- function(n, verbose = TRUE, pos = 1) {
   # Arguments that default value is FALSE
   dots.false <- c("keep.allele.names", "ref.calibration", "long.ld.missing",
                   "detect.mixed.genomes", "detect.duplicate.genomes",
-                  "force.stats", "dp", "internal", "heatmap.fst")
+                  "force.stats", "dp", "internal", "heatmap.fst", "wide")
   if (n %in% dots.true) v <- TRUE
   if (n %in% dots.false) v <- FALSE
 

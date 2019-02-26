@@ -18,14 +18,14 @@ radiator_dots(func.name = as.list(sys.call())[[1]], fd = NULL,
   "parameters", "blacklist.genotypes", "erase.genotypes", "gt", "gt.bin",
   "gt.vcf", "gt.vcf.nuc", "pop.levels", "pop.labels", "pop.select",
   "blacklist.id", "markers.info", "keep.allele.names", "keep.gds",
-  "ref.calibration", "vcf.metadata", "vcf.stats", "whitelist.markers",
-  "write.tidy", "missing.memory", "dart.sequence", "internal",
-  "heatmap.fst"), deprecated = c("maf.thresholds", "common.markers",
-  "max.marker", "monomorphic.out", "snp.ld", "filter.call.rate",
-  "filter.markers.coverage", "filter.markers.missing", "number.snp.reads",
-  "mixed.genomes.analysis", "duplicate.genomes.analysis",
-  "hierarchical.levels", "imputation.method", "pred.mean.matching",
-  "num.tree"), verbose = TRUE)
+  "ref.calibration", "vcf.metadata", "vcf.stats", "wide",
+  "whitelist.markers", "write.tidy", "missing.memory", "dart.sequence",
+  "internal", "heatmap.fst"), deprecated = c("maf.thresholds",
+  "common.markers", "max.marker", "monomorphic.out", "snp.ld",
+  "filter.call.rate", "filter.markers.coverage", "filter.markers.missing",
+  "number.snp.reads", "mixed.genomes.analysis",
+  "duplicate.genomes.analysis", "hierarchical.levels", "imputation.method",
+  "pred.mean.matching", "num.tree"), verbose = TRUE)
 }
 \arguments{
 \item{func.name}{Default: \code{as.list(sys.call())[[1]]}.}
