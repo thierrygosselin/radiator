@@ -148,10 +148,11 @@ read_rad <- function(
     if (verbose) message("Setting filters to:")
     if (verbose) message("    number of samples: ", length(w.s))
     if (verbose) message("    number of markers: ", length(w.m))
-    SeqArray::seqSetFilter(object = data,
-                           variant.id = w.m,
-                           sample.id = as.character(w.s),
-                           verbose = FALSE)
+    SeqArray::seqSetFilter(
+      object = data,
+      variant.id = w.m,
+      sample.id = as.character(w.s),
+      verbose = FALSE)
 
     # Checks--------------------------------------------------------------------
     if (check) {

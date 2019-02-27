@@ -99,7 +99,7 @@ filter_common_markers <- function(
     on.exit(if (verbose) message("\nComputation time, overall: ", round(timing[[3]]), " sec"), add = TRUE)
     on.exit(if (verbose) cat("####################### filter_common_markers completed ########################\n"), add = TRUE)
 
-    message("\nKeeping only common markers between strata")
+    # message("\nKeeping only common markers between strata")
 
     # Checking for missing and/or default arguments ------------------------------
     if (missing(data)) rlang::abort("Input file missing")
@@ -346,7 +346,7 @@ filter_common_markers <- function(
 
     # Return -----------------------------------------------------------------------
       if (verbose) cat("################################### RESULTS ####################################\n")
-      message("Filter common markers:")
+      message("\nFilter common markers:")
       message("Number of individuals / strata / chrom / locus / SNP:")
       if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
       message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)

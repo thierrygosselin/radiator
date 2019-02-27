@@ -285,6 +285,7 @@ radiator_gds_skeleton <- function(gds) {
     ),
     .f = update_radiator_gds,
     gds = gds,
+    radiator.gds = TRUE,
     value = NULL,
     replace = FALSE,
     sync = FALSE,
@@ -303,6 +304,7 @@ radiator_gds_skeleton <- function(gds) {
 #' @export
 update_radiator_gds <- function(
   gds,
+  radiator.gds = TRUE,
   node.name,
   value,
   replace = TRUE,
@@ -340,18 +342,28 @@ update_radiator_gds <- function(
         closezip = TRUE)
     }
   } else {
-    radiator.gds <- gdsfmt::index.gdsn(
-      node = gds, path = "radiator", silent = TRUE)
 
-    gdsfmt::add.gdsn(
-      node = radiator.gds,
-      name = node.name,
-      val = value,
-      replace = replace,
-      compress = "ZIP_RA",
-      closezip = TRUE)
+    if (radiator.gds) {
+      radiator.gds <- gdsfmt::index.gdsn(
+        node = gds, path = "radiator", silent = TRUE)
+
+      gdsfmt::add.gdsn(
+        node = radiator.gds,
+        name = node.name,
+        val = value,
+        replace = replace,
+        compress = "ZIP_RA",
+        closezip = TRUE)
+    } else {
+      gdsfmt::add.gdsn(
+        node = gds,
+        name = node.name,
+        val = value,
+        replace = replace,
+        compress = "ZIP_RA",
+        closezip = TRUE)
+    }
   }
-
 
 
   if (sync) {
@@ -712,7 +724,8 @@ summary_gds <- function(gds, verbose = TRUE) {
   n.markers <- length(check$variant.sel[check$variant.sel])
   if (verbose) message("    number of samples: ", n.ind)
   if (verbose) message("    number of markers: ", n.markers)
-  return(res = list(n.ind = n.ind, n.markers = n.markers))
+  invisible(x = list(n.ind = n.ind, n.markers = n.markers))
+  # return(res = list(n.ind = n.ind, n.markers = n.markers))
 }# End summary_gds
 
 # update blacklist of markers---------------------------------------------------
@@ -1084,7 +1097,7 @@ generate_markers_stats <- function (
   filename = NULL,
   fig.filename = NULL,
   plot = TRUE,
-  force.stats = FALSE,
+  force.stats = TRUE,
   subsample = NULL,
   file.date = NULL,
   parallel.core = parallel::detectCores() - 1,

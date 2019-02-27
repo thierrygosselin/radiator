@@ -86,6 +86,17 @@ filter_individuals <- function(
   verbose = TRUE,
   ...
 ) {
+
+  ##TESTS
+  # path.folder <- NULL
+  # parameters <- NULL
+  # id.stats <- NULL
+  # internal <- FALSE
+  # dp <- TRUE
+  # subsample <- NULL
+  # subsample.markers.stats <- NULL
+
+
   if (interactive.filter ||
       !is.null(filter.individuals.missing) ||
       !is.null(filter.individuals.heterozygosity) ||
@@ -109,7 +120,7 @@ filter_individuals <- function(
     on.exit(options(width = opt.change), add = TRUE)
     on.exit(timing <- proc.time() - timing, add = TRUE)
     on.exit(if (verbose) message("\nComputation time, overall: ", round(timing[[3]]), " sec"), add = TRUE)
-    on.exit(if (verbose) cat("################################## completed ###################################\n"), add = TRUE)
+    on.exit(if (verbose) cat("########################### completed filter_individuals #######################\n"), add = TRUE)
 
     # Function call and dotslist -------------------------------------------------
     rad.dots <- radiator_dots(
@@ -117,7 +128,8 @@ filter_individuals <- function(
       fd = rlang::fn_fmls_names(),
       args.list = as.list(environment()),
       dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
-      keepers = c("id.stats", "path.folder", "parameters", "dp", "subsample", "subsample.markers.stats", "internal"),
+      keepers = c("path.folder", "parameters", "internal", "id.stats", "dp",
+                  "subsample", "subsample.markers.stats"),
       verbose = verbose
     )
 
@@ -181,28 +193,35 @@ filter_individuals <- function(
       verbose = verbose)
 
     # stats  ---------------------------------------------------------------------
-    check.mono <- FALSE
+    filter.monomorphic <- FALSE
 
     # Step 1. Visuals ----------------------------------------------------------
     if (interactive.filter) message("\nStep 1. Visualization of samples QC\n")
     if (is.null(id.stats)) {
       if (is.null(subsample)) {
-        if (is.null(subsample.markers.stats)) subsample.markers.stats <- 0.2
+        if (
+          !is.null(filter.individuals.missing) ||
+          !is.null(filter.individuals.coverage.total) ||
+          !is.null(filter.individuals.heterozygosity)
+        ) {
+          subsample.markers.stats <- 1
+        } else {
+          if (is.null(subsample.markers.stats)) subsample.markers.stats <- 0.2
+        }
         variant.id <- SeqArray::seqGetData(
           gdsfile = data, var.name = "variant.id")
         n.markers <- length(variant.id)
-        if (n.markers > 200000) {
+        if (n.markers > 200000 && subsample.markers.stats < 1) {
           variant.select <- sample(
             x = variant.id,
             size = round(subsample.markers.stats * n.markers, 0))
         } else {
-          subsample <- FALSE
+          subsample <- NULL
           variant.select <- NULL
         }
       } else {
-        variant.select <- subsample
+        variant.select <- subsample <- NULL
       }
-
 
       id.stats <- generate_id_stats(
         gds = data,
@@ -213,8 +232,6 @@ filter_individuals <- function(
         parallel.core = parallel.core,
         verbose = verbose)
       print(id.stats$fig)
-      # res$individuals <- id.stats$info %>%
-      #   readr::write_tsv(x = ., path = file.path(path.folder, ind.file))
     }
     # Step 2. Missingness-----------------------------------------------------------------
     if (interactive.filter) {
@@ -244,7 +261,7 @@ The maximum amount of missingness you tolerate for a sample:", minmax = c(0, 1))
 
       if (!purrr::is_double(filter.individuals.missing)) {
         outlier.id.missing <- floor(id.stats$stats$OUTLIERS_HIGH[1]*100)/100
-        message("\nRemoving outliers individuals based on genotyping statistics: ", outlier.id.missing)
+        if (verbose) message("\nRemoving outliers individuals based on genotyping statistics: ", outlier.id.missing)
         filter.individuals.missing <- outlier.id.missing
       } else {
         message("\nRemoving individuals based on genotyping statistics: ", filter.individuals.missing)
@@ -257,8 +274,8 @@ The maximum amount of missingness you tolerate for a sample:", minmax = c(0, 1))
         dplyr::mutate(FILTER = "filter.individuals.missing")
       n.bl <- nrow(bl)
       if (n.bl > 0) {
-        check.mono <- TRUE
-        if (verbose) message("    number of individuals blacklisted based on missing genotypes: ", n.bl)
+        filter.monomorphic <- TRUE
+        # if (verbose) message("    number of individuals blacklisted based on missing genotypes: ", n.bl)
         bl.filename <- stringi::stri_join("blacklist.individuals.missing_", file.date, ".tsv")
         readr::write_tsv(x = bl, path = file.path(path.folder, bl.filename))
         bl.i <- update_bl_individuals(gds = data, update = bl)
@@ -282,7 +299,7 @@ The maximum amount of missingness you tolerate for a sample:", minmax = c(0, 1))
         file.date = file.date,
         verbose = verbose)
 
-      message("Filter individuals based on missingness:")
+      message("\nFilter individuals based on missingness: ", filter.individuals.missing)
       message("Number of individuals / strata / chrom / locus / SNP:")
       if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
       message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
@@ -340,7 +357,7 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
         dplyr::mutate(FILTER = "filter.individuals.heterozygosity")
       n.bl <- nrow(bl)
       if (n.bl > 0) {
-        check.mono <- TRUE
+        filter.monomorphic <- TRUE
 
         if (verbose) message("    number of individuals blacklisted based on heterozygosity: ", n.bl)
         bl.filename <- stringi::stri_join("blacklist.individuals.heterozygosity_", file.date, ".tsv")
@@ -365,7 +382,7 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
         file.date = file.date,
         verbose = verbose)
 
-      message("Filter individuals based on heterozygosity:")
+      message("\nFilter individuals based on heterozygosity: ", paste(het.low, het.high, collapse = " / "))
       message("Number of individuals / strata / chrom / locus / SNP:")
       if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
       message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
@@ -423,7 +440,7 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
           dplyr::mutate(FILTER = "filter.individuals.coverage.total")
         n.bl <- nrow(bl)
         if (n.bl > 0) {
-          check.mono <- TRUE
+          filter.monomorphic <- TRUE
           if (verbose) message("    number of individuals blacklisted based on total coverage: ", n.bl)
           bl.filename <- stringi::stri_join("blacklist.individuals.coverate.total_", file.date, ".tsv")
           readr::write_tsv(x = bl, path = file.path(path.folder, bl.filename))
@@ -447,7 +464,7 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
           file.date = file.date,
           verbose = verbose)
 
-        message("Filter individuals based on total coverage:")
+        message("\nFilter individuals based on total coverage: ", paste(cov.low, cov.high, collapse = " / "))
         message("Number of individuals / strata / chrom / locus / SNP:")
         if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
         message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
@@ -457,15 +474,14 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
     }
 
     # MONOMORPHIC MARKERS --------------------------------------------------
-    if (check.mono) {
-      data <- filter_monomorphic(
-        data = data,
-        parallel.core = parallel.core,
-        verbose = FALSE,
-        parameters = filters.parameters,
-        path.folder = path.folder,
-        internal = TRUE)
-    }
+    data <- filter_monomorphic(
+      data = data,
+      filter.monomorphic = filter.monomorphic,
+      parallel.core = parallel.core,
+      verbose = FALSE,
+      parameters = filters.parameters,
+      path.folder = path.folder,
+      internal = TRUE)
   }#before this one
   return(data)
 }#End filter_individuals

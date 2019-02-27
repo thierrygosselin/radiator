@@ -2,32 +2,26 @@
 % Please edit documentation in R/tidy_vcf.R
 \name{tidy_vcf}
 \alias{tidy_vcf}
-\title{Tidy a vcf file (bi/multi-allelic).}
+\title{Tidy a vcf file (bi and multi-allelic).}
 \usage{
-tidy_vcf(data, strata = NULL, parallel.core = parallel::detectCores() -
-  1, verbose = FALSE, ...)
+tidy_vcf(data, strata = NULL, filename = NULL,
+  parallel.core = parallel::detectCores() - 1, verbose = FALSE, ...)
 }
 \arguments{
-\item{data}{(character string) The VCF SNPs are biallelic or haplotypes.
-
-
-To make the VCF population-ready, you have to use \code{strata} argument.
-\strong{GATK VCF files:} Some VCF have an \code{ID} column filled with \code{.},
-the LOCUS information is all contained along the linkage group in the
-\code{CHROM} column. To make it work with
-\href{https://github.com/thierrygosselin/radiator}{radiator},
-the \code{ID} column is filled with the \code{POS} column info.
-\strong{platypus VCF files:} Some VCF files don't have an ID filed with values,
-here the same thing as GATK VCF files above is done.
-\strong{stacks VCF files:} with \emph{de novo} approaches, the CHROM column is
-filled with "1", the LOCUS column correspond to the CHROM section in stacks VCF and
-the COL column is POS -1. With a reference genome, the ID column in stacks VCF is
-separated into "LOCUS", "COL", "STRANDS".}
+\item{data}{(VCF file, character string) The VCF SNPs are biallelic or haplotypes.
+To make the VCF population-ready, the argument \code{strata} is required.}
 
 \item{strata}{(optional)
 The strata file is a tab delimited file with a minimum of 2 columns headers:
 \code{INDIVIDUALS} and \code{STRATA}. Documented in \code{\link{read_strata}}.
 Default: \code{strata = NULL}.}
+
+\item{filename}{(optional) The function uses \code{\link[fst]{write.fst}},
+to write the tidy data frame in
+the working directory. The file extension appended to
+the \code{filename} provided is \code{.rad}.
+With default: \code{filename = NULL}, the tidy data frame is
+in the global environment only (i.e. not written in the working directory...).}
 
 \item{parallel.core}{(optional) The number of core used for parallel
 execution during import.
@@ -38,126 +32,174 @@ the function is a little more chatty during execution.
 Default: \code{verbose = TRUE}.}
 
 \item{...}{(optional) To pass further argument for fine-tuning the tidying
-(details below).}
+(read below).}
 }
 \value{
-The output in your global environment is a tidy data frame.
+The output in your global environment is a tidy data frame, the GDS file
+generated is in the working directory under the name given during function execution.
 }
 \description{
 Used internally in
 \href{https://github.com/thierrygosselin/radiator}{radiator}
 and might be of interest for users.
-Highly recommended to use \code{\link[radiator]{tidy_genomic_data}} or
-\code{\link[radiator]{genomic_converter}}. Those two functions allows
+Highly recommended to use \code{\link[radiator]{filter_rad}} to reduce
+the number of markers. Advance options below are also available to
 to manipulate and prune the dataset with blacklists and whitelists along
 several other filtering options.
 }
-\details{
-\strong{Advance mode, using \emph{dots-dots-dots ...}}
+\section{VCF file format}{
+
+
+\strong{GATK:} Some VCF have an \code{ID} column filled with \code{.},
+the LOCUS information is all contained along the linkage group in the
+\code{CHROM} column. To make it work with
+\href{https://github.com/thierrygosselin/radiator}{radiator},
+the \code{ID} column is filled with the \code{POS} column info.
+
+\strong{platypus:} Some VCF files don't have an ID filed with values,
+here the same thing as GATK VCF files above is done.
+
+\strong{stacks:} with \emph{de novo} approaches, the CHROM column is
+filled with "1", the LOCUS column correspond to the CHROM section in stacks VCF and
+the COL column is POS -1. With a reference genome, the ID column in stacks VCF is
+separated into "LOCUS", "COL", "STRANDS".
+
+\emph{stacks problem: } current version as some intrinsic problem with
+missing allele depth info, during the tidying process a message will
+highlight the number of genotypes impacted by the problem. When possible, the
+problem is corrected by adding the read depth info into the allele depth field.
+}
+
+\section{Advance mode, using \emph{dots-dots-dots ...}}{
+
+
+The arguments below are not available using code completion (e.g. with TAB),
+consequently any misspelling will generate an error or be ignored.
+
+\emph{dots-dots-dots ...} arguments names and values are reported and written
+in the working directory when \code{internal = FALSE} and \code{verbose = TRUE}.
+
+\strong{General arguments: }
 \enumerate{
-\item \code{whitelist.markers: }documented in \code{\link[radiator]{tidy_genomic_data}}
-\item \code{blacklist.id: }documented in \code{\link[radiator]{tidy_genomic_data}}
-\item \code{pop.select: }documented in \code{\link[radiator]{tidy_genomic_data}}
-\item \code{pop.levels: }documented in \code{\link[radiator]{tidy_genomic_data}}
-\item \code{pop.labels: }documented in \code{\link[radiator]{tidy_genomic_data}}
-\item \code{ref.calibration: } (optional, logical)
-Default: \code{ref.calibration = FALSE}.
-REF/ALT alleles are designated based on count.
-The allele with the higher overall count is called REF.
-When the count for REF/ALT alleles is equal, the REF allele is chosen randomly.
-REF/ALT designation can change when individuals are blacklisted.
-If individuals are blacklisted by
-internal filters inside this function the argument is turned on automatically.
-If you removed individuals in another software that doesn't check this, force
-the calibration of REF/ALT alleles: \code{ref.calibration = TRUE}.
-\item \code{vcf.stats: } (optional, logical) Generates individuals and markers important statistics
-helpful for filtering. These are very fast to generate and because computational
-cost is minimal, even for huge VCFs, the default is \code{vcf.stats = TRUE}.
-\item \code{vcf.metadata: } (optional, logical or character string)
-With \code{vcf.metadata = FALSE}, only the genotypes are kept (GT field).
-With \code{vcf.metadata = TRUE},
-all the metadata contained in the \code{FORMAT} field will be kept in
-the tidy data file. radiator is currently keeping/cleaning only these metadata:
-\code{"DP", "AD", "GL", "PL", "GQ", "HQ", "GOF", "NR", "NV"}.
-e.g. you only wnat AD and PL, \code{vcf.metadata = c("AD", "PL")}.
-If yours is not in the list, submit a request.
-Default: \code{vcf.metadata = TRUE}.
-\item \code{filter.common.markers}: (logical) Default: code{filter.common.markers = TRUE}.
-Detailed in \code{\link[radiator]{tidy_genomic_data}}.
-\item \code{filter.mac}: (integer) To blacklist markers below a specific MAC
-(calculated overall).
-\item \code{filter.coverage.outliers}: (logical) To blacklist markers with low and
-high coverage based on outlier statistics.
-\item \code{filter.markers.missing}: (integer) To blacklist markers with too
-many missing data. e.g. \code{filter.markers.missing = 10}, will only keep
-markers with missing rate <= to 10%.
-\item \code{filter.snp.read.position}: 3 options available, \code{"outliers", "q75", "iqr"}.
-This argument will blacklist markers based on it's position on the read.
-\code{filter.snp.read.position = "outliers"}, will remove markers based
-on outlier statistics of the position on the reads. e.g. if majority of SNPs
-are found between 10 and 90 pb, and very few above and below, those markers are
-discarded. Use this function argument with dataset with problematic assembly,
-or \emph{de novo} assembly with undocumented or poorly selected
-mismatch threshold.
-\item \code{filter.short.ld}: this is the \code{snp.ld} argument
-in \code{\link[radiator]{filter_ld}}
-\item \code{filter.long.ld}: this is the \code{ld.threshold} argument
-in \code{\link[radiator]{filter_ld}}
-\item \code{long.ld.missing}: this is the \code{long.ld.missing} argument
-in \code{\link[radiator]{filter_ld}}
-\item \code{filter.individuals.missing}: (double) Use this argument to
-blacklist individuals with too many missing data.
-e.g. \code{filter.individuals.missing = 0.7}, will remove individuals with >
-0.7 or 70% missing genotypes. This can help discover more polymorphic markers
-with some dataset.
-\item \code{markers.info}: (character) With default: \code{markers.info = NULL},
-all the variable in the vcf INFO field are imported.
-To import only DP (the SNP total read depth) and AF (the SNP allele frequency),
-use \code{markers.info = c("DP", "AF")}.
-Using, \code{markers.info = character(0)} will not import INFO variables.
 \item \code{path.folder}: to write ouput in a specific path
 (used internally in radiator). Default: \code{path.folder = getwd()}.
 If the supplied directory doesn't exist, it's created.
+\item \code{internal: } (optional, character)
+Default (\code{internal = FALSE}). A folder is generated to write the files.
+\item \code{random.seed}: (integer, optional) For reproducibility, set an integer
+that will be used inside codes that uses randomness. With default,
+a random number is generated, printed and written in the directory.
+Default: \code{random.seed = NULL}.
+\item \code{parameters} It's a parameter file where radiator output results of
+filtering. Used internally.
+Default: \code{parameters = NULL}.
 }
+\strong{tidying arguments/behavior:}
+\enumerate{
+\item \code{tidy.vcf:} (optional, logical)
+Default: \code{tidy.vcf = TRUE}. But you can always stop the process after
+the creation of the GDS file (equivalent of running \code{\link{write_seqarray}}).
+\item \code{tidy.check:} (optional, logical)
+Default: \code{tidy.check = TRUE}. By default, the number of markers just before
+tidying is checked. Tidying a VCF file with more than 20000 markers is
+sub-optimal:
+\itemize{
+\item a computer with lots of RAM is required
+\item it's very slow to generate
+\item it's very slow to run codes after
+\item for most non model species this number of markers is not realistic...
 }
-\section{VCF file format version}{
+Consequently, the function execution is suspended and user are asked if they
+still want to continue with the tidying or stop and keep the GDS file/object.
 
+This behavior can be annoying, \emph{if the user knows what he's doing}, to turn off
+use: \code{tidy.check = FALSE}.
+\item \code{ref.calibration: } (optional, logical)
+Default: \code{ref.calibration = FALSE}.
+Documented in \code{\link[radiator]{calibrate_alleles}}.
+\item \code{vcf.stats: } (optional, logical) Generates individuals and
+markers statistics helpful for filtering.
+These are very fast to generate and because computational
+cost is minimal, even for huge VCFs, the default is \code{vcf.stats = TRUE}.
+\item \code{vcf.metadata: } (optional, logical or character string)
+With \code{vcf.metadata = FALSE}, only the genotypes are kept (GT field)
+in the tidy dataset.
+With \code{vcf.metadata = TRUE},
+all the metadata contained in the \code{FORMAT} field will be kept in
+the tidy data file. radiator is currently keeping and cleaning these metadata:
+\code{"DP", "AD", "GL", "PL", "GQ", "HQ", "GOF", "NR", "NV"}.
+e.g. you only want AD and PL, \code{vcf.metadata = c("AD", "PL")}.
+Need another metadata ? Submit a request on github...
+Default: \code{vcf.metadata = TRUE}.
+}
 
-If you need a different file format version than the current one, just change
-the version inside the newly created VCF, that should do the trick.
-\href{https://vcftools.github.io/specs.html}{For more
-information on Variant Call Format specifications}.
+\strong{Filtering arguments:}
+\enumerate{
+\item \code{blacklist.id: } (optional, character)
+Default (\code{blacklist.id = NULL}).
+Documented in \code{\link[radiator]{tidy_genomic_data}}.
+\item \code{filter.strands}: (optional, character)
+ Default (\code{filter.strands = "blacklist"}).
+ documented in \code{\link[radiator]{write_seqarray}}.
+\item \code{whitelist.markers: }(optional, path)
+Default: \code{whitelist.markers = NULL}.
+Documented in \code{\link[radiator]{filter_whitelist}}.
+\item \code{filter.individuals.missing}: (double)
+Default: \code{filter.individuals.missing = NULL}.
+Documented in \code{\link[radiator]{filter_individuals}}.
+\item \code{filter.monomorphic}: (logical)
+Default: \code{filter.monomorphic = TRUE}.
+Documented in \code{\link[radiator]{filter_monomorphic}}.
+Required package: \code{UpSetR}.
+\item \code{filter.common.markers}: (logical)
+Default: \code{filter.common.markers = TRUE}.
+Documented in \code{\link[radiator]{filter_common_markers}}.
+Required package: \code{UpSetR}.
+\item \code{filter.mac}: (integer)
+Default: \code{filter.mac = NULL}.
+Documented in \code{\link[radiator]{filter_mac}}.
+\item \code{filter.coverage}: (logical)
+Default: \code{filter.coverage = NULL}.
+Documented in \code{\link[radiator]{filter_coverage}}.
+\item \code{filter.genotyping}: (integer)
+Default: \code{filter.genotyping = NULL}.
+Documented in \code{\link[radiator]{filter_genotyping}}.
+\item \code{filter.snp.position.read: } (optional, character, integer)
+Default: \code{filter.snp.position.read = NULL}.
+Documented in \code{\link[radiator]{filter_snp_position_read}}.
+\item \code{filter.snp.number: } (optional, character, integer)
+Default: \code{filter.snp.number = NULL}.
+Documented in \code{\link[radiator]{filter_snp_number}}.
+\item \code{filter.short.ld}: (optional, character)
+Default: \code{filter.short.ld = NULL}.
+Documented in \code{\link[radiator]{filter_ld}}.
+\item \code{filter.long.ld}: (optional, character)
+Default: \code{filter.long.ld = NULL}.
+Documented in \code{\link[radiator]{filter_ld}}.
+Required package: \code{SNPRelate}.
+\item \code{long.ld.missing}: Documented in \code{\link[radiator]{filter_ld}}.
+Default: \code{long.ld.missing = FALSE}.
+\item \code{ld.method}: Documented in \code{\link[radiator]{filter_ld}}.
+Default: \code{ld.method = "r2"}.
+}
 }
 
 \examples{
 \dontrun{
 # very basic with built-in defaults (not recommended):
- prep.data <- radiator::tidy_vcf(data = "populations.snps.vcf")
+prep.data <- radiator::tidy_vcf(data = "populations.snps.vcf")
 
 # Using more arguments and filters (recommended):
-prep.data <- radiator::tidy_vcf(
-data = "populations.snps.vcf",
-strata = "strata_salamander.tsv",
-vcf.stats = TRUE,
-filter.individuals.missing = "outlier",
-filter.common.markers = TRUE,
-filter.strands = FALSE,
-filter.mac = 4,
-filter.markers.missing = 50,
-filter.snp.read.position = "outliers",
-filter.short.ld = "maf",
-filter.long.ld = NULL,
-vcf.metadata = TRUE,
-path.folder = "salamander/prep_data",
-verbose = TRUE)
-
-# To view the objects generated by the function:
-names(prep.data)
-
-# if you want to check the blacklisted markers:
-bl <- prep.data$blacklist.markers
-# or get the numbers associated with the filters applied:
- bl.numbers <- dplyr::count(prep.data$blacklist.markers, FILTER)
+tidy.data <- radiator::tidy_vcf(
+    data = "populations.snps.vcf",
+    strata = "strata_salamander.tsv",
+    filter.individuals.missing = "outlier",
+    filter.mac = 4,
+    filter.genotyping = 0.1,
+    filter.snp.position.read = "outliers",
+    filter.short.ld = "mac",
+    path.folder = "salamander/prep_data",
+    verbose = TRUE)
 }
 }
 \references{
@@ -166,7 +208,9 @@ The variant call format and VCFtools.
 Bioinformatics, 27, 2156-2158.
 }
 \seealso{
-\code{\link[radiator]{write_seqarray}}
+\code{\link[radiator]{write_seqarray}},
+\code{\link[radiator]{tidy_genomic_data}},
+\code{\link[radiator]{filter_rad}}
 }
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}

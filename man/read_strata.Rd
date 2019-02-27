@@ -6,7 +6,7 @@
 \usage{
 read_strata(strata, pop.id = FALSE, pop.levels = NULL,
   pop.labels = NULL, pop.select = NULL, blacklist.id = NULL,
-  keep.two = TRUE, verbose = FALSE)
+  keep.two = TRUE, path.folder = NULL, verbose = FALSE)
 }
 \arguments{
 \item{strata}{(path or object) The strata file or object.
@@ -55,6 +55,11 @@ Default: \code{blacklist.id = NULL}.}
 \item{keep.two}{(optional, logical) The output is limited to 2 columns:
 \code{INDIVIDUALS, STRATA}.
 Default: \code{keep.two = TRUE}.}
+
+\item{path.folder}{(optional, path)
+If \code{!is.null(blacklist.id) || !is.null(pop.select)}, the modified strata
+is written by default in the working directory unless specified otherwise.
+Default: \code{path.folder = getwd()}.}
 
 \item{verbose}{(optional, logical) When \code{verbose = TRUE}
 the function is a little more chatty during execution.

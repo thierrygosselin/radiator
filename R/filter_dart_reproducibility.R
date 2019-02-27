@@ -350,14 +350,13 @@ The minimum reproducibility tolerated:", minmax = c(0, 1))
         verbose = verbose)
 
       # Return -----------------------------------------------------------------------
-      if (verbose) {
-        cat("################################### RESULTS ####################################\n")
-        message("Filter DArT reproducibility: ", filter.reproducibility)
-        message("Number of individuals / strata / chrom / locus / SNP:")
-        message("    Before: ", filters.parameters$filters.parameters$BEFORE)
-        message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-        message("    After: ", filters.parameters$filters.parameters$AFTER)
-      }
+      if (verbose) cat("################################### RESULTS ####################################\n")
+      message("\nFilter DArT reproducibility: ", filter.reproducibility)
+      message("Number of individuals / strata / chrom / locus / SNP:")
+      if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
+      message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
+      if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
+
     }
     return(data)
   } else {

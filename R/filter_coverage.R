@@ -121,6 +121,7 @@ filter_coverage <- function(
       cat("########################### radiator::filter_coverage ##########################\n")
       cat("################################################################################\n")
     }
+    if (!verbose) message("filter_coverage...")
 
     # Cleanup-------------------------------------------------------------------
     file.date <- format(Sys.time(), "%Y%m%d@%H%M")
@@ -208,10 +209,6 @@ filter_coverage <- function(
     # Step 1. Visuals ----------------------------------------------------------
     if (interactive.filter) message("\nStep 1. Coverage visualization and helper table\n")
 
-    # Whitelist and blacklist --------------------------------------------------
-    # want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS")
-    wl <- bl <- extract_markers_metadata(gds = data)
-
     # Generate coverage stats---------------------------------------------------
     if (verbose) message("Generating coverage statistics")
     info <- generate_markers_stats(
@@ -228,6 +225,10 @@ filter_coverage <- function(
     stats <- info$stats
     info <- info$info
 
+    # Whitelist and blacklist --------------------------------------------------
+    # want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS")
+    wl <- bl <- extract_markers_metadata(gds = data)
+
     # identify outliers: low and high -----------------------------------------
     out.low <- floor(stats$OUTLIERS_LOW[stats$GROUP == "mean coverage"]*1000)/1000
     out.high <- floor(stats$OUTLIERS_HIGH[stats$GROUP == "mean coverage"]*1000)/1000
@@ -236,26 +237,6 @@ filter_coverage <- function(
                                       COVERAGE_MEAN <= out.high) %$%
       VARIANT_ID %>%
       as.integer
-
-    # temp <- generate_markers_stats(
-    #   gds = data,
-    #   missing = FALSE,
-    #   heterozygosity = FALSE,
-    #   snp.per.locus = FALSE,
-    #   snp.position.read = FALSE,
-    #   force.stats = TRUE,
-    #   path.folder = path.folder,
-    #   filename = "markers_coverage_no_outliers",
-    #   fig.filename = "markers_coverage_qc_no_outliers",
-    #   subsample = variant.wo.out,
-    #   file.date = file.date,
-    #   parallel.core = parallel.core
-    # )
-    # variant.wo.out <- temp <- NULL
-    # check <- temp$info
-    # min(check$COVERAGE_MEAN)
-    # max(check$COVERAGE_MEAN)
-
 
     # Helper table -------------------------------------------------------------
     # filter.coverage <- "outliers"

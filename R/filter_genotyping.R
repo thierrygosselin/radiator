@@ -207,10 +207,6 @@ filter_genotyping <- function(
     # Step 1. Visuals ----------------------------------------------------------
     if (interactive.filter) message("\nStep 1. Missing visualization and helper table\n")
 
-    # Whitelist and blacklist --------------------------------------------------
-    # want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS")
-    wl <- bl <- extract_markers_metadata(gds = data)
-
     # Generate coverage stats---------------------------------------------------
     if (verbose) message("Generating statistics")
     info <- generate_markers_stats(
@@ -225,6 +221,10 @@ filter_genotyping <- function(
     )
     stats <- info$stats
     info <- info$info
+
+    # Whitelist and blacklist --------------------------------------------------
+    # want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS")
+    wl <- bl <- extract_markers_metadata(gds = data)
 
     # Helper table -------------------------------------------------------------
     if (verbose) message("Generating missingness/genotyping helper table...")
@@ -413,11 +413,11 @@ filter_genotyping <- function(
 
     # results --------------------------------------------------------------------
     if (verbose) cat("################################### RESULTS ####################################\n")
-    if (verbose) message("Filter genotyping threshold: ", filter.genotyping)
+    message("\nFilter genotyping threshold: ", filter.genotyping)
     message("Number of individuals / strata / chrom / locus / SNP:")
-    message("    Before: ", filters.parameters$filters.parameters$BEFORE)
+    if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
     message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-    message("    After: ", filters.parameters$filters.parameters$AFTER)
+    if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
   }
   return(data)
 }#End filter_genotyping

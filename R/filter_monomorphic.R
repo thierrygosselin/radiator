@@ -80,7 +80,7 @@ filter_monomorphic <- function(
     on.exit(if (verbose) cat("######################## filter_monomorphic completed ##########################\n"), add = TRUE)
 
     # if (verbose) message("\nScanning for monomorphic markers...")
-    message("\nScanning for monomorphic markers...")
+    # message("\nScanning for monomorphic markers...")
 
     # Checking for missing and/or default arguments ------------------------------
     if (missing(data)) rlang::abort("Input file missing")
@@ -295,7 +295,7 @@ filter_monomorphic <- function(
 
     # Return -------------------------------------------------------------------
     if (verbose) cat("################################### RESULTS ####################################\n")
-    message("Filter monomorphic markers")
+    message("\nFilter monomorphic markers")
     message("Number of individuals / strata / chrom / locus / SNP:")
     if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
     message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)

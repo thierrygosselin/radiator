@@ -125,7 +125,7 @@ filter_snp_number <- function(
       fd = rlang::fn_fmls_names(),
       args.list = as.list(environment()),
       dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
-      keepers = c("path.folder", "parameters", "internal"),
+      keepers = c("path.folder", "parameters", "internal", "force.stats"),
       verbose = verbose
     )
 
@@ -195,7 +195,7 @@ filter_snp_number <- function(
     # Whitelist and blacklist --------------------------------------------------
     want <- c("MARKERS", "CHROM", "LOCUS", "POS", "COL")
     if (data.type == "SeqVarGDSClass") {
-      wl <- bl <- extract_markers_metadata(gds = data)
+      wl <- extract_markers_metadata(gds = data)
     } else {
       wl <- bl <- dplyr::select(data, dplyr::one_of(want))
     }
@@ -215,9 +215,11 @@ filter_snp_number <- function(
       wl <- generate_markers_stats(
         gds = data,
         snp.per.locus = TRUE,
-        missing = FALSE, coverage = FALSE,
+        missing = FALSE,
+        coverage = FALSE,
         allele.coverage = FALSE,
-        mac = FALSE, heterozygosity = FALSE,
+        mac = FALSE,
+        heterozygosity = FALSE,
         snp.position.read = FALSE,
         force.stats = force.stats,
         path.folder = path.folder,
@@ -226,8 +228,9 @@ filter_snp_number <- function(
         parallel.core = parallel.core
       )
       stats <- wl$stats
-      wl <- wl$info
+      wl <- bl <- wl$info
     } else {
+      bl <- wl
       wl %<>%
         dplyr::group_by(LOCUS) %>%
         dplyr::mutate(SNP_PER_LOCUS = n()) %>%
@@ -398,18 +401,6 @@ filter_snp_number <- function(
         value = wl,
         sync = TRUE
       )
-      # sync_gds(gds = data, markers = wl$VARIANT_ID)
-      # radiator.gds <- gdsfmt::index.gdsn(
-      #   node = data, path = "radiator", silent = TRUE)
-      #
-      # # Update metadata
-      # gdsfmt::add.gdsn(
-      #   node = radiator.gds,
-      #   name = "markers.meta",
-      #   val = wl,
-      #   replace = TRUE,
-      #   compress = "ZIP_RA",
-      #   closezip = TRUE)
 
       # update blacklist.markers
       if (nrow(bl) > 0) {
@@ -437,14 +428,12 @@ filter_snp_number <- function(
       verbose = verbose)
 
     # Return -----------------------------------------------------------------------
-    if (verbose) {
-      cat("################################### RESULTS ####################################\n")
-      message("Filter SNPs per locus threshold: ", filter.snp.number)
-      message("Number of individuals / strata / chrom / locus / SNP:")
-      message("    Before: ", filters.parameters$filters.parameters$BEFORE)
-      message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-      message("    After: ", filters.parameters$filters.parameters$AFTER)
-    }
+    if (verbose) cat("################################### RESULTS ####################################\n")
+    message("\nFilter SNPs per locus threshold: ", filter.snp.number)
+    message("Number of individuals / strata / chrom / locus / SNP:")
+    if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
+    message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
+    if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
   }
   return(data)
 } #End filter_snp_number

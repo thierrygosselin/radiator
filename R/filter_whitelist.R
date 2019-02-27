@@ -134,7 +134,7 @@ filter_whitelist <- function(
       fd = rlang::fn_fmls_names(),
       args.list = as.list(environment()),
       dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
-      keepers = c("path.folder", "parameters", "biallelic", "markers.meta"),
+      keepers = c("path.folder", "parameters", "biallelic", "markers.meta", "internal"),
       verbose = verbose
     )
 
@@ -294,12 +294,12 @@ filter_whitelist <- function(
       file.date = file.date,
       verbose = verbose)
 
-    if (verbose) {
-      message("Number of individuals / strata / chrom / locus / SNP:")
-      message("    Before: ", filters.parameters$filters.parameters$BEFORE)
-      message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-      message("    After: ", filters.parameters$filters.parameters$AFTER)
-    }
+    message("\nFilter whitelist : ", n.markers.w, "SNPs")
+    message("Number of individuals / strata / chrom / locus / SNP:")
+    if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
+    message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
+    if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
+
   }# End !is.null
   return(data)
 }#End filter_whitelist

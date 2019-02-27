@@ -44,9 +44,15 @@
 
 #' @inheritParams tidy_genomic_data
 #' @inheritParams read_blacklist_id
+
 #' @param keep.two (optional, logical) The output is limited to 2 columns:
 #' \code{INDIVIDUALS, STRATA}.
 #' Default: \code{keep.two = TRUE}.
+
+#' @param path.folder (optional, path)
+#' If \code{!is.null(blacklist.id) || !is.null(pop.select)}, the modified strata
+#' is written by default in the working directory unless specified otherwise.
+#' Default: \code{path.folder = getwd()}.
 
 #' @details the strata file used in radiator is a tab delimited file with
 #' a minimum of 2 columns headers:
@@ -94,6 +100,7 @@ read_strata <- function(
   pop.select = NULL,
   blacklist.id = NULL,
   keep.two = TRUE,
+  path.folder = NULL,
   verbose = FALSE
 ) {
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
@@ -182,8 +189,9 @@ read_strata <- function(
 
 
     if (!is.null(blacklist.id) || !is.null(pop.select)) {
+      if (is.null(path.folder)) path.folder <- getwd()
       strata.fn <- stringi::stri_join("strata_radiator_filtered_", file.date, ".tsv")
-      readr::write_tsv(x = strata, path = strata.fn)
+      readr::write_tsv(x = strata, path = file.path(path.folder, strata.fn))
     }
 
     res = list(
@@ -595,3 +603,61 @@ strata_haplo <- function(strata = NULL, data = NULL, blacklist.id = NULL) {
   strata.df <- dplyr::distinct(strata.df, POP_ID, INDIVIDUALS)
   return(strata.df)
 }#End strata_haplo
+
+
+#' @title strata_vcf
+#' @description Manage strata
+#' @rdname strata_vcf
+#' @keywords internal
+#' @export
+strata_vcf <- function(strata, input, blacklist.id) {
+
+  if (is.null(strata)) {
+    message("No strata file provided")
+    message("    generating a strata with 1 grouping")
+    strata.df <- dplyr::distinct(input, INDIVIDUALS) %>%
+      dplyr::mutate(STRATA = rep("pop1", n()))
+  } else {
+    if (is.vector(strata)) {
+      strata.df <- suppressMessages(readr::read_tsv(
+        file = strata, col_names = TRUE,
+        col_types = readr::cols(.default = readr::col_character())
+      ))
+    } else {
+      strata.df <- strata
+      strata.df <- dplyr::mutate_all(.tbl = strata.df, .funs = as.character)
+    }
+  }
+
+  colnames(strata.df) <- stringi::stri_replace_all_fixed(
+    str = colnames(strata.df),
+    pattern = "STRATA",
+    replacement = "POP_ID",
+    vectorize_all = FALSE
+  )
+
+  # Remove potential whitespace in pop_id
+  strata.df$POP_ID <- clean_pop_names(strata.df$POP_ID)
+  colnames.strata <- colnames(strata.df)
+
+  # clean ids
+  strata.df$INDIVIDUALS <- clean_ind_names(strata.df$INDIVIDUALS)
+
+  strata.df <- dplyr::distinct(strata.df, POP_ID, INDIVIDUALS, .keep_all = TRUE)
+
+  if (!is.null(strata)) {
+    id.vcf <- dplyr::distinct(input, INDIVIDUALS) %>%
+      dplyr::mutate(INDIVIDUALS = clean_ind_names(INDIVIDUALS)) %>%
+      purrr::flatten_chr(.)
+
+    strata.df <- dplyr::filter(strata.df, INDIVIDUALS %in% id.vcf)
+  }
+
+
+  # filtering the strata if blacklist id available
+  if (!is.null(blacklist.id)) {
+    strata.df <- dplyr::anti_join(x = strata.df, y = blacklist.id, by = "INDIVIDUALS")
+  }
+
+  return(strata.df)
+}#End strata_vcf

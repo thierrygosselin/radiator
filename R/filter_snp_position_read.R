@@ -337,19 +337,6 @@ filter_snp_position_read <- function(
         value = wl,
         sync = TRUE
       )
-      # # Update GDS
-      # sync_gds(gds = data, markers = wl$VARIANT_ID)
-      # radiator.gds <- gdsfmt::index.gdsn(
-      #   node = data, path = "radiator", silent = TRUE)
-      #
-      # # Update metadata
-      # gdsfmt::add.gdsn(
-      #   node = radiator.gds,
-      #   name = "markers.meta",
-      #   val = wl,
-      #   replace = TRUE,
-      #   compress = "ZIP_RA",
-      #   closezip = TRUE)
 
       # update blacklist.markers
       if (nrow(bl) > 0) {
@@ -376,20 +363,13 @@ filter_snp_position_read <- function(
       file.date = file.date,
       verbose = verbose)
 
-    # if (filters.parameters$filters.parameters$BLACKLIST == 0) {
-    #   file.remove(path.folder)
-    #   if (verbose) message("Folder removed: ", folder_short(path.folder))
-    # }
-
     # Return -----------------------------------------------------------------------
-    if (verbose) {
-      cat("################################### RESULTS ####################################\n")
-      message("Filter SNP position on the read : ", filter.snp.position.read)
-      message("Number of individuals / strata / chrom / locus / SNP:")
-      message("    Before: ", filters.parameters$filters.parameters$BEFORE)
-      message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-      message("    After: ", filters.parameters$filters.parameters$AFTER)
-    }
+    if (verbose) cat("################################### RESULTS ####################################\n")
+    message("\nFilter SNP position on the read : ", filter.snp.position.read)
+    message("Number of individuals / strata / chrom / locus / SNP:")
+    if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
+    message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
+    if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
   }
   return(data)
 } #End filter_snp_position_read

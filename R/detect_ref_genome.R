@@ -117,13 +117,7 @@ detect_ref_genome <- function(chromosome = NULL, data = NULL, verbose = TRUE) {
 
     # sync gds -------------------------------------------------------------------
     if (!is.null(data) && !is.null(radiator.gds) && sync.gds) {
-      gdsfmt::add.gdsn(
-        node = radiator.gds,
-        name = "reference.genome",
-        val = ref.genome,
-        replace = TRUE,
-        compress = "ZIP_RA",
-        closezip = TRUE)
+      update_radiator_gds(gds = data, node.name = "reference.genome", value = ref.genome)
     }
 
     # Result ---------------------------------------------------------------------

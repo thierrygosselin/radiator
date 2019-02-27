@@ -221,14 +221,16 @@ filter_rad <- function(
   # Required package -----------------------------------------------------------
   if (!"SeqVarTools" %in% utils::installed.packages()[,"Package"] ||
       !"HardyWeinberg" %in% utils::installed.packages()[,"Package"] ||
-      !"ggtern" %in% utils::installed.packages()[,"Package"]
+      !"ggtern" %in% utils::installed.packages()[,"Package"] ||
+      !"UpSetR" %in% utils::installed.packages()[,"Package"]
   ) {
     rlang::abort('For this function to work properly,
-please install SeqVarTools, HardyWeinberg and ggtern:
+make sure you have these packages: SeqVarTools, HardyWeinberg, ggtern and UpSetR
 install.packages("BiocManager")
 install.packages("HardyWeinberg")
 install.packages("ggtern")
 BiocManager::install("SeqVarTools")
+install.packages("UpSetR")
 ')
   }
 
@@ -358,15 +360,15 @@ BiocManager::install("SeqVarTools")
     gds <- radiator::tidy_genomic_data(
       data = data,
       strata = strata,
-      vcf.metadata = TRUE,
       parallel.core = parallel.core,
       verbose = FALSE,
+      internal = TRUE,
+      vcf.metadata = TRUE,
       vcf.stats = TRUE,
       gt.vcf.nuc = TRUE,
       gt.vcf = TRUE,
       gt = TRUE,
-      gt.bin = TRUE,
-      keep.gds = FALSE
+      gt.bin = TRUE
     )
 
     # Keep GT_BIN
@@ -594,6 +596,11 @@ BiocManager::install("SeqVarTools")
     if (verbose) message("Writing the blacklist of ids: blacklist.id.tsv")
   }
 
+  # Generate new strata
+  strata <- extract_individuals(gds = gds, ind.field.select = c("INDIVIDUALS", "STRATA"))
+  readr::write_tsv(x = strata, path = file.path(path.folder, "strata.filtered.tsv"))
+  if (verbose) message("Writing the filtered strata: strata.filtered.tsv")
+
   # missing memory
   # if (verbose) message("Memorizing missing genotypes")
   # memory.filename <- stringi::stri_join(filename, "_filtered_missing_memory.rad")
@@ -604,12 +611,6 @@ BiocManager::install("SeqVarTools")
   #   dplyr::arrange(MARKERS, INDIVIDUALS) %>%
   #   radiator::write_rad(data = ., path = memory.filename)
   # if (verbose) message("File written: ", memory.filename)
-
-
-  # Generate new strata
-  strata <- extract_individuals(gds = gds, ind.field.select = c("INDIVIDUALS", "STRATA"))
-  readr::write_tsv(x = strata, path = file.path(path.folder, "strata.filtered.tsv"))
-  if (verbose) message("Writing the filtered strata: strata.filtered.tsv")
 
   # genomic_converter-----------------------------------------------------------
   output <- genomic_converter(

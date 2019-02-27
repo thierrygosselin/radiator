@@ -4,8 +4,8 @@
 \alias{update_radiator_gds}
 \title{update_radiator_gds}
 \usage{
-update_radiator_gds(gds, node.name, value, replace = TRUE,
-  sync = FALSE, summary = FALSE, verbose = FALSE)
+update_radiator_gds(gds, radiator.gds = TRUE, node.name, value,
+  replace = TRUE, sync = FALSE, summary = FALSE, verbose = FALSE)
 }
 \description{
 Update radiator gds node

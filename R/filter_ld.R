@@ -666,13 +666,13 @@ filter_ld <- function(
         file.date = file.date,
         verbose = verbose)
 
-      if (verbose) {
-        message("\nFilter short ld threshold: ", filter.short.ld)
-        message("Number of individuals / strata / chrom / locus / SNP:")
-        message("    Before: ", filters.parameters$filters.parameters$BEFORE)
-        message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-        message("    After: ", filters.parameters$filters.parameters$AFTER)
-      }
+
+      message("\nFilter short ld threshold: ", filter.short.ld)
+      message("Number of individuals / strata / chrom / locus / SNP:")
+      if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
+      message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
+      if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
+
 
     } #End short ld
 
@@ -898,9 +898,9 @@ filter_ld <- function(
           verbose = FALSE)
 
         # if (is.integer(wl.variant.id)) {
-          # wl.variant.id %<>% purrr::flatten_int(.)
+        # wl.variant.id %<>% purrr::flatten_int(.)
         # } else {
-          wl.variant.id %<>% purrr::flatten_chr(.)
+        wl.variant.id %<>% purrr::flatten_chr(.)
         # }
 
         wl %<>% dplyr::filter(VARIANT_ID %in% wl.variant.id)
@@ -954,13 +954,12 @@ filter_ld <- function(
         file.date = file.date,
         verbose = verbose)
 
-      if (verbose) {
-        message("\nFilter long ld threshold: ", filter.long.ld)
-        message("Number of individuals / strata / chrom / locus / SNP:")
-        message("    Before: ", filters.parameters$filters.parameters$BEFORE)
-        message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-        message("    After: ", filters.parameters$filters.parameters$AFTER)
-      }
+      message("\nFilter long ld threshold: ", filter.long.ld)
+      message("Number of individuals / strata / chrom / locus / SNP:")
+      if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
+      message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
+      if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
+
 
     }#End long distance LD pruning
   }

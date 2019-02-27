@@ -11,7 +11,7 @@
 #' dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE)}.
 #' @param keepers (optional) The arguments that are used inside the function.
 #' Default: \code{keepers = c(
-#' "subsample.markers.stats",
+#' "subsample.markers.stats", "subsample",
 #' "filter.reproducibility", "filter.individuals.missing",
 #' "filter.individuals.heterozygosity", "filter.individuals.coverage.total",
 #' "filter.common.markers", "filter.monomorphic", "filter.mac",
@@ -24,12 +24,12 @@
 #' "gt", "gt.bin", "gt.vcf", "gt.vcf.nuc",
 #' "pop.levels", "pop.labels", "pop.select", "blacklist.id",
 #' "markers.info", "keep.allele.names", "keep.gds", "ref.calibration",
-#' "vcf.metadata", "vcf.stats",
+#' "vcf.metadata", "vcf.stats", "id.stats", "dp",
 #' "whitelist.markers",
 #' "write.tidy",
 #' "dart.sequence",
 #' "missing.memory",
-#' "internal", "heatmap.fst")}.
+#' "internal", "heatmap.fst", "tidy.check", "tidy.vcf")}.
 #' @param deprecated (optional) radiator's deprecated arguments.
 #' Default: \code{deprecated = c("maf.thresholds", "common.markers",
 #' "max.marker","monomorphic.out", "snp.ld", "filter.call.rate",
@@ -76,7 +76,8 @@ radiator_dots <- function(
     "missing.memory",
     "dart.sequence",
     "internal",
-    "heatmap.fst"
+    "heatmap.fst",
+    "tidy.check", "tidy.vcf"
   ),
   deprecated = c(
     "maf.thresholds",
@@ -246,20 +247,21 @@ assign_defaults <- function(n, verbose = TRUE, pos = 1) {
 
   # Specifics...
   # Arguments that default value is TRUE
-  dots.true <- c("gt.vcf.nuc", "gt.vcf", "gt", "gt.bin", "keep.gds",
+  dots.true <- c("keep.gds",
                  "vcf.stats", "vcf.metadata",
                  "filter.common.markers", "filter.monomorphic",
-                 "ld.figures", "dart.sequence")
+                 "ld.figures", "dart.sequence",
+                 "force.stats")
   # Arguments that default value is FALSE
   dots.false <- c("keep.allele.names", "ref.calibration", "long.ld.missing",
                   "detect.mixed.genomes", "detect.duplicate.genomes",
-                  "force.stats", "dp", "internal", "heatmap.fst", "wide")
+                  "dp", "internal", "heatmap.fst", "wide")
   if (n %in% dots.true) v <- TRUE
   if (n %in% dots.false) v <- FALSE
 
   # Specific values...
   if (n == "filter.strands") v <- "blacklist"
-  if (n == "subsample.markers.stats") v <- 0.2
+  # if (n == "subsample.markers.stats") v <- 0.2
   if (n == "ld.method") v <- "r2"
   if (n == "hierarchical.levels") v <- "strata"
   if (n == "num.tree") v <-50L

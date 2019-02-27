@@ -228,6 +228,7 @@ write_seqarray <- function(
   # parallel.core <- parallel::detectCores() - 1
   # verbose <- TRUE
   # path.folder = NULL
+  # internal <- FALSE
   # random.seed <- NULL
 
   # vcf.stats <- TRUE
@@ -238,6 +239,7 @@ write_seqarray <- function(
   # filter.snp.position.read <- NULL
   # filter.mac <- NULL
   # filter.common.markers = FALSE
+  # filter.monomorphic <- FALSE
   # filter.short.ld <- NULL
   # filter.long.ld <- NULL
   # long.ld.missing <- TRUE
@@ -247,8 +249,6 @@ write_seqarray <- function(
   # pop.levels = NULL
   # pop.labels = NULL
   # whitelist.markers = NULL
-  # keep.gds <- TRUE
-  # markers.info = NULL
   # subsample.markers.stats = 0.2
   # parameters <- NULL
   # filter.individuals.missing <- NULL
@@ -261,6 +261,7 @@ write_seqarray <- function(
   # filter.short.ld <- "mac"
   # filter.long.ld <- 0.3
   # filter.common.markers = TRUE
+  # filter.monomorphic <- TRUE
   # filter.mac <- 4
   # filter.coverage = c(5, 150)
   # filter.genotyping <- 0.15
@@ -305,7 +306,7 @@ write_seqarray <- function(
                 "filter.individuals.missing", "filter.individuals.coverage.total",
                 "filter.common.markers", "filter.monomorphic",
                 "filter.strands",
-                "blacklist.id", "pop.select", "pop.levels", "pop.labels", "keep.gds",
+                "blacklist.id", "pop.select", "pop.levels", "pop.labels",
                 "path.folder",
                 "markers.info", "vcf.metadata",
                 "subsample.markers.stats", "parameters", "random.seed", "internal"),
@@ -368,17 +369,25 @@ write_seqarray <- function(
   }
 
   # Folders---------------------------------------------------------------------
-  path.folder <- generate_folder(
+  wf <- path.folder <- generate_folder(
+    f = path.folder,
+    rad.folder = "write_seqarray",
+    internal = internal,
+    file.date = file.date,
+    verbose = verbose)
+
+  radiator.folder <- generate_folder(
     f = path.folder,
     rad.folder = "radiator",
-    internal = internal,
+    prefix_int = TRUE,
+    internal = FALSE,
     file.date = file.date,
     verbose = verbose)
 
   # write the dots file
   write_rad(
     data = rad.dots,
-    path = path.folder,
+    path = radiator.folder,
     filename = stringi::stri_join("radiator_write_seqarray_args_", file.date, ".tsv"),
     tsv = TRUE,
     internal = internal,
@@ -389,7 +398,6 @@ write_seqarray <- function(
   if (is.null(filename)) {
     ind.file <- stringi::stri_join("vcf_individuals_info_", file.date, ".tsv")
     markers.file <- stringi::stri_join("vcf_markers_metadata_", file.date, ".tsv")
-    filename <- stringi::stri_join("radiator_", file.date, ".gds")
     blacklist.markers <- stringi::stri_join("blacklist.markers_", file.date, ".tsv")
     blacklist.id.filename <- stringi::stri_join("blacklist.individuals_", file.date, ".tsv")
   } else {
@@ -397,36 +405,31 @@ write_seqarray <- function(
     markers.file <- stringi::stri_join(filename, "_vcf_markers_metadata_", file.date, ".tsv")
     blacklist.markers <- stringi::stri_join(filename, "_blacklist.markers_", file.date, ".tsv")
     blacklist.id.filename <- stringi::stri_join(filename, "_blacklist.individuals_", file.date, ".tsv")
-    filename.problem <- file.exists(stringi::stri_join(filename, ".gds"))
-    if (filename.problem) {
-      filename <- stringi::stri_join(filename, "_", file.date, ".gds")
-    } else {
-      filename <- stringi::stri_join(filename, ".gds")
-    }
-    filename.problem <- file.exists(filename)
-    if (filename.problem) {
-      filename <- stringi::stri_join("duplicated_", filename)
-    }
   }
 
-  filename.short <- filename
-  filename <- file.path(path.folder, filename)
+  filename <- generate_filename(
+    name.shortcut = filename,
+    path.folder = radiator.folder,
+    extension = "gds")
+
+  filename.short <- filename$filename.short
+  filename <- filename$filename
 
   # Random seed ----------------------------------------------------------------
-  readr::write_lines(x = random.seed, path = file.path(path.folder, "random.seed"))
+  readr::write_lines(x = random.seed, path = file.path(radiator.folder, "random.seed"))
   if (verbose) message("File written: random.seed (", random.seed,")")
 
-  # Filter parameter file: generate --------------------------------------------
+  # radiator_parameters: generate --------------------------------------------
   filters.parameters <- radiator_parameters(
     generate = TRUE,
     initiate = FALSE,
     update = FALSE,
     parameter.obj = parameters,
-    path.folder = path.folder,
+    path.folder = radiator.folder,
     file.date = file.date,
     verbose = verbose)
 
-  # Read vcf -------------------------------------------------------------------
+  # VCF: Read ------------------------------------------------------------------
   timing.vcf <- proc.time()
 
   # Get file size
@@ -440,7 +443,7 @@ write_seqarray <- function(
   }
 
   if (big.vcf >= 500000000) {
-    message("\nReading a large VCF...you actually have time for coffee, take your time!\n")
+    message("\nReading a large VCF...you actually have time for coffee or tea!\n")
   }
   # Check for bad header generated by stacks
   detect.source <- check_header_source_vcf(data)
@@ -471,30 +474,27 @@ write_seqarray <- function(
   ) %>%
     SeqArray::seqOpen(gds.fn = ., readonly = FALSE)
 
+  # VCF: Summary ----------------------------------------------------------------
+  summary_gds(gds, verbose = TRUE)
+  message("done! timing: ", round((proc.time() - timing.vcf)[[3]]), " sec\n")
+  if (verbose) message("\nFile written: ", filename.short)
   parallel.temp <- check.header <- detect.source <- NULL #no longer used
 
-  # Summary --------------------------------------------------------------------
-  sum <- summary_gds(gds, verbose = verbose)
-  n.ind <- sum$n.ind
-  if (verbose && keep.gds) message("\nFile written: ", filename.short)
-  if (verbose) message("Import timing: ", round((proc.time() - timing.vcf)[[3]]), " sec\n\n")
-
-  if (verbose)  message("Analyzing the data...")
-  # radiator skeleton folder ---------------------------------------------------
+  # Generate radiator skeleton -------------------------------------------------
+  if (verbose)  message("\nAnalyzing the data...")
   radiator.gds <- radiator_gds_skeleton(gds)
-
-  # source
-  update_radiator_gds(gds = gds, node.name = "source", value = source)
-
   # Blacklist of individuals: generate
   bl.i <- update_bl_individuals(gds = gds, generate = TRUE)
   # Blacklist of markers: generate
   bl.gds <- update_bl_markers(gds = gds, generate = TRUE)
 
-  # bi- or multi-alllelic VCF --------------------------------------------------
+  # VCF: source ----------------------------------------------------------------
+  update_radiator_gds(gds = gds, node.name = "source", value = source)
+  if (verbose) message("VCF source: ", source)
+  # VCF: bi- or multi-alllelic--------------------------------------------------
   biallelic <- detect_biallelic_markers(data = gds, verbose = verbose)
 
-  # clean sample id in VCF -----------------------------------------------------
+  # VCF clean sample id---------------------------------------------------------
   individuals.vcf <- tibble::tibble(
     INDIVIDUALS_VCF = SeqArray::seqGetData(gds, "sample.id")) %>%
     dplyr::mutate(INDIVIDUALS_CLEAN = radiator::clean_ind_names(INDIVIDUALS_VCF))
@@ -503,33 +503,24 @@ write_seqarray <- function(
     if (verbose) message("Cleaning VCF's sample names")
     clean.id.filename <- stringi::stri_join("cleaned.vcf.id.info_", file.date, ".tsv")
     readr::write_tsv(x = individuals.vcf,
-                     path = file.path(path.folder, clean.id.filename))
-    gdsfmt::add.gdsn(
-      node = radiator.gds,
-      name = "id.clean",
-      val = individuals.vcf,
-      replace = TRUE,
-      compress = "ZIP_RA",
-      closezip = TRUE)
+                     path = file.path(radiator.folder, clean.id.filename))
+
+    update_radiator_gds(gds = gds, node.name = "id.clean", value = individuals.vcf)
   }
-
   # replace id in VCF
-  gdsfmt::add.gdsn(
-    node = gds,
-    name = "sample.id",
-    val = individuals.vcf$INDIVIDUALS_CLEAN,
-    replace = TRUE,
-    compress = "ZIP_RA",
-    closezip = TRUE)
-
+  update_radiator_gds(
+    gds = gds,
+    radiator.gds = FALSE,
+    node.name = "sample.id",
+    value = individuals.vcf$INDIVIDUALS_CLEAN,
+    replace = TRUE)
 
   individuals <- dplyr::select(individuals.vcf, INDIVIDUALS = INDIVIDUALS_CLEAN)
 
   # Add a individuals node
   update_radiator_gds(gds = gds, node.name = "individuals", value = individuals)
 
-  # Sync id in STRATA and VCF --------------------------------------------------
-  # Strata ---------------------------------------------------------------------
+  # VCF sync id with STRATA------------------------------------------------------
   strata <- radiator::read_strata(
     strata = strata,
     pop.levels = pop.levels,
@@ -553,7 +544,7 @@ write_seqarray <- function(
     individuals.vcf <- NULL
     blacklist.strata <- nrow(bl)
     if (blacklist.strata != 0) {
-      bl.i <- update_bl_individuals(gds = radiator.gds, update = bl, bl.i.gds = bl.i)
+      bl.i <- update_bl_individuals(gds = gds, update = bl, bl.i.gds = bl.i)
       if (verbose) message("    number of sample blacklisted by the stata: ", blacklist.strata)
       # the param file is updated after markers metadata below
     }
@@ -569,12 +560,10 @@ write_seqarray <- function(
   #Update GDS node
   update_radiator_gds(gds = gds, node.name = "individuals", value = individuals)
 
-  # Markers metadata  ----------------------------------------------------------
-  markers.meta <- extract_markers_metadata(
-    gds = gds, radiator.node = FALSE)
+  # VCF: Markers metadata  ------------------------------------------------------
+  markers.meta <- extract_markers_metadata(gds = gds)
 
-  # reference genome or de novo ------------------------------------------------
-  # system.time(ref.genome <- detect_ref_genome(chromosome = markers.meta$CHROM, verbose = verbose))
+  # VCF: reference genome or de novo -------------------------------------------
   ref.genome <- detect_ref_genome(data = gds, verbose = verbose)
 
   # Stacks specific adjustments
@@ -598,7 +587,7 @@ write_seqarray <- function(
     markers.meta$LOCUS <- markers.meta$VARIANT_ID
   }
 
-  # LOCUS cleaning and Strands detection ---------------------------------------
+  # VCF: LOCUS cleaning and Strands detection ----------------------------------
   if (stringi::stri_detect_regex(str = markers.meta[1,3], pattern = "[^[:alnum:]]+")) {
     locus.sep <- unique(stringi::stri_extract_all_regex(
       str = markers.meta[1,3],
@@ -619,36 +608,8 @@ write_seqarray <- function(
 
     detect.strand <- any(stringi::stri_detect_fixed(str = unique(markers.meta$STRANDS), pattern = "+"))
     if (anyNA(detect.strand)) detect.strand <- FALSE
-
-    if (detect.strand) {
-      blacklist.strands <- dplyr::distinct(markers.meta, CHROM, LOCUS, POS) %>%
-        dplyr::group_by(CHROM, POS) %>%
-        dplyr::tally(.) %>%
-        dplyr::filter(n > 1) %>%
-        dplyr::ungroup(.) %>%
-        dplyr::select(CHROM, POS)
-
-      if (nrow(blacklist.strands) == 0) {
-        blacklist.strands <- NULL
-      } else {
-        blacklist.strands %<>%
-          dplyr::mutate_at(.tbl = .,
-                           .vars = c("CHROM", "POS"),
-                           .funs = radiator::clean_markers_names)
-        if (verbose) {
-          message("\nDetected ", nrow(blacklist.strands)," duplicate SNPs on different strands (+/-)")
-          message("    By default radiator prune those SNPs")
-          message("    To change this behavior, use argument: filter.strands\n")
-        }
-      }
-
-    } else {
-      markers.meta %<>% dplyr::select(-STRANDS)
-      blacklist.strands <- NULL
-    }
-    detect.strand <- NULL
   } else {
-    blacklist.strands <- NULL
+    detect.strand <- FALSE
   }
 
   # Generate MARKERS column and fix types --------------------------------------
@@ -665,23 +626,16 @@ write_seqarray <- function(
 
   # ADD MARKERS META to GDS
   update_radiator_gds(gds = gds, node.name = "markers.meta", value = markers.meta)
-  # suppressWarnings(gdsfmt::add.gdsn(
-  #   node = radiator.gds,
-  #   name = "markers.meta",
-  #   val = markers.meta,
-  #   replace = TRUE,
-  #   compress = "ZIP_RA",
-  #   closezip = TRUE))
 
   # replace chromosome info in GDS
   # Why ? well snp ld e.g. will otherwise be performed by chromosome and with de novo data = by locus...
-  gdsfmt::add.gdsn(
-    node = gds,
-    name = "chromosome",
-    val = markers.meta$CHROM,
-    replace = TRUE,
-    compress = "ZIP_RA",
-    closezip = TRUE)
+  update_radiator_gds(
+    gds = gds,
+    radiator.gds = FALSE,
+    node.name = "chromosome",
+    value = markers.meta$CHROM,
+    replace = TRUE
+  )
 
   # radiator_parameters: initiate --------------------------------------------
   # with original VCF's values
@@ -698,55 +652,147 @@ write_seqarray <- function(
     file.date = file.date,
     verbose = FALSE)
 
-  # MONOMORPHIC MARKERS --------------------------------------------------
-  gds <- filter_monomorphic(
-    data = gds,
-    filter.monomorphic = filter.monomorphic,
-    parallel.core = parallel.core,
-    verbose = verbose,
-    parameters = filters.parameters,
-    path.folder = path.folder,
-    internal = internal)
+  ##______________________________________________________________________######
+  # Filters --------------------------------------------------------------------
+  # Filter duplicated SNPs on different strands---------------------------------
+  if (detect.strand) {
+    blacklist.strands <- dplyr::distinct(markers.meta, VARIANT_ID, MARKERS, CHROM, LOCUS, POS) %>%
+      dplyr::group_by(CHROM, POS) %>%
+      dplyr::mutate(n = n()) %>%
+      dplyr::ungroup(.) %>%
+      dplyr::filter(n > 1) %>%
+      dplyr::select(-n) %>%
+      dplyr::distinct(CHROM, POS, .keep_all = TRUE)
 
-  # PRE-FILTERING --------------------------------------------------------------
-  # whitelist of markers, the filter column in the vcf and blacklisted strands
-  # The order here doesnt matter
 
-  # Whitelist------------------------------------------------------------
-  gds <- filter_whitelist(
-    data = gds,
-    whitelist.markers = whitelist.markers,
-    verbose = verbose,
-    path.folder = path.folder,
-    parameters = filters.parameters,
-    biallelic = biallelic,
-    markers.meta = markers.meta)
+    # blacklist.strands <- dplyr::distinct(markers.meta, CHROM, LOCUS, POS) %>%
+    #   dplyr::group_by(CHROM, POS) %>%
+    #   dplyr::tally(.) %>%
+    #   dplyr::filter(n > 1) %>%
+    #   dplyr::ungroup(.) %>%
+    #   dplyr::select(CHROM, POS)
 
-  # vcf FILTER column ---------------------------------------
-  # This is automatically triggered
-  markers.meta <- extract_markers_metadata(gds = gds)
+    if (nrow(blacklist.strands) > 0) {
+      if (verbose) {
+        message("\nDetected ", nrow(blacklist.strands)," duplicate SNPs on different strands (+/-)")
+        message("    By default radiator prune those SNPs")
+        message("    To change this behavior, use argument: filter.strands")
+      }
+      # if (verbose) message("\nFiltering duplicated markers on different strands")
+      if (filter.strands == "keep.both") {
+        message("Keeping both duplicated markers")
+      }
+
+      if (filter.strands == "best.stats") {
+        # bk variant
+        variant.bk <- markers.meta$VARIANT_ID
+        sync_gds(gds = gds, markers = blacklist.strands$VARIANT_ID)
+        blacklist.strands <- SeqArray::seqAlleleCount(
+          gdsfile = gds,
+          ref.allele = NULL,
+          .progress = TRUE,
+          parallel = parallel.core) %>%
+          unlist(.) %>%
+          matrix(
+            data = .,
+            nrow = nrow(blacklist.strands), ncol = 2, byrow = TRUE,
+            dimnames = list(rownames = blacklist.strands$VARIANT_ID,
+                            colnames = c("REF_COUNT", "ALT_COUNT"))) %>%
+          tibble::as_tibble(., rownames = "VARIANT_ID") %>%
+          tibble::add_column(.data = .,
+                             MARKERS = blacklist.strands$MARKERS,
+                             CHROM = blacklist.strands$CHROM,
+                             POS = blacklist.strands$POS,
+                             MISSING_PROP = SeqArray::seqMissing(
+                               gdsfile = gds,
+                               per.variant = TRUE, .progress = TRUE, parallel = parallel.core),
+                             .after = 1) %>%
+          dplyr::mutate(
+            MAC = dplyr::if_else(ALT_COUNT < REF_COUNT, ALT_COUNT, REF_COUNT),
+            ALT_COUNT = NULL, REF_COUNT = NULL) %>%
+          dplyr::group_by(CHROM, POS) %>%
+          dplyr::filter(MISSING_PROP == max(MISSING_PROP)) %>%
+          dplyr::filter(MAC == min(MAC)) %>%
+          dplyr::ungroup(.) %>%
+          dplyr::arrange(CHROM, POS) %>%
+          dplyr::distinct(CHROM, POS, .keep_all = TRUE) %>%
+          dplyr::select(MARKERS)
+
+        # come back to original variant
+        sync_gds(gds = gds, markers = variant.bk, verbose = FALSE)
+      }# End best stats
+
+      if (filter.strands == "blacklist") {
+        blacklist.strands %<>% dplyr::distinct(MARKERS)
+      }
+
+      if (filter.strands != "keep.both") {
+        # update the blacklist
+        blacklist.strands %<>%
+          dplyr::mutate(FILTER = "filter.strands")
+
+        bl.gds <- update_bl_markers(gds = gds, update = blacklist.strands)
+        # Update markers.meta
+        markers.meta %<>% dplyr::filter(!MARKERS %in% blacklist.strands$MARKERS)
+        # check <- markers.meta
+
+        # Update GDS
+        update_radiator_gds(
+          gds = gds,
+          node.name = "markers.meta",
+          value = markers.meta,
+          sync = TRUE)
+
+        # Filter parameter file: update
+        filters.parameters <- radiator_parameters(
+          generate = FALSE,
+          initiate = FALSE,
+          update = TRUE,
+          parameter.obj = filters.parameters,
+          data = gds,
+          filter.name = "duplicated markers on different strands",
+          param.name = "filter.strands",
+          values = filter.strands,
+          path.folder = path.folder,
+          file.date = file.date,
+          verbose = verbose)
+
+        message("\nFilter duplicated markers on different strands: ", filter.strands)
+        message("Number of individuals / strata / chrom / locus / SNP:")
+        if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
+        message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
+        if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
+      }
+    }
+  }#Here
+  blacklist.strands <- NULL
+
+  # Filter the vcf's FILTER column ---------------------------------------------
   markers.meta$FILTER <- SeqArray::seqGetData(
     gds, "annotation/filter")
   filter.check.unique <- unique(markers.meta$FILTER)
 
   if (length(filter.check.unique) > 1) {
     message("Filtering markers based on VCF FILTER column")
-    n.markers.before <- nrow(markers.meta)
+    # n.markers.before <- nrow(markers.meta)
 
     bl <- markers.meta %>%
       dplyr::filter(FILTER != "PASS") %>%
       dplyr::select(MARKERS) %>%
       dplyr::mutate(FILTER = "vcf filter column")
 
-    bl.gds <- update_bl_markers(gds = radiator.gds, update = bl)
+    bl.gds <- update_bl_markers(gds = gds, update = bl)
 
-    markers.meta %<>% dplyr::filter(FILTER == "PASS")
-    n.markers.after <- nrow(markers.meta)
-    n.markers <- stringi::stri_join(n.markers.before, n.markers.before - n.markers.after, n.markers.after, sep = " / ")
-    if (verbose) message("    Number of SNPs before / blacklisted / after: ", n.markers)
-    sync_gds(gds = gds, markers = markers.meta$VARIANT_ID)
+    markers.meta %<>%
+      dplyr::filter(FILTER == "PASS") %>%
+      dplyr::select(-FILTER)
+    update_radiator_gds(
+      gds = gds,
+      node.name = "markers.meta",
+      value = markers.meta,
+      sync = TRUE)
 
-    # Filter parameter file: update
+    # radiator_parameters: update
     filters.parameters <- radiator_parameters(
       generate = FALSE,
       initiate = FALSE,
@@ -759,122 +805,203 @@ write_seqarray <- function(
       file.date = file.date,
       verbose = verbose)
 
+    message("\nFilter vcf filter column: PASS or not")
+    message("Number of individuals / strata / chrom / locus / SNP:")
+    if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
+    message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
+    if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
+
+  } else {
+    markers.meta %<>%
+      dplyr::select(-FILTER)
   }
+
   filter.check.unique <- NULL
-  markers.meta %<>% dplyr::select(-FILTER)
+  markers.meta <- individuals <- NULL
 
-  # FILTER STRANDS -----------------------------------------------------------
-  # This is automatically triggered filter.strands = "blacklist" by default
-  if (!is.null(blacklist.strands)) {
-    if (verbose) message("\nFiltering duplicated markers on different strands")
-    blacklist.strands <- dplyr::right_join(markers.meta, blacklist.strands,
-                                           by = c("CHROM", "POS")) %>%
-      dplyr::select(VARIANT_ID, MARKERS, CHROM, POS)
+  # Filter_monomorphic----------------------------------------------------------
+  gds <- filter_monomorphic(
+    data = gds,
+    filter.monomorphic = filter.monomorphic,
+    parallel.core = parallel.core,
+    verbose = verbose,
+    parameters = filters.parameters,
+    path.folder = wf,
+    internal = FALSE)
 
-    if (filter.strands == "keep.both") {
-      message("Keeping both duplicated markers")
-    }
+  # Filter common markers ------------------------------------------------------
+  gds <- filter_common_markers(
+    data = gds,
+    filter.common.markers = filter.common.markers,
+    plot = TRUE,
+    parallel.core = parallel.core,
+    verbose = verbose,
+    parameters = filters.parameters,
+    path.folder = wf,
+    internal = FALSE)
 
-    if (filter.strands == "best.stats") {
-      sync_gds(gds = gds, markers = blacklist.strands$VARIANT_ID)
-      blacklist.strands <- SeqArray::seqAlleleCount(
-        gdsfile = gds,
-        ref.allele = NULL,
-        .progress = TRUE,
-        parallel = parallel.core) %>%
-        unlist(.) %>%
-        matrix(
-          data = .,
-          nrow = nrow(blacklist.strands), ncol = 2, byrow = TRUE,
-          dimnames = list(rownames = blacklist.strands$VARIANT_ID,
-                          colnames = c("REF_COUNT", "ALT_COUNT"))) %>%
-        tibble::as_tibble(., rownames = "VARIANT_ID") %>%
-        tibble::add_column(.data = .,
-                           MARKERS = blacklist.strands$MARKERS,
-                           CHROM = blacklist.strands$CHROM,
-                           POS = blacklist.strands$POS,
-                           MISSING_PROP = SeqArray::seqMissing(
-                             gdsfile = gds,
-                             per.variant = TRUE, .progress = TRUE, parallel = parallel.core),
-                           .after = 1) %>%
-        dplyr::mutate(
-          MAC = dplyr::if_else(ALT_COUNT < REF_COUNT, ALT_COUNT, REF_COUNT),
-          ALT_COUNT = NULL, REF_COUNT = NULL) %>%
-        dplyr::group_by(CHROM, POS) %>%
-        dplyr::filter(MISSING_PROP == max(MISSING_PROP)) %>%
-        dplyr::filter(MAC == min(MAC)) %>%
-        dplyr::ungroup(.) %>%
-        dplyr::arrange(CHROM, POS) %>%
-        dplyr::distinct(CHROM, POS, .keep_all = TRUE) %>%
-        dplyr::select(MARKERS)
-    }# End best stats
+  # Filter Whitelist------------------------------------------------------------
+  gds <- filter_whitelist(
+    data = gds,
+    whitelist.markers = whitelist.markers,
+    verbose = verbose,
+    path.folder = wf,
+    parameters = filters.parameters,
+    biallelic = biallelic,
+    internal = FALSE)
 
-    if (filter.strands == "blacklist") {
-      blacklist.strands %<>% dplyr::distinct(MARKERS)
-    }
+  # Filter_individuals----------------------------------------------------------
+  gds <- filter_individuals(
+    interactive.filter = FALSE,
+    data = gds,
+    filter.individuals.missing = filter.individuals.missing,
+    filter.individuals.heterozygosity = NULL,
+    filter.individuals.coverage.total = filter.individuals.coverage.total,
+    parallel.core = parallel.core,
+    verbose = verbose,
+    path.folder = wf,
+    parameters = filters.parameters,
+    dp = dp,
+    internal = FALSE
+  )
 
-    if (filter.strands != "keep.both") {
-      message("Blacklisted markers: ", nrow(blacklist.strands))
+  # Filter MAC----------------------------------------------------------------
+  gds <- filter_mac(
+    interactive.filter = FALSE,
+    data = gds,
+    filter.mac = filter.mac,
+    filename = NULL,
+    parallel.core = parallel.core,
+    verbose = verbose,
+    parameters = filters.parameters,
+    path.folder = wf,
+    internal = FALSE)
 
-      # update the blacklist
-      blacklist.strands %<>%
-        dplyr::mutate(FILTER = "filter.strands")
+  # Filter mean coverage------------------------------------------------------
+  gds <- filter_coverage(
+    interactive.filter = FALSE,
+    data = gds,
+    filter.coverage = filter.coverage,
+    filename = NULL,
+    parallel.core = parallel.core,
+    verbose = verbose,
+    parameters = filters.parameters,
+    path.folder = wf,
+    internal = FALSE)
 
-      bl.gds <- update_bl_markers(gds = radiator.gds, update = blacklist.strands)
-      # Update markers.meta
-      markers.meta %<>% dplyr::filter(!MARKERS %in% blacklist.strands$MARKERS)
-      # check <- markers.meta
+  # Filter genotyping---------------------------------------------------------
+  gds <- filter_genotyping(
+    interactive.filter = FALSE,
+    data = gds,
+    filter.genotyping = filter.genotyping,
+    filename = NULL,
+    parallel.core = parallel.core,
+    verbose = verbose,
+    parameters = filters.parameters,
+    path.folder = wf,
+    internal = FALSE)
 
-      # Update GDS
-      update_radiator_gds(gds = gds, node.name = "markers.meta", value = markers.meta, sync = TRUE)
+  # Filter SNP position on the read---------------------------------------------
+  gds <- filter_snp_position_read(
+    interactive.filter = FALSE,
+    data = gds,
+    filter.snp.position.read = filter.snp.position.read,
+    filename = NULL,
+    parallel.core = parallel.core,
+    verbose = verbose,
+    parameters = filters.parameters,
+    path.folder = wf,
+    internal = FALSE)
 
-      # Filter parameter file: update
-      filters.parameters <- radiator_parameters(
-        generate = FALSE,
-        initiate = FALSE,
-        update = TRUE,
-        parameter.obj = filters.parameters,
-        data = gds,
-        filter.name = "duplicated markers on different strands",
-        param.name = "filter.strands",
-        values = filter.strands,
-        path.folder = path.folder,
-        file.date = file.date,
-        verbose = verbose)
-    }
+  # Filter number of SNPs per locus --------------------------------------------
+  gds <- filter_snp_number(
+    interactive.filter = FALSE,
+    data = gds,
+    filter.snp.number = filter.snp.number,
+    filename = NULL,
+    parallel.core = parallel.core,
+    verbose = verbose,
+    parameters = filters.parameters,
+    path.folder = wf,
+    internal = FALSE)
+
+  # Filter Linkage disequilibrium --------------------------------------------
+  gds <- filter_ld(
+    interactive.filter = FALSE,
+    data = gds,
+    filter.short.ld = filter.short.ld,
+    filter.long.ld = filter.long.ld,
+    parallel.core = parallel.core,
+    filename = NULL,
+    verbose = verbose,
+    long.ld.missing = long.ld.missing,
+    ld.method = ld.method,
+    parameters = filters.parameters,
+    path.folder = wf,
+    internal = FALSE)
+
+  # Final Sync GDS -----------------------------------------------------------
+  markers.meta <- extract_markers_metadata(gds)
+  strata <- extract_individuals(gds = gds, ind.field.select = c("INDIVIDUALS", "STRATA"))
+  sync_gds(gds = gds, samples = strata$INDIVIDUALS,
+           markers = markers.meta$VARIANT_ID)
+  # summary_gds(gds)
+  # generate a folder to put the stats...
+  path.folder <- generate_folder(
+    f = wf,
+    rad.folder = "filtered",
+    internal = FALSE,
+    file.date = file.date,
+    verbose = verbose)
+
+  # Whitelist
+  markers.meta %>%
+    readr::write_tsv(x = ., path = file.path(path.folder, "whitelist.markers.tsv"))
+  if (verbose) message("Writing the whitelist of filtered markers: whitelist.markers.tsv")
+
+  # blacklist
+  bl <- update_bl_markers(gds = gds, extract = TRUE)
+  if (nrow(bl) > 0) {
+    readr::write_tsv(x = bl, path = file.path(path.folder, "blacklist.markers.tsv"))
+    if (verbose) message("Writing the blacklist of markers: blacklist.markers.tsv")
   }
-  blacklist.strands <- NULL
 
+  # writing the blacklist of id
+  blacklist.id <- update_bl_individuals(gds = gds, extract = TRUE)
+  if (nrow(blacklist.id) > 0) {
+    readr::write_tsv(x = blacklist.id, path = file.path(path.folder, "blacklist.id.tsv"))
+    if (verbose) message("Writing the blacklist of ids: blacklist.id.tsv")
+  }
+  # Generate new strata
+  readr::write_tsv(x = strata, path = file.path(path.folder, "strata.filtered.tsv"))
+  if (verbose) message("Writing the filtered strata: strata.filtered.tsv")
 
 
   #______________________________###############################################
   #-----------------------------------  VCF STATS   ----------------------------
-
-
   if (vcf.stats) {
     # SUBSAMPLE markers --------------------------------------------------------
-    markers.meta <- extract_markers_metadata(gds = gds)#update
     n.markers <- length(markers.meta$VARIANT_ID)
     if (n.markers < 200000) subsample.markers.stats <- 1
 
     if (subsample.markers.stats < 1) {
-      markers.subsampled <- dplyr::sample_frac(tbl = markers.meta,
-                                               size = subsample.markers.stats)
+      markers.subsampled <- dplyr::sample_frac(
+        tbl = markers.meta,
+        size = subsample.markers.stats)
       variant.select <- markers.subsampled$VARIANT_ID
       subsample.filename <- stringi::stri_join("markers.subsampled_", file.date, ".tsv")
       dplyr::select(markers.subsampled, MARKERS) %>%
         dplyr::mutate(RANDOM_SEED = random.seed) %>%
-        readr::write_tsv(x = .,
-                         path = file.path(path.folder, subsample.filename))
+        readr::write_tsv(
+          x = .,
+          path = file.path(path.folder, subsample.filename))
       markers.subsampled <- NULL
     } else {
       variant.select <- NULL
     }
 
-    # Individuals stats --------------------------------------------------------
+    # Individuals stats
     if (verbose) message("\nGenerating individual stats")
-    # Note to my self: the test you ran show that timing of missing prop is
-    # not really impacted by number of markers, but heterozygosity is...
     id.stats <- generate_id_stats(
       gds = gds,
       subsample = variant.select,
@@ -884,140 +1011,16 @@ write_seqarray <- function(
       parallel.core = parallel.core,
       verbose = verbose)
 
-    # names(id.stats)
-    print(id.stats$fig)
-    individuals <- id.stats$info %>%
-      readr::write_tsv(x = ., path = file.path(path.folder, ind.file))
-    ind.stats.file <- stringi::stri_join("vcf_individuals_stats_", file.date, ".tsv")
-    ind.stats <- id.stats$stats %>%
-      readr::write_tsv(x = ., path = file.path(path.folder, ind.stats.file))
-
-    # filter.individuals.missing -----------------------------------------------
-    gds <- filter_individuals(
-      interactive.filter = FALSE,
-      data = gds,
-      filter.individuals.missing = filter.individuals.missing,
-      filter.individuals.heterozygosity = NULL,
-      filter.individuals.coverage.total = filter.individuals.coverage.total,
-      parallel.core = parallel.core,
-      verbose = verbose,
-      path.folder = path.folder,
-      subsample = variant.select,
-      parameters = filters.parameters,
-      dp = TRUE,
-      id.stats = id.stats
-    )
-
-
-    # Markers stats ------------------------------------------------------------
-    if (verbose) message("Updating markers metadata and stats\n")
-    temp <- generate_markers_stats(
+    # Markers stats
+    if (verbose) message("Generating markers stats")
+    stats.sub <- generate_markers_stats(
       gds = gds,
       path.folder = path.folder,
       filename = markers.file,
       file.date = file.date,
       parallel.core = parallel.core,
-      subsample = variant.select)
-    stats.sub <- temp$info
-
-    # Note to my self: might no longer be necessary if always using the meta inside the GDS
-    if (is.null(variant.select)) {
-      markers.meta <- temp$info
-      stats.sub <- NULL
-    } else {
-      stats.sub <- temp$info
-    }
-    m.stats <- temp$stats# required below
-    temp <- NULL
-
-    ##______________________________________________________________________####
-    # Filters ------------------------------------------------------------------
-    # Filter common markers ----------------------------------------------------
-    gds <- filter_common_markers(
-      data = gds,
-      filter.common.markers = filter.common.markers,
-      plot = TRUE,
-      parallel.core = parallel.core,
-      verbose = verbose,
-      parameters = filters.parameters,
-      path.folder = path.folder,
-      internal = internal)
-
-    # FILTER MAC----------------------------------------------------------------
-    gds <- filter_mac(
-      interactive.filter = FALSE,
-      data = gds,
-      filter.mac = filter.mac,
-      filename = NULL,
-      parallel.core = parallel.core,
-      verbose = verbose,
-      parameters = filters.parameters,
-      path.folder = path.folder)
-
-    # Filter mean coverage------------------------------------------------------
-    gds <- filter_coverage(
-      interactive.filter = FALSE,
-      data = gds,
-      filter.coverage = filter.coverage,
-      filename = NULL,
-      parallel.core = parallel.core,
-      verbose = verbose,
-      parameters = filters.parameters,
-      path.folder = path.folder)
-
-    # Filter genotyping---------------------------------------------------------
-    gds <- filter_genotyping(
-      interactive.filter = FALSE,
-      data = gds,
-      filter.genotyping = filter.genotyping,
-      filename = NULL,
-      parallel.core = parallel.core,
-      verbose = verbose,
-      parameters = filters.parameters,
-      path.folder = path.folder)
-
-    # SNP position on the read--------------------------------------------------
-    gds <- filter_snp_position_read(
-      interactive.filter = FALSE,
-      data = gds,
-      filter.snp.position.read = filter.snp.position.read,
-      filename = NULL,
-      parallel.core = parallel.core,
-      verbose = verbose,
-      parameters = filters.parameters,
-      path.folder = path.folder)
-
-    # number of SNPs per locus -------------------------------------------------
-    gds <- filter_snp_number(
-      interactive.filter = FALSE,
-      data = gds,
-      filter.snp.number = filter.snp.number,
-      filename = NULL,
-      parallel.core = parallel.core,
-      verbose = verbose,
-      parameters = filters.parameters,
-      path.folder = path.folder)
-
-    # Filter Linkage disequilibrium --------------------------------------------
-    gds <- filter_ld(
-      interactive.filter = FALSE,
-      data = gds,
-      filter.short.ld = filter.short.ld,
-      filter.long.ld = filter.long.ld,
-      parallel.core = parallel.core,
-      filename = NULL,
-      verbose = verbose,
-      long.ld.missing = long.ld.missing,
-      ld.method = ld.method,
-      parameters = filters.parameters,
-      path.folder = path.folder)
-
-    # Final Sync GDS -----------------------------------------------------------
-    markers.meta <- extract_markers_metadata(gds)
-    sync_gds(gds = gds, samples = individuals$INDIVIDUALS,
-             markers = markers.meta$VARIANT_ID)
-
-
+      subsample = variant.select) %$% info
+    # names(stats.sub)
     # For summary at the end of the function:
     ind.missing <- round(mean(individuals$MISSING_PROP, na.rm = TRUE), 2)
     if (dp) ind.cov.total <- round(mean(individuals$COVERAGE_TOTAL, na.rm = TRUE), 0)
@@ -1032,7 +1035,7 @@ write_seqarray <- function(
     }
   }#End stats
 
-  # RESULTS --------------------------------------------------------------------
+  #RESULTS --------------------------------------------------------------------
   number.info <- SeqArray::seqGetFilter(gdsfile = gds)
   if (verbose) {
     cat("################################### SUMMARY ####################################\n")

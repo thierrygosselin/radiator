@@ -20,12 +20,13 @@ radiator_dots(func.name = as.list(sys.call())[[1]], fd = NULL,
   "blacklist.id", "markers.info", "keep.allele.names", "keep.gds",
   "ref.calibration", "vcf.metadata", "vcf.stats", "wide",
   "whitelist.markers", "write.tidy", "missing.memory", "dart.sequence",
-  "internal", "heatmap.fst"), deprecated = c("maf.thresholds",
-  "common.markers", "max.marker", "monomorphic.out", "snp.ld",
-  "filter.call.rate", "filter.markers.coverage", "filter.markers.missing",
-  "number.snp.reads", "mixed.genomes.analysis",
-  "duplicate.genomes.analysis", "hierarchical.levels", "imputation.method",
-  "pred.mean.matching", "num.tree"), verbose = TRUE)
+  "internal", "heatmap.fst", "tidy.check", "tidy.vcf"),
+  deprecated = c("maf.thresholds", "common.markers", "max.marker",
+  "monomorphic.out", "snp.ld", "filter.call.rate",
+  "filter.markers.coverage", "filter.markers.missing", "number.snp.reads",
+  "mixed.genomes.analysis", "duplicate.genomes.analysis",
+  "hierarchical.levels", "imputation.method", "pred.mean.matching",
+  "num.tree"), verbose = TRUE)
 }
 \arguments{
 \item{func.name}{Default: \code{as.list(sys.call())[[1]]}.}
@@ -40,7 +41,7 @@ dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE)}.}
 
 \item{keepers}{(optional) The arguments that are used inside the function.
 Default: \code{keepers = c(
-"subsample.markers.stats",
+"subsample.markers.stats", "subsample",
 "filter.reproducibility", "filter.individuals.missing",
 "filter.individuals.heterozygosity", "filter.individuals.coverage.total",
 "filter.common.markers", "filter.monomorphic", "filter.mac",
@@ -53,12 +54,12 @@ Default: \code{keepers = c(
 "gt", "gt.bin", "gt.vcf", "gt.vcf.nuc",
 "pop.levels", "pop.labels", "pop.select", "blacklist.id",
 "markers.info", "keep.allele.names", "keep.gds", "ref.calibration",
-"vcf.metadata", "vcf.stats",
+"vcf.metadata", "vcf.stats", "id.stats", "dp",
 "whitelist.markers",
 "write.tidy",
 "dart.sequence",
 "missing.memory",
-"internal", "heatmap.fst")}.}
+"internal", "heatmap.fst", "tidy.check", "tidy.vcf")}.}
 
 \item{deprecated}{(optional) radiator's deprecated arguments.
 Default: \code{deprecated = c("maf.thresholds", "common.markers",

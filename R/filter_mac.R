@@ -184,6 +184,7 @@ filter_mac <- function(
       cat("############################## radiator::filter_mac ############################\n")
       cat("################################################################################\n")
     }
+    if (!verbose) message("filter_mac...")
 
     # Cleanup-------------------------------------------------------------------
     file.date <- format(Sys.time(), "%Y%m%d@%H%M")
@@ -492,11 +493,11 @@ filter_mac <- function(
 
     # results --------------------------------------------------------------------
     if (verbose) cat("################################### RESULTS ####################################\n")
-    if (verbose) message("Filter mac threshold: ", filter.mac)
+    message("\nFilter mac threshold: ", filter.mac)
     message("Number of individuals / strata / chrom / locus / SNP:")
-    message("    Before: ", filters.parameters$filters.parameters$BEFORE)
+    if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
     message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-    message("    After: ", filters.parameters$filters.parameters$AFTER)
+    if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
   }
   return(data)
 }#End filter_mac

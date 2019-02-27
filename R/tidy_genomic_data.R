@@ -250,11 +250,11 @@ tidy_genomic_data <- function(
     input <- radiator::tidy_vcf(
       data = data,
       strata = strata.df,
-      vcf.metadata = vcf.metadata,
       parallel.core = parallel.core,
       verbose = verbose,
       whitelist.markers = whitelist.markers,
       filename = NULL,
+      vcf.metadata = vcf.metadata,
       vcf.stats = vcf.stats,
       gt.vcf.nuc = TRUE,
       gt.vcf = TRUE,
@@ -264,7 +264,6 @@ tidy_genomic_data <- function(
       internal = TRUE
     )
     biallelic <- radiator::detect_biallelic_markers(input)
-    # biallelic <- input$biallelic
   } # End import VCF
 
   # Import PLINK ---------------------------------------------------------------
