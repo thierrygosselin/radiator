@@ -106,7 +106,7 @@ filter_snp_number <- function(
     }
     # Cleanup-------------------------------------------------------------------
     file.date <- format(Sys.time(), "%Y%m%d@%H%M")
-    if (verbose) message("Execution date/time: ", file.date)
+    if (verbose) message("Execution date@time: ", file.date)
     old.dir <- getwd()
     opt.change <- getOption("width")
     options(width = 70)
@@ -280,7 +280,9 @@ filter_snp_number <- function(
         axis.title.y = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
         legend.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
         legend.text = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-        strip.text.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"))
+        strip.text.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
+        axis.text.x = ggplot2::element_text(size = 12, family = "Helvetica", angle = 90, hjust = 1, vjust = 0.5)
+      )
     print(d.plot)
 
     # save
@@ -326,7 +328,7 @@ filter_snp_number <- function(
       ggplot2::theme(
         axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
         axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-        axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica")#, angle = 90, hjust = 1, vjust = 0.5)
+        axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica", angle = 90, hjust = 1, vjust = 0.5)
       ) +
       ggplot2::facet_grid(LIST ~. , scales = "free", space = "free")
     print(markers.plot)
@@ -371,10 +373,10 @@ filter_snp_number <- function(
     # Filtering ----------------------------------------------------------------
     if (!purrr::is_double(filter.snp.number)) {
       out.high <- round(stats$OUTLIERS_HIGH[stats$GROUP == "SNPs per locus"])
-      message("\nRemoving outliers markers based on the number of SNPs per locus statistic: ", out.high)
+      if (verbose) message("\nRemoving outliers markers based on the number of SNPs per locus statistic: ", out.high)
       filter.snp.number <- out.high
     } else {
-      message("\nRemoving markers based on on the number of SNPs per locus statistic: ", filter.snp.number)
+      if (verbose) message("\nRemoving markers based on the number of SNPs per locus statistic: ", filter.snp.number)
     }
 
 

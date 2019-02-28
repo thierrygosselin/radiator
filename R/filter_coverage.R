@@ -121,11 +121,11 @@ filter_coverage <- function(
       cat("########################### radiator::filter_coverage ##########################\n")
       cat("################################################################################\n")
     }
-    if (!verbose) message("filter_coverage...")
+    # if (!verbose) message("filter_coverage...")
 
     # Cleanup-------------------------------------------------------------------
     file.date <- format(Sys.time(), "%Y%m%d@%H%M")
-    if (verbose) message("Execution date/time: ", file.date)
+    if (verbose) message("Execution date@time: ", file.date)
     old.dir <- getwd()
     opt.change <- getOption("width")
     options(width = 70)
@@ -372,7 +372,7 @@ filter_coverage <- function(
         ggplot2::theme(
           axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
           axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-          axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica") #angle = 90, hjust = 1, vjust = 0.5),
+          axis.text.x = ggplot2::element_text(size = 10, family = "Helvetica", angle = 90, hjust = 1, vjust = 0.5)
           # strip.text.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold")
         ) +
         ggplot2::theme_bw()+
@@ -448,7 +448,7 @@ filter_coverage <- function(
 
     # results --------------------------------------------------------------------
     if (verbose) cat("################################### RESULTS ####################################\n")
-    message("Filter mean coverage thresholds: ", paste(filter.coverage, collapse = " / "))
+    message("\nFilter mean coverage thresholds: ", paste(filter.coverage, collapse = " / "))
     message("Number of individuals / strata / chrom / locus / SNP:")
     if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
     message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)

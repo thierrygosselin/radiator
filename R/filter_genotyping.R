@@ -123,7 +123,7 @@ filter_genotyping <- function(
     }
     # Cleanup---------------------------------------------------------------------
     file.date <- format(Sys.time(), "%Y%m%d@%H%M")
-    if (verbose) message("Execution date/time: ", file.date)
+    if (verbose) message("Execution date@time: ", file.date)
     old.dir <- getwd()
     opt.change <- getOption("width")
     options(width = 70)
@@ -341,10 +341,10 @@ filter_genotyping <- function(
     # identify outliers: low and high -----------------------------------------
     if (!purrr::is_double(filter.genotyping)) {
       out.high <- floor(stats$OUTLIERS_HIGH[stats$GROUP == "missing genotypes"]*1000)/1000
-      message("\nRemoving outliers markers based on genotyping statistic: ", out.high)
+      if (verbose) message("\nRemoving outliers markers based on genotyping statistic: ", out.high)
       filter.genotyping <- out.high
     } else {
-      message("\nRemoving markers based on genotyping statistic: ", filter.genotyping)
+      if (verbose) message("\nRemoving markers based on genotyping statistic: ", filter.genotyping)
     }
 
     # Whitelist and Blacklist of markers

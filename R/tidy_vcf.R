@@ -231,7 +231,7 @@ tidy_vcf <- function(
 
   # Cleanup---------------------------------------------------------------------
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
-  if (verbose) message("Execution date/time: ", file.date)
+  if (verbose) message("Execution date@time: ", file.date)
   old.dir <- getwd()
   opt.change <- getOption("width")
   options(width = 70)
@@ -264,6 +264,7 @@ tidy_vcf <- function(
     keepers = c(
       "blacklist.id",
       "filter.individuals.missing",
+      "filter.individuals.coverage.total",
       "filter.common.markers",
       "filter.monomorphic",
       "filter.mac",
@@ -344,27 +345,13 @@ tidy_vcf <- function(
   if (is.null(tidy.check)) tidy.check <- TRUE
 
   # Folders---------------------------------------------------------------------
-  path.folder <- generate_folder(
+  wf <- path.folder <- generate_folder(
     f = path.folder,
-    rad.folder = "radiator",
+    rad.folder = "tidy_vcf",
+    prefix_int = FALSE,
     internal = internal,
     file.date = file.date,
     verbose = verbose)
-
-  # write the dots file
-  write_rad(
-    data = rad.dots,
-    path = path.folder,
-    filename = stringi::stri_join("radiator_tidy_vcf_args_", file.date, ".tsv"),
-    tsv = TRUE,
-    internal = internal,
-    verbose = verbose
-  )
-
-  filename.rad <- generate_filename(path.folder = path.folder, extension = "rad")
-  # Random seed ----------------------------------------------------------------
-  readr::write_lines(x = random.seed, path = file.path(path.folder, "random.seed"))
-  if (verbose) message("File written: random.seed (", random.seed,")")
 
   # import VCF -----------------------------------------------------------------
   data <- radiator::write_seqarray(
@@ -385,6 +372,7 @@ tidy_vcf <- function(
     filter.common.markers = filter.common.markers,
     whitelist.markers = whitelist.markers,
     filter.individuals.missing = filter.individuals.missing,
+    filter.individuals.coverage.total = filter.individuals.coverage.total,
     filter.mac = filter.mac,
     filter.coverage = filter.coverage,
     filter.genotyping = filter.genotyping,
@@ -396,24 +384,43 @@ tidy_vcf <- function(
     ld.method = ld.method
   )
 
-  #End GDS-------
+  # tidy_vcf folder ------------------------------------------------------------
+  tidy.folder <- generate_folder(
+    f = path.folder,
+    rad.folder = "tidy_vcf",
+    prefix_int = TRUE,
+    internal = FALSE,
+    file.date = file.date,
+    verbose = verbose)
 
+  # write the dots file: after the GDS import...
+  write_rad(
+    data = rad.dots,
+    path = tidy.folder,
+    filename = stringi::stri_join("radiator_tidy_vcf_args_", file.date, ".tsv"),
+    tsv = TRUE,
+    internal = internal,
+    verbose = verbose
+  )
+
+  # Random seed ----------------------------------------------------------------
+  readr::write_lines(x = random.seed, path = file.path(tidy.folder, "random.seed"))
+  if (verbose) message("File written: random.seed (", random.seed,")")
+
+  # Tidy the data --------------------------------------------------------------
   if (tidy.vcf) {
-    # summary, markers and individuals -----------------------------------------
+    # Get info markers and individuals -----------------------------------------
     wl.v <- SeqArray::seqGetData(data, "variant.id")
     markers.meta <- extract_markers_metadata(gds = data) %>%
       dplyr::filter(VARIANT_ID %in% wl.v)
     wl.s <- SeqArray::seqGetData(data, "sample.id")
+
     individuals <- extract_individuals(
       gds = data, ind.field.select = "INDIVIDUALS"
     ) %>%
       dplyr::filter(INDIVIDUALS %in% wl.s) %$% INDIVIDUALS
     n.markers <- length(markers.meta$VARIANT_ID)
     n.individuals <- length(individuals)
-
-    # data.summary <- summary_gds(gds = data, verbose = FALSE)
-    # n.markers <- data.summary$n.markers
-    # n.individuals <- data.summary$n.ind
 
     # STRATEGY tidy vcf  ---------------------------------------------------------
     # Depending on the number of markers ...
@@ -449,7 +456,7 @@ tidy_vcf <- function(
     # gt.vcf.nuc
     # gt
 
-
+    # Tidy check ----------  ---------------------------------------------------
     if (tidy.check && n.markers > 20000) {
       cat("\n\n################################## IMPORTANT ###################################\n")
       message("Tidying vcf with ", n.markers, " SNPs is not optimal:")
@@ -493,7 +500,6 @@ tidy_vcf <- function(
         if (verbose) message("\nRe-calibration of REF/ALT alleles: TRUE")
       }
 
-      return(data)
       # bi- or multi-alllelic VCF ------------------------------------------------
       biallelic <- detect_biallelic_markers(data = data)
 
@@ -636,7 +642,7 @@ tidy_vcf <- function(
 
 
       if (vcf.metadata) {
-        if (verbose) message("Keeping vcf genotypes metadata: yes")
+        if (verbose) message("\nKeeping vcf genotypes metadata: yes")
         # detect FORMAT fields available
         have <-  SeqArray::seqSummary(
           gdsfile = data,
@@ -669,7 +675,7 @@ tidy_vcf <- function(
         }
       }
 
-      # # Remove or not gds connection and file --------------------------------------
+      # # Remove or not gds connection and file
       # if (!keep.gds) {
       #   gds <- NULL
       #   if (file.exists(data$filename)) file.remove(data$filename)
@@ -764,12 +770,16 @@ tidy_vcf <- function(
         ) %$% input
       }
 
-      # include strata
+      # include strata ---------------------------------------------------------
+      strata <- extract_individuals(gds = data, ind.field.select = c("STRATA", "INDIVIDUALS"))
+
       if (!is.null(strata)) {
-        tidy.data %<>% join_strata(data = ., strata = strata, verbose = TRUE)
-        if (rlang::has_name(tidy.data, "STRATA")) {
-          tidy.data %<>% dplyr::rename(POP_ID = STRATA)
-        }
+        tidy.data <- join_strata(
+          data = tidy.data,
+          strata = strata,
+          pop.id = TRUE,
+          verbose = TRUE
+          )
       } else {
         tidy.data %<>% dplyr::mutate(POP_ID = 1L)
       }
@@ -781,18 +791,30 @@ tidy_vcf <- function(
                 "REF", "ALT", "GT_VCF", "GT_VCF_NUC", "GT", "GT_BIN",
                 "POLYMORPHIC")
 
-      tidy.data <- suppressWarnings(
-        dplyr::select(tidy.data, dplyr::one_of(want), dplyr::everything()))
+      suppressWarnings(
+        tidy.data %<>% dplyr::select(dplyr::one_of(want), dplyr::everything())
+        )
 
       # Sort id
       tidy.data %<>% dplyr::arrange(POP_ID, INDIVIDUALS)
 
       #write tidy
-      radiator::write_rad(data = tidy.data, path = file.path(path.folder, filename.rad))
+      # path.folder <- generate_folder(
+      #   f = wf,
+      #   rad.folder = "tidy_data",
+      #   internal = FALSE,
+      #   file.date = file.date,
+      #   verbose = verbose)
 
-      message("Updating GDS with genotypes.meta values")
+      filename.rad <- generate_filename(
+        path.folder = tidy.folder,
+        extension = "rad")
+      write_rad(data = tidy.data, path = filename.rad$filename)
+
+      if (verbose) message("Updating GDS with genotypes.meta values")
       update_radiator_gds(gds = data, node.name = "genotypes.meta", value = tidy.data)
-    } #tidy.vcf
+      message("\nTidy data file written: ", filename.rad$filename.short)
+      } #tidy.vcf
   }#tidy.vcf
 
 

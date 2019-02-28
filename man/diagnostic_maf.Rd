@@ -22,7 +22,6 @@ Minor Allele Frequency diagnostic, help choose a filter threshold.
 }
 \details{
 Highly recommended to look at the distribution of MAF
-\link{plot_density_distribution_maf}
 }
 \examples{
 \dontrun{

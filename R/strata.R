@@ -466,8 +466,7 @@ check_pop_levels <- function(
 #' strata.
 #' @param data A tidy dataset object.
 #' Documented in \code{\link[radiator]{tidy_genomic_data}}.
-#' @param strata A strata object.
-#' Documented in \code{\link[radiator]{read_strata}}.
+#' @inheritParams read_strata
 #' @inheritParams radiator_common_arguments
 #' @return The data filtered by the strata by individuals.
 
@@ -490,7 +489,7 @@ check_pop_levels <- function(
 
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
-join_strata <- function(data, strata = NULL, verbose = TRUE) {
+join_strata <- function(data, strata = NULL, pop.id = FALSE, verbose = TRUE) {
   if (is.null(strata)) return(data)
   if (verbose) message("Synchronizing data and strata...")
   if (rlang::has_name(data, "POP_ID")) data %<>% dplyr::select(-POP_ID)
@@ -505,15 +504,21 @@ join_strata <- function(data, strata = NULL, verbose = TRUE) {
     rlang::abort("No more individuals in your data, check data and strata ID names...")
   }
 
-  data %<>% dplyr::left_join(strata, by = "INDIVIDUALS")
+  suppressWarnings(
+    data %<>% dplyr::left_join(strata, by = "INDIVIDUALS")
+  )
   if (verbose) {
     if (rlang::has_name(data, "POP_ID")) {
-      message("    Number of strat: ", length(unique(data$POP_ID)))
+      message("    Number of strata: ", length(unique(data$POP_ID)))
     }
     if (rlang::has_name(data, "STRATA")) {
       message("    Number of strata: ", length(unique(data$STRATA)))
     }
     message("    Number of individuals: ", length(unique(data$INDIVIDUALS)))
+  }
+
+  if (isTRUE(pop.id) && rlang::has_name(data, "STRATA")) {
+    data %<>% dplyr::rename(POP_ID = STRATA)
   }
   return(data)
 }#End join_strata

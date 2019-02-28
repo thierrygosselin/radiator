@@ -4,14 +4,20 @@
 \alias{join_strata}
 \title{Join the strata with the data}
 \usage{
-join_strata(data, strata = NULL, verbose = TRUE)
+join_strata(data, strata = NULL, pop.id = FALSE, verbose = TRUE)
 }
 \arguments{
 \item{data}{A tidy dataset object.
 Documented in \code{\link[radiator]{tidy_genomic_data}}.}
 
-\item{strata}{A strata object.
-Documented in \code{\link[radiator]{read_strata}}.}
+\item{strata}{(path or object) The strata file or object.
+Additional documentation is available in \code{\link{read_strata}}.
+Use that function to whitelist/blacklist populations/individuals.
+Option to set \code{pop.levels/pop.labels} is also available.}
+
+\item{pop.id}{(logical) When \code{pop.id = TRUE}, the strata returns
+the stratification colname \code{POP_ID}.
+Default: \code{pop.id = FALSE}, returns \code{STRATA}.}
 
 \item{verbose}{(optional, logical) When \code{verbose = TRUE}
 the function is a little more chatty during execution.

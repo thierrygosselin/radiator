@@ -291,7 +291,7 @@ filter_hwe <- function(
     }
     # Cleanup---------------------------------------------------------------------
     file.date <- format(Sys.time(), "%Y%m%d@%H%M")
-    if (verbose) message("Execution date/time: ", file.date)
+    if (verbose) message("Execution date@time: ", file.date)
     old.dir <- getwd()
     opt.change <- getOption("width")
     options(width = 70)

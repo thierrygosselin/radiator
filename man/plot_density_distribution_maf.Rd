@@ -30,7 +30,7 @@ zoom in a section with 'fig + coord_cartesian(xlim = c(0, 0.1), ylim = c(0, 1))'
 Save the figure with : \code{ggsave("figure name.pdf", width = 40, height = 20, dpi = 600, units = "cm", useDingbats = F)}.
 }
 \seealso{
-\link{tidy_genomic_data} and  \link{summary_stats_vcf_tidy}
+\link{tidy_genomic_data}
 }
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}

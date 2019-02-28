@@ -270,7 +270,7 @@ write_seqarray <- function(
 
   # Cleanup---------------------------------------------------------------------
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
-  if (verbose) message("Execution date/time: ", file.date)
+  if (verbose) message("Execution date@time: ", file.date)
   old.dir <- getwd()
   opt.change <- getOption("width")
   options(width = 70)
@@ -372,13 +372,14 @@ write_seqarray <- function(
   wf <- path.folder <- generate_folder(
     f = path.folder,
     rad.folder = "write_seqarray",
+    prefix_int = FALSE,
     internal = internal,
     file.date = file.date,
     verbose = verbose)
 
   radiator.folder <- generate_folder(
     f = path.folder,
-    rad.folder = "radiator",
+    rad.folder = "import_gds",
     prefix_int = TRUE,
     internal = FALSE,
     file.date = file.date,
@@ -727,15 +728,35 @@ write_seqarray <- function(
       }
 
       if (filter.strands != "keep.both") {
+        # Folders---------------------------------------------------------------------
+        path.folder.strands <- generate_folder(
+          f = path.folder,
+          rad.folder = "filter_duplicated_markers",
+          internal = FALSE,
+          file.date = file.date,
+          verbose = verbose)
+
         # update the blacklist
         blacklist.strands %<>%
           dplyr::mutate(FILTER = "filter.strands")
+
+        write_rad(
+          data = blacklist.strands,
+          path = path.folder.strands,
+          filename = stringi::stri_join("blacklist.duplicated.markers.strands_",
+                                        file.date, ".tsv"),
+          tsv = TRUE, internal = FALSE, verbose = verbose)
 
         bl.gds <- update_bl_markers(gds = gds, update = blacklist.strands)
         # Update markers.meta
         markers.meta %<>% dplyr::filter(!MARKERS %in% blacklist.strands$MARKERS)
         # check <- markers.meta
-
+        write_rad(
+          data = markers.meta,
+          path = path.folder.strands,
+          filename = stringi::stri_join("whitelist.duplicated.markers.strands_",
+                                        file.date, ".tsv"),
+          tsv = TRUE, internal = FALSE, verbose = verbose)
         # Update GDS
         update_radiator_gds(
           gds = gds,
@@ -750,7 +771,7 @@ write_seqarray <- function(
           update = TRUE,
           parameter.obj = filters.parameters,
           data = gds,
-          filter.name = "duplicated markers on different strands",
+          filter.name = "filter duplicated markers on different strands",
           param.name = "filter.strands",
           values = filter.strands,
           path.folder = path.folder,
@@ -765,7 +786,7 @@ write_seqarray <- function(
       }
     }
   }#Here
-  blacklist.strands <- NULL
+  blacklist.strands <- path.folder.strands <- NULL
 
   # Filter the vcf's FILTER column ---------------------------------------------
   markers.meta$FILTER <- SeqArray::seqGetData(
@@ -941,6 +962,7 @@ write_seqarray <- function(
     internal = FALSE)
 
   # Final Sync GDS -----------------------------------------------------------
+  if (verbose) message("\nPreparing output files...")
   markers.meta <- extract_markers_metadata(gds)
   strata <- extract_individuals(gds = gds, ind.field.select = c("INDIVIDUALS", "STRATA"))
   sync_gds(gds = gds, samples = strata$INDIVIDUALS,
@@ -1009,30 +1031,31 @@ write_seqarray <- function(
       path.folder = path.folder,
       file.date = file.date,
       parallel.core = parallel.core,
-      verbose = verbose)
+      verbose = verbose) %$% info
 
     # Markers stats
     if (verbose) message("Generating markers stats")
-    stats.sub <- generate_markers_stats(
+    markers.stats <- generate_markers_stats(
       gds = gds,
       path.folder = path.folder,
       filename = markers.file,
       file.date = file.date,
       parallel.core = parallel.core,
+      verbose = verbose,
       subsample = variant.select) %$% info
-    # names(stats.sub)
-    # For summary at the end of the function:
-    ind.missing <- round(mean(individuals$MISSING_PROP, na.rm = TRUE), 2)
-    if (dp) ind.cov.total <- round(mean(individuals$COVERAGE_TOTAL, na.rm = TRUE), 0)
-    if (dp) ind.cov.mean <- round(mean(individuals$COVERAGE_MEAN, na.rm = TRUE), 0)
 
-    if (!is.null(stats.sub)) {
-      markers.missing <- round(mean(stats.sub$MISSING_PROP, na.rm = TRUE), 2)
-      if (dp) markers.cov <- round(mean(stats.sub$COVERAGE_MEAN, na.rm = TRUE), 0) # same as above because NA...
-    } else {
-      markers.missing <- round(mean(markers.meta$MISSING_PROP, na.rm = TRUE), 2)
-      if (dp) markers.cov <- round(mean(markers.meta$COVERAGE_MEAN, na.rm = TRUE), 0) # same as above because NA...
-    }
+    # For summary at the end of the function:
+    ind.missing <- round(mean(id.stats$MISSING_PROP, na.rm = TRUE), 2)
+    if (dp) ind.cov.total <- round(mean(id.stats$COVERAGE_TOTAL, na.rm = TRUE), 0)
+    if (dp) ind.cov.mean <- round(mean(id.stats$COVERAGE_MEAN, na.rm = TRUE), 0)
+
+    # if (!is.null(stats.sub)) {
+      markers.missing <- round(mean(markers.stats$MISSING_PROP, na.rm = TRUE), 2)
+      if (dp) markers.cov <- round(mean(markers.stats$COVERAGE_MEAN, na.rm = TRUE), 0) # same as above because NA...
+    # } else {
+      # markers.missing <- round(mean(markers.stats$MISSING_PROP, na.rm = TRUE), 2)
+      # if (dp) markers.cov <- round(mean(markers.stats$COVERAGE_MEAN, na.rm = TRUE), 0) # same as above because NA...
+    # }
   }#End stats
 
   #RESULTS --------------------------------------------------------------------
@@ -1040,7 +1063,7 @@ write_seqarray <- function(
   if (verbose) {
     cat("################################### SUMMARY ####################################\n")
     if (vcf.stats) {
-      message("\n\nSummary (before filtering):\nMissing data: ")
+      message("\n\nSummary (AFTER filtering):\nMissing data: ")
       message("    markers: ", markers.missing)
       message("    individuals: ", ind.missing)
       if (dp) message("\n\nCoverage info:")
@@ -1049,12 +1072,11 @@ write_seqarray <- function(
       if (dp) message("    markers mean coverage: ", markers.cov)
     }
   }
-  message("\n\nNumber of chromosome/contig/scaffold: ", dplyr::n_distinct(markers.meta$CHROM))
-  message("Number of locus: ", dplyr::n_distinct(markers.meta$LOCUS))
+  message("\n\nNumber of chromosome/contig/scaffold: ", length(unique(markers.meta$CHROM)))
+  message("Number of locus: ", length(unique(markers.meta$LOCUS)))
   message("Number of markers: ", length(number.info$variant.sel[number.info$variant.sel]))
-  message("Number of individuals: ", length(number.info$sample.sel[number.info$sample.sel]))
-
-  individuals <- stats <- markers.meta <- NULL
+  summary_strata(strata)
+  id.stats <- markers.stats <- markers.meta <- NULL
 
   message("radiator Genomic Data Structure (GDS) file: ", folder_short(filename))
   return(gds)

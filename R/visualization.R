@@ -183,7 +183,7 @@ plot_coverage_imbalance_diagnostic <- function(tidy.vcf.file, pop.levels, read.d
 #' @details turn off the legend using \code{fig + theme(legend.position = "none")} or
 #' zoom in a section with 'fig + coord_cartesian(xlim = c(0, 0.1), ylim = c(0, 1))'.
 #' Save the figure with : \code{ggsave("figure name.pdf", width = 40, height = 20, dpi = 600, units = "cm", useDingbats = F)}.
-#' @seealso \link{tidy_genomic_data} and  \link{summary_stats_vcf_tidy}
+#' @seealso \link{tidy_genomic_data}
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 #' @keywords internal
 
