@@ -15,12 +15,20 @@
 #' \code{\link{write_seqarray}} or
 #' \code{\link{tidy_vcf}}.
 # @param filename (optional) Name of the file written to the working directory.
+#' @param path.folder (path, optional) By default will print results in the working directory.
+#' Default: \code{path.folder = NULL}.
+#' @param digits (integer, optional). Default: \code{digits = 4}. For populatios stats.
 #' @inheritParams radiator_common_arguments
 #' @rdname summary_rad
 #' @export
 # @keywords internal
 
-summary_rad <- function(data, verbose = TRUE) {
+summary_rad <- function(
+  data,
+  path.folder = NULL,
+  digits = 4,
+  verbose = TRUE
+) {
   # Cleanup-------------------------------------------------------------------
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
   if (verbose) message("Execution date@time: ", file.date)
@@ -38,6 +46,16 @@ summary_rad <- function(data, verbose = TRUE) {
   # Checking for missing and/or default arguments-------------------------------
   if (missing(data)) rlang::abort("Input file missing")
 
+
+  # Folders---------------------------------------------------------------------
+  path.folder <- generate_folder(
+    f = path.folder,
+    rad.folder = "summary_stats",
+    prefix_int = FALSE,
+    internal = FALSE,
+    file.date = file.date,
+    verbose = verbose)
+
   # Detect format --------------------------------------------------------------
   data.type <- radiator::detect_genomic_format(data)
   if (!data.type %in% c("tbl_df", "fst.file", "SeqVarGDSClass", "gds.file")) {
@@ -50,15 +68,56 @@ summary_rad <- function(data, verbose = TRUE) {
                    install.packages("BiocManager")
                    BiocManager::install("SeqVarTools")')
     }
-
+    message("Importing gds file...")
     if (data.type == "gds.file") {
       data <- radiator::read_rad(data, verbose = verbose)
       data.type <- "SeqVarGDSClass"
     }
+
+    tidy.data <- extract_genotypes_metadata(
+      gds = data,
+      genotypes.meta.select = c("MARKERS", "COL", "INDIVIDUALS", "POP_ID", "GT_BIN"))
+
+    if (length(tidy.data) == 0) {
+      tidy.data <- gds2tidy(gds = data)
+    }
+    SeqArray::seqClose(data)
+    data <- tidy.data
+    tidy.data <- NULL
+
   } else { #tidy.data
     if (is.vector(data)) data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
   }
-  s <- data %>%
+  if (verbose) message("Summarizing...")
+  # ms: markers stats
+  ms <- data %>%
+    dplyr::filter(!is.na(GT_BIN)) %>%
+    dplyr::group_by(MARKERS) %>%
+    dplyr::summarise(
+      N = as.numeric(n()),
+      PP = as.numeric(length(GT_BIN[GT_BIN == 0])),
+      PQ = as.numeric(length(GT_BIN[GT_BIN == 1])),
+      QQ = as.numeric(length(GT_BIN[GT_BIN == 2]))
+    ) %>%
+    dplyr::ungroup(.) %>%
+    dplyr::mutate(
+      FREQ_REF = ((PP*2) + PQ)/(2*N),
+      FREQ_ALT = ((QQ*2) + PQ)/(2*N),
+      HET_O = PQ/N,
+      HET_E = 2 * FREQ_REF * FREQ_ALT,
+      FIS = dplyr::if_else(HET_O == 0, 1, round(((HET_E - HET_O) / HET_E), 6)),
+      PP = NULL, PQ = NULL, QQ= NULL
+    ) %>%
+    dplyr::rename(MAF_GLOBAL = FREQ_ALT)
+
+  write_rad(
+    data = ms,
+    path = path.folder,
+    filename = "summary.stats.markers.tsv",
+    tsv = TRUE, verbose = verbose)
+
+  # mps: markers pop stats
+  mps <- data %>%
     dplyr::filter(!is.na(GT_BIN)) %>%
     dplyr::group_by(MARKERS, POP_ID) %>%
     dplyr::summarise(
@@ -67,24 +126,51 @@ summary_rad <- function(data, verbose = TRUE) {
       PQ = as.numeric(length(GT_BIN[GT_BIN == 1])),
       QQ = as.numeric(length(GT_BIN[GT_BIN == 2]))
     ) %>%
+    dplyr::ungroup(.) %>%
     dplyr::mutate(
       FREQ_REF = ((PP*2) + PQ)/(2*N),
       FREQ_ALT = ((QQ*2) + PQ)/(2*N),
       HET_O = PQ/N,
       HET_E = 2 * FREQ_REF * FREQ_ALT,
-      FIS = dplyr::if_else(HET_O == 0, 1, round(((HET_E - HET_O) / HET_E), 6))
+      FIS = dplyr::if_else(HET_O == 0, 1, round(((HET_E - HET_O) / HET_E), 6)),
+      PP = NULL, PQ = NULL, QQ= NULL
     ) %>%
-    dplyr::ungroup(.)
+    dplyr::rename(MAF_LOCAL = FREQ_ALT)
+  write_rad(
+    data = mps,
+    path = path.folder,
+    filename = "summary.stats.markers.pop.tsv",
+    tsv = TRUE, verbose = verbose)
 
-  global.maf <- s %>%
-    dplyr::group_by(MARKERS) %>%
-    dplyr::summarise_at(.tbl = ., .vars = c("N", "PP", "PQ", "QQ"), .funs = sum, na.rm = TRUE) %>%
-    dplyr::mutate(GLOBAL_MAF = (PQ + (2 * QQ)) / (2*N)) %>%
-    dplyr::select(MARKERS, GLOBAL_MAF)
+  # global.maf <- data.sum %>%
+  #   dplyr::group_by(MARKERS) %>%
+  #   dplyr::summarise_at(.tbl = ., .vars = c("N", "PP", "PQ", "QQ"), .funs = sum, na.rm = TRUE) %>%
+  #   dplyr::mutate(MAF_GLOBAL = (PQ + (2 * QQ)) / (2*N)) %>%
+  #   dplyr::select(MARKERS, MAF_GLOBAL)
 
-  s %<>%
-    dplyr::left_join(global.maf, by = "MARKERS") %>%
-    dplyr::select(MARKERS, POP_ID, N, FREQ_REF, FREQ_ALT, GLOBAL_MAF, HET_O, HET_E, FIS)
-  # readr::write_tsv(vcf.summary, filename, append = FALSE, col_names = TRUE)
-  return(s)
+  # mps <- dplyr::left_join(data.sum, global.maf, by = "MARKERS") %>%
+  #   dplyr::select(MARKERS, POP_ID, N, FREQ_REF, FREQ_ALT, MAF_GLOBAL, HET_O, HET_E, FIS)
+
+  # ps: pop stats
+  ps <- mps %>%
+    dplyr::group_by(POP_ID) %>%
+    dplyr::summarise_at(
+      .tbl = .,
+      .vars = c("N", "FREQ_REF", "MAF_LOCAL", "HET_O", "HET_E", "FIS"),
+      .funs = mean,
+      na.rm = TRUE) %>%
+    dplyr::mutate_at(
+      .tbl = .,
+      .vars = c("N", "FREQ_REF", "MAF_LOCAL", "HET_O", "HET_E", "FIS"),
+      .funs = round,
+      digits = digits
+      )
+  write_rad(
+    data = ps,
+    path = path.folder,
+    filename = "summary.stats.pop.tsv",
+    tsv = TRUE, verbose = verbose)
+  return(res = list(summary.stats.pop = ps,
+                    summary.stats.markers.pop = mps,
+                    summary.stats.markers = ms))
 }#End summary_stats_vcf_tidy
