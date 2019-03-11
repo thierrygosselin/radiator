@@ -18,7 +18,7 @@
 #'
 #' \emph{How to get GDS and tidy data ?}
 #' Look into \code{\link{tidy_genomic_data}},
-#' \code{\link{write_seqarray}} or
+#' \code{\link{read_vcf}} or
 #' \code{\link{tidy_vcf}}.
 
 #' @param detect.duplicate.genomes (optional, logical) For use inside radiator pipelines.
@@ -120,7 +120,6 @@
 #' @importFrom utils combn
 #' @importFrom stats na.omit var median quantile dist
 #' @importFrom amap Dist
-# @importFrom parallelDist parDist
 #' @importFrom readr write_tsv
 #' @importFrom parallel detectCores
 #' @importFrom purrr flatten map
@@ -308,6 +307,7 @@ detect_duplicate_genomes <- function(
         data = data,
         path.folder = path.folder,
         file.date = file.date,
+        internal = internal,
         verbose = verbose)
 
 
@@ -460,7 +460,8 @@ detect_duplicate_genomes <- function(
         dplyr::mutate(GENOTYPED_PROP = 1 - MISSING_PROP, MISSING_PROP = NULL) %>%
         dplyr::rename(POP_ID = STRATA)
       strata <- dplyr::distinct(geno.stats, INDIVIDUALS, POP_ID)
-      geno.stats %<>% dplyr::select(-POP_ID)
+
+      geno.stats %<>% dplyr::select(INDIVIDUALS, GENOTYPED_PROP )
       readr::write_tsv(
         x = geno.stats,
         path = file.path(path.folder, "genotyped.statistics.tsv"))
@@ -484,14 +485,18 @@ detect_duplicate_genomes <- function(
         dplyr::mutate(PAIRS = seq(from = 1, to = n(), by = 1)) %>%
         dplyr::arrange(PAIRS)
       input.prep <- NULL
-      res$distance <- dplyr::bind_cols(
+
+      res$distance <- suppressWarnings(
+        dplyr::bind_cols(
         res$distance,
         dplyr::select(res$distance, ID1, ID2, PAIRS) %>%
           dplyr::left_join(dplyr::rename(geno.stats, ID1 = INDIVIDUALS, ID1_G = GENOTYPED_PROP), by = "ID1") %>%
           dplyr::left_join(dplyr::rename(geno.stats, ID2 = INDIVIDUALS, ID2_G = GENOTYPED_PROP), by = "ID2") %>%
           data.table::as.data.table(.) %>%
           data.table::melt.data.table(
-            data = ., id.vars = c("ID1", "ID2", "PAIRS"), variable.name = "GENOTYPED_MAX", value.name = "GENOTYPED_PROP",
+            data = ., id.vars = c("ID1", "ID2", "PAIRS"),
+            variable.name = "GENOTYPED_MAX",
+            value.name = "GENOTYPED_PROP",
             variable.factor = FALSE) %>%
           tibble::as_tibble(.) %>%
           dplyr::group_by(PAIRS) %>%
@@ -502,6 +507,7 @@ detect_duplicate_genomes <- function(
           dplyr::mutate(GENOTYPED_MAX = dplyr::if_else(GENOTYPED_MAX == "ID1_G", ID1, ID2)) %>%
           dplyr::arrange(PAIRS) %>%
           dplyr::select(-ID1, -ID2, -PAIRS)
+      )
       )
 
 
@@ -812,14 +818,14 @@ detect_duplicate_genomes <- function(
       check.mono <- FALSE
 
       message("\nInspect tables and figures to decide if some individual(s) need to be blacklisted")
-      remove.id <- interactive_question(
+      remove.id <- radiator_question(
         x = "    Do you need to blacklist individual(s) (y/n): ", answer.opt = c("y", "n"))
 
       if (remove.id == "y") {
         message("\nRemoving duplicates can be accomplish in 2 ways: using a threshold or manually")
         message("    manually: the function generate a blacklist that you populate")
         message("    threshold: more powerful to fully remove duplicates")
-        remove.dup <- interactive_question(
+        remove.dup <- radiator_question(
           x = "    Do you want to use the threshold method ?(y/n): ", answer.opt = c("y", "n"))
 
         if (remove.dup == "n") {
@@ -831,7 +837,7 @@ detect_duplicate_genomes <- function(
           message("    Keep column name, just add the individual(s) to blacklist(s)")
           blacklist.id.similar <- "check blacklist.id.similar.tsv file"
 
-          finished <- interactive_question(
+          finished <- radiator_question(
             x = "    When finished filling the blacklist type `y`:",
             answer.opt = c("y", "Y", "yes", "Yes", "YES"))
 
@@ -846,7 +852,7 @@ detect_duplicate_genomes <- function(
           if (data.type != "SeqVarGDSClass") {
             analysis <- "distance"
           } else {
-            analysis <- interactive_question(
+            analysis <- radiator_question(
               x = "\nChoose the analysis method to blacklist duplicates? (distance/genome): ",
               answer.opt = c("distance", "genome")
             )
@@ -857,12 +863,12 @@ detect_duplicate_genomes <- function(
           } else {
             data.dup <-  "individuals.pairwise.genome.similarity.tsv"
           }
-          dup.threshold <- interactive_question(
+          dup.threshold <- radiator_question(
             x = "\nEnter the threshold to remove duplicates: (between 0 and 1)", minmax = c(0, 1))
           message("\nNow decide how to remove duplicates involved in pairs from different pop/group:")
           message("    y: remove both samples in the pair")
           message("    n: removes the sample in the pair with more missing genotypes")
-          diff.pop.remove <- interactive_question(
+          diff.pop.remove <- radiator_question(
             x = "    Enter y/n: ", answer.opt = c("y", "n"))
 
 
@@ -892,14 +898,22 @@ detect_duplicate_genomes <- function(
         if (data.type == "tbl_df") {
           data  %<>% dplyr::filter(!INDIVIDUALS %in% blacklist.id.similar$INDIVIDUALS)
         } else {
-          id.info <- extract_individuals(gds = data)
-          bl <- id.info %>% dplyr::filter(INDIVIDUALS %in% blacklist.id.similar$INDIVIDUALS) %>%
-            dplyr::distinct(INDIVIDUALS) %>%
-            dplyr::mutate(FILTER = "filter.individuals.duplicates")
-          bl.i <- update_bl_individuals(gds = data, update = bl)
-
-          id.info %<>% dplyr::filter(!INDIVIDUALS %in% blacklist.id.similar$INDIVIDUALS)
+          id.info <- extract_individuals(gds = data, whitelist = FALSE) %>%
+            dplyr::mutate(
+              FILTERS = dplyr::if_else(
+                INDIVIDUALS %in% blacklist.id.similar$INDIVIDUALS,
+                "filter.individuals.duplicates", FILTERS
+              )
+            )
           update_radiator_gds(gds = data, node.name = "individuals", value = id.info, sync = TRUE)
+
+          # id.info <- extract_individuals(gds = data)
+          # bl <- id.info %>% dplyr::filter(INDIVIDUALS %in% blacklist.id.similar$INDIVIDUALS) %>%
+          #   dplyr::distinct(INDIVIDUALS) %>%
+          #   dplyr::mutate(FILTER = "filter.individuals.duplicates")
+          # bl.i <- update_bl_individuals(gds = data, update = bl)
+
+          # id.info %<>% dplyr::filter(!INDIVIDUALS %in% blacklist.id.similar$INDIVIDUALS)
         }
         blacklist.id.similar <- NULL
       }
@@ -917,15 +931,16 @@ detect_duplicate_genomes <- function(
       values = dup.threshold,
       path.folder = path.folder,
       file.date = file.date,
+      internal = internal,
       verbose = verbose)
 
-    # RESULTS --------------------------------------------------------------------
-    if (verbose) cat("################################### RESULTS ####################################\n")
-    message("Detect duplicate genomes: ", dup.threshold)
-    message("Number of individuals / strata / chrom / locus / SNP:")
-    if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
-    message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-    if (verbose)message("    After: ", filters.parameters$filters.parameters$AFTER)
+    # results ------------------------------------------------------------------
+    radiator_results_message(
+      rad.message = stringi::stri_join("Detect duplicate genomes: ", dup.threshold),
+      filters.parameters,
+      internal,
+      verbose
+    )
 
     # MONOMORPHIC MARKERS --------------------------------------------------
     if (check.mono) {
@@ -935,7 +950,7 @@ detect_duplicate_genomes <- function(
         verbose = FALSE,
         parameters = filters.parameters,
         path.folder = path.folder,
-        internal = TRUE)
+        internal = FALSE)
     }
   }
   return(data)
@@ -984,7 +999,9 @@ distance_individuals <- function(
   } else {
     sample.id <- extract_individuals(
       gds = x,
-      ind.field.select = "INDIVIDUALS") %$% INDIVIDUALS
+      ind.field.select = "INDIVIDUALS",
+      whitelist = TRUE) %$%
+      INDIVIDUALS
     # x.bk <- x
     x <- SNPRelate::snpgdsIBS(
       gdsobj = x,
@@ -992,7 +1009,7 @@ distance_individuals <- function(
       num.thread = parallel.core,
       remove.monosnp = TRUE,
       snp.id = extract_markers_metadata(
-        gds = x, markers.meta.select = "VARIANT_ID") %$% VARIANT_ID,
+        gds = x, markers.meta.select = "VARIANT_ID", whitelist = TRUE) %$% VARIANT_ID,
       sample.id = sample.id,
       verbose = FALSE) %$% ibs
 

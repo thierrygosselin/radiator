@@ -1,3 +1,5 @@
+# separate_markers -------------------------------------------------------------
+
 # Separate a column (markers) into CHROM LOCUS and POS
 # generate markers meta
 
@@ -107,11 +109,11 @@ separate_markers <- function(
     suppressWarnings(data %<>% dplyr::select(dplyr::one_of(want)) %>%
                        dplyr::distinct(MARKERS, .keep_all = TRUE))
     generate.ref.alt <- FALSE
-    generate.markers.metadata <- TRUE
+    generate.markers.metadata <- FALSE
   }
 
   if (markers.meta.all.only) {
-    want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF", "ALT")
+    want <- c("FILTERS", "VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF", "ALT")
     suppressWarnings(data %<>% dplyr::select(dplyr::one_of(want)) %>%
                        dplyr::distinct(MARKERS, .keep_all = TRUE))
     generate.markers.metadata <- generate.ref.alt <- TRUE
@@ -160,7 +162,7 @@ separate_markers <- function(
     }
   }# End of splitting markers column
 
-  # Generate missing markers meta ----------------------------------------------
+  # Generate missing markers meta
   if (generate.markers.metadata) {
     data <- generate_markers_metadata(
       data = data,
@@ -172,7 +174,7 @@ separate_markers <- function(
   return(data)
 }#End separate_markers
 
-
+# generate_markers_metadata ----------------------------------------------------
 #' @name generate_markers_metadata
 #' @title Generate markers metadata
 
@@ -219,7 +221,7 @@ generate_markers_metadata <- function(
       rlang::abort("biallelic TRUE/FALSE required")
     }
 
-    want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF",
+    want <- c("FILTERS", "VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF",
               "ALT", "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG", "SEQUENCE")
     if (!unique.markers) {
       suppressWarnings(
@@ -271,3 +273,83 @@ generate_markers_metadata <- function(
   }
   return(data)
 }#End generate_markers_metadata
+
+
+
+# separate_gt ------------------------------------------------------------------
+#' @title separate_gt
+#' @description Separate genotype field
+#' @rdname separate_gt
+#' @keywords internal
+#' @export
+separate_gt <- function(
+  x,
+  sep = "/",
+  gt = "GT_VCF_NUC",
+  gather = TRUE,
+  haplotypes = TRUE,
+  exclude = c("LOCUS", "INDIVIDUALS", "POP_ID"),
+  cpu.rounds = 10,
+  parallel.core = parallel::detectCores() - 1
+) {
+  # sep <-  "/"
+  # x <- input2
+  separate_genotype <- function(x, sep, gt, gather, haplotypes, exclude){
+    res <- tidyr::separate(
+      data = x,
+      col = gt, into = c("ALLELE1", "ALLELE2"),
+      sep = sep,
+      extra = "drop", remove = TRUE
+    )
+
+    if (gather) {
+      # res <- tidyr::gather(
+      #   data = res,
+      #   key = ALLELE_GROUP,
+      #   value = HAPLOTYPES,
+      #   -dplyr::one_of(exclude)
+      # )
+
+      res <- data.table::melt.data.table(
+        data = data.table::as.data.table(res),
+        id.vars = exclude,
+        variable.name = "ALLELE_GROUP",
+        value.name = "HAPLOTYPES",
+        variable.factor = FALSE) %>%
+        tibble::as_tibble(.)
+
+      if (!haplotypes) {
+        res  %<>% dplyr::rename(ALLELES = HAPLOTYPES)
+      }
+    }
+
+    return(res)
+  }
+
+  if (parallel.core > 1) {
+    n.row <- nrow(x)
+    split.vec <- as.integer(floor((parallel.core * cpu.rounds * (1:n.row - 1) / n.row) + 1))
+    res <- split(x = x, f = split.vec) %>%
+      .radiator_parallel_mc(
+        X = .,
+        FUN = separate_genotype,
+        mc.cores = parallel.core,
+        sep = sep,
+        gt = gt,
+        gather = gather,
+        haplotypes = haplotypes,
+        exclude = exclude
+      ) %>%
+      dplyr::bind_rows(.)
+  } else {
+    res <- separate_genotype(
+      x = x,
+      sep = sep,
+      gt = gt,
+      gather = gather,
+      haplotypes = haplotypes,
+      exclude = exclude)
+  }
+  return(res)
+}#End separate_gt
+

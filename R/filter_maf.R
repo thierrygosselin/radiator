@@ -600,7 +600,7 @@ maf.approach = \"SNP\" : SNPs on the same locus/read are considered independent.
       # message("Choose the maf.approach (SNP/locus):")
       # maf.approach <- as.character(readLines(n = 1))
 
-      maf.approach <- interactive_question(
+      maf.approach <- radiator_question(
         x = "\nChoose the maf.approach (SNP/locus): ", answer.opt = c("SNP", "locus"))
 
 
@@ -622,7 +622,7 @@ because LOCUS and POS (SNP) info is not available")
       message("    Using a FREQUENCY, choose a value between 0 and 0.9")
       message("    Using COUNT of alternate allele, choose an integer >= 1")
       # maf.local.threshold <- as.character(readLines(n = 1))
-      maf.local.threshold <- interactive_question(
+      maf.local.threshold <- radiator_question(
         x = "    Enter value: ", minmax = c(0, 1000))
 
       if (maf.local.threshold >= 1) {
@@ -640,7 +640,7 @@ because LOCUS and POS (SNP) info is not available")
       message("    Using COUNT of alternate allele, choose an integer >= 1")
       message("    Note: please use the same method count/freqency as the local threshold")
       # maf.global.threshold <- as.character(readLines(n = 1))
-      maf.global.threshold <- interactive_question(
+      maf.global.threshold <- radiator_question(
         x = "    Enter value: ", minmax = c(0, 1000))
       if (maf.global.threshold >= 1) {
         maf.global.threshold <- as.integer(maf.global.threshold)
@@ -657,7 +657,7 @@ because LOCUS and POS (SNP) info is not available")
       message("No idea what to choose? Use OR")
       # message("Choose the maf.operator (AND/OR):")
       # maf.operator <- as.character(readLines(n = 1))
-      maf.operator <- interactive_question(
+      maf.operator <- radiator_question(
         x = "    Choose the maf.operator (AND/OR): ", answer.opt = c("AND", "OR"))
 
       # if (!maf.operator %in% c("OR", "AND")) rlang::abort("maf.operator: either OR/AND")
@@ -672,7 +672,7 @@ because LOCUS and POS (SNP) info is not available")
       message("    Note: not sure? use 1")
       # message("\n    Choose the maf.pop.num.threshold:")
       # maf.pop.num.threshold <- as.integer(readLines(n = 1))
-      maf.pop.num.threshold <- interactive_question(
+      maf.pop.num.threshold <- radiator_question(
         x = "    Enter threshold (integer): ", minmax = c(1, 1000))
     }
 

@@ -26,7 +26,7 @@ Default: \code{detect.mixed.genomes = TRUE}.}
 
 \emph{How to get GDS and tidy data ?}
 Look into \code{\link{tidy_genomic_data}},
-\code{\link{write_seqarray}} or
+\code{\link{read_vcf}} or
 \code{\link{tidy_vcf}}.}
 
 \item{ind.heterozygosity.threshold}{(string, double, optional)

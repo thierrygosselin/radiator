@@ -113,15 +113,19 @@ private_alleles <- function(data, strata = NULL, verbose = TRUE) {
       data.type <- "SeqVarGDSClass"
     }
     strata <- extract_individuals(
-      gds = data, ind.field.select = c("INDIVIDUALS", "STRATA")
+      gds = data,
+      ind.field.select = c("INDIVIDUALS", "STRATA"),
+      whitelist = TRUE
     )
     private <- SeqVarTools::getGenotypeAlleles(
       gdsobj = data, use.names = TRUE) %>%
       magrittr::set_colnames(
         x = .,
         value = extract_markers_metadata(
-          gds = data, markers.meta.select = "MARKERS"
-        ) %$%
+          gds = data,
+          markers.meta.select = "MARKERS",
+          whitelist = TRUE
+          ) %$%
           MARKERS
       ) %>%
       tibble::as_tibble(x = ., rownames = "INDIVIDUALS") %>%

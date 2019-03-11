@@ -5,7 +5,7 @@
 \title{extract_individuals}
 \usage{
 extract_individuals(gds, ind.field.select = NULL, radiator.node = TRUE,
-  verbose = FALSE)
+  whitelist = FALSE, blacklist = FALSE, verbose = FALSE)
 }
 \description{
 Import gds or radiator individuals node

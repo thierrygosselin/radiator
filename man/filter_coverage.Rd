@@ -22,7 +22,7 @@ Default: \code{interactive.filter = TRUE}.}
 
 \emph{How to get GDS and tidy data ?}
 Look into \code{\link{tidy_genomic_data}},
-\code{\link{write_seqarray}} or
+\code{\link{read_vcf}} or
 \code{\link{tidy_vcf}}.}
 
 \item{filter.coverage}{(optional, string) 2 options:

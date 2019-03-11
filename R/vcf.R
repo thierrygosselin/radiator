@@ -1,3 +1,2549 @@
+# Read VCF with SeqArray--------------------------------------------------------
+# write a SeqArray object from a tidy data frame
+#' @name read_vcf
+#' @title Read VCF files for radiator and also write a SeqArray GDS file.
+#' @description The function reads VCF files for radiator and
+#' generate a connection SeqArray \href{http://zhengxwen.github.io/SeqArray/}{SeqArray}
+#' GDS object/file of class \code{SeqVarGDSClass} (Zheng et al. 2017)
+#' The Genomic Data Structure (GDS) file format is detailed in
+#' \href{http://zhengxwen.github.io/gdsfmt}{gdsfmt}.
+#'
+#' The function as an advance mode that allows various filtering arguments to
+#' be used. Handy to prune the dataset based on various QCs but also to
+#' remove artifacts, duplicated information and thus lower the overall noise in
+#' the VCF.
+#'
+#' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
+#' and might be of interest for users.
+
+
+#' @param data (path, character) The VCF markers are biallelic SNPs or haplotypes.
+#' To make the VCF population-ready, you have to use \code{strata} argument.
+#'
+#' \itemize{
+#' \item \strong{GATK, platypus and ipyrad VCFs:}
+#' Some VCFs have an \code{ID} column filled with \code{.},
+#' the LOCUS information is all contained along the linkage group in the
+#' \code{CHROM} column. Consequently, the short read locus information is unknown.
+#' To make it work with
+#' \href{https://github.com/thierrygosselin/radiator}{radiator},
+#' the \code{ID} column is filled with the \code{POS} column info.
+#' \item \strong{stacks VCFs:} with \emph{de novo} approaches, the CHROM column is
+#' filled with "1", the LOCUS column correspond to the CHROM section in stacks VCF and
+#' the COL column is POS -1. With a reference genome, the ID column in stacks VCF is
+#' separated into "LOCUS", "COL", "STRANDS".
+#' }
+
+
+#' @param filename (optional) The file name of the Genomic Data Structure (GDS) file.
+#' radiator will append \code{.gds.rad} to the filename.
+#' If the filename chosen exists in the working directory,
+#' the default \code{radiator_datetime.gds} is chosen.
+#' Default: \code{filename = NULL}.
+
+#' @param vcf.stats (optional, logical) Generates individuals and markers
+#' statistics helpful for filtering.
+#' These are very fast to generate and because computational
+#' cost is minimal, even for huge VCFs, the default is \code{vcf.stats = TRUE}.
+#' Individual's missing genotype proportion, averaged heterozygosity,
+#' total coverage, mean genotype coverage and marker's metadata
+#' along count for ref and alt alleles and mean
+#' coverage is generated and written in the working directory.
+#' Default: \code{vcf.stats = TRUE}.
+
+
+#' @inheritParams tidy_genomic_data
+#' @inheritParams radiator_common_arguments
+
+
+#' @details
+#' A vcf file of 35 GB with ~4 millions SNPs take about ~7 min with 8 CPU.
+#' A vcf file of 21 GB with ~2 millions SNPs take about ~5 min with 7 CPU.
+#'
+#' After the file is generated, you can close your computer and
+#' come back to it a month later and it's now a matter of sec to open a connection.
+#'
+#'
+#' \strong{markers heterozygosity and inbreeding coefficient}:
+#' The heterozygosity statistics (het obs and Fis) presented in this function
+#' are calculated globally across strata, without the possibility to filter out
+#' markers. We think this filtering for these statistics are best
+#' addressed in \code{\link{filter_het}}, \code{\link{filter_fis}} and
+#' \code{\link{filter_hwe}}, after outlier individuals and
+#' markers (for other stats) are blacklisted. Why ? The reason is that an excess of
+#' heterozygotes and negative Fis values are not a bad thing \emph{per se}.
+#' Genomic regions under balancing selection may contain such markers and
+#' statistics.
+#'
+#'
+#' \strong{Advance mode, using \emph{dots-dots-dots ...}}
+#' \enumerate{
+#' \item \code{whitelist.markers}: detailed in \code{\link[radiator]{filter_whitelist}}.
+#' \item \code{blacklist.id}: detailed in \code{\link[radiator]{tidy_genomic_data}}.
+#' \item \code{pop.select}: detailed in \code{\link[radiator]{tidy_genomic_data}}.
+#' \item \code{pop.levels}: detailed in \code{\link[radiator]{tidy_genomic_data}}.
+#' \item \code{pop.labels}: detailed in \code{\link[radiator]{tidy_genomic_data}}.
+#' \item \code{filter.strands}: (optional, character) Filter duplicate SNPs
+#' found on different strands (+/-), options are:
+#' \code{"keep.both", "best.stats", "blacklist"}. \code{"keep.both"}: does nothing
+#' and duplicated markers are kept (not recommended, but here for testing purposes),
+#' \code{"best.stats"}: will keep only one, based on the best statistics
+#' (MAC and missingness). \code{"blacklist"}: discard all duplicated markers.
+#' Default (\code{filter.strands = "blacklist"}).
+#' \item \code{filter.common.markers}: (logical) Default: \code{filter.common.markers = TRUE}.
+#' Documented in \code{\link{filter_common_markers}}.
+#' \item \code{filter.mac}: (integer) Default: code{filter.mac = NULL}.
+#' To blacklist markers below a specific Minor Allele Count (calculated overall/global).
+#' Documented in \code{\link{filter_mac}}.
+#'
+#' \item \code{filter.coverage}: (optional, string)
+#' Default: code{filter.coverage = NULL}. To blacklist markers based on mean coverage.
+#' Documented in \code{\link{filter_coverage}}.
+#'
+#' \item \code{filter.genotyping}: (integer) To blacklist markers with too
+#' many missing data. e.g. \code{filter.genotyping = 10}, will only keep
+#' markers with missing rate <= to 10 percent.
+#' \item \code{filter.snp.position.read}: 3 options available, \code{"outliers", "q75", "iqr"}.
+#' This argument will blacklist markers based on it's position on the read.
+#' \code{filter.snp.position.read = "outliers"}, will remove markers based
+#' on outlier statistics of the position on the reads. e.g. if majority of SNPs
+#' are found between 10 and 90 pb, and very few above and below, those markers are
+#' discarded. Use this function argument with dataset with problematic assembly,
+#' or \emph{de novo} assembly with undocumented or poorly selected
+#' mismatch threshold.
+#' \item \code{filter.short.ld}: Described in \code{\link[radiator]{filter_ld}}
+#' \item \code{filter.long.ld}: Described in  \code{\link[radiator]{filter_ld}}
+#' \item \code{long.ld.missing}: Described in \code{\link[radiator]{filter_ld}}
+#' \item \code{ld.method}: (optional, character) The values available are
+#' \code{"composite"}, for LD composite measure, \code{"r"} for R coefficient
+#' (by EM algorithm assuming HWE, it could be negative), \code{"r2"} for r^2,
+#' \code{"dprime"} for D',
+#' \code{"corr"} for correlation coefficient. The method corr and composite are
+#' equivalent when SNPs are coded based on the presence of the alternate allele
+#' (\code{0, 1, 2}).
+#' Default: \code{ld.method = "r2"}.
+
+#' \item \code{filter.individuals.missing}: (double) Use this argument to
+#' blacklist individuals with too many missing data.
+#' e.g. \code{filter.individuals.missing = 0.7}, will remove individuals with >
+#' 0.7 or 70% missing genotypes. This can help discover more polymorphic markers
+#' with some dataset.
+#' \item \code{markers.info}: (character) With default: \code{markers.info = NULL},
+#' all the variable in the vcf INFO field are imported.
+#' To import only DP (the SNP total read depth) and AF (the SNP allele frequency),
+#' use \code{markers.info = c("DP", "AF")}.
+#' Using, \code{markers.info = character(0)} will not import INFO variables.
+#' \item \code{path.folder}: to write ouput in a specific path
+#' (used internally in radiator). Default: \code{path.folder = getwd()}.
+#' If the supplied directory doesn't exist, it's created.
+#' \item \code{random.seed}: (integer, optional) For reproducibility, set an integer
+#' that will be used inside codes that uses randomness. With default,
+#' a random number is generated, printed and written in the directory.
+#' Default: \code{random.seed = NULL}.
+#' \item \code{subsample.markers.stats}: By default, when no filters are
+#' requested and that the number of markers is > 200K,
+#' 0.2 of markers are randomly selected to generate the
+#' statistics (individuals and markers). This is an all-around and
+#' reliable number.
+#' In doubt, overwrite this value by using 1 (all markers selected) and
+#' expect a small computational cost.
+#' }
+
+#' @return
+#' The function returns a list with:
+#' \enumerate{
+#' \item \code{vcf.connection}: the name of the GDS file.
+#' To close the connection with the GDS file: use \code{SeqArray::seqClose(OBJECT_NAME$vcf.connection)}
+#' \item \code{individuals}: a tibble with the names of samples in the original
+#' VCF \code{INDIVIDUALS_VCF} and corrected for use in radiator \code{INDIVIDUALS}
+#' \item \code{biallelic}: is the data biallelic or not.
+#' \item \code{markers.meta}: a tibble with the markers metadata, including:
+#' \code{VARIANT_ID, CHROM, LOCUS, POS, COL, MARKERS, REF, ALT} when available.
+#' \item \code{n.ind}: the number of individuals
+#' \item \code{n.markers}: the number of markers
+#' \item \code{n.chromosome}: the numer of chromosome
+#' \item \code{n.locus}: the number of locus
+#' \item \code{filename}: the name of the file used.
+#' }
+
+
+#' @export
+#' @rdname read_vcf
+#' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join
+#' @importFrom stringi stri_replace_all_fixed
+#' @importFrom tibble has_name
+#' @importFrom tidyr spread
+
+#' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
+
+#' @references Zheng X, Gogarten S, Lawrence M, Stilp A, Conomos M, Weir BS,
+#' Laurie C, Levine D (2017). SeqArray -- A storage-efficient high-performance
+#' data format for WGS variant calls.
+#' Bioinformatics.
+#'
+#' @references Danecek P, Auton A, Abecasis G et al. (2011)
+#' The variant call format and VCFtools.
+#' Bioinformatics, 27, 2156-2158.
+
+#' @seealso \code{\link{filter_ld}} and \code{\link[radiator]{tidy_genomic_data}}
+
+#' @examples
+#' \dontrun{
+#' #require(SeqVarTools)
+#' # with built-in defaults:
+#'  prep.data <- radiator::read_vcf(data = "populations.snps.vcf")
+#'
+#' # Using more arguments and filters (recommended):
+#' prep.data <- radiator::read_vcf(
+#'     data = "populations.snps.vcf",
+#'     strata = "strata_salamander.tsv",
+#'     filter.individuals.missing = "outliers",
+#'     filter.common.markers = TRUE,
+#'     filter.strands = "blacklist",
+#'     filter.mac = 4,
+#'     filter.genotyping = 0.3,
+#'     filter.snp.position.read = "outliers",
+#'     filter.short.ld = "mac",
+#'     filter.long.ld = NULL,
+#'     path.folder = "salamander",
+#'     verbose = TRUE)
+#' }
+
+read_vcf <- function(
+  data,
+  strata = NULL,
+  filename = NULL,
+  vcf.stats = TRUE,
+  parallel.core = parallel::detectCores() - 1,
+  verbose = TRUE,
+  ...
+) {
+
+  # #Test
+  # data = "populations.snps.vcf"
+  # strata <- NULL
+  # filename <- NULL
+  # parallel.core <- parallel::detectCores() - 1
+  # verbose <- TRUE
+  # path.folder = NULL
+  # internal <- FALSE
+  # random.seed <- NULL
+
+  # vcf.stats <- TRUE
+  # vcf.metadata = TRUE
+  # filter.strands = "blacklist"
+  # filter.coverage = NULL
+  # filter.genotyping <- NULL
+  # filter.snp.position.read <- NULL
+  # filter.mac <- NULL
+  # filter.common.markers = FALSE
+  # filter.monomorphic <- FALSE
+  # filter.short.ld <- NULL
+  # filter.long.ld <- NULL
+  # long.ld.missing <- TRUE
+  # ld.method <- "r2"
+  # blacklist.id = NULL
+  # pop.select = NULL
+  # pop.levels = NULL
+  # pop.labels = NULL
+  # whitelist.markers = NULL
+  # subsample.markers.stats = 0.2
+  # parameters <- NULL
+  # filter.individuals.missing <- NULL
+  # filter.individuals.coverage.total <- NULL
+
+
+  ## With filters
+  # filter.individuals.missing <- "outliers"
+  # filter.individuals.coverage.total <- "outliers"
+  # filter.short.ld <- "mac"
+  # filter.long.ld <- 0.3
+  # filter.common.markers = TRUE
+  # filter.monomorphic <- TRUE
+  # filter.mac <- 4
+  # filter.coverage = c(5, 150)
+  # filter.genotyping <- 0.15
+  # filter.snp.position.read <- "outliers"
+  # filter.snp.number <- "outliers"
+
+  # Cleanup---------------------------------------------------------------------
+  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
+  if (verbose) message("Execution date@time: ", file.date)
+  old.dir <- getwd()
+  opt.change <- getOption("width")
+  options(width = 70)
+  timing <- proc.time()# for timing
+  res <- list()
+  #back to the original directory and options
+  on.exit(setwd(old.dir), add = TRUE)
+  on.exit(options(width = opt.change), add = TRUE)
+  on.exit(timing <- proc.time() - timing, add = TRUE)
+  on.exit(if (verbose) message("\nComputation time, overall: ", round(timing[[3]]), " sec"), add = TRUE)
+  on.exit(if (verbose) cat("########################### completed read_vcf ###########################\n"), add = TRUE)
+
+  # Required package -----------------------------------------------------------
+  if (!"SeqVarTools" %in% utils::installed.packages()[,"Package"]) {
+    rlang::abort('Please install SeqVarTools for this option:\n
+                 install.packages("BiocManager")
+                 BiocManager::install("SeqVarTools")')
+  }
+
+  # Checking for missing and/or default arguments ------------------------------
+  if (missing(data)) rlang::abort("vcf file missing")
+
+  # Function call and dotslist -------------------------------------------------
+  rad.dots <- radiator_dots(
+    func.name = as.list(sys.call())[[1]],
+    fd = rlang::fn_fmls_names(),
+    args.list = as.list(environment()),
+    dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
+    keepers = c("whitelist.markers",
+                "filter.mac", "filter.snp.position.read", "filter.snp.number",
+                "filter.coverage", "filter.genotyping", "filter.short.ld",
+                "filter.long.ld", "long.ld.missing", "ld.method",
+                "filter.individuals.missing", "filter.individuals.coverage.total",
+                "filter.common.markers", "filter.monomorphic",
+                "filter.strands",
+                "blacklist.id", "pop.select", "pop.levels", "pop.labels",
+                "path.folder",
+                "markers.info", "vcf.metadata",
+                "subsample.markers.stats", "parameters", "random.seed", "internal"),
+    verbose = verbose
+  )
+
+
+  if (!is.null(filter.snp.position.read) ||
+      !is.null(filter.mac) ||
+      !is.null(filter.coverage) ||
+      !is.null(filter.genotyping) ||
+      !is.null(filter.short.ld) ||
+      !is.null(filter.long.ld) ||
+      !is.null(long.ld.missing) ||
+      !is.null(filter.individuals.missing) ||
+      !is.null(filter.individuals.coverage.total) ||
+      !is.null(filter.snp.number)) subsample.markers.stats <- 1
+
+  if (!is.null(ld.method)) {
+    ld.method <- match.arg(ld.method, c("composite", "r", "r2", "dprime", "corr"))
+  }
+  if (!is.null(filter.snp.position.read)) {
+    filter.snp.position.read <- match.arg(
+      arg = filter.snp.position.read,
+      choices = c("outliers", "iqr", "q75"),
+      several.ok = TRUE)
+  }
+  if (is.logical(vcf.metadata)) {
+    if (vcf.metadata) {
+      overwrite.metadata <- NULL
+    } else {
+      overwrite.metadata <- "GT"
+    }
+  } else {#NULL or character
+    if (is.null(vcf.metadata)) {
+      overwrite.metadata <- NULL
+      vcf.metadata <- TRUE
+    } else {
+      overwrite.metadata <- vcf.metadata
+      if (!"GT" %in% overwrite.metadata) {
+        message("GT field always included in vcf.metadata")
+        overwrite.metadata <- c("GT", overwrite.metadata)
+      }
+      vcf.metadata <- TRUE
+    }
+  }
+
+  if (is.null(random.seed)) {
+    random.seed <- sample(x = 1:1000000, size = 1)
+    set.seed(random.seed)
+  } else {
+    set.seed(random.seed)
+  }
+
+  # LD
+  # currently: will only filter long ld if short ld as been taken care of first...
+  if (!is.null(filter.long.ld) && is.null(filter.short.ld)) {
+    message("\nfilter.short.ld argument set by default to: maf")
+    filter.short.ld <- "mac"
+  }
+
+  # Folders---------------------------------------------------------------------
+  wf <- path.folder <- generate_folder(
+    f = path.folder,
+    rad.folder = "read_vcf",
+    prefix_int = FALSE,
+    internal = internal,
+    file.date = file.date,
+    verbose = verbose)
+
+  radiator.folder <- generate_folder(
+    f = path.folder,
+    rad.folder = "import_gds",
+    prefix_int = TRUE,
+    internal = FALSE,
+    file.date = file.date,
+    verbose = verbose)
+
+  # write the dots file
+  write_rad(
+    data = rad.dots,
+    path = radiator.folder,
+    filename = stringi::stri_join("radiator_read_vcf_args_", file.date, ".tsv"),
+    tsv = TRUE,
+    internal = internal,
+    verbose = verbose
+  )
+
+
+  if (is.null(filename)) {
+    ind.file <- stringi::stri_join("vcf_individuals_info_", file.date, ".tsv")
+    markers.file <- stringi::stri_join("vcf_markers_metadata_", file.date, ".tsv")
+    blacklist.markers <- stringi::stri_join("blacklist.markers_", file.date, ".tsv")
+    blacklist.id.filename <- stringi::stri_join("blacklist.individuals_", file.date, ".tsv")
+  } else {
+    ind.file <- stringi::stri_join(filename, "_vcf_individuals_info_", file.date, ".tsv")
+    markers.file <- stringi::stri_join(filename, "_vcf_markers_metadata_", file.date, ".tsv")
+    blacklist.markers <- stringi::stri_join(filename, "_blacklist.markers_", file.date, ".tsv")
+    blacklist.id.filename <- stringi::stri_join(filename, "_blacklist.individuals_", file.date, ".tsv")
+  }
+
+  filename <- generate_filename(
+    name.shortcut = filename,
+    path.folder = radiator.folder,
+    extension = "gds")
+
+  filename.short <- filename$filename.short
+  filename <- filename$filename
+
+  # Random seed ----------------------------------------------------------------
+  readr::write_lines(x = random.seed, path = file.path(radiator.folder, "random.seed"))
+  if (verbose) message("File written: random.seed (", random.seed,")")
+
+  # radiator_parameters: generate --------------------------------------------
+  filters.parameters <- radiator_parameters(
+    generate = TRUE,
+    initiate = FALSE,
+    update = FALSE,
+    parameter.obj = parameters,
+    path.folder = radiator.folder,
+    file.date = file.date,
+    verbose = verbose)
+
+  # VCF: Read ------------------------------------------------------------------
+  timing.vcf <- proc.time()
+
+  # Get file size
+  big.vcf <- file.size(data)
+  if (big.vcf <= 10000000) {
+    message("\nReading VCF")
+  }
+
+  if (big.vcf > 10000000 &&  big.vcf < 500000000) {
+    message("\nReading VCF...you have time for a espresso...")
+  }
+
+  if (big.vcf >= 500000000) {
+    message("\nReading a large VCF...you actually have time for coffee or tea!\n")
+  }
+  # Check for bad header generated by stacks
+  detect.source <- check_header_source_vcf(data)
+  stacks.2 <- detect.source$source
+  source <- stringi::stri_replace_all_regex(
+    str = detect.source$check.header$header$value
+    [detect.source$check.header$header$id == "source"],
+    pattern = "[\"]", replacement = "", vectorize_all = FALSE)
+  check.header <- detect.source$check.header
+  dp <- "DP" %in% detect.source$check.header$format$ID # Check that DP is trere
+
+  if (!is.null(detect.source$markers.info)) markers.info <- detect.source$markers.info
+  if (!is.null(detect.source$overwrite.metadata)) overwrite.metadata <- detect.source$overwrite.metadata
+
+  # for small VCF SeqArray not that good with parallel...
+  parallel.temp <- parallel.core
+  if (big.vcf < 10000000) parallel.temp <- 1
+  big.vcf <- NULL
+  gds <- SeqArray::seqVCF2GDS(
+    vcf.fn = data,
+    out.fn = filename,
+    parallel = parallel.temp,
+    storage.option = "ZIP_RA",
+    verbose = FALSE,
+    header = check.header,
+    info.import = markers.info, # characters, the variable name(s) in the INFO field for import; or NULL for all variables
+    fmt.import = overwrite.metadata# characters, the variable name(s) in the FORMAT field for import; or NULL for all variables#
+  ) %>%
+    SeqArray::seqOpen(gds.fn = ., readonly = FALSE)
+
+  # VCF: Summary ----------------------------------------------------------------
+  summary_gds(gds, verbose = TRUE)
+  message("done! timing: ", round((proc.time() - timing.vcf)[[3]]), " sec\n")
+  if (verbose) message("\nFile written: ", filename.short)
+  parallel.temp <- check.header <- detect.source <- NULL #no longer used
+
+  # Generate radiator skeleton -------------------------------------------------
+  if (verbose)  message("\nAnalyzing the data...")
+  radiator.gds <- radiator_gds_skeleton(gds)
+  # Blacklist of individuals: generate
+  bl.i <- update_bl_individuals(gds = gds, generate = TRUE)
+  # Blacklist of markers: generate
+  bl.gds <- update_bl_markers(gds = gds, generate = TRUE)
+
+  # VCF: source ----------------------------------------------------------------
+  update_radiator_gds(gds = gds, node.name = "source", value = source)
+  if (verbose) message("VCF source: ", source)
+  # VCF: bi- or multi-alllelic--------------------------------------------------
+  biallelic <- detect_biallelic_markers(data = gds, verbose = verbose)
+
+  # VCF clean sample id---------------------------------------------------------
+  individuals.vcf <- tibble::tibble(
+    INDIVIDUALS_VCF = SeqArray::seqGetData(gds, "sample.id")) %>%
+    dplyr::mutate(INDIVIDUALS_CLEAN = radiator::clean_ind_names(INDIVIDUALS_VCF))
+
+  if (!identical(individuals.vcf$INDIVIDUALS_VCF, individuals.vcf$INDIVIDUALS_CLEAN)) {
+    if (verbose) message("Cleaning VCF's sample names")
+    clean.id.filename <- stringi::stri_join("cleaned.vcf.id.info_", file.date, ".tsv")
+    readr::write_tsv(x = individuals.vcf,
+                     path = file.path(radiator.folder, clean.id.filename))
+
+    update_radiator_gds(gds = gds, node.name = "id.clean", value = individuals.vcf)
+  }
+  # replace id in VCF
+  update_radiator_gds(
+    gds = gds,
+    radiator.gds = FALSE,
+    node.name = "sample.id",
+    value = individuals.vcf$INDIVIDUALS_CLEAN,
+    replace = TRUE)
+
+  individuals <- dplyr::select(individuals.vcf, INDIVIDUALS = INDIVIDUALS_CLEAN)
+
+  # Add a individuals node
+  update_radiator_gds(gds = gds, node.name = "individuals", value = individuals)
+
+  # VCF sync id with STRATA------------------------------------------------------
+  strata <- radiator::read_strata(
+    strata = strata,
+    pop.levels = pop.levels,
+    pop.labels = pop.labels,
+    pop.select = pop.select,
+    blacklist.id = blacklist.id) %$% strata
+
+  if (!is.null(strata)) {
+    if (verbose) message("Synchronizing samples in VCF and strata...")
+
+    strata %<>% dplyr::filter(INDIVIDUALS %in% individuals.vcf$INDIVIDUALS_CLEAN)
+    bl <- individuals.vcf %>%
+      dplyr::filter(!INDIVIDUALS_CLEAN %in% strata$INDIVIDUALS) %>%
+      dplyr::select(INDIVIDUALS = INDIVIDUALS_CLEAN) %>%
+      dplyr::distinct(INDIVIDUALS) %>%
+      dplyr::mutate(FILTER = "blacklisted by strata")
+    # strata %<>% dplyr::filter(INDIVIDUALS %in% individuals.vcf$INDIVIDUALS_CLEAN)
+    if (nrow(strata) == 0) {
+      rlang::abort("No more individuals in your data, check VCF and strata ID names...")
+    }
+    individuals.vcf <- NULL
+    blacklist.strata <- nrow(bl)
+    if (blacklist.strata != 0) {
+      bl.i <- update_bl_individuals(gds = gds, update = bl, bl.i.gds = bl.i)
+      if (verbose) message("    number of sample blacklisted by the stata: ", blacklist.strata)
+      # the param file is updated after markers metadata below
+    }
+    sync_gds(gds = gds, samples = strata$INDIVIDUALS)
+    individuals <- strata
+    strata <- TRUE
+  } else {
+    strata <- FALSE
+    blacklist.strata <- 0L
+    individuals %<>% dplyr::mutate(STRATA = 1L)
+  }
+
+  #Update GDS node
+  update_radiator_gds(gds = gds, node.name = "individuals", value = individuals)
+
+  # VCF: Markers metadata  ------------------------------------------------------
+  markers.meta <- extract_markers_metadata(gds = gds)
+
+  # VCF: reference genome or de novo -------------------------------------------
+  ref.genome <- detect_ref_genome(data = gds, verbose = verbose)
+
+  # Stacks specific adjustments
+  if (!ref.genome) {
+    if (stacks.2) {
+      markers.meta %<>% dplyr::mutate(
+        LOCUS = CHROM,
+        CHROM = "1",
+        COL = POS - 1)
+    } else {
+      markers.meta %<>% dplyr::mutate(
+        CHROM = "1")
+    }
+  }
+
+  # GATK, platypus and freebayes specific adjustment
+  # Locus with NA or . or ""
+  weird.locus <- length(unique(markers.meta$LOCUS)) <= 1
+  if (weird.locus && !stacks.2) {
+    if (verbose) message("LOCUS field empty... adding unique id instead")
+    markers.meta$LOCUS <- markers.meta$VARIANT_ID
+  }
+
+  # VCF: LOCUS cleaning and Strands detection ----------------------------------
+  if (stringi::stri_detect_regex(str = markers.meta[1,3], pattern = "[^[:alnum:]]+")) {
+    locus.sep <- unique(stringi::stri_extract_all_regex(
+      str = markers.meta[1,3],
+      pattern = "[^a-zA-Z0-9-+-]",
+      omit_no_match = TRUE)[[1]])
+
+    markers.meta <- suppressWarnings(
+      tidyr::separate(
+        data = markers.meta,
+        col = LOCUS, into = c("LOCUS", "COL", "STRANDS"),
+        sep = locus.sep,
+        # sep = "",
+        extra = "drop", fill = "warn",
+        remove = TRUE, convert = TRUE)
+    )
+    if (anyNA(markers.meta$STRANDS)) markers.meta$STRANDS <- NA_character_
+    locus.sep <- NULL
+
+    detect.strand <- any(stringi::stri_detect_fixed(str = unique(markers.meta$STRANDS), pattern = "+"))
+    if (anyNA(detect.strand)) detect.strand <- FALSE
+  } else {
+    detect.strand <- FALSE
+  }
+
+  # Generate MARKERS column and fix types --------------------------------------
+  markers.meta %<>%
+    dplyr::mutate_at(
+      .tbl = .,
+      .vars = c("CHROM", "LOCUS", "POS"),
+      .funs = radiator::clean_markers_names) %>%
+    dplyr::mutate(
+      MARKERS = stringi::stri_join(CHROM, LOCUS, POS, sep = "__"),
+      REF = SeqArray::seqGetData(gdsfile = gds, var.name = "$ref"),
+      ALT = SeqArray::seqGetData(gdsfile = gds, var.name = "$alt")
+    )
+
+  # ADD MARKERS META to GDS
+  update_radiator_gds(gds = gds, node.name = "markers.meta", value = markers.meta)
+
+  # replace chromosome info in GDS
+  # Why ? well snp ld e.g. will otherwise be performed by chromosome and with de novo data = by locus...
+  update_radiator_gds(
+    gds = gds,
+    radiator.gds = FALSE,
+    node.name = "chromosome",
+    value = markers.meta$CHROM,
+    replace = TRUE
+  )
+
+  # radiator_parameters: initiate --------------------------------------------
+  # with original VCF's values
+  filters.parameters <- radiator_parameters(
+    generate = FALSE,
+    initiate = TRUE,
+    update = TRUE,
+    parameter.obj = filters.parameters,
+    data = gds,
+    filter.name = "vcf",
+    param.name = "original values in VCF + strata",
+    values = "",
+    path.folder = path.folder,
+    file.date = file.date,
+    verbose = FALSE)
+
+  ##______________________________________________________________________######
+  # Filters --------------------------------------------------------------------
+  # Filter duplicated SNPs on different strands---------------------------------
+  if (detect.strand) {
+    blacklist.strands <- dplyr::distinct(markers.meta, VARIANT_ID, MARKERS, CHROM, LOCUS, POS) %>%
+      dplyr::group_by(CHROM, POS) %>%
+      dplyr::mutate(n = n()) %>%
+      dplyr::ungroup(.) %>%
+      dplyr::filter(n > 1) %>%
+      dplyr::select(-n) %>%
+      dplyr::distinct(CHROM, POS, .keep_all = TRUE)
+
+
+    # blacklist.strands <- dplyr::distinct(markers.meta, CHROM, LOCUS, POS) %>%
+    #   dplyr::group_by(CHROM, POS) %>%
+    #   dplyr::tally(.) %>%
+    #   dplyr::filter(n > 1) %>%
+    #   dplyr::ungroup(.) %>%
+    #   dplyr::select(CHROM, POS)
+
+    if (nrow(blacklist.strands) > 0) {
+      if (verbose) {
+        message("\nDetected ", nrow(blacklist.strands)," duplicate SNPs on different strands (+/-)")
+        message("    By default radiator prune those SNPs")
+        message("    To change this behavior, use argument: filter.strands")
+      }
+      # if (verbose) message("\nFiltering duplicated markers on different strands")
+      if (filter.strands == "keep.both") {
+        message("Keeping both duplicated markers")
+      }
+
+      if (filter.strands == "best.stats") {
+        # bk variant
+        variant.bk <- markers.meta$VARIANT_ID
+        sync_gds(gds = gds, markers = blacklist.strands$VARIANT_ID)
+        blacklist.strands <- SeqArray::seqAlleleCount(
+          gdsfile = gds,
+          ref.allele = NULL,
+          .progress = TRUE,
+          parallel = parallel.core) %>%
+          unlist(.) %>%
+          matrix(
+            data = .,
+            nrow = nrow(blacklist.strands), ncol = 2, byrow = TRUE,
+            dimnames = list(rownames = blacklist.strands$VARIANT_ID,
+                            colnames = c("REF_COUNT", "ALT_COUNT"))) %>%
+          tibble::as_tibble(., rownames = "VARIANT_ID") %>%
+          tibble::add_column(.data = .,
+                             MARKERS = blacklist.strands$MARKERS,
+                             CHROM = blacklist.strands$CHROM,
+                             POS = blacklist.strands$POS,
+                             MISSING_PROP = SeqArray::seqMissing(
+                               gdsfile = gds,
+                               per.variant = TRUE, .progress = TRUE, parallel = parallel.core),
+                             .after = 1) %>%
+          dplyr::mutate(
+            MAC = dplyr::if_else(ALT_COUNT < REF_COUNT, ALT_COUNT, REF_COUNT),
+            ALT_COUNT = NULL, REF_COUNT = NULL) %>%
+          dplyr::group_by(CHROM, POS) %>%
+          dplyr::filter(MISSING_PROP == max(MISSING_PROP)) %>%
+          dplyr::filter(MAC == min(MAC)) %>%
+          dplyr::ungroup(.) %>%
+          dplyr::arrange(CHROM, POS) %>%
+          dplyr::distinct(CHROM, POS, .keep_all = TRUE) %>%
+          dplyr::select(MARKERS)
+
+        # come back to original variant
+        sync_gds(gds = gds, markers = variant.bk, verbose = FALSE)
+      }# End best stats
+
+      if (filter.strands == "blacklist") {
+        blacklist.strands %<>% dplyr::distinct(MARKERS)
+      }
+
+      if (filter.strands != "keep.both") {
+        # Folders---------------------------------------------------------------------
+        path.folder.strands <- generate_folder(
+          f = path.folder,
+          rad.folder = "filter_duplicated_markers",
+          internal = FALSE,
+          file.date = file.date,
+          verbose = verbose)
+
+        # update the blacklist
+        blacklist.strands %<>%
+          dplyr::mutate(FILTER = "filter.strands")
+
+        write_rad(
+          data = blacklist.strands,
+          path = path.folder.strands,
+          filename = stringi::stri_join("blacklist.duplicated.markers.strands_",
+                                        file.date, ".tsv"),
+          tsv = TRUE, internal = FALSE, verbose = verbose)
+
+        bl.gds <- update_bl_markers(gds = gds, update = blacklist.strands)
+        # Update markers.meta
+        markers.meta %<>% dplyr::filter(!MARKERS %in% blacklist.strands$MARKERS)
+        # check <- markers.meta
+        write_rad(
+          data = markers.meta,
+          path = path.folder.strands,
+          filename = stringi::stri_join("whitelist.duplicated.markers.strands_",
+                                        file.date, ".tsv"),
+          tsv = TRUE, internal = FALSE, verbose = verbose)
+        # Update GDS
+        update_radiator_gds(
+          gds = gds,
+          node.name = "markers.meta",
+          value = markers.meta,
+          sync = TRUE)
+
+        # Filter parameter file: update
+        filters.parameters <- radiator_parameters(
+          generate = FALSE,
+          initiate = FALSE,
+          update = TRUE,
+          parameter.obj = filters.parameters,
+          data = gds,
+          filter.name = "filter duplicated markers on different strands",
+          param.name = "filter.strands",
+          values = filter.strands,
+          path.folder = path.folder,
+          file.date = file.date,
+          verbose = verbose)
+
+        message("\nFilter duplicated markers on different strands: ", filter.strands)
+        message("Number of individuals / strata / chrom / locus / SNP:")
+        if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
+        message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
+        if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
+      }
+    }
+  }#Here
+  blacklist.strands <- path.folder.strands <- NULL
+
+  # Filter the vcf's FILTER column ---------------------------------------------
+  markers.meta$FILTER <- SeqArray::seqGetData(
+    gds, "annotation/filter")
+  filter.check.unique <- unique(markers.meta$FILTER)
+
+  if (length(filter.check.unique) > 1) {
+    message("Filtering markers based on VCF FILTER column")
+    # n.markers.before <- nrow(markers.meta)
+
+    bl <- markers.meta %>%
+      dplyr::filter(FILTER != "PASS") %>%
+      dplyr::select(MARKERS) %>%
+      dplyr::mutate(FILTER = "vcf filter column")
+
+    bl.gds <- update_bl_markers(gds = gds, update = bl)
+
+    markers.meta %<>%
+      dplyr::filter(FILTER == "PASS") %>%
+      dplyr::select(-FILTER)
+    update_radiator_gds(
+      gds = gds,
+      node.name = "markers.meta",
+      value = markers.meta,
+      sync = TRUE)
+
+    # radiator_parameters: update
+    filters.parameters <- radiator_parameters(
+      generate = FALSE,
+      initiate = FALSE,
+      update = TRUE,
+      parameter.obj = filters.parameters,
+      data = gds,
+      filter.name = "vcf filter column",
+      param.name = "PASS or not",
+      path.folder = path.folder,
+      file.date = file.date,
+      verbose = verbose)
+
+    message("\nFilter vcf filter column: PASS or not")
+    message("Number of individuals / strata / chrom / locus / SNP:")
+    if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
+    message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
+    if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
+
+  } else {
+    markers.meta %<>%
+      dplyr::select(-FILTER)
+  }
+
+  filter.check.unique <- NULL
+  markers.meta <- individuals <- NULL
+
+  # Filter_monomorphic----------------------------------------------------------
+  gds <- filter_monomorphic(
+    data = gds,
+    filter.monomorphic = filter.monomorphic,
+    parallel.core = parallel.core,
+    verbose = verbose,
+    parameters = filters.parameters,
+    path.folder = wf,
+    internal = FALSE)
+
+  # Filter common markers ------------------------------------------------------
+  gds <- filter_common_markers(
+    data = gds,
+    filter.common.markers = filter.common.markers,
+    fig = TRUE,
+    parallel.core = parallel.core,
+    verbose = verbose,
+    parameters = filters.parameters,
+    path.folder = wf,
+    internal = FALSE)
+
+  # Filter Whitelist------------------------------------------------------------
+  gds <- filter_whitelist(
+    data = gds,
+    whitelist.markers = whitelist.markers,
+    verbose = verbose,
+    path.folder = wf,
+    parameters = filters.parameters,
+    biallelic = biallelic,
+    internal = FALSE)
+
+  # Filter_individuals----------------------------------------------------------
+  gds <- filter_individuals(
+    data = gds,
+    interactive.filter = FALSE,
+    filter.individuals.missing = filter.individuals.missing,
+    filter.individuals.heterozygosity = NULL,
+    filter.individuals.coverage.total = filter.individuals.coverage.total,
+    parallel.core = parallel.core,
+    verbose = verbose,
+    path.folder = wf,
+    parameters = filters.parameters,
+    dp = dp,
+    internal = FALSE
+  )
+
+  # Filter MAC----------------------------------------------------------------
+  gds <- filter_mac(
+    data = gds,
+    interactive.filter = FALSE,
+    filter.mac = filter.mac,
+    filename = NULL,
+    parallel.core = parallel.core,
+    verbose = verbose,
+    parameters = filters.parameters,
+    path.folder = wf,
+    internal = FALSE)
+
+  # Filter mean coverage------------------------------------------------------
+  gds <- filter_coverage(
+    data = gds,
+    interactive.filter = FALSE,
+    filter.coverage = filter.coverage,
+    filename = NULL,
+    parallel.core = parallel.core,
+    verbose = verbose,
+    parameters = filters.parameters,
+    path.folder = wf,
+    internal = FALSE)
+
+  # Filter genotyping---------------------------------------------------------
+  gds <- filter_genotyping(
+    data = gds,
+    interactive.filter = FALSE,
+    filter.genotyping = filter.genotyping,
+    filename = NULL,
+    parallel.core = parallel.core,
+    verbose = verbose,
+    parameters = filters.parameters,
+    path.folder = wf,
+    internal = FALSE)
+
+  # Filter SNP position on the read---------------------------------------------
+  gds <- filter_snp_position_read(
+    data = gds,
+    interactive.filter = FALSE,
+    filter.snp.position.read = filter.snp.position.read,
+    filename = NULL,
+    parallel.core = parallel.core,
+    verbose = verbose,
+    parameters = filters.parameters,
+    path.folder = wf,
+    internal = FALSE)
+
+  # Filter number of SNPs per locus --------------------------------------------
+  gds <- filter_snp_number(
+    data = gds,
+    interactive.filter = FALSE,
+    filter.snp.number = filter.snp.number,
+    filename = NULL,
+    parallel.core = parallel.core,
+    verbose = verbose,
+    parameters = filters.parameters,
+    path.folder = wf,
+    internal = FALSE)
+
+  # Filter Linkage disequilibrium --------------------------------------------
+  gds <- filter_ld(
+    data = gds,
+    interactive.filter = FALSE,
+    filter.short.ld = filter.short.ld,
+    filter.long.ld = filter.long.ld,
+    parallel.core = parallel.core,
+    filename = NULL,
+    verbose = verbose,
+    long.ld.missing = long.ld.missing,
+    ld.method = ld.method,
+    parameters = filters.parameters,
+    path.folder = wf,
+    internal = FALSE)
+
+  # Final Sync GDS -----------------------------------------------------------
+  if (verbose) message("\nPreparing output files...")
+  markers.meta <- extract_markers_metadata(gds, whitelist = TRUE)
+  strata <- extract_individuals(
+    gds = gds,
+    ind.field.select = c("INDIVIDUALS", "STRATA"),
+    whitelist = TRUE)
+  sync_gds(gds = gds, samples = strata$INDIVIDUALS,
+           markers = markers.meta$VARIANT_ID)
+  # summary_gds(gds)
+  # generate a folder to put the stats...
+  path.folder <- generate_folder(
+    f = wf,
+    rad.folder = "filtered",
+    internal = FALSE,
+    file.date = file.date,
+    verbose = verbose)
+
+  # Whitelist
+  write_rad(data = markers.meta,
+            path = path.folder,
+            filename = "whitelist.markers.tsv",
+            tsv = TRUE,
+            write.message = "standard",
+            verbose = verbose)
+  # blacklist
+  bl <- update_bl_markers(gds = gds, extract = TRUE)
+  if (nrow(bl) > 0) {
+    write_rad(data = bl,
+              path = path.folder,
+              filename = "blacklist.markers.tsv",
+              tsv = TRUE,
+              write.message = "standard",
+              verbose = verbose)
+  }
+
+
+  # writing the blacklist of id
+  blacklist.id <- update_bl_individuals(gds = gds, extract = TRUE)
+  if (nrow(blacklist.id) > 0) {
+    write_rad(data = blacklist.id,
+              path = path.folder,
+              filename = "blacklist.id.tsv",
+              tsv = TRUE,
+              write.message = "standard",
+              verbose = verbose)
+  }
+
+  # Generate new strata
+  write_rad(data = strata,
+            path = path.folder,
+            filename = "strata.filtered.tsv",
+            tsv = TRUE,
+            write.message = "Writing the filtered strata: strata.filtered.tsv",
+            verbose = verbose)
+
+  #______________________________###############################################
+  #-----------------------------------  VCF STATS   ----------------------------
+  if (vcf.stats) {
+    if (verbose) message("\nGenerating statistics after filtering")
+    # SUBSAMPLE markers
+    n.markers <- length(markers.meta$VARIANT_ID)
+    if (n.markers < 200000) subsample.markers.stats <- 1
+
+    if (subsample.markers.stats < 1) {
+      markers.subsampled <- dplyr::sample_frac(
+        tbl = markers.meta,
+        size = subsample.markers.stats)
+      variant.select <- markers.subsampled$VARIANT_ID
+      subsample.filename <- stringi::stri_join("markers.subsampled_", file.date, ".tsv")
+      dplyr::select(markers.subsampled, MARKERS) %>%
+        dplyr::mutate(RANDOM_SEED = random.seed) %>%
+        readr::write_tsv(
+          x = .,
+          path = file.path(path.folder, subsample.filename))
+      markers.subsampled <- NULL
+    } else {
+      variant.select <- NULL
+    }
+
+    # Individuals stats
+    if (verbose) message("    calculating individual stats...")
+    id.stats <- generate_id_stats(
+      gds = gds,
+      subsample = variant.select,
+      path.folder = path.folder,
+      file.date = file.date,
+      parallel.core = parallel.core,
+      verbose = verbose) %$% info
+
+    # Markers stats
+    if (verbose) message("    calculating markers stats...")
+    markers.stats <- generate_markers_stats(
+      gds = gds,
+      path.folder = path.folder,
+      filename = markers.file,
+      file.date = file.date,
+      parallel.core = parallel.core,
+      verbose = verbose,
+      subsample = variant.select) %$% info
+
+    # For summary at the end of the function:
+    ind.missing <- round(mean(id.stats$MISSING_PROP, na.rm = TRUE), 2)
+    if (dp) ind.cov.total <- round(mean(id.stats$COVERAGE_TOTAL, na.rm = TRUE), 0)
+    if (dp) ind.cov.mean <- round(mean(id.stats$COVERAGE_MEAN, na.rm = TRUE), 0)
+
+    # if (!is.null(stats.sub)) {
+    markers.missing <- round(mean(markers.stats$MISSING_PROP, na.rm = TRUE), 2)
+    if (dp) markers.cov <- round(mean(markers.stats$COVERAGE_MEAN, na.rm = TRUE), 0) # same as above because NA...
+    # } else {
+    # markers.missing <- round(mean(markers.stats$MISSING_PROP, na.rm = TRUE), 2)
+    # if (dp) markers.cov <- round(mean(markers.stats$COVERAGE_MEAN, na.rm = TRUE), 0) # same as above because NA...
+    # }
+  }#End stats
+
+  #RESULTS --------------------------------------------------------------------
+  number.info <- SeqArray::seqGetFilter(gdsfile = gds)
+  if (verbose) {
+    cat("################################### SUMMARY ####################################\n")
+    if (vcf.stats) {
+      message("\n\nSummary (AFTER filtering):\nMissing data: ")
+      message("    markers: ", markers.missing)
+      message("    individuals: ", ind.missing)
+      if (dp) message("\n\nCoverage info:")
+      if (dp) message("    individuals mean read depth: ", ind.cov.total)
+      if (dp) message("    individuals mean genotype coverage: ", ind.cov.mean)
+      if (dp) message("    markers mean coverage: ", markers.cov)
+    }
+  }
+  message("\n\nNumber of chromosome/contig/scaffold: ", length(unique(markers.meta$CHROM)))
+  message("Number of locus: ", length(unique(markers.meta$LOCUS)))
+  message("Number of markers: ", length(number.info$variant.sel[number.info$variant.sel]))
+  summary_strata(strata)
+  id.stats <- markers.stats <- markers.meta <- NULL
+
+  message("radiator Genomic Data Structure (GDS) file: ", folder_short(filename))
+  return(gds)
+  } # End read_vcf
+
+# tidy_vcf ---------------------------------------------------------------------
+#' @name tidy_vcf
+
+#' @title Tidy a vcf file (bi and multi-allelic).
+
+#' @description Used internally in
+#' \href{https://github.com/thierrygosselin/radiator}{radiator}
+#' and might be of interest for users.
+#' Highly recommended to use \code{\link[radiator]{filter_rad}} to reduce
+#' the number of markers. Advance options below are also available to
+#' to manipulate and prune the dataset with blacklists and whitelists along
+#' several other filtering options.
+#'
+#' @param data (VCF file, character string) The VCF SNPs are biallelic or haplotypes.
+#' To make the VCF population-ready, the argument \code{strata} is required.
+#'
+#'
+#' @inheritParams radiator_common_arguments
+#' @inheritParams tidy_genomic_data
+
+#' @param ... (optional) To pass further argument for fine-tuning the tidying
+#' (read below).
+
+#' @export
+#' @rdname tidy_vcf
+
+#' @return The output in your global environment is a tidy data frame, the GDS file
+#' generated is in the working directory under the name given during function execution.
+
+
+#' @section VCF file format:
+#'
+#' \strong{GATK:} Some VCF have an \code{ID} column filled with \code{.},
+#' the LOCUS information is all contained along the linkage group in the
+#' \code{CHROM} column. To make it work with
+#' \href{https://github.com/thierrygosselin/radiator}{radiator},
+#' the \code{ID} column is filled with the \code{POS} column info.
+#'
+#' \strong{platypus:} Some VCF files don't have an ID filed with values,
+#' here the same thing as GATK VCF files above is done.
+#'
+#' \strong{stacks:} with \emph{de novo} approaches, the CHROM column is
+#' filled with "1", the LOCUS column correspond to the CHROM section in stacks VCF and
+#' the COL column is POS -1. With a reference genome, the ID column in stacks VCF is
+#' separated into "LOCUS", "COL", "STRANDS".
+#'
+#' \emph{stacks problem: } current version as some intrinsic problem with
+#' missing allele depth info, during the tidying process a message will
+#' highlight the number of genotypes impacted by the problem. When possible, the
+#' problem is corrected by adding the read depth info into the allele depth field.
+
+
+#' @section Advance mode, using \emph{dots-dots-dots ...}:
+#'
+#' The arguments below are not available using code completion (e.g. with TAB),
+#' consequently any misspelling will generate an error or be ignored.
+#'
+#' \emph{dots-dots-dots ...} arguments names and values are reported and written
+#' in the working directory when \code{internal = FALSE} and \code{verbose = TRUE}.
+#'
+#' \strong{General arguments: }
+#' \enumerate{
+#' \item \code{path.folder}: to write ouput in a specific path
+#' (used internally in radiator). Default: \code{path.folder = getwd()}.
+#' If the supplied directory doesn't exist, it's created.
+#' \item \code{internal: } (optional, character)
+#' Default (\code{internal = FALSE}). A folder is generated to write the files.
+#' \item \code{random.seed}: (integer, optional) For reproducibility, set an integer
+#' that will be used inside codes that uses randomness. With default,
+#' a random number is generated, printed and written in the directory.
+#' Default: \code{random.seed = NULL}.
+#' \item \code{parameters} It's a parameter file where radiator output results of
+#' filtering. Used internally.
+#' Default: \code{parameters = NULL}.
+#' }
+
+#' \strong{tidying arguments/behavior:}
+#' \enumerate{
+#' \item \code{tidy.vcf:} (optional, logical)
+#' Default: \code{tidy.vcf = TRUE}. But you can always stop the process after
+#' the creation of the GDS file (equivalent of running \code{\link{read_vcf}}).
+#' \item \code{tidy.check:} (optional, logical)
+#' Default: \code{tidy.check = TRUE}. By default, the number of markers just before
+#' tidying is checked. Tidying a VCF file with more than 20000 markers is
+#' sub-optimal:
+#' \itemize{
+#' \item a computer with lots of RAM is required
+#' \item it's very slow to generate
+#' \item it's very slow to run codes after
+#' \item for most non model species this number of markers is not realistic...
+#' }
+#' Consequently, the function execution is suspended and user are asked if they
+#' still want to continue with the tidying or stop and keep the GDS file/object.
+#'
+#' This behavior can be annoying, \emph{if the user knows what he's doing}, to turn off
+#' use: \code{tidy.check = FALSE}.
+#' \item \code{ref.calibration: } (optional, logical)
+#' Default: \code{ref.calibration = FALSE}.
+#' Documented in \code{\link[radiator]{calibrate_alleles}}.
+#' \item \code{vcf.stats: } (optional, logical) Generates individuals and
+#' markers statistics helpful for filtering.
+#' These are very fast to generate and because computational
+#' cost is minimal, even for huge VCFs, the default is \code{vcf.stats = TRUE}.
+#' \item \code{vcf.metadata: } (optional, logical or character string)
+#' With \code{vcf.metadata = FALSE}, only the genotypes are kept (GT field)
+#' in the tidy dataset.
+#' With \code{vcf.metadata = TRUE},
+#' all the metadata contained in the \code{FORMAT} field will be kept in
+#' the tidy data file. radiator is currently keeping and cleaning these metadata:
+#' \code{"DP", "AD", "GL", "PL", "GQ", "HQ", "GOF", "NR", "NV"}.
+#' e.g. you only want AD and PL, \code{vcf.metadata = c("AD", "PL")}.
+#' Need another metadata ? Submit a request on github...
+#' Default: \code{vcf.metadata = TRUE}.
+#' }
+#'
+#' \strong{Filtering arguments:}
+#' \enumerate{
+#' \item \code{blacklist.id: } (optional, character)
+#' Default (\code{blacklist.id = NULL}).
+#' Documented in \code{\link[radiator]{tidy_genomic_data}}.
+#' \item \code{filter.strands}: (optional, character)
+#'  Default (\code{filter.strands = "blacklist"}).
+#'  documented in \code{\link[radiator]{read_vcf}}.
+#' \item \code{whitelist.markers: }(optional, path)
+#' Default: \code{whitelist.markers = NULL}.
+#' Documented in \code{\link[radiator]{filter_whitelist}}.
+#' \item \code{filter.individuals.missing}: (double)
+#' Default: \code{filter.individuals.missing = NULL}.
+#' Documented in \code{\link[radiator]{filter_individuals}}.
+#' \item \code{filter.monomorphic}: (logical)
+#' Default: \code{filter.monomorphic = TRUE}.
+#' Documented in \code{\link[radiator]{filter_monomorphic}}.
+#' Required package: \code{UpSetR}.
+#' \item \code{filter.common.markers}: (logical)
+#' Default: \code{filter.common.markers = TRUE}.
+#' Documented in \code{\link[radiator]{filter_common_markers}}.
+#' Required package: \code{UpSetR}.
+#' \item \code{filter.mac}: (integer)
+#' Default: \code{filter.mac = NULL}.
+#' Documented in \code{\link[radiator]{filter_mac}}.
+#' \item \code{filter.coverage}: (logical)
+#' Default: \code{filter.coverage = NULL}.
+#' Documented in \code{\link[radiator]{filter_coverage}}.
+#' \item \code{filter.genotyping}: (integer)
+#' Default: \code{filter.genotyping = NULL}.
+#' Documented in \code{\link[radiator]{filter_genotyping}}.
+#' \item \code{filter.snp.position.read: } (optional, character, integer)
+#' Default: \code{filter.snp.position.read = NULL}.
+#' Documented in \code{\link[radiator]{filter_snp_position_read}}.
+#' \item \code{filter.snp.number: } (optional, character, integer)
+#' Default: \code{filter.snp.number = NULL}.
+#' Documented in \code{\link[radiator]{filter_snp_number}}.
+#' \item \code{filter.short.ld}: (optional, character)
+#' Default: \code{filter.short.ld = NULL}.
+#' Documented in \code{\link[radiator]{filter_ld}}.
+#' \item \code{filter.long.ld}: (optional, character)
+#' Default: \code{filter.long.ld = NULL}.
+#' Documented in \code{\link[radiator]{filter_ld}}.
+#' Required package: \code{SNPRelate}.
+#' \item \code{long.ld.missing}: Documented in \code{\link[radiator]{filter_ld}}.
+#' Default: \code{long.ld.missing = FALSE}.
+#' \item \code{ld.method}: Documented in \code{\link[radiator]{filter_ld}}.
+#' Default: \code{ld.method = "r2"}.
+#' }
+#'
+
+#'
+#' @examples
+#' \dontrun{
+#' # very basic with built-in defaults (not recommended):
+#' prep.data <- radiator::tidy_vcf(data = "populations.snps.vcf")
+#'
+#' # Using more arguments and filters (recommended):
+#' tidy.data <- radiator::tidy_vcf(
+#'     data = "populations.snps.vcf",
+#'     strata = "strata_salamander.tsv",
+#'     filter.individuals.missing = "outlier",
+#'     filter.mac = 4,
+#'     filter.genotyping = 0.1,
+#'     filter.snp.position.read = "outliers",
+#'     filter.short.ld = "mac",
+#'     path.folder = "salamander/prep_data",
+#'     verbose = TRUE)
+#' }
+
+#' @seealso \code{\link[radiator]{read_vcf}},
+#' \code{\link[radiator]{tidy_genomic_data}},
+#' \code{\link[radiator]{filter_rad}}
+
+#' @references Danecek P, Auton A, Abecasis G et al. (2011)
+#' The variant call format and VCFtools.
+#' Bioinformatics, 27, 2156-2158.
+
+#' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
+
+tidy_vcf <- function(
+  data,
+  strata = NULL,
+  filename = NULL,
+  parallel.core = parallel::detectCores() - 1,
+  verbose = FALSE,
+  ...) {
+
+  # # test
+  # data = "populations.snps.vcf"
+  # strata = "spis-popmap-448samples.tsv"
+  # vcf.stats = TRUE
+  # vcf.metadata = TRUE
+  # parallel.core = 8
+  # verbose = TRUE
+  # blacklist.id = NULL
+  # whitelist.markers = NULL
+  # filename = NULL
+
+  # filter.individuals.missing = "outlier"
+  # filter.common.markers = TRUE
+  # filter.monomorphic = TRUE
+  # filter.strands = FALSE
+  # filter.mac = 4
+  # filter.coverage = TRUE
+  # filter.genotyping = 10
+  # filter.snp.position.read = "outliers"
+  # filter.short.ld = "maf"
+  # filter.long.ld = 0.8
+  # gt.vcf.nuc = TRUE
+  # gt.vcf = TRUE
+  # gt = TRUE
+  # gt.bin = TRUE
+  # wide = FALSE
+  # ref.calibration = FALSE
+
+  # Cleanup---------------------------------------------------------------------
+  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
+  if (verbose) message("Execution date@time: ", file.date)
+  old.dir <- getwd()
+  opt.change <- getOption("width")
+  options(width = 70)
+  timing <- proc.time()# for timing
+  res <- list()
+  #back to the original directory and options
+  on.exit(setwd(old.dir), add = TRUE)
+  on.exit(options(width = opt.change), add = TRUE)
+  on.exit(timing <- proc.time() - timing, add = TRUE)
+  on.exit(if (verbose) message("\nComputation time, overall: ", round(timing[[3]]), " sec"), add = TRUE)
+  on.exit(if (verbose) cat("############################## completed tidy_vcf ##############################\n"), add = TRUE)
+
+
+  # Required package -----------------------------------------------------------
+  if (!"SeqVarTools" %in% utils::installed.packages()[,"Package"]) {
+    rlang::abort('Please install SeqVarTools for this option:\n
+                 install.packages("BiocManager")
+                 BiocManager::install("SeqVarTools")')
+  }
+
+  # Checking for missing and/or default arguments ------------------------------
+  if (missing(data)) rlang::abort("vcf file missing")
+
+  # Function call and dotslist -------------------------------------------------
+  rad.dots <- radiator_dots(
+    func.name = as.list(sys.call())[[1]],
+    fd = rlang::fn_fmls_names(),
+    args.list = as.list(environment()),
+    dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
+    keepers = c(
+      "blacklist.id",
+      "filter.individuals.missing",
+      "filter.individuals.coverage.total",
+      "filter.common.markers",
+      "filter.monomorphic",
+      "filter.mac",
+      "filter.coverage",
+      "filter.genotyping",
+      "filter.snp.position.read",
+      "filter.snp.number",
+      "filter.short.ld", "filter.long.ld", "long.ld.missing", "ld.method",
+      "filter.strands",
+      "random.seed",
+      "path.folder",
+      "parameters",
+      "gt", "gt.bin", "gt.vcf", "gt.vcf.nuc",
+      "ref.calibration",
+      "vcf.metadata", "vcf.stats",
+      "whitelist.markers",
+      "internal",
+      "tidy.check", "tidy.vcf"
+    ),
+    verbose = verbose
+  )
+
+  if (!is.null(filter.snp.position.read) ||
+      !is.null(filter.mac) ||
+      !is.null(filter.coverage) ||
+      !is.null(filter.genotyping) ||
+      !is.null(filter.short.ld) ||
+      !is.null(filter.long.ld) ||
+      !is.null(long.ld.missing) ||
+      !is.null(filter.individuals.missing) ||
+      !is.null(filter.individuals.coverage.total) ||
+      !is.null(filter.snp.number)) subsample.markers.stats <- 1
+
+  if (!is.null(ld.method)) {
+    ld.method <- match.arg(ld.method, c("composite", "r", "r2", "dprime", "corr"))
+  }
+  if (!is.null(filter.snp.position.read)) {
+    filter.snp.position.read <- match.arg(
+      arg = filter.snp.position.read,
+      choices = c("outliers", "iqr", "q75"),
+      several.ok = TRUE)
+  }
+  if (is.logical(vcf.metadata)) {
+    if (vcf.metadata) {
+      overwrite.metadata <- NULL
+    } else {
+      overwrite.metadata <- "GT"
+    }
+  } else {#NULL or character
+    if (is.null(vcf.metadata)) {
+      overwrite.metadata <- NULL
+      vcf.metadata <- TRUE
+    } else {
+      overwrite.metadata <- vcf.metadata
+      if (!"GT" %in% overwrite.metadata) {
+        message("GT field always included in vcf.metadata")
+        overwrite.metadata <- c("GT", overwrite.metadata)
+      }
+      vcf.metadata <- TRUE
+    }
+  }
+
+  if (is.null(random.seed)) {
+    random.seed <- sample(x = 1:1000000, size = 1)
+    set.seed(random.seed)
+  } else {
+    set.seed(random.seed)
+  }
+
+  # LD
+  # currently: will only filter long ld if short ld as been taken care of first...
+  if (!is.null(filter.long.ld) && is.null(filter.short.ld)) {
+    message("\nfilter.short.ld argument set by default to: maf")
+    filter.short.ld <- "mac"
+  }
+
+  if (is.null(tidy.vcf)) tidy.vcf <- TRUE
+  if (is.null(tidy.check)) tidy.check <- TRUE
+
+  # Folders---------------------------------------------------------------------
+  wf <- path.folder <- generate_folder(
+    f = path.folder,
+    rad.folder = "tidy_vcf",
+    prefix_int = FALSE,
+    internal = internal,
+    file.date = file.date,
+    verbose = verbose)
+
+  # import VCF -----------------------------------------------------------------
+  data <- radiator::read_vcf(
+    data = data,
+    strata = strata,
+    filename = filename,
+    verbose = FALSE,
+    parallel.core = parallel.core,
+    internal = TRUE,
+    vcf.stats = vcf.stats,
+    vcf.metadata = vcf.metadata,
+    path.folder = path.folder,
+    random.seed = random.seed,
+    parameters = parameters,
+    blacklist.id = blacklist.id,
+    filter.strands = filter.strands,
+    filter.monomorphic = filter.monomorphic,
+    filter.common.markers = filter.common.markers,
+    whitelist.markers = whitelist.markers,
+    filter.individuals.missing = filter.individuals.missing,
+    filter.individuals.coverage.total = filter.individuals.coverage.total,
+    filter.mac = filter.mac,
+    filter.coverage = filter.coverage,
+    filter.genotyping = filter.genotyping,
+    filter.snp.position.read = filter.snp.position.read,
+    filter.snp.number = filter.snp.number,
+    filter.short.ld = filter.short.ld,
+    filter.long.ld = filter.long.ld,
+    long.ld.missing = long.ld.missing,
+    ld.method = ld.method
+  )
+
+  # tidy_vcf folder ------------------------------------------------------------
+  tidy.folder <- generate_folder(
+    f = path.folder,
+    rad.folder = "tidy_vcf",
+    prefix_int = TRUE,
+    internal = FALSE,
+    file.date = file.date,
+    verbose = verbose)
+
+  # write the dots file: after the GDS import...
+  write_rad(
+    data = rad.dots,
+    path = tidy.folder,
+    filename = stringi::stri_join("radiator_tidy_vcf_args_", file.date, ".tsv"),
+    tsv = TRUE,
+    internal = internal,
+    verbose = verbose
+  )
+
+  # Random seed ----------------------------------------------------------------
+  readr::write_lines(x = random.seed, path = file.path(tidy.folder, "random.seed"))
+  if (verbose) message("File written: random.seed (", random.seed,")")
+
+  # Tidy the data --------------------------------------------------------------
+  if (tidy.vcf) {
+    # Get info markers and individuals -----------------------------------------
+    wl.v <- SeqArray::seqGetData(data, "variant.id")
+    markers.meta <- extract_markers_metadata(gds = data, whitelist = TRUE) %>%
+      dplyr::filter(VARIANT_ID %in% wl.v)
+    wl.s <- SeqArray::seqGetData(data, "sample.id")
+
+    individuals <- extract_individuals(
+      gds = data,
+      ind.field.select = "INDIVIDUALS",
+      whitelist = TRUE
+    ) %>%
+      dplyr::filter(INDIVIDUALS %in% wl.s) %$% INDIVIDUALS
+    n.markers <- length(markers.meta$VARIANT_ID)
+    n.individuals <- length(individuals)
+
+    # STRATEGY tidy vcf  ---------------------------------------------------------
+    # Depending on the number of markers ...
+    # All this can be overwritten in ... argument
+    # gt.bin is the dosage of ALT allele: 0, 1, 2 NA
+    if (is.null(gt.bin)) {
+      if (n.markers < 5000) gt.bin <- TRUE
+      if (n.markers >= 5000 && n.markers < 30000) gt.bin <- TRUE
+      if (n.markers >= 30000) gt.bin <- FALSE
+    }
+    # gt.vcf is genotype coding in the VCF: 0/0, 0/1, 1/1, ./.
+    if (is.null(gt.vcf)) {
+      if (n.markers < 5000) gt.vcf <- TRUE
+      if (n.markers >= 5000 && n.markers < 30000) gt.vcf <- TRUE
+      if (n.markers >= 30000) gt.vcf <- FALSE
+    }
+    # gt.vcf.nuc is genotype coding in the VCF but with nucleotides: A/C, ./.
+    if (is.null(gt.vcf.nuc)) {
+      if (n.markers < 5000) gt.vcf.nuc <- TRUE
+      if (n.markers >= 5000 && n.markers < 30000) gt.vcf.nuc <- FALSE
+      if (n.markers >= 30000) gt.vcf.nuc <- FALSE
+    }
+    # gt is genotype coding a la genepop: 001002, 000000
+    if (is.null(gt)) {
+      if (n.markers < 5000) gt <- TRUE
+      if (n.markers >= 5000 && n.markers < 30000) gt <- FALSE
+      if (n.markers >= 30000) gt <- FALSE
+    }
+
+    # check
+    # gt.bin
+    # gt.vcf
+    # gt.vcf.nuc
+    # gt
+
+    # Tidy check ----------  ---------------------------------------------------
+    if (tidy.check && n.markers > 20000) {
+      cat("\n\n################################## IMPORTANT ###################################\n")
+      message("Tidying vcf with ", n.markers, " SNPs is not optimal:")
+      message("    1. a computer with lots of RAM is required")
+      message("    2. it's very slow to generate")
+      message("    3. it's very slow to run codes after")
+      message("    4. for most non model species this number of markers is not realistic...")
+      message("\nRecommendations:")
+      message("    1. use advance features available in this function (read doc)")
+      message("    2. filter your dataset. e.g. with filter_rad")
+      message("\nIdeally target a maximum of ~ 10 000 - 20 0000 unlinked SNPs\n")
+
+      if (n.markers > 20000) tidy.vcf <- FALSE
+      tidy.vcf <- radiator_question(
+        x = "\nContinue tidying the VCF (y/n) ?",
+        answer.opt = c("Y", "N", "Yes", "No", "YES", "NO", "yes", "no", "y", "n"))
+      if (any(c("y", "Y", "Yes", "YES", "yes") %in% tidy.vcf)) {
+        tidy.vcf <- TRUE
+        message("Tidying the large vcf...")
+      } else {
+        message("\nKeeping the GDS object/file")
+        tidy.vcf <- FALSE
+        return(data)
+      }
+    }
+
+    # Print genotypes tidying
+    message("\nGenotypes formats generated with ", n.markers, " SNPs: ")
+    message("    GT_BIN (the dosage of ALT allele: 0, 1, 2 NA): ", gt.bin)
+    message("    GT_VCF (the genotype coding VCFs: 0/0, 0/1, 1/1, ./.): ", gt.vcf)
+    message("    GT_VCF_NUC (the genotype coding in VCFs, but with nucleotides: A/C, ./.): ", gt.vcf.nuc)
+    message("    GT (the genotype coding 'a la genepop': 001002, 001001, 000000): ", gt)
+
+    # Tidying TRUE  --------------------------------------------------------------
+    if (tidy.vcf) {
+      tibble.size <- n.markers * n.individuals
+      tidy.data <- tibble::tibble(GT_BIN = numeric(tibble.size))
+      # When IDs are blacklisted...you want to recalibrate REF/ALT alleles
+      if (!is.null(blacklist.id)) {
+        ref.calibration <- TRUE
+        if (verbose) message("\nRe-calibration of REF/ALT alleles: TRUE")
+      }
+
+      # bi- or multi-alllelic VCF ------------------------------------------------
+      biallelic <- detect_biallelic_markers(data = data)
+
+      # import genotypes ---------------------------------------------------------
+      # gt.bin
+      if (gt.bin) {
+        tidy.data %<>%
+          dplyr::mutate(
+            GT_BIN = as.vector(SeqArray::seqGetData(
+              gdsfile = data, var.name = "$dosage_alt")
+            )
+          )
+        # if (wide) {
+        #   tidy.data$GT_BIN <- tibble::as_tibble(x = SeqArray::seqGetData(
+        #     gdsfile = data, var.name = "$dosage_alt")) %>%
+        #     magrittr::set_colnames(x = ., value = data$markers.meta$MARKERS) %>%
+        #     tibble::add_column(.data = .,
+        #                        "INDIVIDUALS" = id.string,
+        #                        .before = 1)
+        # }
+      } else {
+        tidy.data %<>% dplyr::select(-GT_BIN)
+      }
+
+      if (gt) gt.vcf.nuc <- TRUE
+      # nucleotides info required to generate genepop format 001, 002, 003, 004
+      # when gt is TRUE, gt.vcf.nuc is always TRUE
+      if (gt.vcf.nuc) {
+        tidy.data %<>%
+          dplyr::mutate(
+            GT_VCF_NUC = as.vector(SeqVarTools::getGenotypeAlleles(
+              gdsobj = data, use.names = TRUE))
+          )
+      }
+
+      if (gt.vcf) {
+        tidy.data %<>%
+          dplyr::mutate(
+            GT_VCF = as.vector(SeqVarTools::getGenotype(gdsobj = data, use.names = TRUE))
+          )
+        tidy.data$GT_VCF[is.na(tidy.data$GT_VCF)] <- "./."
+      } else {
+        tidy.data %<>% dplyr::select(-GT_VCF)
+      }
+
+      if (gt) {
+        tidy.data %<>%
+          dplyr::mutate(
+            GT = stringi::stri_replace_all_fixed(
+              str = GT_VCF_NUC,
+              pattern = c("A", "C", "G", "T", "/"),
+              replacement = c("001", "002", "003", "004", ""),
+              vectorize_all = FALSE) %>%
+              stringi::stri_replace_na(str = ., replacement = "000000")
+          )
+      }
+      # if (wide) {
+      #   # id.string
+      #   #   id.string <- data$individuals$INDIVIDUALS
+      #
+      #   data$tidy.data$GT <- tibble::as_tibble(
+      #     matrix(data = data$tidy.data$GT,
+      #            nrow = nrow(id.string),
+      #            ncol = nrow(data$markers.meta))
+      #   ) %>%
+      #     magrittr::set_colnames(x = ., value = data$markers.meta$MARKERS) %>%
+      #     tibble::add_column(
+      #       .data = .,
+      #       "INDIVIDUALS" = id.string,
+      #       .before = 1
+      #     )
+      # }
+
+      # replace NA in gt.vcf.nuc
+      if (gt.vcf.nuc) {
+        tidy.data$GT_VCF_NUC[is.na(tidy.data$GT_VCF_NUC)] <- "./."
+      }
+      # more work for gt.vcf.nuc
+      # if (gt.vcf.nuc) {
+      #   if (wide) {
+      #     tidy.data$GT_VCF_NUC %<>%
+      #       magrittr::set_colnames(x = ., value = markers.meta$MARKERS) %>%
+      #       tibble::as_tibble(x = ., rownames = "INDIVIDUALS")
+      #   } else {
+      #     tidy.data$GT_VCF_NUC <- as.vector(tidy.data$GT_VCF_NUC)
+      #   }
+      #   tidy.data$GT_VCF_NUC[is.na(tidy.data$GT_VCF_NUC)] <- "./."
+      # } else {
+      #   tidy.data$GT_VCF_NUC <- NULL
+      # }
+
+      # gt.vcf
+      # if (gt.vcf) {
+      #   data$tidy.data$GT_VCF <- SeqVarTools::getGenotype(gdsobj = gds, use.names = TRUE)
+      #   if (wide) {
+      #     data$tidy.data$GT_VCF %<>% magrittr::set_colnames(x = ., value = data$markers.meta$MARKERS) %>%
+      #       tibble::as_tibble(x = ., rownames = "INDIVIDUALS")
+      #   } else {
+      #     data$tidy.data$GT_VCF <- as.vector(data$tidy.data$GT_VCF)
+      #   }
+      #
+      #   data$tidy.data$GT_VCF[is.na(data$tidy.data$GT_VCF)] <- "./."
+      #   # replace(data, which(data == what), NA)
+      # }
+
+      # check missing genotypes
+      # head(tidy.data$GT[is.na(tidy.data$GT_BIN)])
+      # head(tidy.data$GT_VCF_NUC[is.na(tidy.data$GT_BIN)])
+      # head(tidy.data$GT_VCF[is.na(tidy.data$GT_BIN)])
+
+      # genotypes metadata ---------------------------------------------------------
+      # Check vcf.metadata
+      # vcf.metadata <- TRUE
+      # vcf.metadata <- FALSE
+      # vcf.metadata <- NULL
+      # vcf.metadata <- "GT"
+
+      if (is.logical(vcf.metadata)) {
+        if (vcf.metadata) {
+          overwrite.metadata <- NULL
+        } else {
+          overwrite.metadata <- "GT"
+        }
+      } else {#NULL or character
+        if (is.null(vcf.metadata)) {
+          overwrite.metadata <- NULL
+          vcf.metadata <- TRUE
+        } else {
+          overwrite.metadata <- vcf.metadata
+          if (!"GT" %in% overwrite.metadata) {
+            message("GT field always included in vcf.metadata")
+            overwrite.metadata <- c("GT", overwrite.metadata)
+          }
+          vcf.metadata <- TRUE
+        }
+      }
+      #Check
+      # vcf.metadata
+      # overwrite.metadata
+
+
+      if (vcf.metadata) {
+        if (verbose) message("\nKeeping vcf genotypes metadata: yes")
+        # detect FORMAT fields available
+        have <-  SeqArray::seqSummary(
+          gdsfile = data,
+          varname = "annotation/format",
+          check = "none", verbose = FALSE)$ID
+        # current version doesn't deal well with PL with 3 fields separated with ","
+        # want <- c("DP", "AD", "GL", "PL", "HQ", "GQ", "GOF", "NR", "NV", "RO", "QR", "AO", "QA")
+
+        if (length(have) > 0) {
+          want <- c("DP", "AD", "GL", "PL", "HQ", "GQ", "GOF", "NR", "NV")
+
+          if (!is.null(overwrite.metadata)) want <- overwrite.metadata
+          if (verbose) message("    genotypes metadata: ", stringi::stri_join(want, collapse = ", "))
+
+          parse.format.list <- purrr::keep(.x = have, .p = have %in% want)
+          # work on parallelization of this part
+          tidy.data %<>%
+            dplyr::bind_cols(
+              genotypes.meta = purrr::map(
+                .x = parse.format.list, .f = parse_gds_metadata, gds = data,
+                verbose = verbose, parallel.core = parallel.core) %>%
+                purrr::flatten(.) %>%
+                purrr::flatten_df(.)
+            )
+          # check
+          # test <- tidy.data
+        } else {
+          if (verbose) message("    genotypes metadata: none found")
+          vcf.metadata <- FALSE
+        }
+      }
+
+
+
+      # Haplotypes or biallelic VCF-------------------------------------------------
+      # # recoding genotype
+      # if (biallelic) {# biallelic VCF
+      #   if (verbose) message("Recoding bi-allelic VCF...")
+      # } else {#multi-allelic vcf
+      #   if (verbose) message("Recoding VCF haplotype...")
+      # }
+      # input <- dplyr::rename(input, GT_VCF_NUC = GT)
+
+      # Generating the tidy --------------------------------------------------------
+
+      ## Note to myself: check timig with 1M SNPs to see
+      ## if this is more efficient than data.table melt...
+
+      want <- intersect(c("MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF", "ALT"),
+                        names(markers.meta))
+      tidy.data <- suppressWarnings(
+        dplyr::select(markers.meta, dplyr::one_of(want))) %>%
+        dplyr::bind_cols(
+          tibble::as_tibble(
+            matrix(
+              data = NA,
+              nrow = n.markers, ncol = n.individuals)) %>%
+            magrittr::set_colnames(x = ., value = individuals)) %>%
+        data.table::as.data.table(.) %>%
+        data.table::melt.data.table(
+          data = .,
+          id.vars = want,
+          variable.name = "INDIVIDUALS",
+          value.name = "GT",
+          variable.factor = FALSE) %>%
+        tibble::as_tibble(.) %>%
+        dplyr::select(-GT) %>%
+        dplyr::mutate(
+          MARKERS = factor(x = MARKERS,
+                           levels = markers.meta$MARKERS, ordered = TRUE),
+          INDIVIDUALS = factor(x = INDIVIDUALS,
+                               levels = individuals,
+                               ordered = TRUE)) %>%
+        dplyr::arrange(MARKERS, INDIVIDUALS) %>%
+        dplyr::bind_cols(tidy.data)
+      # Check stacks AD problem --------------------------------------------------
+      # Some genotypes with missing AD...
+      if (vcf.metadata) {
+        stacks.ad.problem <- tidy.data %>%
+          dplyr::select(READ_DEPTH, ALLELE_REF_DEPTH,ALLELE_ALT_DEPTH) %>%
+          dplyr::filter(!is.na(READ_DEPTH)) %>%
+          dplyr::filter(is.na(ALLELE_REF_DEPTH) & is.na(ALLELE_ALT_DEPTH))
+        stacks.ad.problem.n <- nrow(stacks.ad.problem)
+
+        if (stacks.ad.problem.n > 0) {
+          message("\n\nStacks problem detected")
+          message("    missing allele depth info")
+          message("    number of genotypes with problem: ", stacks.ad.problem.n)
+          message("    correcting problem by adding the read depth info into AD fields...\n\n")
+
+          stacks.ad.problem <- dplyr::select(tidy.data, GT_BIN) %>%
+            dplyr::bind_cols(dplyr::select(tidy.data, READ_DEPTH, ALLELE_REF_DEPTH, ALLELE_ALT_DEPTH)) %>%
+            dplyr::mutate(COL_ID = seq(1, n())) %>%
+            dplyr::filter(!is.na(READ_DEPTH)) %>%
+            dplyr::filter(is.na(ALLELE_REF_DEPTH) & is.na(ALLELE_ALT_DEPTH)) %>%
+            dplyr::mutate(
+              ALLELE_REF_DEPTH = dplyr::if_else(GT_BIN == 0, READ_DEPTH, ALLELE_REF_DEPTH),
+              ALLELE_ALT_DEPTH = dplyr::if_else(GT_BIN == 2, READ_DEPTH, ALLELE_ALT_DEPTH)
+            )
+
+          tidy.data$ALLELE_REF_DEPTH[stacks.ad.problem$COL_ID] <- stacks.ad.problem$ALLELE_REF_DEPTH
+          tidy.data$ALLELE_ALT_DEPTH[stacks.ad.problem$COL_ID] <- stacks.ad.problem$ALLELE_ALT_DEPTH
+          # check <- tidy.data[stacks.ad.problem$COL_ID, ]
+        }
+        stacks.ad.problem.n <- stacks.ad.problem.n <- NULL
+      }
+
+      # re-calibration of ref/alt alleles ------------------------------------------
+
+      if (ref.calibration) {
+        if (verbose) message("\nCalculating REF/ALT alleles...")
+        tidy.data <- radiator::calibrate_alleles(
+          data = tidy.data,
+          biallelic = biallelic,
+          parallel.core = parallel.core,
+          verbose = verbose,
+          gt.vcf.nuc = gt.vcf.nuc,
+          gt = gt,
+          gt.vcf = gt.vcf,
+          gt.bin = gt.bin
+        ) %$% input
+      }
+
+      # include strata ---------------------------------------------------------
+      strata <- extract_individuals(
+        gds = data,
+        ind.field.select = c("STRATA", "INDIVIDUALS"),
+        whitelist = TRUE)
+
+      if (!is.null(strata)) {
+        tidy.data <- join_strata(
+          data = tidy.data,
+          strata = strata,
+          pop.id = TRUE,
+          verbose = TRUE
+          )
+      } else {
+        tidy.data %<>% dplyr::mutate(POP_ID = 1L)
+      }
+
+
+      # Re ordering columns
+      want <- c("MARKERS", "CHROM", "LOCUS", "POS", "ID", "COL", "INDIVIDUALS",
+                "STRATA", "POP_ID",
+                "REF", "ALT", "GT_VCF", "GT_VCF_NUC", "GT", "GT_BIN",
+                "POLYMORPHIC")
+
+      suppressWarnings(
+        tidy.data %<>% dplyr::select(dplyr::one_of(want), dplyr::everything())
+        )
+
+      # Sort id
+      tidy.data %<>% dplyr::arrange(POP_ID, INDIVIDUALS)
+
+      #write tidy
+      # path.folder <- generate_folder(
+      #   f = wf,
+      #   rad.folder = "tidy_data",
+      #   internal = FALSE,
+      #   file.date = file.date,
+      #   verbose = verbose)
+
+      filename.rad <- generate_filename(
+        path.folder = tidy.folder,
+        extension = "rad")
+      write_rad(data = tidy.data, path = filename.rad$filename)
+
+      if (verbose) message("Updating GDS with genotypes.meta values")
+      update_radiator_gds(gds = data, node.name = "genotypes.meta", value = tidy.data)
+      message("\nTidy data file written: ", filename.rad$filename.short)
+      } #tidy.vcf
+  }#tidy.vcf
+
+
+  # Results --------------------------------------------------------------------
+  return(tidy.data)
+}#End tidy_vcf
+
+
+# Internal nested Function -----------------------------------------------------
+#' @title parse_gds_metadata
+#' @description function to parse the format field and tidy the results of VCF
+#' @rdname parse_gds_metadata
+#' @keywords internal
+#' @export
+parse_gds_metadata <- function(
+  x,
+  gds = NULL,
+  verbose = TRUE,
+  parallel.core = parallel::detectCores() - 1) {
+
+  res <- list()
+  format.name <- x
+  # format.name <- x <- "DP"
+  # format.name <- x <- "AD"
+  # format.name <- x <- "GL"
+  # format.name <- x <- "PL"
+  # format.name <- x <- "HQ"
+  # format.name <- x <- "GQ"
+  # format.name <- x <- "GOF"
+  # format.name <- x <- "NR"
+  # format.name <- x <- "NV"
+  # format.name <- x <- "RO" # not yet implemented
+  # format.name <- x <- "QR" # not yet implemented
+  # format.name <- x <- "AO" # not yet implemented
+  # format.name <- x <- "QA" # not yet implemented
+
+  if (verbose) message("\nParsing and tidying: ", format.name)
+
+  # Allele Depth
+  if (format.name == "AD") {
+    if (verbose) message("AD column: splitting into ALLELE_REF_DEPTH and ALLELE_ALT_DEPTH")
+    res$AD <- SeqArray::seqGetData(
+      gdsfile = gds,
+      var.name = "annotation/format/AD"
+    )$data %>%
+      tibble::as_tibble(.)
+    column.vec <- seq_along(res$AD)
+    res$AD <- tibble::tibble(
+      ALLELE_REF_DEPTH = res$AD[, column.vec %% 2 == 1] %>%
+        as.matrix(.) %>%
+        as.vector(.),
+      ALLELE_ALT_DEPTH = res$AD[, column.vec %% 2 == 0] %>%
+        as.matrix(.) %>%
+        as.vector(.))
+    split.vec <- split_vec_row(x = res$AD, 3, parallel.core = parallel.core)
+    res$AD$ALLELE_REF_DEPTH <- clean_ad(
+      x = res$AD$ALLELE_REF_DEPTH,
+      split.vec = split.vec,
+      parallel.core = parallel.core)
+
+    res$AD$ALLELE_ALT_DEPTH <- clean_ad(
+      x = res$AD$ALLELE_ALT_DEPTH,
+      split.vec = split.vec,
+      parallel.core = parallel.core)
+    split.vec <- NULL
+    # test1 <- res$AD
+  } # End AD
+
+
+  # Read depth
+  if (format.name == "DP") {
+    if (verbose) message("DP column: cleaning and renaming to READ_DEPTH")
+    res$DP <- tibble::tibble(READ_DEPTH = SeqArray::seqGetData(
+      gdsfile = gds,
+      var.name = "annotation/format/DP")$data %>% as.vector(.))
+    # test <- res$DP
+    # depth <- SeqArray::seqGetData(gds, "annotation/format/DP")
+    #
+    # if (ind) {
+    #   coverage.info$ind.cov.tot <- as.integer(round(rowSums(x = depth$data, na.rm = TRUE, dims = 1L), 0))
+    #   coverage.info$ind.cov.mean <- as.integer(round(rowMeans(x = depth$data, na.rm = TRUE, dims = 1L), 0))
+    # }
+    # if (markers) {
+    #   coverage.info$markers.mean <- as.integer(round(colMeans(x = depth$data, na.rm = TRUE, dims = 1L), 0))
+    #   coverage.info$markers.tot <- as.integer(round(colSums(x = depth$data, na.rm = TRUE, dims = 1L), 0))
+    # }
+  } # End DP
+
+  # Cleaning HQ: Haplotype quality as phred score
+  if (format.name == "HQ") {
+    res$HQ <- tibble::tibble(HQ = SeqArray::seqGetData(
+      gdsfile = gds,
+      var.name = "annotation/format/HQ")$data %>% as.vector(.))
+    # test <- res$HQ
+
+    # check HQ and new stacks version with no HQ
+    all.missing <- nrow(res$HQ)
+    if (all.missing != 0) {
+      if (verbose) message("HQ column: Haplotype Quality")
+    } else {
+      message("HQ values are all missing: removing column")
+      res$HQ <- NULL
+    }
+  } # End HQ
+
+  # Cleaning GQ: Genotype quality as phred score
+  if (format.name == "GQ") {
+    if (verbose) message("GQ column: Genotype Quality")
+    res$GQ <- tibble::tibble(GQ = SeqArray::seqGetData(
+      gdsfile = gds,
+      var.name = "annotation/format/GQ")$data %>% as.vector(.))
+    # test <- res$GQ
+  } # End GQ
+
+  # GL cleaning
+  if (format.name == "GL") {
+    if (verbose) message("GL column: cleaning Genotype Likelihood column")
+    res$GL <- SeqArray::seqGetData(gdsfile = gds,
+                                   var.name = "annotation/format/GL")$data %>%
+      tibble::as_tibble(.)
+    column.vec <- seq_along(res$GL)
+    res$GL <- tibble::tibble(GL_HOM_REF = res$GL[, column.vec %% 3 == 1] %>%
+                               as.matrix(.) %>%
+                               as.vector(.),
+                             GL_HET = res$GL[, column.vec %% 3 == 2] %>%
+                               as.matrix(.) %>%
+                               as.vector(.),
+                             GL_HOM_ALT = res$GL[, column.vec %% 3 == 0] %>%
+                               as.matrix(.) %>%
+                               as.vector(.))
+    res$GL[res$GL == "NaN"] <- NA
+  } # End GL
+
+  # Cleaning GOF: Goodness of fit value
+  if (format.name == "GOF") {
+    if (verbose) message("GOF column: Goodness of fit value")
+    res$GOF <- tibble::tibble(GOF = SeqArray::seqGetData(
+      gdsfile = gds,
+      var.name = "annotation/format/GOF")$data %>% as.vector(.))
+    # test <- res$GOF
+  } # End GOF
+
+  # Cleaning NR: Number of reads covering variant location in this sample
+  if (format.name == "NR") {
+    if (verbose) message("NR column: splitting column into the number of variant")
+    res$NR <- tibble::tibble(NR = SeqArray::seqGetData(
+      gdsfile = gds,
+      var.name = "annotation/format/NR")$data %>% as.vector(.))
+    # test <- res$NR
+  }#End cleaning NR column
+
+  # Cleaning NV: Number of reads containing variant in this sample
+  if (format.name == "NV") {
+    if (verbose) message("NV column: splitting column into the number of variant")
+    res$NR <- tibble::tibble(NV = SeqArray::seqGetData(
+      gdsfile = gds,
+      var.name = "annotation/format/NV")$data %>% as.vector(.))
+    # test <- res$NV
+  }#End cleaning NV column
+
+  # RO
+  # Cleaning RO: Reference allele observation count
+  # if (format.name == "RO") {
+  #   if (verbose) message("RO column: splitting column into the number of variant")
+  #   res$RO <- tibble::tibble(RO = SeqArray::seqGetData(
+  #     gdsfile = gds,
+  #     var.name = "annotation/format/RO")$data %>% as.vector(.))
+  #   # test <- res$RO
+  # }#End cleaning RO column
+
+  # # Cleaning QR: Sum of quality of the reference observations
+  # if (format.name == "QR") {
+  #   if (verbose) message("QR column: splitting column into the number of variant")
+  #   res$QR <- tibble::tibble(QR = SeqArray::seqGetData(
+  #     gdsfile = gds,
+  #     var.name = "annotation/format/QR")$data %>% as.vector(.))
+  #   # test <- res$QR
+  # }#End cleaning QR column
+
+
+  # # Cleaning AO: Alternate allele observation count
+  # if (format.name == "AO") {
+  #   if (verbose) message("AO column: splitting column into the number of variant")
+  #   res$AO <- tibble::tibble(AO = SeqArray::seqGetData(
+  #     gdsfile = gds,
+  #     var.name = "annotation/format/AO")$data %>% as.vector(.))
+  #   # test <- res$AO
+  # }#End cleaning AO column
+
+  # # Cleaning QA: Sum of quality of the alternate observations
+  # if (format.name == "QA") {
+  #   if (verbose) message("QA column: splitting column into the number of variant")
+  #   res$QA <- tibble::tibble(QA = SeqArray::seqGetData(
+  #     gdsfile = gds,
+  #     var.name = "annotation/format/QA")$data %>% as.vector(.))
+  #   # test <- res$QA
+  # }#End cleaning QA column
+
+
+
+  # test <- res$AD %>%
+  #   dplyr::bind_cols(READ_DEPTH = SeqArray::seqGetData(
+  #   gdsfile = gds,
+  #   var.name = "annotation/format/DP")$data %>% as.vector(.))
+
+  # if (gather.data) {
+  #   x <- dplyr::mutate(x, ID = seq(1, n()))
+  #   x <- data.table::melt.data.table(
+  #     data = data.table::as.data.table(x),
+  #     id.vars = "ID",
+  #     variable.name = "INDIVIDUALS",
+  #     value.name = format.name,
+  #     variable.factor = FALSE) %>%
+  #     tibble::as_tibble(.) %>%
+  #     dplyr::select(-ID, -INDIVIDUALS)
+  # }
+  return(res)
+}#End parse_gds_metadata
+
+#' @title split_vcf_id
+#' @description split VCF ID in parallel
+#' @rdname split_vcf_id
+#' @keywords internal
+#' @export
+
+split_vcf_id <- function(x) {
+  res <- dplyr::rename(x, ID = LOCUS) %>%
+    tidyr::separate(data = ., col = ID, into = c("LOCUS", "COL"),
+                    sep = "_", extra = "drop", remove = FALSE) %>%
+    dplyr::mutate_at(.tbl = ., .vars = c("CHROM", "POS", "LOCUS"), .funs = as.character) %>%
+    dplyr::mutate_at(.tbl = ., .vars = c("CHROM", "POS", "LOCUS"), .funs = clean_markers_names) %>%
+    tidyr::unite(MARKERS, c(CHROM, LOCUS, POS), sep = "__", remove = FALSE)
+  return(res)
+}#End split_vcf_id
+
+
+
+#' @title clean_ad
+#' @description Clean allele depth field in VCF.
+#' AD column: splitting coverage info into ALLELE_REF_DEPTH and ALLELE_ALT_DEPTH
+#' @rdname clean_ad
+#' @keywords internal
+#' @export
+clean_ad <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) {
+  clean <- function(x) {
+    x <- as.integer(replace_by_na(data = x, what = 0))
+  }
+
+  x <- split(x = x, f = split.vec) %>%
+    .radiator_parallel(
+      X = ., FUN = clean, mc.cores = parallel.core) %>%
+    purrr::flatten_int(.)
+  return(x)
+}#End clean_ad
+
+
+#' @title clean_pl
+#' @description Clean PL column.
+#' PL column (normalized, phred-scaled likelihoods for genotypes):
+#' separating into PROB_HOM_REF, PROB_HET and PROB_HOM_ALT")
+#' Value 1: probability that the site is homozgyous REF
+#' Value 2: probability that the sample is heterzygous
+#' Value 2: probability that it is homozygous ALT
+#' @rdname clean_pl
+#' @keywords internal
+#' @export
+clean_pl <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) {
+  clean <- function(x) {
+    res <- x %>%
+      dplyr::mutate(
+        PL = dplyr::if_else(GT_VCF == "./.", NA_character_, PL)) %>%
+      tidyr::separate(
+        data = ., PL, c("PROB_HOM_REF", "PROB_HET", "PROB_HOM_ALT"),
+        sep = ",", extra = "drop", remove = FALSE) %>%
+      dplyr::mutate_at(
+        .tbl = ., .vars = c("PROB_HOM_REF", "PROB_HET", "PROB_HOM_ALT"),
+        .funs = as.numeric) %>%
+      dplyr::select(-GT_VCF)
+    return(res)
+  }#End clean
+  x <- dplyr::bind_cols(
+    dplyr::select(x, -PL),
+    dplyr::ungroup(x) %>%
+      dplyr::select(GT_VCF, PL) %>%
+      split(x = ., f = split.vec) %>%
+      .radiator_parallel(
+        X = ., FUN = clean, mc.cores = parallel.core) %>%
+      dplyr::bind_rows(.))
+  return(x)
+}#End clean_pl
+
+#' @title clean_gl
+#' @description Clean GL column.
+#' GL column: cleaning Genotype Likelihood column
+#' @rdname clean_gl
+#' @keywords internal
+#' @export
+
+clean_gl <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) {
+  x <- x %>%
+    dplyr::mutate(
+      GL = dplyr::if_else(GT_VCF == "./.", NA_character_, GL),
+      GL = suppressWarnings(
+        stringi::stri_replace_all_fixed(
+          GL, c(".,.,.", ".,", ",."), c("NA", "", ""), vectorize_all = FALSE))
+    )
+
+  # check GL and new stacks version with no GL
+  all.missing <- all(is.na(x$GL))
+
+  if (!all.missing) {
+    gl.clean <- max(
+      unique(stringi::stri_count_fixed(
+        str = unique(sample(x = x$GL, size = 100, replace = FALSE)),
+        pattern = ",")
+      ), na.rm = TRUE
+    )
+
+    if (gl.clean == 2) {
+      message("GL column: separating into PROB_HOM_REF, PROB_HET and PROB_HOM_ALT")
+      # Value 1: probability that the site is homozgyous REF
+      # Value 2: probability that the sample is heterzygous
+      # Value 2: probability that it is homozygous ALT
+      # system.time(input2 <- input %>%
+      #   tidyr::separate(data = ., GL, c("PROB_HOM_REF", "PROB_HET", "PROB_HOM_ALT"), sep = ",", extra = "drop", remove = FALSE) %>%
+      #   dplyr::mutate_at(.tbl = ., .vars = c("PROB_HOM_REF", "PROB_HET", "PROB_HOM_ALT"), .funs = as.numeric)
+      # )
+      clean <- function(x) {
+        res <- x %>%
+          tidyr::separate(
+            data = ., GL, c("PROB_HOM_REF", "PROB_HET", "PROB_HOM_ALT"),
+            sep = ",", extra = "drop", remove = FALSE) %>%
+          dplyr::mutate_at(
+            .tbl = ., .vars = c("PROB_HOM_REF", "PROB_HET", "PROB_HOM_ALT"),
+            .funs = as.numeric)
+        return(res)
+      }
+
+      x <- dplyr::bind_cols(
+        dplyr::select(x, -GL),
+        dplyr::ungroup(x) %>%
+          dplyr::select(GL) %>%
+          split(x = ., f = split.vec) %>%
+          .radiator_parallel(
+            X = ., FUN = clean, mc.cores = parallel.core) %>%
+          dplyr::bind_rows(.))
+
+    } else {
+      x$GL <- suppressWarnings(as.numeric(x$GL))
+    }
+  } else {
+    message("    GL values are all missing: removing column")
+    x <- dplyr::select(x, -GL)
+  }
+  return(x)
+}#End clean_gl
+
+#' @title clean_nr
+#' @description Cleaning NR: Number of reads covering variant location in
+#' this sample
+#' @rdname clean_nr
+#' @keywords internal
+#' @export
+clean_nr <- function(x, split.vec, parallel.core = parallel::detectCores() - 1){
+  nr.col <- max(unique(stringi::stri_count_fixed(str = unique(x$NR), pattern = ","))) + 1
+  nr.col.names <- stringi::stri_join(rep("NR_", nr.col), seq(1:nr.col))
+  nr.col <- NULL
+
+  clean <- function(x, nr.col.names = NULL) {
+    res <- tidyr::separate(data = x, col = NR, into = nr.col.names,
+                           sep = ",", extra = "drop", remove = FALSE)
+    return(res)
+  }#End clean
+
+  x <- dplyr::bind_cols(
+    dplyr::select(x, -NR),
+    dplyr::ungroup(x) %>%
+      dplyr::mutate(NR = dplyr::if_else(GT_VCF == "./.", NA_character_, NR)) %>%
+      dplyr::select(NR) %>%
+      split(x = ., f = split.vec) %>%
+      .radiator_parallel_mc(
+        X = ., FUN = clean, mc.cores = parallel.core,
+        nr.col.names = nr.col.names) %>%
+      dplyr::bind_rows(.))
+  return(x)
+}#End clean_nr
+
+#' @title clean_nv
+#' @description Cleaning NV: Number of reads containing variant in this sample
+#' @rdname clean_nv
+#' @keywords internal
+#' @export
+clean_nv <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) {
+
+  nv.col <- max(unique(stringi::stri_count_fixed(str = unique(x$NV), pattern = ","))) + 1
+  nv.col.names <- stringi::stri_join(rep("NV_", nv.col), seq(1:nv.col))
+  nv.col <- NULL
+
+  clean <- function(x, nv.col.names = NULL) {
+    res <- tidyr::separate(
+      data = x, col = NV, into = nv.col.names,
+      sep = ",", extra = "drop", remove = FALSE)
+    return(res)
+  }
+
+  x <- dplyr::bind_cols(
+    dplyr::select(x, -NV),
+    dplyr::ungroup(x) %>%
+      dplyr::mutate(NV = dplyr::if_else(GT_VCF == "./.", NA_character_, NV)) %>%
+      dplyr::select(NV) %>%
+      split(x = ., f = split.vec) %>%
+      .radiator_parallel_mc(
+        X = ., FUN = clean, mc.cores = parallel.core,
+        nv.col.names = nv.col.names) %>%
+      dplyr::bind_rows(.))
+  return(x)
+}#End clean_nv
+
+
+# write_vcf---------------------------------------------------------------------
+# write a vcf file from a tidy data frame
+
+#' @name write_vcf
+#' @title Write a vcf file from a tidy data frame
+#' @description Write a vcf file (file format version 4.3, see details below)
+#' from a tidy data frame.
+#' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
+#' and might be of interest for users.
+
+#' @param data A tidy data frame object in the global environment or
+#' a tidy data frame in wide or long format in the working directory.
+#' \emph{How to get a tidy data frame ?}
+#' Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
+
+
+#' @param pop.info (optional, logical) Should the population information be
+#' included in the FORMAT field (along the GT info for each samples ?). To make
+#' the VCF population-ready use \code{pop.info = TRUE}. The population information
+#' must be included in the \code{POP_ID} column of the tidy dataset.
+#' Default: \code{pop.info = FALSE}. Experimental.
+
+#' @param filename (optional) The file name prefix for the vcf file
+#' written to the working directory. With default: \code{filename = NULL},
+#' the date and time is appended to \code{radiator_vcf_file_}.
+
+#' @details \strong{VCF file format version:}
+#'
+#' If you need a different file format version than the current one, just change
+#' the version inside the newly created VCF, that should do the trick.
+#' \href{https://vcftools.github.io/specs.html}{For more
+#' information on Variant Call Format specifications}.
+
+
+#' @export
+#' @rdname write_vcf
+#' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join everything
+#' @importFrom stringi stri_join stri_replace_all_fixed stri_extract_all_fixed stri_replace_all_regex stri_sub stri_pad_left stri_count_fixed stri_replace_na
+#' @importFrom readr write_tsv write_delim
+#' @importFrom utils write.table packageVersion
+#' @importFrom tibble has_name data_frame
+#' @importFrom tidyr spread
+
+#' @references Danecek P, Auton A, Abecasis G et al. (2011)
+#' The variant call format and VCFtools.
+#' Bioinformatics, 27, 2156-2158.
+
+#' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
+
+write_vcf <- function(data, pop.info = FALSE, filename = NULL) {
+
+  # Import data ---------------------------------------------------------------
+  if (is.vector(data)) {
+    data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
+  }
+
+  # REF/ALT Alleles and VCF genotype format ------------------------------------
+  if (!tibble::has_name(data, "GT_VCF")) {
+    ref.change <- radiator::calibrate_alleles(data = data)$input
+    data <- dplyr::left_join(data, ref.change, by = c("MARKERS", "INDIVIDUALS"))
+  }
+
+  # remove duplicate REF/ALT column
+  if (tibble::has_name(data, "REF.x")) {
+    data <- dplyr::select(.data = data, -c(REF.x, ALT.x)) %>%
+      dplyr::rename(REF = REF.y, ALT = ALT.y)
+  }
+
+  # Include CHROM, LOCUS, POS --------------------------------------------------
+  if (!tibble::has_name(data, "CHROM")) {
+    data <- dplyr::mutate(
+      .data = data,
+      CHROM = rep("1", n()),
+      LOCUS = MARKERS,
+      POS = MARKERS
+    )
+  }
+
+  # Order/sort by pop and ind --------------------------------------------------
+  if (tibble::has_name(data, "POP_ID")) {
+    data <- dplyr::arrange(data, POP_ID, INDIVIDUALS)
+  } else {
+    data <- dplyr::arrange(data, INDIVIDUALS)
+  }
+
+  id.string <- unique(data$INDIVIDUALS)# keep to sort vcf columns
+  # Remove the POP_ID column ---------------------------------------------------
+  if (tibble::has_name(data, "POP_ID") && (!pop.info)) {
+    data <- dplyr::select(.data = data, -POP_ID)
+  }
+
+  # Info field -----------------------------------------------------------------
+  info.field <- suppressWarnings(
+    dplyr::select(.data = data, MARKERS, GT_VCF) %>%
+      dplyr::filter(GT_VCF != "./.") %>%
+      dplyr::count(x = ., MARKERS) %>%
+      dplyr::mutate(INFO = stringi::stri_join("NS=", n, sep = "")) %>%
+      dplyr::select(-n)
+  )
+
+  # VCF body  ------------------------------------------------------------------
+  GT_VCF_POP_ID <- NULL
+  if (pop.info) {
+    output <- suppressWarnings(
+      dplyr::left_join(data, info.field, by = "MARKERS") %>%
+        dplyr::select(MARKERS, CHROM, LOCUS, POS, REF, ALT, INFO, INDIVIDUALS, GT_VCF, POP_ID) %>%
+        dplyr::mutate(GT_VCF_POP_ID = stringi::stri_join(GT_VCF, POP_ID, sep = ":")) %>%
+        dplyr::select(-c(GT_VCF, POP_ID)) %>%
+        dplyr::group_by(MARKERS, CHROM, LOCUS, POS, INFO, REF, ALT) %>%
+        tidyr::spread(data = ., key = INDIVIDUALS, value = GT_VCF_POP_ID) %>%
+        dplyr::ungroup(.) %>%
+        dplyr::mutate(
+          QUAL = rep(".", n()),
+          FILTER = rep("PASS", n()),
+          FORMAT = rep("GT:POP", n())
+        )
+    )
+
+  } else {
+    output <- suppressWarnings(
+      dplyr::left_join(data, info.field, by = "MARKERS") %>%
+        dplyr::select(MARKERS, CHROM, LOCUS, POS, REF, ALT, INDIVIDUALS, GT_VCF, INFO) %>%
+        dplyr::group_by(MARKERS, CHROM, LOCUS, POS, INFO, REF, ALT) %>%
+        tidyr::spread(data = ., key = INDIVIDUALS, value = GT_VCF) %>%
+        dplyr::ungroup(.) %>%
+        dplyr::mutate(
+          QUAL = rep(".", n()),
+          FILTER = rep("PASS", n()),
+          FORMAT = rep("GT", n())
+        )
+    )
+  }
+
+  # Transform the REF/ALT format back to A/C/G/T if 001, 002, etc is found
+  ref.change <- TRUE %in% unique(c("001", "002", "003", "004") %in% unique(output$REF))
+
+  if (ref.change) {
+    output <- output %>%
+      dplyr::mutate(
+        REF = stringi::stri_replace_all_fixed(
+          str = REF,
+          pattern = c("001", "002", "003", "004"),
+          replacement = c("A", "C", "G", "T"),
+          vectorize_all = FALSE),
+        ALT = stringi::stri_replace_all_fixed(
+          str = ALT,
+          pattern = c("001", "002", "003", "004"),
+          replacement = c("A", "C", "G", "T"),
+          vectorize_all = FALSE)
+      )
+  }
+
+  if (tibble::has_name(output, "COL")) {
+    output <- output %>% dplyr::mutate(LOCUS = stringi::stri_join(LOCUS, COL, sep = "_"))
+  } else {
+    output <- output %>% dplyr::mutate(LOCUS = stringi::stri_join(LOCUS, as.numeric(POS) - 1, sep = "_"))
+  }
+
+  # Keep the required columns
+  output <- dplyr::ungroup(output) %>%
+    dplyr::arrange(CHROM, LOCUS, POS) %>%
+    dplyr::select(-MARKERS) %>%
+    dplyr::select('#CHROM' = CHROM, POS, ID = LOCUS, REF, ALT, QUAL, FILTER, INFO, FORMAT, id.string)
+  # dplyr::select('#CHROM' = CHROM, POS, ID = LOCUS, REF, ALT, QUAL, FILTER, INFO, FORMAT, dplyr::everything())
+
+
+  # Filename ------------------------------------------------------------------
+  if (is.null(filename)) {
+    # Get date and time to have unique filenaming
+    file.date <- format(Sys.time(), "%Y%m%d@%H%M")
+    filename <- stringi::stri_join("radiator_vcf_file_", file.date, ".vcf")
+  } else {
+    filename <- stringi::stri_join(filename, ".vcf")
+  }
+
+  # File format ----------------------------------------------------------------
+  readr::write_delim(
+    x = tibble::tibble("##fileformat=VCFv4.3"),
+    path = filename, delim = " ", append = FALSE, col_names = FALSE)
+
+  # File date ------------------------------------------------------------------
+  file.date <- stringi::stri_replace_all_fixed(Sys.Date(), pattern = "-", replacement = "")
+  file.date <- stringi::stri_join("##fileDate=", file.date, sep = "")
+  readr::write_delim(x = tibble::tibble(file.date), path = filename, delim = " ", append = TRUE, col_names = FALSE)
+
+  # Source ---------------------------------------------------------------------
+  readr::write_delim(x = tibble::tibble(stringi::stri_join("##source=radiator_v.", as.character(utils::packageVersion("radiator")))), path = filename, delim = " ", append = TRUE, col_names = FALSE)
+
+  # Info field 1 ---------------------------------------------------------------
+  info1 <- as.data.frame('##INFO=<ID=NS,Number=1,Type=Integer,Description=\"Number of Samples With Data\">')
+  utils::write.table(x = info1, file = filename, sep = " ", append = TRUE, col.names = FALSE, row.names = FALSE, quote = FALSE)
+
+
+  # Format field 1 -------------------------------------------------------------
+  format1 <- '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">'
+  format1 <- as.data.frame(format1)
+  utils::write.table(x = format1, file = filename, sep = " ", append = TRUE, col.names = FALSE, row.names = FALSE, quote = FALSE)
+
+  # Format field 2 ---------------------------------------------------------------
+  if (pop.info) {
+    format2 <- as.data.frame('##FORMAT=<ID=POP_ID,Number=1,Type=Character,Description="Population identification of Sample">')
+    utils::write.table(x = format2, file = filename, sep = " ", append = TRUE, col.names = FALSE, row.names = FALSE, quote = FALSE)
+  }
+
+  # Write the prunned vcf to the file ------------------------------------------
+  suppressWarnings(readr::write_tsv(x = output, path = filename, append = TRUE, col_names = TRUE))
+}# end write_vcf
+
+
 # extract_individuals_vcf-------------------------------------------------------
 #' @title Extract individuals from vcf file
 #' @description Function that returns the individuals present in a vcf file.
@@ -13,12 +2559,12 @@ extract_individuals_vcf <- function(data) {
   temp.file <-
     suppressWarnings(suppressMessages(
       readr::read_table(file = data, n_max = 200, col_names = "HEADER")
-      ))
+    ))
   skip.number <- which(stringi::stri_detect_fixed(str = temp.file$HEADER,
                                                   pattern = "#CHROM")) - 1
   temp.file <- NULL
   remove <- c("#CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT")
-  id <- tibble::data_frame(INDIVIDUALS = colnames(readr::read_tsv(
+  id <- tibble::tibble(INDIVIDUALS = colnames(readr::read_tsv(
     file = data,
     n_max = 1,
     skip = skip.number,
@@ -27,8 +2573,10 @@ extract_individuals_vcf <- function(data) {
   return(id)
 }#End extract_individuals_vcf
 
-# extract_info_vcf-------------------------------------------------------
 
+
+
+# extract_info_vcf-------------------------------------------------------
 #' @title extract_info_vcf
 #' @description Extract vcf information
 #' @rdname extract_info_vcf
@@ -48,7 +2596,7 @@ extract_info_vcf <- function(vcf) {
 }#End extract_info_vcf
 
 
-# check_header_source_vcf
+# check_header_source_vcf-------------------------------------------------------
 #' @title Check the vcf header and detect vcf source
 #' @description Check the vcf header and detect vcf source
 #' @rdname check_header_source_vcf
@@ -62,7 +2610,7 @@ check_header_source_vcf <- function(vcf) {
     purrr::keep(
       .x = problematic.id,
       .p = problematic.id %in% check.header$format$ID
-      )
+    )
   for (p in problematic.id) {
     check.header$format[check.header$format$ID == p, "Number"] <- "."
   }
@@ -95,214 +2643,6 @@ check_header_source_vcf <- function(vcf) {
   )
 }#End check_header_source_vcf
 
-
-# vcf_strata -------------------------------------------------------------------
-#' @name vcf_strata
-#' @title Join stratification metadata to a VCF (population-aware VCF)
-#' @description Include stratification metadata, e.g. population-level information,
-#' to the \code{FORMAT} field of a VCF file.
-#' @param data A VCF file
-
-#' @param strata (optional) A tab delimited file at least 2 columns
-#' with header:
-#' \code{INDIVIDUALS} and \code{STRATA}.
-#' The \code{STRATA} and any other columns can be any hierarchical grouping.
-#' To create a strata file see \code{\link[radiator]{individuals2strata}}.
-
-#' @param filename (optional) The file name for the modifed VCF,
-#' written to the working directory. Default: \code{filename = NULL} will make a
-#' custom filename with data and time.
-
-#' @export
-#' @rdname vcf_strata
-#' @importFrom purrr detect_index
-#' @importFrom readr read_delim write_tsv read_lines
-#' @importFrom data.table fread melt.data.table as.data.table
-#' @importFrom tibble as_data_frame add_row
-#' @importFrom stringi stri_replace_all_fixed stri_detect_fixed
-#' @importFrom utils write.table count.fields
-#' @importFrom dplyr left_join mutate rename ungroup group_by
-#' @importFrom tidyr unite_ spread
-
-#' @return A VCF file in the working directory with new \code{FORMAT} field(s)
-#' correponding to the strata column(s).
-
-#' @seealso
-#' \href{https://vcftools.github.io}{VCF web page}
-#'
-#' \href{VCF specification page}{https://vcftools.github.io/specs.html}
-
-#' @references Danecek P, Auton A, Abecasis G et al. (2011)
-#' The variant call format and VCFtools.
-#' Bioinformatics, 27, 2156-2158.
-
-#' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
-
-
-vcf_strata <- function(data, strata, filename = NULL) {
-  # data <- "batch_1.vcf"
-  # strata <- "strata.sturgeon.12pop.tsv"
-  # filename <- NULL
-  # data <- "example_vcf2dadi_ferchaud_2015.vcf"
-  # strata <- "strata.stickleback.tsv"
-
-  cat("#######################################################################\n")
-  cat("######################### radiator: vcf_strata ##########################\n")
-  cat("#######################################################################\n")
-
-  # Checking for missing and/or default arguments ******************************
-  if (missing(data)) rlang::abort("Input file missing")
-  if (missing(strata)) rlang::abort("Strata file missing")
-
-  # import the first 50 lines
-  quick.scan <- readr::read_lines(file = data, n_max = 75)
-
-  # Function to detect where CHROM line starts
-  detect_vcf_header <- function(x) {
-    stringi::stri_detect_fixed(str = x, pattern = "CHROM", negate = FALSE)
-  }
-
-  # Detect the index
-  max.vcf.header <- purrr::detect_index(.x = quick.scan, .p = detect_vcf_header) - 1
-
-  # import VCF header and add a row containing the new format field
-  vcf.header <- readr::read_delim(file = data, n_max = max.vcf.header, col_names = "VCF_HEADER", delim = "\n")
-
-  # import the vcf file, no filters etc.
-  message("Importing the VCF file")
-  input <- data.table::fread(
-    input = data,
-    sep = "\t",
-    stringsAsFactors = FALSE,
-    header = TRUE,
-    skip = "CHROM",
-    showProgress = TRUE,
-    verbose = FALSE
-  ) %>%
-    tibble::as_data_frame()
-
-  # transform in long format
-  input <- data.table::melt.data.table(
-    data = data.table::as.data.table(input),
-    id.vars = c("#CHROM", "POS", "ID",  "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT"),
-    variable.name = "INDIVIDUALS",
-    variable.factor = FALSE,
-    value.name = "FORMAT_ID"
-  ) %>%
-    tibble::as_data_frame() %>%
-    dplyr::mutate(
-      INDIVIDUALS = stringi::stri_replace_all_fixed(
-        str = INDIVIDUALS,
-        pattern = c("_", ":"),
-        replacement = c("-", "-"),
-        vectorize_all = FALSE)
-    )
-
-  # population levels and strata  ---------------------------------------------
-  message("Importing the strata file")
-  if (is.vector(strata)) {
-    # message("strata file: yes")
-    number.columns.strata <- max(utils::count.fields(strata, sep = "\t"))
-    col.types <- stringi::stri_join(rep("c", number.columns.strata), collapse = "")
-    strata.df <- readr::read_tsv(file = strata, col_names = TRUE, col_types = col.types) %>%
-      dplyr::rename(POP_ID = STRATA)
-  } else {
-    # message("strata object: yes")
-    colnames(strata) <- stringi::stri_replace_all_fixed(
-      str = colnames(strata),
-      pattern = "STRATA",
-      replacement = "POP_ID",
-      vectorize_all = FALSE
-    )
-    strata.df <- strata
-  }
-
-  strata.number <- length(strata.df) - 1
-  strata.colnames <- purrr::discard(.x = colnames(strata.df), .p = colnames(strata.df) %in% "INDIVIDUALS")
-
-  # Replace unwanted whitespace pattern in the strata
-  strata.df <- strata.df %>%
-    dplyr::mutate(
-      INDIVIDUALS = stringi::stri_replace_all_fixed(
-        str = INDIVIDUALS,
-        pattern = c("_", ":"),
-        replacement = c("-", "-"),
-        vectorize_all = FALSE
-      ),
-      POP_ID = stringi::stri_replace_all_fixed(
-        str = POP_ID,
-        pattern = " ",
-        replacement = "_",
-        vectorize_all = FALSE
-      )
-    )
-
-
-  # Join strata to input and merge strata column to FORMAT field
-  message("Joining the strata to the VCF into new field format...")
-  input <- input %>%
-    dplyr::left_join(strata.df, by = "INDIVIDUALS") %>%
-    tidyr::unite_(
-      data = .,
-      col = "FORMAT_ID",
-      from = c("FORMAT_ID", strata.colnames),
-      sep = ":",
-      remove = TRUE
-    ) %>%
-    dplyr::group_by(`#CHROM`, POS, ID,  REF, ALT, QUAL, FILTER, INFO, FORMAT) %>%
-    tidyr::spread(data = ., key = INDIVIDUALS, value = FORMAT_ID) %>%
-    dplyr::ungroup(.) %>%
-    dplyr::mutate(
-      FORMAT = stringi::stri_join(
-        FORMAT,
-        stringi::stri_join(strata.colnames, collapse = ":"),
-        sep = ":",
-        collapse = NULL
-      )
-    )
-
-  # Filename ------------------------------------------------------------------
-  message("Writing to the working directory...")
-  if (is.null(filename)) {
-    # Get date and time to have unique filenaming
-    file.date <- stringi::stri_replace_all_fixed(Sys.time(), pattern = " EDT", replacement = "", vectorize_all = FALSE)
-    file.date <- stringi::stri_replace_all_fixed(file.date, pattern = c("-", " ", ":"), replacement = c("", "@", ""), vectorize_all = FALSE)
-    file.date <- stri_sub(file.date, from = 1, to = 13)
-    filename <- stringi::stri_join("radiator_vcf_file_", file.date, ".vcf")
-  } else {
-    filename <- stringi::stri_join(filename, ".vcf")
-  }
-  # File format ----------------------------------------------------------------
-  # write_delim(x = data_frame("##fileformat=VCFv4.2"), path = filename, delim = " ", append = FALSE, col_names = FALSE)
-  vcf.header[1,] <- "##fileformat=VCFv4.3"
-
-  # File date ------------------------------------------------------------------
-  file.date <- stringi::stri_replace_all_fixed(Sys.Date(), pattern = "-", replacement = "")
-  file.date <- stringi::stri_join("##fileDate=", file.date, sep = "")
-  # write_delim(x = data_frame(file.date), path = filename, delim = " ", append = TRUE, col_names = FALSE)
-  vcf.header[2,] <- file.date
-
-  # Source ---------------------------------------------------------------------
-  # write_delim(x = data_frame(stringi::stri_join("##source=radiator_v.", utils::packageVersion("radiator"))), path = filename, delim = " ", append = TRUE, col_names = FALSE)
-  # vcf.header[3,] <- stringi::stri_replace_all_fixed(str = vcf.header[3,], pattern = '"', replacement = "", vectorize_all = FALSE)
-  # vcf.header[3,]<- stringi::stri_join(vcf.header[3,], "and radiator v.", utils::packageVersion("radiator"))
-
-  # New FORMAT -----------------------------------------------------------------
-  for (i in strata.colnames) {
-    vcf.header <- tibble::add_row(
-      .data = vcf.header,
-      VCF_HEADER = stringi::stri_join(
-        "##FORMAT=<ID=", i, ',Number=1,Type=Character,Description="New strata",Source="radiator",Version="', utils::packageVersion("radiator"), '">')
-    )
-  }
-  # VCF HEADER  ------------------------------------------------------------------
-  utils::write.table(x = vcf.header, file = filename, sep = " ", append = FALSE, col.names = FALSE, quote = FALSE, row.names = FALSE)
-
-  # Write the data   -------------------------------------------------------------
-  suppressWarnings(readr::write_tsv(x = input, path = filename, append = TRUE, col_names = TRUE))
-
-  cat("############################## completed ##############################\n")
-}#vcf_strata
 
 
 ## Split vcf--------------------------------------------------------------------
@@ -467,48 +2807,45 @@ split_vcf <- function(
 }#End split_vcf
 
 
+# Merge vcf---------------------------------------------------------------------
 
+# @title Merge VCF files
+# @description This function allows to merge 2 VCF files.
 
-## Merge vcf
+# @param vcf1 First VCF file.
+# @param strata1 strata file for vcf1.
+# @param vcf2 Second VCF file.
+# @param strata2 strata file for vcf2.
+# @param filename Name of the merged VCF file.
+# With the default, the function gives a filename based on date and time.
+# Default: \code{filename = NULL}.
+# @inheritParams tidy_genomic_data
 
-#' @title Merge VCF files
-#' @description This function allows to merge 2 VCF files.
+# @importFrom stringi stri_replace_all_fixed stri_replace_na stri_join stri_count_fixed
+# @importFrom tibble as_data_frame data_frame add_column add_row
+# @importFrom dplyr select rename n_distinct distinct mutate summarise group_by ungroup arrange left_join full_join semi_join anti_join bind_rows bind_cols if_else
+# @importFrom readr write_tsv read_tsv
+# @importFrom tidyr separate gather
+# @importFrom parallel detectCores
+# @importFrom ggplot2 ggplot aes geom_violin geom_boxplot stat_summary labs theme element_blank element_text geom_jitter scale_colour_manual scale_y_reverse theme_light geom_bar facet_grid stat_smooth
+# @importFrom purrr flatten_chr map_df flatten_dbl
 
-#' @param vcf1 First VCF file.
-#' @param strata1 strata file for vcf1.
-#' @param vcf2 Second VCF file.
-#' @param strata2 strata file for vcf2.
-#' @param filename Name of the merged VCF file.
-#' With the default, the function gives a filename based on date and time.
-#' Default: \code{filename = NULL}.
-#' @inheritParams tidy_genomic_data
+# @return The function returns in the global environment a tidy dataset with
+# the merged VCF files and the merged VCF in the working directory.
 
-#' @importFrom stringi stri_replace_all_fixed stri_replace_na stri_join stri_count_fixed
-#' @importFrom tibble as_data_frame data_frame add_column add_row
-#' @importFrom dplyr select rename n_distinct distinct mutate summarise group_by ungroup arrange left_join full_join semi_join anti_join bind_rows bind_cols if_else
-#' @importFrom readr write_tsv read_tsv
-#' @importFrom tidyr separate gather
-#' @importFrom parallel detectCores
-#' @importFrom ggplot2 ggplot aes geom_violin geom_boxplot stat_summary labs theme element_blank element_text geom_jitter scale_colour_manual scale_y_reverse theme_light geom_bar facet_grid stat_smooth
-#' @importFrom purrr flatten_chr map_df flatten_dbl
+# @examples
+# \dontrun{
+# # The simplest way to run the function:
+# sum <- radiator::merge_vcf(
+# vcf1 = "batch_1.vcf", strata1 = "strata1_brook_charr.tsv",
+# vcf1 = "batch_2.vcf", strata2 = "strata2_brook_charr.tsv",
+# pop.select = c("QC", "ON", "NE"),
+# maf.thresholds = c(0.002, 0.001),
+# maf.pop.num.threshold = 1,
+# maf.approach = "SNP",maf.operator = "OR",
+# filename = "my_new_VCF.vcf"
+# }
 
-#' @return The function returns in the global environment a tidy dataset with
-#' the merged VCF files and the merged VCF in the working directory.
-
-#' @examples
-#' \dontrun{
-#' # The simplest way to run the function:
-#' sum <- radiator::merge_vcf(
-#' vcf1 = "batch_1.vcf", strata1 = "strata1_brook_charr.tsv",
-#' vcf1 = "batch_2.vcf", strata2 = "strata2_brook_charr.tsv",
-#' pop.select = c("QC", "ON", "NE"),
-#' maf.thresholds = c(0.002, 0.001),
-#' maf.pop.num.threshold = 1,
-#' maf.approach = "SNP",maf.operator = "OR",
-#' filename = "my_new_VCF.vcf"
-#' }
-
-# merge_vcf----------------------------------------------------------------
 # @rdname merge_vcf
 # @export
 # @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
@@ -525,7 +2862,7 @@ split_vcf <- function(
 #   cat("#######################################################################\n")
 #   timing <- proc.time()
 #
-#   # manage missing arguments -----------------------------------------------------
+#   # manage missing arguments
 #   if (missing(vcf1)) rlang::abort("vcf1 file missing")
 #   if (missing(vcf2)) rlang::abort("vcf2 file missing")
 #   if (missing(strata1)) rlang::abort("strata1 file missing")
@@ -543,13 +2880,13 @@ split_vcf <- function(
 #   #   pop.labels <- stringi::stri_replace_all_fixed(pop.labels, pattern = " ", replacement = "_", vectorize_all = FALSE)
 #   # }
 #
-#   # Filename -------------------------------------------------------------------
+#   # Filename
 #   # Get date and time to have unique filenaming
 #   if (is.null(filename)) {
 #     file.date <- format(Sys.time(), "%Y%m%d@%H%M")
 #   }
 #
-#   # import data ----------------------------------------------------------------
+#   # import data
 #   message("Importing and tidying the vcf1...")
 #   input <- suppressMessages(radiator::tidy_genomic_data(
 #     data = vcf1,
@@ -599,10 +2936,216 @@ split_vcf <- function(
 #   # Write VCF in the working directory
 #   radiator::write_vcf(data = input, pop.info = FALSE, filename = filename)
 #
-#   # results --------------------------------------------------------------------
+#   # results
 #   message("Merged VCF in the working directory: ", filename, ".vcf")
 #   timing <- proc.time() - timing
 #   message("\nComputation time: ", round(timing[[3]]), " sec")
 #   cat("############################## completed ##############################\n")
 #   return(input)
 # }#End merge_vcf
+
+
+
+# vcf_strata -------------------------------------------------------------------
+#' @name vcf_strata
+#' @title Join stratification metadata to a VCF (population-aware VCF)
+#' @description Include stratification metadata, e.g. population-level information,
+#' to the \code{FORMAT} field of a VCF file.
+#' @param data A VCF file
+
+#' @param strata (optional) A tab delimited file at least 2 columns
+#' with header:
+#' \code{INDIVIDUALS} and \code{STRATA}.
+#' The \code{STRATA} and any other columns can be any hierarchical grouping.
+#' To create a strata file see \code{\link[radiator]{individuals2strata}}.
+
+#' @param filename (optional) The file name for the modifed VCF,
+#' written to the working directory. Default: \code{filename = NULL} will make a
+#' custom filename with data and time.
+
+#' @export
+#' @rdname vcf_strata
+#' @importFrom purrr detect_index
+#' @importFrom utils write.table count.fields
+
+#' @return A VCF file in the working directory with new \code{FORMAT} field(s)
+#' correponding to the strata column(s).
+
+#' @seealso
+#' \href{https://vcftools.github.io}{VCF web page}
+#'
+#' \href{VCF specification page}{https://vcftools.github.io/specs.html}
+
+#' @references Danecek P, Auton A, Abecasis G et al. (2011)
+#' The variant call format and VCFtools.
+#' Bioinformatics, 27, 2156-2158.
+
+#' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
+#' @keywords internal
+
+
+vcf_strata <- function(data, strata, filename = NULL) {
+  # data <- "batch_1.vcf"
+  # strata <- "strata.sturgeon.12pop.tsv"
+  # filename <- NULL
+  # data <- "example_vcf2dadi_ferchaud_2015.vcf"
+  # strata <- "strata.stickleback.tsv"
+
+  cat("#######################################################################\n")
+  cat("######################### radiator: vcf_strata ##########################\n")
+  cat("#######################################################################\n")
+
+  # Checking for missing and/or default arguments ******************************
+  if (missing(data)) rlang::abort("Input file missing")
+  if (missing(strata)) rlang::abort("Strata file missing")
+
+  # import the first 50 lines
+  quick.scan <- readr::read_lines(file = data, n_max = 75)
+
+  # Function to detect where CHROM line starts
+  detect_vcf_header <- function(x) {
+    stringi::stri_detect_fixed(str = x, pattern = "CHROM", negate = FALSE)
+  }
+
+  # Detect the index
+  max.vcf.header <- purrr::detect_index(.x = quick.scan, .p = detect_vcf_header) - 1
+
+  # import VCF header and add a row containing the new format field
+  vcf.header <- readr::read_delim(file = data, n_max = max.vcf.header, col_names = "VCF_HEADER", delim = "\n")
+
+  # import the vcf file, no filters etc.
+  message("Importing the VCF file")
+  input <- data.table::fread(
+    input = data,
+    sep = "\t",
+    stringsAsFactors = FALSE,
+    header = TRUE,
+    skip = "CHROM",
+    showProgress = TRUE,
+    verbose = FALSE
+  ) %>%
+    tibble::as_tibble()
+
+  # transform in long format
+  input <- data.table::melt.data.table(
+    data = data.table::as.data.table(input),
+    id.vars = c("#CHROM", "POS", "ID",  "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT"),
+    variable.name = "INDIVIDUALS",
+    variable.factor = FALSE,
+    value.name = "FORMAT_ID"
+  ) %>%
+    tibble::as_tibble() %>%
+    dplyr::mutate(
+      INDIVIDUALS = stringi::stri_replace_all_fixed(
+        str = INDIVIDUALS,
+        pattern = c("_", ":"),
+        replacement = c("-", "-"),
+        vectorize_all = FALSE)
+    )
+
+  # population levels and strata  ---------------------------------------------
+  message("Importing the strata file")
+  if (is.vector(strata)) {
+    # message("strata file: yes")
+    number.columns.strata <- max(utils::count.fields(strata, sep = "\t"))
+    col.types <- stringi::stri_join(rep("c", number.columns.strata), collapse = "")
+    strata.df <- readr::read_tsv(file = strata, col_names = TRUE, col_types = col.types) %>%
+      dplyr::rename(POP_ID = STRATA)
+  } else {
+    # message("strata object: yes")
+    colnames(strata) <- stringi::stri_replace_all_fixed(
+      str = colnames(strata),
+      pattern = "STRATA",
+      replacement = "POP_ID",
+      vectorize_all = FALSE
+    )
+    strata.df <- strata
+  }
+
+  strata.number <- length(strata.df) - 1
+  strata.colnames <- purrr::discard(.x = colnames(strata.df), .p = colnames(strata.df) %in% "INDIVIDUALS")
+
+  # Replace unwanted whitespace pattern in the strata
+  strata.df <- strata.df %>%
+    dplyr::mutate(
+      INDIVIDUALS = stringi::stri_replace_all_fixed(
+        str = INDIVIDUALS,
+        pattern = c("_", ":"),
+        replacement = c("-", "-"),
+        vectorize_all = FALSE
+      ),
+      POP_ID = stringi::stri_replace_all_fixed(
+        str = POP_ID,
+        pattern = " ",
+        replacement = "_",
+        vectorize_all = FALSE
+      )
+    )
+
+
+  # Join strata to input and merge strata column to FORMAT field
+  message("Joining the strata to the VCF into new field format...")
+  input <- input %>%
+    dplyr::left_join(strata.df, by = "INDIVIDUALS") %>%
+    tidyr::unite_(
+      data = .,
+      col = "FORMAT_ID",
+      from = c("FORMAT_ID", strata.colnames),
+      sep = ":",
+      remove = TRUE
+    ) %>%
+    dplyr::group_by(`#CHROM`, POS, ID,  REF, ALT, QUAL, FILTER, INFO, FORMAT) %>%
+    tidyr::spread(data = ., key = INDIVIDUALS, value = FORMAT_ID) %>%
+    dplyr::ungroup(.) %>%
+    dplyr::mutate(
+      FORMAT = stringi::stri_join(
+        FORMAT,
+        stringi::stri_join(strata.colnames, collapse = ":"),
+        sep = ":",
+        collapse = NULL
+      )
+    )
+
+  # Filename ------------------------------------------------------------------
+  message("Writing to the working directory...")
+  if (is.null(filename)) {
+    # Get date and time to have unique filenaming
+    file.date <- stringi::stri_replace_all_fixed(Sys.time(), pattern = " EDT", replacement = "", vectorize_all = FALSE)
+    file.date <- stringi::stri_replace_all_fixed(file.date, pattern = c("-", " ", ":"), replacement = c("", "@", ""), vectorize_all = FALSE)
+    file.date <- stri_sub(file.date, from = 1, to = 13)
+    filename <- stringi::stri_join("radiator_vcf_file_", file.date, ".vcf")
+  } else {
+    filename <- stringi::stri_join(filename, ".vcf")
+  }
+  # File format ----------------------------------------------------------------
+  # write_delim(x = data_frame("##fileformat=VCFv4.2"), path = filename, delim = " ", append = FALSE, col_names = FALSE)
+  vcf.header[1,] <- "##fileformat=VCFv4.3"
+
+  # File date ------------------------------------------------------------------
+  file.date <- stringi::stri_replace_all_fixed(Sys.Date(), pattern = "-", replacement = "")
+  file.date <- stringi::stri_join("##fileDate=", file.date, sep = "")
+  # write_delim(x = data_frame(file.date), path = filename, delim = " ", append = TRUE, col_names = FALSE)
+  vcf.header[2,] <- file.date
+
+  # Source ---------------------------------------------------------------------
+  # write_delim(x = data_frame(stringi::stri_join("##source=radiator_v.", utils::packageVersion("radiator"))), path = filename, delim = " ", append = TRUE, col_names = FALSE)
+  # vcf.header[3,] <- stringi::stri_replace_all_fixed(str = vcf.header[3,], pattern = '"', replacement = "", vectorize_all = FALSE)
+  # vcf.header[3,]<- stringi::stri_join(vcf.header[3,], "and radiator v.", utils::packageVersion("radiator"))
+
+  # New FORMAT -----------------------------------------------------------------
+  for (i in strata.colnames) {
+    vcf.header <- tibble::add_row(
+      .data = vcf.header,
+      VCF_HEADER = stringi::stri_join(
+        "##FORMAT=<ID=", i, ',Number=1,Type=Character,Description="New strata",Source="radiator",Version="', utils::packageVersion("radiator"), '">')
+    )
+  }
+  # VCF HEADER  ------------------------------------------------------------------
+  utils::write.table(x = vcf.header, file = filename, sep = " ", append = FALSE, col.names = FALSE, quote = FALSE, row.names = FALSE)
+
+  # Write the data   -------------------------------------------------------------
+  suppressWarnings(readr::write_tsv(x = input, path = filename, append = TRUE, col_names = TRUE))
+
+  cat("############################## completed ##############################\n")
+}#vcf_strata
+

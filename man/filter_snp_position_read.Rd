@@ -22,7 +22,7 @@ Default: \code{interactive.filter = TRUE}.}
 
 \emph{How to get GDS and tidy data ?}
 Look into \code{\link{tidy_genomic_data}},
-\code{\link{write_seqarray}} or
+\code{\link{read_vcf}} or
 \code{\link{tidy_vcf}}.}
 
 \item{strata}{(path or object) The strata file or object.

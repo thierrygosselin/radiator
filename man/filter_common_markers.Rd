@@ -4,7 +4,7 @@
 \alias{filter_common_markers}
 \title{Filter common markers between strata}
 \usage{
-filter_common_markers(data, filter.common.markers = TRUE, plot = FALSE,
+filter_common_markers(data, filter.common.markers = TRUE, fig = FALSE,
   parallel.core = parallel::detectCores() - 1, verbose = FALSE, ...)
 }
 \arguments{
@@ -16,16 +16,16 @@ filter_common_markers(data, filter.common.markers = TRUE, plot = FALSE,
 
 \emph{How to get GDS and tidy data ?}
 Look into \code{\link{tidy_genomic_data}},
-\code{\link{write_seqarray}} or
+\code{\link{read_vcf}} or
 \code{\link{tidy_vcf}}.}
 
 \item{filter.common.markers}{(optional, logical)
 Default: \code{filter.common.markers = TRUE}.}
 
-\item{plot}{(optional, logical) \code{plot = TRUE} will produce an
-\href{https://github.com/hms-dbmi/UpSetR}{UpSet plot} to visualize the number
+\item{fig}{(optional, logical) \code{fig = TRUE} will produce an
+\href{https://github.com/hms-dbmi/UpSetR}{UpSet fig} to visualize the number
 of markers between populations. The package is required for this to work...
-Default: \code{plot = FALSE}.}
+Default: \code{fig = FALSE}.}
 
 \item{parallel.core}{(optional) The number of core used for parallel
 execution during import.

@@ -2,7 +2,7 @@
 % Please edit documentation in R/strata.R
 \name{summary_strata}
 \alias{summary_strata}
-\title{summary of strata}
+\title{Summary of strata}
 \usage{
 summary_strata(strata)
 }

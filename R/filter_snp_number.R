@@ -190,12 +190,13 @@ filter_snp_number <- function(
       data = data,
       path.folder = path.folder,
       file.date = file.date,
+      internal = internal,
       verbose = verbose)
 
     # Whitelist and blacklist --------------------------------------------------
     want <- c("MARKERS", "CHROM", "LOCUS", "POS", "COL")
     if (data.type == "SeqVarGDSClass") {
-      wl <- extract_markers_metadata(gds = data)
+      wl <- extract_markers_metadata(gds = data, whitelist = TRUE) # not optimal, currently used just to get locus info
     } else {
       wl <- bl <- dplyr::select(data, dplyr::one_of(want))
     }
@@ -350,18 +351,18 @@ filter_snp_number <- function(
       max.allowed <- stats[[6]]
       if (verbose) message("\nStep 2. Filtering markers based on the maximum of SNPs per locus\n")
 
-      filter.snp.number <- interactive_question(
+      filter.snp.number <- radiator_question(
         x = "Do you still want to blacklist markers? (y/n):",
         answer.opt = c("y", "n"))
 
       if (filter.snp.number == "y") {
-        outlier.stats <- interactive_question(
+        outlier.stats <- radiator_question(
           x = "Do you want to remove markers based on the outlier statistics or not (y/n) ?
           (n: next question will be to enter your own threshold)", answer.opt = c("y", "n"))
         if (outlier.stats == "y") {
           filter.snp.number <- "outliers"
         } else {
-          filter.snp.number <- interactive_question(
+          filter.snp.number <- radiator_question(
             x = "Enter the maximum number of SNP per locus allowed:", minmax = c(1, max.allowed))
         }
         outlier.stats <- NULL
@@ -381,14 +382,15 @@ filter_snp_number <- function(
 
 
     # Whitelist and Blacklist of markers
-    wl %<>% dplyr::filter(SNP_PER_LOCUS <= filter.snp.number) %>%
-      readr::write_tsv(
-        x = .,
+    wl %<>% dplyr::filter(SNP_PER_LOCUS <= filter.snp.number)
+    readr::write_tsv(
+        x = wl,
         path = file.path(path.folder, "whitelist.snp.per.locus.tsv"),
         append = FALSE, col_names = TRUE)
-    bl %<>% dplyr::setdiff(wl) %>%
-      readr::write_tsv(
-        x = .,
+    bl %<>% dplyr::setdiff(wl) %>% dplyr::mutate(FILTERS = "filter.snp.number")
+
+    readr::write_tsv(
+        x = bl,
         path = file.path(path.folder, "blacklist.snp.per.locus.tsv"),
         append = FALSE, col_names = TRUE)
     # saving whitelist and blacklist
@@ -396,20 +398,24 @@ filter_snp_number <- function(
     if (verbose) message("File written: blacklist.markers.genotyping.tsv")
 
     if (data.type == "SeqVarGDSClass") {
-      # # Update GDS
+
+      markers.meta <- extract_markers_metadata(gds = data) %>%
+        dplyr::mutate(
+          FILTERS = dplyr::if_else(
+            VARIANT_ID %in% bl$VARIANT_ID, "filter.snp.number", FILTERS
+          )
+        )
+
+      # Update GDS
       update_radiator_gds(
         gds = data,
         node.name = "markers.meta",
-        value = wl,
+        value = markers.meta,
         sync = TRUE
       )
 
-      # update blacklist.markers
-      if (nrow(bl) > 0) {
-        bl %<>% dplyr::select(MARKERS) %>%
-          dplyr::mutate(FILTER = "filter.snp.number")
-        bl.gds <- update_bl_markers(gds = data, update = bl)
-      }
+
+
     } else {
       # Apply the filter to the tidy data
       data  %<>% dplyr::filter(MARKERS %in% wl$MARKERS)
@@ -427,15 +433,17 @@ filter_snp_number <- function(
       values = filter.snp.number,
       path.folder = path.folder,
       file.date = file.date,
+      internal = internal,
       verbose = verbose)
 
-    # Return -----------------------------------------------------------------------
-    if (verbose) cat("################################### RESULTS ####################################\n")
-    message("\nFilter SNPs per locus threshold: ", filter.snp.number)
-    message("Number of individuals / strata / chrom / locus / SNP:")
-    if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
-    message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-    if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
+    # results ------------------------------------------------------------------
+    radiator_results_message(
+      rad.message = stringi::stri_join("\nFilter SNPs per locus threshold: ",
+                                       filter.snp.number),
+      filters.parameters,
+      internal,
+      verbose
+    )
   }
   return(data)
 } #End filter_snp_number

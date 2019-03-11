@@ -65,14 +65,15 @@ filter_dart_reproducibility <- function(
 ) {
 
   # interactive.filter <- TRUE
-  # data <- gds
-  # path.folder <- "testing_reproducility"
-  # force.stats <- TRUE
+  # # data <- gds
+  # path.folder <- NULL
   # parameters <- NULL
   # filename <- NULL
   # filter.reproducibility <- NULL
   # parallel.core <- parallel::detectCores() - 1
   # verbose = TRUE
+  # internal <- FALSE
+
   if (interactive.filter || !is.null(filter.reproducibility)) {
     if (interactive.filter) verbose <- TRUE
     if (verbose) {
@@ -166,27 +167,24 @@ filter_dart_reproducibility <- function(
       data = data,
       path.folder = path.folder,
       file.date = file.date,
+      internal = internal,
       verbose = verbose)
 
     # Whitelist and blacklist --------------------------------------------------
     want <- c("MARKERS", "CHROM", "LOCUS", "POS", "COL", "REP_AVG")
     if (data.type == "SeqVarGDSClass") {
-      wl <- bl <- extract_markers_metadata(gds = data)
+      markers.meta <- bl <- extract_markers_metadata(gds = data, whitelist = FALSE)
     } else {
-      wl <- bl <- suppressWarnings(dplyr::select(data, dplyr::one_of(want)))
+      markers.meta <- bl <- suppressWarnings(dplyr::select(data, dplyr::one_of(want)))
     }
     # Check that required info is present in data:
-    check <- tibble::has_name(wl, "REP_AVG")
-    if (!check) {
+    if (!tibble::has_name(markers.meta, "REP_AVG")) {
       message("This filter requires REP_AVG info, skipping filtering...")
-      bl %<>% dplyr::setdiff(wl)
-      return(res = list(input = data,
-                        whitelist.markers.snp.number = wl,
-                        blacklist.markers.snp.number = bl))
+      return(data)
     }
 
     # Generating statistics ----------------------------------------------------
-    rep.stats <- tibble_stats(x = wl$REP_AVG, group = "reproducibility")
+    rep.stats <- tibble_stats(x = markers.meta$REP_AVG, group = "reproducibility")
     readr::write_tsv(x = rep.stats, path = file.path(path.folder, "dart_reproducibility_stats.tsv"))
     if (verbose) message("File written: dart_reproducibility_stats.tsv")
 
@@ -210,10 +208,10 @@ filter_dart_reproducibility <- function(
     }#End how_many_markers
 
     snp.range <- seq(0.9, 1, 0.005)
-    n.markers <- nrow(wl)
+    n.markers <- nrow(markers.meta)
     helper.table <- tibble::tibble(REPRODUCIBILITY = snp.range) %>%
       dplyr::mutate(
-        WHITELISTED_MARKERS = purrr::map_int(.x = snp.range, .f = how_many_markers, x = wl),
+        WHITELISTED_MARKERS = purrr::map_int(.x = snp.range, .f = how_many_markers, x = markers.meta),
         BLACKLISTED_MARKERS = n.markers - WHITELISTED_MARKERS
       ) %>%
       readr::write_tsv(
@@ -257,18 +255,18 @@ filter_dart_reproducibility <- function(
     if (interactive.filter) {
       message("\nStep 2. Filtering markers based on markers reproducibility\n")
 
-      filter.reproducibility <- interactive_question(
+      filter.reproducibility <- radiator_question(
         x = "Do you still want to blacklist markers? (y/n):",
         answer.opt = c("y", "n"))
 
       if (filter.reproducibility == "y") {
-        outlier.stats <- interactive_question(
+        outlier.stats <- radiator_question(
           x = "Do you want to remove markers based on the outlier statistics or not (y/n) ?
 (n: next question will be to enter your own threshold)", answer.opt = c("y", "n"))
         if (outlier.stats == "y") {
           filter.reproducibility <- "outliers"
         } else {
-          filter.reproducibility <- interactive_question(
+          filter.reproducibility <- radiator_question(
             x = "Enter the proportion threshold (0-1)
 The minimum reproducibility tolerated:", minmax = c(0, 1))
         }
@@ -288,12 +286,35 @@ The minimum reproducibility tolerated:", minmax = c(0, 1))
         message("\nRemoving markers based on reproducibility statistic: ", filter.reproducibility)
       }
 
+
+
+      if (data.type == "SeqVarGDSClass") {
+        markers.meta %<>%
+          dplyr::mutate(
+            FILTERS = dplyr::if_else(REP_AVG < filter.reproducibility,
+                                     "filter.dart.reproducibility", FILTERS)
+          )
+        wl <- markers.meta %>% dplyr::filter(FILTERS == "whitelist")
+        # Update GDS
+        update_radiator_gds(
+          gds = data,
+          node.name = "markers.meta",
+          value = markers.meta,
+          sync = TRUE
+        )
+
+      } else {
+        # Apply the filter to the tidy data
+        wl <- dplyr::filter(markers.meta, REP_AVG >= filter.reproducibility)
+        data  %<>% dplyr::filter(MARKERS %in% wl$MARKERS)
+
+      }
       # Whitelist and Blacklist of markers
-      wl %<>% dplyr::filter(REP_AVG >= filter.reproducibility) %>%
-        readr::write_tsv(
-          x = .,
-          path = file.path(path.folder, "whitelist.dart.reproducibility.tsv"),
-          append = FALSE, col_names = TRUE)
+      readr::write_tsv(
+        x = wl,
+        path = file.path(path.folder, "whitelist.dart.reproducibility.tsv"),
+        append = FALSE, col_names = TRUE)
+
       bl %<>% dplyr::setdiff(wl) %>%
         readr::write_tsv(
           x = .,
@@ -303,37 +324,7 @@ The minimum reproducibility tolerated:", minmax = c(0, 1))
       if (verbose) message("File written: whitelist.dart.reproducibility.tsv")
       if (verbose) message("File written: blacklist.dart.reproducibility.tsv")
 
-      if (data.type == "SeqVarGDSClass") {
-        # Update GDS
-        update_radiator_gds(
-          gds = data,
-          node.name = "markers.meta",
-          value = wl,
-          sync = TRUE
-        )
-        # sync_gds(gds = data, markers = wl$VARIANT_ID)
-        # radiator.gds <- gdsfmt::index.gdsn(
-        #   node = data, path = "radiator", silent = TRUE)
-        #
-        # # Update metadata
-        # gdsfmt::add.gdsn(
-        #   node = radiator.gds,
-        #   name = "markers.meta",
-        #   val = wl,
-        #   replace = TRUE,
-        #   compress = "ZIP_RA",
-        #   closezip = TRUE)
 
-        # update blacklist.markers
-        if (nrow(bl) > 0) {
-          bl %<>% dplyr::select(MARKERS) %>%
-            dplyr::mutate(FILTER = "filter.dart.reproducibility")
-          bl.gds <- update_bl_markers(gds = data, update = bl)
-        }
-      } else {
-        # Apply the filter to the tidy data
-        data  %<>% dplyr::filter(MARKERS %in% wl$MARKERS)
-      }
 
       # Update parameters --------------------------------------------------------
       filters.parameters <- radiator_parameters(
@@ -347,16 +338,17 @@ The minimum reproducibility tolerated:", minmax = c(0, 1))
         values = filter.reproducibility,
         path.folder = path.folder,
         file.date = file.date,
+        internal = internal,
         verbose = verbose)
 
       # Return -----------------------------------------------------------------------
-      if (verbose) cat("################################### RESULTS ####################################\n")
-      message("\nFilter DArT reproducibility: ", filter.reproducibility)
-      message("Number of individuals / strata / chrom / locus / SNP:")
-      if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
-      message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-      if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
-
+      radiator_results_message(
+        rad.message = stringi::stri_join("\nFilter DArT reproducibility: ",
+                                         filter.reproducibility),
+        filters.parameters,
+        internal,
+        verbose
+      )
     }
     return(data)
   } else {

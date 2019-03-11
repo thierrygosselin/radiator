@@ -4,9 +4,23 @@
 \alias{summary_gds}
 \title{summary_gds}
 \usage{
-summary_gds(gds, verbose = TRUE)
+summary_gds(gds, check.sync = FALSE, verbose = TRUE)
+}
+\arguments{
+\item{gds}{(2 options) A Genomic Data Structure (GDS) file or object
+
+\emph{How to get GDS ?}
+Look into \code{\link{tidy_genomic_data}},
+\code{\link{read_vcf}},
+\code{\link{tidy_vcf}} or \code{\link{write_gds}}.}
+
+\item{check.sync}{(logical, optional) Check if GDS object is in sync with
+radiator metada.}
+
+\item{verbose}{(optional, logical) When \code{verbose = TRUE}
+the function is a little more chatty during execution.
+Default: \code{verbose = TRUE}.}
 }
 \description{
 Summary of gds object or file: number of samples and markers
 }
-\keyword{internal}

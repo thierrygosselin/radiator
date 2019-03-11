@@ -5,7 +5,8 @@
 \title{dart2gds}
 \usage{
 dart2gds(data, strata = NULL, markers.meta, filename, dart.format,
-  verbose = TRUE)
+  gt.vcf = NULL, gt.vcf.nuc = NULL, gt = NULL,
+  parallel.core = parallel::detectCores() - 1, verbose = TRUE)
 }
 \description{
 Transform dart to GDS format

@@ -29,7 +29,7 @@
 #' "write.tidy",
 #' "dart.sequence",
 #' "missing.memory",
-#' "internal", "heatmap.fst", "tidy.check", "tidy.vcf")}.
+#' "internal", "heatmap.fst", "tidy.check", "tidy.vcf", "tidy.dart")}.
 #' @param deprecated (optional) radiator's deprecated arguments.
 #' Default: \code{deprecated = c("maf.thresholds", "common.markers",
 #' "max.marker","monomorphic.out", "snp.ld", "filter.call.rate",
@@ -77,7 +77,7 @@ radiator_dots <- function(
     "dart.sequence",
     "internal",
     "heatmap.fst",
-    "tidy.check", "tidy.vcf"
+    "tidy.check", "tidy.vcf", "tidy.dart"
   ),
   deprecated = c(
     "maf.thresholds",

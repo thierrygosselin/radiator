@@ -134,3 +134,62 @@ mclapply_win <- function(
   Linux   = {pbmcapply::pbmclapply},
   Darwin  = {pbmcapply::pbmclapply}
 )
+#End radiator_parallel with progress bar
+
+# split_vec_row ----------------------------------------------------------------
+#' @title split_vec_row
+#' @description Split input into chunk for parallel processing
+#' @rdname split_vec_row
+#' @keywords internal
+#' @export
+split_vec_row <- function(x, cpu.rounds, parallel.core = parallel::detectCores() - 1) {
+  if (!is.integer(x)) {
+    n.row <- nrow(x)
+  } else {
+    n.row <- x
+  }
+  split.vec <- as.integer(floor((parallel.core * cpu.rounds * (1:n.row - 1) / n.row) + 1))
+  return(split.vec)
+}#End split_vec_row
+
+
+# parallel_core_opt ------------------------------------------------------------
+#' @title parallel_core_opt
+#' @description Optimization of parallel core argument for radiator
+#' @keywords internal
+#' @export
+parallel_core_opt <- function(parallel.core = NULL, max.core = NULL) {
+  # strategy:
+  # minimum of 1 core and a maximum of all the core available -2
+  # even number of core
+  # test
+  # parallel.core <- 1
+  # parallel.core <- 2
+  # parallel.core <- 3
+  # parallel.core <- 11
+  # parallel.core <- 12
+  # parallel.core <- 16
+  # max.core <- 5
+  # max.core <- 50
+  # max.core <- NULL
+
+  # Add-ons options
+  # to control the max and min number to use...
+
+  if (is.null(parallel.core)) {
+    parallel.core <- parallel::detectCores() - 2
+  } else {
+    parallel.core <- floor(parallel.core / 2) * 2
+    parallel.core <- max(1, min(parallel.core, parallel::detectCores() - 2))
+  }
+
+  if (is.null(max.core)) {
+    parallel.core.opt <- parallel.core
+  } else {
+    parallel.core.opt <- min(parallel.core, floor(max.core / 2) * 2)
+  }
+  parallel.core.opt
+  return(parallel.core.opt)
+}#End parallel_core_opt
+
+

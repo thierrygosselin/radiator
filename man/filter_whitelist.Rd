@@ -15,7 +15,7 @@ filter_whitelist(data, whitelist.markers = NULL, verbose = TRUE, ...)
 
 \emph{How to get GDS and tidy data ?}
 Look into \code{\link{tidy_genomic_data}},
-\code{\link{write_seqarray}} or
+\code{\link{read_vcf}} or
 \code{\link{tidy_vcf}}.}
 
 \item{whitelist.markers}{(path or object)

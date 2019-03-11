@@ -1,4 +1,4 @@
-# write a gsi_sim file
+# write_gsi_sim ----------------------------------------------------------------
 
 #' @name write_gsi_sim
 

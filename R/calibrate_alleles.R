@@ -89,6 +89,7 @@ calibrate_alleles <- function(
   # gt.bin <- TRUE
 
 
+  message("Calibrating REF/ALT alleles...")
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("Input file missing")
 
@@ -202,7 +203,7 @@ calibrate_alleles <- function(
       inversion <- FALSE
     }
     old.ref <- NULL
-    message("\nNumber of markers with REF/ALT change(s) = ", nrow(change.ref))
+    message("    number of REF/ALT switch = ", nrow(change.ref))
   } else {
     inversion <- FALSE
   }
@@ -213,7 +214,7 @@ calibrate_alleles <- function(
   data <- dplyr::left_join(data, new.ref, by = "MARKERS")
   new.ref <- NULL
 
-  if (verbose) message("    integrating new genotype codings...")
+  if (verbose) message("    integrating genotypes codings...")
   if (tibble::has_name(data, "POLYMORPHIC")) data <- dplyr::select(data, -POLYMORPHIC)
   data <- integrate_ref(
     x = data,
@@ -278,7 +279,7 @@ calibrate_alleles <- function(
   if (anyNA(data$REF)) {
     all.missing <- dplyr::filter(data, is.na(REF)) %>% dplyr::distinct(MARKERS)
     readr::write_tsv(x = all.missing, path = "markers.missing.all.id.tsv")
-    message("Number of markers missing in all individuals and removed: ", nrow(all.missing))
+    message("    number of markers missing in all individuals and removed: ", nrow(all.missing))
     data <- dplyr::filter(data, !MARKERS %in% all.missing$MARKERS)
   }
 

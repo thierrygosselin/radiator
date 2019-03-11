@@ -22,7 +22,7 @@ Default: \code{interactive.filter = TRUE}.}
 
 \emph{How to get GDS and tidy data ?}
 Look into \code{\link{tidy_genomic_data}},
-\code{\link{write_seqarray}} or
+\code{\link{read_vcf}} or
 \code{\link{tidy_vcf}}.}
 
 \item{filter.short.ld}{(character) 5 options (default: \code{filter.short.ld = "mac"}):
@@ -136,11 +136,6 @@ Default: \code{long.ld.missing = FALSE}.
 equivalent when SNPs are coded based on the presence of the alternate allele
 (\code{0, 1, 2}).
 Default: \code{ld.method = "r2"}.
-
-\item \code{keep.gds} (logical) Default: \code{keep.gds = FALSE}, when the input data is a
-tidy data frame of genotypes, the GDS file
-generated for the long distance LD is removed after completion. With GDS input,
-the GDS file is always updated and kept in the working directory.
 \item \code{ld.figures}: (logical) Generate long distance LD statistics and
 figures.
 Default: \code{ld.figures = TRUE}

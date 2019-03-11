@@ -247,9 +247,9 @@
 
 
 filter_hwe <- function(
+  data,
   interactive.filter = TRUE,
   filter.hwe = TRUE,
-  data,
   strata = NULL,
   hw.pop.threshold = NULL,
   midp.threshold = "****",
@@ -354,6 +354,7 @@ filter_hwe <- function(
       data = data,
       path.folder = path.folder,
       file.date = file.date,
+      internal = internal,
       verbose = verbose)
 
     # File type detection----------------------------------------------------------
@@ -735,7 +736,7 @@ filter_hwe <- function(
       # continue with filters or not ------
       if (interactive.filter) {
         hw.q <- "\nDo you want to continue with the filtering ? (y/n):"
-        do.hw <- interactive_question(x = hw.q, answer.opt = c("y", "n"))
+        do.hw <- radiator_question(x = hw.q, answer.opt = c("y", "n"))
       } else {
         do.hw <- "y"
       }
@@ -753,7 +754,7 @@ filter_hwe <- function(
 
         if (is.null(hw.pop.threshold)) hw.pop.threshold <- n.pop - 1
         if (interactive.filter) {
-          hw.pop.threshold <- interactive_question(
+          hw.pop.threshold <- radiator_question(
             x = "\nBased on figures and tables enter the hw.pop.threshold (integer): ",
             minmax = c(0, 100000000))
         }
@@ -775,7 +776,7 @@ filter_hwe <- function(
           if (interactive.filter) {
             message("\nChoosing the final filtered dataset")
             message("   the tidy data object associated with this filter...")
-            midp.threshold <- interactive_question(
+            midp.threshold <- radiator_question(
               x = "   choose the mid p-value threshold (one of: *, **, ***, **** or *****)", answer.opt = c("*", "**", "***", "****", "*****"))
 
           }
@@ -812,25 +813,20 @@ filter_hwe <- function(
       # GDS ----------------------------------------------------------------------
       if (!is.null(gds.bk)) {
         # convert back or filter the gds....
-        bl <- wl <- extract_markers_metadata(gds = gds.bk)
-
-        wl %<>% dplyr::filter(MARKERS %in% unique(data$MARKERS))
-
+         markers.meta <- extract_markers_metadata(gds = gds.bk) %>%
+          dplyr::mutate(
+            FILTERS = dplyr::if_else(!MARKERS %in% unique(data$MARKERS), "filter.hwe", FILTERS
+            )
+          )
         data <- gds.bk
         gds.bk <- NULL
+
+
         update_radiator_gds(
           gds = data,
           node.name = "markers.meta",
-          value = wl,
+          value = markers.meta,
           sync = TRUE)
-
-        # update blacklist.markers
-        bl %<>% dplyr::setdiff(wl)
-        if (nrow(bl) > 0) {
-          bl %<>% dplyr::select(MARKERS) %>%
-            dplyr::mutate(FILTER = "filter.hwe")
-          bl.gds <- update_bl_markers(gds = data, update = bl)
-        }
       }
     }#End run.analysis
 
@@ -847,15 +843,17 @@ filter_hwe <- function(
                                   collapse = " / ", ignore_null = FALSE),
       path.folder = path.folder,
       file.date = file.date,
+      internal = internal,
       verbose = verbose)
 
-    # Return ---------------------------------------------------------------------
-      message("Filter HWE: ", stringi::stri_join(hw.pop.threshold, " / ", midp.threshold,
-                                                 ignore_null = FALSE))
-      message("Number of individuals / strata / chrom / locus / SNP:")
-      if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
-      message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-      if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
+    # results ------------------------------------------------------------------
+    radiator_results_message(
+      rad.message = stringi::stri_join("Filter HWE: ", stringi::stri_join(hw.pop.threshold, " / ", midp.threshold,
+                                                                          ignore_null = FALSE)),
+      filters.parameters,
+      internal,
+      verbose
+    )
   }
   return(data)
 }# End filter_hwe
@@ -1020,28 +1018,22 @@ blacklist_hw <- function(
           unfiltered.data %>%
             dplyr::bind_rows(data.temp) %>%
             dplyr::mutate(POP_ID = factor(POP_ID, levels = pop.id.levels)) %>%
-            dplyr::filter(!MARKERS %in% blacklist$MARKERS) %>%
-            radiator::write_rad(data = ., path = rad.filename) %>%
+            dplyr::filter(!MARKERS %in% blacklist$MARKERS))
+          radiator::write_rad(data = whitelist, path = rad.filename)
+          whitelist %>%
             dplyr::select(dplyr::one_of(want)) %>%
             dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-            readr::write_tsv(x = ., path = whitelist.filename))
+            readr::write_tsv(x = ., path = whitelist.filename)
       } else {
         whitelist <- suppressWarnings(
           unfiltered.data %>%
-            dplyr::filter(!MARKERS %in% blacklist$MARKERS) %>%
-            radiator::write_rad(data = ., path = rad.filename) %>%
-            dplyr::select(dplyr::one_of(want)) %>%
-            dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-            readr::write_tsv(x = ., path = whitelist.filename))
-      }
+            dplyr::filter(!MARKERS %in% blacklist$MARKERS))
 
-      # fil.param <- update_filter_parameter(
-      #   filter = "HWE",
-      #   unfiltered = unfiltered.data,
-      #   filtered = whitelist,
-      #   parameter = "hw.pop.threshold/mid.p.value",
-      #   threshold = stringi::stri_join(hw.pop.threshold, significance.group, sep = "/"),
-      #   param.path = filters.parameters.path)
+        radiator::write_rad(data = whitelist, path = rad.filename)
+        whitelist %>% dplyr::select(dplyr::one_of(want)) %>%
+            dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
+            readr::write_tsv(x = ., path = whitelist.filename)
+      }
     }
   }#End bl_map
   split(x = x, f = x$SIGNIFICANCE) %>%

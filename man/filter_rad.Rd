@@ -2,7 +2,7 @@
 % Please edit documentation in R/filter_rad.R
 \name{filter_rad}
 \alias{filter_rad}
-\title{one function to rule them all}
+\title{ONE FUNCTION TO RULE THEM ALL}
 \usage{
 filter_rad(interactive.filter = TRUE, data, strata = NULL,
   output = NULL, filename = NULL, verbose = TRUE,

@@ -20,7 +20,7 @@ radiator_dots(func.name = as.list(sys.call())[[1]], fd = NULL,
   "blacklist.id", "markers.info", "keep.allele.names", "keep.gds",
   "ref.calibration", "vcf.metadata", "vcf.stats", "wide",
   "whitelist.markers", "write.tidy", "missing.memory", "dart.sequence",
-  "internal", "heatmap.fst", "tidy.check", "tidy.vcf"),
+  "internal", "heatmap.fst", "tidy.check", "tidy.vcf", "tidy.dart"),
   deprecated = c("maf.thresholds", "common.markers", "max.marker",
   "monomorphic.out", "snp.ld", "filter.call.rate",
   "filter.markers.coverage", "filter.markers.missing", "number.snp.reads",
@@ -59,7 +59,7 @@ Default: \code{keepers = c(
 "write.tidy",
 "dart.sequence",
 "missing.memory",
-"internal", "heatmap.fst", "tidy.check", "tidy.vcf")}.}
+"internal", "heatmap.fst", "tidy.check", "tidy.vcf", "tidy.dart")}.}
 
 \item{deprecated}{(optional) radiator's deprecated arguments.
 Default: \code{deprecated = c("maf.thresholds", "common.markers",

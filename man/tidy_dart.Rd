@@ -84,19 +84,8 @@ It's the path to a file \code{.rad} file that contains 3 columns:
 \code{MARKERS, INDIVIDUALS, ERASE}. The file is produced by several radiator
 functions. For DArT data, \code{\link[radiator]{filter_rad}} generate the file.
 Defautl: \code{missing.memory = NULL}.
-\item write.tidy (optional, character) Options are:
-\itemize{
-\item \code{NULL}: will not generate the tidy output. e.g. only the gds is
-requested.
-\item \code{light}: columns removed:
-\code{CHROM, LOCUS, POS, GT_VCF, GT_VCF_NUC, GT} columns
-\item \code{strip}: will only keep
-\code{MARKERS, INDIVIDUALS, POP_ID, GT_BIN} columns.
-\item \code{full}: preserves all the columns
-}
-Default: \code{write.tidy = NULL}.
 \item \code{dart.sequence}: (optional, logical) To keep the sequence of markers in
-the GDS.
+the GDS. Theres no computational cost to keep it in the GDS...
 Default: \code{dart.sequence = TRUE}.
 \item \code{path.folder}: (optional, path) To write output in a specific folder.
 Default: \code{path.folder = NULL}. With defautl, the working directory is used.

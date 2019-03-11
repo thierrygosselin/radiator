@@ -12,7 +12,7 @@
 #'
 #' \emph{How to get GDS and tidy data ?}
 #' Look into \code{\link{tidy_genomic_data}},
-#' \code{\link{write_seqarray}} or
+#' \code{\link{read_vcf}} or
 #' \code{\link{tidy_vcf}}.
 
 #' @param detect.mixed.genomes (optional, logical) For use inside radiator pipelines.
@@ -262,6 +262,7 @@ detect_mixed_genomes <- function(
         data = data,
         path.folder = path.folder,
         file.date = file.date,
+        internal = internal,
         verbose = verbose)
 
       # highlight heterozygote and missing (optimized for speed depending on data)
@@ -364,6 +365,7 @@ detect_mixed_genomes <- function(
         data = data,
         path.folder = path.folder,
         file.date = file.date,
+        internal = internal,
         verbose = verbose)
 
       # GDS....
@@ -397,7 +399,10 @@ detect_mixed_genomes <- function(
         dplyr::bind_rows(dplyr::mutate(.data = het.ind, POP_ID = rep("OVERALL", n()))) %>%
         dplyr::mutate(POP_ID = factor(POP_ID, levels = c(pop.levels, "OVERALL"), ordered = TRUE)) %>%
         tidyr::gather(data = ., key = MISSING_GROUP, value = MISSING_PROP, -c(POP_ID, INDIVIDUALS, HET_PROP)) %>%
-        dplyr::mutate(MISSING_GROUP = factor(MISSING_GROUP, levels = c("MISSING_PROP_POP", "MISSING_PROP_OVERALL"))) %>%
+        dplyr::mutate(
+          MISSING_GROUP = factor(MISSING_GROUP,
+                                 levels = c("MISSING_PROP_POP", "MISSING_PROP_OVERALL")),
+          MISSING_PROP = as.numeric(MISSING_PROP)) %>%
         dplyr::arrange(POP_ID, MISSING_GROUP)
     }
 
@@ -457,7 +462,7 @@ detect_mixed_genomes <- function(
 
     het.manhattan <- ggplot2::ggplot(
       data = het.ind.overall,
-      ggplot2::aes(x = POP_ID, y = HET_PROP, size = MISSING_PROP, colour = POP_ID)) +
+      ggplot2::aes(x = POP_ID, y = HET_PROP, size = as.numeric(MISSING_PROP), colour = POP_ID)) +
       ggplot2::geom_jitter(alpha = 0.6) +
       ggplot2::scale_y_continuous(name = "Mean Observed Heterozygosity (proportion)",
                                   breaks = y.breaks, labels = y.breaks, limits = c(y.breaks.min, y.breaks.max)) + #y.breaks
@@ -508,6 +513,7 @@ detect_mixed_genomes <- function(
         name = "Mean Observed Heterozygosity (proportion)",
         breaks = y.breaks, labels = y.breaks, limits = c(y.breaks.min, y.breaks.max)) + #y.breaks
       # breaks = y.breaks, limits = c(0, y.breaks.max), expand = c(0.06, 0)) +
+      ggplot2::theme_classic()+
       ggplot2::theme(
         legend.position = "none",
         plot.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold", hjust = 0.5),
@@ -516,8 +522,7 @@ detect_mixed_genomes <- function(
         axis.text.x = ggplot2::element_text(size = 10, family = "Helvetica"),
         axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
         axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
-      ) +
-      ggplot2::theme_classic()
+      )
     # het.bp
     ggplot2::ggsave(
       filename = file.path(path.folder, "individual.heterozygosity.boxplot.pdf"),
@@ -528,17 +533,17 @@ detect_mixed_genomes <- function(
 
     if (interactive.filter) {
       message("\n\nInspect plots and tables in folder created...")
-      bl.id.het <- interactive_question(
+      bl.id.het <- radiator_question(
         x = "    Do you want to exclude individuals based on heterozygosity ? (y/n): ", answer.opt = c("y", "n"))
 
 
       if (bl.id.het == "y") {
         mix.text <- "    Enter the min value for ind.heterozygosity.threshold argument (0 turns off): "
-        threshold.min <- interactive_question(x = mix.text, minmax = c(0, 1))
+        threshold.min <- radiator_question(x = mix.text, minmax = c(0, 1))
 
         mix.text <- "    Enter the max value for ind.heterozygosity.threshold argument (1 turns off): "
         # threshold.max <- as.numeric(readLines(n = 1))
-        threshold.max <- interactive_question(x = mix.text, minmax = c(0, 1))
+        threshold.max <- radiator_question(x = mix.text, minmax = c(0, 1))
         ind.heterozygosity.threshold <- as.numeric(c(threshold.min, threshold.max))
       } else {
         threshold.min <- 0
@@ -572,13 +577,14 @@ detect_mixed_genomes <- function(
 
       if (data.type == "SeqVarGDSClass") {
 
-        id.info <- extract_individuals(gds = data)
-        bl <- id.info %>% dplyr::filter(INDIVIDUALS %in% blacklist.ind.het$INDIVIDUALS) %>%
-          dplyr::distinct(INDIVIDUALS) %>%
-          dplyr::mutate(FILTER = "filter.individuals.heterozygosity")
-        bl.i <- update_bl_individuals(gds = data, update = bl)
+        id.info <- extract_individuals(gds = data, whitelist = FALSE) %>%
+          dplyr::mutate(
+            FILTERS = dplyr::if_else(
+              INDIVIDUALS %in% blacklist.ind.het$INDIVIDUALS,
+              "filter.individuals.heterozygosity", FILTERS
+            )
+          )
 
-        id.info %<>% dplyr::filter(!INDIVIDUALS %in% blacklist.ind.het$INDIVIDUALS)
         update_radiator_gds(gds = data, node.name = "individuals", value = id.info, sync = TRUE)
 
       } else {
@@ -599,15 +605,18 @@ detect_mixed_genomes <- function(
       values = paste(threshold.min, threshold.max, collapse = " / "),
       path.folder = path.folder,
       file.date = file.date,
+      internal = internal,
       verbose = verbose)
 
-    if (verbose) cat("################################### RESULTS ####################################\n")
-    message("Detect mixed genomes: ", paste(threshold.min, threshold.max, collapse = " / "))
-    message("Number of individuals / strata / chrom / locus / SNP:")
-    if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
-    message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-    if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
-
+    # results ------------------------------------------------------------------
+    radiator_results_message(
+      rad.message = stringi::stri_join("Detect mixed genomes: ",
+                                       paste(threshold.min, threshold.max,
+                                             collapse = " / ")),
+      filters.parameters,
+      internal,
+      verbose
+    )
 
     # MONOMORPHIC MARKERS --------------------------------------------------
     if (check.mono) {
@@ -617,7 +626,7 @@ detect_mixed_genomes <- function(
         verbose = FALSE,
         parameters = filters.parameters,
         path.folder = path.folder,
-        internal = TRUE)
+        internal = FALSE)
     }
 
 

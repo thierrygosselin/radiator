@@ -5,7 +5,7 @@
 \title{not_common_markers}
 \usage{
 not_common_markers(x, strata, parallel.core = parallel::detectCores() -
-  1)
+  2)
 }
 \description{
 Generate a blacklist of markers not in common

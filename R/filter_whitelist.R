@@ -86,7 +86,7 @@ read_whitelist <- function(whitelist.markers = NULL, verbose = FALSE) {
 #'
 #' \emph{How to get GDS and tidy data ?}
 #' Look into \code{\link{tidy_genomic_data}},
-#' \code{\link{write_seqarray}} or
+#' \code{\link{read_vcf}} or
 #' \code{\link{tidy_vcf}}.
 #'
 #'
@@ -142,7 +142,7 @@ filter_whitelist <- function(
     path.folder <- generate_folder(
       f = path.folder,
       rad.folder = "filter_whitelist",
-      internal = TRUE,
+      internal = internal,
       file.date = file.date,
       verbose = verbose)
 
@@ -153,7 +153,7 @@ filter_whitelist <- function(
       filename = stringi::stri_join(
         "radiator_filter_whitelist_args_", file.date, ".tsv"),
       tsv = TRUE,
-      internal = TRUE,
+      internal = internal,
       verbose = verbose
     )
 
@@ -207,7 +207,7 @@ filter_whitelist <- function(
 
     if (data.type == "SeqVarGDSClass") {
       if (verbose) message("GDS filter reset")
-      sync_gds(gds = data, reset = TRUE, verbose = FALSE)
+      sync_gds(gds = data, reset.gds = TRUE, verbose = FALSE)
     }
 
     # Filter parameter file: generate and initiate -----------------------------
@@ -219,6 +219,7 @@ filter_whitelist <- function(
       data = data,
       path.folder = path.folder,
       file.date = file.date,
+      internal = internal,
       verbose = verbose)
 
     # filtering ----------------------------------------------------------------
@@ -237,47 +238,73 @@ filter_whitelist <- function(
     # GDS
     if (data.type == "SeqVarGDSClass") {
 
-      if (!is.null(markers.meta)) {
-        if (nrow(markers.meta) < nrow(whitelist.markers)) {
-          markers.meta <- extract_markers_metadata(gds = data, radiator.node = FALSE)
-          bl <- markers.meta # for blacklist below
-          markers.meta <- suppressWarnings(
-            dplyr::semi_join(markers.meta, whitelist.markers, by = "VARIANT_ID"))
-        } else {
-          bl <- markers.meta # for blacklist below
-          markers.meta <- suppressWarnings(
-            dplyr::semi_join(markers.meta, whitelist.markers,
-                             by = intersect(colnames(markers.meta), colnames(whitelist.markers))))
-        }
-      } else {
-        markers.meta <- extract_markers_metadata(gds = data, radiator.node = FALSE)
-        bl <- markers.meta # for blacklist below
-        markers.meta <- suppressWarnings(
-          dplyr::semi_join(markers.meta, whitelist.markers, by = "VARIANT_ID"))
-      }
+      # if (!is.null(markers.meta)) {
+      #   if (nrow(markers.meta) < nrow(whitelist.markers)) {
+      #     markers.meta <- extract_markers_metadata(gds = data, whitelist = FALSE)
+      #     # bl <- markers.meta # for blacklist below
+      #     # markers.meta <- suppressWarnings(
+      #     #   dplyr::semi_join(markers.meta, whitelist.markers, by = "VARIANT_ID"))
+      #     markers.meta %<>%
+      #       dplyr::mutate(
+      #         FILTERS = dplyr::if_else(
+      #           !VARIANT_ID %in% whitelist.markers$VARIANT_ID, "filter.whitelist", FILTERS
+      #         )
+      #       )
+      #   } else {
+      #     # bl <- markers.meta # for blacklist below
+      #     markers.meta <- suppressWarnings(
+      #       dplyr::semi_join(markers.meta, whitelist.markers,
+      #                        by = intersect(colnames(markers.meta), colnames(whitelist.markers))))
+      #   }
+      # } else {
+      markers.meta <- extract_markers_metadata(
+        gds = data,
+        whitelist = FALSE
+      ) %>%
+        dplyr::mutate(
+          FILTERS = dplyr::if_else(
+            !VARIANT_ID %in% whitelist.markers$VARIANT_ID, "filter.whitelist", FILTERS
+          )
+        )
+      # bl <- markers.meta # for blacklist below
+      # markers.meta <- suppressWarnings(
+      #   dplyr::semi_join(markers.meta, whitelist.markers, by = "VARIANT_ID"))
+      # }
 
-      if (nrow(markers.meta) == 0) {
+      if (nrow(dplyr::filter(markers.meta, FILTERS == "whitelist")) == 0) {
         rlang::abort("No markers left in the dataset, check whitelist...")
       }
 
       update_radiator_gds(
         gds = data,
         node.name = "markers.meta",
-        value = whitelist.markers,
+        value = markers.meta,
         replace = TRUE,
         sync = TRUE,
         verbose = TRUE
       )
 
+      write_rad(
+        data = markers.meta %>% dplyr::filter(FILTERS == "filter.whitelist"),
+        path = path.folder,
+        filename = stringi::stri_join("blacklist.markers_", file.date, ".tsv"),
+        tsv = TRUE, internal = internal, verbose = verbose)
+      write_rad(
+        data = markers.meta %>% dplyr::filter(FILTERS == "whitelist"),
+        path = path.folder,
+        filename = stringi::stri_join("whitelist.markers_", file.date, ".tsv"),
+        tsv = TRUE, internal = internal, verbose = verbose)
+
+
       # update bl gds
-      bl %<>% dplyr::setdiff(markers.meta) %>%
-        dplyr::mutate(FILTER = "filter.whitelist.markers") %>%
-        readr::write_tsv(
-          x = .,
-          path = file.path(
-            path.folder,
-            (stringi::stri_join("blacklist.markers_", file.date, ".tsv"))))
-      bl.gds <- update_bl_markers(gds = data, update = bl)
+      # bl %<>% dplyr::setdiff(markers.meta) %>%
+      #   dplyr::mutate(FILTER = "filter.whitelist.markers") %>%
+      #   readr::write_tsv(
+      #     x = .,
+      #     path = file.path(
+      #       path.folder,
+      #       (stringi::stri_join("blacklist.markers_", file.date, ".tsv"))))
+      # bl.gds <- update_bl_markers(gds = data, update = bl)
     } # End GDS
 
     # Filter parameter file: update --------------------------------------------
@@ -292,14 +319,15 @@ filter_whitelist <- function(
       values = n.markers.w,
       path.folder = path.folder,
       file.date = file.date,
+      internal = internal,
       verbose = verbose)
-
-    message("\nFilter whitelist : ", n.markers.w, "SNPs")
-    message("Number of individuals / strata / chrom / locus / SNP:")
-    if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
-    message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-    if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
-
+    # results ------------------------------------------------------------------
+    radiator_results_message(
+      rad.message = stringi::stri_join("\nFilter whitelist : ", n.markers.w, "SNPs"),
+      filters.parameters,
+      internal,
+      verbose
+    )
   }# End !is.null
   return(data)
 }#End filter_whitelist

@@ -97,11 +97,6 @@
 #' equivalent when SNPs are coded based on the presence of the alternate allele
 #' (\code{0, 1, 2}).
 #' Default: \code{ld.method = "r2"}.
-#'
-#' \item \code{keep.gds} (logical) Default: \code{keep.gds = FALSE}, when the input data is a
-#' tidy data frame of genotypes, the GDS file
-#' generated for the long distance LD is removed after completion. With GDS input,
-#' the GDS file is always updated and kept in the working directory.
 #' \item \code{ld.figures}: (logical) Generate long distance LD statistics and
 #' figures.
 #' Default: \code{ld.figures = TRUE}
@@ -168,538 +163,526 @@ filter_ld <- function(
   ...
 ) {
 
+
   # testing
   # interactive.filter = TRUE
-  # data <- "radiator_20181212@1130.gds"
+  # data <- gds
   # filter.short.ld = "mac"
   # filter.long.ld = 0.3
   # filename = NULL
   # parallel.core = parallel::detectCores() - 1
-  # # ...
-  # keep.gds <- TRUE
   # ld.figures <- TRUE
   # long.ld.missing = TRUE
   # ld.method = "r2"
   # verbose = TRUE
   # path.folder <- "testing_LD"
   # parameters <- NULL
-  if (interactive.filter || !is.null(filter.short.ld) || !is.null(filter.long.ld)) {
-    if (interactive.filter) verbose <- TRUE
-    if (verbose) {
-      cat("################################################################################\n")
-      cat("############################## radiator::filter_ld #############################\n")
-      cat("################################################################################\n")
+  if (!interactive.filter && is.null(filter.short.ld) && is.null(filter.long.ld)) {
+    return(data)
+  }
+
+  if (interactive.filter) verbose <- TRUE
+  if (verbose) {
+    cat("################################################################################\n")
+    cat("############################## radiator::filter_ld #############################\n")
+    cat("################################################################################\n")
+  }
+  # Cleanup-------------------------------------------------------------------
+  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
+  if (verbose) message("Execution date@time: ", file.date)
+  old.dir <- getwd()
+  opt.change <- getOption("width")
+  options(width = 70)
+  timing <- proc.time()# for timing
+  #back to the original directory and options
+  on.exit(setwd(old.dir), add = TRUE)
+  on.exit(options(width = opt.change), add = TRUE)
+  on.exit(timing <- proc.time() - timing, add = TRUE)
+  on.exit(if (verbose) message("\nComputation time, overall: ", round(timing[[3]]), " sec"), add = TRUE)
+  on.exit(if (verbose) cat("############################# completed filter_ld ##############################\n"), add = TRUE)
+
+  # Function call and dotslist -------------------------------------------------
+  rad.dots <- radiator_dots(
+    func.name = as.list(sys.call())[[1]],
+    fd = rlang::fn_fmls_names(),
+    args.list = as.list(environment()),
+    dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
+    keepers = c("long.ld.missing", "ld.method", "ld.figures",
+                "subsample.markers.stats",
+                "path.folder", "parameters", "internal"),
+    verbose = verbose
+  )
+
+  # Checking for missing and/or default arguments ------------------------------
+  if (missing(data)) rlang::abort("data is missing")
+
+  # Folders---------------------------------------------------------------------
+  path.folder <- generate_folder(
+    f = path.folder,
+    rad.folder = "filter_ld",
+    internal = internal,
+    file.date = file.date,
+    verbose = verbose)
+
+  # write the dots file
+  write_rad(
+    data = rad.dots,
+    path = path.folder,
+    filename = stringi::stri_join("radiator_filter_ld_args_", file.date, ".tsv"),
+    tsv = TRUE,
+    internal = internal,
+    verbose = verbose
+  )
+
+  # interactive.filter steps -------------------------------------------------
+  if (interactive.filter) {
+    message("\nInteractive mode: on\n")
+    message("Step 1. Short distance LD threshold selection")
+    message("Step 2. Filtering markers based on short distance LD")
+    message("Step 3. Long distance LD pruning selection")
+    message("Step 4. Threshold selection")
+    message("Step 5. Filtering markers based on long distance LD\n\n")
+  }
+
+  # match arg ------------------------------------------------------------------
+  if (!is.null(filter.short.ld)) {
+    if (filter.short.ld == "maf") {
+      message("\n\nPlease update your code to use filter.short.ld = 'mac'\n\n")
+      filter.short.ld <- "mac"
     }
-    # Cleanup-------------------------------------------------------------------
-    file.date <- format(Sys.time(), "%Y%m%d@%H%M")
-    if (verbose) message("Execution date@time: ", file.date)
-    old.dir <- getwd()
-    opt.change <- getOption("width")
-    options(width = 70)
-    timing <- proc.time()# for timing
-    #back to the original directory and options
-    on.exit(setwd(old.dir), add = TRUE)
-    on.exit(options(width = opt.change), add = TRUE)
-    on.exit(timing <- proc.time() - timing, add = TRUE)
-    on.exit(if (verbose) message("\nComputation time, overall: ", round(timing[[3]]), " sec"), add = TRUE)
-    on.exit(if (verbose) cat("############################# completed filter_ld ##############################\n"), add = TRUE)
+    filter.short.ld <- match.arg(filter.short.ld, c("first", "random", "last", "middle", "mac"))
+  }
+  if (!is.null(ld.method)) {
+    ld.method <- match.arg(ld.method, c("composite", "r", "r2","dprime", "corr"))
+  }
 
-    # Function call and dotslist -------------------------------------------------
-    rad.dots <- radiator_dots(
-      func.name = as.list(sys.call())[[1]],
-      fd = rlang::fn_fmls_names(),
-      args.list = as.list(environment()),
-      dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
-      keepers = c("long.ld.missing", "ld.method", "keep.gds", "ld.figures",
-                  "path.folder", "parameters", "internal"),
-      verbose = verbose
-    )
-
-    # Checking for missing and/or default arguments ------------------------------
-    if (missing(data)) rlang::abort("data is missing")
-
-    # Folders---------------------------------------------------------------------
-    path.folder <- generate_folder(
-      f = path.folder,
-      rad.folder = "filter_ld",
-      internal = internal,
-      file.date = file.date,
-      verbose = verbose)
-
-    # write the dots file
-    write_rad(
-      data = rad.dots,
-      path = path.folder,
-      filename = stringi::stri_join("radiator_filter_ld_args_", file.date, ".tsv"),
-      tsv = TRUE,
-      internal = internal,
-      verbose = verbose
-    )
-
-    # interactive.filter steps -------------------------------------------------
-    if (interactive.filter) {
-      message("\nInteractive mode: on\n")
-      message("Step 1. Short distance LD threshold selection")
-      message("Step 2. Filtering markers based on short distance LD")
-      message("Step 3. Long distance LD pruning selection")
-      message("Step 4. Threshold selection")
-      message("Step 5. Filtering markers based on long distance LD\n\n")
-    }
-
-    # match arg ------------------------------------------------------------------
-    if (!is.null(filter.short.ld)) {
-      if (filter.short.ld == "maf") {
-        message("\n\nPlease update your code to use filter.short.ld = 'mac'\n\n")
-        filter.short.ld <- "mac"
-      }
-      filter.short.ld <- match.arg(filter.short.ld, c("first", "random", "last", "middle", "mac"))
-    }
-    if (!is.null(ld.method)) {
-      ld.method <- match.arg(ld.method, c("composite", "r", "r2","dprime", "corr"))
-    }
-
-    # Filename -------------------------------------------------------------------
-    if (is.null(filename)) {
-      write.ld <- FALSE
-      filename <- stringi::stri_join("radiator_", file.date, ".ld")
+  # Filename -------------------------------------------------------------------
+  if (is.null(filename)) {
+    write.ld <- FALSE
+    filename <- stringi::stri_join("radiator_", file.date, ".ld")
+  } else {
+    write.ld <- TRUE
+    filename.problem <- file.exists(filename)
+    if (filename.problem) {
+      filename <- stringi::stri_join(filename, "_", file.date, ".ld")
     } else {
-      write.ld <- TRUE
-      filename.problem <- file.exists(filename)
-      if (filename.problem) {
-        filename <- stringi::stri_join(filename, "_", file.date, ".ld")
-      } else {
-        filename <- stringi::stri_join(filename, ".ld")
-      }
+      filename <- stringi::stri_join(filename, ".ld")
     }
+  }
 
-    filename.gds <- stringi::stri_join(filename, ".gds")
-    filename.gds <- file.path(path.folder, filename.gds)
-    filename <- file.path(path.folder, filename)
+  filename.gds <- stringi::stri_join(filename, ".gds")
+  filename.gds <- file.path(path.folder, filename.gds)
+  filename <- file.path(path.folder, filename)
 
-    # for tbl_df with long.ld filtering
-    filename.gds.rad <- stringi::stri_join(filename.gds, ".rad")
+  # for tbl_df with long.ld filtering
+  filename.gds.rad <- stringi::stri_join(filename.gds, ".rad")
 
-    # Detect format --------------------------------------------------------------
-    data.type <- radiator::detect_genomic_format(data)
-    if (!data.type %in% c("tbl_df", "fst.file", "SeqVarGDSClass", "gds.file")) {
-      rlang::abort("Input not supported for this function: read function documentation")
-    }
+  # Detect format --------------------------------------------------------------
+  data.type <- radiator::detect_genomic_format(data)
+  if (!data.type %in% c("tbl_df", "fst.file", "SeqVarGDSClass", "gds.file")) {
+    rlang::abort("Input not supported for this function: read function documentation")
+  }
 
-    # Import data ---------------------------------------------------------------
-    if (data.type %in% c("tbl_df", "fst.file")) {
-      if (is.vector(data)) data <- radiator::tidy_wide(data = data, import.metadata = FALSE)
-      data.type <- "tbl_df"
+  # Import data ---------------------------------------------------------------
+  if (data.type %in% c("tbl_df", "fst.file")) {
+    if (is.vector(data)) data <- radiator::tidy_wide(data = data, import.metadata = FALSE)
+    data.type <- "tbl_df"
 
-      wl <- bl <- dplyr::select(data, MARKERS, CHROM, LOCUS, POS) %>%
-        dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-        dplyr::arrange(LOCUS, MARKERS)
-    }
+    wl <- bl <- dplyr::select(data, MARKERS, CHROM, LOCUS, POS) %>%
+      dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
+      dplyr::arrange(LOCUS, MARKERS)
+  }
 
-    # GDS
-    if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
-      if (!"SeqVarTools" %in% utils::installed.packages()[,"Package"]) {
-        rlang::abort('Please install SeqVarTools for this option:\n
+  # GDS
+  if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
+    if (!"SeqVarTools" %in% utils::installed.packages()[,"Package"]) {
+      rlang::abort('Please install SeqVarTools for this option:\n
            install.packages("BiocManager")
            BiocManager::install("SeqVarTools")')
-      }
-
-      if (data.type == "gds.file") {
-        data <- radiator::read_rad(data, verbose = verbose)
-        data.type <- "SeqVarGDSClass"
-      }
-
-      wl <- bl <- extract_markers_metadata(data) %>%
-        dplyr::arrange(LOCUS, MARKERS)
     }
 
-    # radiator_parameters: initiate ------------------------------------------
-    filters.parameters <- radiator_parameters(
-      generate = TRUE,
-      initiate = TRUE,
-      update = FALSE,
-      parameter.obj = parameters,
-      data = data,
-      path.folder = path.folder,
-      file.date = file.date,
-      verbose = verbose)
+    if (data.type == "gds.file") {
+      data <- radiator::read_rad(data, verbose = verbose)
+      data.type <- "SeqVarGDSClass"
+    }
 
-    # Short LD -------------------------------------------------------------------
-    if (interactive.filter || !is.null(filter.short.ld)) {
-      if (verbose) message("Minimizing short distance LD...")
-      locus.stats <- dplyr::group_by(.data = wl, LOCUS) %>%
-        dplyr::summarise(SNP_N = n()) %>%
-        dplyr::group_by(SNP_N) %>%
-        dplyr::tally(.) %>%
-        dplyr::ungroup(.) %>%
-        readr::write_tsv(
-          x = ., path = file.path(path.folder, "short.ld.locus.stats.tsv"),
-          append = FALSE, col_names = TRUE)
+    wl <- bl <- extract_markers_metadata(data, whitelist = TRUE) %>%
+      dplyr::arrange(LOCUS, MARKERS)
+  }
 
-      if (nrow(locus.stats) > 1) {
-        range.number.snp.locus <- range(locus.stats$SNP_N, na.rm = TRUE)
-        if (verbose) message("    The range in the number of SNP/locus is: ", stringi::stri_join(range.number.snp.locus, collapse = "-"))
+  # radiator_parameters: initiate ------------------------------------------
+  filters.parameters <- radiator_parameters(
+    generate = TRUE,
+    initiate = TRUE,
+    update = FALSE,
+    parameter.obj = parameters,
+    data = data,
+    path.folder = path.folder,
+    file.date = file.date,
+    internal = internal,
+    verbose = verbose)
 
-        if (interactive.filter) {
-          if (verbose) message("\nStep 1. Short distance LD threshold selection")
-          if (verbose) message("the goal is to keep only 1 SNP per read/locus")
-          short.ld.fig <- tibble::tibble(
-            GROUP = c("read", "read", "read", "first", "middle", "last"),
-            SNP = c(15, 60, 90, 15, 60, 90)) %>%
-            dplyr::mutate(
-              GROUP = factor(
-                x = GROUP,
-                levels = c("last", "middle", "first", "read"),
-                ordered = TRUE)
-            ) %>%
-            ggplot2::ggplot(
-              data = .,
-              ggplot2::aes(x = SNP, y = GROUP, colour = GROUP)) +
-            ggplot2::geom_point(size = 5, shape = 19) +
-            ggplot2::geom_segment(ggplot2::aes(x = 1, y = 1, xend = 100, yend = 1), colour = "black", size = 0.3) +
-            ggplot2::geom_segment(ggplot2::aes(x = 1, y = 2, xend = 100, yend = 2), colour = "black", size = 0.3) +
-            ggplot2::geom_segment(ggplot2::aes(x = 1, y = 3, xend = 100, yend = 3), colour = "black", size = 0.3) +
-            ggplot2::geom_segment(ggplot2::aes(x = 1, y = 4, xend = 100, yend = 4), colour = "black", size = 1) +
-            ggplot2::scale_x_continuous(name = "Read length (bp)",
-                                        breaks = 1:100, limits = c(1, 100)) +
-            ggplot2::labs(
-              title = "RAD short linkage disequilibrium filtering options",
-              y = "filter.short.ld values") +
-            ggplot2::theme_minimal() +
-            ggplot2::theme(
-              # panel.grid.major.x = ggplot2::element_blank(),
-              plot.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold", hjust = 0.5),
-              # axis.line.x = ggplot2::element_line(colour = "black", size = 2),
-              axis.title.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-              axis.text.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold", hjust = 1, vjust = 0.5, angle = 90),
-              axis.title.y = ggplot2::element_blank(),
-              # axis.title.y = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-              # axis.ticks.y = ggplot2::element_blank(),
-              panel.grid.minor.x = ggplot2::element_blank(),
-              panel.grid.major.y = ggplot2::element_blank(),
-              legend.position = "none"
-              # axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
-            )
-          print(short.ld.fig)
+  # Short LD -------------------------------------------------------------------
+  if (interactive.filter || !is.null(filter.short.ld)) {
+    if (verbose) message("Minimizing short distance LD...")
+    locus.stats <- dplyr::group_by(.data = wl, LOCUS) %>%
+      dplyr::summarise(SNP_N = n()) %>%
+      dplyr::count(SNP_N) %>%
+      readr::write_tsv(
+        x = ., path = file.path(path.folder, "short.ld.locus.stats.tsv"),
+        append = FALSE, col_names = TRUE)
+
+    if (nrow(locus.stats) > 1) {
+      range.number.snp.locus <- range(locus.stats$SNP_N, na.rm = TRUE)
+      if (verbose) message("    The range in the number of SNP/locus is: ", stringi::stri_join(range.number.snp.locus, collapse = "-"))
+
+      if (interactive.filter) {
+        if (verbose) message("\nStep 1. Short distance LD threshold selection")
+        if (verbose) message("the goal is to keep only 1 SNP per read/locus")
+        short.ld.fig <- tibble::tibble(
+          GROUP = c("read", "read", "read", "first", "middle", "last"),
+          SNP = c(15, 60, 90, 15, 60, 90)) %>%
+          dplyr::mutate(
+            GROUP = factor(
+              x = GROUP,
+              levels = c("last", "middle", "first", "read"),
+              ordered = TRUE)
+          ) %>%
+          ggplot2::ggplot(
+            data = .,
+            ggplot2::aes(x = SNP, y = GROUP, colour = GROUP)) +
+          ggplot2::geom_point(size = 5, shape = 19) +
+          ggplot2::geom_segment(ggplot2::aes(x = 1, y = 1, xend = 100, yend = 1), colour = "black", size = 0.3) +
+          ggplot2::geom_segment(ggplot2::aes(x = 1, y = 2, xend = 100, yend = 2), colour = "black", size = 0.3) +
+          ggplot2::geom_segment(ggplot2::aes(x = 1, y = 3, xend = 100, yend = 3), colour = "black", size = 0.3) +
+          ggplot2::geom_segment(ggplot2::aes(x = 1, y = 4, xend = 100, yend = 4), colour = "black", size = 1) +
+          ggplot2::scale_x_continuous(name = "Read length (bp)",
+                                      breaks = 1:100, limits = c(1, 100)) +
+          ggplot2::labs(
+            title = "RAD short linkage disequilibrium filtering options",
+            y = "filter.short.ld values") +
+          ggplot2::theme_minimal() +
+          ggplot2::theme(
+            # panel.grid.major.x = ggplot2::element_blank(),
+            plot.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold", hjust = 0.5),
+            # axis.line.x = ggplot2::element_line(colour = "black", size = 2),
+            axis.title.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
+            axis.text.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold", hjust = 1, vjust = 0.5, angle = 90),
+            axis.title.y = ggplot2::element_blank(),
+            # axis.title.y = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
+            # axis.ticks.y = ggplot2::element_blank(),
+            panel.grid.minor.x = ggplot2::element_blank(),
+            panel.grid.major.y = ggplot2::element_blank(),
+            legend.position = "none"
+            # axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
+          )
+        print(short.ld.fig)
 
 
-          if (verbose) message("Options include: first, middle, last, random or mac")
-          if (verbose) message("Not sure ? use mac...")
-          filter.short.ld <- interactive_question(
-            x = "Choose the filter.short.ld threshold: ",
-            answer.opt = c("first", "random", "last", "middle", "mac"))
-        }
+        if (verbose) message("Options include: first, middle, last, random or mac")
+        if (verbose) message("Not sure ? use mac...")
+        filter.short.ld <- radiator_question(
+          x = "Choose the filter.short.ld threshold: ",
+          answer.opt = c("first", "random", "last", "middle", "mac"))
+      }
 
 
-        # Random selection ---------------------------------------------------------
-        if (verbose) message("\nStep 2. Filtering markers based on short distance LD")
-        if (verbose) message("filter.short.ld = ", filter.short.ld)
+      # Random selection ---------------------------------------------------------
+      if (verbose) message("\nStep 2. Filtering markers based on short distance LD")
+      if (verbose) message("filter.short.ld = ", filter.short.ld)
 
-        if (filter.short.ld == "random") {
-          wl %<>%
-            dplyr::group_by(LOCUS) %>%
-            dplyr::sample_n(tbl = ., size = 1, replace = FALSE) %>%
-            dplyr::ungroup(.)
-        }#End snp random
+      if (filter.short.ld == "random") {
+        wl %<>%
+          dplyr::group_by(LOCUS) %>%
+          dplyr::sample_n(tbl = ., size = 1, replace = FALSE) %>%
+          dplyr::ungroup(.)
+      }#End snp random
 
-        # Fist SNP on the read -----------------------------------------------------
-        if (filter.short.ld == "first") {
+      # Fist SNP on the read -----------------------------------------------------
+      if (filter.short.ld == "first") {
+        wl %<>%
+          dplyr::group_by(LOCUS) %>%
+          dplyr::summarise(POS = min(POS)) %>%
+          dplyr::ungroup(.)
+      }#End snp first
+
+      # Last SNP on the read -----------------------------------------------------
+      if (filter.short.ld == "last") {
+        wl %<>%
+          dplyr::group_by(LOCUS) %>%
+          dplyr::summarise(POS = max(POS)) %>%
+          dplyr::ungroup(.)
+      }#End snp last
+
+      # Middle SNP on the read -----------------------------------------------------
+      if (filter.short.ld == "middle") {
+        snp.locus.prep <- dplyr::group_by(.data = wl, LOCUS) %>%
+          dplyr::tally(.) %>%
+          dplyr::ungroup(.)
+
+        pick.middle <- snp.locus.prep %>%
+          dplyr::filter(n > 2) %>%
+          dplyr::select(LOCUS)
+
+        if (nrow(pick.middle) == 0) {
+          if (verbose) message("IMPORTANT: the data doesn't have more than 3 SNPs per locus")
+          if (verbose) message("    First SNP will be selected instead...")
           wl %<>%
             dplyr::group_by(LOCUS) %>%
             dplyr::summarise(POS = min(POS)) %>%
             dplyr::ungroup(.)
-        }#End snp first
 
-        # Last SNP on the read -----------------------------------------------------
-        if (filter.short.ld == "last") {
-          wl %<>%
-            dplyr::group_by(LOCUS) %>%
-            dplyr::summarise(POS = max(POS)) %>%
-            dplyr::ungroup(.)
-        }#End snp last
-
-        # Middle SNP on the read -----------------------------------------------------
-        if (filter.short.ld == "middle") {
-          snp.locus.prep <- dplyr::group_by(.data = wl, LOCUS) %>%
-            dplyr::tally(.) %>%
-            dplyr::ungroup(.)
-
-          pick.middle <- snp.locus.prep %>%
-            dplyr::filter(n > 2) %>%
-            dplyr::select(LOCUS)
-
-          if (nrow(pick.middle) == 0) {
-            if (verbose) message("IMPORTANT: the data doesn't have more than 3 SNPs per locus")
-            if (verbose) message("    First SNP will be selected instead...")
-            wl %<>%
-              dplyr::group_by(LOCUS) %>%
-              dplyr::summarise(POS = min(POS)) %>%
-              dplyr::ungroup(.)
-
-          } else {
-
-            # For locus with <= 2 SNPs/read just keep the first one.
-            keep.first <- snp.locus.prep %>%
-              dplyr::filter(n <= 2) %>%
-              dplyr::select(LOCUS)
-            if (verbose) message("    Number of locus with first SNP selected: ", nrow(keep.first))
-            keep.first.select <- wl %>%
-              dplyr::filter(LOCUS %in% keep.first$LOCUS) %>%
-              dplyr::group_by(LOCUS) %>%
-              dplyr::summarise(POS = min(POS)) %>%
-              dplyr::ungroup(.)
-
-            pick.middle.select <- wl %>%
-              dplyr::filter(LOCUS %in% pick.middle$LOCUS) %>%
-              dplyr::group_by(LOCUS) %>%
-              dplyr::filter(POS != min(POS)) %>% # remove the first SNP
-              dplyr::filter(POS != max(POS)) %>% # remove the last SNP
-              dplyr::sample_n(tbl = ., size = 1, replace = FALSE) # pick one at random
-
-            if (verbose) message("    Number of locus with random middle SNP selected: ", nrow(pick.middle))
-            wl <- dplyr::bind_rows(keep.first.select, pick.middle.select) %>%
-              dplyr::arrange(LOCUS, POS)
-          }
-          pick.middle <- snp.locus.prep <- keep.first.select <- pick.middle.select <- keep.first <- NULL
-        }#End snp middle
-
-        # SNP with max MAC on the read -----------------------------------------------
-        if (filter.short.ld == "mac") {
-
-          # n.markers <- dplyr::n_distinct(data$MARKERS)
-          if (data.type == "tbl_df") {
-            # one.snp: markers that doesnt require filtering for MAF/MAC
-            # because only 1 SNP/locus
-            one.snp <- dplyr::group_by(.data = wl, LOCUS) %>%
-              dplyr::tally(.) %>%
-              dplyr::filter(n == 1) %>%
-              dplyr::left_join(wl, by = "LOCUS") %>%
-              dplyr::select(-n) %>%
-              dplyr::distinct(MARKERS, .keep_all = TRUE)
-
-
-            # calculate GLOBAL mac per SNP/LOCUS
-            if (tibble::has_name(data, "GT_BIN")) {
-              more.snp <- dplyr::distinct(wl, MARKERS) %>%
-                dplyr::filter(!MARKERS %in% one.snp$MARKERS)
-              n.markers <- nrow(more.snp)
-
-              global_mac <- function(x) {
-                mac.data <- dplyr::group_by(x, MARKERS) %>%
-                  dplyr::summarise(
-                    PP = as.numeric(2 * length(GT_BIN[GT_BIN == 0])),
-                    PQ = as.numeric(length(GT_BIN[GT_BIN == 1])),
-                    QQ = as.numeric(2 * length(GT_BIN[GT_BIN == 2]))
-                  ) %>%
-                  # need this step because seen cases where 2 is not the minor allele...
-                  dplyr::mutate(
-                    PP = PP + PQ,
-                    QQ = QQ + PQ,
-                    PQ = NULL,
-                    MAC_GLOBAL = dplyr::if_else(PP < QQ, PP, QQ),
-                    PP = NULL, QQ = NULL) %>%
-                  dplyr::ungroup(.)
-                return(mac.data)
-              }#End global_maf
-
-              if (n.markers > 10000) {
-                split.vec <- more.snp %>%
-                  dplyr::mutate(SPLIT_VEC = split_vec_row(
-                    more.snp,
-                    cpu.rounds = ceiling(n.markers/10000),
-                    parallel.core = parallel.core))
-
-                mac.data <- data %>%
-                  dplyr::filter(!is.na(GT_BIN)) %>%
-                  dplyr::filter(!MARKERS %in% one.snp$MARKERS) %>%
-                  dplyr::left_join(split.vec, by = "MARKERS") %>%
-                  split(x = ., f = .$SPLIT_VEC) %>%
-                  .radiator_parallel_mc(
-                    X = .,
-                    FUN = global_mac,
-                    mc.cores = parallel.core
-                  ) %>%
-                  dplyr::bind_rows(.)
-                more.snp <- split.vec <- NULL
-              } else {
-                mac.data <- global_mac(
-                  x = dplyr::filter(data, !is.na(GT_BIN)) %>%
-                    dplyr::filter(!MARKERS %in% one.snp$MARKERS)
-                )
-              }
-            } else {
-              mac.data <- data %>%
-                dplyr::filter(GT != "000000") %>%
-                dplyr::filter(!MARKERS %in% one.snp$MARKERS) %>%
-                dplyr::select(MARKERS, INDIVIDUALS, GT) %>%
-                dplyr::mutate(
-                  A1 = stringi::stri_sub(GT, 1, 3),
-                  A2 = stringi::stri_sub(GT, 4,6)
-                ) %>%
-                dplyr::select(MARKERS, INDIVIDUALS, A1, A2) %>%
-                tidyr::gather(data = ., key = ALLELES, value = GT, -c(MARKERS, INDIVIDUALS)) %>%
-                dplyr::group_by(MARKERS, GT) %>%
-                dplyr::tally(.) %>%
-                dplyr::group_by(MARKERS) %>%
-                dplyr::filter(n == min(n)) %>%
-                dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-                dplyr::summarise(MAC_GLOBAL = n) %>%
-                dplyr::ungroup(.) %>%
-                dplyr::select(MARKERS, MAC_GLOBAL)
-            }
-
-            wl %<>%
-              dplyr::filter(!MARKERS %in% one.snp$MARKERS) %>%
-              dplyr::left_join(mac.data, by = "MARKERS") %>%
-              dplyr::group_by(LOCUS) %>%
-              dplyr::filter(MAC_GLOBAL == max(MAC_GLOBAL)) %>%
-              dplyr::ungroup(.) %>%
-              dplyr::select(-MAC_GLOBAL) %>%
-              dplyr::distinct(LOCUS, .keep_all = TRUE) %>%
-              dplyr::bind_rows(one.snp)
-            one.snp <- mac.data <- NULL
-
-
-          } else {
-            n.markers <- nrow(wl)
-            if (!tibble::has_name(wl, "MAC_GLOBAL")) {
-              wl  %<>%
-                dplyr::bind_cols(
-                  SeqArray::seqAlleleCount(
-                    gdsfile = data,
-                    ref.allele = NULL,
-                    .progress = TRUE,
-                    parallel = parallel.core) %>%
-                    unlist(.) %>%
-                    matrix(
-                      data = .,
-                      nrow = n.markers, ncol = 2, byrow = TRUE,
-                      dimnames = list(rownames = wl$MARKERS,
-                                      colnames = c("REF_COUNT", "ALT_COUNT"))) %>%
-                    tibble::as_tibble(.)) %>%
-                dplyr::mutate(
-                  # MAC or MAF here it's the same
-                  MAC_GLOBAL = dplyr::if_else(ALT_COUNT < REF_COUNT, ALT_COUNT, REF_COUNT),
-                  ALT_COUNT = NULL, REF_COUNT = NULL
-                )
-            }
-
-            wl  %<>%
-              dplyr::group_by(LOCUS) %>%
-              dplyr::filter(MAC_GLOBAL == max(MAC_GLOBAL)) %>%
-              dplyr::ungroup(.) %>%
-              dplyr::distinct(LOCUS, .keep_all = TRUE)
-          }
-        }#End snp mac
-
-        # Whitelist and Blacklist of markers
-        whitelist.short.ld <- wl
-        # res.ld$whitelist.short.ld <- wl
-        readr::write_tsv(
-          x = wl, path = file.path(path.folder, "whitelist.short.ld.tsv"),
-          append = FALSE, col_names = TRUE)
-
-        # res.ld$blacklist.short.ld <- bl <- dplyr::setdiff(bl, wl)
-        blacklist.short.ld <- bl <- dplyr::setdiff(bl, wl)
-        readr::write_tsv(
-          x = bl,
-          path = file.path(path.folder, "blacklist.short.ld.tsv"),
-          append = FALSE, col_names = TRUE)
-        if (verbose) message("File written: whitelist.short.ld.tsv")
-        if (verbose) message("File written: blacklist.short.ld.tsv")
-
-        # filtering data to minimize LD -----------------------------------------
-        if (data.type == "tbl_df") {
-          data <- dplyr::filter(data, MARKERS %in% wl$MARKERS)
         } else {
-          # updating the GDS object
-          update_radiator_gds(
-            gds = data,
-            node.name = "markers.meta",
-            value = wl,
-            sync = TRUE
+
+          # For locus with <= 2 SNPs/read just keep the first one.
+          keep.first <- snp.locus.prep %>%
+            dplyr::filter(n <= 2) %>%
+            dplyr::select(LOCUS)
+          if (verbose) message("    Number of locus with first SNP selected: ", nrow(keep.first))
+          keep.first.select <- wl %>%
+            dplyr::filter(LOCUS %in% keep.first$LOCUS) %>%
+            dplyr::group_by(LOCUS) %>%
+            dplyr::summarise(POS = min(POS)) %>%
+            dplyr::ungroup(.)
+
+          pick.middle.select <- wl %>%
+            dplyr::filter(LOCUS %in% pick.middle$LOCUS) %>%
+            dplyr::group_by(LOCUS) %>%
+            dplyr::filter(POS != min(POS)) %>% # remove the first SNP
+            dplyr::filter(POS != max(POS)) %>% # remove the last SNP
+            dplyr::sample_n(tbl = ., size = 1, replace = FALSE) # pick one at random
+
+          if (verbose) message("    Number of locus with random middle SNP selected: ", nrow(pick.middle))
+          wl <- dplyr::bind_rows(keep.first.select, pick.middle.select) %>%
+            dplyr::arrange(LOCUS, POS)
+        }
+        pick.middle <- snp.locus.prep <- keep.first.select <- pick.middle.select <- keep.first <- NULL
+      }#End snp middle
+
+      # SNP with max MAC on the read -----------------------------------------------
+      if (filter.short.ld == "mac") {
+
+        # n.markers <- dplyr::n_distinct(data$MARKERS)
+        if (data.type == "tbl_df") {
+          # one.snp: markers that doesnt require filtering for MAF/MAC
+          # because only 1 SNP/locus
+          one.snp <- dplyr::group_by(.data = wl, LOCUS) %>%
+            dplyr::tally(.) %>%
+            dplyr::filter(n == 1) %>%
+            dplyr::left_join(wl, by = "LOCUS") %>%
+            dplyr::select(-n) %>%
+            dplyr::distinct(MARKERS, .keep_all = TRUE)
+
+
+          # calculate GLOBAL mac per SNP/LOCUS
+          if (tibble::has_name(data, "GT_BIN")) {
+            more.snp <- dplyr::distinct(wl, MARKERS) %>%
+              dplyr::filter(!MARKERS %in% one.snp$MARKERS)
+            n.markers <- nrow(more.snp)
+
+            global_mac <- function(x) {
+              mac.data <- dplyr::group_by(x, MARKERS) %>%
+                dplyr::summarise(
+                  PP = as.numeric(2 * length(GT_BIN[GT_BIN == 0])),
+                  PQ = as.numeric(length(GT_BIN[GT_BIN == 1])),
+                  QQ = as.numeric(2 * length(GT_BIN[GT_BIN == 2]))
+                ) %>%
+                # need this step because seen cases where 2 is not the minor allele...
+                dplyr::mutate(
+                  PP = PP + PQ,
+                  QQ = QQ + PQ,
+                  PQ = NULL,
+                  MAC_GLOBAL = dplyr::if_else(PP < QQ, PP, QQ),
+                  PP = NULL, QQ = NULL) %>%
+                dplyr::ungroup(.)
+              return(mac.data)
+            }#End global_maf
+
+            if (n.markers > 10000) {
+              split.vec <- more.snp %>%
+                dplyr::mutate(SPLIT_VEC = split_vec_row(
+                  more.snp,
+                  cpu.rounds = ceiling(n.markers/10000),
+                  parallel.core = parallel.core))
+
+              mac.data <- data %>%
+                dplyr::filter(!is.na(GT_BIN)) %>%
+                dplyr::filter(!MARKERS %in% one.snp$MARKERS) %>%
+                dplyr::left_join(split.vec, by = "MARKERS") %>%
+                split(x = ., f = .$SPLIT_VEC) %>%
+                .radiator_parallel_mc(
+                  X = .,
+                  FUN = global_mac,
+                  mc.cores = parallel.core
+                ) %>%
+                dplyr::bind_rows(.)
+              more.snp <- split.vec <- NULL
+            } else {
+              mac.data <- global_mac(
+                x = dplyr::filter(data, !is.na(GT_BIN)) %>%
+                  dplyr::filter(!MARKERS %in% one.snp$MARKERS)
+              )
+            }
+          } else {
+            mac.data <- data %>%
+              dplyr::filter(GT != "000000") %>%
+              dplyr::filter(!MARKERS %in% one.snp$MARKERS) %>%
+              dplyr::select(MARKERS, INDIVIDUALS, GT) %>%
+              dplyr::mutate(
+                A1 = stringi::stri_sub(GT, 1, 3),
+                A2 = stringi::stri_sub(GT, 4,6)
+              ) %>%
+              dplyr::select(MARKERS, INDIVIDUALS, A1, A2) %>%
+              tidyr::gather(data = ., key = ALLELES, value = GT, -c(MARKERS, INDIVIDUALS)) %>%
+              dplyr::group_by(MARKERS, GT) %>%
+              dplyr::tally(.) %>%
+              dplyr::group_by(MARKERS) %>%
+              dplyr::filter(n == min(n)) %>%
+              dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
+              dplyr::summarise(MAC_GLOBAL = n) %>%
+              dplyr::ungroup(.) %>%
+              dplyr::select(MARKERS, MAC_GLOBAL)
+          }
+
+          wl %<>%
+            dplyr::filter(!MARKERS %in% one.snp$MARKERS) %>%
+            dplyr::left_join(mac.data, by = "MARKERS") %>%
+            dplyr::group_by(LOCUS) %>%
+            dplyr::filter(MAC_GLOBAL == max(MAC_GLOBAL)) %>%
+            dplyr::ungroup(.) %>%
+            dplyr::select(-MAC_GLOBAL) %>%
+            dplyr::distinct(LOCUS, .keep_all = TRUE) %>%
+            dplyr::bind_rows(one.snp)
+          one.snp <- mac.data <- NULL
+
+
+        } else {
+          n.markers <- nrow(wl)
+          if (!tibble::has_name(wl, "MAC_GLOBAL")) {
+            wl  %<>%
+              dplyr::bind_cols(
+                SeqArray::seqAlleleCount(
+                  gdsfile = data,
+                  ref.allele = NULL,
+                  .progress = TRUE,
+                  parallel = parallel.core) %>%
+                  unlist(.) %>%
+                  matrix(
+                    data = .,
+                    nrow = n.markers, ncol = 2, byrow = TRUE,
+                    dimnames = list(rownames = wl$MARKERS,
+                                    colnames = c("REF_COUNT", "ALT_COUNT"))) %>%
+                  tibble::as_tibble(.)) %>%
+              dplyr::mutate(
+                # MAC or MAF here it's the same
+                MAC_GLOBAL = dplyr::if_else(ALT_COUNT < REF_COUNT, ALT_COUNT, REF_COUNT),
+                ALT_COUNT = NULL, REF_COUNT = NULL
+              )
+          }
+
+          wl  %<>%
+            dplyr::group_by(LOCUS) %>%
+            dplyr::filter(MAC_GLOBAL == max(MAC_GLOBAL)) %>%
+            dplyr::ungroup(.) %>%
+            dplyr::distinct(LOCUS, .keep_all = TRUE)
+        }
+      }#End snp mac
+
+      # Whitelist and Blacklist of markers
+      readr::write_tsv(
+        x = wl, path = file.path(path.folder, "whitelist.short.ld.tsv"),
+        append = FALSE, col_names = TRUE)
+
+      bl %<>%
+        # dplyr::setdiff(wl) %>%
+        dplyr::filter(!VARIANT_ID %in% wl$VARIANT_ID) %>%
+        dplyr::mutate(FILTER = "filter.short.ld")
+
+      readr::write_tsv(
+        x = bl,
+        path = file.path(path.folder, "blacklist.short.ld.tsv"),
+        append = FALSE, col_names = TRUE)
+      if (verbose) message("File written: whitelist.short.ld.tsv")
+      if (verbose) message("File written: blacklist.short.ld.tsv")
+
+      # filtering data to minimize LD -----------------------------------------
+      if (data.type == "tbl_df") {
+        data <- dplyr::filter(data, MARKERS %in% wl$MARKERS)
+      } else {
+        markers.meta <- extract_markers_metadata(gds = data) %>%
+          dplyr::mutate(
+            FILTERS = dplyr::if_else(VARIANT_ID %in% bl$VARIANT_ID, "filter.short.ld", FILTERS
+            )
           )
 
-
-          # sync_gds(gds = data, markers = wl$VARIANT_ID)
-          #
-          # # Update GDS
-          # radiator.gds <- gdsfmt::index.gdsn(
-          #   node = data, path = "radiator", silent = TRUE)
-          #
-          # # Update metadata
-          # gdsfmt::add.gdsn(
-          #   node = radiator.gds,
-          #   name = "markers.meta",
-          #   val = wl,
-          #   replace = TRUE,
-          #   compress = "ZIP_RA",
-          #   closezip = TRUE)
-
-          # update blacklist.markers
-          if (nrow(bl) > 0) {
-            bl %<>% dplyr::select(MARKERS) %>%
-              dplyr::mutate(FILTER = "filter.short.ld")
-            bl.gds <- update_bl_markers(gds = data, update = bl)
-          }
-        }
-        # if (verbose) message("    Filtering the dataset to minimize LD by keeping only 1 SNP per locus")
-      } else {
-        if (verbose) message("\nThere is no variation in the number of SNP/locus across the data\n")
+        # updating the GDS object
+        update_radiator_gds(
+          gds = data,
+          node.name = "markers.meta",
+          value = markers.meta,
+          sync = TRUE
+        )
       }
-
-      # Note to myself:
-      # locus.stats: this stats could be written in directory or output in res
-      locus.stats <- mac.data <- NULL
-
-
-      # radiator_parameters --------------------------------------------------------
-      filters.parameters <- radiator_parameters(
-        generate = FALSE,
-        initiate = FALSE,
-        update = TRUE,
-        parameter.obj = filters.parameters,
-        data = data,
-        filter.name = "Filter short ld",
-        param.name = "filter.short.ld",
-        values = filter.short.ld,
-        path.folder = path.folder,
-        file.date = file.date,
-        verbose = verbose)
-
-
-      message("\nFilter short ld threshold: ", filter.short.ld)
-      message("Number of individuals / strata / chrom / locus / SNP:")
-      if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
-      message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-      if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
-
-
-    } #End short ld
-
-    # Long distance LD pruning ---------------------------------------------------
-    if (interactive.filter) {
-      long.ld <- interactive_question(
-        x = "\nDo you want to continue filtering using long distance ld  ? (y/n):",
-        answer.opt = c("y", "n"))
-      if (long.ld == "y") {
-        interactive.filter <- TRUE
-      } else {
-        interactive.filter <- FALSE
-        filter.long.ld <- NULL
-      }
+    } else {
+      if (verbose) message("\nThere is no variation in the number of SNP/locus across the data\n")
     }
-    if (interactive.filter || !is.null(filter.long.ld)) {
-      ref.genome <- detect_ref_genome(data = data, verbose = FALSE)
 
-      if (interactive.filter) {
-        message("\nStep 3. Long distance LD pruning selection")
+    # Note to myself:
+    # locus.stats: this stats could be written in directory or output in res
+    locus.stats <- mac.data <- bl <- wl <- short.ld.fig <- NULL
+
+
+    # radiator_parameters --------------------------------------------------------
+    filters.parameters <- radiator_parameters(
+      generate = FALSE,
+      initiate = FALSE,
+      update = TRUE,
+      parameter.obj = filters.parameters,
+      data = data,
+      filter.name = "Filter short ld",
+      param.name = "filter.short.ld",
+      values = filter.short.ld,
+      path.folder = path.folder,
+      file.date = file.date,
+      internal = internal,
+      verbose = verbose)
+
+    # results short LD -------------------------------------------------------
+    radiator_results_message(
+      rad.message = stringi::stri_join("\nFilter short ld threshold: ", filter.short.ld),
+      filters.parameters,
+      internal,
+      verbose
+    )
+
+  } #End short ld
+
+  # Long distance LD pruning ---------------------------------------------------
+  long.ld <- "y"
+  if (interactive.filter) {
+    long.ld <- radiator_question(
+      x = "\nDo you want to continue filtering using long distance ld  ? (y/n):",
+      answer.opt = c("y", "n"))
+    if (long.ld == "n") {
+      return(data)
+    }
+  }
+  if (interactive.filter || !is.null(filter.long.ld)) {
+    ref.genome <- detect_ref_genome(data = data, verbose = FALSE)
+
+    if (interactive.filter) {
+      message("\nStep 3. Long distance LD pruning selection")
+      if (!ref.genome) {
+        message("Using missingness to select SNPs in LD is still under construction with de novo data")
+        message("Basic pruning using SNPRelate is used")
+        # message("\nNote: with de novo data, using LD with missing stats can take longer to compute")
+        # message(    "e.g. with 20 000 SNPs, generating the pairwise matrix of LD can take several hours")
+        long.ld.missing <- FALSE
+      } else {
+        message("With a reference genome, pruning is done by chromosome/scaffolds")
         message("Pruning method can randomly choose to keep 1 SNP or")
         message("select the SNP based on missing data statistics")
-        if (!ref.genome) {
-          message("\nNote: with de novo data, using LD with missing stats can take longer to compute")
-          message(    "e.g. with 20 000 SNPs, generating the required stats can take up to 1h")
-        }
-        long.ld.missing <- interactive_question(
+        long.ld.missing <- radiator_question(
           x = "\nDo you want to use missing data statistics ? (y/n):",
           answer.opt = c("y", "n"))
         if (long.ld.missing == "y") {
@@ -707,77 +690,35 @@ filter_ld <- function(
         } else {
           long.ld.missing <- FALSE
         }
-
-        if (!long.ld.missing) {
-          filter.long.ld <- interactive_question(
-            x = "\nEnter the filter.long.ld threshold? (double/proportion):", minmax = c(0,1))
-        }
       }
+    }
 
 
-      if (data.type == "tbl_df") {# for long distance LD pruning
-        # Check if data is biallelic
-        biallelic <- radiator::detect_biallelic_markers(data = data)
-        if (!biallelic) rlang::abort("Long distance LD: biallelic genotypes required")
+    if (data.type == "tbl_df") {# for long distance LD pruning
+      # Check if data is biallelic
+      biallelic <- radiator::detect_biallelic_markers(data = data)
+      if (!biallelic) rlang::abort("Long distance LD: biallelic genotypes required")
 
-        # Generating SNPRelate data
-        if (verbose) message("\nPreparing the data long LD filtering...")
-        # res.ld$data.gds <- radiator::write_gds(
-        data.gds <- radiator::write_gds(
-          data = data,
-          filename = filename,
-          verbose = FALSE)
+      # Generating SNPRelate data
+      if (verbose) message("\nPreparing the data long LD filtering...")
+      # res.ld$data.gds <- radiator::write_gds(
+      data.gds <- radiator::write_gds(
+        data = data,
+        filename = filename,
+        verbose = FALSE)
 
-        markers$VARIANT_ID <- markers$MARKERS
-        data$VARIANT_ID <- data$MARKERS
+      markers$VARIANT_ID <- markers$MARKERS
+      data$VARIANT_ID <- data$MARKERS
 
-        if (keep.gds) {
-          if (verbose) message("SNPRelate GDS file generated: ", filename.gds)
-          if (verbose) message("To close the connection use SNPRelate::snpgdsClose(filename)")
-        }
-      }
+      if (verbose) message("SNPRelate GDS file generated: ", filename.gds)
+      if (verbose) message("To close the connection use SNPRelate::snpgdsClose(filename)")
+    } #End tidy data
 
-      if (is.null(filter.short.ld)) {
-        wl <- extract_markers_metadata(data)
-      }
+    wl <- extract_markers_metadata(data, whitelist = TRUE)
+    n.chrom <- length(unique(wl$CHROM))
+    #     denovo <- FALSE
 
-      n.chrom <- length(unique(wl$CHROM))
-
-      # if (n.chrom == 1) {
-      #   denovo <- TRUE
-      #   wl.bk <- wl
-      #   # wl.bk -> wl
-      #   # wl is now fake chrom...
-      #
-      #   # generate fake chromosome
-      #   if (long.ld.missing) {
-      #     # sample 100 markers 50 times
-      #     wl <- dplyr::distinct(wl, VARIANT_ID, MARKERS)
-      #
-      #     fake_chrom <- function(iterations, wl, size = 0.005) {
-      #       fake <- dplyr::sample_frac(tbl = wl, size = size) %>%
-      #         dplyr::mutate(
-      #           CHROM = iterations,
-      #           LD_SUBSAMPLE = TRUE
-      #         )
-      #     }
-      #     n.chrom <- 100L # update
-      #     wl <- purrr::map_dfr(
-      #       .x = 1:n.chrom,
-      #       .f = fake_chrom,
-      #       wl = wl,
-      #       size = 0.005)
-      #
-      #     chrom.tick <- dplyr::distinct(wl, CHROM) %>%
-      #       dplyr::mutate(
-      #         CHROM_TICK = stringi::stri_join(seq(from = 1, to = n(), by = 1), n(), sep = "/")
-      #       )
-      #     wl %<>% dplyr::left_join(chrom.tick, by = "CHROM")
-      #   }
-
-      # } else {
-      denovo <- FALSE
-
+    if (ref.genome) {
       chrom.tick <- dplyr::distinct(wl, CHROM) %>%
         dplyr::mutate(
           CHROM_TICK = stringi::stri_join(seq(from = 1, to = n(), by = 1), n(), sep = "/")
@@ -793,181 +734,381 @@ filter_ld <- function(
           LD_SUBSAMPLE = dplyr::if_else(
             CHROM %in% ld.sample, TRUE, FALSE)
         )
-      # }
+
       chrom.tick <- chrom.tick$CHROM
       n.markers <- nrow(wl)
       wl %<>%
         dplyr::arrange(CHROM, VARIANT_ID) %>%
         dplyr::mutate(CHROM = factor(x = CHROM, levels = chrom.tick, ordered = TRUE)) %>%
         dplyr::arrange(CHROM)
+    } #End ref.genome approach
 
-      # reset bl
-      bl <- wl
-      ld.sample <- NULL
+    # reset bl
+    bl <- wl
+    ld.sample <- NULL
 
-      # LONG LD with MISSING -----------------------------------------------------
-      if (long.ld.missing) {
-        if (verbose) message("\nLong distance LD pruning with missing data")
+    # LONG LD with MISSING -----------------------------------------------------
+    if (long.ld.missing) {
+      if (verbose) message("\nLong distance LD pruning with missing data")
 
-        wl.bl.ld <- ld_missing(
-          wl = wl,
-          data = data,
-          ld.threshold = if (interactive.filter) {
-            seq(0.1, 0.9, by = 0.1)
-          } else {
-            filter.long.ld
-          },
-          denovo = denovo,
-          ld.method = ld.method,
-          ld.figures = ld.figures,
-          parallel.core = parallel.core,
-          verbose = verbose,
-          path.folder = path.folder
-        )
-        # if (verbose) message("Several whitelists and blacklists were generated")
-
-        if (interactive.filter) {
-          if (verbose) message("\nStep 4. Threshold selection")
-          if (verbose) message("Look at the boxplot, a threshold of 0.2 will blacklist more markers than a threshold of 0.8")
-          if (denovo) {
-            filter.long.ld <- interactive_question(
-              x = "\nEnter the long LD threshold (filter.long.ld threshold, double/proportion):", minmax = c(0,1))
-          } else {
-            filter.long.ld <- interactive_question(
-              x = "\nEnter the final filter.long.ld threshold? (double/proportion):", minmax = c(0,1))
-          }
-        }
-
-        if (denovo) {
-          #Here the blacklist and whitelist
-
-
-
-
-
-        } else {
-          if (interactive.filter) message("\nStep 5. Filtering markers based on long distance LD")
-          wl.bl.ld <- magrittr::extract2(wl.bl.ld, as.name(filter.long.ld))
-          wl <- wl.bl.ld %$% wl
-          bl <- wl.bl.ld %$% bl
-        }
-
-        # updating the GDS object ------------------------------------------------
-        if (data.type == "tbl_df") {
-          data <- dplyr::filter(data, MARKERS %in% wl$MARKERS)
-        } else {
-          update_radiator_gds(
-            gds = data,
-            node.name = "markers.meta",
-            value = wl,
-            sync = TRUE
-          )
-
-          # update blacklist.markers
-          if (nrow(bl) > 0) {
-            bl %<>% dplyr::select(MARKERS) %>%
-              dplyr::mutate(FILTER = "filter.long.ld")
-            bl.gds <- update_bl_markers(gds = data, update = bl)
-          }
-        }
-
-      }# End long.ld.missing
-
-      # Pruning with SNPRelate::snpgdsLDpruning --------------------------------------
-      if (!long.ld.missing) {
-        # problem with this one is that missigness is unaccounted for during SNP selection
-        # SNPs are randomly selected...
-        if (verbose) message("\nLong distance LD pruning WITHOUT missing data stats")
-
-        if (ld.method == "r2") {
-          ld.m <- "r"
-        } else {
-          ld.m <- ld.method
-        }
-        wl.variant.id <- SNPRelate::snpgdsLDpruning(
-          gdsobj = data,
-          snp.id = wl$VARIANT_ID,
-          sample.id = SeqArray::seqGetData(data, "sample.id"),
-          autosome.only = FALSE,
-          remove.monosnp = TRUE,
-          maf = NaN,
-          missing.rate = NaN,
-          method = ld.m,
-          ld.threshold = filter.long.ld,
-          num.thread = 1,# no gain in speed to use more
-          verbose = FALSE)
-
-        # if (is.integer(wl.variant.id)) {
-        # wl.variant.id %<>% purrr::flatten_int(.)
-        # } else {
-        wl.variant.id %<>% purrr::flatten_chr(.)
-        # }
-
-        wl %<>% dplyr::filter(VARIANT_ID %in% wl.variant.id)
-        readr::write_tsv(
-          x = wl, path = file.path(path.folder, "whitelist.long.ld.tsv"),
-          append = FALSE, col_names = TRUE)
-        whitelist.long.ld <- wl
-        wl.variant.id <- NULL
-
-        blacklist.long.ld <- bl <- dplyr::setdiff(bl, wl)
-        readr::write_tsv(
-          x = bl,
-          path = file.path(path.folder, "blacklist.long.ld.tsv"),
-          append = FALSE, col_names = TRUE)
-        if (verbose) message("File written: whitelist.long.ld.tsv")
-        if (verbose) message("File written: blacklist.long.ld.tsv")
-
-        # updating the GDS object ------------------------------------------------
-        if (data.type == "tbl_df") {
-          data <- dplyr::filter(data, MARKERS %in% wl$MARKERS)
-        } else {
-          # updating the GDS object
-          update_radiator_gds(
-            gds = data,
-            node.name = "markers.meta",
-            value = wl,
-            sync = TRUE
-          )
-
-          # update blacklist.markers
-          if (nrow(bl) > 0) {
-            bl %<>% dplyr::select(MARKERS) %>%
-              dplyr::mutate(FILTER = "filter.long.ld")
-            bl.gds <- update_bl_markers(gds = data, update = bl)
-          }
-        }
-      }# End ld pruning with SNPRelate
-
-      # radiator_parameters --------------------------------------------------------
-      filters.parameters <- radiator_parameters(
-        generate = FALSE,
-        initiate = FALSE,
-        update = TRUE,
-        parameter.obj = filters.parameters,
+      wl.bl.ld <- ld_missing(
+        wl = wl,
         data = data,
-        filter.name = "Filter long ld",
-        param.name = paste0("filter.long.ld / long.ld.missing"),
-        values = stringi::stri_join(filter.long.ld, long.ld.missing,
-                                    collapse = " / ", ignore_null = FALSE),
+        ld.threshold = if (interactive.filter) {
+          seq(0.1, 0.9, by = 0.1)
+        } else {
+          filter.long.ld
+        },
+        denovo = denovo,
+        ld.method = ld.method,
+        ld.figures = ld.figures,
+        parallel.core = parallel.core,
+        verbose = verbose,
+        path.folder = path.folder
+      )
+      # if (verbose) message("Several whitelists and blacklists were generated")
+
+      if (interactive.filter) {
+        if (verbose) message("\nStep 4. Threshold selection")
+        if (verbose) message("Look at the boxplot, a threshold of 0.2 will blacklist more markers than a threshold of 0.8")
+          filter.long.ld <- radiator_question(
+            x = "\nEnter the long LD threshold (filter.long.ld threshold, double/proportion):", minmax = c(0,1))
+
+      }
+
+        if (interactive.filter) message("\nStep 5. Filtering markers based on long distance LD")
+        wl.bl.ld <- magrittr::extract2(wl.bl.ld, as.name(filter.long.ld))
+        wl <- wl.bl.ld %$% wl
+        bl <- wl.bl.ld %$% bl
+
+      # updating the GDS object
+      if (data.type == "tbl_df") {
+        data <- dplyr::filter(data, MARKERS %in% wl$MARKERS)
+      } else {
+        markers.meta <- extract_markers_metadata(gds = data) %>%
+          dplyr::mutate(
+            FILTERS = dplyr::if_else(VARIANT_ID %in% bl, "filter.long.ld", FILTERS
+            )
+          )
+
+        # updating the GDS object
+        update_radiator_gds(
+          gds = data,
+          node.name = "markers.meta",
+          value = markers.meta,
+          sync = TRUE
+        )
+      }
+
+    }# End long.ld.missing
+
+    # Pruning with SNPRelate::snpgdsLDpruning --------------------------------------
+    if (!long.ld.missing) {
+      # SNPs are randomly selected...
+      if (verbose) message("\nLong distance LD pruning WITHOUT missing data stats")
+
+      # if (verbose) message("")
+      if (is.null(subsample.markers.stats)) {
+        subsample.markers.stats <- 0.2
+      } else {
+        if (!is.double(subsample.markers.stats)) subsample.markers.stats <- 0.2
+      }
+
+      # Boxplot
+      bp <- ld_boxplot(
+        gds = data,
+        subsample.markers.stats = subsample.markers.stats,
+        ld.method = ld.method,
         path.folder = path.folder,
-        file.date = file.date,
-        verbose = verbose)
+        parallel.core = parallel.core,
+        verbose = verbose
+      )
+      bp <- NULL
 
-      message("\nFilter long ld threshold: ", filter.long.ld)
-      message("Number of individuals / strata / chrom / locus / SNP:")
-      if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
-      message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-      if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
+      if (interactive.filter) {
+        if (verbose) message("\nStep 4. Threshold selection")
+        if (verbose) message("Look at the boxplot, a threshold of 0.2 blacklist more markers than 0.8")
+        filter.long.ld <- radiator_question(
+          x = "\nEnter the long LD threshold (filter.long.ld threshold, double/proportion):", minmax = c(0,1))
+      }
 
+      if (ld.method == "r2") {
+        ld.m <- "r"
+        filter.long.ld <- sqrt(filter.long.ld)
+      } else {
+        ld.m <- ld.method
+      }
 
-    }#End long distance LD pruning
-  }
+      id <- extract_individuals(
+        gds = data,
+        ind.field.select = "INDIVIDUALS",
+        whitelist = TRUE) %$%
+        INDIVIDUALS
+
+      if (verbose) message("Pruning with SNPRelate...")
+      timing <- proc.time()# for timing
+      wl.variant.id <- SNPRelate::snpgdsLDpruning(
+        gdsobj = data,
+        snp.id = wl$VARIANT_ID,
+        sample.id = id,
+        autosome.only = FALSE,
+        remove.monosnp = TRUE,
+        maf = NaN,
+        missing.rate = NaN,
+        method = ld.m,
+        ld.threshold = filter.long.ld,
+        num.thread = 1L,# more not supported
+        verbose = FALSE) %>%
+        unlist(.)
+      timing <- proc.time() - timing
+      if (verbose) message("LD pruning computation time: ", round(timing[[3]]), " sec")
+
+      wl.n <- length(wl.variant.id)
+      # if (verbose) message("Number of markers whitelised: ", wl.n)
+      # summary_gds(data, check.sync = TRUE, verbose = TRUE)
+      # sync_gds(gds)
+
+      wl %<>% dplyr::filter(VARIANT_ID %in% wl.variant.id)
+      bl %<>% dplyr::setdiff(wl) %>% dplyr::mutate(FILTERS = "filter.long.ld")
+      write_rad(
+        data = wl,
+        path = path.folder,
+        filename = "whitelist.long.ld.tsv",
+        tsv = TRUE,
+        internal = FALSE,
+        verbose = verbose
+      )
+      write_rad(
+        data = bl,
+        path = path.folder,
+        filename = "blacklist.long.ld.tsv",
+        tsv = TRUE,
+        internal = FALSE,
+        verbose = verbose
+      )
+      wl.variant.id <- NULL
+
+      # updating the GDS object
+      if (data.type == "tbl_df") {
+        data <- dplyr::filter(data, MARKERS %in% wl$MARKERS)
+      } else {
+        markers.meta <- extract_markers_metadata(gds = data) %>%
+          dplyr::mutate(
+            FILTERS = dplyr::if_else(
+              VARIANT_ID %in% bl$VARIANT_ID, "filter.long.ld", FILTERS
+            )
+          )
+
+        # updating the GDS object
+        update_radiator_gds(
+          gds = data,
+          node.name = "markers.meta",
+          value = markers.meta,
+          sync = TRUE
+        )
+      }
+    }# End ld pruning with SNPRelate
+
+    # radiator_parameters --------------------------------------------------------
+    filters.parameters <- radiator_parameters(
+      generate = FALSE,
+      initiate = FALSE,
+      update = TRUE,
+      parameter.obj = filters.parameters,
+      data = data,
+      filter.name = "Filter long ld",
+      param.name = paste0("filter.long.ld / long.ld.missing"),
+      values = stringi::stri_join(filter.long.ld, long.ld.missing,
+                                  collapse = " / ", ignore_null = FALSE),
+      path.folder = path.folder,
+      file.date = file.date,
+      internal = internal,
+      verbose = verbose)
+
+    # results long LD --------------------------------------------------------
+    radiator_results_message(
+      rad.message = stringi::stri_join("\nFilter long ld threshold: ", filter.long.ld),
+      filters.parameters,
+      internal,
+      verbose
+    )
+  }#End long distance LD pruning
   return(data)
 }#End filter_ld
 
 
 # Internal nested functions: ---------------------------------------------------
+# boxplot of LD using subsampled markers ----------------------------
+#' @name ld_boxplot
+#' @title ld_boxplot
+#' @description Generate a boxplot of LD using subsampled markers.
+#' Return the matrix of LD.
+#' Write to directory the stats and boxplot.
+# @rdname ld_boxplot
+#' @export
+#' @keywords internal
+ld_boxplot <- function(
+  gds,
+  subsample.markers.stats = 0.2,
+  ld.method = "r2",
+  path.folder = NULL,
+  parallel.core = parallel::detectCores() - 2,
+  verbose = TRUE
+) {
+
+  if (is.null(path.folder)) path.folder <- getwd()
+
+  variant.id.bk <- extract_markers_metadata(
+    gds = gds,
+    markers.meta.select = "VARIANT_ID",
+    whitelist = TRUE
+  ) %$%
+    VARIANT_ID
+
+  n.snp <- length(variant.id.bk)
+  if (subsample.markers.stats != 1) {
+    subsample.markers.n <- floor(subsample.markers.stats * n.snp)
+    message("Using a subset of the markers: ", subsample.markers.n)
+    if (verbose) message("to change the default proportion: subsample.markers.stats argument")
+    variant.sub <- sample(
+      x = variant.id.bk,
+      size = min(n.snp, subsample.markers.n))
+    bp.filename <- "snp.long.ld.boxplot.subsample.pdf"
+    ld.summary.filename <- "ld.summary.stats.subsample.tsv"
+  } else {
+    variant.sub <- variant.id.bk
+    bp.filename <- "snp.long.ld.boxplot.pdf"
+    ld.summary.filename <- "ld.summary.stats.tsv"
+  }
+  n.snp.sub <- length(variant.sub)
+
+  id <- extract_individuals(
+    gds = gds,
+    ind.field.select = "INDIVIDUALS",
+    whitelist = TRUE
+  ) %$%
+    INDIVIDUALS
+
+  # R2 is handled in radiator, not SNPRelate...
+  if (ld.method == "r2") {
+    ld.m <- "r"
+  } else {
+    ld.m <- ld.method
+  }
+
+  # SNPRelate doesnt like when lower than number of markers used...
+  parallel.core.temp <- max(1L, n.snp.sub)
+  if (parallel.core <= parallel.core.temp) {
+    parallel.core.temp <- parallel.core
+  }
+
+  if (verbose) message("\nLinkage Disequilibrium (LD) estimation on genotypes")
+  timing <- proc.time()# for timing
+  ld.res <- SNPRelate::snpgdsLDMat(
+    gdsobj = gds,
+    snp.id = variant.sub,
+    sample.id = id,
+    slide = -1,
+    mat.trim = FALSE,
+    method = ld.m,
+    num.thread = parallel.core.temp,
+    with.id = TRUE,
+    verbose = FALSE) %$%
+    LD %>%
+    magrittr::set_colnames(x = ., variant.sub) %>%
+    magrittr::set_rownames(x = ., variant.sub)
+  timing <- proc.time() - timing
+  if (verbose) message("LD computation time: ", round(timing[[3]]), " sec")
+
+  # this is necessary...
+  SeqArray::seqSetFilter(
+    object = gds,
+    variant.id = variant.id.bk,
+    action = "set",
+    verbose = FALSE)
+
+  if (verbose) message("Generating statistics for boxplot")
+  # Fill with NA the diagonal and the lower triangle...
+  ld.res[lower.tri(ld.res, diag = TRUE)] <- rlang::na_dbl
+
+  # check if all missing (yep seen it...)
+  all.missing <- all(is.na(ld.res))
+  if (all.missing) {
+    message("\n\nProblem: LD matrix missing all LD")
+    return(ld.res)
+  }
+
+  # absolute values
+  ld.res <- abs(ld.res)
+
+  if (ld.method == "r2") {
+    ld.res <- ld.res^2 #r^2 used here...
+  }
+
+  # Blox plot prep
+  ld.res.bk <- ld.res # keep a bk and this is the data returned for now
+  # ld.res <- ld.res.bk
+
+  # generate a vector
+  ld.res <- as.vector(ld.res) %>% magrittr::extract(!is.na(.))
+
+  # stats
+  ld.summary <- tibble_stats(x = ld.res, group = "Long LD")
+  outlier.ld <- round(ld.summary$OUTLIERS_HIGH, 2)
+
+  # stats without outlier high
+  ld.summary %<>%
+    dplyr::bind_rows(
+      tibble_stats(
+        x = ld.res[ld.res < outlier.ld],
+        group = stringi::stri_join("minus outliers high: ", round(ld.summary$OUTLIERS_HIGH, 2))
+      )
+    )
+  ld.res <- NULL
+
+  # write the dots file
+  write_rad(
+    data = ld.summary,
+    path = path.folder,
+    filename = ld.summary.filename,
+    tsv = TRUE,
+    internal = FALSE,
+    verbose = verbose
+  )
+
+  if (ld.method == "r2") {
+    ld.title <- expression(paste("Long distance linkage disequilibrium (", r^2, ")"))
+  }
+
+  if (ld.method == "r") {
+    ld.title <- "Long distance linkage disequilibrium (r)"
+  }
+
+  if (ld.method == "dprime") {
+    ld.title <- "Long distance linkage disequilibrium (D')"
+  }
+
+  if (ld.method == "corr") {
+    ld.title <- "Long distance linkage disequilibrium (corr)"
+  }
+
+  if (ld.method == "composite") {
+    ld.title <- "Long distance linkage disequilibrium (composite)"
+  }
+
+  if (verbose) message("Generating boxplot")
+
+  ld.boxplot <- boxplot_stats(
+    data = ld.summary,
+    title = "Markers long distance linkage disequilibrium (LD)",
+    subtitle = paste0("Outlier high: ", round(ld.summary$OUTLIERS_HIGH, 2)),
+    x.axis.title = NULL,
+    y.axis.title = ld.title,
+    facet.columns = TRUE,
+    path.folder = path.folder,
+    bp.filename = bp.filename)
+  return(ld.res.bk)
+}#End ld_boxplot
 
 # melt the LD matrice into a data frame --------------------------------------
 #' @name ld2df
@@ -979,12 +1120,16 @@ filter_ld <- function(
 ld2df <- function(x) {
   x <- as.matrix(x)
   x <- dplyr::bind_cols(tibble::tibble(MARKERS_A = rownames(x)),
-                        tibble::as_data_frame(x)) %>%
+                        tibble::as_tibble(x)) %>%
     data.table::as.data.table(.) %>%
     data.table::melt.data.table(
-      data = ., id.vars = "MARKERS_A", variable.name = "MARKERS_B", value.name = "LD",
-      variable.factor = FALSE) %>%
-    tibble::as_data_frame(.) %>%
+      data = .,
+      id.vars = "MARKERS_A",
+      variable.name = "MARKERS_B",
+      value.name = "LD",
+      variable.factor = FALSE
+    ) %>%
+    tibble::as_tibble(.) %>%
     dplyr::filter(!is.na(LD)) %>%
     dplyr::arrange(dplyr::desc(LD))
   return(x)
@@ -1022,9 +1167,10 @@ ld_pruning <- function(
   if (nrow(ld.tibble) > 0) {
     markers.ld.list <- tibble::tibble(
       MARKERS = c(ld.tibble$MARKERS_A, ld.tibble$MARKERS_B)) %>%
-      dplyr::group_by(MARKERS) %>%
-      dplyr::tally(.) %>%
-      dplyr::ungroup(.) %>%
+      dplyr::count(MARKERS) %>%
+      # dplyr::group_by(MARKERS) %>%
+      # dplyr::tally(.) %>%
+      # dplyr::ungroup(.) %>%
       dplyr::arrange(dplyr::desc(n)) %>%
       dplyr::distinct(MARKERS) %>%
       purrr::flatten_chr(.)
@@ -1304,7 +1450,7 @@ ld_missing <- function(
       }
     }
 
-    # Reset the filter of the GDS-------------------------------------------
+    # Reset the filter of the GDS
     SeqArray::seqSetFilter(object = data,
                            variant.id = w.m,
                            sample.id = w.s,
@@ -1332,7 +1478,7 @@ ld_missing <- function(
       parallel.core = parallel.core,
       verbose = verbose)
 
-  # stats ------------------------------------------------------------------
+  # stats
   if (!denovo) {
     chrom.stats <- purrr::map_dfr(.x = chrom.ld, .f = "chrom.ld.stats") %>%
       dplyr::mutate(PROP_BLACKLISTED = round(NUMBER_SNP_BLACKLISTED / NUMBER_SNP, 2))
@@ -1343,7 +1489,7 @@ ld_missing <- function(
       path = file.path(path.folder, "snp.ld.chrom.stats.tsv"))
   }
 
-  # figure: distribution number of SNPs per scaffolds/chrom ----------------
+  # figure: distribution number of SNPs per scaffolds/chrom
   if (!denovo) {
     d.plot <- ggplot2::ggplot(
       data = chrom.stats,
@@ -1371,10 +1517,8 @@ ld_missing <- function(
       filename = file.path(path.folder, "snp.number.per.chromosome.pdf"),
       plot = d.plot,
       width = 30, height = 10, dpi = 300, units = "cm", useDingbats = FALSE)
-  }
 
-  # Whitelists and blacklists --------------------------------------------
-  if (!denovo) {
+    # Whitelists and blacklists
     ld_wl_bl <- function(x, wl, path.folder, verbose) {
 
       bl.ld <- purrr::map_dfr(.x = chrom.ld, .f = "blacklist.markers")
@@ -1405,7 +1549,7 @@ ld_missing <- function(
     wl.bl.ld <- ld_wl_bl(x = chrom.ld, wl = wl, path.folder = path.folder, verbose = verbose)
   }
 
-  # stats and figures-------------------------------------------------------
+  # stats and figures
   if (ld.figures) {
     fig.data <- purrr::map(.x = chrom.ld, .f = "fig.data") %>%
       purrr::flatten_dbl(.)

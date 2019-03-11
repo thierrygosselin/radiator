@@ -16,7 +16,7 @@ filter_monomorphic(data, filter.monomorphic = TRUE,
 
 \emph{How to get GDS and tidy data ?}
 Look into \code{\link{tidy_genomic_data}},
-\code{\link{write_seqarray}} or
+\code{\link{read_vcf}} or
 \code{\link{tidy_vcf}}.}
 
 \item{filter.monomorphic}{(optional, logical)
@@ -63,7 +63,7 @@ mono <- radiator::filter_monomorphic(data = "my.radiator.gds.rad", verbose = TRU
 }
 \seealso{
 \code{\link{filter_rad}},
-\code{\link{tidy_genomic_data}}, \code{\link{write_seqarray}},
+\code{\link{tidy_genomic_data}}, \code{\link{read_vcf}},
 \code{\link{tidy_vcf}}.
 }
 \author{

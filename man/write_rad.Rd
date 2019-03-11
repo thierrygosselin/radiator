@@ -69,7 +69,9 @@ radiator::write_rad(data = gds.object)
 }
 }
 \seealso{
-\href{https://github.com/fstpackage/fst}{fst} and \href{https://github.com/zhengxwen/gdsfmt}{GDS}
+\href{https://github.com/fstpackage/fst}{fst}
+\href{https://github.com/zhengxwen/gdsfmt}{GDS}
+\code{\link{read_rad}}
 }
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}

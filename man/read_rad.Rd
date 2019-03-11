@@ -2,7 +2,7 @@
 % Please edit documentation in R/read_rad.R
 \name{read_rad}
 \alias{read_rad}
-\title{Read radiator file ending .rad or .gds}
+\title{Read radiator file ending \code{.gds, .rad, .gds.rad}.}
 \usage{
 read_rad(data, columns = NULL, from = 1, to = NULL,
   as.data.table = FALSE, old.format = FALSE, allow.dup = FALSE,
@@ -49,7 +49,7 @@ A radiator tidy data frame or
 GDS object (with read/write permissions) in the global environment.
 }
 \description{
-Fast read of .rad or .gds file.
+Fast read of \code{.gds, .rad, .gds.rad} files.
 The function uses \code{\link[fst]{read_fst}} or
 CoreArray Genomic Data Structure (\href{https://github.com/zhengxwen/gdsfmt}{GDS})
 file system.
@@ -71,7 +71,9 @@ turtle <- radiator::read_rad(data = "data.turtle.rad")
 }
 }
 \seealso{
-\href{https://github.com/fstpackage/fst}{fst} and \href{https://github.com/zhengxwen/gdsfmt}{GDS}
+\href{https://github.com/fstpackage/fst}{fst}
+\href{https://github.com/zhengxwen/gdsfmt}{GDS}
+\code{\link{read_rad}}
 }
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}

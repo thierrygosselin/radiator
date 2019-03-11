@@ -24,7 +24,7 @@
 #'
 #' \emph{How to get GDS?}
 #' Look into:
-#' \code{\link{write_seqarray}} or
+#' \code{\link{read_vcf}} or
 #' \code{\link{tidy_vcf}}.
 
 
@@ -49,7 +49,7 @@
 
 #' @seealso
 #' \code{\link{filter_rad}}
-#' \code{\link{tidy_genomic_data}}, \code{\link{write_seqarray}},
+#' \code{\link{tidy_genomic_data}}, \code{\link{read_vcf}},
 #' \code{\link{tidy_vcf}}.
 
 #' @examples
@@ -95,7 +95,12 @@ filter_individuals <- function(
   # dp <- TRUE
   # subsample <- NULL
   # subsample.markers.stats <- NULL
-
+  # interactive.filter = TRUE
+  # filter.individuals.missing = NULL
+  # filter.individuals.heterozygosity = NULL
+  # filter.individuals.coverage.total = NULL
+  # parallel.core = parallel::detectCores() - 1
+  # verbose = TRUE
 
   if (interactive.filter ||
       !is.null(filter.individuals.missing) ||
@@ -190,65 +195,62 @@ filter_individuals <- function(
       data = data,
       path.folder = path.folder,
       file.date = file.date,
+      internal = internal,
       verbose = verbose)
 
     # stats  ---------------------------------------------------------------------
     filter.monomorphic <- FALSE
 
     # Step 1. Visuals ----------------------------------------------------------
-    if (interactive.filter) message("\nStep 1. Visualization of samples QC\n")
-    if (is.null(id.stats)) {
-      if (is.null(subsample)) {
-        if (
-          !is.null(filter.individuals.missing) ||
-          !is.null(filter.individuals.coverage.total) ||
-          !is.null(filter.individuals.heterozygosity)
-        ) {
-          subsample.markers.stats <- 1
-        } else {
-          if (is.null(subsample.markers.stats)) subsample.markers.stats <- 0.2
-        }
-        variant.id <- SeqArray::seqGetData(
-          gdsfile = data, var.name = "variant.id")
-        n.markers <- length(variant.id)
-        if (n.markers > 200000 && subsample.markers.stats < 1) {
-          variant.select <- sample(
-            x = variant.id,
-            size = round(subsample.markers.stats * n.markers, 0))
-        } else {
-          subsample <- NULL
-          variant.select <- NULL
-        }
-      } else {
-        variant.select <- subsample <- NULL
-      }
-
-      id.stats <- generate_id_stats(
-        gds = data,
-        subsample = variant.select,
-        depth.info = dp,
-        path.folder = path.folder,
-        file.date = file.date,
-        parallel.core = parallel.core,
-        verbose = verbose)
-      print(id.stats$fig)
+    if (interactive.filter) {
+      message("\nStep 1. Visualization of samples QC\n")
     }
+
+    # Note to myself: for now it's better not to subsample, because of filtering
+    variant.select <- subsample <- NULL
+    subsample.markers.stats <- 1
+    # if (is.null(id.stats)) {
+    #   if (is.null(subsample)) {
+    #     variant.id <- SeqArray::seqGetData(
+    #       gdsfile = data, var.name = "variant.id")
+    #     n.markers <- length(variant.id)
+    #     if (n.markers > 200000 && subsample.markers.stats < 1) {
+    #       variant.select <- sample(
+    #         x = variant.id,
+    #         size = round(subsample.markers.stats * n.markers, 0))
+    #     } else {
+    #       subsample <- NULL
+    #       variant.select <- NULL
+    #     }
+    #   } else {
+    #
+    #   }
+
+    id.stats <- generate_id_stats(
+      gds = data,
+      subsample = variant.select,
+      path.folder = path.folder,
+      file.date = file.date,
+      parallel.core = parallel.core,
+      verbose = verbose)
+    print(id.stats$fig)
+
     # Step 2. Missingness-----------------------------------------------------------------
     if (interactive.filter) {
       message("\nStep 2. Filtering markers based individual missingness/genotyping\n")
 
-      filter.individuals.missing <- interactive_question(
+      filter.individuals.missing <- radiator_question(
         x = "Do you want to blacklist samples based on missingness ? (y/n):",
         answer.opt = c("y", "n"))
 
       if (filter.individuals.missing == "y") {
-        outlier.stats <- interactive_question(
+        outlier.stats <- radiator_question(
           x = "Do you want to remove samples based on the outlier statistics or not (y/n) ?
 (n: next question will be to enter your own threshold)", answer.opt = c("y", "n"))
         if (outlier.stats == "y") {
           filter.individuals.missing <- "outliers"
         } else {
-          filter.individuals.missing <- interactive_question(
+          filter.individuals.missing <- radiator_question(
             x = "Enter the proportion threshold (0-1)
 The maximum amount of missingness you tolerate for a sample:", minmax = c(0, 1))
         }
@@ -270,21 +272,25 @@ The maximum amount of missingness you tolerate for a sample:", minmax = c(0, 1))
       bl <- id.stats$info %>%
         dplyr::filter(MISSING_PROP > filter.individuals.missing) %>%
         dplyr::ungroup(.) %>%
-        dplyr::distinct(INDIVIDUALS) %>%
+        dplyr::distinct(INDIVIDUALS, .keep_all = TRUE) %>%
         dplyr::mutate(FILTER = "filter.individuals.missing")
       n.bl <- nrow(bl)
+
+      individuals <- extract_individuals(gds = data, whitelist = FALSE) %>%
+        dplyr::mutate(
+          FILTERS = dplyr::if_else(
+            INDIVIDUALS %in% bl$INDIVIDUALS,
+            "filter.individuals.missing", FILTERS
+          )
+        )
+      update_radiator_gds(gds = data, node.name = "individuals", value = individuals, sync = TRUE)
+
       if (n.bl > 0) {
         filter.monomorphic <- TRUE
-        # if (verbose) message("    number of individuals blacklisted based on missing genotypes: ", n.bl)
         bl.filename <- stringi::stri_join("blacklist.individuals.missing_", file.date, ".tsv")
         readr::write_tsv(x = bl, path = file.path(path.folder, bl.filename))
-        bl.i <- update_bl_individuals(gds = data, update = bl)
-
-        id.stats$info  %<>%
-          dplyr::filter(!INDIVIDUALS %in% bl$INDIVIDUALS)
-
-        update_radiator_gds(gds = data, node.name = "individuals", value = id.stats$info, sync = TRUE)
       }
+
       # Filter parameter file: update
       filters.parameters <- radiator_parameters(
         generate = FALSE,
@@ -297,36 +303,39 @@ The maximum amount of missingness you tolerate for a sample:", minmax = c(0, 1))
         values = filter.individuals.missing,
         path.folder = path.folder,
         file.date = file.date,
+        internal = internal,
         verbose = verbose)
 
-      message("\nFilter individuals based on missingness: ", filter.individuals.missing)
-      message("Number of individuals / strata / chrom / locus / SNP:")
-      if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
-      message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-      if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
-
+      # results ------------------------------------------------------------------
+      radiator_results_message(
+        rad.message = stringi::stri_join("\nFilter individuals based on missingness: ",
+                                         filter.individuals.missing),
+        filters.parameters,
+        internal,
+        verbose
+      )
     }#End filter.individuals.missing
 
     # Step 3. Heterozygosity------------------------------------------------------------
     if (interactive.filter) {
       message("\nStep 3. Filtering markers based on individual heterozygosity\n")
 
-      filter.individuals.heterozygosity <- interactive_question(
+      filter.individuals.heterozygosity <- radiator_question(
         x = "Do you want to blacklist samples based on heterozygosity ? (y/n):",
         answer.opt = c("y", "n"))
 
       if (filter.individuals.heterozygosity == "y") {
-        outlier.stats <- interactive_question(
+        outlier.stats <- radiator_question(
           x = "Do you want to remove samples based on the outliers statistics or not (y/n) ?
 (n: next questions will be to enter your own thresholds)", answer.opt = c("y", "n"))
         if (outlier.stats == "y") {
           filter.individuals.heterozygosity <- "outliers"
         } else {
           filter.individuals.heterozygosity <- c(0,1)
-          filter.individuals.heterozygosity[1] <- interactive_question(
+          filter.individuals.heterozygosity[1] <- radiator_question(
             x = "Enter the min proportion threshold (0-1)
 The minimum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 1))
-          filter.individuals.heterozygosity[2] <- interactive_question(
+          filter.individuals.heterozygosity[2] <- radiator_question(
             x = "Enter the max proportion threshold (0-1)
 The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 1))
         }
@@ -356,17 +365,27 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
         dplyr::distinct(INDIVIDUALS) %>%
         dplyr::mutate(FILTER = "filter.individuals.heterozygosity")
       n.bl <- nrow(bl)
+
+      individuals <- extract_individuals(gds = data, whitelist = FALSE) %>%
+        dplyr::mutate(
+          FILTERS = dplyr::if_else(
+            INDIVIDUALS %in% bl$INDIVIDUALS,
+            "filter.individuals.heterozygosity", FILTERS
+          )
+        )
+      update_radiator_gds(gds = data, node.name = "individuals", value = individuals, sync = TRUE)
+
       if (n.bl > 0) {
         filter.monomorphic <- TRUE
 
         if (verbose) message("    number of individuals blacklisted based on heterozygosity: ", n.bl)
         bl.filename <- stringi::stri_join("blacklist.individuals.heterozygosity_", file.date, ".tsv")
         readr::write_tsv(x = bl, path = file.path(path.folder, bl.filename))
-        bl.i <- update_bl_individuals(gds = data, update = bl)
+        # bl.i <- update_bl_individuals(gds = data, update = bl)
         id.stats$info  %<>%
           dplyr::filter(!INDIVIDUALS %in% bl$INDIVIDUALS)
 
-        update_radiator_gds(gds = data, node.name = "individuals", value = id.stats$info, sync = TRUE)
+        # update_radiator_gds(gds = data, node.name = "individuals", value = id.stats$info, sync = TRUE)
       }
       # Filter parameter file: update
       filters.parameters <- radiator_parameters(
@@ -380,14 +399,16 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
         values = paste(het.low, het.high, collapse = " / "),
         path.folder = path.folder,
         file.date = file.date,
+        internal = internal,
         verbose = verbose)
 
-      message("\nFilter individuals based on heterozygosity: ", paste(het.low, het.high, collapse = " / "))
-      message("Number of individuals / strata / chrom / locus / SNP:")
-      if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
-      message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-      if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
-
+      # results ------------------------------------------------------------------
+      radiator_results_message(
+        rad.message = stringi::stri_join("\nFilter individuals based on heterozygosity: ", paste(het.low, het.high, collapse = " / ")),
+        filters.parameters,
+        internal,
+        verbose
+      )
     }#End filter.individuals.heterozygosity
 
     # Step 4. Coverage total--------------------------------------------------------------
@@ -395,22 +416,22 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
       if (interactive.filter) {
         message("\nStep 4. Filtering markers based on individual's total coverage\n")
 
-        filter.individuals.coverage.total <- interactive_question(
+        filter.individuals.coverage.total <- radiator_question(
           x = "Do you want to blacklist samples based on total coverage ? (y/n):",
           answer.opt = c("y", "n"))
 
         if (filter.individuals.coverage.total == "y") {
-          outlier.stats <- interactive_question(
+          outlier.stats <- radiator_question(
             x = "Do you want to remove samples based on the outliers statistics or not (y/n) ?
           (n: next questions will be to enter your own thresholds)", answer.opt = c("y", "n"))
           if (outlier.stats == "y") {
             filter.individuals.coverage.total <- "outliers"
           } else {
             filter.individuals.coverage.total <- c(0,10000000000000000000000)
-            filter.individuals.coverage.total[1] <- interactive_question(
+            filter.individuals.coverage.total[1] <- radiator_question(
               x = "Enter the min proportion threshold (0-1)
             The minimum amount of coverage you tolerate for a sample:", minmax = c(0, 10000000000000000000000))
-            filter.individuals.coverage.total[2] <- interactive_question(
+            filter.individuals.coverage.total[2] <- radiator_question(
               x = "Enter the max proportion threshold (0-1)
             The maximum amount of coverage you tolerate for a sample:", minmax = c(0, 10000000000000000000000))
           }
@@ -439,16 +460,26 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
           dplyr::distinct(INDIVIDUALS) %>%
           dplyr::mutate(FILTER = "filter.individuals.coverage.total")
         n.bl <- nrow(bl)
+
+        individuals <- extract_individuals(gds = data, whitelist = FALSE) %>%
+          dplyr::mutate(
+            FILTERS = dplyr::if_else(
+              INDIVIDUALS %in% bl$INDIVIDUALS,
+              "filter.individuals.coverage.total", FILTERS
+            )
+          )
+        update_radiator_gds(gds = data, node.name = "individuals", value = individuals, sync = TRUE)
+
         if (n.bl > 0) {
           filter.monomorphic <- TRUE
           if (verbose) message("    number of individuals blacklisted based on total coverage: ", n.bl)
           bl.filename <- stringi::stri_join("blacklist.individuals.coverate.total_", file.date, ".tsv")
           readr::write_tsv(x = bl, path = file.path(path.folder, bl.filename))
-          bl.i <- update_bl_individuals(gds = data, update = bl)
-          id.stats$info  %<>%
-            dplyr::filter(!INDIVIDUALS %in% bl$INDIVIDUALS)
+          # bl.i <- update_bl_individuals(gds = data, update = bl)
+          # id.stats$info  %<>%
+            # dplyr::filter(!INDIVIDUALS %in% bl$INDIVIDUALS)
 
-          update_radiator_gds(gds = data, node.name = "individuals", value = id.stats$info, sync = TRUE)
+          # update_radiator_gds(gds = data, node.name = "individuals", value = id.stats$info, sync = TRUE)
         }
         # Filter parameter file: update
         filters.parameters <- radiator_parameters(
@@ -462,14 +493,16 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
           values = paste(cov.low, cov.high, collapse = " / "),
           path.folder = path.folder,
           file.date = file.date,
+          internal = internal,
           verbose = verbose)
 
-        message("\nFilter individuals based on total coverage: ", paste(cov.low, cov.high, collapse = " / "))
-        message("Number of individuals / strata / chrom / locus / SNP:")
-        if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
-        message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-        if (verbose)message("    After: ", filters.parameters$filters.parameters$AFTER)
-
+        # results ------------------------------------------------------------------
+        radiator_results_message(
+          rad.message = stringi::stri_join("\nFilter individuals based on total coverage: ", paste(cov.low, cov.high, collapse = " / ")),
+          filters.parameters,
+          internal,
+          verbose
+        )
       }#End coverage total
     }
 
@@ -481,7 +514,7 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
       verbose = FALSE,
       parameters = filters.parameters,
       path.folder = path.folder,
-      internal = TRUE)
+      internal = FALSE)
   }#before this one
   return(data)
 }#End filter_individuals

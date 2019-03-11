@@ -25,16 +25,16 @@
 #'
 #' \emph{How to get GDS and tidy data ?}
 #' Look into \code{\link{tidy_genomic_data}},
-#' \code{\link{write_seqarray}} or
+#' \code{\link{read_vcf}} or
 #' \code{\link{tidy_vcf}}.
 #'
 #' @param filter.common.markers (optional, logical)
 #' Default: \code{filter.common.markers = TRUE}.
 #'
-#' @param plot (optional, logical) \code{plot = TRUE} will produce an
-#' \href{https://github.com/hms-dbmi/UpSetR}{UpSet plot} to visualize the number
+#' @param fig (optional, logical) \code{fig = TRUE} will produce an
+#' \href{https://github.com/hms-dbmi/UpSetR}{UpSet fig} to visualize the number
 #' of markers between populations. The package is required for this to work...
-#' Default: \code{plot = FALSE}.
+#' Default: \code{fig = FALSE}.
 
 #' @param verbose (optional, logical) \code{verbose = TRUE} to be chatty
 #' during execution.
@@ -63,23 +63,26 @@
 filter_common_markers <- function(
   data,
   filter.common.markers = TRUE,
-  plot = FALSE,
+  fig = FALSE,
   parallel.core = parallel::detectCores() - 1,
   verbose = FALSE,
   ...
 ) {
   # Test
   # filter.common.markers = TRUE
-  # plot = TRUE
+  # fig = TRUE
   # parallel.core = parallel::detectCores() - 1
   # verbose = TRUE
-  # path.folder <- NULL
-  # parameters <- NULL
+  # # path.folder <- NULL
+  # # parameters <- NULL
   # internal <- FALSE
+  # parameters = filters.parameters
+  # path.folder = wf
 
 
-
-  if (filter.common.markers) {
+  if (!filter.common.markers) {
+    return(data)
+  } else {
     if (verbose) {
       cat("################################################################################\n")
       cat("######################## radiator::filter_common_markers #######################\n")
@@ -113,8 +116,8 @@ filter_common_markers <- function(
       keepers = c("path.folder", "parameters", "internal"),
       verbose = verbose
     )
-    if (internal) plot <- FALSE
-    if (plot) {
+    if (internal) fig <- FALSE
+    if (fig) {
       if (!requireNamespace("UpSetR", quietly = TRUE)) {
         rlang::abort("UpSetR needed for this function to work
                    Install with install.packages('UpSetR')")
@@ -168,86 +171,74 @@ filter_common_markers <- function(
         data = data,
         path.folder = path.folder,
         file.date = file.date,
-        internal = FALSE,
+        internal = internal,
         verbose = verbose)
-      n.pop <- filters.parameters$info$n.pop
 
-      if (plot && n.pop == 1) {
-        message("\n\nNOTE: the plot argument requires more than 1 strata\n\n")
-        plot <- FALSE
+
+      # Filtering common markers -----------------------------------------------
+      if (verbose) message("Scanning for common markers...")
+      n.markers.before <- filters.parameters$info$n.snp
+      strata <- extract_individuals(
+        gds = data,
+        ind.field.select = c("STRATA", "INDIVIDUALS"),
+        whitelist = TRUE)
+      n.pop <- length(unique(strata$STRATA))
+
+      if (n.pop == 1) {
+        message("Only 1 strata...returning data")
+        return(data)
       }
 
-      # Filtering common markers -------------------------------------------------
-      if (verbose) message("Scanning for common markers...")
-      wl <- bl <- extract_markers_metadata(gds = data)
-      n.markers.before <- nrow(wl)
-      strata <- extract_individuals(gds = data, ind.field.select = c("STRATA", "INDIVIDUALS"))
-
-      if (plot) {
+      # plot_upset--------------------------------------------------------------
+      if (fig) {
         plot.filename <- stringi::stri_join(
           "common.markers.upsetrplot_", file.date, ".pdf")
         plot.filename <- file.path(path.folder, plot.filename)
-        plot_upset(x = data, data.type = data.type,
-                   strata = strata,
+        plot_upset(x = data,
+                   data.type = data.type,
                    plot.filename = plot.filename,
                    parallel.core = parallel.core,
-                   n.pop = n.pop, verbose = verbose)
+                   verbose = verbose)
       }
 
-
+      # while SeqArray bug is fixed, PLAN B below uses tidy data
+      markers.meta <- extract_markers_metadata(gds = data, whitelist = FALSE)
       bl <- not_common_markers(x = data, strata = strata,
                                parallel.core = parallel.core)
+
       n.markers.removed <- length(bl)
       want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS")
       if (n.markers.removed > 0) {
         n.markers.after <- n.markers.before - n.markers.removed
-        bl <- wl %>% dplyr::filter(VARIANT_ID %in% bl) %>%
-          dplyr::select(dplyr::one_of(want))
+        markers.meta %<>%
+          dplyr::mutate(
+            FILTERS = dplyr::if_else(
+              VARIANT_ID %in% bl, "filter.common.markers", FILTERS
+              )
+            )
 
         write_rad(
-          data = bl,
+          data = markers.meta %>% dplyr::filter(FILTERS == "filter.common.markers"),
           path = path.folder,
           filename = stringi::stri_join("blacklist.not.common.markers_", file.date, ".tsv"),
-          tsv = TRUE, internal = FALSE, verbose = verbose)
-
-        wl %<>% dplyr::filter(!MARKERS %in% bl$MARKERS)
-
+          tsv = TRUE, internal = internal, verbose = verbose)
 
         # Update GDS
         update_radiator_gds(
           gds = data,
           node.name = "markers.meta",
-          value = wl,
+          value = markers.meta,
           sync = TRUE
         )
-        # radiator::sync_gds(gds = data, markers = wl$VARIANT_ID, verbose = FALSE)
-        #
-        # radiator.gds <- gdsfmt::index.gdsn(
-        #   node = data, path = "radiator", silent = TRUE)
-        #
-        # # Update metadata
-        # gdsfmt::add.gdsn(
-        #   node = radiator.gds,
-        #   name = "markers.meta",
-        #   val = wl,
-        #   replace = TRUE,
-        #   compress = "ZIP_RA",
-        #   closezip = TRUE)
 
-        # update blacklist.markers
-        bl %<>% dplyr::select(MARKERS) %>%
-          dplyr::mutate(FILTER = "filter.common.markers")
-        bl.gds <- update_bl_markers(gds = data, update = bl)
-      } else {
-        bl <- wl[0,]
-        n.markers.after <- n.markers.before
       }
-      # write the whitelist even if no blacklist...
       write_rad(
-        data = wl,
+        data = markers.meta %>% dplyr::filter(FILTERS == "whitelist"),
         path = path.folder,
         filename = stringi::stri_join("whitelist.common.markers_", file.date, ".tsv"),
-        tsv = TRUE, internal = FALSE, verbose = verbose)
+        tsv = TRUE,
+        internal = internal,
+        verbose = verbose)
 
     } else {#Tidy data
       # Import data ---------------------------------------------------------------
@@ -268,24 +259,23 @@ filter_common_markers <- function(
         data = data,
         path.folder = path.folder,
         file.date = file.date,
-        internal = FALSE,
+        internal = internal,
         verbose = verbose)
 
       n.pop <- filters.parameters$info$n.pop
-      if (plot && n.pop == 1) {
+      if (fig && n.pop == 1) {
         message("\n\nNOTE: the plot argument requires more than 1 strata\n\n")
-        plot <- FALSE
+        fig <- FALSE
       }
-      if (plot) {
+      if (fig) {
         plot.filename <- stringi::stri_join(
           "common.markers.upsetrplot_", file.date, ".pdf")
         plot.filename <- file.path(path.folder, plot.filename)
         plot_upset(x = data,
                    data.type = data.type,
-                   n.pop = n.pop,
                    plot.filename = plot.filename,
-                   parallel.core = parallel.core
-        )
+                   parallel.core = parallel.core,
+                   verbose = verbose)
       }
 
       if (verbose) message("Scanning for common markers...")
@@ -314,19 +304,17 @@ filter_common_markers <- function(
           data = bl,
           path = path.folder,
           filename = stringi::stri_join("blacklist.not.common.markers_", file.date, ".tsv"),
-          tsv = TRUE, internal = FALSE, verbose = verbose)
+          tsv = TRUE, internal = internal, verbose = verbose)
 
         wl %<>% dplyr::filter(!MARKERS %in% bl$MARKERS)
         write_rad(
           data = wl,
           path = path.folder,
           filename = stringi::stri_join("whitelist.common.markers_", file.date, ".tsv"),
-          tsv = TRUE, internal = FALSE, verbose = verbose)
+          tsv = TRUE, internal = internal, verbose = verbose)
       } else {
         bl <- wl[0,]
       }
-
-
     }#End tidy
 
     # Filter parameter file: update --------------------------------------------
@@ -341,19 +329,19 @@ filter_common_markers <- function(
       values = "",
       path.folder = path.folder,
       file.date = file.date,
-      internal = FALSE,
+      internal = internal,
       verbose = verbose)
 
     # Return -----------------------------------------------------------------------
-      if (verbose) cat("################################### RESULTS ####################################\n")
-      message("\nFilter common markers:")
-      message("Number of individuals / strata / chrom / locus / SNP:")
-      if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
-      message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-      if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
-  }
-  return(data)
+    radiator_results_message(
+      rad.message = "\nFilter common markers:",
+      filters.parameters,
+      internal,
+      verbose
+    )
 
+    return(data)
+  }
 }#End filter_common_markers
 
 # Internal functions -----------------------------------------------------------
@@ -366,51 +354,75 @@ filter_common_markers <- function(
 not_common_markers <- function(
   x,
   strata,
-  parallel.core = parallel::detectCores() - 1
+  parallel.core = parallel::detectCores() - 2
 ) {
 
-  # Get the sample from radiator node or gds -----------------------------------
-  sample.bk <- gdsfmt::index.gdsn(
-    node = x, path = "radiator/individuals/INDIVIDUALS", silent = TRUE)
+  # PLAN B
+  # n.pop <- length(unique(strata$STRATA))
+  # bl <- extract_genotypes_metadata(
+  #   gds = x,
+  #   genotypes.meta.select = c("INDIVIDUALS", "VARIANT_ID", "GT_BIN")
+  # ) %>%
+  #   dplyr::filter(!is.na(GT_BIN)) %>%
+  #   join_strata(data = ., strata = strata, verbose = FALSE) %>%
+  #   dplyr::distinct(VARIANT_ID, STRATA) %>%
+  #   dplyr::count(x = ., VARIANT_ID) %>%
+  #   dplyr::filter(n != n.pop) %>%
+  #   dplyr::distinct(VARIANT_ID) %>%
+  #   dplyr::arrange(VARIANT_ID) %$% VARIANT_ID
 
-  if (!is.null(sample.bk)) {
-    sample.bk <- gdsfmt::read.gdsn(sample.bk)
-  } else {
-    sample.bk <- SeqArray::seqGetData(x, "sample.id")
-  }
+  # PLAN A using seqarray
+  # Get the sample from radiator node or gds -----------------------------------
+  # Note to myself : you could get the info below from the strata
+  sample.bk <- extract_individuals(
+    gds = x,
+    ind.field.select = "INDIVIDUALS",
+    whitelist = TRUE
+    ) %$% INDIVIDUALS
 
   not_common <- function(
-    id.select, x, parallel.core = parallel::detectCores() - 1
+    split.data = NULL,
+    x = NULL,
+    parallel.core = parallel::detectCores() - 2
   ) {
+    parallel.core.opt <- parallel_core_opt(parallel.core)
 
-    SeqArray::seqSetFilter(object = x,
-                           sample.id = id.select$INDIVIDUALS,
-                           action = "set",
-                           verbose = FALSE)
+    SeqArray::seqSetFilter(
+      object = x,
+      sample.id = split.data,
+      action = "set",
+      verbose = FALSE)
 
     bl <- SeqArray::seqGetData(
       gdsfile = x,
       var.name = "variant.id")[SeqArray::seqMissing(
-        gdsfile = x, per.variant = TRUE,
-        .progress = TRUE,
-        parallel = parallel.core
+        gdsfile = x,
+        per.variant = TRUE,
+        .progress = FALSE,
+        parallel = parallel.core.opt
       ) == 1]
     return(bl)
   }#End not_common
 
-  bl <- split(x = strata, f = strata$STRATA) %>%
+  bl <- dplyr::group_split(strata, STRATA, keep = FALSE) %>%
+    purrr::flatten(.) %>%
     purrr::map(.x = .,
                .f = not_common,
-               x = x, parallel.core = parallel.core
+               x = x,
+               parallel.core = parallel.core
     ) %>% unlist %>% unique %>% sort
 
-  # reset
-  SeqArray::seqSetFilter(object = x,
-                         sample.id = sample.bk,
-                         action = "set",
-                         verbose = FALSE)
+   # reset
+  # summary_gds(x)
+  # SeqArray::seqSetFilter(x, action = "pop", verbose = TRUE)
+  SeqArray::seqSetFilter(
+    object = x,
+    sample.id = sample.bk,
+    action = "set",
+    verbose = FALSE)
+  # summary_gds(x)
   return(bl)
-}#End missing_per_pop
+}#End not_common_markers
 
 # Generate UPSETR plot----------------------------------------------------------
 #' @title plot_upset
@@ -422,48 +434,89 @@ not_common_markers <- function(
 plot_upset <- function(
   x,
   data.type,
-  n.pop = 1L,
-  strata = NULL,
   plot.filename = NULL,
-  parallel.core = parallel::detectCores() - 1,
+  parallel.core = parallel::detectCores() - 2,
   verbose = FALSE
 ) {
+  if (verbose) message("Generating UpSet plot to visualize markers in common")
 
   if (data.type == "SeqVarGDSClass") {
-    # Get the sample from radiator node or gds -----------------------------
-    sample.bk <- gdsfmt::index.gdsn(
-      node = x, path = "radiator/individuals/INDIVIDUALS", silent = TRUE)
+    # Get the sample from radiator node or gds ---------------------------------
+    strata <- extract_individuals(
+      gds = x,
+      ind.field.select = c("STRATA", "INDIVIDUALS"),
+      whitelist = TRUE
+      )
+    n.pop = length(unique(strata$STRATA))
 
-    if (!is.null(sample.bk)) {
-      sample.bk <- gdsfmt::read.gdsn(sample.bk)
-    } else {
-      sample.bk <- SeqArray::seqGetData(x, "sample.id")
-    }
+    # PLAN B while SeqArray bug is fixed
+    # plot.data <- extract_genotypes_metadata(
+    #   gds = x,
+    #   genotypes.meta.select = c("INDIVIDUALS", "MARKERS", "GT_BIN")
+    # ) %>%
+    #   dplyr::filter(!is.na(GT_BIN)) %>%
+    #   join_strata(data = ., strata = strata, verbose = FALSE) %>%
+    #   dplyr::distinct(MARKERS, STRATA) %>%
+    #   dplyr::mutate(
+    #     n = rep(1, n()),
+    #     STRATA = stringi::stri_join("POP_", STRATA)
+    #   ) %>%
+    #   tidyr::spread(data = ., key = STRATA, value = n, fill = 0) %>%
+    #   data.frame(.)
 
+    sample.bk <- strata$INDIVIDUALS
     missing_markers_pop <- function(
-      id.select, x, parallel.core = parallel::detectCores() - 1
+      strata.split,
+      x,
+      parallel.core = parallel::detectCores() - 2
     ) {
-      SeqArray::seqSetFilter(object = x,
-                             sample.id = id.select$INDIVIDUALS,
-                             action = "set",
-                             verbose = FALSE)
-      # message("Strata: ", unique(id.select$STRATA))
+      # max.core <-length(unique(strata.split$INDIVIDUALS))
+      parallel.core.opt <- parallel_core_opt(parallel.core)
+
+      SeqArray::seqSetFilter(
+        object = x,
+        sample.id = strata.split$INDIVIDUALS,
+        action = "set",
+        verbose = FALSE)
+
+      # mis <- function(x) {
+      #   if (all(is.na(x))) {
+      #     0L
+      #   } else{
+      #     1L
+      #   }
+      # }
+      #
+      # res <- list()
+      # res <- SeqArray::seqApply(
+      #   gdsfile = x,
+      #   var.name = "$dosage_alt",
+      #   FUN = mis,
+      #   margin = "by.variant",
+      #   as.is = "integer",
+      #   parallel = parallel.core.opt)
+      # # message("done!")
+      # # message("length: ", length(res))
 
       res <- tibble::tibble(
         STRATA = SeqArray::seqMissing(
-          gdsfile = x, per.variant = TRUE,
-          .progress = TRUE,
-          parallel = parallel.core
+          gdsfile = x,
+          per.variant = TRUE,
+          .progress = FALSE,
+          parallel = parallel.core.opt
         ) %>%
           magrittr::inset(. == 1L, 9L) %>%
           magrittr::inset(. < 1L, 1L) %>%
           magrittr::inset(. == 9L, 0L)
       ) %>%
-        magrittr::set_colnames(., unique(id.select$STRATA))
+        magrittr::set_colnames(., unique(strata.split$STRATA))
+      # reset filter
+      # SeqArray::seqSetFilter(object = x, action = "pop", verbose = TRUE)
+      # message("done!")
       return(res)
     }#End not_common
 
-    plot.data <- split(x = strata, f = strata$STRATA) %>%
+    plot.data <- dplyr::group_split(.tbl = strata, STRATA) %>%
       purrr::map_dfc(
         .x = .,
         .f = missing_markers_pop,
@@ -472,13 +525,13 @@ plot_upset <- function(
       ) %>%
       data.frame(.)
 
-    # reset
-    SeqArray::seqSetFilter(object = x,
-                           sample.id = sample.bk,
-                           action = "set",
-                           verbose = FALSE)
-
+    SeqArray::seqSetFilter(
+      object = x,
+      sample.id = sample.bk,
+      action = "set",
+      verbose = FALSE)
   } else {
+    n.pop = length(unique(x$POP_ID))
     if (tibble::has_name(x, "GT_BIN")) {
       plot.data <- dplyr::filter(x, !is.na(GT_BIN))
     } else {
@@ -495,8 +548,10 @@ plot_upset <- function(
   }
 
   pdf(file = plot.filename, onefile = FALSE)
-  UpSetR::upset(plot.data, nsets = n.pop,
-                order.by = "freq", empty.intersections = NULL)
+  UpSetR::upset(
+    plot.data,
+    nsets = n.pop,
+    order.by = "freq",
+    empty.intersections = NULL)
   dev.off()
-  if (verbose) message("    UpSet plot generated to visualize markers in common")
 }#End plot_upset

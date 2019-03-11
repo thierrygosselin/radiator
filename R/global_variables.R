@@ -121,7 +121,9 @@ if (getRversion() >= "2.15.1") {
       "whitelist.markers.genotyping", "whitelist.markers.mac",
       "whitelist.markers.snp.position.read", "write.tidy", "ibs", "info",
       "vcf.stats", "keep.allele.names", "blacklist.genotypes", "gt", "gt.vcf.nuc",
-      "internal"
+      "internal", "ALT_DEPTH_MEAN", "ALT_DEPTH_TOTAL", "REF_DEPTH_MEAN",
+      "REF_DEPTH_TOTAL", "MARKERS1", "SWITCH", "TARGET_ID1", "VARIANT_ID.x",
+      "VARIANT_ID.y", "variant.id", "problem.filename"
     )
   )
 }

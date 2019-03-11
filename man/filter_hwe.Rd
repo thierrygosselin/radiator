@@ -4,12 +4,17 @@
 \alias{filter_hwe}
 \title{Filter markers based on Hardy-Weinberg Equilibrium}
 \usage{
-filter_hwe(interactive.filter = TRUE, filter.hwe = TRUE, data,
+filter_hwe(data, interactive.filter = TRUE, filter.hwe = TRUE,
   strata = NULL, hw.pop.threshold = NULL, midp.threshold = "****",
   filename = NULL, parallel.core = parallel::detectCores() - 1,
   verbose = TRUE, ...)
 }
 \arguments{
+\item{data}{A tidy data frame object in the global environment or
+a tidy data frame in wide or long format in the working directory.
+\emph{How to get a tidy data frame ?}
+Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.}
+
 \item{interactive.filter}{(optional, logical) Do you want the filtering session to
 be interactive. Figures of distribution are shown before asking for filtering
 thresholds.
@@ -17,11 +22,6 @@ Default: \code{interactive.filter = TRUE}.}
 
 \item{filter.hwe}{(optional, logical) Used inside radiator pipeline.
 Default: \code{filter.hwe = TRUE}.}
-
-\item{data}{A tidy data frame object in the global environment or
-a tidy data frame in wide or long format in the working directory.
-\emph{How to get a tidy data frame ?}
-Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.}
 
 \item{strata}{(optional)
 The strata file is a tab delimited file with a minimum of 2 columns headers:

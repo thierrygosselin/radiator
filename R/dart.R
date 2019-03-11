@@ -352,7 +352,7 @@ merge_dart <- function(
   }
 
   if (filter.common.markers) {
-    input <- radiator::filter_common_markers(data = input, plot = TRUE, verbose = TRUE) %$% input
+    input <- radiator::filter_common_markers(data = input, fig = TRUE, verbose = TRUE) %$% input
     message("\n    **** Manually save the figure ****")
   }
 
@@ -448,8 +448,8 @@ tidy_dart_metadata <- function(
   on.exit(setwd(old.dir), add = TRUE)
   on.exit(options(width = opt.change), add = TRUE)
   on.exit(timing <- proc.time() - timing, add = TRUE)
-  on.exit(message("\nComputation time: ", round(timing[[3]]), " sec"), add = TRUE)
-  on.exit(cat("############################## completed ##############################\n"), add = TRUE)
+  on.exit(if (verbose) message("\nTiming: ", round(timing[[3]]), " sec"), add = TRUE)
+  on.exit(if (verbose) cat("############################## completed ##############################\n"), add = TRUE)
 
 
   # Checking for missing and/or default arguments ------------------------------
@@ -686,19 +686,8 @@ tidy_dart_metadata <- function(
 #' \code{MARKERS, INDIVIDUALS, ERASE}. The file is produced by several radiator
 #' functions. For DArT data, \code{\link[radiator]{filter_rad}} generate the file.
 #' Defautl: \code{missing.memory = NULL}.
-#' \item write.tidy (optional, character) Options are:
-#' \itemize{
-#' \item \code{NULL}: will not generate the tidy output. e.g. only the gds is
-#' requested.
-#' \item \code{light}: columns removed:
-#' \code{CHROM, LOCUS, POS, GT_VCF, GT_VCF_NUC, GT} columns
-#' \item \code{strip}: will only keep
-#' \code{MARKERS, INDIVIDUALS, POP_ID, GT_BIN} columns.
-#' \item \code{full}: preserves all the columns
-#' }
-#' Default: \code{write.tidy = NULL}.
 #' \item \code{dart.sequence}: (optional, logical) To keep the sequence of markers in
-#' the GDS.
+#' the GDS. Theres no computational cost to keep it in the GDS...
 #' Default: \code{dart.sequence = TRUE}.
 #' \item \code{path.folder}: (optional, path) To write output in a specific folder.
 #' Default: \code{path.folder = NULL}. With defautl, the working directory is used.
@@ -749,11 +738,15 @@ tidy_dart <- function(
   # whitelist.markers = NULL
   # missing.memory <- NULL
   # dart.sequence <- TRUE
-  # write.tidy = "full"
-  # write.tidy = NULL
   # path.folder = NULL
   # radiator.pipeline = NULL
   # internal <- FALSE
+
+  if (verbose) {
+    cat("################################################################################\n")
+    cat("############################## radiator::tidy_dart #############################\n")
+    cat("################################################################################\n")
+  }
 
   # Cleanup-------------------------------------------------------------------
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
@@ -766,35 +759,44 @@ tidy_dart <- function(
   on.exit(setwd(old.dir), add = TRUE)
   on.exit(options(width = opt.change), add = TRUE)
   on.exit(timing <- proc.time() - timing, add = TRUE)
-  on.exit(if (verbose) message("\nComputation time, overall: ", round(timing[[3]]), " sec"), add = TRUE)
+  on.exit(message("\nDArT conversion timing: ", round(timing[[3]]), " sec"), add = TRUE)
   on.exit(if (verbose) cat("############################## completed tidy_dart #############################\n"), add = TRUE)
 
-  if (verbose) {
-    cat("################################################################################\n")
-    cat("############################## radiator::tidy_dart #############################\n")
-    cat("################################################################################\n")
-  }
   # Function call and dotslist -------------------------------------------------
   rad.dots <- radiator_dots(
     func.name = as.list(sys.call())[[1]],
     fd = rlang::fn_fmls_names(),
     args.list = as.list(environment()),
     dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
-    keepers = c("whitelist.markers", "missing.memory", "dart.sequence", "write.tidy",
-                "path.folder", "internal"),
+    keepers = c("whitelist.markers", "missing.memory", "dart.sequence",
+                "path.folder", "internal", "pop.levels",
+                "gt", "gt.bin", "gt.vcf", "gt.vcf.nuc",
+                "tidy.dart", "tidy.check"
+    ),
     verbose = verbose
   )
+  if (is.null(tidy.dart)) tidy.dart <- TRUE
+  if (is.null(tidy.check)) tidy.check <- TRUE
 
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("data is missing")
 
-   # Folders---------------------------------------------------------------------
-  path.folder <- generate_folder(
+  # Folders---------------------------------------------------------------------
+  wf <- path.folder <- generate_folder(
     f = path.folder,
     rad.folder = "tidy_dart",
+    prefix_int = FALSE,
     internal = internal,
     file.date = file.date,
     verbose = verbose)
+
+  # radiator.folder <- generate_folder(
+  #   f = path.folder,
+  #   rad.folder = "import_dart",
+  #   prefix_int = TRUE,
+  #   internal = FALSE,
+  #   file.date = file.date,
+  #   verbose = verbose)
 
   # write the dots file
   write_rad(
@@ -843,297 +845,66 @@ tidy_dart <- function(
     date = TRUE,
     extension = "tsv")
 
-  # Check that DArT file as good target id written -----------------------------
-  target.id <- extract_dart_target_id(data, write = FALSE)
-  n.ind.dart <- nrow(target.id)
-  if (verbose) message("Number of individuals in DArT file: ", n.ind.dart)
-  if (nrow(target.id) != length(unique(target.id$TARGET_ID))) {
-    rlang::abort("\nnon unique target id are used in the DArT file...
-                 What you want are different target ids at the end of the row that contains AlleleID, AlleleSequence, etc
-                 Edit manually before trying again
-                 If you're still encountering problem, email author for help")
-  }
-
-  # Check DArT format file -----------------------------------------------------
-  dart.check <- check_dart(data)
-  if (!dart.check$data.type %in% c("dart", "silico.dart")) {
-    rlang::abort("\nContact author to show your DArT data, problems during import")
-  } else {
-    skip.number <- dart.check$skip.number
-  }
-  if (verbose) message("Importing DArT data")
-  dart.check <- NULL
-
-  # Strata file ------------------------------------------------------------------
-  if (verbose) message("\nMaking DArT data population-wise...")
-  strata.df <- radiator::read_strata(
-    strata = strata,
-    pop.levels = NULL, pop.labels = NULL,
-    pop.select = NULL, blacklist.id = NULL,
-    keep.two = FALSE, verbose = verbose)
-  pop.levels <- strata.df$pop.levels
-  pop.labels <- strata.df$pop.labels
-  pop.select <- strata.df$pop.select
-  blacklist.id <- strata.df$blacklist.id
-  strata.df <- strata.df$strata
-  n.ind.strata <- nrow(strata.df)
-
-  # Check that TARGET_ID in strata match TARGET_ID in the DArT file ------------
-  if (n.ind.dart != n.ind.strata) {
-    strata.id.check <- strata.df %>%
-      dplyr::mutate(IN_DART = stringi::stri_trans_toupper(strata.df$TARGET_ID)
-                    %in% stringi::stri_trans_toupper(target.id$TARGET_ID))
-    strata.id.pass <- !FALSE %in% (unique(strata.id.check$IN_DART))
-    if (!strata.id.pass) {
-      readr::write_tsv(
-        x = strata.id.check,
-        path = problem.filename$filename)
-      rlang::abort("\nSome of the samples in the strata are not found in the DArT file.
-                   For more info: ", problem.filename$filename.short)
-    }
-    message("Using individuals in strata file to filter individuals in DArT file")
-    message("\nNote: Careful if using DArT statistics generated for all samples...\n")
-    strata.id.check <- NULL
-  } else {
-    if (!identical(sort(target.id$TARGET_ID), sort(strata.df$TARGET_ID))) {
-      rlang::abort("\nThe DArT and strata files don't have the same TARGET_IDs")
-    }
-  }
-  target.id <- NULL
-
-  # need to check for duplicate names... yes happening all the time
-  duplicate.id.strata <- length(strata.df$INDIVIDUALS) - length(unique(strata.df$INDIVIDUALS))
-
-  if (duplicate.id.strata > 0) {
-    message("Duplicated individuals names found in the strata.\n   number of duplicate names = ", duplicate.id.strata, "\n")
-    rlang::abort("\nFix the strata with unique names and\nverify the DArT file for the same issue, adjust accordingly...")
-  }
+  # initialization ------
+  dummy1 <- data.frame(
+    ERASE = character(0),
+    GT_BIN = integer(0),
+    GT = character(0),
+    GT_VCF = character(0),
+    GT_VCF_NUC = character(0),
+    READ_DEPTH = integer(0),
+    ALLELE_REF_DEPTH = integer(0),
+    ALLELE_ALT_DEPTH = integer(0)
+  )
 
   # Import data ---------------------------------------------------------------
-  message("Reading DArT file...")
-  if (stringi::stri_detect_fixed(
-    str = stringi::stri_sub(str = data, from = -4, to = -1),
-    pattern = ".csv")) {
-    csv <- TRUE
-  } else {
-    csv <- FALSE
-  }
-
-  if (csv) {
-    dart.col.type <- readr::read_csv(
-      file = data,
-      skip = skip.number, n_max = 1,
-      na = "-",
-      col_names = FALSE,
-      col_types = readr::cols(.default = readr::col_character()))
-  } else {
-    dart.col.type <- readr::read_tsv(
-      file = data,
-      skip = skip.number, n_max = 1,
-      na = "-",
-      col_names = FALSE,
-      col_types = readr::cols(.default = readr::col_character()))
-  }
-  dart.sequence <- TRUE
-  if (dart.sequence) {
-    info <- c("ALLELEID", "SNP", "SNPPOSITION", "CALLRATE",
-              "AVGCOUNTREF", "AVGCOUNTSNP", "REPAVG", "CLONEID", "AVGREADDEPTH",
-              "REPRODUCIBILITY", "CLUSTERCONSENSUSSEQUENCE")
-    info.type <- c("c", "c", "i", "d", "d", "d", "d", "c", "d", "d", "c")
-
-  } else {
-    info <- c("ALLELEID", "SNP", "SNPPOSITION", "CALLRATE",
-              "AVGCOUNTREF", "AVGCOUNTSNP", "REPAVG", "CLONEID", "AVGREADDEPTH",
-              "REPRODUCIBILITY")
-    info.type <- c("c", "c", "i", "d", "d", "d", "d", "c", "d", "d")
-  }
-  want <- tibble::tibble(INFO = info, COL_TYPE = info.type) %>%
-    dplyr::bind_rows(
-      dplyr::select(strata.df, INFO = TARGET_ID) %>%
-        dplyr::mutate(
-          COL_TYPE = rep("c", n()),
-          INFO = stringi::stri_trans_toupper(INFO)))
-
-  dart.col.type <- dart.col.type %>%
-    tidyr::gather(data = .,key = DELETE, value = INFO) %>%
-    dplyr::select(-DELETE) %>%
-    dplyr::mutate(
-      INFO = stringi::stri_trans_toupper(INFO),
-      INFO = stringi::stri_replace_all_fixed(
-        str = INFO, pattern = c(" ", "_"),
-        replacement = c("", "-"), vectorize_all = FALSE)
-    ) %>%
-    dplyr::left_join(want, by = "INFO") %>%
-    dplyr::mutate(COL_TYPE = stringi::stri_replace_na(str = COL_TYPE, replacement = "_")) %>%
-    dplyr::select(COL_TYPE) %>%
-    purrr::flatten_chr(.) %>% stringi::stri_join(collapse = "")
-  want <- NULL
-
-  if (csv) {
-    input <- suppressMessages(suppressWarnings(
-      readr::read_csv(
-        file = data,
-        skip = skip.number,
-        na = c("-", " ", "", "NA"),
-        col_names = TRUE,
-        col_types = dart.col.type)
-    ))
-  } else {
-    input <- suppressMessages(suppressWarnings(
-      readr::read_tsv(
-        file = data,
-        skip = skip.number,
-        na = c("-", " ", "", "NA"),
-        col_names = TRUE,
-        col_types = dart.col.type)
-    ))
-  }
-  dart.col.type <- NULL
-  colnames(input) <- stringi::stri_trans_toupper(colnames(input))
-  colnames(input) = stringi::stri_replace_all_fixed(
-    str = colnames(input), pattern = c(" ", "_"), replacement = c("", "-"), vectorize_all = FALSE)
-  colnames(input) <- stringi::stri_replace_all_fixed(
-    str = colnames(input),
-    pattern = c("AVGCOUNTREF", "AVGCOUNTSNP", "REPAVG", "ALLELEID",
-                "SNPPOSITION", "CALLRATE", "REPRODUCIBILITY", "AVGREADDEPTH",
-                "CLUSTERCONSENSUSSEQUENCE"),
-    replacement = c("AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG", "LOCUS",
-                    "POS", "CALL_RATE", "REP_AVG", "AVG_READ_DEPTH",
-                    "SEQUENCE"),
-    vectorize_all = FALSE)
-
-  if (!rlang::has_name(input, "LOCUS") && rlang::has_name(input, "CLONEID")) {
-    colnames(input) <- stringi::stri_replace_all_fixed(
-      str = colnames(input),
-      pattern = "CLONEID",
-      replacement = "LOCUS",
-      vectorize_all = FALSE)
-  }
-
-  if (rlang::has_name(input, "LOCUS") && rlang::has_name(input, "CLONEID")) {
-    input <- dplyr::select(input, -CLONEID)
-  }
-
-  if (!rlang::has_name(input, "LOCUS")) rlang::abort("\nProblem tidying DArT dataset: contact author")
-
-  # necessary steps...observed with DArT file using ref genome -----------------
-  input %<>% dplyr::filter(!is.na(LOCUS))
-  if (rlang::has_name(input, "POS")) {
-    input %<>% dplyr::arrange(LOCUS, POS)
-  } else {
-    input %<>% dplyr::arrange(LOCUS)
-  }
-
-  # Check for duplicate rows (sometimes people combine DArT data...)----------
-  input.dup <- nrow(dplyr::distinct(input, LOCUS, SNP, POS, CALL_RATE, .keep_all = FALSE))
-
-  # make sure no duplicates
-  if (nrow(input) != input.dup) {
-    message("Duplicate rows were identified")
-    message("    using distinct rows")
-    message("    check input data if downstream problems")
-    input %<>% dplyr::distinct(LOCUS, SNP, POS, CALL_RATE, .keep_all = TRUE)
-  }
-  input.dup <- NULL
-
-  # Screen for duplicate names -------------------------------------------------
-  if (dart.sequence) {
-    remove.list <- c("LOCUS", "SNP", "POS", "CALL_RATE", "AVG_COUNT_REF",
-                     "AVG_COUNT_SNP", "REP_AVG", "SEQUENCE")
-  } else {
-    remove.list <- c("LOCUS", "SNP", "POS", "CALL_RATE", "AVG_COUNT_REF",
-                     "AVG_COUNT_SNP", "REP_AVG")
-  }
-  individuals.df <- tibble::tibble(
-    INDIVIDUALS = purrr::discard(.x = colnames(input),
-                                 .p = colnames(input) %in% remove.list))
-  duplicate.individuals <- length(individuals.df$INDIVIDUALS) - length(unique(individuals.df$INDIVIDUALS))
-  if (duplicate.individuals > 0) {
-    rlang::abort(stringi::stri_join("\nDuplicated individuals names found in the data set.\nNumber of duplicate names = ", duplicate.individuals))
-  }
-  # removing unused object
-  remove.list <- individuals.df <- duplicate.individuals <- NULL
+  input <- read_dart(
+    data = data,
+    strata = strata,
+    pop.levels = pop.levels,
+    verbose = verbose
+  )
+  strata <- input$strata
+  dart.format <- input$dart.format
+  input <- input$input
 
   # Tidying data ---------------------------------------------------------------
-  if (dart.sequence) {
-    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "CALL_RATE",
-              "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG", "SEQUENCE")
-  } else {
-    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "CALL_RATE",
-              "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")
-  }
-
-  input <- suppressWarnings(
-    input %>%
-      tidyr::separate(col = LOCUS, into = c("LOCUS", "NOT_USEFUL"), sep = "\\|", extra = "drop") %>%
-      dplyr::select(-NOT_USEFUL) %>%
-      tidyr::separate(col = SNP, into = c("NOT_USEFUL", "KEEPER"), sep = ":", extra = "drop") %>%
-      dplyr::select(-NOT_USEFUL) %>%
-      tidyr::separate(col = KEEPER, into = c("REF", "ALT"), sep = ">") %>%
-      dplyr::mutate(
-        CHROM = rep("CHROM_1", n()),
-        MARKERS = stringi::stri_join(CHROM, LOCUS, POS, sep = "__")) %>%
-      dplyr::select(dplyr::one_of(want), dplyr::everything()) %>%
-      dplyr::mutate_at(.tbl = ., .vars = c("MARKERS", "CHROM", "LOCUS", "POS"), .funs = as.character)
-  ) %>%
-    dplyr::arrange(CHROM, LOCUS, POS, REF)
-
   # Whitelist ------------------------------------------------------------------
   if (!is.null(whitelist.markers)) {
-    input <- filter_whitelist(
-      data = input, whitelist.markers = whitelist.markers)
+    input %<>% filter_whitelist(data = ., whitelist.markers = whitelist.markers)
+  }
+  # STRATEGY tidy dart  ---------------------------------------------------------
+  # Depending on the number of markers ...
+  # All this can be overwritten in ... argument
+  # gt.bin is the dosage of ALT allele: 0, 1, 2 NA
+
+  n.markers <- length(unique(input$MARKERS))
+  gt.bin <- TRUE
+
+  # gt.vcf is genotype coding in the VCF: 0/0, 0/1, 1/1, ./.
+  if (is.null(gt.vcf)) {
+    if (n.markers < 5000) gt.vcf <- TRUE
+    if (n.markers >= 5000 && n.markers < 30000) gt.vcf <- TRUE
+    if (n.markers >= 30000) gt.vcf <- FALSE
+  }
+  # gt.vcf.nuc is genotype coding in the VCF but with nucleotides: A/C, ./.
+  if (is.null(gt.vcf.nuc)) {
+    if (n.markers < 5000) gt.vcf.nuc <- TRUE
+    if (n.markers >= 5000 && n.markers < 30000) gt.vcf.nuc <- FALSE
+    if (n.markers >= 30000) gt.vcf.nuc <- FALSE
+  }
+  # gt is genotype coding a la genepop: 001002, 000000
+  if (is.null(gt)) {
+    if (n.markers < 5000) gt <- TRUE
+    if (n.markers >= 5000 && n.markers < 30000) gt <- FALSE
+    if (n.markers >= 30000) gt <- FALSE
   }
 
-  # if (!is.null(whitelist.markers)) {
-  #   if (is.vector(whitelist.markers)) {
-  #     whitelist.markers <- readr::read_tsv(
-  #       file = whitelist.markers,
-  #       col_names = TRUE,
-  #       col_types = readr::cols(.default = readr::col_character()))
-  #   }
-  #   columns.names.whitelist <- colnames(whitelist.markers)
-  #   nrow.before <- nrow(whitelist.markers)
-  #   whitelist.markers <- dplyr::distinct(whitelist.markers)
-  #   nrow.after <- nrow(whitelist.markers)
-  #   duplicate.whitelist.markers <- nrow.before - nrow.after
-  #   if (duplicate.whitelist.markers > 0) {
-  #     message("Whitelist of markers with ", duplicate.whitelist.markers, " duplicated identifiers...")
-  #     message("    Creating unique whitelist")
-  #     message("    Warning: downstream results might be impacted by this, check how you made your VCF file...")
-  #   }
-  #   nrow.before <- duplicate.whitelist.markers <- NULL
-  #
-  #   whitelist.markers <- dplyr::mutate_all(
-  #     .tbl = whitelist.markers, .funs = clean_markers_names)
-  #
-  #   if (verbose) message("Filtering with whitelist of markers")
-  #   if (verbose) message("    Whitelisted markers: ", nrow.after)
-  #   nrow.after <- NULL
-  #   input <- suppressWarnings(
-  #     dplyr::semi_join(input, whitelist.markers, by = columns.names.whitelist)
-  #   )
-  # }#End filtering DArT with whitelist of markers
-
-  # DArT characteristics--------------------------------------------------------
-  # Determine the type of DArT file: 1 or 2-row format (binary)
-  binary <- anyNA(input$REF)
-
-  if (verbose)  message("DArT characteristics:")
-
   # 1-row format----------------------------------------------------------------
-  if (!binary) {
-    if (verbose) message("DArT mapping SNP 1 Row format...")
-
-    # input <- dplyr::filter(input, !is.na(MARKERS))
-    if (dart.sequence) {
-      want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT",
-                "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG",
-                "SEQUENCE")
-    } else {
-      want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT",
-                "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")
-    }
-
+  if (dart.format == "1row") {
+    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT",
+              "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG",
+              "SEQUENCE")
     input <- suppressWarnings(
       data.table::as.data.table(input) %>%
         data.table::melt.data.table(
@@ -1186,149 +957,160 @@ tidy_dart <- function(
     )
   }#End 1 row format DArT file
 
-  # Binary dart 2-row format----------------------------------------------------
-  if (binary) {
-    if (verbose) message("DArT SNP 2 Rows format")
+  # Binary dart counts and 2-rows format-----------------------------------------
+  if (dart.format != "1row") {
+    # Markers meta
+    want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS", "COL",
+              "REF", "ALT", "SEQUENCE",
+              "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")
+    markers.meta <- suppressWarnings(
+      dplyr::ungroup(input) %>%
+        dplyr::select(dplyr::one_of(want)) %>%
+        dplyr::filter(!is.na(REF) | !is.na(ALT)) %>%
+        dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
+        dplyr::arrange(MARKERS) %>%
+        dplyr::select(-AVG_COUNT_REF, -AVG_COUNT_SNP) %>%
+        dplyr::mutate(FILTERS = "whitelist") %>%
+        dplyr::select(FILTERS, VARIANT_ID, MARKERS, CHROM, LOCUS, POS, COL, REF, ALT, dplyr::everything(.))
+    )
+    write_rad(
+      data = markers.meta,
+      path = meta.filename$filename,
+      filename = meta.filename$filename.short,
+      write.message = "standard",
+      verbose = verbose
+    )
+    # if (verbose) message("File written: ", meta.filename$)
 
-    # keep one marker and check if genotypes are count data
-    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "CALL_RATE",
-              "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG", "SEQUENCE")
-    count.data <- 0 #required to start the while loop
-    while (count.data == 0) {
-      count.data <- suppressWarnings(dplyr::select(
-        input, -dplyr::one_of(want)) %>%
-          dplyr::sample_n(tbl = ., size = 3) %>%
-          purrr::flatten_chr(.) %>%
-          as.integer %>%
-          unique %>%
-          sum(na.rm = TRUE))
-    }
-    count.data <- count.data > 3
-    n.markers <- length(unique(input$MARKERS))
-    n.individuals <- length(colnames(input)) - 10
+    notwanted <- c("FILTERS", "CHROM", "LOCUS", "POS", "COL", "CALL_RATE", "AVG_COUNT_REF",
+                   "AVG_COUNT_SNP", "REP_AVG", "SEQUENCE")
+    suppressWarnings(
+      input %<>%
+        dplyr::select(-dplyr::one_of(notwanted)) %>%
+        dplyr::arrange(MARKERS, REF))
 
-    if (count.data) {#count data
-      if (verbose) message("DArT alleles counts (coverage/read depth) detected")
-      # Markers meta
-      markers.meta <- suppressWarnings(
-        dplyr::ungroup(input) %>%
-          dplyr::select(dplyr::one_of(want)) %>%
-          dplyr::filter(!is.na(REF) | !is.na(ALT)) %>%
-          dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-          dplyr::arrange(MARKERS) %>%
-          dplyr::select(-AVG_COUNT_REF, -AVG_COUNT_SNP) %>%
-          radiator::write_rad(
-            data = ., path = meta.filename$filename))
-      if (verbose) message("File written: ", meta.filename$filename.short)
-
-      notwanted <- c("CHROM", "LOCUS", "POS", "CALL_RATE", "AVG_COUNT_REF",
-                     "AVG_COUNT_SNP", "REP_AVG", "SEQUENCE")
-      input <- suppressWarnings(
-        input %>%
-          dplyr::select(-dplyr::one_of(notwanted)) %>%
-          dplyr::arrange(MARKERS, REF))
-
-      if (verbose) message("Generating genotypes...")
-      #GDS ---------------------------------------------------------------------
-      data.gds <- dart2gds(
-        data = input,
-        strata = strata.df,
-        markers.meta = markers.meta,
-        filename = filename.gds$filename,
-        dart.format = "counts",
-        verbose = verbose)
-      # radiator::write_rad(data = data.gds)
-      strata <- strata.df
-      if (is.null(write.tidy)) input <- data.gds
-
-      if (!is.null(write.tidy)) {
-        input <- input %>%
-          dplyr::left_join(
-            dplyr::distinct(input, MARKERS) %>%
-              dplyr::mutate(SPLIT_VEC = split_vec_row(., 10, parallel.core = parallel.core))
-            , by = "MARKERS") %>%
-          split(x = ., f = .$SPLIT_VEC)
-        input <- suppressWarnings(
-          .radiator_parallel_mc(
-            X = input,
-            FUN = dart2gt,
-            mc.preschedule = FALSE,
-            mc.cores = parallel.core,
-            mc.cleanup = FALSE,
-            dart.format = "counts",
-            write.tidy = write.tidy
-          ) %>%
-            dplyr::bind_rows(.) %>%
-            dplyr::left_join(radiator::read_rad(meta.filename$filename), by = "MARKERS"))
-      }
-    } else {#Genotypes coded 0, 1, 2
-      # Markers meta
-      markers.meta <- suppressWarnings(
-        dplyr::ungroup(input) %>%
-          dplyr::select(dplyr::one_of(want)) %>%
-          dplyr::filter(!is.na(REF) | !is.na(ALT)) %>%
-          dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-          dplyr::arrange(MARKERS) %>%
-          radiator::write_rad(
-            data = ., path = meta.filename$filename))
-      if (verbose) message("File written: ", meta.filename$filename.short)
-
-      notwanted <- c("CHROM", "LOCUS", "POS", "CALL_RATE", "AVG_COUNT_REF",
-                     "AVG_COUNT_SNP", "REP_AVG", "SEQUENCE")
-      suppressWarnings(
-        input %<>%
-          dplyr::select(-dplyr::one_of(notwanted)) %>%
-          dplyr::arrange(MARKERS, REF)
-      )
-
-      if (verbose) message("Generating genotypes...")
-      #GDS ---------------------------------------------------------------------
-      data.gds <- dart2gds(
-        data = input,
-        strata = strata.df,
-        markers.meta = markers.meta,
-        filename = filename.gds$filename,
-        dart.format = "2rows",
-        verbose = verbose) #%>% read_rad(data = .)
-      # radiator::write_rad(data = data.gds)
-      strata <- strata.df
-      if (is.null(write.tidy)) input <- data.gds
-
-      if (!is.null(write.tidy)) {
-        input <-
-          dplyr::left_join(
-            input,
-            dplyr::distinct(input, MARKERS) %>%
-              dplyr::mutate(SPLIT_VEC = split_vec_row(., 4, parallel.core = parallel.core))
-            , by = "MARKERS") %>%
-          split(x = ., f = .$SPLIT_VEC)
-
-        input <- suppressWarnings(
-          .radiator_parallel_mc(
-            X = input,
-            FUN = dart2gt,
-            mc.preschedule = FALSE,
-            mc.cores = parallel.core,
-            mc.cleanup = FALSE,
-            dart.format = "2rows",
-            write.tidy = write.tidy
-          ) %>%
-            dplyr::bind_rows(.) %>%
-            dplyr::left_join(radiator::read_rad(meta.filename$filename), by = "MARKERS"))
-      }
-    }
+    #GDS -----------------------------------------------------------------------
+    input <- dart2gds(
+      data = input,
+      strata = strata,
+      markers.meta = markers.meta,
+      filename = filename.gds$filename,
+      dart.format = dart.format,
+      gt.vcf = gt.vcf,
+      gt.vcf.nuc = gt.vcf.nuc,
+      gt = gt,
+      parallel.core = parallel.core,
+      verbose = verbose
+    )
   }#End binary
 
-  if (!is.null(write.tidy)) {
-    # Strata file to include populations ----------------------------------------
-    # To make sure target ids match
-    input %<>% dplyr::left_join(strata.df, by = "TARGET_ID") %>%
-      dplyr::select(-TARGET_ID)
-    strata.df <- NULL
+  # Tidy data -----------------------------------------------------------------
+  n.chrom <- length(unique(markers.meta$CHROM))
+  n.locus <- length(unique(markers.meta$LOCUS))
+  n.snp <- length(unique(markers.meta$MARKERS))
 
-    if (rlang::has_name(input, "STRATA")) {
-      input %<>% dplyr::rename(POP_ID = STRATA)
+
+  # message("Closing the GDS connection")
+  # SeqArray::seqClose(object = data.gds)
+
+  # Tidy check ---------------------------------------------------------------
+  if (tidy.dart && tidy.check && n.markers > 20000) {
+    cat("\n\n################################## IMPORTANT ###################################\n")
+    message("Tidying DArT data with ", n.markers, " SNPs is not optimal:")
+    message("    1. a computer with lots of RAM is required")
+    message("    2. it's very slow to generate")
+    message("    3. it's very slow to run codes after")
+    message("    4. for most non model species this number of markers is not realistic...")
+    message("\nRecommendation:")
+    message("    1. stop here and just use the GDS")
+    message("    2. filter your dataset. e.g. with filter_rad")
+    message("\nIdeally target a maximum of ~ 10 000 - 20 0000 unlinked SNPs\n")
+
+    if (n.markers > 20000) tidy.dart <- FALSE
+    tidy.dart <- radiator_question(
+      x = "\nContinue tidying the DArT data (y/n) ?",
+      answer.opt = c("Y", "N", "Yes", "No", "YES", "NO", "yes", "no", "y", "n"))
+    if (any(c("y", "Y", "Yes", "YES", "yes") %in% tidy.dart)) {
+      tidy.dart <- TRUE
+      message("Tidying the large DArT file...")
+    } else {
+      message("\nKeeping only the GDS object/file")
+      tidy.dart <- FALSE
     }
+  }
+
+  # Print genotypes tidying
+  if (verbose) {
+    message("\nGenotypes formats generated with ", n.markers, " SNPs: ")
+    message("    GT_BIN (the dosage of ALT allele: 0, 1, 2 NA): ", gt.bin)
+    message("    GT_VCF (the genotype coding VCFs: 0/0, 0/1, 1/1, ./.): ", gt.vcf)
+    message("    GT_VCF_NUC (the genotype coding in VCFs, but with nucleotides: A/C, ./.): ", gt.vcf.nuc)
+    message("    GT (the genotype coding 'a la genepop': 001002, 001001, 000000): ", gt)
+  }
+
+  if (tidy.dart) {
+    notwanted <- c("REF", "ALT")
+    tidy.data <- markers.meta %>%
+      dplyr::left_join(
+        extract_genotypes_metadata(gds = input, whitelist = TRUE) %>%
+          dplyr::select(-dplyr::one_of(notwanted))
+        , by = "MARKERS"
+      )
+
+    # Check that merging was successful
+    if (!identical(tidy.data$VARIANT_ID.x, tidy.data$VARIANT_ID.y)) {
+      rlang::abort("Tidying problem: raise an issue on GitHub...")
+    } else {
+      tidy.data %<>%
+        dplyr::select(-VARIANT_ID.y) %>%
+        dplyr::rename(VARIANT_ID = VARIANT_ID.x)
+    }
+
+    # Calibration of ref/alt alleles ------------------------------------------
+    # # write REF/ALT dictionary
+    #
+    # if (ref.calibration) {
+    #   tidy.data <- radiator::calibrate_alleles(
+    #     data = tidy.data,
+    #     biallelic = TRUE,
+    #     parallel.core = parallel.core,
+    #     verbose = verbose,
+    #     gt.vcf.nuc = gt.vcf.nuc,
+    #     gt = gt,
+    #     gt.vcf = gt.vcf,
+    #     gt.bin = gt.bin
+    #   ) %$% input
+    #   if (rlang::has_name(tidy.data, "POLYMORPHIC")) tidy.data %<>% dplyr::select(-POLYMORPHIC)
+    # }
+
+    dplyr::distinct(tidy.data, MARKERS, CHROM, LOCUS, POS, REF, ALT) %>%
+      readr::write_tsv(x = ., path = dic.filename$filename)
+    if (verbose) message("File written: ", dic.filename$filename.short)
+
+
+    # Final strata ---------------------------------------------------------
+    strata <- extract_individuals(gds = input, whitelist = TRUE)
+    # Generate new strata
+    # write_rad(data = strata,
+    #           path = path.folder,
+    #           filename = "strata.tidy.dart.tsv",
+    #           tsv = TRUE,
+    #           write.message = "Writing the tidy_dart strata: strata.tidy.dart.tsv",
+    #           verbose = verbose)
+    readr::write_tsv(x = strata, path = strata.filename$filename)
+
+    if (!is.null(strata)) {
+      tidy.data <- join_strata(
+        data = tidy.data,
+        strata = dplyr::select(strata, STRATA, INDIVIDUALS),
+        pop.id = TRUE,
+        verbose = FALSE
+      )
+
+    } else {
+      tidy.data %<>% dplyr::mutate(POP_ID = 1L)
+    }
+
 
     # Erase genotypes ------------------------------------------------------------
     if (!is.null(missing.memory)) {
@@ -1360,96 +1142,369 @@ tidy_dart <- function(
       if (rlang::has_name(input, "READ_DEPTH")) input$READ_DEPTH[which.missing] <- NA
       if (rlang::has_name(input, "ALLELE_REF_DEPTH")) input$ALLELE_REF_DEPTH[which.missing] <- NA
       if (rlang::has_name(input, "ALLELE_ALT_DEPTH")) input$ALLELE_ALT_DEPTH[which.missing] <- NA
-    }
+    }#End missing.memory
 
-    # Writing tidy data ----------------------------------------------------------
-    if (write.tidy == "full") {
-      want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "INDIVIDUALS",
-                "POP_ID", "CALL_RATE", "REP_AVG",
-                "AVG_COUNT_REF", "AVG_COUNT_SNP",
-                "READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH",
-                "GT", "GT_VCF", "GT_VCF_NUC", "GT_BIN", "SEQUENCE")
-    }
-
-    if (write.tidy == "light") {
-      want <- c("MARKERS", "INDIVIDUALS", "POP_ID","REF", "ALT",
-                "CALL_RATE", "REP_AVG",
-                "AVG_COUNT_REF", "AVG_COUNT_SNP",
-                "READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH",
-                "GT_BIN")
-    }
-
-    if (write.tidy == "strip") {
-      want <- c("MARKERS", "INDIVIDUALS", "POP_ID", "GT_BIN")
-    }
-
-    # write REF/ALT dictionary
-    dplyr::distinct(input, MARKERS, CHROM, LOCUS, POS, REF, ALT) %>%
-      readr::write_tsv(x = ., path = dic.filename$filename)
-    if (verbose) message("File written: ", dic.filename$filename.short)
 
     # write tidy
-    input <- suppressWarnings(
-      dplyr::ungroup(input) %>%
-        dplyr::select(dplyr::one_of(want)) %>%
-        dplyr::mutate(POP_ID = factor(x = POP_ID, levels = pop.levels)) %>%
-        dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)) %>%
-      radiator::write_rad(data = ., path = filename$filename)
-    if (verbose) message("File written: ", filename$filename.short)
+    write_rad(data = tidy.data, path = filename$filename)
 
-    if(is.null(whitelist.markers)) {
-      if (verbose) message("\nUnfiltered tidy DArT data written to folder")
-    } else {
-      if (verbose) message("\nWhitelist filtered tidy DArT data written to folder")
-    }
-
-    # clean...
-    input$INDIVIDUALS <- radiator::clean_ind_names(input$INDIVIDUALS)
-    input$POP_ID <- radiator::clean_pop_names(input$POP_ID)
-
-    # Generate a new strata file -------------------------------------------------
-    strata <- dplyr::distinct(input, INDIVIDUALS, POP_ID) %>%
-      dplyr::rename(STRATA = POP_ID) %>%
-      readr::write_tsv(x = ., path = strata.filename$filename)
-    if (verbose) message("File written: ", strata.filename$filename.short)
-  }
+    # Whitelist
+    # readr::write_tsv(x = markers.meta, file.path(wf, "whitelist.markers.tidy.dart.tsv"))
+    write_rad(data = markers.meta,
+              path = wf,
+              filename = "whitelist.markers.tidy.dart.tsv",
+              tsv = TRUE,
+              write.message = "standard",
+              verbose = verbose)
+    input <- tidy.data
+  }#tidy
 
   # Results --------------------------------------------------------------------
-  if (verbose) {
-    n.pop <- length(unique(strata$STRATA))
-    n.ind <- length(unique(strata$INDIVIDUALS))
-
-    if (!is.null(write.tidy)) {
-      if (write.tidy == "full") n.chrom <- length(unique(input$CHROM))
-      if (write.tidy == "full") n.locus <- length(unique(input$LOCUS))
-      n.snp <- length(unique(input$MARKERS))
-      if (write.tidy == "full") message("\nNumber of chrom: ", n.chrom)
-      if (write.tidy == "full") message("Number of locus: ", n.locus)
-    } else {
-      n.snp <- n.markers
-    }
-    message("\n\nNumber of SNPs: ", n.snp)
-    message("Number of populations: ", n.pop)
-    message("Number of individuals: ", n.ind)
-
-    strata.stats <- strata %>%
-      dplyr::group_by(STRATA) %>%
-      dplyr::tally(.) %>%
-      dplyr::mutate(POP_IND = stringi::stri_join(STRATA, n, sep = " = "))
-
-    message("\nNumber of ind/pop:\n", stringi::stri_join(strata.stats$POP_IND, collapse ="\n"))
-  }
+  if (verbose) cat("################################### SUMMARY ####################################\n")
+  message("\nNumber of chrom: ", n.chrom)
+  message("Number of locus: ", n.locus)
+  message("Number of SNPs: ", n.snp)
+  summary_strata(strata)
   return(input)
+
 }#End tidy_dart
 
+# INTERNAL FUNCTIONS------------------------------------------------------------
+#' @title read_dart
+#' @description Read DArT file
+#' @rdname read_dart
+#' @keywords internal
+#' @export
+read_dart <- function(data, strata, pop.levels = NULL, verbose = TRUE) {
+  message("Reading DArT file...")
+  # Check that DArT file as good target id written -----------------------------
+  target.id <- extract_dart_target_id(data, write = FALSE)
+  n.ind.dart <- nrow(target.id)
+  if (verbose) message("    Number of individuals: ", n.ind.dart)
+  if (nrow(target.id) != length(unique(target.id$TARGET_ID))) {
+    rlang::abort("\nnon unique target id are used in the DArT file...
+                 What you want are different target ids at the end of the row that contains AlleleID, AlleleSequence, etc
+                 Edit manually before trying again
+                 If you're still encountering problem, email author for help")
+  }
 
+  # Check DArT format file -----------------------------------------------------
+  dart.check <- check_dart(data)
+  if (!dart.check$data.type %in% c("dart", "silico.dart")) {
+    rlang::abort("\nContact author to show your DArT data, problems during import")
+  } else {
+    skip.number <- dart.check$skip.number
+  }
+  dart.check <- NULL
+
+  # Strata file ------------------------------------------------------------------
+  strata.df <- radiator::read_strata(
+    strata = strata,
+    pop.levels = pop.levels, pop.labels = NULL,
+    pop.select = NULL, blacklist.id = NULL,
+    keep.two = FALSE, verbose = verbose)
+  pop.levels <- strata.df$pop.levels
+  pop.labels <- strata.df$pop.labels
+  pop.select <- strata.df$pop.select
+  blacklist.id <- strata.df$blacklist.id
+  strata.df <- strata.df$strata
+  n.ind.strata <- nrow(strata.df)
+
+  # Check that TARGET_ID in strata match TARGET_ID in the DArT file ------------
+  if (verbose) message("Using individuals in strata file to filter individuals in DArT file")
+  if (n.ind.dart != n.ind.strata) {
+    strata.id.check <- strata.df %>%
+      dplyr::mutate(IN_DART = stringi::stri_trans_toupper(strata.df$TARGET_ID)
+                    %in% stringi::stri_trans_toupper(target.id$TARGET_ID))
+    strata.id.pass <- !FALSE %in% (unique(strata.id.check$IN_DART))
+    if (!strata.id.pass) {
+      readr::write_tsv(
+        x = strata.id.check,
+        path = problem.filename$filename)
+      rlang::abort("\nSome of the samples in the strata are not found in the DArT file.
+                   For more info: ", problem.filename$filename.short)
+    }
+    if (verbose) message("\nNote: Careful if using DArT statistics generated for all samples...\n")
+    strata.id.check <- NULL
+    } else {
+      if (!identical(sort(target.id$TARGET_ID), sort(strata.df$TARGET_ID))) {
+        rlang::abort("\nThe DArT and strata files don't have the same TARGET_IDs")
+      }
+    }
+  target.id <- NULL
+
+  # need to check for duplicate names... yes happening all the time
+  duplicate.id.strata <- length(strata.df$INDIVIDUALS) - length(unique(strata.df$INDIVIDUALS))
+
+  if (duplicate.id.strata > 0) {
+    message("Duplicated individuals names found in the strata.\n   number of duplicate names = ", duplicate.id.strata, "\n")
+    rlang::abort("\nFix the strata with unique names and\nverify the DArT file for the same issue, adjust accordingly...")
+  }
+
+  if (stringi::stri_detect_fixed(
+    str = stringi::stri_sub(str = data, from = -4, to = -1),
+    pattern = ".csv")) {
+    csv <- TRUE
+  } else {
+    csv <- FALSE
+  }
+  if (csv) {
+    dart.col.type <- readr::read_csv(
+      file = data,
+      skip = skip.number, n_max = 1,
+      na = "-",
+      col_names = FALSE,
+      col_types = readr::cols(.default = readr::col_character()))
+  } else {
+    dart.col.type <- readr::read_tsv(
+      file = data,
+      skip = skip.number, n_max = 1,
+      na = "-",
+      col_names = FALSE,
+      col_types = readr::cols(.default = readr::col_character()))
+  }
+  dart.sequence <- TRUE
+  # if (dart.sequence) {
+  info <- c("ALLELEID", "SNP", "SNPPOSITION", "CALLRATE",
+            "AVGCOUNTREF", "AVGCOUNTSNP", "REPAVG", "CLONEID", "AVGREADDEPTH",
+            "REPRODUCIBILITY", "CLUSTERCONSENSUSSEQUENCE")
+  info.type <- c("c", "c", "i", "d", "d", "d", "d", "c", "d", "d", "c")
+
+  # } else {
+  #   info <- c("ALLELEID", "SNP", "SNPPOSITION", "CALLRATE",
+  #             "AVGCOUNTREF", "AVGCOUNTSNP", "REPAVG", "CLONEID", "AVGREADDEPTH",
+  #             "REPRODUCIBILITY")
+  #   info.type <- c("c", "c", "i", "d", "d", "d", "d", "c", "d", "d")
+  # }
+  want <- tibble::tibble(INFO = info, COL_TYPE = info.type) %>%
+    dplyr::bind_rows(
+      dplyr::select(strata.df, INFO = TARGET_ID) %>%
+        dplyr::mutate(
+          COL_TYPE = rep("c", n()),
+          INFO = stringi::stri_trans_toupper(INFO)))
+
+  dart.col.type %<>%
+    tidyr::gather(data = .,key = DELETE, value = INFO) %>%
+    dplyr::select(-DELETE) %>%
+    dplyr::mutate(
+      INFO = stringi::stri_trans_toupper(INFO),
+      INFO = stringi::stri_replace_all_fixed(
+        str = INFO, pattern = c(" ", "_"),
+        replacement = c("", "-"), vectorize_all = FALSE)
+    ) %>%
+    dplyr::left_join(want, by = "INFO") %>%
+    dplyr::mutate(COL_TYPE = stringi::stri_replace_na(str = COL_TYPE, replacement = "_")) %>%
+    dplyr::select(COL_TYPE) %>%
+    purrr::flatten_chr(.) %>% stringi::stri_join(collapse = "")
+  want <- NULL
+
+  if (csv) {
+    input <- suppressMessages(suppressWarnings(
+      readr::read_csv(
+        file = data,
+        skip = skip.number,
+        na = c("-", " ", "", "NA"),
+        col_names = TRUE,
+        col_types = dart.col.type)
+    ))
+  } else {
+    input <- suppressMessages(suppressWarnings(
+      readr::read_tsv(
+        file = data,
+        skip = skip.number,
+        na = c("-", " ", "", "NA"),
+        col_names = TRUE,
+        col_types = dart.col.type)
+    ))
+  }
+  dart.col.type <- NULL
+  colnames(input) %<>%
+    stringi::stri_trans_toupper(str = .) %>%
+    stringi::stri_replace_all_fixed(
+      str = .,
+      pattern = c(" ", "_"),
+      replacement = c("", "-"),
+      vectorize_all = FALSE
+    ) %>%
+    stringi::stri_replace_all_fixed(
+      str = .,
+      pattern = c("AVGCOUNTREF", "AVGCOUNTSNP", "REPAVG", "ALLELEID",
+                  "SNPPOSITION", "CALLRATE", "REPRODUCIBILITY", "AVGREADDEPTH",
+                  "CLUSTERCONSENSUSSEQUENCE"),
+      replacement = c("AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG", "LOCUS",
+                      "POS", "CALL_RATE", "REP_AVG", "AVG_READ_DEPTH",
+                      "SEQUENCE"),
+      vectorize_all = FALSE)
+
+  if (rlang::has_name(input, "CLONEID")) {
+    if (rlang::has_name(input, "LOCUS")) {
+      input %<>% dplyr::select(-CLONEID)
+    } else {
+      colnames(input) %<>%
+        stringi::stri_replace_all_fixed(
+          str = .,
+          pattern = "CLONEID",
+          replacement = "LOCUS",
+          vectorize_all = FALSE)
+    }
+  }
+
+  if (!rlang::has_name(input, "LOCUS")) {
+    rlang::abort("\nProblem tidying DArT dataset: contact author")
+  }
+  # necessary steps...observed with DArT file using ref genome -----------------
+  input %<>% dplyr::filter(!is.na(LOCUS))
+  if (rlang::has_name(input, "POS")) {
+    input %<>% dplyr::arrange(LOCUS, POS)
+  } else {
+    input %<>% dplyr::arrange(LOCUS)
+  }
+
+  # Check for duplicate rows (sometimes people combine DArT data...)----------
+  input.dup <- nrow(dplyr::distinct(input, LOCUS, SNP, POS, CALL_RATE, .keep_all = FALSE))
+
+  # make sure no duplicates
+  if (nrow(input) != input.dup) {
+    message("Duplicate rows were identified")
+    message("    using distinct rows")
+    message("    check input data if downstream problems")
+    input %<>% dplyr::distinct(LOCUS, SNP, POS, CALL_RATE, .keep_all = TRUE)
+  }
+  input.dup <- NULL
+
+  # Screen for duplicate names -------------------------------------------------
+  id <- purrr::discard(
+    .x = colnames(input),
+    .p = colnames(input) %in% c("LOCUS", "SNP", "POS", "CALL_RATE", "AVG_COUNT_REF",
+                                "AVG_COUNT_SNP", "REP_AVG", "SEQUENCE")
+  )
+  dup.id <- length(id) - length(unique(id))
+  if (dup.id > 0) {
+    rlang::abort(stringi::stri_join("Duplicated individual names in the data: ", dup.id))
+  }
+  # removing unused object
+  remove.list <- id <- dup.id <- NULL
+
+  # clean locus, generate MARKERS and VARIANT_ID
+  input %<>% clean_dart_locus(.)
+
+  # DArT characteristics--------------------------------------------------------
+  if (verbose)  message("\nDArT characteristics:")
+  # dart.format:
+  # "1row" !binary
+  # "2rows" binary
+  # "counts" binary
+
+  # Determine the type of DArT file: binary (2-row formats) or not 1 (row genotypes)
+  dart.format <- detect_dart_format(
+    x = input,
+    target.id = strata.df$TARGET_ID,
+    verbose = verbose)
+
+  return(res = list(input = input, strata = strata.df, dart.format = dart.format))
+  }#End read_dart
+
+
+
+# clean_dart_locus--------------------------------------------------------------
+#' @title clean_dart_locus
+#' @description Clean LOCUS and generate VARIANT_ID and MARKERS
+#' @rdname clean_dart_locus
+#' @keywords internal
+#' @export
+clean_dart_locus <- function(x) {
+  want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS", "COL",
+            "REF", "ALT", "SEQUENCE",
+            "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")
+  suppressWarnings(
+    x %<>%
+      tidyr::separate(col = LOCUS,
+                      into = c("LOCUS", "NOT_USEFUL"),
+                      sep = "\\|",
+                      extra = "drop"
+      ) %>%
+      dplyr::select(-NOT_USEFUL) %>%
+      tidyr::separate(col = SNP,
+                      into = c("NOT_USEFUL", "KEEPER"),
+                      sep = ":",
+                      extra = "drop") %>%
+      dplyr::select(-NOT_USEFUL) %>%
+      tidyr::separate(col = KEEPER, into = c("REF", "ALT"), sep = ">") %>%
+      dplyr::mutate(
+        CHROM = rep("CHROM_1", n()),
+        MARKERS = stringi::stri_join(CHROM, LOCUS, POS, sep = "__"),
+        VARIANT_ID = as.integer(factor(MARKERS)),
+        COL = POS
+      ) %>%
+      dplyr::select(dplyr::one_of(want), dplyr::everything()) %>%
+      dplyr::mutate_at(
+        .tbl = .,
+        .vars = c("MARKERS", "CHROM", "LOCUS", "POS"),
+        .funs = as.character
+      ) %>%
+      dplyr::arrange(CHROM, LOCUS, POS, REF)
+  )
+}#End clean_dart_locus
+
+# detect_dart_format-------------------------------------------------------------
+#' @title detect_dart_format
+#' @description Detect the dart genotype format: 1row, 2rows or counts
+#' @rdname detect_dart_format
+#' @keywords internal
+#' @export
+detect_dart_format <- function(x = NULL, target.id = NULL, verbose = TRUE) {
+  binary <- anyNA(x$REF)
+
+  if (!binary) {
+    if (verbose) message("DArT SNP format: genotypes in 1 Row")
+    dart.format <- "1row"
+  } else {
+    count.data <- x %>%
+      dplyr::select(
+        dplyr::one_of(
+          sample(x = target.id, size = min(10, floor(0.1 * length(target.id))))
+        )
+      ) %>%
+      dplyr::mutate_all(.tbl = ., .funs = as.numeric) %>%
+      purrr::flatten_dbl(.) %>%
+      unique(.)
+
+    count.data <- any(count.data > 1, na.rm = TRUE)
+
+    if (count.data) {
+      dart.format <- "counts"
+      if (verbose) message("DArT SNP format: alleles coverage in 2 Rows counts")
+    } else {
+      dart.format <- "2rows"
+      if (verbose) message("DArT SNP format: genotypes in 2 Rows")
+    }
+  }
+  return(dart.format)
+
+
+  # prior code:
+  # # keep one marker and check if genotypes are count data
+  # want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "CALL_RATE",
+  #           "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG", "SEQUENCE")
+  # count.data <- 0 #required to start the while loop
+  # while (count.data == 0) {
+  #   count.data <- suppressWarnings(dplyr::select(
+  #     x, -dplyr::one_of(want)) %>%
+  #       dplyr::sample_n(tbl = ., size = 3) %>%
+  #       purrr::flatten_chr(.) %>%
+  #       as.integer %>%
+  #       unique %>%
+  #       sum(na.rm = TRUE))
+  # }
+  # count.data <- count.data > 3
+}#End detect_dart_format
 # dart2gt----------------------------------------------------------------
 #' @title dart2gt
 #' @description Transform dart genotypes to radiator genotypes fields
 #' @rdname dart2gt
 #' @keywords internal
 #' @export
-dart2gt <- function(x, dart.format, write.tidy = "full", gds = FALSE) {
+dart2gt <- function(x, dart.format, write.tidy = "full") {
   # x <- input
   # 1 row format----------------------------------------------------------------
   if (dart.format == "1row") {
@@ -1689,84 +1744,7 @@ dart2gt <- function(x, dart.format, write.tidy = "full", gds = FALSE) {
             READ_DEPTH = ALLELE_REF_DEPTH + ALLELE_ALT_DEPTH
           )
       )
-
-      # Before (slower)
-      # x <- x %>%
-      #   dplyr::mutate(
-      #     A1 = dplyr::if_else(ALLELE_REF_DEPTH > 0, REF, NA_character_),
-      #     A2 = dplyr::if_else(ALLELE_ALT_DEPTH > 0, ALT, NA_character_),
-      #     VCF_A1 = dplyr::if_else(is.na(A1), NA_integer_, 0L),
-      #     VCF_A2 = dplyr::if_else(is.na(A2), NA_integer_, 1L)
-      #   ) %>%
-      #   dplyr::arrange(MARKERS, TARGET_ID) %>%
-      #   dplyr::mutate(
-      #     A1 = dplyr::if_else(is.na(A1), A2, A1),
-      #     A2 = dplyr::if_else(is.na(A2), A1, A2),
-      #     GT_VCF_NUC = stringi::stri_join(A1, A2, sep = "/"),
-      #     GT_VCF_NUC = stringi::stri_replace_na(str = GT_VCF_NUC, replacement = "./."),
-      #     GT_1 = stringi::stri_replace_all_fixed(
-      #       str = A1,
-      #       pattern = c("A", "C", "G", "T"),
-      #       replacement = c("001", "002", "003", "004"),
-      #       vectorize_all = FALSE),
-      #     GT_2 = stringi::stri_replace_all_fixed(
-      #       str = A2,
-      #       pattern = c("A", "C", "G", "T"),
-      #       replacement = c("001", "002", "003", "004"),
-      #       vectorize_all = FALSE),
-      #     GT = stringi::stri_join(GT_1, GT_2),
-      #     GT = stringi::stri_replace_na(str = GT, replacement = "000000")) %>%
-      #   dplyr::select(-c(A1, A2, GT_1, GT_2)) %>%
-      #   dplyr::mutate(
-      #     VCF_A1 = dplyr::if_else(is.na(VCF_A1), VCF_A2, VCF_A1),
-      #     VCF_A2 = dplyr::if_else(is.na(VCF_A2), VCF_A1, VCF_A2),
-      #     GT_VCF = stringi::stri_join(VCF_A1, VCF_A2, sep = "/"),
-      #     GT_VCF = stringi::stri_replace_na(str = GT_VCF, replacement = "./.")
-      #   ) %>%
-      #   dplyr::select(-c(VCF_A1, VCF_A2)) %>%
-      #   dplyr::mutate(
-      #     GT_BIN = as.numeric(
-      #       stringi::stri_replace_all_fixed(
-      #         str = GT_VCF,
-      #         pattern = c("0/0", "1/1", "0/1", "1/0", "./."),
-      #         replacement = c("0", "2", "1", "1", NA),
-      #         vectorize_all = FALSE)),
-      #     ALLELE_REF_DEPTH = as.integer(ALLELE_REF_DEPTH),
-      #     ALLELE_ALT_DEPTH = as.integer(ALLELE_ALT_DEPTH),
-      #     ALLELE_REF_DEPTH = dplyr::if_else(GT_VCF == "./.", NA_integer_, ALLELE_REF_DEPTH),
-      #     ALLELE_ALT_DEPTH = dplyr::if_else(GT_VCF == "./.", NA_integer_, ALLELE_ALT_DEPTH),
-      #     READ_DEPTH = ALLELE_REF_DEPTH + ALLELE_ALT_DEPTH)
     } else {
-      #before
-      # system.time(test1 <- x %>%
-      #   dplyr::mutate(
-      #     A1 = dplyr::if_else(ALLELE_REF_DEPTH > 0, REF, NA_character_),
-      #     A2 = dplyr::if_else(ALLELE_ALT_DEPTH > 0, ALT, NA_character_),
-      #     VCF_A1 = dplyr::if_else(is.na(A1), NA_integer_, 0L),
-      #     VCF_A2 = dplyr::if_else(is.na(A2), NA_integer_, 1L)
-      #   ) %>%
-      #   dplyr::arrange(MARKERS, TARGET_ID) %>%
-      #   dplyr::select(-c(A1, A2)) %>%
-      #   dplyr::mutate(
-      #     VCF_A1 = dplyr::if_else(is.na(VCF_A1), VCF_A2, VCF_A1),
-      #     VCF_A2 = dplyr::if_else(is.na(VCF_A2), VCF_A1, VCF_A2),
-      #     GT_VCF = stringi::stri_join(VCF_A1, VCF_A2, sep = "/"),
-      #     GT_VCF = stringi::stri_replace_na(str = GT_VCF, replacement = "./.")
-      #   ) %>%
-      #   dplyr::select(-c(VCF_A1, VCF_A2)) %>%
-      #   dplyr::mutate(
-      #     GT_BIN = as.numeric(
-      #       stringi::stri_replace_all_fixed(
-      #         str = GT_VCF,
-      #         pattern = c("0/0", "1/1", "0/1", "1/0", "./."),
-      #         replacement = c("0", "2", "1", "1", NA),
-      #         vectorize_all = FALSE)),
-      #     ALLELE_REF_DEPTH = as.integer(ALLELE_REF_DEPTH),
-      #     ALLELE_ALT_DEPTH = as.integer(ALLELE_ALT_DEPTH),
-      #     ALLELE_REF_DEPTH = dplyr::if_else(GT_VCF == "./.", NA_integer_, ALLELE_REF_DEPTH),
-      #     ALLELE_ALT_DEPTH = dplyr::if_else(GT_VCF == "./.", NA_integer_, ALLELE_ALT_DEPTH),
-      #     READ_DEPTH = ALLELE_REF_DEPTH + ALLELE_ALT_DEPTH))
-
       # now faster:
       x <- dplyr::bind_rows(
         dplyr::filter(x, MISSING) %>%
@@ -1792,26 +1770,6 @@ dart2gt <- function(x, dart.format, write.tidy = "full", gds = FALSE) {
             READ_DEPTH = ALLELE_REF_DEPTH + ALLELE_ALT_DEPTH
           )
       )
-
-      # Without th GT_BIN
-      # x <- dplyr::bind_rows(
-      #   dplyr::filter(x, MISSING) %>%
-      #     dplyr::mutate(
-      #       MISSING = NULL,
-      #       REF = NULL,
-      #       ALT = NULL,
-      #       ALLELE_REF_DEPTH = NA_integer_,
-      #       ALLELE_ALT_DEPTH = NA_integer_,
-      #       READ_DEPTH = NA_integer_
-      #     ),
-      #   dplyr::filter(x, !MISSING) %>%
-      #     dplyr::mutate(
-      #       MISSING = NULL,
-      #       REF = NULL,
-      #       ALT = NULL,
-      #       READ_DEPTH = ALLELE_REF_DEPTH + ALLELE_ALT_DEPTH
-      #     )
-      # )
     }
   }#End counts data
 
@@ -1831,11 +1789,13 @@ dart2gds <- function(
   markers.meta,
   filename,
   dart.format,
+  gt.vcf = NULL,
+  gt.vcf.nuc = NULL,
+  gt = NULL,
+  parallel.core = parallel::detectCores() - 1,
   verbose = TRUE
 ) {
-
-  data %<>% dplyr::arrange(MARKERS)
-  variant.id <- as.integer(factor(order(unique(data$MARKERS))))
+  # gt.vcf <- gt.vcf.nuc <- gt <- NULL
 
   # 1 row format----------------------------------------------------------------
   if (dart.format == "1row") {
@@ -1875,90 +1835,43 @@ dart2gds <- function(
 
   # Count data------------------------------------------------------------------
   if (dart.format == "counts") {
-    ad.ref <- dplyr::filter(data, is.na(REF)) %>%
-      dplyr::select(-REF, -ALT, -MARKERS) %>%
-      dplyr::mutate_all(.tbl = ., .funs = as.integer) %>%
-      data.matrix(.)
-
-    ad.alt <- dplyr::filter(data, !is.na(REF)) %>%
-      dplyr::select(-REF, -ALT, -MARKERS) %>%
-      dplyr::mutate_all(.tbl = ., .funs = as.integer) %>%
-      data.matrix(.)
-
-
-    n.ind <- ncol(data) - 3
-    dp <- list()
-    dp$length <- rep(1L, length(variant.id))
-    dp$data <- ad.alt + ad.ref
-    attributes(dp$data) <- list(dim = c(n.ind,length(variant.id)),
-                                dimnames = list(sample = NULL, variant = NULL))
-    dp$data %<>% magrittr::inset(. == 0, NA_integer_)
-    missing.mem <- which(is.na(dp$data))
-    ad.ref[missing.mem] <- NA
-    ad.alt[missing.mem] <- NA
-
-
-    genotypes.meta <- tibble::tibble(
-      READ_DEPTH = as.vector(dp$data),
-      ALLELE_REF_DEPTH = as.vector(ad.ref),
-      ALLELE_ALT_DEPTH = as.vector(ad.alt)
-    ) %>%
-      tidy2wide(
-        x = .,
-        individuals = colnames(dplyr::select(data, -REF, -ALT, -MARKERS)),
-        markers = unique(data$MARKERS),
-        wide = FALSE) %$%
-      data.tidy %>%
-      dplyr::rename(TARGET_ID = INDIVIDUALS)
-
-    ad.alt <- ad.ref <- NULL
-    dp <- NULL # for now, not needed
-    data <-
-      (
-        dplyr::filter(data, is.na(REF)) %>%
-          dplyr::select(-REF, -ALT, -MARKERS) %>%
-          data.matrix(.) %>%
-          magrittr::inset(. > 0, 0L) %>%
-          magrittr::inset(. == 0, 1L) %>%
-          as.matrix(.)
-      ) +
-      (
-        dplyr::filter(data, !is.na(REF)) %>%
-          dplyr::select(-REF, -ALT, -MARKERS) %>%
-          data.matrix(.) %>%
-          magrittr::inset(. > 0, 1L) %>%
-          as.matrix(.)
-      )
-    data  %<>%
-      magrittr::inset(missing.mem, NA) %>%
-      magrittr::set_rownames(x = ., value = variant.id)
-    missing.mem <- NULL
-    # data <- magrittr::set_rownames(x = data, value = variant.id)
+    message("Generating genotypes...")
     source <- c("dart", "counts")
+    dp <- NULL
+    parallel.core.temp <- 2 * floor(parallel.core / 2)
+
+    genotypes.meta <- dplyr::left_join(
+      data,
+      dplyr::distinct(data, MARKERS) %>%
+        dplyr::mutate(SPLIT_VEC = split_vec_row(., 4, parallel.core = parallel.core.temp))
+      , by = "MARKERS") %>%
+      dplyr::group_split(SPLIT_VEC, keep = FALSE) %>%
+      .radiator_parallel_mc(
+        X = .,
+        FUN = generate_geno,
+        mc.cores = parallel.core.temp,
+        gt.vcf = gt.vcf,
+        gt.vcf.nuc = gt.vcf.nuc,
+        gt = gt
+      ) %>%
+      dplyr::bind_rows(.) %>%
+      tibble::add_column(.data = ., FILTERS = "whitelist", .before = 1) %>%
+      dplyr::arrange(MARKERS, TARGET_ID)
+
+    data <- genotypes.meta %>%
+      dplyr::select(VARIANT_ID, TARGET_ID, GT_BIN) %>%
+      data.table::as.data.table(.) %>%
+      data.table::dcast.data.table(
+        data = .,
+        formula = VARIANT_ID ~ TARGET_ID,
+        value.var = "GT_BIN"
+      ) %>%
+      tibble::as_tibble(.) %>%
+      dplyr::arrange(VARIANT_ID) %>%
+      tibble::column_to_rownames(.data = ., var = "VARIANT_ID")
   }# End counts
 
   # Generate GDS ---------------------------------------------------------------
-  if (!is.null(strata)) {
-    df.order <- colnames(data)
-    strata %<>%
-      dplyr::mutate(
-        TARGET_ID = factor(x = TARGET_ID, levels = df.order, ordered = TRUE)
-      ) %>%
-      dplyr::arrange(TARGET_ID)
-    check <- strata %>%
-      dplyr::mutate(
-        CHECK = df.order,
-        CHECK = dplyr::if_else(CHECK == TARGET_ID, TRUE, FALSE)
-      ) %>%
-      dplyr::select(CHECK) %>%
-      purrr::flatten_lgl(.) %>%
-      unique
-    if (length(check) > 1 || !check) {
-      rlang::abort("Problem with sample and target id names...")
-    }
-    check <- df.order <- NULL
-  }
-
   data <- radiator_gds(
     genotypes.df = data,
     strata = strata,
@@ -1970,5 +1883,462 @@ dart2gds <- function(
     source = source,
     open = TRUE,
     verbose = verbose)
+  message("done!")
   return(data)
 }# End dart2gds
+
+# generate_geno----------------------------------------------------------------
+#' @title generate_geno
+#' @description Generate the genotypes and prep for GDS
+#' @rdname generate_geno
+#' @keywords internal
+#' @export
+generate_geno <- function(
+  x,
+  gt = FALSE,
+  gt.vcf.nuc = FALSE,
+  gt.vcf = FALSE
+) {
+  # res <- list()
+  message("Generating genotypes...")
+  source <- c("dart", "counts")
+  # x %<>% dplyr::select(-SPLIT_VEC)
+  res <- dplyr::filter(x, !is.na(REF)) %>%
+    dplyr::arrange(MARKERS) %>%
+    data.table::as.data.table(.) %>%
+    data.table::melt.data.table(
+      data = .,
+      id.vars = c("VARIANT_ID", "MARKERS", "REF", "ALT"),
+      variable.name = "TARGET_ID",
+      value.name = "ALLELE_ALT_DEPTH",
+      variable.factor = FALSE) %>%
+    tibble::as_tibble(.) %>%
+    dplyr::bind_cols(
+      dplyr::filter(x, is.na(REF)) %>%
+        dplyr::select(-REF, -ALT, -VARIANT_ID) %>%
+        data.table::as.data.table(.) %>%
+        data.table::melt.data.table(
+          data = .,
+          id.vars = "MARKERS",
+          variable.name = "TARGET_ID",
+          value.name = "ALLELE_REF_DEPTH",
+          variable.factor = FALSE) %>%
+        tibble::as_tibble(.)
+    )
+  x <- NULL
+
+  if (!identical(res$MARKERS, res$MARKERS1)) {
+    rlang::abort("Contact author, DArT tiding problem")
+  } else {
+    res %<>% dplyr::select(-MARKERS1)
+  }
+
+  if (!identical(res$TARGET_ID, res$TARGET_ID1)) {
+    rlang::abort("Contact author, DArT tiding problem")
+  } else {
+    res %<>% dplyr::select(-TARGET_ID1)
+  }
+
+  res %<>%
+    dplyr::mutate_at(
+      .tbl = .,
+      .vars = c("ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH"),
+      .funs = as.numeric
+    ) %>%
+    dplyr::mutate(READ_DEPTH = ALLELE_REF_DEPTH + ALLELE_ALT_DEPTH)
+
+  # Coverage for allele calibration
+  want <- c("ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH")
+  switch <- dplyr::group_by(res, MARKERS) %>%
+    dplyr::summarise_at(.tbl = ., .vars = want, .funs = sum, na.rm = TRUE) %>%
+    dplyr::mutate_at(.tbl = ., .vars = want, .funs = round, digits = 0) %>%
+    dplyr::mutate_at(.tbl = ., .vars = want, .funs = as.integer) %>%
+    dplyr::ungroup(.) %>%
+    dplyr::mutate(
+      SWITCH = dplyr::if_else(ALLELE_ALT_DEPTH > ALLELE_REF_DEPTH, TRUE, FALSE),
+      ALLELE_ALT_DEPTH = NULL, ALLELE_REF_DEPTH = NULL
+    ) %>%
+    dplyr::filter(SWITCH) %>%
+    dplyr::select(MARKERS) %$%
+    MARKERS
+  n.switch <- length(switch)
+  if (n.switch > 0) {
+    message("Calibration REF/ALT based on read depth of alleles: ", n.switch)
+    res <- dplyr::filter(res, !MARKERS %in% switch) %>%
+      dplyr::bind_rows(
+        dplyr::filter(res, MARKERS %in% switch) %>%
+          dplyr::rename(
+            ALT = REF,
+            REF = ALT,
+            ALLELE_REF_DEPTH = ALLELE_ALT_DEPTH,
+            ALLELE_ALT_DEPTH = ALLELE_REF_DEPTH
+          )
+      )
+  }
+  switch <- NULL
+
+  # GT_BIN
+  res %<>%
+    dplyr::mutate(
+      GT_BIN = dplyr::case_when(
+        ALLELE_REF_DEPTH > 0 & ALLELE_ALT_DEPTH == 0 ~ 0,
+        ALLELE_REF_DEPTH > 0 & ALLELE_ALT_DEPTH > 0 ~ 1,
+        ALLELE_REF_DEPTH == 0 & ALLELE_ALT_DEPTH > 0 ~ 2
+      )
+    ) %>%
+    dplyr::mutate_at(
+      .tbl = .,
+      .vars = c("READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH"),
+      .funs = replace_by_na, what = 0
+    )
+
+  if (gt.vcf) {
+    res %<>%
+      dplyr::mutate(
+        GT_VCF = dplyr::case_when(
+          GT_BIN == 0 ~ "0/0", GT_BIN == 1 ~ "0/1", GT_BIN == 2 ~ "1/1",
+          is.na(GT_BIN) ~ "./.")
+      )
+  }
+
+  if (gt.vcf.nuc) {
+    res %<>%
+      dplyr::mutate(
+        GT_VCF_NUC = dplyr::case_when(
+          GT_BIN == 0 ~ stringi::stri_join(REF, REF, sep = "/"),
+          GT_BIN == 1 ~ stringi::stri_join(REF, ALT, sep = "/"),
+          GT_BIN == 2 ~ stringi::stri_join(ALT, ALT, sep = "/"),
+          is.na(GT_BIN) ~ "./.")
+      )
+  }
+
+  if (gt) {
+    res %<>%
+      dplyr::mutate(
+        GT = stringi::stri_replace_all_fixed(
+          str = GT_VCF_NUC,
+          pattern = c("A", "C", "G", "T", "/"),
+          replacement = c("001", "002", "003", "004", ""),
+          vectorize_all = FALSE) %>%
+          stringi::stri_replace_na(str = ., replacement = "000000")
+      )
+  }
+  # res$genotypes <- res %>%
+  #   dplyr::select(VARIANT_ID, TARGET_ID, GT_BIN) %>%
+  #   data.table::as.data.table(.) %>%
+  #   data.table::dcast.data.table(
+  #     data = .,
+  #     formula = VARIANT_ID ~ TARGET_ID,
+  #     value.var = "GT_BIN"
+  #   ) %>%
+  #   tibble::as_tibble(.)
+  return(res)
+}# End generate_geno
+
+
+# tidy_silico_dart -------------------------------------------------------------
+# Import, filter and transform a silico dart output file to different formats
+
+#' @name tidy_silico_dart
+
+#' @title Tidy silico \href{http://www.diversityarrays.com}{DArT} output file.
+
+#' @description Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
+#' and might be of interest for users. The function generate a tidy dataset using
+#' \href{http://www.diversityarrays.com}{DArT} file.
+
+#' @param data Silico DArT output file.
+#' The function can import \code{.csv} or \code{.tsv} files.
+
+#' @param strata A tab delimited file or object with 3 columns.
+#' Columns header is:
+#' \code{TARGET_ID}, \code{INDIVIDUALS} and \code{STRATA}.
+#' Note: the column \code{STRATA} refers to any grouping of individuals.
+#' You need to make sure that
+#' the column \code{TARGET_ID} match the id used by DArT.
+#' The column \code{INDIVIDUALS} and \code{STRATA} will be kept in the tidy data.
+#' Only individuals in the strata file are kept in the tidy, i.e. that the strata
+#' is also used as a whitelist of individuals/strata.
+#' Silico DArT data is currently used to detect sex markers, so the \code{STRATA}
+#' column should be filed with sex information: \code{M} or \code{F}.
+
+#' @param verbose (optional, logical) When verbose = TRUE the function is a
+#' little more chatty during execution.
+#' Default: \code{verbose = FALSE}.
+
+#' @inheritParams tidy_genomic_data
+
+
+#' @return A tidy dataframe with several columns depending on DArT file:
+#' #TODO
+#'
+#'
+#' Written in the working directory:
+#' #TODO
+
+#' @export
+#' @rdname tidy_silico_dart
+#' @importFrom dplyr group_by select rename filter mutate summarise distinct n_distinct arrange left_join semi_join anti_join inner_join full_join tally bind_rows
+#' @importFrom parallel detectCores
+#' @importFrom stringi stri_replace_all_fixed stri_join stri_sub stri_replace_na stri_pad_left
+#' @importFrom purrr discard
+#' @importFrom data.table as.data.table dcast.data.table melt.data.table
+#' @importFrom readr read_tsv write_tsv read_lines read_table
+#' @importFrom tibble as_data_frame data_frame
+#' @importFrom tidyr spread gather unite separate
+
+#' @examples
+#' \dontrun{
+#' clownfish.dart.tidy <- radiator::tidy_silico_dart(
+#' data = "clownfish.dart.tsv",
+#' strata = "clownfish.strata.tsv",
+#' verbose = TRUE)
+#' }
+
+#' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
+
+tidy_silico_dart <- function(
+  data,
+  strata = NULL,
+  filename = NULL,
+  verbose = TRUE
+) {
+
+  # Test
+  # data = "Report_DAci18-3647_1_moreOrders_SilicoDArT_2.csv"
+  # strata = "sturgeon_sex_strata_no_u.tsv"
+  # filename = NULL
+  # verbose = TRUE
+
+  opt.change <- getOption("width")
+  options(width = 70)
+  # for timing
+  timing <- proc.time()
+  message("Importing silico DArT data...")
+
+  # Checking for missing and/or default arguments ------------------------------
+  if (missing(data)) rlang::abort("Input file missing")
+  if (missing(strata)) rlang::abort("strata file missing")
+
+  # Check that DArT file as good target id written -----------------------------
+  target.id <- radiator::extract_dart_target_id(data, write = FALSE)
+  n.ind.dart <- nrow(target.id)
+  if (verbose) message("Number of individuals in DArT file: ", n.ind.dart)
+  if (nrow(target.id) != length(unique(target.id$TARGET_ID))) {
+    rlang::abort("\nnon unique target id are used in the DArT file...
+                 What you want are different target ids at the end of the row
+                 that contains AlleleID, AlleleSequence.
+                 Edit manually before trying again
+                 If you're still encountering problem, email author for help")
+  }
+
+  # Date & Time and filenames --------------------------------------------------
+  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
+
+  if (is.null(filename)) {
+    filename <- stringi::stri_join("radiator_tidy_silico_dart_", file.date, ".tsv")
+    strata.filename <- stringi::stri_join("radiator_tidy_silico_dart_strata_", file.date, ".tsv")
+  } else {
+    strata.filename <- stringi::stri_join(filename, "_strata_", file.date, ".tsv")
+    filename <- stringi::stri_join(filename, "_", file.date, ".tsv")
+  }
+
+  # Check DArT format file -----------------------------------------------------
+  dart.check <- check_dart(data)
+  if (!dart.check$data.type %in% c("dart", "silico.dart")) {
+    rlang::abort("\nContact author to show your silico DArT data, problems during import")
+  } else {
+    skip.number <- dart.check$skip.number
+  }
+
+  # Strata file ------------------------------------------------------------------
+  if (verbose) message("\nMaking DArT data population-wise...")
+  strata.df <- radiator::read_strata(
+    strata = strata,
+    pop.levels = NULL, pop.labels = NULL,
+    pop.select = NULL, blacklist.id = NULL,
+    keep.two = FALSE, verbose = verbose)
+  pop.levels <- strata.df$pop.levels
+  pop.labels <- strata.df$pop.labels
+  # pop.select <- strata.df$pop.select
+  # blacklist.id <- strata.df$blacklist.id
+  strata.df <- strata.df$strata
+  n.ind.strata <- nrow(strata.df)
+
+  # Check that TARGET_ID in strata match TARGET_ID in the DArT file ------------
+  if (n.ind.dart != n.ind.strata) {
+    strata.id.check <- strata.df %>%
+      dplyr::mutate(IN_DART = stringi::stri_trans_toupper(strata.df$TARGET_ID)
+                    %in% stringi::stri_trans_toupper(target.id$TARGET_ID))
+    strata.id.pass <- !FALSE %in% (unique(strata.id.check$IN_DART))
+    if (!strata.id.pass) {
+      problem.filename <- stringi::stri_join("radiator_tidy_dart_strata_problem_", file.date, ".tsv")
+      readr::write_tsv(
+        x = strata.id.check,
+        path = problem.filename)
+      rlang::abort("\nSome of the samples in the strata are not found in the DArT file.
+                   For more info: ", problem.filename)
+    }
+    message("\nCaution: you've chosen to tidy a subsample of your DArT file.
+            DArT statistics generated for all samples might not apply...\n")
+    strata.id.check <- NULL
+    } else {
+      if (!identical(sort(target.id$TARGET_ID), sort(strata.df$TARGET_ID))) {
+        rlang::abort("\nThe DArT and strata files don't have the same TARGET_IDs")
+      }
+    }
+  target.id <- NULL
+
+  # need to check for duplicate names... yes happening all the time
+  duplicate.id.strata <- length(strata.df$INDIVIDUALS) - dplyr::n_distinct(strata.df$INDIVIDUALS)
+
+  if (duplicate.id.strata > 0) {
+    message("Duplicated individuals names found in the strata.\n   number of duplicate names = ", duplicate.id.strata, "\n")
+    rlang::abort("\nFix the strata with unique names and\nverify the DArT file for the same issue, adjust accordingly...")
+  }
+
+  # Import data ---------------------------------------------------------------
+  if (stringi::stri_detect_fixed(
+    str = stringi::stri_sub(str = data, from = -4, to = -1),
+    pattern = ".csv")) {
+    csv <- TRUE
+  } else {
+    csv <- FALSE
+  }
+
+  if (csv) {
+    dart.col.type <- readr::read_csv(
+      file = data,
+      skip = skip.number, n_max = 1,
+      na = "-",
+      col_names = FALSE,
+      col_types = readr::cols(.default = readr::col_character()))
+  } else {
+    dart.col.type <- readr::read_tsv(
+      file = data,
+      skip = skip.number, n_max = 1,
+      na = "-",
+      col_names = FALSE,
+      col_types = readr::cols(.default = readr::col_character()))
+  }
+
+  want <- tibble::data_frame(
+    INFO = c("CLONEID", "ALLELESEQUENCE", "SEQUENCE", "TRIMMEDSEQUENCE"),
+    COL_TYPE = c("c", "c", "c", "c")) %>%
+    dplyr::bind_rows(
+      dplyr::select(strata.df, INFO = TARGET_ID) %>%
+        dplyr::mutate(
+          COL_TYPE = rep("c", n()),
+          INFO = stringi::stri_trans_toupper(INFO)))
+
+  dart.col.type <- dart.col.type %>%
+    tidyr::gather(data = .,key = DELETE, value = INFO) %>%
+    dplyr::select(-DELETE) %>%
+    dplyr::mutate(
+      INFO = stringi::stri_trans_toupper(INFO),
+      INFO = stringi::stri_replace_all_fixed(INFO, pattern = " ", replacement = "", vectorize_all = FALSE)
+    ) %>%
+    dplyr::left_join(want, by = "INFO") %>%
+    dplyr::mutate(COL_TYPE = stringi::stri_replace_na(str = COL_TYPE, replacement = "_")) %>%
+    dplyr::select(COL_TYPE) %>%
+    purrr::flatten_chr(.) %>% stringi::stri_join(collapse = "")
+  want <- NULL
+
+  if (csv) {
+    input <- suppressMessages(suppressWarnings(
+      readr::read_csv(
+        file = data,
+        skip = skip.number,
+        na = c("-", " ", "", "NA"),
+        col_names = TRUE,
+        col_types = dart.col.type)
+    ))
+  } else {
+    input <- suppressMessages(suppressWarnings(
+      readr::read_tsv(
+        file = data,
+        skip = skip.number,
+        na = c("-", " ", "", "NA"),
+        col_names = TRUE,
+        col_types = dart.col.type)
+    ))
+  }
+  dart.col.type <- NULL
+  colnames(input) <- stringi::stri_trans_toupper(colnames(input))
+  colnames(input) = stringi::stri_replace_all_fixed(
+    str = colnames(input), pattern = " ", replacement = "", vectorize_all = FALSE)
+
+  check.data <- c("ALLELESEQUENCE", "SEQUENCE", "TRIMMEDSEQUENCE")
+  check.data <- purrr::keep(.x = colnames(input), .p = colnames(input) %in% check.data)
+
+  if (length(check.data > 1)) {
+    keeper <- sample(check.data, size = 1)
+    keeper <- c("CLONEID", keeper, strata.df$TARGET_ID)
+
+    input <- dplyr::select(input, dplyr::one_of(keeper))
+    colnames(input) <- stringi::stri_replace_all_fixed(
+      str = colnames(input),
+      pattern = c("ALLELESEQUENCE", "TRIMMEDSEQUENCE"),
+      replacement = c("SEQUENCE", "SEQUENCE"),
+      vectorize_all = FALSE)
+  }
+
+  input <- data.table::as.data.table(input) %>%
+    data.table::melt.data.table(
+      data = .,
+      id.vars = c("CLONEID", "SEQUENCE"),
+      variable.name = "TARGET_ID",
+      variable.factor = FALSE,
+      value.name = "VALUE"
+    ) %>%
+    tibble::as_data_frame(.)
+
+  # Strata file to include populations ----------------------------------------
+  # To make sure target ids match
+  input <- dplyr::left_join(input, strata.df, by = "TARGET_ID") %>%
+    dplyr::select(-TARGET_ID)
+  strata.df <- NULL
+
+  if (tibble::has_name(input, "STRATA")) {
+    input <- dplyr::rename(input, POP_ID = STRATA)
+  }
+
+
+  input <- dplyr::mutate(input, VALUE = as.integer(VALUE))
+
+  # write tidy
+  input <- suppressWarnings(
+    dplyr::ungroup(input) %>%
+      dplyr::arrange(CLONEID, POP_ID, INDIVIDUALS)) %>%
+    readr::write_tsv(x = ., path = filename)
+
+  # clean...
+  input$INDIVIDUALS <- radiator::clean_ind_names(input$INDIVIDUALS)
+  input$POP_ID <- radiator::clean_pop_names(input$POP_ID)
+
+  # Generate a new strata file -------------------------------------------------
+  strata <- dplyr::distinct(input, INDIVIDUALS, POP_ID) %>%
+    dplyr::rename(STRATA = POP_ID) %>%
+    readr::write_tsv(x = ., path = strata.filename)
+  # Results --------------------------------------------------------------------
+  if (verbose) {
+    n.pop <- dplyr::n_distinct(strata$STRATA)
+    n.ind <- dplyr::n_distinct(strata$INDIVIDUALS)
+    n.snp <- dplyr::n_distinct(input$CLONEID)
+
+    message("Number of SNPs: ", n.snp)
+    message("Number of populations: ", n.pop)
+    message("Number of individuals: ", n.ind)
+
+    strata.stats <- strata %>%
+      dplyr::group_by(STRATA) %>%
+      dplyr::tally(.) %>%
+      dplyr::mutate(POP_IND = stringi::stri_join(STRATA, n, sep = " = "))
+
+    message("\nNumber of ind/pop:\n", stringi::stri_join(strata.stats$POP_IND, collapse ="\n"))
+    timing <- proc.time() - timing
+    message("\nComputation time: ", round(timing[[3]]), " sec")
+  }
+  options(width = opt.change)
+  return(input)
+  }#End tidy_silico_dart

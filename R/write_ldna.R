@@ -55,13 +55,6 @@
 #' To install LDna:
 #' devtools::install_github("petrikemppainen/LDna")
 #'
-#'
-#' \strong{Further arguments passed via the \emph{dots-dots-dots}:}
-#' \itemize{
-#' \item keep.gds Default \code{keep.gds = FALSE}, the SNPRelate GDS object
-#' generated is removed after completion of the LDna object.
-#' }
-#'
 
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
@@ -77,7 +70,6 @@ write_ldna <- function(data,
   # data <- unfiltered.data
   # filename = NULL
   # parallel.core = parallel::detectCores() - 1
-  # keep.gds <- TRUE
 
   # Check that snprelate is installed
   if (!requireNamespace("SNPRelate", quietly = TRUE)) {
@@ -88,18 +80,7 @@ write_ldna <- function(data,
 
   # dotslist -------------------------------------------------------------------
   radiator.dots <- list(...)
-  want <- c("keep.gds")
-  unknowned_param <- setdiff(names(radiator.dots), want)
 
-  if (length(unknowned_param) > 0) {
-    rlang::abort("Unknowned \"...\" parameters ",
-         stringi::stri_join(unknowned_param, collapse = " "))
-  }
-
-  keep.gds <- radiator.dots[["keep.gds"]]
-
-  # useful outside this function
-  if (is.null(keep.gds)) keep.gds <- FALSE
 
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("Input file missing")
@@ -137,10 +118,9 @@ write_ldna <- function(data,
     biallelic = TRUE,
     filename = filename,
     verbose = FALSE)
-  if (keep.gds) {
-    message("SNPRelate GDS file generated: ", filename, ".gds")
-    message("To close the connection use SNPRelate::snpgdsClose(filename)")
-  }
+  message("SNPRelate GDS file generated: ", filename, ".gds")
+  message("To close the connection use SNPRelate::snpgdsClose(filename)")
+
 
   # Compute LD -----------------------------------------------------------------
   message("Computing LD matrix...")
@@ -175,12 +155,6 @@ write_ldna <- function(data,
     filename <- stringi::stri_join(filename, ".rds")
     message("Writing LDna file: ", filename)
     saveRDS(object = long.distance.ld, file = filename)
-  }
-
-  # remove SNPRelate GDS object -------------------------------------------------
-  if (!keep.gds) {
-    message("Removing GDS file")
-    if (file.exists(data$filename)) file.remove(data$filename)
   }
   return(long.distance.ld)
 } # End write_ldna

@@ -4,7 +4,7 @@
 \alias{dart2gt}
 \title{dart2gt}
 \usage{
-dart2gt(x, dart.format, write.tidy = "full", gds = FALSE)
+dart2gt(x, dart.format, write.tidy = "full")
 }
 \description{
 Transform dart genotypes to radiator genotypes fields

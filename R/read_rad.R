@@ -1,8 +1,8 @@
 # read .rad file
 
 #' @name read_rad
-#' @title Read radiator file ending .rad or .gds
-#' @description Fast read of .rad or .gds file.
+#' @title Read radiator file ending \code{.gds, .rad, .gds.rad}.
+#' @description Fast read of \code{.gds, .rad, .gds.rad} files.
 #' The function uses \code{\link[fst]{read_fst}} or
 #' CoreArray Genomic Data Structure (\href{https://github.com/zhengxwen/gdsfmt}{GDS})
 #' file system.
@@ -51,7 +51,11 @@
 #' @importFrom fst read_fst
 #' @importFrom purrr safely
 #'
-#' @seealso \href{https://github.com/fstpackage/fst}{fst} and \href{https://github.com/zhengxwen/gdsfmt}{GDS}
+#' @seealso
+#' \href{https://github.com/fstpackage/fst}{fst}
+#' \href{https://github.com/zhengxwen/gdsfmt}{GDS}
+#' \code{\link{read_rad}}
+
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 #' @examples
 #' \dontrun{
@@ -120,47 +124,63 @@ read_rad <- function(
   if ("gds.file" %in% data.type) {
     if (verbose) message("Opening GDS file connection")
 
+    # if (!is.character(gds)) data <- data$filename
+
     if (allow.dup) {
       data <- SeqArray::seqOpen(gds.fn = data, readonly = TRUE, allow.duplicate = TRUE)
     } else {
       data <- SeqArray::seqOpen(gds.fn = data, readonly = FALSE)
     }
 
-
-    rad_sample <- purrr::safely(.f = function(x) gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/individuals/INDIVIDUALS")))
-    rad_markers <- purrr::safely(.f = function(x) gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/markers.meta/VARIANT_ID")))
-
-    # Note to myself: just use , silent = TRUE and it will return null if doesnt work..
-    w.s <-  rad_sample(data)
-    if (!is.null(w.s$error)) {
-      w.s <- SeqArray::seqGetData(gdsfile = data, var.name = "sample.id")
-    } else {
-      w.s <- w.s$result
-    }
-
-    w.m <- rad_markers(data)
-    if (!is.null(w.m$error)) {
-      w.m <- SeqArray::seqGetData(gdsfile = data, var.name = "variant.id")
-    } else {
-      w.m <- w.m$result
-    }
-
+    s <- extract_individuals(
+      gds = data,
+      ind.field.select = "INDIVIDUALS",
+      whitelist = TRUE
+    ) %$%
+      INDIVIDUALS
+    m <- extract_markers_metadata(
+      gds = data,
+      markers.meta.select = "VARIANT_ID",
+      whitelist = TRUE
+    ) %$%
+      VARIANT_ID
     if (verbose) message("Setting filters to:")
-    if (verbose) message("    number of samples: ", length(w.s))
-    if (verbose) message("    number of markers: ", length(w.m))
-    SeqArray::seqSetFilter(
-      object = data,
-      variant.id = w.m,
-      sample.id = as.character(w.s),
-      verbose = FALSE)
+    if (verbose) message("    number of samples: ", length(s))
+    if (verbose) message("    number of markers: ", length(m))
+
+    SeqArray::seqSetFilter(object = data,
+                           variant.id = m,
+                           sample.id = as.character(s),
+                           verbose = FALSE)
+
+    # rad_sample <- purrr::safely(.f = function(x) gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/individuals/INDIVIDUALS")))
+    # rad_markers <- purrr::safely(.f = function(x) gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/markers.meta/VARIANT_ID")))
+    #
+    # # Note to myself: just use , silent = TRUE and it will return null if doesnt work..
+    # w.s <-  rad_sample(data)
+    # if (!is.null(w.s$error)) {
+    #   w.s <- SeqArray::seqGetData(gdsfile = data, var.name = "sample.id")
+    # } else {
+    #   w.s <- w.s$result
+    # }
+    #
+    # w.m <- rad_markers(data)
+    # if (!is.null(w.m$error)) {
+    #   w.m <- SeqArray::seqGetData(gdsfile = data, var.name = "variant.id")
+    # } else {
+    #   w.m <- w.m$result
+    # }
+    # if (verbose) message("Setting filters to:")
+    # if (verbose) message("    number of samples: ", length(w.s))
+    # if (verbose) message("    number of markers: ", length(w.m))
 
     # Checks--------------------------------------------------------------------
     if (check) {
       check <- SeqArray::seqGetFilter(data)
-      if (length(check$sample.sel[check$sample.sel]) != length(w.s)) {
+      if (length(check$sample.sel[check$sample.sel]) != length(s)) {
         rlang::abort("Number of samples don't match, contact author")
       }
-      if (length(check$variant.sel[check$variant.sel]) != length(w.m)) {
+      if (length(check$variant.sel[check$variant.sel]) != length(m)) {
         rlang::abort("Number of markers don't match, contact author")
       }
     }
@@ -226,7 +246,11 @@ read_rad <- function(
 #'
 #'
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
-#' @seealso \href{https://github.com/fstpackage/fst}{fst} and \href{https://github.com/zhengxwen/gdsfmt}{GDS}
+#' @seealso
+#' \href{https://github.com/fstpackage/fst}{fst}
+#' \href{https://github.com/zhengxwen/gdsfmt}{GDS}
+#' \code{\link{read_rad}}
+#'
 #' @examples
 #' \dontrun{
 #' require(SeqArray)
@@ -270,36 +294,40 @@ write_rad <- function(
       data.type <- class(data)
 
       if ("SeqVarGDSClass" %in% data.type) {
-        rad_sample <- purrr::safely(.f = function(x) gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/individuals/INDIVIDUALS")))
-        rad_markers <- purrr::safely(.f = function(x) gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/markers.meta/VARIANT_ID")))
-
-        w.s <-  rad_sample(data)
-        if (!is.null(w.s$error)) {
-          w.s <- SeqArray::seqGetData(gdsfile = data, var.name = "sample.id")
-        } else {
-          w.s <- w.s$result
-        }
-
-        w.m <- rad_markers(data)
-        if (!is.null(w.m$error)) {
-          w.m <- SeqArray::seqGetData(gdsfile = data, var.name = "variant.id")
-        } else {
-          w.m <- w.m$result
-        }
-
+        s <- extract_individuals(
+          gds = data,
+          ind.field.select = "INDIVIDUALS",
+          whitelist = TRUE
+        ) %$%
+          INDIVIDUALS
+        m <- extract_markers_metadata(
+          gds = data,
+          markers.meta.select = "VARIANT_ID",
+          whitelist = TRUE
+        ) %$%
+          VARIANT_ID
         if (verbose) message("Setting filters to:")
-        if (verbose) message("    number of samples: ", length(w.s))
-        if (verbose) message("    number of markers: ", length(w.m))
+        if (verbose) message("    number of samples: ", length(s))
+        if (verbose) message("    number of markers: ", length(m))
         SeqArray::seqSetFilter(object = data,
-                               variant.id = w.m,
-                               sample.id = as.character(w.s),
+                               variant.id = m,
+                               sample.id = as.character(s),
                                verbose = FALSE)
         if (verbose) message("Closing connection with GDS file:\n", data$filename)
+        gds.filename <- data$filename
         SeqArray::seqClose(data)
+        return(gds.filename)
       } else {
         if (is.null(path)) rlang::abort("The function requires the path of the file")
         tibble::as_data_frame(data) %>%
           fst::write_fst(x = ., path = path, compress = 85)
+        if (!is.null(write.message) && verbose) {
+          if (write.message == "standard") {
+            message("File written: ", folder_short(filename))
+          } else {
+            write.message
+          }
+        }
       }
     }
   }

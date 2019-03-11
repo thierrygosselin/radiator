@@ -34,7 +34,7 @@
 
 #' @seealso
 #' \code{\link{filter_rad}},
-#' \code{\link{tidy_genomic_data}}, \code{\link{write_seqarray}},
+#' \code{\link{tidy_genomic_data}}, \code{\link{read_vcf}},
 #' \code{\link{tidy_vcf}}.
 
 #' @examples
@@ -141,63 +141,73 @@ filter_monomorphic <- function(
         data = data,
         path.folder = path.folder,
         file.date = file.date,
-        internal = FALSE,
+        internal = internal,
         verbose = verbose)
 
       # Scanning for monomorphic markers------------------------------------------
-      wl <- bl <- extract_markers_metadata(gds = data)
-      n.markers.before <- nrow(wl)
-
+      n.markers.before <- filters.parameters$info$n.snp
       bl <- count_monomorphic(x = data, parallel.core = parallel.core)
       n.markers.removed <- length(bl)
       want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS")
-
+      markers.meta <- extract_markers_metadata(gds = data, whitelist = FALSE)
 
       if (n.markers.removed > 0) {
         n.markers.after <- n.markers.before - n.markers.removed
-        suppressWarnings(bl <- wl %>% dplyr::filter(VARIANT_ID %in% bl) %>%
-                           dplyr::select(dplyr::one_of(want)))
+        # suppressWarnings(bl <- wl %>% dplyr::filter(VARIANT_ID %in% bl) %>%
+        #                    dplyr::select(dplyr::one_of(want)))
+        markers.meta %<>%
+          dplyr::mutate(
+            FILTERS = dplyr::if_else(
+              VARIANT_ID %in% bl, "filter.monomorphic", FILTERS
+            )
+          )
 
         write_rad(
-          data = bl,
+          data = markers.meta %>% dplyr::filter(FILTERS == "filter.monomorphic"),
           path = path.folder,
           filename = stringi::stri_join("blacklist.monomorphic.markers_", file.date, ".tsv"),
-          tsv = TRUE, internal = FALSE, verbose = verbose)
+          tsv = TRUE, internal = internal, verbose = verbose)
 
-        wl %<>% dplyr::filter(!MARKERS %in% bl$MARKERS)
+        # wl %<>% dplyr::filter(!MARKERS %in% bl$MARKERS)
 
 
         # Update GDS
         update_radiator_gds(
           gds = data,
           node.name = "markers.meta",
-          value = wl,
+          value = markers.meta,
           sync = TRUE,
           verbose = verbose
         )
 
-        bl %<>% dplyr::select(MARKERS) %>%
-          dplyr::mutate(FILTER = "filter.monomorphic")
+        # bl %<>% dplyr::select(MARKERS) %>%
+        #   dplyr::mutate(FILTER = "filter.monomorphic")
 
-        bl.gds <- update_bl_markers(gds = data, update = bl)
-      } else {
-        bl <- wl[0,]
-        n.markers.after <- n.markers.before
-      }
+        # bl.gds <- update_bl_markers(gds = data, update = bl)
+      } #else {
+      #   bl <- wl[0,]
+      #   n.markers.after <- n.markers.before
+      # }
 
       # write the whitelist even if no blacklist...
       write_rad(
-        data = wl,
+        data = markers.meta %>% dplyr::filter(FILTERS == "whitelist"),
         path = path.folder,
         filename = stringi::stri_join("whitelist.polymorphic.markers_", file.date, ".tsv"),
-        tsv = TRUE, internal = FALSE, verbose = verbose)
+        tsv = TRUE, internal = internal, verbose = verbose)
 
     } else {# tidy data
       # Import data ---------------------------------------------------------------
       if (is.vector(data)) data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
       data.type <- "tbl_df"
+
       # Keep whitelist and blacklist (same = same space used)
-      wl <- radiator::separate_markers(data = data, sep = "__", markers.meta.lists.only = TRUE)
+      wl <- radiator::separate_markers(
+        data = data,
+        sep = NULL,
+        markers.meta.lists.only = TRUE,
+        generate.markers.metadata = FALSE
+      )
       data %<>% dplyr::left_join(wl, by = intersect(colnames(data), colnames(wl)))
 
       # Filter parameter file: generate and initiate ------------------------------------------
@@ -209,15 +219,15 @@ filter_monomorphic <- function(
         data = data,
         path.folder = path.folder,
         file.date = file.date,
-        internal = FALSE,
+        internal = internal,
         verbose = verbose)
-      if (tibble::has_name(data, "POP_ID")) {
-        filters.parameters$info$n.pop <- length(unique(data$POP_ID))
-      }
-      if (tibble::has_name(data, "STRATA")) {
-        filters.parameters$info$n.pop <- length(unique(data$STRATA))
-      }
-      filters.parameters$info$n.ind <- length(unique(data$INDIVIDUALS))
+      # if (tibble::has_name(data, "POP_ID")) {
+      #   filters.parameters$info$n.pop <- length(unique(data$POP_ID))
+      # }
+      # if (tibble::has_name(data, "STRATA")) {
+      #   filters.parameters$info$n.pop <- length(unique(data$STRATA))
+      # }
+      # filters.parameters$info$n.ind <- length(unique(data$INDIVIDUALS))
 
       # Scanning for monomorphic markers------------------------------------------
       if (verbose) message("Scanning for monomorphic markers...")
@@ -255,7 +265,7 @@ filter_monomorphic <- function(
           data = bl,
           path = path.folder,
           filename = stringi::stri_join("blacklist.monomorphic.markers_", file.date, ".tsv"),
-          tsv = TRUE, internal = FALSE, verbose = verbose)
+          tsv = TRUE, internal = internal, verbose = verbose)
       } else {
         bl <- wl[0,]
       }
@@ -265,7 +275,7 @@ filter_monomorphic <- function(
         data = wl,
         path = path.folder,
         filename = stringi::stri_join("whitelist.polymorphic.markers_", file.date, ".tsv"),
-        tsv = TRUE, internal = FALSE, verbose = verbose)
+        tsv = TRUE, internal = internal, verbose = verbose)
     }#Tidy data
 
     # Filter parameter file: update --------------------------------------------
@@ -280,27 +290,26 @@ filter_monomorphic <- function(
       values = "",
       path.folder = path.folder,
       file.date = file.date,
-      internal = FALSE,
+      internal = internal,
       verbose = verbose)
 
-    if (data.type != "SeqVarGDSClass") {
-      if (tibble::has_name(data, "POP_ID")) {
-        filters.parameters$info$n.pop <- length(unique(data$POP_ID))
-      }
-      if (tibble::has_name(data, "STRATA")) {
-        filters.parameters$info$n.pop <- length(unique(data$STRATA))
-      }
-      filters.parameters$info$n.ind <- length(unique(data$INDIVIDUALS))
-    }
+    # if (data.type != "SeqVarGDSClass") {
+    #   if (tibble::has_name(data, "POP_ID")) {
+    #     filters.parameters$info$n.pop <- length(unique(data$POP_ID))
+    #   }
+    #   if (tibble::has_name(data, "STRATA")) {
+    #     filters.parameters$info$n.pop <- length(unique(data$STRATA))
+    #   }
+    #   filters.parameters$info$n.ind <- length(unique(data$INDIVIDUALS))
+    # }
 
     # Return -------------------------------------------------------------------
-    if (verbose) cat("################################### RESULTS ####################################\n")
-    message("\nFilter monomorphic markers")
-    message("Number of individuals / strata / chrom / locus / SNP:")
-    if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
-    message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-    if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
-
+    radiator_results_message(
+      rad.message = "\nFilter monomorphic markers",
+      filters.parameters,
+      internal,
+      verbose
+    )
   }
   return(data)
 }#End filter_monomorphic

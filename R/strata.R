@@ -115,7 +115,7 @@ read_strata <- function(
         col_types = readr::cols(.default = readr::col_character()))
     }
 
-    if (tibble::has_name(strata, "POP_ID") && !tibble::has_name(strata, "STRATA")) {
+    if (rlang::has_name(strata, "POP_ID") && !rlang::has_name(strata, "STRATA")) {
       colnames(strata) <- stringi::stri_replace_all_fixed(
         colnames(strata), "POP_ID", "STRATA",
         vectorize_all = FALSE)
@@ -147,7 +147,7 @@ read_strata <- function(
     if (!is.null(pop.select)) {
       n.pop.new <- length(pop.select)
       if (verbose) message("\nPopulations/strata selected: ", stringi::stri_join(pop.select, collapse = ", "), " (", n.pop.new," pops)")
-      strata  %<>% suppressWarnings(dplyr::filter(STRATA %in% pop.select))
+      strata  %<>% dplyr::filter(STRATA %in% pop.select)
     }
 
 
@@ -174,7 +174,7 @@ read_strata <- function(
     }
 
     # If dart file manage TARGET_ID ----------------------------------------------
-    if (tibble::has_name(strata, "TARGET_ID")) {
+    if (rlang::has_name(strata, "TARGET_ID")) {
       strata  %<>%
         dplyr::mutate(
           TARGET_ID = stringi::stri_trans_toupper(TARGET_ID),
@@ -205,7 +205,7 @@ read_strata <- function(
 }#End read_strata
 
 # Summary strata ---------------------------------------------------------------
-#' @title summary of strata
+#' @title Summary of strata
 #' @description Summarise the information of a strata file or object.
 #' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 #' and might be of interest for users.
@@ -374,7 +374,7 @@ change_pop_names <- function(data, pop.levels = NULL, pop.labels = NULL) {
 
   # POP_ID in gsi_sim does not like spaces, we need to remove space in everything touching POP_ID...
 
-  if (tibble::has_name(data, "STRATA") & !tibble::has_name(data, "POP_ID")) {
+  if (rlang::has_name(data, "STRATA") & !rlang::has_name(data, "POP_ID")) {
     data %<>% dplyr::rename(POP_ID = STRATA)
   }
 
@@ -609,60 +609,53 @@ strata_haplo <- function(strata = NULL, data = NULL, blacklist.id = NULL) {
   return(strata.df)
 }#End strata_haplo
 
+# read_blacklist_id -----------------------------------------------------------------
+#' @name read_blacklist_id
+#' @title read_blacklist_id
+#' @description Read a file or object with blacklisted individuals.
+#' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
+#' and might be of interest for users.
 
-#' @title strata_vcf
-#' @description Manage strata
-#' @rdname strata_vcf
-#' @keywords internal
+#' @param blacklist.id (optional, path or object) A blacklist file in the working directory
+#' or object in the global environment. The data frame
+#' as 1 column (named \code{INDIVIDUALS}) and is filled with the individual IDs
+#' The ids are cleaned with \code{\link{clean_ind_names}} for separators,
+#' only \code{-} are tolerated. Duplicates are removed automatically.
+#' Default: \code{blacklist.id = NULL}.
+
+#' @inheritParams radiator_common_arguments
+
+#' @rdname read_blacklist_id
 #' @export
-strata_vcf <- function(strata, input, blacklist.id) {
-
-  if (is.null(strata)) {
-    message("No strata file provided")
-    message("    generating a strata with 1 grouping")
-    strata.df <- dplyr::distinct(input, INDIVIDUALS) %>%
-      dplyr::mutate(STRATA = rep("pop1", n()))
-  } else {
-    if (is.vector(strata)) {
-      strata.df <- suppressMessages(readr::read_tsv(
-        file = strata, col_names = TRUE,
-        col_types = readr::cols(.default = readr::col_character())
-      ))
+#' @return A tibble with column \code{INDIVIDUALS}.
+#' @examples
+#' \dontrun{
+#' bl <- radiator::read_blacklist_id("blacklist.tsv")
+#' }
+read_blacklist_id <- function(blacklist.id = NULL, verbose = TRUE) {
+  if (!is.null(blacklist.id)) {# With blacklist of ID
+    if (is.vector(blacklist.id)) {
+      suppressMessages(blacklist.id <- readr::read_tsv(
+        blacklist.id,
+        col_names = TRUE,
+        col_types = readr::cols(.default = readr::col_character())))
     } else {
-      strata.df <- strata
-      strata.df <- dplyr::mutate_all(.tbl = strata.df, .funs = as.character)
+      if (!rlang::has_name(blacklist.id, "INDIVIDUALS")) {
+        rlang::abort("Blacklist of individuals should have 1 column named: INDIVIDUALS")
+      }
+      blacklist.id <- dplyr::mutate_all(.tbl = blacklist.id, .funs = as.character)
     }
+    blacklist.id$INDIVIDUALS <- radiator::clean_ind_names(blacklist.id$INDIVIDUALS)
+
+    # remove potential duplicate id
+    dup <- dplyr::distinct(.data = blacklist.id, INDIVIDUALS)
+    blacklist.id.dup <- nrow(blacklist.id) - nrow(dup)
+    if (blacklist.id.dup >1) {
+      if (verbose) message("Duplicate id's in blacklist: ", blacklist.id.dup)
+      blacklist.id <- dup
+    }
+    dup <- blacklist.id.dup <- NULL
+    if (verbose) message("Number of individuals in blacklist: ", nrow(blacklist.id))
   }
-
-  colnames(strata.df) <- stringi::stri_replace_all_fixed(
-    str = colnames(strata.df),
-    pattern = "STRATA",
-    replacement = "POP_ID",
-    vectorize_all = FALSE
-  )
-
-  # Remove potential whitespace in pop_id
-  strata.df$POP_ID <- clean_pop_names(strata.df$POP_ID)
-  colnames.strata <- colnames(strata.df)
-
-  # clean ids
-  strata.df$INDIVIDUALS <- clean_ind_names(strata.df$INDIVIDUALS)
-
-  strata.df <- dplyr::distinct(strata.df, POP_ID, INDIVIDUALS, .keep_all = TRUE)
-
-  if (!is.null(strata)) {
-    id.vcf <- dplyr::distinct(input, INDIVIDUALS) %>%
-      dplyr::mutate(INDIVIDUALS = clean_ind_names(INDIVIDUALS)) %>%
-      purrr::flatten_chr(.)
-
-    strata.df <- dplyr::filter(strata.df, INDIVIDUALS %in% id.vcf)
-  }
-
-
-  # filtering the strata if blacklist id available
-  if (!is.null(blacklist.id)) {
-    strata.df <- dplyr::anti_join(x = strata.df, y = blacklist.id, by = "INDIVIDUALS")
-  }
-
-  return(strata.df)
-}#End strata_vcf
+  return(blacklist.id)
+}#End read_blacklist_id

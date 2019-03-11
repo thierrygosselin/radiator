@@ -40,3 +40,4 @@ Bioinformatics, 27, 2156-2158.
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}
 }
+\keyword{internal}

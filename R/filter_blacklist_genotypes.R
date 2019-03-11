@@ -127,7 +127,7 @@ read_blacklist_genotypes <- function(
 #'
 #' \emph{How to get GDS and tidy data ?}
 #' Look into \code{\link{tidy_genomic_data}},
-#' \code{\link{write_seqarray}} or
+#' \code{\link{read_vcf}} or
 #' \code{\link{tidy_vcf}}.
 #'
 #'
@@ -254,7 +254,7 @@ filter_blacklist_genotypes <- function(
       } else {
         id <- SeqArray::seqGetData(gdsfile = data, var.name = "sample.id")
       }
-      wl <- radiator::extract_markers_metadata(gds = data) %$% MARKERS
+      wl <- radiator::extract_markers_metadata(gds = data, whitelist = TRUE) %$% MARKERS
     }
     blacklist.genotypes  %<>% dplyr::filter(INDIVIDUALS %in% id) %>%
       dplyr::filter(MARKERS %in% wl)

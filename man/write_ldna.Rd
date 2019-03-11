@@ -45,13 +45,6 @@ BiocManager::install("SNPRelate")
 
 To install LDna:
 devtools::install_github("petrikemppainen/LDna")
-
-
-\strong{Further arguments passed via the \emph{dots-dots-dots}:}
-\itemize{
-\item keep.gds Default \code{keep.gds = FALSE}, the SNPRelate GDS object
-generated is removed after completion of the LDna object.
-}
 }
 \references{
 Kemppainen P, Knight CG, Sarma DK et al. (2015)

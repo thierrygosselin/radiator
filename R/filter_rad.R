@@ -2,7 +2,7 @@
 
 #' @name filter_rad
 
-#' @title one function to rule them all
+#' @title ONE FUNCTION TO RULE THEM ALL
 
 #' @description Designed for RADseq data, it's radiator integrated pipeline that links
 #' several \code{filter_} functions of \pkg{radiator}.
@@ -164,39 +164,6 @@ filter_rad <- function(
   ...
 ) {
 
-  # #testing
-  # interactive.filter = TRUE
-  # strata = NULL
-  # output = "genind"
-  # filename = NULL
-  # verbose = TRUE
-  # parallel.core = parallel::detectCores() - 1
-  # subsample.markers.stats <- 1
-  # #Filters
-  # filter.reproducibility = NULL
-  # filter.individuals.missing = NULL
-  # filter.individuals.heterozygosity = NULL
-  # filter.individuals.coverage.total = NULL
-  # filter.common.markers = FALSE
-  # filter.mac = NULL
-  # filter.coverage = NULL
-  # filter.genotyping = NULL
-  # filter.snp.position.read = NULL
-  # filter.snp.number = NULL
-  # filter.short.ld = NULL
-  # filter.long.ld = NULL
-  # long.ld.missing = NULL
-  # ld.method <- "r2"
-  # filter.strands <- "blacklist"
-  # detect.mixed.genomes = NULL
-  # detect.duplicate.genomes = NULL
-  # filter.hwe = NULL
-  # # Others
-  # erase.genotypes = NULL
-  # random.seed = NULL
-  # path.folder = NULL
-  # internal = FALSE
-
   if (verbose) {
     cat("################################################################################\n")
     cat("############################# radiator::filter_rad #############################\n")
@@ -254,7 +221,7 @@ install.packages("UpSetR")
       "blacklist.genotype", "erase.genotypes",
       "gt", "gt.bin", "gt.vcf", "gt.vcf.nuc",
       "pop.levels", "pop.labels", "pop.select", "blacklist.id",
-      "markers.info", "keep.allele.names", "keep.gds", "ref.calibration",
+      "markers.info", "keep.allele.names", "ref.calibration",
       "vcf.metadata", "vcf.stats",
       "whitelist.markers",
       "write.tidy",
@@ -331,7 +298,7 @@ install.packages("UpSetR")
       gds <- read_rad(data)
       data.type <- radiator::detect_genomic_format(gds)
     } else if (data.type %in% c("vcf.file")) {
-      gds <- write_seqarray(
+      gds <- read_vcf(
         data = data,
         strata = strata,
         filter.strands = filter.strands,
@@ -348,11 +315,12 @@ install.packages("UpSetR")
         data = data,
         strata = strata,
         filename = filename,
-        verbose = TRUE,
+        verbose = FALSE,
         parallel.core = parallel.core,
         path.folder = radiator.folder,
-        filters.parameters = filters.parameters,
-        internal = TRUE
+        pop.levels = pop.levels,
+        internal = TRUE,
+        tidy.dart = FALSE
       )
       data.type <- "SeqVarGDSClass"
     }
@@ -365,23 +333,28 @@ install.packages("UpSetR")
       internal = TRUE,
       vcf.metadata = TRUE,
       vcf.stats = TRUE,
-      gt.vcf.nuc = TRUE,
-      gt.vcf = TRUE,
-      gt = TRUE,
+      gt.vcf.nuc = FALSE,
+      gt.vcf = FALSE,
+      gt = FALSE,
       gt.bin = TRUE
     )
-
-    # Keep GT_BIN
-    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "INDIVIDUALS",
-              "POP_ID", "GT_BIN", "READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH",
-              "GQ", "GL_HOM_REF", "GL_HET", "GL_HOM_ALT")
-    gds <- suppressWarnings(dplyr::select(gds, dplyr::one_of(want)))
   }
 
   source <- extract_source(gds) # to know if dart data or not...
 
   # Filter reproducibility -----------------------------------------------------
   if ("dart" %in% source) {
+    # Filter parameter file: initiate
+    filters.parameters <- radiator_parameters(
+      generate = FALSE,
+      initiate = TRUE,
+      update = FALSE,
+      parameter.obj = filters.parameters,
+      data = gds,
+      path.folder = radiator.folder,
+      file.date = file.date,
+      verbose = verbose)
+
     gds <- filter_dart_reproducibility(
       data = gds,
       interactive.filter = interactive.filter,
@@ -389,41 +362,49 @@ install.packages("UpSetR")
       parallel.core = parallel.core,
       verbose = verbose,
       parameters = filters.parameters,
-      path.folder = wf)
+      path.folder = wf,
+      internal = FALSE)
   }
 
-  # STATISTICS -----------------------------------------------------------------
-  # SUBSAMPLE markers
-  if (is.null(subsample.markers.stats)) subsample.markers.stats <- 0.2
+  # Filter_monomorphic----------------------------------------------------------
+  gds <- filter_monomorphic(
+    data = gds,
+    filter.monomorphic = filter.monomorphic,
+    parallel.core = parallel.core,
+    verbose = verbose,
+    parameters = filters.parameters,
+    path.folder = wf,
+    internal = FALSE)
 
-  # Markers metadata
-  markers.meta <- extract_markers_metadata(gds)
+  # Filter common markers ------------------------------------------------------
+  gds <- filter_common_markers(
+    data = gds,
+    filter.common.markers = filter.common.markers.bk,
+    fig = TRUE,
+    parallel.core = parallel.core,
+    verbose = verbose,
+    parameters = filters.parameters,
+    path.folder = wf,
+    internal = FALSE)
 
-  n.markers <- length(markers.meta$VARIANT_ID)
-  if (n.markers < 200000) subsample.markers.stats <- 1
-
-  if (subsample.markers.stats < 1) {
-    markers.subsampled <- dplyr::sample_frac(tbl = markers.meta,
-                                             size = subsample.markers.stats)
-    variant.select <- markers.subsampled$VARIANT_ID
-    subsample.filename <- stringi::stri_join("markers.subsampled_", file.date, ".tsv")
-    dplyr::select(markers.subsampled, MARKERS) %>%
-      dplyr::mutate(RANDOM_SEED = random.seed) %>%
-      readr::write_tsv(x = .,
-                       path = file.path(radiator.folder, subsample.filename))
-    markers.subsampled <- NULL
-  } else {
-    variant.select <- NULL
-  }
+  # Filter Whitelist------------------------------------------------------------
+  gds <- filter_whitelist(
+    data = gds,
+    whitelist.markers = whitelist.markers,
+    verbose = verbose,
+    path.folder = wf,
+    parameters = filters.parameters,
+    biallelic = biallelic,
+    internal = FALSE)
 
   # Genotypes metadata ---------------------------------------------------------
   # check for coverage information...
   genotypes.meta <- extract_genotypes_metadata(gds, index.only = TRUE)
   count.data <- "ALLELE_REF_DEPTH" %in% genotypes.meta
-  coverage.info <- "READ_DEPTH" %in% genotypes.meta
+  # coverage.info <- "READ_DEPTH" %in% genotypes.meta
   genotypes.meta <- NULL
 
-  # filter.individuals.missing -----------------------------------------------
+  # Filter_individuals----------------------------------------------------------
   gds <- filter_individuals(
     data = gds,
     interactive.filter = interactive.filter,
@@ -433,31 +414,10 @@ install.packages("UpSetR")
     parallel.core = parallel.core,
     verbose = verbose,
     path.folder = wf,
-    subsample = variant.select,
     parameters = filters.parameters,
-    dp = count.data)
-
-  # Markers stats ------------------------------------------------------------
-  if (verbose) message("\nGenerating markers stats\n")
-  temp <- generate_markers_stats(
-    gds = gds,
-    path.folder = radiator.folder,
-    filename = NULL,
-    file.date = file.date,
-    parallel.core = parallel.core,
-    subsample = variant.select,
-    force.stats = FALSE)
-  temp <- NULL
-
-  # Filter common markers ----------------------------------------------------
-  gds <- filter_common_markers(
-    data = gds,
-    filter.common.markers = filter.common.markers.bk,
-    plot = TRUE,
-    parallel.core = parallel.core,
-    verbose = verbose,
-    parameters = filters.parameters,
-    path.folder = wf)
+    dp = count.data,
+    internal = FALSE
+  )
 
   # Filter MAC------------------------------------------------------------------
   gds <- filter_mac(
@@ -468,7 +428,9 @@ install.packages("UpSetR")
     parallel.core = parallel.core,
     verbose = verbose,
     parameters = filters.parameters,
-    path.folder = wf)
+    path.folder = wf,
+    internal = FALSE)
+
 
   # Filter coverage-------------------------------------------------------------
   gds <- filter_coverage(
@@ -479,7 +441,8 @@ install.packages("UpSetR")
     parallel.core = parallel.core,
     verbose = verbose,
     parameters = filters.parameters,
-    path.folder = wf)
+    path.folder = wf,
+    internal = FALSE)
 
   # Filter genotyping---------------------------------------------------------
   gds <- filter_genotyping(
@@ -490,7 +453,8 @@ install.packages("UpSetR")
     parallel.core = parallel.core,
     verbose = verbose,
     parameters = filters.parameters,
-    path.folder = wf)
+    path.folder = wf,
+    internal = FALSE)
 
   # Filter SNP position on the read---------------------------------------------
   gds <- filter_snp_position_read(
@@ -501,7 +465,9 @@ install.packages("UpSetR")
     parallel.core = parallel.core,
     verbose = verbose,
     parameters = filters.parameters,
-    path.folder = wf)
+    path.folder = wf,
+    internal = FALSE)
+
 
   # Filter snp number per locus ------------------------------------------------
   gds <- filter_snp_number(
@@ -512,9 +478,8 @@ install.packages("UpSetR")
     parallel.core = parallel.core,
     verbose = verbose,
     parameters = filters.parameters,
-    path.folder = wf)
-
-  # return(gds)
+    path.folder = wf,
+    internal = FALSE)
 
   # Filter Linkage disequilibrium --------------------------------------------
   gds <- filter_ld(
@@ -528,7 +493,9 @@ install.packages("UpSetR")
     long.ld.missing = long.ld.missing,
     ld.method = ld.method,
     parameters = filters.parameters,
-    path.folder = wf)
+    path.folder = wf,
+    internal = FALSE)
+
 
   # Detect mixed genomes -------------------------------------------------------
   gds <- detect_mixed_genomes(
@@ -538,7 +505,8 @@ install.packages("UpSetR")
     ind.heterozygosity.threshold = NULL,
     parameters = filters.parameters,
     verbose = verbose,
-    path.folder = wf)
+    path.folder = wf,
+    internal = FALSE)
 
   #Detect duplicate genomes ---------------------------------------------------
   gds <- detect_duplicate_genomes(
@@ -549,8 +517,8 @@ install.packages("UpSetR")
     verbose = verbose,
     parameters = filters.parameters,
     random.seed = random.seed,
-    path.folder = wf
-  )
+    path.folder = wf,
+    internal = FALSE)
 
   # Filter HWE -----------------------------------------------------------------
   gds <- filter_hwe(
@@ -563,12 +531,29 @@ install.packages("UpSetR")
     parallel.core = parallel.core,
     parameters = filters.parameters,
     path.folder = wf,
-    verbose = verbose)
+    verbose = verbose,
+    internal = FALSE)
 
 
-  # FINAL PREP -----------------------------------------------------------------
+  # Final Sync GDS -----------------------------------------------------------
+  if (verbose) message("\nPreparing output files...")
+  markers.meta <- extract_markers_metadata(
+    gds = gds,
+    whitelist = TRUE)
+
+  strata <- extract_individuals(
+    gds = gds,
+    ind.field.select = c("INDIVIDUALS", "STRATA"),
+    whitelist = TRUE)
+
+  sync_gds(
+    gds = gds,
+    samples = strata$INDIVIDUALS,
+    markers = markers.meta$VARIANT_ID
+  )
+
+  # FINAL PREP
   # filtered data folder
-  if (verbose) message("\n\nTransferring data to genomic converter...")
   path.folder <- generate_folder(
     f = wf,
     rad.folder = "filtered",
@@ -576,30 +561,88 @@ install.packages("UpSetR")
     file.date = file.date,
     verbose = verbose)
 
-
   # Whitelist
-  extract_markers_metadata(gds) %>%
-    readr::write_tsv(x = ., path = file.path(path.folder, "whitelist.markers.tsv"))
-  if (verbose) message("Writing the whitelist of filtered markers: whitelist.markers.tsv")
-
+  write_rad(data = markers.meta,
+            path = path.folder,
+            filename = "whitelist.markers.tsv",
+            tsv = TRUE,
+            write.message = "standard",
+            verbose = verbose)
   # blacklist
-  bl <- update_bl_markers(gds = gds, extract = TRUE)
+  bl <- extract_markers_metadata(gds = gds, blacklist = TRUE)
   if (nrow(bl) > 0) {
-    readr::write_tsv(x = bl, path = file.path(path.folder, "blacklist.markers.tsv"))
-    if (verbose) message("Writing the blacklist of markers: blacklist.markers.tsv")
+    write_rad(data = bl,
+              path = path.folder,
+              filename = "blacklist.markers.tsv",
+              tsv = TRUE,
+              write.message = "standard",
+              verbose = verbose)
   }
 
+
   # writing the blacklist of id
-  blacklist.id <- update_bl_individuals(gds = gds, extract = TRUE)
+  blacklist.id <- extract_individuals(gds = gds, blacklist = TRUE)
   if (nrow(blacklist.id) > 0) {
-    readr::write_tsv(x = blacklist.id, path = file.path(path.folder, "blacklist.id.tsv"))
-    if (verbose) message("Writing the blacklist of ids: blacklist.id.tsv")
+    write_rad(data = blacklist.id,
+              path = path.folder,
+              filename = "blacklist.id.tsv",
+              tsv = TRUE,
+              write.message = "standard",
+              verbose = verbose)
   }
 
   # Generate new strata
-  strata <- extract_individuals(gds = gds, ind.field.select = c("INDIVIDUALS", "STRATA"))
-  readr::write_tsv(x = strata, path = file.path(path.folder, "strata.filtered.tsv"))
-  if (verbose) message("Writing the filtered strata: strata.filtered.tsv")
+  write_rad(data = strata,
+            path = path.folder,
+            filename = "strata.filtered.tsv",
+            tsv = TRUE,
+            write.message = "Writing the filtered strata: strata.filtered.tsv",
+            verbose = verbose)
+
+
+  # Statistics after filtering -------------------------------------------------
+  if (verbose) message("\nGenerating statistics after filtering")
+  # SUBSAMPLE markers
+  n.markers <- length(markers.meta$VARIANT_ID)
+  if (n.markers < 200000) subsample.markers.stats <- 1
+  if (subsample.markers.stats < 1) {
+    markers.subsampled <- dplyr::sample_frac(
+      tbl = markers.meta,
+      size = subsample.markers.stats)
+    variant.select <- markers.subsampled$VARIANT_ID
+    subsample.filename <- stringi::stri_join("markers.subsampled_", file.date, ".tsv")
+    dplyr::select(markers.subsampled, MARKERS) %>%
+      dplyr::mutate(RANDOM_SEED = random.seed) %>%
+      readr::write_tsv(
+        x = .,
+        path = file.path(path.folder, subsample.filename))
+    markers.subsampled <- NULL
+  } else {
+    variant.select <- NULL
+  }
+
+  # Individuals stats
+  if (verbose) message("calculating individual stats...")
+  id.stats <- generate_id_stats(
+    gds = gds,
+    subsample = variant.select,
+    path.folder = path.folder,
+    file.date = file.date,
+    parallel.core = parallel.core,
+    verbose = verbose
+    ) %$% info
+
+  # Markers stats
+  if (verbose) message("calculating markers stats...")
+  markers.stats <- generate_markers_stats(
+    gds = gds,
+    path.folder = path.folder,
+    filename = NULL,
+    file.date = file.date,
+    parallel.core = parallel.core,
+    verbose = verbose,
+    subsample = variant.select
+  ) %$% info
 
   # missing memory
   # if (verbose) message("Memorizing missing genotypes")
@@ -613,7 +656,8 @@ install.packages("UpSetR")
   # if (verbose) message("File written: ", memory.filename)
 
   # genomic_converter-----------------------------------------------------------
-  output <- genomic_converter(
+  if (verbose) message("\nTransferring data to genomic converter...")
+  res$output <- genomic_converter(
     data = gds,
     strata = strata,
     output = output,
@@ -625,9 +669,8 @@ install.packages("UpSetR")
     filter.common.markers = FALSE,
     filter.monomorphic = FALSE,
     internal = TRUE)
-
-  if (verbose) {
-    sum <- summary_gds(gds = gds, verbose = TRUE)
-  }
-  return(gds)
+  if (is.null(res$output)) res$output <- "not selected"
+  summary_gds(gds = gds, verbose = TRUE)
+  res$gds <- gds
+  return(res)
 }#End filter_rad

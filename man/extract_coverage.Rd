@@ -4,7 +4,8 @@
 \alias{extract_coverage}
 \title{extract_coverage}
 \usage{
-extract_coverage(gds, markers = TRUE, ind = TRUE, depth = NULL)
+extract_coverage(gds, markers = TRUE, ind = TRUE, update.gds = FALSE,
+  parallel.core = parallel::detectCores() - 2)
 }
 \description{
 Extract coverage information from a GDS file

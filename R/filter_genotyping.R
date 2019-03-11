@@ -93,8 +93,8 @@
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 filter_genotyping <- function(
-  interactive.filter = TRUE,
   data,
+  interactive.filter = TRUE,
   filter.genotyping = NULL,
   filename = NULL,
   parallel.core = parallel::detectCores() - 1,
@@ -110,9 +110,9 @@ filter_genotyping <- function(
     # filename = NULL
     # parallel.core = parallel::detectCores() - 1
     # verbose = TRUE
-    # path.folder = "genotyping_test"
+    # path.folder = NULL
     # parameters <- NULL
-    # force.stats <- NULL
+    # force.stats <- TRUE
 
 
     if (interactive.filter) verbose <- TRUE
@@ -202,6 +202,7 @@ filter_genotyping <- function(
       data = data,
       path.folder = path.folder,
       file.date = file.date,
+      internal = internal,
       verbose = verbose)
 
     # Step 1. Visuals ----------------------------------------------------------
@@ -209,22 +210,26 @@ filter_genotyping <- function(
 
     # Generate coverage stats---------------------------------------------------
     if (verbose) message("Generating statistics")
+    # return(data)
+    # summary_gds(data)
     info <- generate_markers_stats(
       gds = data,
       missing = TRUE,
-      coverage = FALSE, allele.coverage = FALSE, mac = FALSE,
-      heterozygosity = FALSE, snp.per.locus = FALSE, snp.position.read = FALSE,
+      coverage = FALSE,
+      allele.coverage = FALSE,
+      mac = FALSE,
+      heterozygosity = FALSE,
+      snp.per.locus = FALSE,
+      snp.position.read = FALSE,
       force.stats = force.stats,
       path.folder = path.folder,
       file.date = file.date,
       parallel.core = parallel.core
     )
+    # summary_gds(data)
+
     stats <- info$stats
     info <- info$info
-
-    # Whitelist and blacklist --------------------------------------------------
-    # want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS")
-    wl <- bl <- extract_markers_metadata(gds = data)
 
     # Helper table -------------------------------------------------------------
     if (verbose) message("Generating missingness/genotyping helper table...")
@@ -246,7 +251,9 @@ filter_genotyping <- function(
         path = file.path(path.folder, "genotyping.helper.table.tsv"))
 
     # checking if strata present
-    strata <- extract_individuals(gds = data, ind.field.select = c("INDIVIDUALS", "STRATA"))
+    strata <- extract_individuals(
+      gds = data,
+      ind.field.select = c("INDIVIDUALS", "STRATA"))
     if (!is.null(strata$STRATA)) {
       m.strata <- missing_per_pop(
         gds = data, strata = strata, parallel.core = parallel.core)
@@ -276,11 +283,12 @@ filter_genotyping <- function(
       m.strata <- round_mean <- mean.pop <- NULL
 
       if (verbose) message("File written: markers.pop.missing.helper.table.tsv")
-      helper.table  %<>% tidyr::gather(
-        data = .,
-        key = LIST,
-        value = MARKERS,
-        -c(MISSING_PROP, STRATA)
+      helper.table  %<>%
+        tidyr::gather(
+          data = .,
+          key = LIST,
+          value = MARKERS,
+          -c(MISSING_PROP, STRATA)
         ) %>%
         dplyr::mutate(STRATA = factor(STRATA, levels = strata.levels, ordered = TRUE)) %>%
         dplyr::arrange(STRATA)
@@ -288,9 +296,10 @@ filter_genotyping <- function(
       strata <- TRUE
       strata.levels <- NULL
     } else {
-      helper.table  %<>% tidyr::gather(
-        data = .,
-        key = LIST, value = MARKERS, -MISSING_PROP)
+      helper.table  %<>%
+        tidyr::gather(
+          data = .,
+          key = LIST, value = MARKERS, -MISSING_PROP)
       n.pop <- 1L
       strata <- FALSE
     }
@@ -334,7 +343,7 @@ filter_genotyping <- function(
     if (interactive.filter) {
       filter.genotyping <- 1L
       if (verbose) message("\nStep 2. Filtering markers based on maximum missing proportion\n")
-      filter.genotyping <- interactive_question(
+      filter.genotyping <- radiator_question(
         x = "Choose the maximum missing proportion allowed: ", minmax = c(0, 1))
     }
 
@@ -347,50 +356,32 @@ filter_genotyping <- function(
       if (verbose) message("\nRemoving markers based on genotyping statistic: ", filter.genotyping)
     }
 
-    # Whitelist and Blacklist of markers
-    wl %<>% dplyr::filter(MISSING_PROP <= filter.genotyping) %>%
-      readr::write_tsv(
-        x = .,
-        path = file.path(path.folder, "whitelist.markers.genotyping.tsv"),
-        append = FALSE, col_names = TRUE)
-    bl %<>% dplyr::setdiff(wl) %>%
-      readr::write_tsv(
-        x = .,
-        path = file.path(path.folder, "blacklist.markers.genotyping.tsv"),
-        append = FALSE, col_names = TRUE)
-    # saving whitelist and blacklist
-    if (verbose) message("File written: whitelist.markers.genotyping.tsv")
-    if (verbose) message("File written: blacklist.markers.genotyping.tsv")
-
-    # Filtering ----------------------------------------------------------------
+    # Whitelist and blacklist --------------------------------------------------
+    bl <- info %>%
+      dplyr::filter(MISSING_PROP > filter.genotyping) %$%
+      VARIANT_ID
+    markers.meta <- extract_markers_metadata(gds = data, whitelist = FALSE) %>%
+      dplyr::mutate(
+        FILTERS = dplyr::if_else(VARIANT_ID %in% bl, "filter.genotyping", FILTERS)
+      )
     # Update GDS
     update_radiator_gds(
       gds = data,
       node.name = "markers.meta",
-      value = wl,
+      value = markers.meta,
       sync = TRUE
     )
+    write_rad(
+      data = markers.meta %>% dplyr::filter(FILTERS == "filter.genotyping"),
+      path = path.folder,
+      filename = stringi::stri_join("blacklist.markers.genotyping_", file.date, ".tsv"),
+      tsv = TRUE, internal = internal, verbose = verbose)
 
-    # sync_gds(gds = data, markers = wl$VARIANT_ID)
-    # radiator.gds <- gdsfmt::index.gdsn(
-    #   node = data, path = "radiator", silent = TRUE)
-    #
-    # # Update metadata
-    # gdsfmt::add.gdsn(
-    #   node = radiator.gds,
-    #   name = "markers.meta",
-    #   val = wl,
-    #   replace = TRUE,
-    #   compress = "ZIP_RA",
-    #   closezip = TRUE)
-
-    # update blacklist.markers
-    if (nrow(bl) > 0) {
-      bl %<>% dplyr::select(MARKERS) %>%
-        dplyr::mutate(FILTER = "filter.genotyping")
-      bl.gds <- update_bl_markers(gds = data, update = bl)
-    }
-
+    write_rad(
+      data = markers.meta %>% dplyr::filter(FILTERS == "whitelist"),
+      path = path.folder,
+      filename = stringi::stri_join("whitelist.markers.genotyping_", file.date, ".tsv"),
+      tsv = TRUE, internal = internal, verbose = verbose)
 
     # Update parameters --------------------------------------------------------
     filters.parameters <- radiator_parameters(
@@ -404,20 +395,18 @@ filter_genotyping <- function(
       values = filter.genotyping,
       path.folder = path.folder,
       file.date = file.date,
+      internal = internal,
       verbose = verbose)
 
-    # if (filters.parameters$filters.parameters$BLACKLIST == 0) {
-    #   file.remove(path.folder)
-    #   if (verbose) message("Folder removed: ", folder_short(path.folder))
-    # }
 
     # results --------------------------------------------------------------------
-    if (verbose) cat("################################### RESULTS ####################################\n")
-    message("\nFilter genotyping threshold: ", filter.genotyping)
-    message("Number of individuals / strata / chrom / locus / SNP:")
-    if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
-    message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-    if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
-  }
+    radiator_results_message(
+      rad.message = stringi::stri_join("\nFilter genotyping threshold: ", filter.genotyping),
+      filters.parameters,
+      internal,
+      verbose
+    )
+
+    }
   return(data)
 }#End filter_genotyping

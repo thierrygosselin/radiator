@@ -5,7 +5,9 @@
 \title{extract_genotypes_metadata}
 \usage{
 extract_genotypes_metadata(gds, genotypes.meta.select = NULL,
-  radiator.node = TRUE, index.only = FALSE, verbose = FALSE)
+  radiator.node = TRUE, index.only = FALSE,
+  sync.markers.individuals = TRUE, whitelist = FALSE,
+  blacklist = FALSE, verbose = FALSE)
 }
 \description{
 Import gds or radiator genotypes meta node

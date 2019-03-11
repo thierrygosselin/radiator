@@ -22,6 +22,19 @@
 
 
 detect_all_missing <- function(data) {
+
+  # For GDS data...
+  # test <- extract_genotypes_metadata(
+  #   gds = gds,
+  #   genotypes.meta.select = c("INDIVIDUALS", "VARIANT_ID", "GT_BIN")
+  # )
+  #
+  # all.missing <- dplyr::group_by(test, VARIANT_ID) %>%
+  #   dplyr::summarise(MISSING = all(is.na(GT_BIN))) %>%
+  #   dplyr::filter(!MISSING)
+
+
+
   res <- list()
 
   # Allows to have either GT, GT_VCF_NUC, GT_VCF or GT_BIN

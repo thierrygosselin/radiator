@@ -253,8 +253,6 @@ filter_mac <- function(
       n.diplo.samples <- dplyr::n_distinct(data$INDIVIDUALS) * 2
     }
 
-
-
     if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
       if (!"SeqVarTools" %in% utils::installed.packages()[,"Package"]) {
         rlang::abort('Please install SeqVarTools for this option:\n
@@ -266,12 +264,9 @@ filter_mac <- function(
         data <- radiator::read_rad(data, verbose = verbose)
         data.type <- "SeqVarGDSClass"
       }
-      n.diplo.samples <- gdsfmt::index.gdsn(node = data, path = "radiator/individuals/INDIVIDUALS", silent = TRUE)
-      if (!is.null(n.diplo.samples)) {
-        n.diplo.samples <- length(unique(gdsfmt::read.gdsn(n.diplo.samples))) * 2
-      } else {
-        n.diplo.samples <- length(SeqArray::seqGetData(data, "sample.id")) * 2
-      }
+      n.diplo.samples <- nrow(
+        extract_individuals(gds = data, ind.field.select = "INDIVIDUALS", whitelist = TRUE)
+      ) * 2
     }
 
     # Filter parameter file: initiate ------------------------------------------
@@ -283,6 +278,7 @@ filter_mac <- function(
       data = data,
       path.folder = path.folder,
       file.date = file.date,
+      internal = internal,
       verbose = verbose)
 
     # Whitelist and blacklist --------------------------------------------------
@@ -291,23 +287,16 @@ filter_mac <- function(
       wl <- bl <- radiator::separate_markers(data = data, sep = "__",
                                              markers.meta.all.only = TRUE,
                                              parallel.core = parallel.core)
-      calculate.mac <- TRUE
+      markers.meta <- NULL
     } else {
-      wl <- bl <- extract_markers_metadata(gds = data)
-      if (tibble::has_name(wl, "MAC_GLOBAL")) {
-        calculate.mac <- FALSE
-      } else {
-        calculate.mac <- TRUE
-      }
+      markers.meta <- extract_markers_metadata(gds = data)
     }
 
     # MAF calculation ----------------------------------------------------------
-    if (calculate.mac) {
-      if (verbose) message("Calculating GLOBAL MAC")
-      mac.data <- compute_mac(data = data, parallel.core = parallel.core)
-    } else {
-      mac.data <- wl
-    }
+    if (verbose) message("Calculating GLOBAL MAC")
+    mac.data <- compute_mac(data = data,
+                            markers.meta = markers.meta,
+                            parallel.core = parallel.core)
 
     readr::write_tsv(x = mac.data, path = file.path(path.folder, "mac.global.tsv"))
     if (verbose) message("File written: maf.global.tsv")
@@ -409,60 +398,48 @@ filter_mac <- function(
     # Step 2. Thresholds selection ---------------------------------------------
     if (interactive.filter) {
       message("\nStep 2. Filtering markers based on MAC\n")
-      filter.mac <- interactive_question(
+      filter.mac <- radiator_question(
         x = "Choose the filter.mac threshold: ", minmax = c(1, n.markers))
     }
 
-    mac.data %<>% dplyr::filter(MAC_GLOBAL >= filter.mac)
-
-    # Whitelist and Blacklist of markers
-    wl %<>% dplyr::filter(MARKERS %in% mac.data$MARKERS) %>%
-      readr::write_tsv(
-        x = .,
-        path = file.path(path.folder, "whitelist.markers.mac.tsv"),
-        append = FALSE, col_names = TRUE)
-    bl %<>% dplyr::setdiff(wl) %>%
-      readr::write_tsv(
-        x = .,
-        path = file.path(path.folder, "blacklist.markers.mac.tsv"),
-        append = FALSE, col_names = TRUE)
-    # saving whitelist and blacklist
-    if (verbose) message("File written: whitelist.markers.mac.tsv")
-    if (verbose) message("File written: blacklist.markers.mac.tsv")
+    mac.data %<>% dplyr::filter(MAC_GLOBAL < filter.mac)
 
     # Filtering ----------------------------------------------------------------
-    if (data.type == "tbl_df") {
+    if (data.type == "tbl_df") {# Whitelist and Blacklist of markers
+      bl %<>%
+        dplyr::filter(MARKERS %in% mac.data$MARKERS) %>%
+        dplyr::mutate(FILTERS = "filter.mac")
+      wl %<>% dplyr::setdiff(bl)
       data %<>% dplyr::filter(MARKERS %in% wl$MARKERS)
     } else {
+      # Whitelist and Blacklist of markers
+      # saving whitelist and blacklist
+      markers.meta %<>%
+        dplyr::mutate(
+          FILTERS = dplyr::if_else(
+            VARIANT_ID %in% mac.data$VARIANT_ID, "filter.mac", FILTERS
+          )
+        )
       update_radiator_gds(
         gds = data,
         node.name = "markers.meta",
-        value = wl,
+        value = markers.meta,
         sync = TRUE
       )
-
-      # sync_gds(gds = data, markers = wl$VARIANT_ID)
-      #
-      # # Update GDS
-      # radiator.gds <- gdsfmt::index.gdsn(
-      #   node = data, path = "radiator", silent = TRUE)
-      #
-      # # Update metadata
-      # gdsfmt::add.gdsn(
-      #   node = radiator.gds,
-      #   name = "markers.meta",
-      #   val = wl,
-      #   replace = TRUE,
-      #   compress = "ZIP_RA",
-      #   closezip = TRUE)
-
-      # update blacklist.markers
-      if (nrow(bl) > 0) {
-        bl %<>% dplyr::select(MARKERS) %>%
-          dplyr::mutate(FILTER = "filter.mac")
-        bl.gds <- update_bl_markers(gds = data, update = bl)
-      }
+      wl <- dplyr::filter(markers.meta, FILTERS == "whitelist")
+      bl <- dplyr::filter(markers.meta, FILTERS == "filter.mac")
     }
+    readr::write_tsv(
+      x = wl,
+      path = file.path(path.folder, "whitelist.markers.mac.tsv"),
+      append = FALSE, col_names = TRUE)
+    readr::write_tsv(
+      x = bl,
+      path = file.path(path.folder, "blacklist.markers.mac.tsv"),
+      append = FALSE, col_names = TRUE)
+    if (verbose) message("File written: whitelist.markers.mac.tsv")
+    if (verbose) message("File written: blacklist.markers.mac.tsv")
+
 
     if (!is.null(filename)) {
       if (data.type == "tbl_df") {
@@ -484,20 +461,21 @@ filter_mac <- function(
       values = filter.mac,
       path.folder = path.folder,
       file.date = file.date,
+      internal = internal,
       verbose = verbose)
 
-    if (filters.parameters$filters.parameters$BLACKLIST == 0) {
-      file.remove(path.folder)
-      if (verbose) message("Folder removed: ", folder_short(path.folder))
-    }
+    # if (filters.parameters$filters.parameters$BLACKLIST == 0) {
+    #   file.remove(path.folder)
+    #   if (verbose) message("Folder removed: ", folder_short(path.folder))
+    # }
 
     # results --------------------------------------------------------------------
-    if (verbose) cat("################################### RESULTS ####################################\n")
-    message("\nFilter mac threshold: ", filter.mac)
-    message("Number of individuals / strata / chrom / locus / SNP:")
-    if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
-    message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-    if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
+    radiator_results_message(
+      rad.message = stringi::stri_join("\nFilter mac threshold: ", filter.mac),
+      filters.parameters,
+      internal,
+      verbose
+    )
   }
   return(data)
 }#End filter_mac
@@ -647,6 +625,7 @@ compute_maf <- function(x, biallelic) {
 compute_mac <- function (
   data,
   blacklist.markers = NULL,
+  markers.meta = NULL,
   parallel.core = parallel::detectCores() - 1
 ) {
   data.type <- detect_genomic_format(data) # gds or tbl_df
@@ -656,17 +635,17 @@ compute_mac <- function (
     } else {
       data %<>% dplyr::filter(GT != "000000")
     }
-    markers.df <- dplyr::distinct(data, MARKERS)
+    markers.meta <- dplyr::distinct(data, MARKERS)
     if (!is.null(blacklist.markers)) {
-      markers.df %<>% dplyr::filter(!MARKERS %in% blacklist.markers$MARKERS)
+      markers.meta %<>% dplyr::filter(!MARKERS %in% blacklist.markers$MARKERS)
     }
-    n.markers <- nrow(markers.df)
+    n.markers <- nrow(markers.meta)
     if (n.markers > 10000) {
       mac.data <- data %>%
         dplyr::left_join(
-          markers.df %>%
+          markers.meta %>%
             dplyr::mutate(SPLIT_VEC = split_vec_row(
-              markers.df,
+              markers.meta,
               cpu.rounds = ceiling(n.markers/10000),
               parallel.core = parallel.core))
           , by = "MARKERS") %>%
@@ -681,21 +660,37 @@ compute_mac <- function (
       mac.data <- mac_one(x = data)
     }
     mac.data %<>% dplyr::arrange(MARKERS)
-    markers.df <- NULL
+    markers.meta <- NULL
   } else {# GDS
-    markers.df <- extract_markers_metadata(
-      gds = data, markers.meta.select = c("VARIANT_ID", "MARKERS"))
+    if (is.null(markers.meta)) {
+      markers.meta <- extract_markers_metadata(
+        gds = data,
+        markers.meta.select = c("VARIANT_ID", "MARKERS"),
+        whitelist = TRUE)
+    } else {
+      if (rlang::has_name(markers.meta, "FILTERS")) {
+        markers.meta %<>% dplyr::filter(FILTERS == "whitelist")
+      }
+      markers.meta %<>% dplyr::select(VARIANT_ID, MARKERS)
+    }
 
     # blacklist markers
     if (!is.null(blacklist.markers)) {
-      markers.df %<>% dplyr::filter(!MARKERS %in% blacklist.markers$MARKERS)
-      sync_gds(gds = data, markers = markers.df$VARIANT_ID)
+      markers.meta %<>% dplyr::filter(!MARKERS %in% blacklist.markers$MARKERS)
+      sync_gds(gds = data, markers = markers.meta$VARIANT_ID)
     }
-    n.markers <- nrow(markers.df)
+    n.markers <- nrow(markers.meta)
+    ad <- extract_coverage(gds = data, ind = FALSE)
+
+    if (is.null(ad$ref.tot) || is.null(ad$alt.tot)) {
+      ad <- NULL
+    } else {
+      ad <- tibble::tibble(R_DEPTH = ad$ref.tot, A_DEPTH = ad$alt.tot)
+    }
 
     mac.data <- suppressWarnings(
       dplyr::bind_cols(
-        markers.df,
+        markers.meta,
         #MAC
         SeqArray::seqAlleleCount(
           gdsfile = data,
@@ -706,34 +701,40 @@ compute_mac <- function (
           matrix(
             data = .,
             nrow = n.markers, ncol = 2, byrow = TRUE,
-            dimnames = list(rownames = markers.df$VARIANT_ID,
+            dimnames = list(rownames = markers.meta$VARIANT_ID,
                             colnames = c("REF_COUNT", "ALT_COUNT"))) %>%
-          tibble::as_tibble(.),
-        # ALLELE DEPTH
-        SeqArray::seqGetData(data, "annotation/format/AD") %$%
-          data %>%
-          colSums(x = ., na.rm = TRUE, dims = 1L) %>%
-          unlist(.) %>%
-          matrix(
-            data = .,
-            nrow = n.markers, ncol = 2, byrow = TRUE,
-            dimnames = list(rownames = markers.df$VARIANT_ID,
-                            colnames = c("R_DEPTH", "A_DEPTH"))) %>%
-          tibble::as_tibble(.)
-      ) %>%
-        dplyr::mutate(
-          MAC_GLOBAL = dplyr::if_else(ALT_COUNT < REF_COUNT, ALT_COUNT, REF_COUNT),
-          MAF_GLOBAL = MAC_GLOBAL / (REF_COUNT + ALT_COUNT),
-          ALT_CHECK = dplyr::if_else(MAC_GLOBAL == ALT_COUNT, "ALT", "REF"),
-          ALT_COUNT = NULL,
-          REF_DEPTH = dplyr::if_else(ALT_CHECK == "ALT", R_DEPTH, A_DEPTH),
-          ALT_DEPTH = dplyr::if_else(ALT_CHECK == "ALT", A_DEPTH, R_DEPTH),
-          R_DEPTH = NULL, A_DEPTH = NULL, ALT_CHECK = NULL
-        ) %>%
-        dplyr::arrange(MARKERS)
-    )
-    markers.df <- NULL
+          tibble::as_tibble(.)))
+
+    if (!is.null(ad)) {
+      suppressWarnings(
+        mac.data %<>%
+          dplyr::bind_cols(ad) %>%
+          dplyr::mutate(
+            MAC_GLOBAL = dplyr::if_else(ALT_COUNT < REF_COUNT, ALT_COUNT, REF_COUNT),
+            MAF_GLOBAL = MAC_GLOBAL / (REF_COUNT + ALT_COUNT),
+            ALT_CHECK = dplyr::if_else(MAC_GLOBAL == ALT_COUNT, "ALT", "REF"),
+            ALT_COUNT = NULL,
+            REF_DEPTH = dplyr::if_else(ALT_CHECK == "ALT", R_DEPTH, A_DEPTH),
+            ALT_DEPTH = dplyr::if_else(ALT_CHECK == "ALT", A_DEPTH, R_DEPTH),
+            R_DEPTH = NULL, A_DEPTH = NULL, ALT_CHECK = NULL
+          ) %>%
+          dplyr::arrange(MARKERS)
+      )
+
+    } else {
+      suppressWarnings(
+        mac.data %<>%
+          dplyr::mutate(
+            MAC_GLOBAL = dplyr::if_else(ALT_COUNT < REF_COUNT, ALT_COUNT, REF_COUNT),
+            MAF_GLOBAL = MAC_GLOBAL / (REF_COUNT + ALT_COUNT),
+            ALT_CHECK = dplyr::if_else(MAC_GLOBAL == ALT_COUNT, "ALT", "REF"),
+            ALT_COUNT = NULL, ALT_CHECK = NULL
+          ) %>%
+          dplyr::arrange(MARKERS)
+      )
+    }
   }
+  ad <- markers.meta <- NULL
   return(mac.data)
 }#End compute_mac
 

@@ -4,7 +4,7 @@
 \alias{compute_mac}
 \title{compute_mac}
 \usage{
-compute_mac(data, blacklist.markers = NULL,
+compute_mac(data, blacklist.markers = NULL, markers.meta = NULL,
   parallel.core = parallel::detectCores() - 1)
 }
 \description{

@@ -153,10 +153,9 @@ filter_snp_position_read <- function(
 
     # Message about steps taken during the process ---------------------------------
     if (interactive.filter) {
-      message("Interactive mode: on")
       message("2 steps to visualize and filter the data based on the number of SNP on the read/locus:")
-      message("Step 1. Impact of SNP number per read/locus (on individual genotypes and locus/snp number potentially filtered)")
-      message("Step 2. Choose the filtering thresholds")
+      message("Step 1. Visualization")
+      message("Step 2. Threshold selection")
     }
 
     # File type detection----------------------------------------------------------
@@ -191,12 +190,14 @@ filter_snp_position_read <- function(
       data = data,
       path.folder = path.folder,
       file.date = file.date,
+      internal = internal,
       verbose = verbose)
 
     # Whitelist and blacklist --------------------------------------------------
     want <- c("MARKERS", "CHROM", "LOCUS", "POS", "COL")
     if (data.type == "SeqVarGDSClass") {
-      wl <- bl <- extract_markers_metadata(gds = data)
+      wl <- bl <- extract_markers_metadata(gds = data, whitelist = TRUE)
+      if (!is.numeric(wl$COL)) wl$COL <- as.numeric(wl$COL)
     } else {
       wl <- bl <- dplyr::select(data, dplyr::one_of(want))
     }
@@ -219,11 +220,10 @@ filter_snp_position_read <- function(
     if (verbose) message("Generating SNP position on read stats")
     stats <- tibble_stats(
       x = wl %>%
-        dplyr::distinct(MARKERS,COL) %$% COL,
+        dplyr::distinct(MARKERS,COL) %$% COL,# %>% as.numeric(.)
       group = "snp position on read")
 
     snp.col.iqr.threshold <- c(stats$Q25, stats$Q75)
-
 
     # Generate box plot
     read.length <- max(wl$COL)
@@ -292,17 +292,17 @@ filter_snp_position_read <- function(
     if (verbose) message("Files written: helper tables and plots")
 
     # Step 2. Thresholds selection ---------------------------------------------
+    if (interactive.filter) {
+      if (verbose) message("\nStep 2. Filtering markers based on the SNPs position on the read\n")
+      filter.snp.position.read <- radiator_question(
+        x = "Choice of stats are: 'outliers', 'q75', 'iqr'", answer.opt = c("outliers", "q75", "iqr"))
+    }
     filter.snp.position.read <- match.arg(
       filter.snp.position.read,
       choices = c("outliers", "q75", "iqr"),
       several.ok = FALSE)
 
-    if (interactive.filter) {
-      if (verbose) message("\nStep 2. Filtering markers based on the SNPs position on the read\n")
-      filter.snp.position.read <- interactive_question(
-        x = "Choice of stats are: 'outliers', 'q75', 'iqr')", answer.opt = c("outliers", "q75", "iqr"))
-    }
-
+    # readr::write_tsv(x = stats, path = "testing.stats.tsv")
 
     # Filtering ----------------------------------------------------------------
     if (filter.snp.position.read == "outliers") {
@@ -320,30 +320,44 @@ filter_snp_position_read <- function(
       x = wl,
       path = file.path(path.folder, "whitelist.markers.snp.position.read.tsv"),
       append = FALSE, col_names = TRUE)
-    bl %<>% dplyr::setdiff(wl) %>%
+
+    bl %<>% dplyr::filter(!MARKERS %in% wl$MARKERS) %>%
+      dplyr::mutate(FILTERS = "filter.snp.position.read")
+      # dplyr::setdiff(wl) %>% # crash RStudio...
+
+    if (nrow(bl) > 0) {
       readr::write_tsv(
-        x = .,
+        x = bl,
         path = file.path(path.folder, "blacklist.markers.snp.position.read.tsv"),
         append = FALSE, col_names = TRUE)
+    }
 
     # saving whitelist and blacklist
     if (verbose) message("File written: whitelist.markers.snp.position.read.tsv")
     if (verbose) message("File written: blacklist.markers.snp.position.read.tsv")
 
     if (data.type == "SeqVarGDSClass") {
+      markers.meta <- extract_markers_metadata(gds = data, whitelist = FALSE) %>%
+        dplyr::mutate(
+          FILTERS = dplyr::if_else(
+            VARIANT_ID %in% bl$VARIANT_ID, "filter.snp.position.read", FILTERS
+          )
+        )
+
       update_radiator_gds(
         gds = data,
         node.name = "markers.meta",
-        value = wl,
+        value = markers.meta,
         sync = TRUE
       )
 
       # update blacklist.markers
-      if (nrow(bl) > 0) {
-        bl %<>% dplyr::select(MARKERS) %>%
-          dplyr::mutate(FILTER = "filter.snp.position.read")
-        bl.gds <- update_bl_markers(gds = data, update = bl)
-      }
+      # if (nrow(bl) > 0) {
+      #   bl %<>% dplyr::select(MARKERS) %>%
+      #     dplyr::mutate(FILTER = "filter.snp.position.read")
+      #   bl.gds <- update_bl_markers(gds = data, update = bl)
+      # }
+
     } else {
       # Apply the filter to the tidy data
       data  %<>% dplyr::filter(MARKERS %in% wl$MARKERS)
@@ -361,15 +375,17 @@ filter_snp_position_read <- function(
       values = filter.snp.position.read,
       path.folder = path.folder,
       file.date = file.date,
+      internal = internal,
       verbose = verbose)
 
-    # Return -----------------------------------------------------------------------
-    if (verbose) cat("################################### RESULTS ####################################\n")
-    message("\nFilter SNP position on the read : ", filter.snp.position.read)
-    message("Number of individuals / strata / chrom / locus / SNP:")
-    if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
-    message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-    if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
+    # results ------------------------------------------------------------------
+    radiator_results_message(
+      rad.message = stringi::stri_join("\nFilter SNP position on the read : ",
+                                       filter.snp.position.read),
+      filters.parameters,
+      internal,
+      verbose
+    )
   }
   return(data)
 } #End filter_snp_position_read

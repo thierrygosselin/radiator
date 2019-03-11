@@ -5,7 +5,8 @@
 \title{extract_markers_metadata}
 \usage{
 extract_markers_metadata(gds, markers.meta.select = NULL,
-  radiator.node = TRUE, verbose = FALSE)
+  radiator.node = TRUE, whitelist = FALSE, blacklist = FALSE,
+  verbose = FALSE)
 }
 \description{
 Import gds or radiator markers meta node

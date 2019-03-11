@@ -16,7 +16,7 @@ detect_biallelic_markers(data, verbose = FALSE,
 
 \emph{How to get GDS and tidy data ?}
 Look into \code{\link{tidy_genomic_data}},
-\code{\link{write_seqarray}} or
+\code{\link{read_vcf}} or
 \code{\link{tidy_vcf}}.}
 
 \item{verbose}{(optional, logical) \code{verbose = TRUE} to be chatty

@@ -56,7 +56,7 @@
 #' @section Input genomic datasets:
 #' \enumerate{
 #' \item GDS file or object, must end with \code{.gds} or \code{.rad}:
-#' documented in \code{\link{write_seqarray}}
+#' documented in \code{\link{read_vcf}}
 #'
 #' \item VCF files must end with \code{.vcf}: documented in \code{\link{tidy_vcf}}
 #'

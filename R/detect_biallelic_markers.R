@@ -16,7 +16,7 @@
 #'
 #' \emph{How to get GDS and tidy data ?}
 #' Look into \code{\link{tidy_genomic_data}},
-#' \code{\link{write_seqarray}} or
+#' \code{\link{read_vcf}} or
 #' \code{\link{tidy_vcf}}.
 
 #' @param verbose (optional, logical) \code{verbose = TRUE} to be chatty

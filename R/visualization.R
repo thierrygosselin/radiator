@@ -1,5 +1,383 @@
 #### Visualization
 
+
+
+# count ind_total_reads -------------------------------------------------------
+#' @title ind_total_reads
+#' @description Counts the total number of reads per samples
+#' @rdname ind_total_reads
+#' @keywords internal
+#' @export
+ind_total_reads <- function(x, path.folder = NULL) {
+  # x <- unfiltered
+  # path.folder <- path.folder.coverage
+  if (is.null(path.folder)) path.folder <- getwd()
+  # generate the stats
+  read.info <- dplyr::group_by(x, INDIVIDUALS, POP_ID) %>%
+    dplyr::summarise(TOTAL_READ_COUNTS = sum(READ_DEPTH, na.rm = TRUE))
+
+  if (is.factor(read.info$POP_ID)) {
+    read.pop.levels <- levels(read.info$POP_ID)
+  } else {
+    read.pop.levels <- unique(read.info$POP_ID)
+  }
+  read.pop.levels <- c(read.pop.levels, "OVERALL")
+
+  overall.read <- dplyr::mutate(read.info, POP_ID = "OVERALL")
+
+
+  read.info <- suppressWarnings(dplyr::bind_rows(read.info, overall.read)) %>%
+    dplyr::mutate(POP_ID = factor(POP_ID, levels = read.pop.levels))
+
+  read.counts.stats <- read.info %>%
+    dplyr::group_by(POP_ID) %>%
+    dplyr::summarise(
+      MEAN = mean(TOTAL_READ_COUNTS, na.rm = TRUE),
+      MEDIAN = stats::median(TOTAL_READ_COUNTS, na.rm = TRUE),
+      SD = stats::sd(TOTAL_READ_COUNTS, na.rm = TRUE),
+      Q25 = stats::quantile(TOTAL_READ_COUNTS, 0.25, na.rm = TRUE),
+      Q75 = stats::quantile(TOTAL_READ_COUNTS, 0.75, na.rm = TRUE),
+      IQR = stats::IQR(TOTAL_READ_COUNTS, na.rm = TRUE),
+      MIN = min(TOTAL_READ_COUNTS, na.rm = TRUE),
+      MAX = max(TOTAL_READ_COUNTS, na.rm = TRUE),
+      OUTLIERS_LOW = Q25 - (1.5 * IQR),
+      OUTLIERS_HIGH = Q75 + (1.5 * IQR),
+      OUTLIERS_LOW_N = length(TOTAL_READ_COUNTS[TOTAL_READ_COUNTS < OUTLIERS_LOW]),
+      OUTLIERS_HIGH_N = length(TOTAL_READ_COUNTS[TOTAL_READ_COUNTS > OUTLIERS_HIGH]),
+      OUTLIERS_TOTAL = OUTLIERS_HIGH_N + OUTLIERS_LOW_N,
+      OUTLIERS_PROP = round(OUTLIERS_TOTAL / length(x), 3)
+    )
+
+  # plots
+  element.text <- ggplot2::element_text(size = 10,
+                                        family = "Helvetica", face = "bold")
+  n.pop <- dplyr::n_distinct(x$POP_ID)
+  ind.plot <- suppressWarnings(
+    ggplot2::ggplot(
+      read.info, ggplot2::aes(x = POP_ID, y = TOTAL_READ_COUNTS, na.rm = TRUE)) +
+      ggplot2::geom_boxplot() +
+      ggplot2::labs(x = "Populations",
+                    y = "Individuals total read counts",
+                    title = "Individuals total read counts") +
+      ggplot2::theme(
+        legend.position = "none",
+        plot.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold", hjust = 0.5),
+        # plot.subtitle = ggplot2::element_text(size = 10, family = "Helvetica", hjust = 0.5),
+        axis.title.y = element.text,
+        axis.title.x = element.text,
+        axis.text.x = element.text))
+
+  suppressWarnings(
+    ggplot2::ggsave(
+      plot = ind.plot,
+      filename = file.path(path.folder, "plot.ind.total.reads.pdf"),
+      width = n.pop * 2, height = 10, dpi = 300, units = "cm",
+      useDingbats = FALSE)
+  )
+
+}#End ind_coverage
+
+# markers_genotyped_helper------------------------------------------------------
+#' @title markers_genotyped_helper
+#' @description Help individual's genotyped threshold
+#' @rdname markers_genotyped_helper
+#' @export
+#' @keywords internal
+markers_genotyped_helper <- function(x, y, overall.only = FALSE) {
+  # x <- res$missing.genotypes.markers.pop
+  # Set the breaks for the figure
+  max.markers <- dplyr::n_distinct(y$MARKERS)
+
+  threshold.helper.overall <- y %>%
+    dplyr::ungroup(.) %>%
+    dplyr::summarise(
+      `0` = length(PERCENT[PERCENT == 0]),
+      `10` = length(PERCENT[PERCENT <= 10]),
+      `20` = length(PERCENT[PERCENT <= 20]),
+      `30` = length(PERCENT[PERCENT <= 30]),
+      `40` = length(PERCENT[PERCENT <= 40]),
+      `50` = length(PERCENT[PERCENT <= 50]),
+      `60` = length(PERCENT[PERCENT <= 60]),
+      `70` = length(PERCENT[PERCENT <= 70]),
+      `80` = length(PERCENT[PERCENT <= 80]),
+      `90` = length(PERCENT[PERCENT <= 90]),
+      `100` = length(PERCENT[PERCENT <= 100])
+    ) %>%
+    tidyr::gather(data = ., key = GENOTYPED_THRESHOLD, value = NUMBER_MARKERS) %>%
+    dplyr::mutate(POP_ID = rep("OVERALL", n()))
+
+  if (!overall.only){
+    threshold.helper.pop <- x %>%
+      dplyr::group_by(POP_ID) %>%
+      dplyr::summarise(
+        `0` = length(PERCENT[PERCENT == 0]),
+        `10` = length(PERCENT[PERCENT <= 10]),
+        `20` = length(PERCENT[PERCENT <= 20]),
+        `30` = length(PERCENT[PERCENT <= 30]),
+        `40` = length(PERCENT[PERCENT <= 40]),
+        `50` = length(PERCENT[PERCENT <= 50]),
+        `60` = length(PERCENT[PERCENT <= 60]),
+        `70` = length(PERCENT[PERCENT <= 70]),
+        `80` = length(PERCENT[PERCENT <= 80]),
+        `90` = length(PERCENT[PERCENT <= 90]),
+        `100` = length(PERCENT[PERCENT <= 100])
+      ) %>%
+      tidyr::gather(data = ., key = GENOTYPED_THRESHOLD, value = NUMBER_MARKERS, -POP_ID)
+
+    mean.pop <- threshold.helper.pop %>%
+      dplyr::group_by(GENOTYPED_THRESHOLD) %>%
+      dplyr::summarise(
+        NUMBER_MARKERS = round(mean(NUMBER_MARKERS), 0)
+      ) %>%
+      dplyr::mutate(POP_ID = rep("MEAN_POP", n()))
+
+    # Check if x$POP_ID is a factor
+    if (is.factor(x$POP_ID)) {
+      x.pop.levels <- levels(x$POP_ID)
+    } else {
+      x.pop.levels <- unique(x$POP_ID)
+    }
+
+    threshold.helper <- suppressWarnings(
+      dplyr::bind_rows(threshold.helper.pop, mean.pop, threshold.helper.overall) %>%
+        dplyr::mutate(
+          GENOTYPED_THRESHOLD = as.numeric(GENOTYPED_THRESHOLD),
+          POP_ID = factor(POP_ID, levels = c(x.pop.levels, "MEAN_POP", "OVERALL"), ordered = TRUE)
+        ))
+    threshold.helper.pop <- mean.pop <- threshold.helper.overall <- x <- y <- NULL
+  } else {
+    threshold.helper <- threshold.helper.overall %>%
+      dplyr::mutate(
+        GENOTYPED_THRESHOLD = as.numeric(GENOTYPED_THRESHOLD)
+      )
+    threshold.helper.overall <- x <- y <- NULL
+  }
+  #Function to replace package plyr round_any
+  rounder <- function(x, accuracy, f = round) {
+    f(x / accuracy) * accuracy
+  }
+
+  if (max.markers >= 1000) {
+    y.breaks.by <- rounder(max.markers / 10, 100, ceiling)
+    y.breaks.max <- rounder(max.markers, 1000, ceiling)
+    y.breaks <- seq(0, y.breaks.max, by = y.breaks.by)
+  } else {
+    y.breaks.by <- rounder(max.markers / 10, 10, ceiling)
+    y.breaks.max <- rounder(max.markers, 100, ceiling)
+    y.breaks <- seq(0, y.breaks.max, by = y.breaks.by)
+  }
+
+
+  plot.markers.geno.threshold <- ggplot2::ggplot(
+    threshold.helper,
+    ggplot2::aes(x = GENOTYPED_THRESHOLD, y = NUMBER_MARKERS)) +
+    ggplot2::geom_line() +
+    ggplot2::geom_point(size = 2, shape = 21, fill = "white") +
+    ggplot2::scale_x_continuous(name = "Marker's missing genotype threshold (percent)", breaks = c(0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100)) +
+    ggplot2::scale_y_continuous(name = "Markers\n(whitelisted number)", breaks = y.breaks, limits = c(0, y.breaks.max)) +
+    ggplot2::theme(
+      axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+      axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+      axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica"),#, angle = 90, hjust = 1, vjust = 0.5),
+      strip.text.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold")
+    ) +
+    ggplot2::theme_bw() +
+    ggplot2::facet_grid(~POP_ID)
+  # plot.markers.geno.threshold
+  return(plot.markers.geno.threshold)
+}#End markers_genotyped_helper
+
+# tibble_stats-----------------------------------------------------------------
+#' @title tibble_stats
+#' @description Generate a tibble of statistics
+#' @rdname tibble_stats
+#' @keywords internal
+#' @export
+tibble_stats <- function(x, group, subsample = NULL) {
+  if (is.null(subsample)) subsample <- 1L
+  Q <- stats::quantile(x, probs = c(0.25, 0.75), na.rm = TRUE)
+  res <- tibble::tibble(
+    GROUP = group,
+    MIN = min(x, na.rm = TRUE),
+    # Q25 = stats::quantile(x, 0.25, na.rm = TRUE),
+    Q25 = Q[1],
+    MEDIAN = stats::median(x, na.rm = TRUE),
+    Q75 = Q[2],
+    MAX = max(x, na.rm = TRUE),
+    IQR = abs(diff(Q)),
+    # IQR = stats::IQR(depth, na.rm = TRUE),
+    OUTLIERS_LOW = Q25 - (1.5 * IQR),
+    OUTLIERS_HIGH =  Q75 + (1.5 * IQR)) %>%
+    dplyr::mutate_if(.tbl = ., .predicate = is.integer, .funs = as.numeric) %>%
+    dplyr::mutate(
+      OUTLIERS_LOW = dplyr::if_else(OUTLIERS_LOW < MIN, MIN, OUTLIERS_LOW),
+      OUTLIERS_HIGH = dplyr::if_else(OUTLIERS_HIGH > MAX, MAX, OUTLIERS_HIGH),
+      SUBSAMPLE = subsample
+    )
+  Q <- NULL
+  return(res)
+}#End tibble_stats
+
+# boxplot_stats-----------------------------------------------------------------
+# boxplot of stats
+#' @title boxplot_stats
+#' @description Generate a boxplot
+#' @rdname boxplot_stats
+#' @keywords internal
+#' @export
+boxplot_stats <- function(
+  data,
+  title,
+  subtitle = NULL,
+  x.axis.title = NULL,
+  y.axis.title,
+  facet.columns = FALSE,
+  facet.rows = FALSE,
+  bp.filename = NULL,
+  path.folder = NULL
+) {
+  # data <- test
+  # x.axis.title = NULL
+  # x.axis.title <- "SNP position on the read groupings"
+  # title <- "Individual's QC stats"
+  # subtitle = "testing"
+  # y.axis.title <- "Statistics"
+  # y.axis.title <- "SNP position (base pair)"
+  # bp.filename <- "vcf.snp.position.read.pdf"
+  # bp.filename <- "test.pdf"
+  # facet.columns = TRUE
+  # facet.rows = FALSE
+  # path.folder = NULL
+
+  if (is.null(path.folder)) path.folder <- getwd()
+
+  n.group <- dplyr::n_distinct(data$GROUP)
+  element.text <- ggplot2::element_text(size = 10,
+                                        family = "Helvetica", face = "bold")
+
+  if (facet.columns) {
+    data <- dplyr::mutate(data, X = "1")
+    fig.boxplot <- ggplot2::ggplot(data = data, ggplot2::aes(X))
+  } else {
+    fig.boxplot <- ggplot2::ggplot(data = data, ggplot2::aes(GROUP))
+  }
+
+
+  fig.boxplot <- fig.boxplot +
+    ggplot2::geom_boxplot(
+      ggplot2::aes(ymin = OUTLIERS_LOW, lower = Q25, middle = MEDIAN, upper = Q75,
+                   ymax = OUTLIERS_HIGH), stat = "identity") +
+    ggplot2::labs(y = y.axis.title, title = title)
+
+  if (!is.null(subtitle)) fig.boxplot <- fig.boxplot + ggplot2::labs(subtitle = subtitle)
+
+  # Draw upper outliers
+  if (facet.columns) {
+    fig.boxplot <- fig.boxplot +
+      ggplot2::geom_segment(
+        ggplot2::aes(
+          x = "1", xend = "1",
+          y = OUTLIERS_HIGH, yend = MAX),
+        linetype = "dashed")
+  } else {
+    fig.boxplot <- fig.boxplot +
+      ggplot2::geom_segment(
+        ggplot2::aes(
+          x = GROUP, xend = GROUP,
+          y = OUTLIERS_HIGH, yend = MAX),
+        linetype = "dashed")
+  }
+
+  # Draw lower outliers
+  if (facet.columns) {
+    fig.boxplot <- fig.boxplot +
+      ggplot2::geom_segment(
+        ggplot2::aes(
+          x = "1", xend = "1",
+          y = OUTLIERS_LOW, yend = MIN),
+        linetype = "dashed")
+  } else {
+    fig.boxplot <- fig.boxplot +
+      ggplot2::geom_segment(
+        ggplot2::aes(
+          x = GROUP, xend = GROUP,
+          y = OUTLIERS_LOW, yend = MIN),
+        linetype = "dashed")
+  }
+
+  fig.boxplot <- fig.boxplot +
+    ggplot2::theme(
+      plot.title = ggplot2::element_text(size = 12, family = "Helvetica",
+                                         face = "bold", hjust = 0.5),
+      legend.position = "none",
+      axis.title.y = element.text,
+      axis.text.y = element.text
+    ) +
+    ggplot2::theme_bw()
+
+  if (is.null(x.axis.title)) {
+    fig.boxplot <- fig.boxplot +
+      ggplot2::theme(
+        axis.title.x = ggplot2::element_blank(),
+        axis.text.x = ggplot2::element_blank(),
+        axis.ticks.x = ggplot2::element_blank()
+      )
+  } else {
+    fig.boxplot <- fig.boxplot +
+      ggplot2::xlab(x.axis.title) +
+      ggplot2::theme(
+        axis.title.x = element.text,
+        # axis.text.x = ggplot2::element_blank(),
+        axis.ticks.x = ggplot2::element_blank()
+      )
+  }
+
+  if (!is.null(subtitle)) {
+    fig.boxplot <- fig.boxplot +
+      ggplot2::theme(
+        plot.subtitle = ggplot2::element_text(size = 10, family = "Helvetica"))
+  }
+
+  if (facet.columns) {
+    fig.boxplot <- fig.boxplot + ggplot2::facet_grid(GROUP ~ ., scales = "free")
+    n.facet <- n.group * 2
+    width <- 15
+    height <- 5 + (4 * n.group)
+  }
+
+  # else {
+  # width <-  10 + (5 * n.group) + 1
+  # height <-  10
+  # }
+
+  if (facet.rows) {
+    fig.boxplot <- fig.boxplot + ggplot2::facet_grid(FACET_ROWS ~ ., scales = "free")
+    n.facet <- n.group * 2
+    width <- 10
+    height <- 5 + (4 * n.group)
+  }
+
+  if (!facet.rows && !facet.columns) {
+    width <-  13 + (5 * n.group) + 1
+    height <-  5
+  }
+
+  print(fig.boxplot)
+  if (!is.null(bp.filename)) {
+    suppressMessages(ggplot2::ggsave(
+      filename = file.path(path.folder, bp.filename),
+      plot = fig.boxplot,
+      width = width,
+      height = height,
+      dpi = 300, units = "cm", useDingbats = FALSE))
+  }
+  return(fig.boxplot)
+}#Endboxplot_stats
+
+
+
+
+# plot_density_distribution_coverage -------------------------------------------
 #' @title Figure density distribution of coverage summary statistics
 #' @description Create density distribution of coverage summary statistics.
 #' Use the coverage summary file created with coverage_summary function.
@@ -392,7 +770,7 @@ plot_snp_position_read <- function(data, aes.colour, y.title) {
 #' @param y.title Title of the y-axis.
 #' @export
 #' @rdname plot_distribution_diversity
-# @keywords internal
+#' @keywords internal
 
 plot_distribution_diversity <- function(data, aes.x, aes.colour, x.title, y.title) {
 
@@ -430,7 +808,7 @@ plot_distribution_diversity <- function(data, aes.x, aes.colour, x.title, y.titl
 #' @param y.title Title of the y-axis.
 #' @export
 #' @rdname plot_boxplot_diversity
-# @keywords internal
+#' @keywords internal
 plot_boxplot_diversity <- function(data, aes.x.y, y.title) {
   ggplot2::ggplot(data, aes.x.y) +
     ggplot2::geom_violin(trim = F) +

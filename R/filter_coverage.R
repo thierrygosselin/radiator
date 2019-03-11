@@ -100,7 +100,6 @@ filter_coverage <- function(
   verbose = TRUE,
   ...
 ) {
-
   if (!is.null(filter.coverage) || interactive.filter) {
 
     # interactive.filter = TRUE
@@ -204,6 +203,7 @@ filter_coverage <- function(
       data = data,
       path.folder = path.folder,
       file.date = file.date,
+      internal = internal,
       verbose = verbose)
 
     # Step 1. Visuals ----------------------------------------------------------
@@ -225,18 +225,15 @@ filter_coverage <- function(
     stats <- info$stats
     info <- info$info
 
-    # Whitelist and blacklist --------------------------------------------------
-    # want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS")
-    wl <- bl <- extract_markers_metadata(gds = data)
 
     # identify outliers: low and high -----------------------------------------
     out.low <- floor(stats$OUTLIERS_LOW[stats$GROUP == "mean coverage"]*1000)/1000
     out.high <- floor(stats$OUTLIERS_HIGH[stats$GROUP == "mean coverage"]*1000)/1000
     if (verbose) message("Generating coverage statistics: without outliers")
-    variant.wo.out <- dplyr::filter(info, COVERAGE_MEAN >= out.low &
-                                      COVERAGE_MEAN <= out.high) %$%
-      VARIANT_ID %>%
-      as.integer
+    # variant.wo.out <- dplyr::filter(info, COVERAGE_MEAN >= out.low &
+    #                                   COVERAGE_MEAN <= out.high) %$%
+    #   VARIANT_ID %>%
+    #   as.integer
 
     # Helper table -------------------------------------------------------------
     # filter.coverage <- "outliers"
@@ -347,7 +344,10 @@ filter_coverage <- function(
       # save
       ggplot2::ggsave(
         filename = file.path(path.folder, "coverage.low.helper.plot.pdf"),
-        plot = markers.plot.low, width = 20, height = 15, dpi = 300, units = "cm", useDingbats = FALSE)
+        plot = markers.plot.low,
+        width = 20,
+        height = 15,
+        dpi = 300, units = "cm", useDingbats = FALSE)
     }
 
     helper.table.high <- tibble::tibble(COVERAGE_HIGH = ch.range) %>%
@@ -382,7 +382,9 @@ filter_coverage <- function(
       # save
       ggplot2::ggsave(
         filename = file.path(path.folder, "coverage.high.helper.plot.pdf"),
-        plot = markers.plot.high, width = 20, height = 15, dpi = 300, units = "cm", useDingbats = FALSE)
+        plot = markers.plot.high,
+        width = 20, height = 15,
+        dpi = 300, units = "cm", useDingbats = FALSE)
     }
     if (verbose) message("Files written: helper tables and plots")
 
@@ -391,46 +393,47 @@ filter_coverage <- function(
     if (interactive.filter) {
       filter.coverage <- c(min.c, max.c)
       message("\nStep 2. Filtering markers based on mean coverage\n")
-      filter.coverage[1] <- interactive_question(
-        x = "Choose the min mean coverage threshold: ", minmax = c(1, max.c))
+      filter.coverage[1] <- radiator_question(
+        x = "Choose the min mean coverage threshold: ", minmax = c(1, 10000))
     }
     if (interactive.filter) {
-      filter.coverage[2] <- interactive_question(
-        x = "Choose the max mean coverage threshold: ", minmax = c(1, max.c))
+      filter.coverage[2] <- radiator_question(
+        x = "Choose the max mean coverage threshold: ", minmax = c(1, 10000))
     }
 
-    # Whitelist and Blacklist of markers
-    wl %<>% dplyr::filter(COVERAGE_MEAN >= filter.coverage[1] &
-                            COVERAGE_MEAN <= filter.coverage[2]) %>%
-      readr::write_tsv(
-        x = .,
-        path = file.path(path.folder, "whitelist.markers.coverage.tsv"),
-        append = FALSE, col_names = TRUE)
-    bl %<>% dplyr::setdiff(wl) %>%
-      readr::write_tsv(
-        x = .,
-        path = file.path(path.folder, "blacklist.markers.coverage.tsv"),
-        append = FALSE, col_names = TRUE)
-    # saving whitelist and blacklist
-    if (verbose) message("File written: whitelist.markers.coverage.tsv")
-    if (verbose) message("File written: blacklist.markers.coverage.tsv")
-
-    # Filtering ----------------------------------------------------------------
+    # Whitelist and blacklist --------------------------------------------------
+    # want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS")
+    bl <- info %>%
+      dplyr::filter(
+        COVERAGE_MEAN < filter.coverage[1] |
+          COVERAGE_MEAN > filter.coverage[2]
+        ) %$% VARIANT_ID
+    markers.meta <- extract_markers_metadata(gds = data, whitelist = FALSE) %>%
+      dplyr::mutate(
+        FILTERS = dplyr::if_else(
+          VARIANT_ID %in% bl, "filter.mean.coverage", FILTERS
+        )
+      )
     # Update GDS
     update_radiator_gds(
       gds = data,
       node.name = "markers.meta",
-      value = wl,
+      value = markers.meta,
       sync = TRUE
     )
 
-    # update blacklist.markers
-    if (nrow(bl) > 0) {
-      bl %<>% dplyr::select(MARKERS) %>%
-        dplyr::mutate(FILTER = "filter.mean.coverage")
-      bl.gds <- update_bl_markers(gds = data, update = bl)
-    }
 
+    write_rad(
+      data = markers.meta %>% dplyr::filter(FILTERS == "filter.mean.coverage"),
+      path = path.folder,
+      filename = stringi::stri_join("blacklist.markers.coverage_", file.date, ".tsv"),
+      tsv = TRUE, internal = internal, verbose = verbose)
+
+    write_rad(
+      data = markers.meta %>% dplyr::filter(FILTERS == "whitelist"),
+      path = path.folder,
+      filename = stringi::stri_join("whitelist.markers.coverage_", file.date, ".tsv"),
+      tsv = TRUE, internal = internal, verbose = verbose)
 
     # Update parameters --------------------------------------------------------
     filters.parameters <- radiator_parameters(
@@ -444,15 +447,17 @@ filter_coverage <- function(
       values = paste(filter.coverage, collapse = " / "),
       path.folder = path.folder,
       file.date = file.date,
+      internal = internal,
       verbose = verbose)
 
-    # results --------------------------------------------------------------------
-    if (verbose) cat("################################### RESULTS ####################################\n")
-    message("\nFilter mean coverage thresholds: ", paste(filter.coverage, collapse = " / "))
-    message("Number of individuals / strata / chrom / locus / SNP:")
-    if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
-    message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-    if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
+    # results ------------------------------------------------------------------
+    radiator_results_message(
+      rad.message = stringi::stri_join("\nFilter mean coverage thresholds: ",
+                                       paste(filter.coverage, collapse = " / ")),
+      filters.parameters,
+      internal,
+      verbose
+    )
   }
   return(data)
 }#End filter_coverage
