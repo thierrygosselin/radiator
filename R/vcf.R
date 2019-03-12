@@ -229,6 +229,7 @@ read_vcf <- function(
   # internal <- FALSE
   # random.seed <- NULL
 
+  # markers.info = NULL
   # vcf.stats <- TRUE
   # vcf.metadata = TRUE
   # filter.strands = "blacklist"
@@ -426,7 +427,8 @@ read_vcf <- function(
     parameter.obj = parameters,
     path.folder = radiator.folder,
     file.date = file.date,
-    verbose = verbose)
+    verbose = verbose,
+    internal = internal)
 
   # VCF: Read ------------------------------------------------------------------
   timing.vcf <- proc.time()
@@ -483,9 +485,9 @@ read_vcf <- function(
   if (verbose)  message("\nAnalyzing the data...")
   radiator.gds <- radiator_gds_skeleton(gds)
   # Blacklist of individuals: generate
-  bl.i <- update_bl_individuals(gds = gds, generate = TRUE)
+  # bl.i <- update_bl_individuals(gds = gds, generate = TRUE)
   # Blacklist of markers: generate
-  bl.gds <- update_bl_markers(gds = gds, generate = TRUE)
+  # bl.gds <- update_bl_markers(gds = gds, generate = TRUE)
 
   # VCF: source ----------------------------------------------------------------
   update_radiator_gds(gds = gds, node.name = "source", value = source)
@@ -515,9 +517,7 @@ read_vcf <- function(
     replace = TRUE)
 
   individuals <- dplyr::select(individuals.vcf, INDIVIDUALS = INDIVIDUALS_CLEAN)
-
-  # Add a individuals node
-  update_radiator_gds(gds = gds, node.name = "individuals", value = individuals)
+  individuals.vcf <- NULL
 
   # VCF sync id with STRATA------------------------------------------------------
   strata <- radiator::read_strata(
@@ -528,36 +528,25 @@ read_vcf <- function(
     blacklist.id = blacklist.id) %$% strata
 
   if (!is.null(strata)) {
-    if (verbose) message("Synchronizing samples in VCF and strata...")
+    individuals %<>%
+      dplyr::left_join(
+        join_strata(individuals, strata, verbose = verbose) %>%
+          dplyr::mutate(FILTERS = "whitelist")
+        , by = "INDIVIDUALS"
+      ) %>%
+      dplyr::mutate(FILTERS = tidyr::replace_na(data = FILTERS, replace = "filter.stata"))
 
-    strata %<>% dplyr::filter(INDIVIDUALS %in% individuals.vcf$INDIVIDUALS_CLEAN)
-    bl <- individuals.vcf %>%
-      dplyr::filter(!INDIVIDUALS_CLEAN %in% strata$INDIVIDUALS) %>%
-      dplyr::select(INDIVIDUALS = INDIVIDUALS_CLEAN) %>%
-      dplyr::distinct(INDIVIDUALS) %>%
-      dplyr::mutate(FILTER = "blacklisted by strata")
-    # strata %<>% dplyr::filter(INDIVIDUALS %in% individuals.vcf$INDIVIDUALS_CLEAN)
-    if (nrow(strata) == 0) {
-      rlang::abort("No more individuals in your data, check VCF and strata ID names...")
+    bl <- dplyr::filter(individuals, FILTERS != "whitelist")
+    if (nrow(bl) != 0) {
+      if (verbose) message("    Number of sample blacklisted by the stata: ", nrow(bl))
     }
-    individuals.vcf <- NULL
-    blacklist.strata <- nrow(bl)
-    if (blacklist.strata != 0) {
-      bl.i <- update_bl_individuals(gds = gds, update = bl, bl.i.gds = bl.i)
-      if (verbose) message("    number of sample blacklisted by the stata: ", blacklist.strata)
-      # the param file is updated after markers metadata below
-    }
-    sync_gds(gds = gds, samples = strata$INDIVIDUALS)
-    individuals <- strata
-    strata <- TRUE
   } else {
-    strata <- FALSE
-    blacklist.strata <- 0L
-    individuals %<>% dplyr::mutate(STRATA = 1L)
+    individuals %<>% dplyr::mutate(STRATA = 1L, FILTERS = "whitelist")
   }
-
+  strata <- generate_strata(data = dplyr::filter(individuals, FILTERS == "whitelist"))
   #Update GDS node
-  update_radiator_gds(gds = gds, node.name = "individuals", value = individuals)
+  update_radiator_gds(gds = gds, node.name = "individuals", value = individuals, sync = TRUE)
+  # summary_gds(gds, check.sync = TRUE, verbose = TRUE)
 
   # VCF: Markers metadata  ------------------------------------------------------
   markers.meta <- extract_markers_metadata(gds = gds)
@@ -568,13 +557,14 @@ read_vcf <- function(
   # Stacks specific adjustments
   if (!ref.genome) {
     if (stacks.2) {
-      markers.meta %<>% dplyr::mutate(
-        LOCUS = CHROM,
-        CHROM = "1",
-        COL = POS - 1)
+      markers.meta %<>%
+        dplyr::mutate(
+          LOCUS = CHROM,
+          CHROM = "1",
+          COL = as.integer(POS) - 1
+        )
     } else {
-      markers.meta %<>% dplyr::mutate(
-        CHROM = "1")
+      markers.meta %<>% dplyr::mutate(CHROM = "1")
     }
   }
 
@@ -663,14 +653,6 @@ read_vcf <- function(
       dplyr::select(-n) %>%
       dplyr::distinct(CHROM, POS, .keep_all = TRUE)
 
-
-    # blacklist.strands <- dplyr::distinct(markers.meta, CHROM, LOCUS, POS) %>%
-    #   dplyr::group_by(CHROM, POS) %>%
-    #   dplyr::tally(.) %>%
-    #   dplyr::filter(n > 1) %>%
-    #   dplyr::ungroup(.) %>%
-    #   dplyr::select(CHROM, POS)
-
     if (nrow(blacklist.strands) > 0) {
       if (verbose) {
         message("\nDetected ", nrow(blacklist.strands)," duplicate SNPs on different strands (+/-)")
@@ -745,16 +727,22 @@ read_vcf <- function(
                                         file.date, ".tsv"),
           tsv = TRUE, internal = FALSE, verbose = verbose)
 
-        bl.gds <- update_bl_markers(gds = gds, update = blacklist.strands)
+        # bl.gds <- update_bl_markers(gds = gds, update = blacklist.strands)
         # Update markers.meta
-        markers.meta %<>% dplyr::filter(!MARKERS %in% blacklist.strands$MARKERS)
+        markers.meta %<>%
+          dplyr::mutate(
+            FILTERS = dplyr::if_else(
+              MARKERS %in% blacklist.strands$MARKERS, "filter.strands", FILTERS
+            )
+          )
         # check <- markers.meta
         write_rad(
-          data = markers.meta,
+          data = dplyr::filter(markers.meta, FILTERS == "whitelist"),
           path = path.folder.strands,
           filename = stringi::stri_join("whitelist.duplicated.markers.strands_",
                                         file.date, ".tsv"),
           tsv = TRUE, internal = FALSE, verbose = verbose)
+
         # Update GDS
         update_radiator_gds(
           gds = gds,
@@ -775,36 +763,46 @@ read_vcf <- function(
           path.folder = path.folder,
           file.date = file.date,
           verbose = verbose)
-
-        message("\nFilter duplicated markers on different strands: ", filter.strands)
-        message("Number of individuals / strata / chrom / locus / SNP:")
-        if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
-        message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-        if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
+        # results ------------------------------------------------------------------
+        radiator_results_message(
+          rad.message = stringi::stri_join("\nFilter duplicated markers on different strands: ",
+                                           filter.strands),
+          filters.parameters,
+          internal,
+          verbose
+        )
       }
     }
   }#Here
   blacklist.strands <- path.folder.strands <- NULL
 
   # Filter the vcf's FILTER column ---------------------------------------------
-  markers.meta$FILTER <- SeqArray::seqGetData(
+  markers.meta$FILTER_VCF <- SeqArray::seqGetData(
     gds, "annotation/filter")
-  filter.check.unique <- unique(markers.meta$FILTER)
+  filter.check.unique <- unique(markers.meta$FILTER_VCF)
 
   if (length(filter.check.unique) > 1) {
     message("Filtering markers based on VCF FILTER column")
     # n.markers.before <- nrow(markers.meta)
 
-    bl <- markers.meta %>%
-      dplyr::filter(FILTER != "PASS") %>%
-      dplyr::select(MARKERS) %>%
-      dplyr::mutate(FILTER = "vcf filter column")
+    # bl <- markers.meta %>%
+    #   dplyr::filter(FILTER_VCF != "PASS") %>%
+    #   dplyr::select(MARKERS) %>%
+    #   dplyr::mutate(FILTER_VCF = "vcf filter column")
 
-    bl.gds <- update_bl_markers(gds = gds, update = bl)
+    # bl.gds <- update_bl_markers(gds = gds, update = bl)
+
+    # markers.meta %<>%
+    #   dplyr::filter(FILTER_VCF == "PASS") %>%
+    #   dplyr::select(-FILTER_VCF)
 
     markers.meta %<>%
-      dplyr::filter(FILTER == "PASS") %>%
-      dplyr::select(-FILTER)
+      dplyr::mutate(
+        FILTERS = dplyr::if_else(
+          FILTER_VCF != "PASS", "vcf filter column", FILTERS
+        )
+      )
+
     update_radiator_gds(
       gds = gds,
       node.name = "markers.meta",
@@ -824,15 +822,15 @@ read_vcf <- function(
       file.date = file.date,
       verbose = verbose)
 
-    message("\nFilter vcf filter column: PASS or not")
-    message("Number of individuals / strata / chrom / locus / SNP:")
-    if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
-    message("    Blacklisted: ", filters.parameters$filters.parameters$BLACKLIST)
-    if (verbose) message("    After: ", filters.parameters$filters.parameters$AFTER)
-
+    # results ------------------------------------------------------------------
+    radiator_results_message(
+      rad.message = stringi::stri_join("\nFilter vcf filter column: PASS or not"),
+      filters.parameters,
+      internal,
+      verbose
+    )
   } else {
-    markers.meta %<>%
-      dplyr::select(-FILTER)
+    markers.meta %<>% dplyr::select(-FILTER_VCF)
   }
 
   filter.check.unique <- NULL
@@ -880,7 +878,6 @@ read_vcf <- function(
     verbose = verbose,
     path.folder = wf,
     parameters = filters.parameters,
-    dp = dp,
     internal = FALSE
   )
 
@@ -966,8 +963,7 @@ read_vcf <- function(
     gds = gds,
     ind.field.select = c("INDIVIDUALS", "STRATA"),
     whitelist = TRUE)
-  sync_gds(gds = gds, samples = strata$INDIVIDUALS,
-           markers = markers.meta$VARIANT_ID)
+  sync_gds(gds = gds)
   # summary_gds(gds)
   # generate a folder to put the stats...
   path.folder <- generate_folder(
@@ -985,7 +981,7 @@ read_vcf <- function(
             write.message = "standard",
             verbose = verbose)
   # blacklist
-  bl <- update_bl_markers(gds = gds, extract = TRUE)
+  bl <- extract_markers_metadata(gds, blacklist = TRUE)
   if (nrow(bl) > 0) {
     write_rad(data = bl,
               path = path.folder,
@@ -997,7 +993,7 @@ read_vcf <- function(
 
 
   # writing the blacklist of id
-  blacklist.id <- update_bl_individuals(gds = gds, extract = TRUE)
+  blacklist.id <- extract_individuals(gds, blacklist = TRUE)
   if (nrow(blacklist.id) > 0) {
     write_rad(data = blacklist.id,
               path = path.folder,
@@ -1040,7 +1036,7 @@ read_vcf <- function(
     }
 
     # Individuals stats
-    if (verbose) message("    calculating individual stats...")
+    if (verbose) message("Calculating individual stats...")
     id.stats <- generate_id_stats(
       gds = gds,
       subsample = variant.select,
@@ -1050,7 +1046,7 @@ read_vcf <- function(
       verbose = verbose) %$% info
 
     # Markers stats
-    if (verbose) message("    calculating markers stats...")
+    if (verbose) message("Calculating markers stats...")
     markers.stats <- generate_markers_stats(
       gds = gds,
       path.folder = path.folder,

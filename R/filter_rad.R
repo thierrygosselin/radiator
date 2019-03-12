@@ -232,7 +232,7 @@ install.packages("UpSetR")
   )
 
   filter.common.markers.bk <- filter.common.markers
-
+  filter.monomorphic.bk <- filter.monomorphic
 
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("data is missing")
@@ -302,13 +302,14 @@ install.packages("UpSetR")
         data = data,
         strata = strata,
         filter.strands = filter.strands,
-        random.seed = random.seed,
+        # random.seed = random.seed,
         filter.monomorphic = FALSE,
         filter.common.markers = FALSE,
         internal = TRUE,
-        filters.parameters = filters.parameters,
+        # filters.parameters = filters.parameters,
         path.folder = radiator.folder,
-        verbose = TRUE)
+        parallel.core = parallel.core,
+        verbose = FALSE)
       data.type <- "SeqVarGDSClass"
     } else {
       gds <- tidy_dart(
@@ -369,7 +370,7 @@ install.packages("UpSetR")
   # Filter_monomorphic----------------------------------------------------------
   gds <- filter_monomorphic(
     data = gds,
-    filter.monomorphic = filter.monomorphic,
+    filter.monomorphic = filter.monomorphic.bk,
     parallel.core = parallel.core,
     verbose = verbose,
     parameters = filters.parameters,

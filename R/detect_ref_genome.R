@@ -92,11 +92,7 @@ detect_ref_genome <- function(chromosome = NULL, data = NULL, verbose = TRUE) {
                              replace = FALSE)
         # if the chrom.unique > 1 more likely not to be de novo assembly (e.g. with old stacks version)
         chrom.unique <- length(unique(ref.genome)) == 1
-        chrom.unique.radiator <- if (chrom.unique && unique(ref.genome) == "CHROM_1") {
-          ref.genome <- FALSE
-        } else {
-          ref.genome <- TRUE
-        }
+        chrom.unique.radiator <- any(unique(ref.genome) == "CHROM_1")
 
         # presence of underscore or other separator: more likely ref genome
         chrom.sep <- TRUE %in%
@@ -108,9 +104,14 @@ detect_ref_genome <- function(chromosome = NULL, data = NULL, verbose = TRUE) {
           stringi::stri_detect_regex(str = ref.genome, pattern = "[[:alpha:]]+") %>%
           unique
 
-        if (chrom.unique) ref.genome <- FALSE
-        if (chrom.alpha || chrom.sep) ref.genome <- TRUE
-        ref.genome <- chrom.unique.radiator
+        if (chrom.unique && chrom.unique.radiator) ref.genome <- FALSE
+        if (chrom.unique.radiator) ref.genome <- FALSE
+        if (chrom.unique && chrom.alpha || chrom.sep) {
+          ref.genome <- TRUE
+        } else {
+          ref.genome <- FALSE
+        }
+        if (chrom.unique.radiator) ref.genome <- FALSE
       }
     }
     chrom.unique <- chrom.alpha <- chrom.sep <- chrom.unique.radiator <- NULL

@@ -697,16 +697,6 @@ extract_coverage <- function(
   coverage.info <- list()
   source <- extract_source(gds)
   n.markers<- summary_gds(gds, verbose = FALSE)$n.markers
-  # m <- tibble::tibble(
-  #   MARKERS = character(length = n.markers),
-  #   COVERAGE_TOTAL = integer(length = n.markers),
-  #   REF_DEPTH_TOTAL = integer(length = n.markers),
-  #   ALT_DEPTH_TOTAL = integer(length = n.markers),
-  #   COVERAGE_MEAN = integer(length = n.markers),
-  #   REF_DEPTH_MEAN = integer(length = n.markers),
-  #   ALT_DEPTH_MEAN = integer(length = n.markers),
-  #   .rows = n.markers
-  # )
 
   # DArT counts and VCFs -------------------------------------------------------
   if (!"dart" %in% source || "counts" %in% source) {
@@ -727,6 +717,7 @@ extract_coverage <- function(
       if (length(have) > 0) {
         want <- c("DP", "AD")
         parse.format.list <- purrr::keep(.x = have, .p = have %in% want)
+        message("Extracting ", paste0(parse.format.list, collapse = ", "), " information...")
         # work on parallelization of this part
         depth <- tidy2wide(
           x = purrr::map(

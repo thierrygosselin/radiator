@@ -716,9 +716,9 @@ filter_ld <- function(
 
     wl <- extract_markers_metadata(data, whitelist = TRUE)
     n.chrom <- length(unique(wl$CHROM))
-    #     denovo <- FALSE
 
     if (ref.genome) {
+      denovo <- FALSE
       chrom.tick <- dplyr::distinct(wl, CHROM) %>%
         dplyr::mutate(
           CHROM_TICK = stringi::stri_join(seq(from = 1, to = n(), by = 1), n(), sep = "/")

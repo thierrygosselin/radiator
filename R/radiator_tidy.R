@@ -168,10 +168,18 @@ tidy2wide <- function(
 ) {
   res <- list()
   if (is.null(markers) && !is.null(gds)) {
-    markers <- extract_markers_metadata(gds = gds, markers.meta.select = "MARKERS") %$% MARKERS
+    markers <- extract_markers_metadata(
+      gds = gds,
+      markers.meta.select = "MARKERS",
+      whitelist = TRUE
+    ) %$% MARKERS
   }
   if (is.null(individuals) && !is.null(gds)) {
-    individuals <- extract_individuals(gds = gds, ind.field.select = "INDIVIDUALS") %$% INDIVIDUALS
+    individuals <- extract_individuals(
+      gds = gds,
+      ind.field.select = "INDIVIDUALS",
+      whitelist = TRUE
+    ) %$% INDIVIDUALS
   }
 
   n.markers <- length(markers)
