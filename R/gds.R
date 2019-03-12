@@ -508,8 +508,8 @@ extract_markers_metadata <- function(
   }
   if (blacklist && rlang::has_name(markers.meta, "FILTERS")){
     markers.meta %<>%
-      dplyr::filter(FILTERS != "whitelist") %>%
-      dplyr::select(-FILTERS)
+      dplyr::filter(FILTERS != "whitelist")# %>%
+      # dplyr::select(-FILTERS)
   }
   return(markers.meta)
 }#End import_metadata
