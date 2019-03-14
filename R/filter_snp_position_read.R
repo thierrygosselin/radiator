@@ -197,6 +197,12 @@ filter_snp_position_read <- function(
     want <- c("MARKERS", "CHROM", "LOCUS", "POS", "COL")
     if (data.type == "SeqVarGDSClass") {
       wl <- bl <- extract_markers_metadata(gds = data, whitelist = TRUE)
+
+      # check for presence of COL info...
+      if (!rlang::has_name(wl, "COL")) {
+        message("COL info required, returning data")
+        return(data)
+      }
       if (!is.numeric(wl$COL)) wl$COL <- as.numeric(wl$COL)
     } else {
       wl <- bl <- dplyr::select(data, dplyr::one_of(want))

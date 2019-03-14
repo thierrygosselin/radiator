@@ -245,15 +245,18 @@ filter_genotyping <- function(
           .f = mis_many_markers,
           x = info),
         BLACKLISTED_MARKERS = n.markers - WHITELISTED_MARKERS
-      ) %>%
-      readr::write_tsv(
-        x = .,
-        path = file.path(path.folder, "genotyping.helper.table.tsv"))
+      )
+
+    readr::write_tsv(
+      x = helper.table,
+      path = file.path(path.folder, "genotyping.helper.table.tsv")
+    )
 
     # checking if strata present
     strata <- extract_individuals(
       gds = data,
-      ind.field.select = c("INDIVIDUALS", "STRATA"))
+      ind.field.select = c("INDIVIDUALS", "STRATA"),
+      whitelist = TRUE)
     if (!is.null(strata$STRATA)) {
       m.strata <- missing_per_pop(
         gds = data, strata = strata, parallel.core = parallel.core)

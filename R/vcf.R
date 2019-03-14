@@ -380,7 +380,7 @@ read_vcf <- function(
     f = path.folder,
     rad.folder = "import_gds",
     prefix_int = TRUE,
-    internal = FALSE,
+    internal = internal,
     file.date = file.date,
     verbose = verbose)
 
@@ -419,16 +419,16 @@ read_vcf <- function(
   readr::write_lines(x = random.seed, path = file.path(radiator.folder, "random.seed"))
   if (verbose) message("File written: random.seed (", random.seed,")")
 
-  # radiator_parameters: generate --------------------------------------------
-  filters.parameters <- radiator_parameters(
-    generate = TRUE,
-    initiate = FALSE,
-    update = FALSE,
-    parameter.obj = parameters,
-    path.folder = radiator.folder,
-    file.date = file.date,
-    verbose = verbose,
-    internal = internal)
+  # # radiator_parameters: generate --------------------------------------------
+  # filters.parameters <- radiator_parameters(
+  #   generate = TRUE,
+  #   initiate = FALSE,
+  #   update = FALSE,
+  #   parameter.obj = parameters,
+  #   path.folder = radiator.folder,
+  #   file.date = file.date,
+  #   verbose = verbose,
+  #   internal = internal)
 
   # VCF: Read ------------------------------------------------------------------
   timing.vcf <- proc.time()
@@ -484,10 +484,6 @@ read_vcf <- function(
   # Generate radiator skeleton -------------------------------------------------
   if (verbose)  message("\nAnalyzing the data...")
   radiator.gds <- radiator_gds_skeleton(gds)
-  # Blacklist of individuals: generate
-  # bl.i <- update_bl_individuals(gds = gds, generate = TRUE)
-  # Blacklist of markers: generate
-  # bl.gds <- update_bl_markers(gds = gds, generate = TRUE)
 
   # VCF: source ----------------------------------------------------------------
   update_radiator_gds(gds = gds, node.name = "source", value = source)
@@ -525,9 +521,11 @@ read_vcf <- function(
     pop.levels = pop.levels,
     pop.labels = pop.labels,
     pop.select = pop.select,
-    blacklist.id = blacklist.id) %$% strata
+    blacklist.id = blacklist.id,
+    keep.two = FALSE) %$% strata
 
   if (!is.null(strata)) {
+    id.levels <- individuals$INDIVIDUALS
     individuals %<>%
       dplyr::left_join(
         join_strata(individuals, strata, verbose = verbose) %>%
@@ -540,9 +538,32 @@ read_vcf <- function(
     if (nrow(bl) != 0) {
       if (verbose) message("    Number of sample blacklisted by the stata: ", nrow(bl))
     }
+
+    # renaming ?
+    if (rlang::has_name(individuals, "NEW_ID")) {
+      if (!identical(id.levels, individuals$INDIVIDUALS)) {
+        rlang::abort("Wrong id order, contact author")
+      }
+      # replace id in GDS
+      update_radiator_gds(
+        gds = gds,
+        radiator.gds = FALSE,
+        node.name = "sample.id",
+        value = individuals$NEW_ID,
+        replace = TRUE)
+
+      individuals %<>% dplyr::rename(INDIVIDUALS = NEW_ID, OLD_ID = INDIVIDUALS)
+
+    }
+
+
   } else {
     individuals %<>% dplyr::mutate(STRATA = 1L, FILTERS = "whitelist")
   }
+
+
+
+
   strata <- generate_strata(data = dplyr::filter(individuals, FILTERS == "whitelist"))
   #Update GDS node
   update_radiator_gds(gds = gds, node.name = "individuals", value = individuals, sync = TRUE)
@@ -626,6 +647,17 @@ read_vcf <- function(
     replace = TRUE
   )
 
+  # # radiator_parameters: generate --------------------------------------------
+  filters.parameters <- radiator_parameters(
+    generate = TRUE,
+    initiate = FALSE,
+    update = FALSE,
+    parameter.obj = parameters,
+    path.folder = radiator.folder,
+    file.date = file.date,
+    verbose = verbose,
+    internal = internal)
+
   # radiator_parameters: initiate --------------------------------------------
   # with original VCF's values
   filters.parameters <- radiator_parameters(
@@ -639,7 +671,9 @@ read_vcf <- function(
     values = "",
     path.folder = path.folder,
     file.date = file.date,
-    verbose = FALSE)
+    internal = internal,
+    verbose = verbose)
+
 
   ##______________________________________________________________________######
   # Filters --------------------------------------------------------------------

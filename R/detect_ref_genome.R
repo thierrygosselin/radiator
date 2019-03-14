@@ -93,6 +93,7 @@ detect_ref_genome <- function(chromosome = NULL, data = NULL, verbose = TRUE) {
         # if the chrom.unique > 1 more likely not to be de novo assembly (e.g. with old stacks version)
         chrom.unique <- length(unique(ref.genome)) == 1
         chrom.unique.radiator <- any(unique(ref.genome) == "CHROM_1")
+        chrom.unique.stacks <- any(unique(ref.genome) == "un")
 
         # presence of underscore or other separator: more likely ref genome
         chrom.sep <- TRUE %in%
@@ -112,6 +113,7 @@ detect_ref_genome <- function(chromosome = NULL, data = NULL, verbose = TRUE) {
           ref.genome <- FALSE
         }
         if (chrom.unique.radiator) ref.genome <- FALSE
+        if (chrom.unique.stacks) ref.genome <- FALSE
       }
     }
     chrom.unique <- chrom.alpha <- chrom.sep <- chrom.unique.radiator <- NULL
