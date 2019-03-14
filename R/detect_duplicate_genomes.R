@@ -849,13 +849,19 @@ detect_duplicate_genomes <- function(
           # message("Use the distance or genome analysis to blacklist duplicates ? (distance/genome): ")
           # analysis <- as.character(readLines(n = 1))
 
-          if (data.type != "SeqVarGDSClass") {
+          if (data.type == "SeqVarGDSClass") {
             analysis <- "distance"
           } else {
-            analysis <- radiator_question(
-              x = "\nChoose the analysis method to blacklist duplicates? (distance/genome): ",
-              answer.opt = c("distance", "genome")
-            )
+            if (!is.null(distance.method) && genome) {
+              analysis <- radiator_question(
+                x = "\nChoose the analysis method to blacklist duplicates? (distance/genome): ",
+                answer.opt = c("distance", "genome")
+              )
+            } else if (genome) {
+              analysis <- "genome"
+            } else {
+              analysis <- "distance"
+            }
           }
 
           if (analysis == "distance") {

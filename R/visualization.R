@@ -369,7 +369,11 @@ boxplot_stats <- function(
       plot = fig.boxplot,
       width = width,
       height = height,
-      dpi = 300, units = "cm", useDingbats = FALSE))
+      dpi = 300, units = "cm",
+      limitsize = FALSE,
+      useDingbats = FALSE
+    )
+    )
   }
   return(fig.boxplot)
 }#Endboxplot_stats
@@ -504,7 +508,7 @@ plot_coverage_imbalance_diagnostic <- function(tidy.vcf.file, pop.levels, read.d
   } else {
     data <- suppressWarnings(
       data %>%
-      dplyr::mutate(POP_ID = factor(POP_ID, levels = pop.levels, ordered = T))
+        dplyr::mutate(POP_ID = factor(POP_ID, levels = pop.levels, ordered = T))
     )
   }
 
@@ -579,7 +583,7 @@ plot_density_distribution_maf <- function(data, maf.group, aes.colour = ggplot2:
     ggplot2::geom_line(aes.colour, stat = "density", adjust = adjust.bin) + # pop colored
     #   scale_colour_manual(name ="Sampling sites", values = colour_palette_sites.pink) +
     ggplot2::scale_x_continuous(breaks = c(0, 0.05, 0.1, 0.2, 0.5, 1),
-                       labels = c("0", "0.05", "0.1", "0.2", "0.5", "1.0")) +
+                                labels = c("0", "0.05", "0.1", "0.2", "0.5", "1.0")) +
     ggplot2::labs(x = x.title) +
     ggplot2::labs(y = "Density of SNP (scaled)") +
     ggplot2::expand_limits(y = 0) +
@@ -714,10 +718,10 @@ plot_snp_number_loci <- function(before.filter.data, after.filter.data) {
     ggplot2::labs(y = "Distribution (number)") +
     ggplot2::facet_wrap(~GROUP, nrow = 1, ncol = 2) +
     ggplot2::theme(axis.title.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-          axis.title.y = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-          legend.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-          legend.text = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-          strip.text.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"))
+                   axis.title.y = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
+                   legend.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
+                   legend.text = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
+                   strip.text.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"))
 
   graph
 }
