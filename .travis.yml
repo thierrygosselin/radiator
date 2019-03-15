@@ -1,13 +1,20 @@
 # Sample .travis.yml for R projects
 
 language: r
+r:
+  - release
 cache: packages
-warnings_are_errors: false
+warnings_are_errors: true
+bioc_required: true
 sudo: false
 before_install:
   - Rscript -e 'update.packages(ask = FALSE)'
   - curl -OL http://raw.github.com/craigcitro/r-travis/master/scripts/travis-tool.sh
   - chmod 755 ./travis-tool.sh
+# Install packages from github
+r_github_packages:
+  - zhengxwen/gdsfmt
+
 notifications:
   email:
     on_success: change

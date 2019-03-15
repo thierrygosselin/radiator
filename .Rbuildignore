@@ -7,4 +7,3 @@
 ^README\.Rmd$
 ^README-.*\.png$
 ^vignettes/*\.Rmd
-
