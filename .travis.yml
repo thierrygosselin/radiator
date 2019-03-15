@@ -3,20 +3,20 @@
 language: r
 cache: packages
 warnings_are_errors: false
-sudo: required
-dist: trusty
-env:
-   global:
-     - _R_CHECK_FORCE_SUGGESTS_ = FALSE
+sudo: false
+before_install:
+  - Rscript -e 'update.packages(ask = FALSE)'
+  - curl -OL http://raw.github.com/craigcitro/r-travis/master/scripts/travis-tool.sh
+  - chmod 755 ./travis-tool.sh
 notifications:
   email:
     on_success: change
     on_failure: change
 
-apt_packages:
-  - libgsl0-dev
+addons:
+  apt:
+    packages:
+      - libgsl0-dev
 os:
   - linux
   - osx
-
-TRAVIS_R_VERSION=3.5.0

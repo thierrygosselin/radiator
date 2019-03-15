@@ -1,4 +1,4 @@
-# radiator v.1.0.0 2019-02-19
+# radiator v.1.0.0 2019-03-15
 
 * There is still documentation and vignette to fix, but this is 
 the release that will be submitted to CRAN
@@ -6,7 +6,7 @@ the release that will be submitted to CRAN
 * Major `SeqArray` and `GDS` integration
 * Imputation module was removed from `radiator` and now lives exclusively in package `grur`
 * `filter_dart` is deprecated. Please use `filter_rad`, the ONE function to rule them all;)
-
+* Trying to fix travis and appveyor
 
 # radiator v.0.0.21 2018-11-14
 

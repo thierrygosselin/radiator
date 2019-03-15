@@ -2,7 +2,7 @@ Package: radiator
 Type: Package
 Title: RADseq Data Exploration, Manipulation and Visualization using R
 Version: 1.0.0
-Date: 2019-02-19
+Date: 2019-03-15
 Encoding: UTF-8
 Authors@R: c(
   person("Thierry", "Gosselin", email = "thierrygosselin@icloud.com", role = c("aut", "cre")),
@@ -47,5 +47,6 @@ License: GPL (>=2)
 LazyLoad: yes
 VignetteBuilder: knitr
 RoxygenNote: 6.1.1
+ByteCompile: TRUE
 URL: https://github.com/thierrygosselin/radiator
 BugReports: https://github.com/thierrygosselin/radiator/issues
