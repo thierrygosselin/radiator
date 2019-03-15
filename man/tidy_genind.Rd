@@ -8,7 +8,8 @@ tidy_genind(data, keep.allele.names = FALSE, tidy = TRUE, gds = TRUE,
   write = FALSE, verbose = FALSE)
 }
 \arguments{
-\item{data}{A genind object in the global environment.}
+\item{data}{(path or object) A genind object in the global environment or
+path to a genind file that will be open with \code{readRDS}.}
 
 \item{keep.allele.names}{Allows to keep allele names for the tidy dataset.
 Requires the alleles to be numeric. To have this argument in

@@ -66,8 +66,8 @@ radiator_gds <- function(
 
   if (rlang::has_name(genotypes.df, "MARKERS")) {
     genotypes.df %<>%
-      dplyr::select(-MARKERS)
-    data.matrix(.) %>%
+      dplyr::select(-MARKERS) %>%
+      data.matrix(.) %>%
       magrittr::set_rownames(x = ., value = variant.id)
   }
 
@@ -111,7 +111,7 @@ radiator_gds <- function(
     separate_markers(
       data = .,
       sep = "__",
-      # markers.meta.all.only = TRUE,
+      markers.meta.all.only = TRUE,
       biallelic = TRUE,
       verbose = verbose)
 

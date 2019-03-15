@@ -6,7 +6,8 @@
 #' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 #' and might be of interest for users.
 
-#' @param data A genind object in the global environment.
+#' @param data (path or object) A genind object in the global environment or
+#' path to a genind file that will be open with \code{readRDS}.
 
 #' @param keep.allele.names Allows to keep allele names for the tidy dataset.
 #' Requires the alleles to be numeric. To have this argument in
@@ -59,8 +60,9 @@ tidy_genind <- function(
 ) {
 
   # Checking for missing and/or default arguments ------------------------------
-  if (missing(data)) stop("data argument required")
-  if (class(data)[1] != "genind") stop("Input is not a genind object")
+  if (missing(data)) rlang::abort("data argument required")
+  if (is.vector(data)) data <- readRDS(data)
+  if (class(data)[1] != "genind") rlang::abort("Input is not a genind object")
   if (verbose) message("genind info:")
   strata <- tibble::tibble(INDIVIDUALS = rownames(data@tab))
   if (is.null(data@pop)) {
@@ -77,17 +79,31 @@ tidy_genind <- function(
 
   if (gds) {
     # prepare genind
-    alt.alleles <- tibble::tibble(MARKERS_ALLELES = colnames(data@tab), COUNT = colSums(x = data@tab, na.rm = TRUE)) %>%
+    alt.alleles <- tibble::tibble(
+      MARKERS_ALLELES = colnames(data@tab),
+      COUNT = colSums(x = data@tab, na.rm = TRUE)
+      ) %>%
       dplyr::mutate(
         MARKERS = stringi::stri_extract_first_regex(str = colnames(data@tab), pattern = "^[^.]+"),
         ALLELES = stringi::stri_extract_last_regex(str = colnames(data@tab), pattern = "(?<=\\.).*")
       ) %>%
-      dplyr::group_by(MARKERS) %>%
-      dplyr::mutate(REF = dplyr::if_else(COUNT == min(COUNT, na.rm = TRUE), "ALT", "REF")) %>%
-      dplyr::ungroup(.) %>%
-      dplyr::select(MARKERS_ALLELES, REF) %>%
-      dplyr::filter(REF == "ALT") %>%
-      dplyr::select(MARKERS_ALLELES) %$% MARKERS_ALLELES
+      dplyr::arrange(MARKERS, COUNT, ALLELES) %>%
+      dplyr::mutate(REF = rep(c("ALT", "REF"), n() / 2))
+
+    # check that REF/ALT are A, C, G, T before going further
+    # any(unique(alt.alleles$ALLELES) %in% c("A", "C", "G", "T"))
+    # any(unique(c("A", "DD", "G")) %in% c("A", "C", "G", "T"))
+
+    ref.alt <- dplyr::select(alt.alleles, MARKERS, REF, ALLELES) %>%
+      data.table::as.data.table(.) %>%
+      data.table::dcast.data.table(
+        data = .,
+        formula = MARKERS ~ REF,
+        value.var = "ALLELES"
+      ) %>%
+      tibble::as_tibble(.)
+
+    alt.alleles %<>% dplyr::filter(REF == "ALT") %$% MARKERS_ALLELES
 
     geno <- tibble::as_tibble(t(data@tab), rownames = "MARKERS") %>%
       dplyr::filter(MARKERS %in% alt.alleles) %>%
@@ -97,7 +113,10 @@ tidy_genind <- function(
       dplyr::arrange(VARIANT_ID)
 
     alt.alleles <- NULL
-    markers.meta <- dplyr::select(geno, VARIANT_ID, MARKERS)
+    markers.meta <- dplyr::select(geno, VARIANT_ID, MARKERS) %>%
+      dplyr::left_join(ref.alt, by = "MARKERS")
+    ref.alt <- NULL
+
     suppressWarnings(
       geno %<>%
         dplyr::select(-MARKERS) %>%
@@ -105,6 +124,7 @@ tidy_genind <- function(
     )
 
     gds.filename <- radiator_gds(
+      source = "genind",
       genotypes.df = geno,
       strata = strata,
       biallelic = TRUE,
@@ -113,7 +133,6 @@ tidy_genind <- function(
       verbose = verbose
     )
     if (verbose) message("Written: GDS filename: ", gds.filename)
-
   }# End gds genind
 
   if (tidy) {
@@ -332,7 +351,7 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
             variable.name = "ALLELES",
             value.name = "n"
           ) %>%
-          tibble::as_data_frame(.) %>%
+          tibble::as_tibble(.) %>%
           # tidyr::gather(data = ., key = ALLELES, value = n, -c(INDIVIDUALS, POP_ID, MARKERS)) %>%
           dplyr::mutate(
             ALLELES = dplyr::case_when(
@@ -349,7 +368,7 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
             formula = POP_ID + INDIVIDUALS ~ MARKERS_ALLELES,
             value.var = "n"
           ) %>%
-          tibble::as_data_frame(.) %>%
+          tibble::as_tibble(.) %>%
           # dplyr::group_by(POP_ID, INDIVIDUALS) %>%
           # tidyr::spread(data =., key = MARKERS_ALLELES, value = n) %>%
           # dplyr::ungroup(.) %>%
@@ -367,7 +386,7 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
             variable.name = "ALLELES",
             value.name = "n"
           ) %>%
-          tibble::as_data_frame(.) %>%
+          tibble::as_tibble(.) %>%
           # tidyr::gather(data = ., key = ALLELES, value = n, -c(INDIVIDUALS, POP_ID, MARKERS)) %>%
           dplyr::mutate(MARKERS_ALLELES = stringi::stri_join(MARKERS, ALLELES, sep = ".")) %>%
           dplyr::select(-MARKERS, -ALLELES) %>%
@@ -377,7 +396,7 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
             formula = POP_ID + INDIVIDUALS ~ MARKERS_ALLELES,
             value.var = "n"
           ) %>%
-          tibble::as_data_frame(.) %>%
+          tibble::as_tibble(.) %>%
           # dplyr::group_by(POP_ID, INDIVIDUALS) %>%
           # tidyr::spread(data =., key = MARKERS_ALLELES, value = n) %>%
           # dplyr::ungroup(.) %>%
@@ -412,7 +431,7 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
           variable.name = "ALLELES",
           value.name = "GT"
         ) %>%
-        tibble::as_data_frame(.) %>%
+        tibble::as_tibble(.) %>%
         dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS, GT) %>%
         dplyr::count(x = ., POP_ID, INDIVIDUALS, MARKERS, GT) %>%
         dplyr::ungroup(.) %>%
@@ -431,7 +450,7 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
           formula = POP_ID + INDIVIDUALS ~ MARKERS_ALLELES,
           value.var = "n"
         ) %>%
-        tibble::as_data_frame(.) %>%
+        tibble::as_tibble(.) %>%
         dplyr::arrange(POP_ID, INDIVIDUALS))
   }
 

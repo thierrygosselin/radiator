@@ -1,11 +1,12 @@
 # tidy_genlight ----------------------------------------------------------------
 #' @name tidy_genlight
-#' @title Tidy a genlight object to a tidy dataframe
-#' @description Tidy genlight object to a tidy dataframe.
+#' @title Tidy a genlight object to a tidy dataframe and/or GDS object/file
+#' @description Tidy genlight object to a tidy dataframe and/or GDS object/file.
 #' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 #' and might be of interest for users.
 
-#' @param data A genlight object in the global environment.
+#' @param data (path or object) A genlight object in the global environment or
+#' path to a genlight file that will be open with \code{readRDS}.
 #' @inheritParams tidy_genomic_data
 
 #' @param tidy (logical) Generate a tidy dataset.
@@ -66,15 +67,12 @@ tidy_genlight <- function(
          ')
   }
 
-  ## test
-  # data
-  # verbose = TRUE
-
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("data argument required")
-  if (class(data)[1] != "genlight") rlang::abort("Input is not a genlight object")
 
   # Import data ---------------------------------------------------------------
+  if (is.vector(data)) data <- readRDS(data)
+  if (class(data)[1] != "genlight") rlang::abort("Input is not a genlight object")
 
   if (verbose) message("genlight info:")
   # strata ?
@@ -82,13 +80,10 @@ tidy_genlight <- function(
   if (is.null(data@pop)) {
     if (verbose) message("    strata: no")
     if (verbose) message("    'pop' will be added")
-    strata %<>% dplyr::mutate(STRATA = "pop")
-    # strata <- tibble::tibble(
-    #   INDIVIDUALS = data@ind.names,
-    #   POP_ID = rep("pop1", dim(data)[1]))
+    strata %<>% dplyr::mutate(POP_ID = "pop")
   } else {
     if (verbose) message("    strata: yes")
-    strata$STRATA = data@pop
+    strata$POP_ID = data@pop
   }
 
   n.markers <- dim(data)[2]
@@ -152,7 +147,7 @@ tidy_genlight <- function(
               "GT_VCF", "GT_BIN", "GT")
 
     if (verbose) message("Generating tidy data...")
-    data <- suppressWarnings(
+    tidy.data <- suppressWarnings(
       data.frame(data) %>%
         magrittr::set_colnames(x = ., value = markers$MARKERS) %>%
         tibble::add_column(.data = ., INDIVIDUALS = rownames(.), .before = 1) %>%
@@ -163,7 +158,7 @@ tidy_genlight <- function(
           variable.name = "MARKERS",
           value.name = "GT_BIN"
         ) %>%
-        tibble::as_data_frame(.) %>%
+        tibble::as_tibble(.) %>%
         dplyr::full_join(markers, by = "MARKERS") %>%
         dplyr::full_join(strata, by =  "INDIVIDUALS") %>%
         dplyr::mutate(
@@ -188,19 +183,17 @@ tidy_genlight <- function(
         dplyr::select(dplyr::one_of(want)))
 
     if (write) {
-      radiator::write_rad(data = data, path = filename.genlight)
+      radiator::write_rad(data = tidy.data, path = filename.genlight)
       if (verbose) message("File written: ", filename.short)
     }
-
   }#End tidy genlight
   if (gds) {
-
-    markers %<>% dplyr::mutate(VARIANT_ID = as.integer(factor(MARKERS)))
-
+    # markers %<>% dplyr::mutate(VARIANT_ID = as.integer(factor(MARKERS)))
     gds.filename <- radiator_gds(
+      source = "genlight",
       genotypes.df = tibble::as_tibble(data.frame(data) %>% t) %>%
-        tibble::add_column(.data = ., VARIANT_ID = markers$VARIANT_ID, .before = 1) %>%
-        dplyr::arrange(VARIANT_ID),
+        tibble::add_column(.data = ., MARKERS = markers$MARKERS, .before = 1) %>%
+        dplyr::arrange(MARKERS),
       strata = dplyr::rename(strata, STRATA = POP_ID),
       biallelic = TRUE,
       markers.meta = markers,
@@ -209,7 +202,13 @@ tidy_genlight <- function(
     )
     if (verbose) message("Written: GDS filename: ", gds.filename)
   }# End gds genlight
-  return(data)
+
+  if (tidy) {
+    return(tidy.data)
+  } else {
+    message("returning GDS filename")
+    return(gds.filename)
+  }
 } # End tidy_genlight
 
 # write_genlight ----------------------------------------------------------------
@@ -271,46 +270,64 @@ write_genlight <- function(data, biallelic = TRUE, write = FALSE, verbose = FALS
     data <- gds2tidy(gds = data, parallel.core = parallel::detectCores() - 1)
     data.type <- "tbl_df"
   } else {
-    want <- c("MARKERS", "POP_ID", "INDIVIDUALS", "REF", "ALT", "GT", "GT_BIN")
-    data <- suppressWarnings(radiator::tidy_wide(data = data, import.metadata = TRUE) %>%
-                               dplyr::select(dplyr::one_of(want)) %>%
-                               dplyr::arrange(POP_ID, INDIVIDUALS))
+    if (rlang::has_name(data, "STRATA")) data %<>% dplyr::rename(POP_ID = STRATA)
+    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "POP_ID", "INDIVIDUALS", "REF", "ALT", "GT_VCF", "GT_BIN")
+    data <- suppressWarnings(
+      radiator::tidy_wide(data = data, import.metadata = TRUE) %>%
+        dplyr::select(dplyr::one_of(want)) %>%
+        dplyr::arrange(POP_ID, INDIVIDUALS)
+    )
   }
 
   # Detect if biallelic data
-  if (is.null(biallelic)) biallelic <- radiator::detect_biallelic_markers(data = input)
+  if (is.null(biallelic)) biallelic <- radiator::detect_biallelic_markers(data)
   if (!biallelic) rlang::abort("genlight object requires biallelic genotypes")
 
-  # data = input
-  input %<>% dplyr::arrange(MARKERS, CHROM, LOCUS, POS, POP_ID, INDIVIDUALS)
-  marker.meta <- dplyr::distinct(.data = input, MARKERS, CHROM, LOCUS, POS)
+  want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT")
+  markers.meta <- suppressWarnings(
+    dplyr::select(data, dplyr::one_of(want)) %>%
+      dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
+      separate_markers(
+        data = .,
+        sep = "__",
+        markers.meta.all.only = TRUE,
+        biallelic = TRUE,
+        verbose = verbose)
+  )
+  data %<>% dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
 
-  if (!tibble::has_name(input, "GT_BIN")) {
-    input$GT_BIN <- stringi::stri_replace_all_fixed(
-      str = input$GT_VCF,
+
+  if (!rlang::has_name(data, "GT_BIN") && rlang::has_name(data, "GT_VCF")) {
+    data$GT_BIN <- stringi::stri_replace_all_fixed(
+      str = data$GT_VCF,
       pattern = c("0/0", "1/1", "0/1", "1/0", "./."),
       replacement = c("0", "2", "1", "1", NA),
       vectorize_all = FALSE
     )
   }
 
-  input <- dplyr::select(.data = input, MARKERS, POP_ID, INDIVIDUALS, GT_BIN) %>%
+  data %<>%
+    dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT_BIN) %>%
     dplyr::mutate(GT_BIN = as.integer(GT_BIN)) %>%
-    dplyr::group_by(INDIVIDUALS, POP_ID) %>%
-    tidyr::spread(data = ., key = MARKERS, value = GT_BIN) %>%
-    dplyr::ungroup(.)
+    data.table::as.data.table(.) %>%
+    data.table::dcast.data.table(
+      data = .,
+      formula = POP_ID + INDIVIDUALS ~ MARKERS,
+      value.var = "GT_BIN"
+    ) %>%
+    tibble::as_tibble(.)
 
   # Generate genlight
   genlight.object <- methods::new(
     "genlight",
-    input[,-(1:2)],
+    data[,-(1:2)],
     parallel = FALSE
   )
-  adegenet::indNames(genlight.object)   <- input$INDIVIDUALS
-  adegenet::pop(genlight.object)        <- input$POP_ID
-  adegenet::chromosome(genlight.object) <- marker.meta$CHROM
-  adegenet::locNames(genlight.object)   <- marker.meta$LOCUS
-  adegenet::position(genlight.object)   <- marker.meta$POS
+  adegenet::indNames(genlight.object)   <- data$INDIVIDUALS
+  adegenet::pop(genlight.object)        <- data$POP_ID
+  adegenet::chromosome(genlight.object) <- markers.meta$CHROM
+  adegenet::locNames(genlight.object)   <- markers.meta$LOCUS
+  adegenet::position(genlight.object)   <- markers.meta$POS
 
 
   # Check
@@ -335,4 +352,4 @@ write_genlight <- function(data, biallelic = TRUE, write = FALSE, verbose = FALS
     if (verbose) message("File written: ", filename.short)
   }
   return(genlight.object)
-  } # End write_genlight
+} # End write_genlight

@@ -2,13 +2,14 @@
 % Please edit documentation in R/genlight.R
 \name{tidy_genlight}
 \alias{tidy_genlight}
-\title{Tidy a genlight object to a tidy dataframe}
+\title{Tidy a genlight object to a tidy dataframe and/or GDS object/file}
 \usage{
 tidy_genlight(data, tidy = TRUE, gds = TRUE, write = FALSE,
   verbose = FALSE)
 }
 \arguments{
-\item{data}{A genlight object in the global environment.}
+\item{data}{(path or object) A genlight object in the global environment or
+path to a genlight file that will be open with \code{readRDS}.}
 
 \item{tidy}{(logical) Generate a tidy dataset.
 Default: \code{tidy = TRUE}.}
@@ -25,7 +26,7 @@ the function is a little more chatty during execution.
 Default: \code{verbose = TRUE}.}
 }
 \description{
-Tidy genlight object to a tidy dataframe.
+Tidy genlight object to a tidy dataframe and/or GDS object/file.
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and might be of interest for users.
 }
