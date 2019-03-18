@@ -38,27 +38,39 @@ To make sure it's going to work properly, try reading it in `R` with:
 
 ``` r
 strata <- radiator::read_strata("my.strata.tsv")
+names(strata)
 # Other arguments are available to help you with this
 ??radiator::read_strata
+```
 
-# not sure about the sample id used inside your VCF file ?
-id <- radiator::extract_individuals_vcf("my.vcf") # for VCF
-id <- radiator::extract_dart_target_id("mt.dart.file.csv") # for DArT
+Not sure about the sample id used inside your VCF file ?
+
+``` r
+strata <- radiator::extract_individuals_vcf("my.vcf") %>% 
+  dplyr::mutate(STRATA = "fill this") %>% 
+  readr::write_tsv(x = ., path = "my.new.vcf.strata.tsv")
+```
+
+You are using DArT data ?
+
+``` r
+strata <- radiator::extract_dart_target_id("mt.dart.file.csv") %>% 
+  dplyr::mutate(INDIVIDUALS = "new id you want to give", STRATA = "fill this") %>% 
+  readr::write_tsv(x = ., path = "my.new.dart.strata.tsv")
 ```
 
 **2. Filter your RADseq data**
 
 ``` r
-data <- radiator::filter_rad(data = "my.vcf", strata = "my.strata.tsv")
-```
-
-You want a genind and a hierfstat objects/files after?
-
-``` r
 data <- radiator::filter_rad(data = "my.vcf", strata = "my.strata.tsv", output = c("genind", "hierfstat"))
 ```
 
-It's my ONE FUNCTION TO RULE THEM ALL. There's obviouly more to this. The function is made of modules (see below) that user's can access separately or in combination. Use [magrittr](https://magrittr.tidyverse.org) `%>%` to chain filtering functions together and dig deeper into your data. But remember, for 95% of users, `filter_rad` will be enough to start exploring the biology!
+**It's the ONE FUNCTION TO RULE THEM ALL**
+
+-   There's obviouly more to this.
+-   The function is made of modules (see below) that user's can access separately or in combination.
+-   Use [magrittr](https://magrittr.tidyverse.org) `%>%` to chain filtering functions together and dig deeper into your data.
+-   But remember, for 95% of users, `filter_rad` will be enough to start exploring the biology!
 
 Overview
 --------
