@@ -53,7 +53,7 @@ library(radiator)
 
 ## Learning radiator
 
-2 things to do to check if radiator as the tools for you:
+See if radiator as the right tools for you:
 
 **1. Prepare a strata file**
 
@@ -92,6 +92,7 @@ data <- radiator::filter_rad(data = "my.vcf", strata = "my.strata.tsv", output =
 
 **It's the ONE FUNCTION TO RULE THEM ALL**
 
+* There's a built-in interactive mode, visualize the data before choosing thresholds.
 * There's obviouly more to this. 
 * The function is made of modules (see below) that user's can access separately or in combination. 
 * Use [magrittr](https://magrittr.tidyverse.org) `%>%` to chain filtering
