@@ -53,13 +53,14 @@ library(radiator)
 
 ## Learning radiator
 
-It's not really complicated, to see if you're going to like radiator there just 
-2 functions to try.
+2 things to do to check if radiator as the tools for you:
 
-**1. Prepare a strata file**
+**1. Prepare a strata file:**
+
 * It's a tab separated file, e.g. `radiator.strata.tsv`
-* A minimum of 2 columns: `INDIVIDUALS` and `STRATA` is required. `STRATA` could
-be your populations or sampling sites names or any grouping you want.
+* A minimum of 2 columns: `INDIVIDUALS` and `STRATA` is required. 
+* The `STRATA` column is e.g. your populations or sampling sites names or any grouping you want.
+* It's like *stacks* population map file with header...
 
 To make sure it's going to work properly, try reading it in `R` with:
 ```r
@@ -70,8 +71,6 @@ strata <- radiator::read_strata("my.strata.tsv")
 # not sure about the sample id used inside your VCF file ?
 id <- radiator::extract_individuals_vcf("my.vcf") # for VCF
 id <- radiator::extract_dart_target_id("mt.dart.file.csv") # for DArT
-
-It's like *stacks* population map file with header...
 ```
 
 **2. Filter your RADseq data**
@@ -81,11 +80,7 @@ data <- radiator::filter_rad(data = "my.vcf", strata = "my.strata.tsv")
 ```
 You want a genind and a hierfstat objects/files after?
 ```r
-data <- radiator::filter_rad(
-    data = "my.vcf",
-    strata = "my.strata.tsv", 
-    output = c("genind", "hierfstat")
-)
+data <- radiator::filter_rad(data = "my.vcf", strata = "my.strata.tsv", output = c("genind", "hierfstat"))
 ```
 
 It's my ONE FUNCTION TO RULE THEM ALL. There's obviouly more to this. The function 
@@ -94,6 +89,8 @@ Use [magrittr](https://magrittr.tidyverse.org) `%>%` to chain filtering
 functions together and dig deeper into your data.
 But remember, for 95% of users, `filter_rad` will be enough to start exploring the biology!
 
+
+## Overview
 
 | Caracteristics | Description |
 |:-------------------|:--------------------------------------------------------|
