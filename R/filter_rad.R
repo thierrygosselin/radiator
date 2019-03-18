@@ -154,9 +154,9 @@
 #' Peter Grewe \email{peter.grewe@csiro.au}
 
 filter_rad <- function(
-  interactive.filter = TRUE,
   data,
   strata = NULL,
+  interactive.filter = TRUE,
   output = NULL,
   filename = NULL,
   verbose = TRUE,
@@ -312,7 +312,7 @@ install.packages("UpSetR")
         verbose = FALSE)
       data.type <- "SeqVarGDSClass"
     } else {
-      gds <- tidy_dart(
+      gds <- read_dart(
         data = data,
         strata = strata,
         filename = filename,
@@ -320,8 +320,7 @@ install.packages("UpSetR")
         parallel.core = parallel.core,
         path.folder = radiator.folder,
         pop.levels = pop.levels,
-        internal = TRUE,
-        tidy.dart = FALSE
+        internal = TRUE
       )
       data.type <- "SeqVarGDSClass"
     }
@@ -542,7 +541,7 @@ install.packages("UpSetR")
     gds = gds,
     whitelist = TRUE)
 
-  strata <- extract_individuals(
+  strata <- extract_individuals_metadata(
     gds = gds,
     ind.field.select = c("INDIVIDUALS", "STRATA"),
     whitelist = TRUE)
@@ -582,7 +581,7 @@ install.packages("UpSetR")
 
 
   # writing the blacklist of id
-  blacklist.id <- extract_individuals(gds = gds, blacklist = TRUE)
+  blacklist.id <- extract_individuals_metadata(gds = gds, blacklist = TRUE)
   if (nrow(blacklist.id) > 0) {
     write_rad(data = blacklist.id,
               path = path.folder,

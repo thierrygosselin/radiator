@@ -253,7 +253,7 @@ filter_genotyping <- function(
     )
 
     # checking if strata present
-    strata <- extract_individuals(
+    strata <- extract_individuals_metadata(
       gds = data,
       ind.field.select = c("INDIVIDUALS", "STRATA"),
       whitelist = TRUE)

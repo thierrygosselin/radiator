@@ -4,7 +4,8 @@
 \alias{generate_geno}
 \title{generate_geno}
 \usage{
-generate_geno(x, gt = FALSE, gt.vcf.nuc = FALSE, gt.vcf = FALSE)
+generate_geno(x, source, gt = FALSE, gt.vcf.nuc = FALSE,
+  gt.vcf = FALSE)
 }
 \description{
 Generate the genotypes and prep for GDS

@@ -276,14 +276,14 @@ The maximum amount of missingness you tolerate for a sample:", minmax = c(0, 1))
         dplyr::mutate(FILTER = "filter.individuals.missing")
       n.bl <- nrow(bl)
 
-      individuals <- extract_individuals(gds = data, whitelist = FALSE) %>%
+      individuals <- extract_individuals_metadata(gds = data, whitelist = FALSE) %>%
         dplyr::mutate(
           FILTERS = dplyr::if_else(
             INDIVIDUALS %in% bl$INDIVIDUALS,
             "filter.individuals.missing", FILTERS
           )
         )
-      update_radiator_gds(gds = data, node.name = "individuals", value = individuals, sync = TRUE)
+      update_radiator_gds(gds = data, node.name = "individuals.meta", value = individuals, sync = TRUE)
 
       if (n.bl > 0) {
         filter.monomorphic <- TRUE
@@ -366,14 +366,14 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
         dplyr::mutate(FILTER = "filter.individuals.heterozygosity")
       n.bl <- nrow(bl)
 
-      individuals <- extract_individuals(gds = data, whitelist = FALSE) %>%
+      individuals <- extract_individuals_metadata(gds = data, whitelist = FALSE) %>%
         dplyr::mutate(
           FILTERS = dplyr::if_else(
             INDIVIDUALS %in% bl$INDIVIDUALS,
             "filter.individuals.heterozygosity", FILTERS
           )
         )
-      update_radiator_gds(gds = data, node.name = "individuals", value = individuals, sync = TRUE)
+      update_radiator_gds(gds = data, node.name = "individuals.meta", value = individuals, sync = TRUE)
 
       if (n.bl > 0) {
         filter.monomorphic <- TRUE
@@ -385,7 +385,7 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
         id.stats$info  %<>%
           dplyr::filter(!INDIVIDUALS %in% bl$INDIVIDUALS)
 
-        # update_radiator_gds(gds = data, node.name = "individuals", value = id.stats$info, sync = TRUE)
+        # update_radiator_gds(gds = data, node.name = "individuals.meta", value = id.stats$info, sync = TRUE)
       }
       # Filter parameter file: update
       filters.parameters <- radiator_parameters(
@@ -461,14 +461,14 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
           dplyr::mutate(FILTER = "filter.individuals.coverage.total")
         n.bl <- nrow(bl)
 
-        individuals <- extract_individuals(gds = data, whitelist = FALSE) %>%
+        individuals <- extract_individuals_metadata(gds = data, whitelist = FALSE) %>%
           dplyr::mutate(
             FILTERS = dplyr::if_else(
               INDIVIDUALS %in% bl$INDIVIDUALS,
               "filter.individuals.coverage.total", FILTERS
             )
           )
-        update_radiator_gds(gds = data, node.name = "individuals", value = individuals, sync = TRUE)
+        update_radiator_gds(gds = data, node.name = "individuals.meta", value = individuals, sync = TRUE)
 
         if (n.bl > 0) {
           filter.monomorphic <- TRUE
@@ -479,7 +479,7 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
           # id.stats$info  %<>%
             # dplyr::filter(!INDIVIDUALS %in% bl$INDIVIDUALS)
 
-          # update_radiator_gds(gds = data, node.name = "individuals", value = id.stats$info, sync = TRUE)
+          # update_radiator_gds(gds = data, node.name = "individuals.meta", value = id.stats$info, sync = TRUE)
         }
         # Filter parameter file: update
         filters.parameters <- radiator_parameters(

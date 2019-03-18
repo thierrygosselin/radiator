@@ -577,7 +577,7 @@ detect_mixed_genomes <- function(
 
       if (data.type == "SeqVarGDSClass") {
 
-        id.info <- extract_individuals(gds = data, whitelist = FALSE) %>%
+        id.info <- extract_individuals_metadata(gds = data, whitelist = FALSE) %>%
           dplyr::mutate(
             FILTERS = dplyr::if_else(
               INDIVIDUALS %in% blacklist.ind.het$INDIVIDUALS,
@@ -585,7 +585,7 @@ detect_mixed_genomes <- function(
             )
           )
 
-        update_radiator_gds(gds = data, node.name = "individuals", value = id.info, sync = TRUE)
+        update_radiator_gds(gds = data, node.name = "individuals.meta", value = id.info, sync = TRUE)
 
       } else {
         input  %<>% dplyr::filter(!INDIVIDUALS %in% blacklist.ind.het$INDIVIDUALS)

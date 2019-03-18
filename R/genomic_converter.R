@@ -75,7 +75,7 @@
 #' documented in \code{\link{tidy_gtypes}}.
 #'
 #' \item dart data from \href{http://www.diversityarrays.com}{DArT}:
-#' documented in \code{\link{tidy_dart}}.
+#' documented in \code{\link{read_dart}}.
 #'
 #' \item genepop file must end with \code{.gen}, documented in \code{\link{tidy_genepop}}.
 #'

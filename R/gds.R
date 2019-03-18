@@ -7,6 +7,7 @@
 #' @export
 radiator_gds <- function(
   genotypes.df,
+  geno.coding = c("alt.dos", "ref.dos"),
   strata = NULL,
   biallelic = TRUE,
   markers.meta = NULL,
@@ -21,6 +22,14 @@ radiator_gds <- function(
   # genotypes.df <- data
   message("Generating GDS...")
   if (!biallelic) rlang::abort("Biallelic data required")
+
+  # Types of genotypes coding.
+  # Generating a GDS file using SNPRelate requires ref allele dosage... the inverse of plink.
+  geno.coding <- match.arg(
+    arg = geno.coding,
+    choices = c("alt.dos", "ref.dos"),
+    several.ok = FALSE
+    )
 
   # Filename
   if (is.null(filename)) {
@@ -73,12 +82,19 @@ radiator_gds <- function(
 
   # Genotypes coding
   if (!is.matrix(genotypes.df)) genotypes.df %<>% data.matrix(.)
-  genotypes.df %<>%
-    # 4 steps for SNPRelate genotype coding (change from ALT to REF dosage)
-    magrittr::inset(is.na(.), 3L) %>%
-    magrittr::inset(. == 0L, 9L) %>%
-    magrittr::inset(. == 2L, 0L) %>%
-    magrittr::inset(. == 9L, 2L)
+
+  # 4 steps for SNPRelate genotype coding (change from ALT to REF dosage)
+  if (geno.coding == "alt.dos") {
+    genotypes.df %<>%
+      magrittr::inset(is.na(.), 3L) %>%
+      magrittr::inset(. == 0L, 9L) %>%
+      magrittr::inset(. == 2L, 0L) %>%
+      magrittr::inset(. == 9L, 2L)
+  }
+  if (geno.coding == "ref.dos") {
+    genotypes.df %<>% magrittr::inset(is.na(.), 3L)
+  }
+
 
   # STRATA
   if (is.null(strata)) {
@@ -212,12 +228,11 @@ radiator_gds <- function(
     value = detect_ref_genome(chromosome = markers.meta$CHROM, verbose = FALSE)
   )
 
-
   # bi- or multi-alllelic VCF
   update_radiator_gds(data.gds, node.name = "biallelic", value = biallelic)
 
   # Add STRATA to GDS
-  update_radiator_gds(data.gds, node.name = "individuals", value = strata)
+  update_radiator_gds(data.gds, node.name = "individuals.meta", value = strata)
 
   # ADD MARKERS META to GDS
   update_radiator_gds(data.gds, node.name = "markers.meta", value = markers.meta)
@@ -280,11 +295,9 @@ radiator_gds_skeleton <- function(gds) {
       "reference.genome",
       "biallelic",
       "id.clean",
-      "individuals",
+      "individuals.meta",
       "markers.meta",
-      "genotypes.meta",
-      "blacklist.individuals",
-      "blacklist.markers"
+      "genotypes.meta"
     ),
     .f = update_radiator_gds,
     gds = gds,
@@ -509,19 +522,19 @@ extract_markers_metadata <- function(
   if (blacklist && rlang::has_name(markers.meta, "FILTERS")){
     markers.meta %<>%
       dplyr::filter(FILTERS != "whitelist")# %>%
-      # dplyr::select(-FILTERS)
+    # dplyr::select(-FILTERS)
   }
   return(markers.meta)
 }#End import_metadata
 
-# extract_individuals-----------------------------------------------------------
-#' @title extract_individuals
+# extract_individuals_metadata-----------------------------------------------------------
+#' @title extract_individuals_metadata
 #' @description Import gds or radiator individuals node
-#' @name extract_individuals
-#' @rdname extract_individuals
+#' @name extract_individuals_metadata
+#' @rdname extract_individuals_metadata
 #' @keywords internal
 #' @export
-extract_individuals <- function(
+extract_individuals_metadata <- function(
   gds,
   ind.field.select = NULL,
   radiator.node = TRUE,
@@ -542,7 +555,7 @@ extract_individuals <- function(
     # will switch radiator.mode to FALSE if returns null
     if (radiator.node) {
       id.index <- gdsfmt::ls.gdsn(gdsfmt::index.gdsn(
-        node = gds, path = "radiator/individuals", silent = TRUE))
+        node = gds, path = "radiator/individuals.meta", silent = TRUE))
       if (is.null(id.index)) radiator.node <- FALSE
     }
 
@@ -563,7 +576,7 @@ extract_individuals <- function(
         id.df[[x]] <- gdsfmt::read.gdsn(
           gdsfmt::index.gdsn(
             node = gds,
-            path = stringi::stri_join("radiator/individuals/", x),
+            path = stringi::stri_join("radiator/individuals.meta/", x),
             silent = TRUE))
       }
 
@@ -593,7 +606,7 @@ extract_individuals <- function(
   }
 
   return(individuals)
-}#End extract_individuals
+}#End extract_individuals_metadata
 
 
 # extract_genotypes_metadata----------------------------------------------------
@@ -652,7 +665,7 @@ extract_genotypes_metadata <- function(
           markers.meta.select = "MARKERS",
           whitelist = TRUE
         ) %$% MARKERS
-        individuals <- extract_individuals(
+        individuals <- extract_individuals_metadata(
           gds = gds,
           ind.field.select = "INDIVIDUALS",
           whitelist = TRUE
@@ -742,28 +755,42 @@ extract_coverage <- function(
 
     if (!is.null(depth)) {
       want <- c("READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH")
+      have <- colnames(depth)
+      want <- purrr::keep(.x = have, .p = have %in% want)
+      colnames_rep <- function(x, total = FALSE, mean = FALSE) {
+        if (total) {
+          x <- stringi::stri_replace_all_fixed(
+            str = x,
+            pattern = c("READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH"),
+            replacement = c("COVERAGE_TOTAL", "REF_DEPTH_TOTAL", "ALT_DEPTH_TOTAL"),
+            vectorize_all = FALSE
+          )
+        }
+        if (mean) {
+          x <- stringi::stri_replace_all_fixed(
+            str = x,
+            pattern = c("READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH"),
+            replacement = c("COVERAGE_MEAN", "REF_DEPTH_MEAN", "ALT_DEPTH_MEAN"),
+            vectorize_all = FALSE
+          )
+        }
+        return(x)
+      }#End colnames_rep
+
       if (markers) {
         m <- dplyr::group_by(depth, MARKERS) %>%
           dplyr::summarise_at(.tbl = ., .vars = want, .funs = sum, na.rm = TRUE) %>%
           dplyr::mutate_at(.tbl = ., .vars = want, .funs = round, digits = 0) %>%
           dplyr::mutate_at(.tbl = ., .vars = want, .funs = as.integer) %>%
           dplyr::ungroup(.) %>%
-          dplyr::rename(
-            COVERAGE_TOTAL = READ_DEPTH,
-            REF_DEPTH_TOTAL = ALLELE_REF_DEPTH,
-            ALT_DEPTH_TOTAL = ALLELE_ALT_DEPTH
-          ) %>%
+          dplyr::rename_all(.funs = list(colnames_rep), total = TRUE) %>%
           dplyr::bind_cols(
             dplyr::group_by(depth, MARKERS) %>%
               dplyr::summarise_at(.tbl = ., .vars = want, .funs = mean, na.rm = TRUE) %>%
               dplyr::mutate_at(.tbl = ., .vars = want, .funs = round, digits = 0) %>%
               dplyr::mutate_at(.tbl = ., .vars = want, .funs = as.integer) %>%
               dplyr::ungroup(.) %>%
-              dplyr::rename(
-                COVERAGE_MEAN = READ_DEPTH,
-                REF_DEPTH_MEAN = ALLELE_REF_DEPTH,
-                ALT_DEPTH_MEAN = ALLELE_ALT_DEPTH
-              ) %>%
+              dplyr::rename_all(.funs = list(colnames_rep), mean = TRUE) %>%
               dplyr::select(-MARKERS)
           )
       }
@@ -773,22 +800,14 @@ extract_coverage <- function(
           dplyr::mutate_at(.tbl = ., .vars = want, .funs = round, digits = 0) %>%
           dplyr::mutate_at(.tbl = ., .vars = want, .funs = as.integer) %>%
           dplyr::ungroup(.) %>%
-          dplyr::rename(
-            COVERAGE_TOTAL = READ_DEPTH,
-            REF_DEPTH_TOTAL = ALLELE_REF_DEPTH,
-            ALT_DEPTH_TOTAL = ALLELE_ALT_DEPTH
-          ) %>%
+          dplyr::rename_all(.funs = list(colnames_rep), total = TRUE) %>%
           dplyr::bind_cols(
             dplyr::group_by(depth, INDIVIDUALS) %>%
               dplyr::summarise_at(.tbl = ., .vars = want, .funs = mean, na.rm = TRUE) %>%
               dplyr::mutate_at(.tbl = ., .vars = want, .funs = round, digits = 0) %>%
               dplyr::mutate_at(.tbl = ., .vars = want, .funs = as.integer) %>%
               dplyr::ungroup(.) %>%
-              dplyr::rename(
-                COVERAGE_MEAN = READ_DEPTH,
-                REF_DEPTH_MEAN = ALLELE_REF_DEPTH,
-                ALT_DEPTH_MEAN = ALLELE_ALT_DEPTH
-              ) %>%
+              dplyr::rename_all(.funs = list(colnames_rep), mean = TRUE) %>%
               dplyr::select(-INDIVIDUALS)
           )
       }
@@ -838,17 +857,17 @@ extract_coverage <- function(
     markers.meta <- NULL
   }
   if (markers) {
-    coverage.info$markers.tot <- m$COVERAGE_TOTAL
-    coverage.info$markers.mean <- m$COVERAGE_MEAN
-    coverage.info$ref.tot <- m$REF_DEPTH_TOTAL
-    coverage.info$ref.mean <- m$REF_DEPTH_MEAN
-    coverage.info$alt.tot <- m$ALT_DEPTH_TOTAL
-    coverage.info$alt.mean <- m$ALT_DEPTH_MEAN
+    coverage.info$markers.tot <- if (rlang::has_name(m, "COVERAGE_TOTAL")) m$COVERAGE_TOTAL
+    coverage.info$markers.mean <- if (rlang::has_name(m, "COVERAGE_MEAN")) m$COVERAGE_MEAN
+    coverage.info$ref.tot <- if (rlang::has_name(m, "REF_DEPTH_TOTAL")) m$REF_DEPTH_TOTAL
+    coverage.info$ref.mean <- if (rlang::has_name(m, "REF_DEPTH_MEAN")) m$REF_DEPTH_MEAN
+    coverage.info$alt.tot <- if (rlang::has_name(m, "ALT_DEPTH_TOTAL")) m$ALT_DEPTH_TOTAL
+    coverage.info$alt.mean <- if (rlang::has_name(m, "ALT_DEPTH_MEAN")) m$ALT_DEPTH_MEAN
     m <- NULL
   }
 
   if (update.gds && ind) {
-    strata <- extract_individuals(gds = gds, whitelist = FALSE)
+    strata <- extract_individuals_metadata(gds = gds, whitelist = FALSE)
     i.levels <- strata$INDIVIDUALS
     not.wanted <- c("COVERAGE_MEAN", "REF_DEPTH_MEAN", "ALT_DEPTH_MEAN", "COVERAGE_TOTAL", "REF_DEPTH_TOTAL", "ALT_DEPTH_TOTAL")
     if (any(not.wanted %in% colnames(strata))) {
@@ -862,22 +881,21 @@ extract_coverage <- function(
     }
     i.levels <- NULL
     update_radiator_gds(gds = gds,
-                        node.name = "individuals",
+                        node.name = "individuals.meta",
                         value = strata)
     strata <- NULL
   }
   if (ind) {
-    coverage.info$ind.cov.tot <- i$COVERAGE_TOTAL
-    coverage.info$ind.cov.mean <- i$COVERAGE_MEAN
-    coverage.info$ind.ref.tot <- i$REF_DEPTH_TOTAL
-    coverage.info$ind.ref.mean <- i$REF_DEPTH_MEAN
-    coverage.info$ind.alt.tot <- i$ALT_DEPTH_TOTAL
-    coverage.info$ind.alt.mean <- i$ALT_DEPTH_MEAN
+    coverage.info$ind.cov.tot <- if (rlang::has_name(i, "COVERAGE_TOTAL")) i$COVERAGE_TOTAL
+    coverage.info$ind.cov.mean <- if (rlang::has_name(i, "COVERAGE_MEAN")) i$COVERAGE_MEAN
+    coverage.info$ind.ref.tot <- if (rlang::has_name(i, "REF_DEPTH_TOTAL")) i$REF_DEPTH_TOTAL
+    coverage.info$ind.ref.mean <- if (rlang::has_name(i, "REF_DEPTH_MEAN")) i$REF_DEPTH_MEAN
+    coverage.info$ind.alt.tot <- if (rlang::has_name(i, "ALT_DEPTH_TOTAL")) i$ALT_DEPTH_TOTAL
+    coverage.info$ind.alt.mean <- if (rlang::has_name(i, "ALT_DEPTH_MEAN")) i$ALT_DEPTH_MEAN
     i <- NULL
   }
   return(coverage.info)
 }#End extract_coverage
-
 
 # sync GDS----------------------------------------------------------------------
 #' @title sync_gds
@@ -917,9 +935,9 @@ sync_gds <- function(
     }
 
     if (reset.filters.i) {
-      i <- extract_individuals(gds = gds, whitelist = FALSE) %>%
+      i <- extract_individuals_metadata(gds = gds, whitelist = FALSE) %>%
         dplyr::mutate(FILTERS = "whitelist")
-      update_radiator_gds(gds = gds, node.name = "individuals", value = i, sync = FALSE)
+      update_radiator_gds(gds = gds, node.name = "individuals.meta", value = i, sync = FALSE)
       SeqArray::seqSetFilter(
         object = gds, sample.id = i$INDIVIDUALS, verbose = FALSE)
     }
@@ -940,7 +958,7 @@ sync_gds <- function(
 
     if (is.null(samples)) {
       if (verbose) message("synchronizing GDS with current samples")
-      samples <- extract_individuals(
+      samples <- extract_individuals_metadata(
         gds = gds,
         ind.field.select = "INDIVIDUALS",
         whitelist = TRUE,
@@ -989,7 +1007,7 @@ list_filters <- function(gds) {
     gds <- radiator::read_rad(gds)
     data.type <- "SeqVarGDSClass"
   }
-  i <- extract_individuals(gds = gds, ind.field.select = "FILTERS", blacklist = FALSE) %>%
+  i <- extract_individuals_metadata(gds = gds, ind.field.select = "FILTERS", blacklist = FALSE) %>%
     dplyr::count(FILTERS, FILTERS) #%>% readr::write_tsv(x = i, path = "filters.individuals.tsv")
   i %<>% dplyr::filter(FILTERS != "whitelist")
   message("Number of filters for individuals: ", nrow(i))
@@ -1113,9 +1131,9 @@ reset_filters <- function(
     update_radiator_gds(gds = gds, node.name = "markers.meta", value = markers.meta, sync = FALSE)
     SeqArray::seqSetFilter(object = gds, variant.id = markers.meta$VARIANT_ID, verbose = FALSE)
 
-    individuals <- extract_individuals(gds = gds, whitelist = FALSE) %>%
+    individuals <- extract_individuals_metadata(gds = gds, whitelist = FALSE) %>%
       dplyr::mutate(FILTERS = "whitelist")
-    update_radiator_gds(gds = gds, node.name = "individuals", value = individuals, sync = FALSE)
+    update_radiator_gds(gds = gds, node.name = "individuals.meta", value = individuals, sync = FALSE)
     SeqArray::seqSetFilter(object = gds, sample.id = individuals$INDIVIDUALS, verbose = FALSE)
   }
   # reset individuals ----------------------------------------------------------
@@ -1140,10 +1158,10 @@ reset_filters <- function(
 
   if (length(reset.i) > 0) {
     message("Resetting ", length(reset.i), " filters for individuals")
-    individuals <- extract_individuals(gds = gds, whitelist = FALSE) %>%
+    individuals <- extract_individuals_metadata(gds = gds, whitelist = FALSE) %>%
       dplyr::mutate(FILTERS = dplyr::if_else(FILTERS %in% reset.i, "whitelist", FILTERS))
     # update
-    update_radiator_gds(gds = gds, node.name = "individuals", value = individuals, sync = FALSE)
+    update_radiator_gds(gds = gds, node.name = "individuals.meta", value = individuals, sync = FALSE)
     #reset
     SeqArray::seqSetFilter(object = gds, sample.id = individuals$INDIVIDUALS, verbose = FALSE)
   }
@@ -1232,7 +1250,7 @@ summary_gds <- function(gds, check.sync = FALSE, verbose = TRUE) {
 
   if (check.sync) {
     id.filtered <- nrow(
-      extract_individuals(
+      extract_individuals_metadata(
         gds = gds,
         ind.field.select = "INDIVIDUALS",
         whitelist = TRUE
@@ -1418,7 +1436,7 @@ generate_id_stats <- function (
                            verbose = FALSE)
   }
 
-  id.info <- extract_individuals(gds, whitelist = TRUE)
+  id.info <- extract_individuals_metadata(gds, whitelist = TRUE)
 
   # missing --------------------------------------------------------------------
   if (missing) {
@@ -2063,7 +2081,7 @@ missing_per_pop <- function(
     return(helper.table)
   }#End missing_pop
 
-  sample.bk <- extract_individuals(
+  sample.bk <- extract_individuals_metadata(
     gds = gds,
     ind.field.select = "INDIVIDUALS",
     whitelist = TRUE
@@ -2108,11 +2126,12 @@ gds2tidy <- function(
   gds,
   markers.meta = NULL,
   individuals = NULL,
+  calibrate.alleles = TRUE,
   parallel.core = parallel::detectCores() - 1,
   ...
 ) {
   if (is.null(individuals)) {
-    individuals <- extract_individuals(gds = gds, whitelist = TRUE, verbose = FALSE)
+    individuals <- extract_individuals_metadata(gds = gds, whitelist = TRUE, verbose = FALSE)
   }
 
   if (is.null(markers.meta)) {
@@ -2149,13 +2168,15 @@ gds2tidy <- function(
 
   # re-calibration of ref/alt alleles ------------------------------------------
   # if (verbose) message("\nCalculating REF/ALT alleles...")
-  tidy.data <- radiator::calibrate_alleles(
-    data = tidy.data,
-    # biallelic = TRUE,
-    parallel.core = parallel.core,
-    verbose = FALSE,
-    gt = FALSE, gt.vcf = FALSE
-  ) %$% input
+  if (calibrate.alleles) {
+    tidy.data <- radiator::calibrate_alleles(
+      data = tidy.data,
+      # biallelic = TRUE,
+      parallel.core = parallel.core,
+      verbose = FALSE,
+      gt = FALSE, gt.vcf = FALSE
+    ) %$% input
+  }
 
   # include strata
   colnames(individuals) <- stringi::stri_replace_all_fixed(

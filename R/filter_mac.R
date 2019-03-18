@@ -265,7 +265,7 @@ filter_mac <- function(
         data.type <- "SeqVarGDSClass"
       }
       n.diplo.samples <- nrow(
-        extract_individuals(gds = data, ind.field.select = "INDIVIDUALS", whitelist = TRUE)
+        extract_individuals_metadata(gds = data, ind.field.select = "INDIVIDUALS", whitelist = TRUE)
       ) * 2
     }
 

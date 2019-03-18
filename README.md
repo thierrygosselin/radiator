@@ -1,6 +1,6 @@
 [![Travis-CI Build Status](https://travis-ci.org/thierrygosselin/radiator.svg?branch=master)](https://travis-ci.org/thierrygosselin/radiator) [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/thierrygosselin/radiator?branch=master&svg=true)](https://ci.appveyor.com/project/thierrygosselin/radiator) [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/radiator)](http://cran.r-project.org/package=radiator) [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active) [![DOI](https://zenodo.org/badge/14548/thierrygosselin/radiator.svg)](https://zenodo.org/badge/latestdoi/14548/thierrygosselin/radiator)
 
-[![packageversion](https://img.shields.io/badge/Package%20version-1.0.0-orange.svg)](commits/master) [![Last-changedate](https://img.shields.io/badge/last%20change-2019--03--15-brightgreen.svg)](/commits/master)
+[![packageversion](https://img.shields.io/badge/Package%20version-1.0.0-orange.svg)](commits/master) [![Last-changedate](https://img.shields.io/badge/last%20change-2019--03--18-brightgreen.svg)](/commits/master)
 
 ------------------------------------------------------------------------
 
@@ -10,8 +10,6 @@ radiator: an R package for RADseq Data Exploration, Manipulation and Visualizati
 This is the development page of the **radiator**, if you want to help, see [contributions section](https://github.com/thierrygosselin/radiator#contributions)
 
 Most genomic analysis look for patterns and trends with various statistics. Bias, noise and outliers can have bounded influence on estimators and interfere with polymorphism discovery. Avoid bad data exploration and control the impact of filters on your downstream genetic analysis. Use radiator to: import, explore, manipulate, visualize, filter, impute and export your GBS/RADseq data.
-
-**radiator** was born from **stackr**. All RADseq filters and visualization related code has been moved out of **stackr** and into a new package, **radiator**. This makes **stackr** and **radiator** simpler, and will make it easier to release fixes for bugs that only affect these packages.
 
 Installation
 ------------
@@ -23,6 +21,45 @@ if (!require("devtools")) install.packages("devtools") # to install
 devtools::install_github("thierrygosselin/radiator")
 library(radiator)
 ```
+
+Learning radiator
+-----------------
+
+It's not really complicated, to see if you're going to like radiator there just 2 functions to try.
+
+**1. Prepare a strata file** \* It's a tab separated file, e.g. `radiator.strata.tsv` \* A minimum of 2 columns: `INDIVIDUALS` and `STRATA` is required. `STRATA` could be your populations or sampling sites names or any grouping you want.
+
+To make sure it's going to work properly, try reading it in `R` with:
+
+``` r
+strata <- radiator::read_strata("my.strata.tsv")
+# Other arguments are available to help you with this
+??radiator::read_strata
+
+# not sure about the sample id used inside your VCF file ?
+id <- radiator::extract_individuals_vcf("my.vcf") # for VCF
+id <- radiator::extract_dart_target_id("mt.dart.file.csv") # for DArT
+
+It's like *stacks* population map file with header...
+```
+
+**2. Filter your RADseq data**
+
+``` r
+data <- radiator::filter_rad(data = "my.vcf", strata = "my.strata.tsv")
+```
+
+You want a genind and a hierfstat objects/files after?
+
+``` r
+data <- radiator::filter_rad(
+    data = "my.vcf",
+    strata = "my.strata.tsv", 
+    output = c("genind", "hierfstat")
+)
+```
+
+It's my ONE FUNCTION TO RULE THEM ALL. There's obviouly more to this. The function is made of modules (see below) that user's can access separately or in combination. Use [magrittr](https://magrittr.tidyverse.org) `%>%` to chain filtering functions together and dig deeper into your data. But remember, for 95% of users, `filter_rad` will be enough to start exploring the biology!
 
 <table style="width:100%;">
 <colgroup>
@@ -38,7 +75,7 @@ library(radiator)
 <tbody>
 <tr class="odd">
 <td align="left"><strong>Import</strong></td>
-<td align="left">List of the 12 supported genomic file formats in <code>tidy_genomic_format</code> and <code>genomic_converter</code>:<br> <a href="https://samtools.github.io/hts-specs/">VCF, SNPs and haplotypes</a> (Danecek et al., 2011)<br><a href="http://pngu.mgh.harvard.edu/~purcell/plink/data.shtml#tr">PLINK tped/tfam</a> (Purcell et al., 2007)<br><a href="https://github.com/thibautjombart/adegenet">genind</a> (Jombart et al., 2010; Jombart and Ahmed, 2011)<br> <a href="https://github.com/thibautjombart/adegenet">genlight</a> (Jombart et al., 2010; Jombart and Ahmed, 2011), also in <code>tidy_genlight</code><br><a href="https://github.com/EricArcher/strataG">strataG gtypes</a> (Archer et al., 2016)<br><a href="http://genepop.curtin.edu.au">Genepop</a> (Raymond and Rousset, 1995; Rousset, 2008), also in <code>tidy_genepop</code><br><a href="http://catchenlab.life.illinois.edu/stacks/">STACKS haplotype file</a> (Catchen et al., 2011, 2013)<br><a href="https://github.com/jgx65/hierfstat">hierfstat</a> (Goudet, 2005), also in <code>tidy_fstat</code><br><a href="http://www.diversityarrays.com">DArT file</a><br>Dataframes of genotypes in wide or long/tidy format, also in <code>tidy_wide</code></td>
+<td align="left">List of the 11 supported input genomic file formats and their variations:<br> <a href="https://samtools.github.io/hts-specs/">VCF: SNPs and haplotypes</a> (Danecek et al., 2011)<br><a href="http://www.diversityarrays.com">DArT files: genotypes in 1row, alleles counts and coverage in 2 rows and SilicoDArT</a><br><a href="http://pngu.mgh.harvard.edu/~purcell/plink/data.shtml#tr">PLINK: bed/tped/tfam</a> (Purcell et al., 2007)<br><a href="https://github.com/thibautjombart/adegenet">genind</a> (Jombart et al., 2010; Jombart and Ahmed, 2011)<br> <a href="https://github.com/thibautjombart/adegenet">genlight</a> (Jombart et al., 2010; Jombart and Ahmed, 2011)<br><a href="https://github.com/EricArcher/strataG">strataG gtypes</a> (Archer et al., 2016)<br><a href="http://genepop.curtin.edu.au">Genepop</a> (Raymond and Rousset, 1995; Rousset, 2008)<br><a href="http://catchenlab.life.illinois.edu/stacks/">STACKS haplotype file</a> (Catchen et al., 2011, 2013)<br><a href="https://github.com/jgx65/hierfstat">hierfstat</a> (Goudet, 2005)<br><a href="https://github.com/zhengxwen/SeqArray">SeqArray</a> (Zheng et al., 2017)<br><a href="https://github.com/zhengxwen/SNPRelate">SNPRelate</a> (Zheng et al., 2012)<br>Dataframes of genotypes in wide or long/tidy format</td>
 </tr>
 <tr class="even">
 <td align="left"><strong>Output</strong></td>
@@ -310,8 +347,8 @@ The **radiator** package fits currently at the end of the GBS workflow (e.g. aft
 
 -   Remove replicates (I hope you have some).
 -   Remove *de novo* assembly artifact:
-    -   run `stackr::summary_haplotypes` to automatically generate blacklist of genotypes and whitelist of markers. The function will highlight individuals and locus with more than 2 alleles (outlier individuals and markers).
-    -   run `filter_snp_number`, function will highlight outlier locus/reads with extreme number of SNP/read or haplotypes
+-   run `stackr::summary_haplotypes` to automatically generate blacklist of genotypes and whitelist of markers. The function will highlight individuals and locus with more than 2 alleles (outlier individuals and markers).
+-   run `filter_snp_number`, function will highlight outlier locus/reads with extreme number of SNP/read or haplotypes
 -   Remove potential duplicated samples that went off your radar with `detect_duplicate_genomes`.
 -   Remove mixed samples or pooled samples that creates outliers individual's heterozygosity with the function `detect_mixed_individuals`.
 

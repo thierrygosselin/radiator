@@ -42,12 +42,6 @@ with polymorphism discovery. Avoid bad data exploration and control the impact
 of filters on your downstream genetic analysis. Use radiator to: import, explore,
 manipulate, visualize, filter, impute and export your GBS/RADseq data.
 
-**radiator** was born from **stackr**. All RADseq filters and visualization
-related code has been moved out of **stackr** and into a new package, **radiator**.
-This makes **stackr** and **radiator** simpler, and will make it easier to
-release fixes for bugs that only affect these packages.
-
-
 ## Installation
 To try out the dev version of **radiator**, copy/paste the code below:
 
@@ -57,9 +51,53 @@ devtools::install_github("thierrygosselin/radiator")
 library(radiator)
 ```
 
+## Learning radiator
+
+It's not really complicated, to see if you're going to like radiator there just 
+2 functions to try.
+
+**1. Prepare a strata file**
+* It's a tab separated file, e.g. `radiator.strata.tsv`
+* A minimum of 2 columns: `INDIVIDUALS` and `STRATA` is required. `STRATA` could
+be your populations or sampling sites names or any grouping you want.
+
+To make sure it's going to work properly, try reading it in `R` with:
+```r
+strata <- radiator::read_strata("my.strata.tsv")
+# Other arguments are available to help you with this
+??radiator::read_strata
+
+# not sure about the sample id used inside your VCF file ?
+id <- radiator::extract_individuals_vcf("my.vcf") # for VCF
+id <- radiator::extract_dart_target_id("mt.dart.file.csv") # for DArT
+
+It's like *stacks* population map file with header...
+```
+
+**2. Filter your RADseq data**
+
+```r
+data <- radiator::filter_rad(data = "my.vcf", strata = "my.strata.tsv")
+```
+You want a genind and a hierfstat objects/files after?
+```r
+data <- radiator::filter_rad(
+    data = "my.vcf",
+    strata = "my.strata.tsv", 
+    output = c("genind", "hierfstat")
+)
+```
+
+It's my ONE FUNCTION TO RULE THEM ALL. There's obviouly more to this. The function 
+is made of modules (see below) that user's can access separately or in combination. 
+Use [magrittr](https://magrittr.tidyverse.org) `%>%` to chain filtering
+functions together and dig deeper into your data.
+But remember, for 95% of users, `filter_rad` will be enough to start exploring the biology!
+
+
 | Caracteristics | Description |
 |:-------------------|:--------------------------------------------------------|
-| **Import** | List of the 12 supported genomic file formats in `tidy_genomic_format` and `genomic_converter`:<br> [VCF, SNPs and haplotypes](https://samtools.github.io/hts-specs/) (Danecek et al., 2011)<br>[PLINK tped/tfam](http://pngu.mgh.harvard.edu/~purcell/plink/data.shtml#tr) (Purcell et al., 2007)<br>[genind](https://github.com/thibautjombart/adegenet) (Jombart et al., 2010; Jombart and Ahmed, 2011)<br>  [genlight](https://github.com/thibautjombart/adegenet) (Jombart et al., 2010; Jombart and Ahmed, 2011), also in `tidy_genlight`<br>[strataG gtypes](https://github.com/EricArcher/strataG) (Archer et al., 2016)<br>[Genepop](http://genepop.curtin.edu.au) (Raymond and Rousset, 1995; Rousset, 2008), also in `tidy_genepop`<br>[STACKS haplotype file](http://catchenlab.life.illinois.edu/stacks/) (Catchen et al., 2011, 2013)<br>[hierfstat](https://github.com/jgx65/hierfstat) (Goudet, 2005), also in `tidy_fstat`<br>[DArT file](http://www.diversityarrays.com)<br>Dataframes of genotypes in wide or long/tidy format, also in `tidy_wide`|
+| **Import** | List of the 11 supported input genomic file formats and their variations:<br> [VCF: SNPs and haplotypes](https://samtools.github.io/hts-specs/) (Danecek et al., 2011)<br>[DArT files: genotypes in 1row, alleles counts and coverage in 2 rows and SilicoDArT](http://www.diversityarrays.com)<br>[PLINK: bed/tped/tfam](http://pngu.mgh.harvard.edu/~purcell/plink/data.shtml#tr) (Purcell et al., 2007)<br>[genind](https://github.com/thibautjombart/adegenet) (Jombart et al., 2010; Jombart and Ahmed, 2011)<br>  [genlight](https://github.com/thibautjombart/adegenet) (Jombart et al., 2010; Jombart and Ahmed, 2011)<br>[strataG gtypes](https://github.com/EricArcher/strataG) (Archer et al., 2016)<br>[Genepop](http://genepop.curtin.edu.au) (Raymond and Rousset, 1995; Rousset, 2008)<br>[STACKS haplotype file](http://catchenlab.life.illinois.edu/stacks/) (Catchen et al., 2011, 2013)<br>[hierfstat](https://github.com/jgx65/hierfstat) (Goudet, 2005)<br>[SeqArray](https://github.com/zhengxwen/SeqArray) (Zheng et al., 2017)<br>[SNPRelate](https://github.com/zhengxwen/SNPRelate) (Zheng et al., 2012)<br>Dataframes of genotypes in wide or long/tidy format|
 | **Output** |25 genomic data formats can be exported out of **radiator** using `genomic_converter` or these separate modules:<br>`write_vcf`: [VCF](https://samtools.github.io/hts-specs/) (Danecek et al., 2011)<br>`write_plink`: [PLINK tped/tfam](http://pngu.mgh.harvard.edu/~purcell/plink/data.shtml#tr) (Purcell et al., 2007)<br>`write_genind`: [adegenet genind and genlight](https://github.com/thibautjombart/adegenet) (Jombart et al., 2010; Jombart and Ahmed, 2011)<br>`write_genlight`: [genlight](https://github.com/thibautjombart/adegenet) (Jombart et al., 2010; Jombart and Ahmed, 2011)<br>`write_gsi_sim`: [gsi_sim](https://github.com/eriqande/gsi_sim) (Anderson et al. 2008)<br>`write_gtypes`: [strataG gtypes](https://github.com/EricArcher/strataG) (Archer et al. 2016)<br>`write_colony`: [COLONY](https://www.zsl.org/science/software/colony) (Jones and Wang, 2010; Wang, 2012)<br>`write_genepop`: [Genepop](http://genepop.curtin.edu.au) (Raymond and Rousset, 1995; Rousset, 2008)<br>[STACKS haplotype file](http://catchenlab.life.illinois.edu/stacks/) (Catchen et al., 2011, 2013)<br>`write_betadiv`: [betadiv](http://adn.biol.umontreal.ca/~numericalecology/Rcode/) (Lamy, 2015)<br> `vcf2dadi`: [δaδi](http://gutengroup.mcb.arizona.edu/software/) (Gutenkunst et al., 2009)<br> `write_structure`: [structure](http://pritchardlab.stanford.edu/structure.html) (Pritchard et al., 2000)<br> `write_arlequin`: [Arlequin](http://cmpg.unibe.ch/software/arlequin35/) (Excoffier et al. 2005)<br> `write_hierfstat`: [hierfstat](https://github.com/jgx65/hierfstat) (Goudet, 2005)<br> `write_snprelate`: [SNPRelate](https://github.com/zhengxwen/SNPRelate) (Zheng et al. 2012)<br>`write_seqarray`: [SeqArray](https://github.com/zhengxwen/SeqArray) (Zheng et al. 2017)<br> `write_bayescan`: [BayeScan](http://cmpg.unibe.ch/software/BayeScan) (Foll and Gaggiotti, 2008)<br>`write_pcadapt`: [pcadapt](https://github.com/bcm-uga/pcadapt) (Luu et al. 2017)<br>`write_hzar` (Derryberry et al. 2013) <br>`write_fineradstructure` (Malinsky et al., 2018) <br>`write_related` [related](https://github.com/timothyfrasier/related) (Pew et al., 2015)<br>`write_stockr` for stockR package (Foster el al., submitted)<br>`write_maverick` [MavericK](http://www.bobverity.com/home/maverick/what-is-maverick/) (Verity & Nichols, 2016)<br>`write_ldna` [LDna](https://github.com/petrikemppainen/LDna) (Kemppainen et al. 2015)<br>Dataframes of genotypes in wide or long/tidy format|
 |**Conversion function**| `genomic_converter` import/export genomic formats mentioned above. The function is also integrated with usefull filters, blacklist and whitelist.|
 |**Outliers detection**|`detect_duplicate_genomes`: Detect and remove duplicate individuals from your dataset <br>`detect_mixed_genomes`: Detect and remove potentially mixed individuals<br>`stackr::summary_haplotype` and `filter_snp_number`: Discard of outlier markers with *de novo* assembly artifact (e.g. markers with an extreme number of SNP per haplotype or with irregular number of alleles)|
@@ -74,11 +112,11 @@ library(radiator)
 
 
 ## Prerequisite - Suggestions - Troubleshooting
-  * **Parallel computing**: follow the steps in this [notebook vignette](https://www.dropbox.com/s/5npumwdo0cxtxi4/rad_genomics_computer_setup.nb.html?dl=0) to install the packages with OpenMP-enabled compiler and conduct imputations in parallel.
-  * [Installation problems.](https://www.dropbox.com/s/5npumwdo0cxtxi4/rad_genomics_computer_setup.nb.html?dl=0)
-  * **Windows users**: Install [Rtools](https://cran.r-project.org/bin/windows/Rtools/).
-  * The R GUI is unstable with functions using parallel ([more info](https://stat.ethz.ch/R-manual/R-devel/library/parallel/html/mclapply.html)), so I recommend using [RStudio](https://www.rstudio.com/products/rstudio/download/) for a better experience.
-  * Running codes in chunks inside R Notebook might cause problem, run it outside in the console.
+* **Parallel computing**: follow the steps in this [notebook vignette](https://www.dropbox.com/s/5npumwdo0cxtxi4/rad_genomics_computer_setup.nb.html?dl=0) to install the packages with OpenMP-enabled compiler and conduct imputations in parallel.
+* [Installation problems.](https://www.dropbox.com/s/5npumwdo0cxtxi4/rad_genomics_computer_setup.nb.html?dl=0)
+* **Windows users**: Install [Rtools](https://cran.r-project.org/bin/windows/Rtools/).
+* The R GUI is unstable with functions using parallel ([more info](https://stat.ethz.ch/R-manual/R-devel/library/parallel/html/mclapply.html)), so I recommend using [RStudio](https://www.rstudio.com/products/rstudio/download/) for a better experience.
+* Running codes in chunks inside R Notebook might cause problem, run it outside in the console.
 
 ## Vignettes, R Notebooks and examples
 
@@ -181,12 +219,12 @@ to make sure bias were not introduce.
 
 * Remove replicates (I hope you have some).
 * Remove *de novo* assembly artifact: 
-    * run `stackr::summary_haplotypes` to automatically
+* run `stackr::summary_haplotypes` to automatically
 generate blacklist of genotypes and whitelist of markers.
 The function will highlight individuals and locus with more than 2 alleles 
 (outlier individuals and markers).
-    * run `filter_snp_number`, function will highlight outlier locus/reads
-    with extreme number of SNP/read or haplotypes 
+* run `filter_snp_number`, function will highlight outlier locus/reads
+with extreme number of SNP/read or haplotypes 
 * Remove potential duplicated samples that went off your radar with `detect_duplicate_genomes`.
 * Remove mixed samples or pooled samples that creates
 outliers individual's heterozygosity with the function `detect_mixed_individuals`.

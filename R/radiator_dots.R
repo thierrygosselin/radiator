@@ -34,8 +34,7 @@
 #' Default: \code{deprecated = c("maf.thresholds", "common.markers",
 #' "max.marker","monomorphic.out", "snp.ld", "filter.call.rate",
 #' "filter.markers.coverage", "filter.markers.missing", "number.snp.reads",
-#' "mixed.genomes.analysis", "duplicate.genomes.analysis", "maf.data",
-#' "hierarchical.levels", "imputation.method", "pred.mean.matching", "num.tree")}.
+#' "mixed.genomes.analysis", "duplicate.genomes.analysis", "maf.data")}.
 # @keywords internal
 #' @inheritParams radiator_common_arguments
 #'
@@ -90,11 +89,8 @@ radiator_dots <- function(
     "filter.markers.missing",
     "number.snp.reads",
     "mixed.genomes.analysis",
-    "duplicate.genomes.analysis",
-    "hierarchical.levels",
-    "imputation.method",
-    "pred.mean.matching",
-    "num.tree"),
+    "duplicate.genomes.analysis"
+    ),
   verbose = TRUE
 ) {
   opt.change <- getOption("width")
@@ -123,6 +119,7 @@ radiator_dots <- function(
     verbose = verbose
   )
   res %<>% dplyr::bind_rows(dplyr::mutate(func.call, VALUES = as.character(VALUES)))
+
   # Dots dots dots -------------------------------------------------------------
   deprecated <- sort(deprecated)
   keepers <- sort(keepers)
@@ -212,6 +209,18 @@ radiator_dots <- function(
 
 
 # Internal nested functions ----------------------------------------------------
+
+#' @title message_func_call
+#' @description Message the function call
+#' @name message_func_call
+#' @keywords internal
+#' @export
+message_func_call <- function(n, v, verbose = TRUE) {
+  # if (length(rlang::quo_name(v)) > 1) {} v <- rlang::quo_name(v)
+  if (verbose) message("    ", stringi::stri_join(n, " = ", paste(rlang::quo_name(v), collapse = "," )))
+}# End message_func_call
+
+
 #' @title extract_dots
 #' @description Extract and Assign ...
 #' @name extract_dots
@@ -261,11 +270,7 @@ assign_defaults <- function(n, verbose = TRUE, pos = 1) {
 
   # Specific values...
   if (n == "filter.strands") v <- "blacklist"
-  # if (n == "subsample.markers.stats") v <- 0.2
   if (n == "ld.method") v <- "r2"
-  if (n == "hierarchical.levels") v <- "strata"
-  if (n == "num.tree") v <-50L
-  if (n == "pred.mean.matching") v <- 0L
   if (n == "iteration.subsample") v <- 1L
 
   # assignment
@@ -278,16 +283,6 @@ assign_defaults <- function(n, verbose = TRUE, pos = 1) {
     GROUPS = "default...")
   return(res)
 }#End assign_defaults
-
-#' @title message_func_call
-#' @description Message the function call
-#' @name message_func_call
-#' @keywords internal
-#' @export
-message_func_call <- function(n, v, verbose = TRUE) {
-  # if (length(rlang::quo_name(v)) > 1) {} v <- rlang::quo_name(v)
-  if (verbose) message("    ", stringi::stri_join(n, " = ", paste(rlang::quo_name(v), collapse = "," )))
-}# End message_func_call
 
 #' @title check_args_class
 #' @description Check the class of the argument/parameter value

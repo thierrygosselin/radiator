@@ -132,7 +132,7 @@ read_rad <- function(
       data <- SeqArray::seqOpen(gds.fn = data, readonly = FALSE)
     }
 
-    s <- extract_individuals(
+    s <- extract_individuals_metadata(
       gds = data,
       ind.field.select = "INDIVIDUALS",
       whitelist = TRUE
@@ -152,27 +152,6 @@ read_rad <- function(
                            variant.id = m,
                            sample.id = as.character(s),
                            verbose = FALSE)
-
-    # rad_sample <- purrr::safely(.f = function(x) gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/individuals/INDIVIDUALS")))
-    # rad_markers <- purrr::safely(.f = function(x) gdsfmt::read.gdsn(gdsfmt::index.gdsn(node = x, path = "radiator/markers.meta/VARIANT_ID")))
-    #
-    # # Note to myself: just use , silent = TRUE and it will return null if doesnt work..
-    # w.s <-  rad_sample(data)
-    # if (!is.null(w.s$error)) {
-    #   w.s <- SeqArray::seqGetData(gdsfile = data, var.name = "sample.id")
-    # } else {
-    #   w.s <- w.s$result
-    # }
-    #
-    # w.m <- rad_markers(data)
-    # if (!is.null(w.m$error)) {
-    #   w.m <- SeqArray::seqGetData(gdsfile = data, var.name = "variant.id")
-    # } else {
-    #   w.m <- w.m$result
-    # }
-    # if (verbose) message("Setting filters to:")
-    # if (verbose) message("    number of samples: ", length(w.s))
-    # if (verbose) message("    number of markers: ", length(w.m))
 
     # Checks--------------------------------------------------------------------
     if (check) {
@@ -294,7 +273,7 @@ write_rad <- function(
       data.type <- class(data)
 
       if ("SeqVarGDSClass" %in% data.type) {
-        s <- extract_individuals(
+        s <- extract_individuals_metadata(
           gds = data,
           ind.field.select = "INDIVIDUALS",
           whitelist = TRUE

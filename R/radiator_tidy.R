@@ -175,7 +175,7 @@ tidy2wide <- function(
     ) %$% MARKERS
   }
   if (is.null(individuals) && !is.null(gds)) {
-    individuals <- extract_individuals(
+    individuals <- extract_individuals_metadata(
       gds = gds,
       ind.field.select = "INDIVIDUALS",
       whitelist = TRUE
@@ -305,7 +305,7 @@ tidy2wide <- function(
 #' documented in \code{\link{tidy_gtypes}}.
 #'
 #' \item dart data from \href{http://www.diversityarrays.com}{DArT}:
-#' documented in \code{\link{tidy_dart}}.
+#' documented in \code{\link{read_dart}}.
 #'
 #' \item genepop file must end with \code{.gen}, documented in \code{\link{tidy_genepop}}.
 #'
@@ -422,7 +422,16 @@ tidy_genomic_data <- function(
                 "whitelist.markers", "filter.common.markers",
                 "filter.monomorphic", "vcf.metadata", "vcf.stats",
                 "blacklist.genotypes", "internal"),
-    verbose = verbose
+    deprecated = c("maf.thresholds", "common.markers",
+                   "max.marker","monomorphic.out", "snp.ld", "filter.call.rate",
+                   "filter.markers.coverage", "filter.markers.missing",
+                   "number.snp.reads",
+                   "mixed.genomes.analysis", "duplicate.genomes.analysis",
+                   "maf.data",
+                   "hierarchical.levels", "imputation.method",
+                   "pred.mean.matching", "num.tree",
+                   "pop.levels", "pop.labels", "pop.select"
+    ),    verbose = verbose
   )
 
   # Checking for missing and/or default arguments ------------------------------
@@ -673,11 +682,12 @@ tidy_genomic_data <- function(
   # Import DArT ----------------------------------------------------------------
   if (data.type == "dart") {
     if (verbose) message("Tidying DArT data...")
-    input <- radiator::tidy_dart(
+    input <- radiator::read_dart(
       data = data,
       strata = strata,
       verbose = FALSE,
-      parallel.core = parallel.core)
+      parallel.core = parallel.core,
+      tidy.dart = TRUE)
     skip.tidy.wide <- TRUE
   }# End dart
 

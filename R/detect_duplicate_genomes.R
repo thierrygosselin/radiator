@@ -904,16 +904,16 @@ detect_duplicate_genomes <- function(
         if (data.type == "tbl_df") {
           data  %<>% dplyr::filter(!INDIVIDUALS %in% blacklist.id.similar$INDIVIDUALS)
         } else {
-          id.info <- extract_individuals(gds = data, whitelist = FALSE) %>%
+          id.info <- extract_individuals_metadata(gds = data, whitelist = FALSE) %>%
             dplyr::mutate(
               FILTERS = dplyr::if_else(
                 INDIVIDUALS %in% blacklist.id.similar$INDIVIDUALS,
                 "filter.individuals.duplicates", FILTERS
               )
             )
-          update_radiator_gds(gds = data, node.name = "individuals", value = id.info, sync = TRUE)
+          update_radiator_gds(gds = data, node.name = "individuals.meta", value = id.info, sync = TRUE)
 
-          # id.info <- extract_individuals(gds = data)
+          # id.info <- extract_individuals_metadata(gds = data)
           # bl <- id.info %>% dplyr::filter(INDIVIDUALS %in% blacklist.id.similar$INDIVIDUALS) %>%
           #   dplyr::distinct(INDIVIDUALS) %>%
           #   dplyr::mutate(FILTER = "filter.individuals.duplicates")
@@ -1003,7 +1003,7 @@ distance_individuals <- function(
         nbproc = parallel.core)) %>%
       distance2tibble(.)# melt the dist matrice into a data frame
   } else {
-    sample.id <- extract_individuals(
+    sample.id <- extract_individuals_metadata(
       gds = x,
       ind.field.select = "INDIVIDUALS",
       whitelist = TRUE) %$%

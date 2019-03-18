@@ -103,6 +103,7 @@ read_strata <- function(
   path.folder = NULL,
   verbose = FALSE
 ) {
+  if (missing(strata)) rlang::abort("\nMissing strata argument...\n")
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
 
   if (is.null(strata)) {
@@ -110,6 +111,7 @@ read_strata <- function(
   } else {
     if (verbose) message("Analyzing strata file")
     if (is.vector(strata)) {
+      if (!file.exists(strata)) rlang::abort("\nstrata file doesn't exist...\n")
       strata <- readr::read_tsv(
         file = strata,
         col_types = readr::cols(.default = readr::col_character()))

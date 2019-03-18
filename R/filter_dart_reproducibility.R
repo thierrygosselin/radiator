@@ -45,7 +45,7 @@
 
 #' @examples
 #' \dontrun{
-#' spotted.cod <- radiator::tidy_dart(
+#' spotted.cod <- radiator::read_dart(
 #'     data = "Combined_1514and1614_SNP_80Callrate.csv",
 #'     strata = "strata.dart.spotted.cod.tsv"
 #' )

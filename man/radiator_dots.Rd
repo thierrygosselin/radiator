@@ -24,9 +24,8 @@ radiator_dots(func.name = as.list(sys.call())[[1]], fd = NULL,
   deprecated = c("maf.thresholds", "common.markers", "max.marker",
   "monomorphic.out", "snp.ld", "filter.call.rate",
   "filter.markers.coverage", "filter.markers.missing", "number.snp.reads",
-  "mixed.genomes.analysis", "duplicate.genomes.analysis",
-  "hierarchical.levels", "imputation.method", "pred.mean.matching",
-  "num.tree"), verbose = TRUE)
+  "mixed.genomes.analysis", "duplicate.genomes.analysis"),
+  verbose = TRUE)
 }
 \arguments{
 \item{func.name}{Default: \code{as.list(sys.call())[[1]]}.}
@@ -65,8 +64,7 @@ Default: \code{keepers = c(
 Default: \code{deprecated = c("maf.thresholds", "common.markers",
 "max.marker","monomorphic.out", "snp.ld", "filter.call.rate",
 "filter.markers.coverage", "filter.markers.missing", "number.snp.reads",
-"mixed.genomes.analysis", "duplicate.genomes.analysis", "maf.data",
-"hierarchical.levels", "imputation.method", "pred.mean.matching", "num.tree")}.}
+"mixed.genomes.analysis", "duplicate.genomes.analysis", "maf.data")}.}
 
 \item{verbose}{(optional, logical) When \code{verbose = TRUE}
 the function is a little more chatty during execution.

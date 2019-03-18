@@ -341,7 +341,7 @@ data_info <- function(x, verbose = FALSE) {
     res$n.chrom <- length(unique(i$CHROM))
     res$n.locus <- length(unique(i$LOCUS))
     res$n.snp <- length(unique(i$MARKERS))
-    i <- extract_individuals(
+    i <- extract_individuals_metadata(
       gds = x,
       ind.field.select = c("STRATA", "INDIVIDUALS"),
       whitelist = TRUE)
@@ -506,7 +506,7 @@ generate_squeleton_folders <- function(
 #' @export
 generate_filename <- function(
   name.shortcut = NULL,
-  path.folder = getwd(),
+  path.folder = NULL,
   date = TRUE,
   extension = c(
     "tsv", "gds.rad", "rad", "gds", "gen", "dat",
@@ -515,6 +515,8 @@ generate_filename <- function(
     "pcadapt", "related", "stockr", "structure", "arlequin"
   )
 ) {
+
+  if (is.null(path.folder)) path.folder <- getwd()
 
   # date and time-
   if (date) {

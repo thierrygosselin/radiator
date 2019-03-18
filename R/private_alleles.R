@@ -112,7 +112,7 @@ private_alleles <- function(data, strata = NULL, verbose = TRUE) {
       data <- radiator::read_rad(data, verbose = verbose)
       data.type <- "SeqVarGDSClass"
     }
-    strata <- extract_individuals(
+    strata <- extract_individuals_metadata(
       gds = data,
       ind.field.select = c("INDIVIDUALS", "STRATA"),
       whitelist = TRUE

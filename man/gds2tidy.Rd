@@ -5,7 +5,8 @@
 \title{gds2tidy}
 \usage{
 gds2tidy(gds, markers.meta = NULL, individuals = NULL,
-  parallel.core = parallel::detectCores() - 1, ...)
+  calibrate.alleles = TRUE, parallel.core = parallel::detectCores() -
+  1, ...)
 }
 \description{
 GDS to tidy...
