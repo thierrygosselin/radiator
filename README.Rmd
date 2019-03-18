@@ -55,7 +55,7 @@ library(radiator)
 
 2 things to do to check if radiator as the tools for you:
 
-**1. Prepare a strata file:**
+**1. Prepare a strata file**
 
 * It's a tab separated file, e.g. `radiator.strata.tsv`
 * A minimum of 2 columns: `INDIVIDUALS` and `STRATA` is required. 
