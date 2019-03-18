@@ -32,6 +32,8 @@ See if radiator as the right tools for you:
 -   It's a tab separated file, e.g. `radiator.strata.tsv`
 -   A minimum of 2 columns: `INDIVIDUALS` and `STRATA` is required.
 -   The `STRATA` column is e.g. your populations or sampling sites names or any grouping you want.
+-   VCF file users, not sure about the sample id inside your file ? see example `??radiator::extract_individuals_vcf`
+-   DArT file users, not sure about the sample id inside your file ? see example `??radiator::extract_dart_target_id`
 -   It's like *stacks* population map file with header...
 
 To make sure it's going to work properly, try reading it in `R` with:
@@ -41,22 +43,6 @@ strata <- radiator::read_strata("my.strata.tsv")
 names(strata)
 # Other arguments are available to help you with this
 ??radiator::read_strata
-```
-
-Not sure about the sample id used inside your VCF file ?
-
-``` r
-strata <- radiator::extract_individuals_vcf("my.vcf") %>% 
-  dplyr::mutate(STRATA = "fill this") %>% 
-  readr::write_tsv(x = ., path = "my.new.vcf.strata.tsv")
-```
-
-You are using DArT data ?
-
-``` r
-strata <- radiator::extract_dart_target_id("mt.dart.file.csv") %>% 
-  dplyr::mutate(INDIVIDUALS = "new id you want to give", STRATA = "fill this") %>% 
-  readr::write_tsv(x = ., path = "my.new.dart.strata.tsv")
 ```
 
 **2. Filter your RADseq data**

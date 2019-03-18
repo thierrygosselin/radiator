@@ -2554,6 +2554,15 @@ write_vcf <- function(data, pop.info = FALSE, filename = NULL) {
 #' @return A tibble with a column: \code{INDIVIDUALS}.
 #' @seealso \pkg{radiator} \code{\link{read_strata}}
 #' @author Thierry Gosselin \email{thierrygosselin@icloud.com}
+#'
+#' @examples
+#' \dontrun{
+#' # Built a strata file:
+#' strata <- radiator::extract_individuals_vcf("my.vcf") %>%
+#'     dplyr::mutate(STRATA = "fill this") %>%
+#'     readr::write_tsv(x = ., path = "my.new.vcf.strata.tsv")
+#' }
+
 extract_individuals_vcf <- function(data) {
   temp.file <-
     suppressWarnings(suppressMessages(

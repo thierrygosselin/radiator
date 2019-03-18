@@ -26,8 +26,13 @@ target id from a DArT file. To help prepare the appropriate STRATA file.
 }
 \examples{
 \dontrun{
-clownfish.dart.tidy <- radiator::extract_dart_target_id(
-data = "clownfish.dart.tsv")
+# Built a strata file:
+strata <- radiator::extract_dart_target_id("mt.dart.file.csv") \%>\%
+    dplyr::mutate(
+        INDIVIDUALS = "new id you want to give",
+        STRATA = "fill this"
+    ) \%>\%
+    readr::write_tsv(x = ., path = "my.new.dart.strata.tsv")
 }
 }
 \author{

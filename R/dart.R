@@ -31,9 +31,15 @@
 
 #' @examples
 #' \dontrun{
-#' clownfish.dart.tidy <- radiator::extract_dart_target_id(
-#' data = "clownfish.dart.tsv")
+#' # Built a strata file:
+#' strata <- radiator::extract_dart_target_id("mt.dart.file.csv") %>%
+#'     dplyr::mutate(
+#'         INDIVIDUALS = "new id you want to give",
+#'         STRATA = "fill this"
+#'     ) %>%
+#'     readr::write_tsv(x = ., path = "my.new.dart.strata.tsv")
 #' }
+
 
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com} and Peter Grewe \email{peter.grewe@csiro.au}
 

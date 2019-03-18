@@ -17,6 +17,14 @@ Function that returns the individuals present in a vcf file.
 Useful to create a strata file or
 to make sure you have the right individuals in your VCF.
 }
+\examples{
+\dontrun{
+# Built a strata file:
+strata <- radiator::extract_individuals_vcf("my.vcf") \%>\%
+    dplyr::mutate(STRATA = "fill this") \%>\%
+    readr::write_tsv(x = ., path = "my.new.vcf.strata.tsv")
+}
+}
 \seealso{
 \pkg{radiator} \code{\link{read_strata}}
 }

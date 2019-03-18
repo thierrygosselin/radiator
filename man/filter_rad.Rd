@@ -4,16 +4,11 @@
 \alias{filter_rad}
 \title{ONE FUNCTION TO RULE THEM ALL}
 \usage{
-filter_rad(interactive.filter = TRUE, data, strata = NULL,
+filter_rad(data, strata = NULL, interactive.filter = TRUE,
   output = NULL, filename = NULL, verbose = TRUE,
   parallel.core = parallel::detectCores() - 1, ...)
 }
 \arguments{
-\item{interactive.filter}{(optional, logical) Do you want the filtering session to
-be interactive. Figures of distribution are shown before asking for filtering
-thresholds.
-Default: \code{interactive.filter = TRUE}.}
-
 \item{data}{12 options for input: VCFs (SNPs or Haplotypes,
 to make the vcf population ready),
 plink, stacks haplotype file, genind (library(adegenet)),
@@ -26,6 +21,11 @@ Documented in \strong{Input genomic datasets} of \code{\link{tidy_genomic_data}}
 The strata file is a tab delimited file with a minimum of 2 columns headers:
 \code{INDIVIDUALS} and \code{STRATA}. Documented in \code{\link{read_strata}}.
 Default: \code{strata = NULL}.}
+
+\item{interactive.filter}{(optional, logical) Do you want the filtering session to
+be interactive. Figures of distribution are shown before asking for filtering
+thresholds.
+Default: \code{interactive.filter = TRUE}.}
 
 \item{output}{24 genomic data formats can be exported: tidy (by default),
 genepop, genind, genlight, vcf (for file format version, see details below),
