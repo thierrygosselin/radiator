@@ -11,6 +11,8 @@ This is the development page of the **radiator**, if you want to help, see [cont
 
 Most genomic analysis look for patterns and trends with various statistics. Bias, noise and outliers can have bounded influence on estimators and interfere with polymorphism discovery. Avoid bad data exploration and control the impact of filters on your downstream genetic analysis. Use radiator to: import, explore, manipulate, visualize, filter, impute and export your GBS/RADseq data.
 
+The package is designed and optimized for fast computations using Genomic Data Structure [GDS](http://zhengxwen.github.io/gdsfmt) file format and data science packages in [tiverse](https://www.tidyverse.org). radiator handles VCF files with millions of SNPs and files of several GB.
+
 Installation
 ------------
 
@@ -94,12 +96,10 @@ Overview
 </tr>
 <tr class="odd">
 <td align="left"><strong>Parallel</strong></td>
-<td align="left">Codes designed and optimized for fast computations using</td>
+<td align="left">Codes designed and optimized for fast computations using Genomic Data Structure <a href="http://zhengxwen.github.io/gdsfmt">GDS</a> file format and data science packages in <a href="https://www.tidyverse.org">tiverse</a>. Works with all OS: Linux, Mac and now PC!</td>
 </tr>
 </tbody>
 </table>
-
-Genomic Data Structure [GDS](http://zhengxwen.github.io/gdsfmt) file format and data science packages in [tiverse](https://www.tidyverse.org) Works with all OS: Linux, Mac and now PC!|
 
 [More in radiator workflow below](https://github.com/thierrygosselin/radiator#radiator-workflow)
 
