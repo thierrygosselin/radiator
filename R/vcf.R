@@ -308,8 +308,7 @@ read_vcf <- function(
                 "blacklist.id", "pop.select", "pop.levels", "pop.labels",
                 "path.folder",
                 "markers.info", "vcf.metadata",
-                "subsample.markers.stats", "parameters", "random.seed", "internal",
-                "fig.upsetr"),
+                "subsample.markers.stats", "parameters", "random.seed", "internal"),
     verbose = verbose
   )
 
@@ -918,7 +917,7 @@ read_vcf <- function(
   gds <- filter_common_markers(
     data = gds,
     filter.common.markers = filter.common.markers,
-    fig = fig.upsetr,
+    fig = TRUE,
     parallel.core = parallel.core,
     verbose = verbose,
     parameters = filters.parameters,

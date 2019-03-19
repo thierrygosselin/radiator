@@ -69,13 +69,13 @@ filter_common_markers <- function(
   ...
 ) {
   # Test
-  # filter.common.markers = TRUE
-  # fig = TRUE
-  # parallel.core = parallel::detectCores() - 1
-  # verbose = TRUE
-  # # path.folder <- NULL
-  # # parameters <- NULL
-  # internal <- FALSE
+  filter.common.markers = TRUE
+  fig = TRUE
+  parallel.core = parallel::detectCores() - 1
+  verbose = TRUE
+  path.folder <- NULL
+  parameters <- NULL
+  internal <- FALSE
   # parameters = filters.parameters
   # path.folder = wf
 
@@ -188,6 +188,11 @@ filter_common_markers <- function(
         message("Only 1 strata...returning data")
         return(data)
       }
+      check.strata <- strata %>% dplyr::count(STRATA) %>% dplyr::filter(n <= 1)
+      if (nrow(check.strata) > 0) {
+        message("\nStrata with low sample size detected: fig <- FALSE\n")
+        fig <- FALSE
+      }
 
       # plot_upset--------------------------------------------------------------
       if (fig) {
@@ -214,8 +219,8 @@ filter_common_markers <- function(
           dplyr::mutate(
             FILTERS = dplyr::if_else(
               VARIANT_ID %in% bl, "filter.common.markers", FILTERS
-              )
             )
+          )
 
         write_rad(
           data = markers.meta %>% dplyr::filter(FILTERS == "filter.common.markers"),
@@ -378,7 +383,7 @@ not_common_markers <- function(
     gds = x,
     ind.field.select = "INDIVIDUALS",
     whitelist = TRUE
-    ) %$% INDIVIDUALS
+  ) %$% INDIVIDUALS
 
   not_common <- function(
     split.data = NULL,
@@ -412,7 +417,7 @@ not_common_markers <- function(
                parallel.core = parallel.core
     ) %>% unlist %>% unique %>% sort
 
-   # reset
+  # reset
   # summary_gds(x)
   # SeqArray::seqSetFilter(x, action = "pop", verbose = TRUE)
   SeqArray::seqSetFilter(
@@ -446,7 +451,7 @@ plot_upset <- function(
       gds = x,
       ind.field.select = c("STRATA", "INDIVIDUALS"),
       whitelist = TRUE
-      )
+    )
     n.pop = length(unique(strata$STRATA))
 
     # PLAN B while SeqArray bug is fixed
