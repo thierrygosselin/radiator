@@ -424,10 +424,8 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
 #' and \href{https://github.com/thierrygosselin/assigner}{assigner}
 #' and might be of interest for users.
 
-#' @param data A tidy data frame object in the global environment or
-#' a tidy data frame in wide or long format in the working directory.
-#' \emph{How to get a tidy data frame ?}
-#' Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
+#' @inheritParams radiator_common_arguments
+
 
 #' @param pop.levels (optional, string) A character string with your populations ordered.
 #' Default: \code{pop.levels = NULL}. Described in \code{\link{read_strata}}.
@@ -490,56 +488,62 @@ write_genepop <- function(
   # genepop.header = NULL
   # markers.line = TRUE
   # filename = NULL
-  # Checking for missing and/or default arguments ******************************
+
+
+  # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("Input file missing")
 
+  # File type detection----------------------------------------------------------
+  data.type <- radiator::detect_genomic_format(data)
+
   # Import data ---------------------------------------------------------------
-  if (is.vector(data)) {
-    data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
+
+  if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
+    if (data.type == "gds.file") {
+      data <- radiator::read_rad(data, verbose = FALSE)
+    }
+    data <- gds2tidy(gds = data, parallel.core = parallel::detectCores() - 1)
+    data.type <- "tbl_df"
+  } else {
+    if (is.vector(data)) {
+      data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
+    }
   }
 
-  # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-  if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
-    data <- dplyr::rename(.data = data, MARKERS = LOCUS)
+  if (rlang::has_name(data, "STRATA") && !rlang::has_name(data, "POP_ID")) {
+    data %<>% dplyr::rename(POP_ID = STRATA)
   }
 
-  data <- dplyr::select(.data = data, POP_ID, INDIVIDUALS, MARKERS, GT)
-
-  data <- data %>%
-    dplyr::mutate(
-      GT = stringi::stri_replace_all_fixed(
-        str = as.character(GT),
-        pattern = c("/", ":", "_", "-", "."),
-        replacement = "",
-        vectorize_all = FALSE),
-      GT = stringi::stri_pad_left(str = as.character(GT), pad = "0", width = 6)
-    )
+  data %<>% dplyr::select(POP_ID, INDIVIDUALS, MARKERS, GT)
 
   # pop.levels -----------------------------------------------------------------
   if (!is.null(pop.levels)) {
-    data <- dplyr::mutate(
-      .data = data,
-      POP_ID = factor(POP_ID, levels = pop.levels, ordered = TRUE),
-      POP_ID = droplevels(POP_ID)
-    ) %>%
+    data %<>%
+      dplyr::mutate(
+        POP_ID = factor(POP_ID, levels = pop.levels, ordered = TRUE),
+        POP_ID = droplevels(POP_ID)
+      ) %>%
       dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS)
   } else {
-    data <- dplyr::mutate(.data = data, POP_ID = factor(POP_ID)) %>%
+    data %<>% dplyr::mutate(POP_ID = factor(POP_ID)) %>%
       dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS)
   }
 
   # Create a marker vector  ------------------------------------------------
-  markers <- dplyr::distinct(.data = data, MARKERS) %>%
-    dplyr::arrange(MARKERS) %>%
-    purrr::flatten_chr(.)
+  markers <- dplyr::distinct(data, MARKERS) %>% dplyr::arrange(MARKERS) %$% MARKERS
 
   # Wide format ----------------------------------------------------------------
-  data <- data %>%
-    dplyr::arrange(MARKERS) %>%
-    dplyr::group_by(POP_ID, INDIVIDUALS) %>%
-    tidyr::spread(data = ., key = MARKERS, value = GT) %>%
-    dplyr::arrange(POP_ID, INDIVIDUALS) %>%
+  data %<>%
     dplyr::ungroup(.) %>%
+    dplyr::arrange(MARKERS) %>%
+    data.table::as.data.table(.) %>%
+    data.table::dcast.data.table(
+      data = .,
+      formula = POP_ID + INDIVIDUALS ~ MARKERS,
+      value.var = "GT"
+    ) %>%
+    tibble::as_tibble(.) %>%
+    dplyr::arrange(POP_ID, INDIVIDUALS) %>%
     dplyr::mutate(INDIVIDUALS = paste(INDIVIDUALS, ",", sep = ""))
 
   # Write the file in genepop format -------------------------------------------

@@ -190,7 +190,7 @@ tidy_genlight <- function(
   if (gds) {
     # markers %<>% dplyr::mutate(VARIANT_ID = as.integer(factor(MARKERS)))
     gds.filename <- radiator_gds(
-      source = "genlight",
+      data.source = "genlight",
       genotypes.df = tibble::as_tibble(data.frame(data) %>% t) %>%
         tibble::add_column(.data = ., MARKERS = markers$MARKERS, .before = 1) %>%
         dplyr::arrange(MARKERS),

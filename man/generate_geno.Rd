@@ -4,7 +4,7 @@
 \alias{generate_geno}
 \title{generate_geno}
 \usage{
-generate_geno(x, source, gt = FALSE, gt.vcf.nuc = FALSE,
+generate_geno(x, data.source, gt = FALSE, gt.vcf.nuc = FALSE,
   gt.vcf = FALSE)
 }
 \description{

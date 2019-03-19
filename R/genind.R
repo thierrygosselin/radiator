@@ -124,7 +124,7 @@ tidy_genind <- function(
     )
 
     gds.filename <- radiator_gds(
-      source = "genind",
+      data.source = "genind",
       genotypes.df = geno,
       strata = strata,
       biallelic = TRUE,

@@ -4,7 +4,7 @@
 \alias{write_gds}
 \title{Write a GDS object from a tidy data frame}
 \usage{
-write_gds(data, source = NULL, filename = NULL, open = TRUE,
+write_gds(data, data.source = NULL, filename = NULL, open = TRUE,
   verbose = TRUE)
 }
 \arguments{
@@ -13,9 +13,9 @@ a tidy data frame in wide or long format in the working directory.
 \emph{How to get a tidy data frame ?}
 Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.}
 
-\item{source}{(optional, character) The name of the software that
-generated the data. e.g. \code{source = "Stacks v.2.2"}.
-Default: \code{source = NULL}.}
+\item{data.source}{(optional, character) The name of the software that
+generated the data. e.g. \code{data.source = "Stacks v.2.2"}.
+Default: \code{data.source = NULL}.}
 
 \item{filename}{(optional) The file name of the Genomic Data Structure (GDS) file.
 radiator will append \code{.gds.rad} to the filename.

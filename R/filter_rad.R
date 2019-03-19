@@ -339,7 +339,7 @@ install.packages("UpSetR")
     )
   }
 
-  source <- extract_source(gds) # to know if dart data or not...
+  source <- extract_data_source(gds) # to know if dart data or not...
 
   # Filter reproducibility -----------------------------------------------------
   if ("dart" %in% source) {

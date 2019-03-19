@@ -103,6 +103,12 @@ functions together and dig deeper into your data [see vignettes](https://github.
 
 ## Life cycle
 
+**DArT users**: 
+
+* `filter_dart`: is now deprecated. Please use `filter_rad`.
+* `tidy_dart` and `tidy_silico_dart`: is now deprecated. 
+Please use `read_dart` for all the 4 DArT files recognized by radiator.
+
 **Missing data: visualization and imputations**
 
 Visualizing missing data and it's imputations requires special attention that fall 

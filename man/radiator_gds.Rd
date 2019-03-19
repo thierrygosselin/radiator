@@ -7,7 +7,7 @@
 radiator_gds(genotypes.df, geno.coding = c("alt.dos", "ref.dos"),
   strata = NULL, biallelic = TRUE, markers.meta = NULL,
   genotypes.meta = NULL, dp = NULL, ad = NULL, filename = NULL,
-  source = NULL, open = FALSE, verbose = TRUE)
+  data.source = NULL, open = FALSE, verbose = TRUE)
 }
 \description{
 helper function to construct a radiator gds

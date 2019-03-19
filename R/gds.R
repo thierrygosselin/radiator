@@ -15,7 +15,7 @@ radiator_gds <- function(
   dp = NULL,
   ad = NULL,
   filename = NULL,
-  source = NULL,
+  data.source = NULL,
   open = FALSE,
   verbose = TRUE
 ) {
@@ -136,12 +136,12 @@ radiator_gds <- function(
     markers.meta %<>% dplyr::mutate(VARIANT_ID = variant.id)
   }
 
-  if (is.null(source)) {
+  if (is.null(data.source)) {
     if (rlang::has_name(markers.meta, "CALL_RATE") ||
         rlang::has_name(markers.meta, "REP_AVG")) {
-      source <- "dart"
+      data.source <- "dart"
     } else {
-      source <- "radiator"
+      data.source <- "radiator"
     }
   }
 
@@ -157,7 +157,7 @@ radiator_gds <- function(
     }
 
     # Second check: order
-    if ("dart" %in% source) {
+    if ("dart" %in% data.source) {
       strata$TARGET_ID <- as.character(strata$TARGET_ID)
       if (!identical(df.order, strata$TARGET_ID)) {
         strata %<>%
@@ -218,8 +218,8 @@ radiator_gds <- function(
   # radiator skeleton folder
   radiator.gds <- radiator_gds_skeleton(data.gds)
 
-  # source
-  update_radiator_gds(data.gds, node.name = "source", value = source)
+  # data.source
+  update_radiator_gds(data.gds, node.name = "data.source", value = data.source)
 
   # reference genome or de novo
   update_radiator_gds(
@@ -239,7 +239,7 @@ radiator_gds <- function(
 
   # Add genotypes metadata
   if (!is.null(genotypes.meta)) {
-    if ("dart" %in% source && "counts" %in% source) {
+    if ("dart" %in% data.source && "counts" %in% data.source) {
       suppressWarnings(
         genotypes.meta %<>%
           dplyr::left_join(dplyr::select(strata, TARGET_ID, INDIVIDUALS), by = "TARGET_ID") %>%
@@ -291,7 +291,7 @@ radiator_gds_skeleton <- function(gds) {
 
   purrr::walk(
     .x = c(
-      "source",
+      "data.source",
       "reference.genome",
       "biallelic",
       "id.clean",
@@ -405,18 +405,18 @@ update_radiator_gds <- function(
   if (summary) sum <- summary_gds(gds, verbose = verbose)
 }#End update_radiator_gds
 
-# extract_source----------------------------------------------------------------
-#' @title extract_source
-#' @description Extract the source of the radiator gds file
-#' @name extract_source
-#' @rdname extract_source
+# extract_data_source----------------------------------------------------------------
+#' @title extract_data_source
+#' @description Extract the data.source of the radiator gds file
+#' @name extract_data_source
+#' @rdname extract_data_source
 #' @keywords internal
 #' @export
-extract_source <- function(gds) {
-  source <- gdsfmt::index.gdsn(node = gds, path = "radiator/source", silent = TRUE)
-  if (!is.null(source)) source <- gdsfmt::read.gdsn(source)
-  return(source)
-}# End extract_source
+extract_data_source <- function(gds) {
+  data.source <- gdsfmt::index.gdsn(node = gds, path = "radiator/data.source", silent = TRUE)
+  if (!is.null(data.source)) data.source <- gdsfmt::read.gdsn(data.source)
+  return(data.source)
+}# End extract_data_source
 
 # extract_markers_metadata------------------------------------------------------
 #' @title extract_markers_metadata
@@ -708,11 +708,11 @@ extract_coverage <- function(
   parallel.core = parallel::detectCores() - 2
 ) {
   coverage.info <- list()
-  source <- extract_source(gds)
+  data.source <- extract_data_source(gds)
   n.markers<- summary_gds(gds, verbose = FALSE)$n.markers
 
   # DArT counts and VCFs -------------------------------------------------------
-  if (!"dart" %in% source || "counts" %in% source) {
+  if (!"dart" %in% data.source || "counts" %in% data.source) {
     depth <- extract_genotypes_metadata(
       gds,
       genotypes.meta.select = c("MARKERS", "INDIVIDUALS", "READ_DEPTH",
@@ -812,13 +812,13 @@ extract_coverage <- function(
           )
       }
     } else {
-      coverage.info <- NULL
+      m <- i <- coverage.info <- NULL
     }
 
   }#End DART counts
 
   #DArT 1 row and 2rows
-  if ("dart" %in% source && any(c("2rows", "1row") %in% source)) {
+  if ("dart" %in% data.source && any(c("2rows", "1row") %in% data.source)) {
     depth <- extract_markers_metadata(
       gds,
       markers.meta.select = c("AVG_COUNT_REF", "AVG_COUNT_SNP"),
@@ -856,6 +856,7 @@ extract_coverage <- function(
                         value = markers.meta)
     markers.meta <- NULL
   }
+
   if (markers) {
     coverage.info$markers.tot <- if (rlang::has_name(m, "COVERAGE_TOTAL")) m$COVERAGE_TOTAL
     coverage.info$markers.mean <- if (rlang::has_name(m, "COVERAGE_MEAN")) m$COVERAGE_MEAN
@@ -1425,6 +1426,7 @@ generate_id_stats <- function (
   verbose = TRUE
 ) {
 
+  if (is.null(path.folder)) path.folder <- getwd()
   res <- list() # return result in this list
   if (is.null(file.date)) file.date <- format(Sys.time(), "%Y%m%d@%H%M")
 
@@ -1498,6 +1500,7 @@ generate_id_stats <- function (
           group = "mean coverage")
       )
     } else {
+      coverage <- FALSE
       id.stats.c <- NULL
     }
   } else {
@@ -1512,9 +1515,9 @@ generate_id_stats <- function (
   id.stats$GROUP <- droplevels(x = id.stats$GROUP)
 
   id.stats.filename <- stringi::stri_join("individuals.qc.stats_", file.date, ".tsv")
-  readr::write_tsv(x = id.info, path = file.path(path.folder, id.stats.filename))
+  if (!is.null(id.info)) readr::write_tsv(x = id.info, path = file.path(path.folder, id.stats.filename))
   id.stats.filename <- stringi::stri_join("individuals.qc.stats.summary_", file.date, ".tsv")
-  readr::write_tsv(x = id.stats, path = file.path(path.folder, id.stats.filename))
+  if (!is.null(id.stats))readr::write_tsv(x = id.stats, path = file.path(path.folder, id.stats.filename))
   if (verbose) message("File written: individuals qc info and stats summary")
 
   # Generate plots
@@ -1630,7 +1633,7 @@ generate_markers_stats <- function (
   # plot = TRUE
 
   if (is.null(file.date)) file.date <- format(Sys.time(), "%Y%m%d@%H%M")
-  source <- extract_source(gds)
+  data.source <- extract_data_source(gds)
 
   # Filenames
   # Stats
@@ -1672,8 +1675,8 @@ generate_markers_stats <- function (
   # Coverage
   if (coverage) {
     if (!rlang::has_name(info, "COVERAGE_TOTAL") || force.stats) {
-      if ("dart" %in% source) {
-        if ("counts" %in% source) {
+      if ("dart" %in% data.source) {
+        if ("counts" %in% data.source) {
           mc <- extract_coverage(gds, ind = FALSE)#coverage
         } else {
           if (is.null(subsample)) {
@@ -2144,7 +2147,6 @@ gds2tidy <- function(
   tidy.data <- suppressWarnings(
     SeqArray::seqGetData(
       gdsfile = gds, var.name = "$dosage_alt") %>%
-      # magrittr::set_colnames(x = ., value = markers.meta$VARIANT_ID) %>%
       magrittr::set_colnames(x = ., value = markers.meta$MARKERS) %>%
       magrittr::set_rownames(x = ., value = individuals$INDIVIDUALS) %>%
       data.table::as.data.table(x = ., keep.rownames = "INDIVIDUALS") %>%
@@ -2215,9 +2217,9 @@ gds2tidy <- function(
 #' \emph{How to get a tidy data frame ?}
 #' Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
 
-#' @param source (optional, character) The name of the software that
-#' generated the data. e.g. \code{source = "Stacks v.2.2"}.
-#' Default: \code{source = NULL}.
+#' @param data.source (optional, character) The name of the software that
+#' generated the data. e.g. \code{data.source = "Stacks v.2.2"}.
+#' Default: \code{data.source = NULL}.
 
 #' @param filename (optional) The file name of the Genomic Data Structure (GDS) file.
 #' radiator will append \code{.gds.rad} to the filename.
@@ -2262,7 +2264,7 @@ gds2tidy <- function(
 
 write_gds <- function(
   data,
-  source = NULL,
+  data.source = NULL,
   filename = NULL,
   open = TRUE,
   verbose = TRUE
@@ -2337,7 +2339,7 @@ write_gds <- function(
     markers.meta = markers.meta,
     genotypes.meta = genotypes.meta,
     filename = filename,
-    source = source,
+    data.source = data.source,
     verbose = verbose
   )
   markers.meta <- genotypes.meta <- data <- strata <- NULL
