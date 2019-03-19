@@ -308,7 +308,8 @@ read_vcf <- function(
                 "blacklist.id", "pop.select", "pop.levels", "pop.labels",
                 "path.folder",
                 "markers.info", "vcf.metadata",
-                "subsample.markers.stats", "parameters", "random.seed", "internal"),
+                "subsample.markers.stats", "parameters", "random.seed", "internal",
+                "fig.upsetr"),
     verbose = verbose
   )
 
@@ -563,12 +564,9 @@ read_vcf <- function(
     individuals %<>% dplyr::mutate(STRATA = 1L, FILTERS = "whitelist")
   }
 
-
-
-
   strata <- generate_strata(data = dplyr::filter(individuals, FILTERS == "whitelist"))
   #Update GDS node
-  update_radiator_gds(gds = gds, node.name = "individuals", value = individuals, sync = TRUE)
+  update_radiator_gds(gds = gds, node.name = "individuals.meta", value = individuals, sync = TRUE)
   # summary_gds(gds, check.sync = TRUE, verbose = TRUE)
 
   # VCF: Markers metadata  ------------------------------------------------------
@@ -589,6 +587,17 @@ read_vcf <- function(
     } else {
       markers.meta %<>% dplyr::mutate(CHROM = "1")
     }
+  }
+
+  if (stringi::stri_detect_fixed(str = source, pattern = "ipyrad")) {
+    markers.meta %<>% dplyr::mutate(
+      LOCUS = stringi::stri_replace_all_fixed(
+        str = CHROM,
+        pattern = "locus_",
+        replacement = "",
+        vectorize_all = FALSE
+      ),
+      COL = as.integer(POS))
   }
 
   # GATK, platypus and freebayes specific adjustment
@@ -648,7 +657,6 @@ read_vcf <- function(
     value = markers.meta$CHROM,
     replace = TRUE
   )
-
   # # radiator_parameters: generate --------------------------------------------
   filters.parameters <- radiator_parameters(
     generate = TRUE,
@@ -886,7 +894,7 @@ read_vcf <- function(
   gds <- filter_common_markers(
     data = gds,
     filter.common.markers = filter.common.markers,
-    fig = TRUE,
+    fig = fig.upsetr,
     parallel.core = parallel.core,
     verbose = verbose,
     parameters = filters.parameters,
@@ -2613,7 +2621,7 @@ extract_info_vcf <- function(vcf) {
 check_header_source_vcf <- function(vcf) {
 
   check.header <- SeqArray::seqVCF_Header(vcf)
-  problematic.id <- c("AD", "AO", "QA", "GL")
+  problematic.id <- c("AD", "AO", "QA", "GL", "CATG")
   problematic.id <-
     purrr::keep(
       .x = problematic.id,

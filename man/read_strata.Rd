@@ -104,13 +104,13 @@ packages or codes: space is changed to an underscore \code{_}.
 \section{VCF}{
 
 VCF file users, not sure about the sample id inside your file ?
-See the example in \code{\link{radiator::extract_individuals_vcf}}
+See the example in \code{\link{extract_individuals_vcf}}
 }
 
 \section{DArT}{
 
 DArT file users, not sure about the sample id inside your file ?
-See the example in \code{\link{radiator::extract_dart_target_id}}
+See the example in \code{\link{extract_dart_target_id}}
 }
 
 \examples{

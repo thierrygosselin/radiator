@@ -227,10 +227,9 @@ install.packages("UpSetR")
       "write.tidy",
       "dart.sequence",
       "hierarchical.levels", "imputation.method", "pred.mean.matching", "num.tree",
-      "missing.memory", "internal"),
+      "missing.memory", "internal", "fig.upsetr"),
     verbose = TRUE
   )
-
   filter.common.markers.bk <- filter.common.markers
   filter.monomorphic.bk <- filter.monomorphic
 
@@ -380,7 +379,7 @@ install.packages("UpSetR")
   gds <- filter_common_markers(
     data = gds,
     filter.common.markers = filter.common.markers.bk,
-    fig = TRUE,
+    fig = fig.upsetr,
     parallel.core = parallel.core,
     verbose = verbose,
     parameters = filters.parameters,

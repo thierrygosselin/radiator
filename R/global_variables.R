@@ -123,7 +123,7 @@ if (getRversion() >= "2.15.1") {
       "vcf.stats", "keep.allele.names", "blacklist.genotypes", "gt", "gt.vcf.nuc",
       "internal", "ALT_DEPTH_MEAN", "ALT_DEPTH_TOTAL", "REF_DEPTH_MEAN",
       "REF_DEPTH_TOTAL", "MARKERS1", "SWITCH", "TARGET_ID1", "VARIANT_ID.x",
-      "VARIANT_ID.y", "variant.id", "problem.filename", "FILTER_VCF"
+      "VARIANT_ID.y", "variant.id", "problem.filename", "FILTER_VCF", "fig.upsetr"
     )
   )
 }

@@ -29,7 +29,8 @@
 #' "write.tidy",
 #' "dart.sequence",
 #' "missing.memory",
-#' "internal", "heatmap.fst", "tidy.check", "tidy.vcf", "tidy.dart")}.
+#' "internal", "heatmap.fst", "tidy.check", "tidy.vcf", "tidy.dart",
+#' "fig.upsetr")}.
 #' @param deprecated (optional) radiator's deprecated arguments.
 #' Default: \code{deprecated = c("maf.thresholds", "common.markers",
 #' "max.marker","monomorphic.out", "snp.ld", "filter.call.rate",
@@ -76,7 +77,8 @@ radiator_dots <- function(
     "dart.sequence",
     "internal",
     "heatmap.fst",
-    "tidy.check", "tidy.vcf", "tidy.dart"
+    "tidy.check", "tidy.vcf", "tidy.dart",
+    "fig.upsetr"
   ),
   deprecated = c(
     "maf.thresholds",
@@ -260,7 +262,8 @@ assign_defaults <- function(n, verbose = TRUE, pos = 1) {
                  "vcf.stats", "vcf.metadata",
                  "filter.common.markers", "filter.monomorphic",
                  "ld.figures", "dart.sequence",
-                 "force.stats")
+                 "force.stats",
+                 "fig.upsetr")
   # Arguments that default value is FALSE
   dots.false <- c("keep.allele.names", "ref.calibration", "long.ld.missing",
                   "detect.mixed.genomes", "detect.duplicate.genomes",
