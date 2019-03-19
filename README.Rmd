@@ -106,7 +106,7 @@ functions together and dig deeper into your data [see vignettes](https://github.
 **DArT users**: 
 
 * `filter_dart`: is now deprecated. Please use `filter_rad`.
-* `tidy_dart` and `tidy_silico_dart`: is now deprecated. 
+* `tidy_dart` and `tidy_silico_dart`: are now deprecated. 
 Please use `read_dart` for all the 4 DArT files recognized by radiator.
 
 **Missing data: visualization and imputations**

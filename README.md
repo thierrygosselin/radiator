@@ -109,7 +109,7 @@ Life cycle
 **DArT users**:
 
 -   `filter_dart`: is now deprecated. Please use `filter_rad`.
--   `tidy_dart` and `tidy_silico_dart`: is now deprecated. Please use `read_dart` for all the 4 DArT files recognized by radiator.
+-   `tidy_dart` and `tidy_silico_dart`: are now deprecated. Please use `read_dart` for all the 4 DArT files recognized by radiator.
 
 **Missing data: visualization and imputations**
 
