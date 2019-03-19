@@ -1095,11 +1095,6 @@ read_dart <- function(
 
     # Calibration of ref/alt alleles ------------------------------------------
     # Now done during coding of genotypes
-    #
-    # dplyr::distinct(tidy.data, MARKERS, CHROM, LOCUS, POS, REF, ALT) %>%
-    #   readr::write_tsv(x = ., path = dic.filename$filename)
-    # if (verbose) message("File written: ", dic.filename$filename.short)
-
 
     # Final strata ---------------------------------------------------------
     strata.filename <- generate_filename(
@@ -1111,13 +1106,10 @@ read_dart <- function(
     readr::write_tsv(x = strata, path = strata.filename$filename)
 
     if (!is.null(strata)) {
-      tidy.data <- join_strata(
-        data = tidy.data,
-        strata = dplyr::select(strata, STRATA, INDIVIDUALS),
-        pop.id = TRUE,
-        verbose = FALSE
-      )
-
+      tidy.data %<>%
+        dplyr::left_join(strata, by = "TARGET_ID") %>%
+        dplyr::select(-TARGET_ID) %>%
+        dplyr::rename(POP_ID = STRATA)
     } else {
       tidy.data %<>% dplyr::mutate(POP_ID = 1L)
     }
