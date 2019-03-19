@@ -4,7 +4,7 @@
 #' @description The Minor Allele Count function
 #' remove/blacklist markers based on Minor/Alternate Allele Count (MAC). Use it
 #' to remove noise, sequencing errors or low polymorphism markers. Some
-#' analysis performs better with the full spectrumallele frequency, so careful
+#' analysis performs better with the full spectrum of allele frequency, so careful
 #' with high threshold that inevitably results in biaises.
 #'
 #' \strong{Filter targets}: Marker's alternate allele(s)

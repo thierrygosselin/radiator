@@ -1,7 +1,9 @@
 # read_strata ----------------------------------------------------------------------------------
 #' @name read_strata
 #' @title read strata
-#' @description Read a strata object or file.
+#' @description Read a strata object or file. The strata file contains thes
+#' individual's metadata, the stratification: e.g. the population id and/or
+#' the sampling sites (see details).
 #' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 #' and might be of interest for users.
 
@@ -54,7 +56,7 @@
 #' is written by default in the working directory unless specified otherwise.
 #' Default: \code{path.folder = getwd()}.
 
-#' @details the strata file used in radiator is a tab delimited file with
+#' @details The strata file used in radiator is a tab delimited file with
 #' a minimum of 2 columns headers:
 #' \code{INDIVIDUALS} and \code{STRATA}.
 #' If a \code{strata} file is specified with all file formats that don't
@@ -73,6 +75,14 @@
 #' have the required column names (\code{INDIVIDUALS} and \code{STRATA}).
 #' The strata column is cleaned of a white spaces that interfere with some
 #' packages or codes: space is changed to an underscore \code{_}.
+
+#' @section VCF:
+#' VCF file users, not sure about the sample id inside your file ?
+#' See the example in \code{\link{radiator::extract_individuals_vcf}}
+
+#' @section DArT:
+#' DArT file users, not sure about the sample id inside your file ?
+#' See the example in \code{\link{radiator::extract_dart_target_id}}
 
 #' @seealso \code{\link{summary_strata}},
 #' \code{\link{individuals2strata}}, \code{\link{change_pop_names}},
@@ -530,8 +540,9 @@ join_strata <- function(data, strata = NULL, pop.id = FALSE, verbose = TRUE) {
 
 #' @name generate_strata
 #' @title Generate strata object from the data
-#' @description Generate strata object from the data \code{POP_ID} or \code{STRATA}
-#' with the \code{INDIVIDUALS}.
+#' @description Generate a strata object from the data.
+#' The function uses the \code{POP_ID} or \code{STRATA} columns along the
+#' \code{INDIVIDUALS}.
 
 #' @inheritParams join_strata
 #' @seealso \code{\link{read_strata}}, \code{\link{summary_strata}},

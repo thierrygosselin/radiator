@@ -74,12 +74,14 @@ Default: \code{verbose = TRUE}.}
 }
 }
 \description{
-Read a strata object or file.
+Read a strata object or file. The strata file contains thes
+individual's metadata, the stratification: e.g. the population id and/or
+the sampling sites (see details).
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and might be of interest for users.
 }
 \details{
-the strata file used in radiator is a tab delimited file with
+The strata file used in radiator is a tab delimited file with
 a minimum of 2 columns headers:
 \code{INDIVIDUALS} and \code{STRATA}.
 If a \code{strata} file is specified with all file formats that don't
@@ -99,6 +101,18 @@ have the required column names (\code{INDIVIDUALS} and \code{STRATA}).
 The strata column is cleaned of a white spaces that interfere with some
 packages or codes: space is changed to an underscore \code{_}.
 }
+\section{VCF}{
+
+VCF file users, not sure about the sample id inside your file ?
+See the example in \code{\link{radiator::extract_individuals_vcf}}
+}
+
+\section{DArT}{
+
+DArT file users, not sure about the sample id inside your file ?
+See the example in \code{\link{radiator::extract_dart_target_id}}
+}
+
 \examples{
 \dontrun{
 radiator::read_strata(strata)

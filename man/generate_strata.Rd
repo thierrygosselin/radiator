@@ -11,8 +11,9 @@ generate_strata(data)
 Documented in \code{\link[radiator]{tidy_genomic_data}}.}
 }
 \description{
-Generate strata object from the data \code{POP_ID} or \code{STRATA}
-with the \code{INDIVIDUALS}.
+Generate a strata object from the data.
+The function uses the \code{POP_ID} or \code{STRATA} columns along the
+\code{INDIVIDUALS}.
 }
 \seealso{
 \code{\link{read_strata}}, \code{\link{summary_strata}},
