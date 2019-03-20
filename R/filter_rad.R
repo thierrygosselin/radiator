@@ -504,6 +504,7 @@ install.packages("UpSetR")
     ind.heterozygosity.threshold = NULL,
     parameters = filters.parameters,
     verbose = verbose,
+    parallel.core = parallel.core,
     path.folder = wf,
     internal = FALSE)
 
