@@ -1103,7 +1103,7 @@ read_vcf <- function(
     }
 
     # Individuals stats
-    if (verbose) message("Calculating individual stats...")
+    message("Generating individual stats...")
     id.stats <- generate_id_stats(
       gds = gds,
       subsample = variant.select,
@@ -1113,7 +1113,7 @@ read_vcf <- function(
       verbose = verbose) %$% info
 
     # Markers stats
-    if (verbose) message("Calculating markers stats...")
+    message("Generating markers stats...")
     markers.stats <- generate_markers_stats(
       gds = gds,
       path.folder = path.folder,
