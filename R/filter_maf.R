@@ -487,8 +487,8 @@ filter_maf <- function(
         ggplot2::labs(y = "Number of markers", x = "Global Minor Allele (count and frequency)") +
         ggplot2::theme(
           legend.position = "none",
-          axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-          axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold")
+          axis.title.x = ggplot2::element_text(size = 10, face = "bold"),
+          axis.title.y = ggplot2::element_text(size = 10, face = "bold")
         ) +
         ggplot2::theme_minimal() +
         ggplot2::facet_grid(~ GROUP, scales = "free")
@@ -530,12 +530,12 @@ filter_maf <- function(
         ggplot2::labs(x = "Minor Allele Frequency (MAF)", y = "Number of markers") +
         ggplot2::expand_limits(y = 0) +
         ggplot2::theme(
-          axis.title.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-          axis.title.y = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
+          axis.title.x = ggplot2::element_text(size = 12, face = "bold"),
+          axis.title.y = ggplot2::element_text(size = 12, face = "bold"),
           legend.position = "none",
-          axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica", angle = 90, hjust = 1, vjust = 0.5),
-          strip.text.y = ggplot2::element_text(angle = 0, size = 12, family = "Helvetica", face = "bold"),
-          strip.text.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold")
+          axis.text.x = ggplot2::element_text(size = 8, angle = 90, hjust = 1, vjust = 0.5),
+          strip.text.y = ggplot2::element_text(angle = 0, size = 12, face = "bold"),
+          strip.text.x = ggplot2::element_text(size = 12, face = "bold")
         ) +
         ggplot2::facet_grid(POP_ID ~ GROUP, scales = "free_x")
       print(histo.maf.local)

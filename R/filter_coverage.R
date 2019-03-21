@@ -332,10 +332,10 @@ filter_coverage <- function(
         ggplot2::scale_x_continuous(name = "Minimum mean coverage allowed", breaks = cl.range) +
         ggplot2::scale_y_continuous(name = "Number of markers")+
         ggplot2::theme(
-          axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-          axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-          # axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica") #angle = 90, hjust = 1, vjust = 0.5),
-          axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica", angle = 90, hjust = 1, vjust = 0.5)
+          axis.title.x = ggplot2::element_text(size = 10, face = "bold"),
+          axis.title.y = ggplot2::element_text(size = 10, face = "bold"),
+          # axis.text.x = ggplot2::element_text(size = 8) #angle = 90, hjust = 1, vjust = 0.5),
+          axis.text.x = ggplot2::element_text(size = 8, angle = 90, hjust = 1, vjust = 0.5)
         ) +
         ggplot2::theme_bw()+
         ggplot2::facet_grid(LIST ~ ., scales = "free", space = "free")
@@ -370,10 +370,10 @@ filter_coverage <- function(
         ggplot2::scale_x_continuous(name = "Maximum mean coverage allowed", breaks = ch.range) +
         ggplot2::scale_y_continuous(name = "Number of markers")+
         ggplot2::theme(
-          axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-          axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-          axis.text.x = ggplot2::element_text(size = 10, family = "Helvetica", angle = 90, hjust = 1, vjust = 0.5)
-          # strip.text.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold")
+          axis.title.x = ggplot2::element_text(size = 10, face = "bold"),
+          axis.title.y = ggplot2::element_text(size = 10, face = "bold"),
+          axis.text.x = ggplot2::element_text(size = 10, angle = 90, hjust = 1, vjust = 0.5)
+          # strip.text.x = ggplot2::element_text(size = 10, face = "bold")
         ) +
         ggplot2::theme_bw()+
         ggplot2::facet_grid(LIST ~ ., scales = "free", space = "free")

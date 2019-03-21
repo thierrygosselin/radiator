@@ -452,10 +452,10 @@ information")
       axis.title.x = ggplot2::element_blank(),
       axis.text.x = ggplot2::element_blank(),
       axis.ticks.x = ggplot2::element_blank(),
-      # axis.title.x = element_text(size = 10, family = "Helvetica", face = "bold"),
-      # axis.text.x = element_text(size = 10, family = "Helvetica"),
-      axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
+      # axis.title.x = element_text(size = 10, face = "bold"),
+      # axis.text.x = element_text(size = 10),
+      axis.title.y = ggplot2::element_text(size = 10, face = "bold"),
+      axis.text.y = ggplot2::element_text(size = 8)
     ) +
     ggplot2::geom_hline(mapping = ggplot2::aes(yintercept = HET_MEAN), het.ind.stats, linetype = "dotted", size = 0.6) + #mean
     # geom_hline(mapping = aes(yintercept = HET_sig_minus), het.ind.stats.pop, linetype = "dashed") + #3 sigma -
@@ -475,10 +475,10 @@ information")
     # theme_minimal() +
     ggplot2::theme(
       legend.position = "none",
-      axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      axis.text.x = ggplot2::element_text(size = 10, family = "Helvetica"),
-      axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
+      axis.title.x = ggplot2::element_text(size = 10, face = "bold"),
+      axis.text.x = ggplot2::element_text(size = 10),
+      axis.title.y = ggplot2::element_text(size = 10, face = "bold"),
+      axis.text.y = ggplot2::element_text(size = 8)
     )
   # individual.heterozygosity.boxplot
 
@@ -741,12 +741,12 @@ use the overall approach.\n")
     ggplot2::labs(y = "Density of SNP (scaled)") +
     ggplot2::expand_limits(y = 0) +
     ggplot2::theme(
-      axis.title.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      axis.title.y = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      legend.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      legend.text = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      strip.text.y = ggplot2::element_text(angle = 0, size = 12, family = "Helvetica", face = "bold"),
-      strip.text.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold")
+      axis.title.x = ggplot2::element_text(size = 12, face = "bold"),
+      axis.title.y = ggplot2::element_text(size = 12, face = "bold"),
+      legend.title = ggplot2::element_text(size = 12, face = "bold"),
+      legend.text = ggplot2::element_text(size = 12, face = "bold"),
+      strip.text.y = ggplot2::element_text(angle = 0, size = 12, face = "bold"),
+      strip.text.x = ggplot2::element_text(size = 12, face = "bold")
     ) +
     ggplot2::facet_grid(POP_ID ~ HET_GROUP)
 
@@ -766,10 +766,10 @@ use the overall approach.\n")
       panel.grid.minor.y = ggplot2::element_line(linetype = "dotted", colour = "blue"),
       panel.grid.major.x = ggplot2::element_blank(),
       # legend.position = "none",
-      axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      axis.text.x = ggplot2::element_text(size = 10, family = "Helvetica", angle = 90, hjust = 1, vjust = 0.5),
-      axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
+      axis.title.x = ggplot2::element_text(size = 10, face = "bold"),
+      axis.text.x = ggplot2::element_text(size = 10, angle = 90, hjust = 1, vjust = 0.5),
+      axis.title.y = ggplot2::element_text(size = 10, face = "bold"),
+      axis.text.y = ggplot2::element_text(size = 8)
     ) #+ ggplot2::facet_grid(~ HET_GROUP)
   # markers.pop.heterozygosity.manhattan.plot
 
@@ -782,10 +782,10 @@ use the overall approach.\n")
     ggplot2::labs(colour = "Populations") +
     ggplot2::theme(
       legend.position = "none",
-      axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      axis.text.x = ggplot2::element_text(size = 10, family = "Helvetica", angle = 90, hjust = 1, vjust = 0.5),
-      axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
+      axis.title.x = ggplot2::element_text(size = 10, face = "bold"),
+      axis.text.x = ggplot2::element_text(size = 10, angle = 90, hjust = 1, vjust = 0.5),
+      axis.title.y = ggplot2::element_text(size = 10, face = "bold"),
+      axis.text.y = ggplot2::element_text(size = 8)
     ) +
     ggplot2::facet_grid(~ HET_GROUP, scales = "free_y")
 
@@ -1245,11 +1245,11 @@ use the overall approach.\n")
       ggplot2::labs(x = "Number of SNPs per Locus") +
       ggplot2::labs(y = "Observed Heterozygosity Statistics") +
       ggplot2::theme(
-        axis.title.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-        axis.title.y = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-        legend.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-        legend.text = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-        strip.text.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold")
+        axis.title.x = ggplot2::element_text(size = 12, face = "bold"),
+        axis.title.y = ggplot2::element_text(size = 12, face = "bold"),
+        legend.title = ggplot2::element_text(size = 12, face = "bold"),
+        legend.text = ggplot2::element_text(size = 12, face = "bold"),
+        strip.text.x = ggplot2::element_text(size = 12, face = "bold")
       ) +
       ggplot2::facet_grid(~HET_GROUP)
     # snp.per.locus.het.plot
@@ -1290,11 +1290,11 @@ use the overall approach.\n")
       ggplot2::labs(x = "Locus coverage (read depth)") +
       ggplot2::labs(y = "Observed Heterozygosity Statistics") +
       ggplot2::theme(
-        axis.title.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-        axis.title.y = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-        legend.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-        legend.text = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-        strip.text.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold")
+        axis.title.x = ggplot2::element_text(size = 12, face = "bold"),
+        axis.title.y = ggplot2::element_text(size = 12, face = "bold"),
+        legend.title = ggplot2::element_text(size = 12, face = "bold"),
+        legend.text = ggplot2::element_text(size = 12, face = "bold"),
+        strip.text.x = ggplot2::element_text(size = 12, face = "bold")
       ) +
       ggplot2::facet_grid(~HET_GROUP)
     # het.cov.plot

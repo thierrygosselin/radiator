@@ -277,12 +277,12 @@ filter_snp_number <- function(
       ggplot2::geom_vline(ggplot2::aes(xintercept = as.numeric(ceiling(stats[[9]]))), color = "yellow") +
       ggplot2::theme_bw()+
       ggplot2::theme(
-        axis.title.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-        axis.title.y = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-        legend.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-        legend.text = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-        strip.text.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-        axis.text.x = ggplot2::element_text(size = 12, family = "Helvetica", angle = 90, hjust = 1, vjust = 0.5)
+        axis.title.x = ggplot2::element_text(size = 12, face = "bold"),
+        axis.title.y = ggplot2::element_text(size = 12, face = "bold"),
+        legend.title = ggplot2::element_text(size = 12, face = "bold"),
+        legend.text = ggplot2::element_text(size = 12, face = "bold"),
+        strip.text.x = ggplot2::element_text(size = 12, face = "bold"),
+        axis.text.x = ggplot2::element_text(size = 12, angle = 90, hjust = 1, vjust = 0.5)
       )
     print(d.plot)
 
@@ -327,9 +327,9 @@ filter_snp_number <- function(
       ggplot2::scale_y_continuous(name = "Number of markers") +
       ggplot2::theme_bw()+
       ggplot2::theme(
-        axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-        axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-        axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica", angle = 90, hjust = 1, vjust = 0.5)
+        axis.title.x = ggplot2::element_text(size = 10, face = "bold"),
+        axis.title.y = ggplot2::element_text(size = 10, face = "bold"),
+        axis.text.x = ggplot2::element_text(size = 8, angle = 90, hjust = 1, vjust = 0.5)
       ) +
       ggplot2::facet_grid(LIST ~. , scales = "free", space = "free")
     print(markers.plot)

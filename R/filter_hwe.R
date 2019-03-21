@@ -586,11 +586,11 @@ filter_hwe <- function(
           x = "Number of populations in HWD",
           title = "Number of markers blacklisted based on the number of populations in HWD\nand mid p-value thresholds") +
         ggplot2::theme(
-          plot.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold", hjust = 0.5),
-          axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-          axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-          axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica"),# , angle = 90, hjust = 1, vjust = 0.5),
-          strip.text.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold")
+          plot.title = ggplot2::element_text(size = 12, face = "bold", hjust = 0.5),
+          axis.title.x = ggplot2::element_text(size = 10, face = "bold"),
+          axis.title.y = ggplot2::element_text(size = 10, face = "bold"),
+          axis.text.x = ggplot2::element_text(size = 8),# , angle = 90, hjust = 1, vjust = 0.5),
+          strip.text.x = ggplot2::element_text(size = 10, face = "bold")
         )
       # plot.hwd.thresholds
       if (interactive.filter) print(plot.hwd.thresholds)
@@ -667,8 +667,8 @@ filter_hwe <- function(
           subtitle = "genotypes frequencies shown for AA: REF/REF, AB: REF/ALT and BB: ALT/ALT"
         ) +
         ggplot2::theme(
-          plot.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold", hjust = 0.5),
-          plot.subtitle = ggplot2::element_text(size = 10, family = "Helvetica", hjust = 0.5)
+          plot.title = ggplot2::element_text(size = 12, face = "bold", hjust = 0.5),
+          plot.subtitle = ggplot2::element_text(size = 10, hjust = 0.5)
         ) +
         ggtern::theme_rgbw() +
         ggtern::theme_nogrid_minor() +
@@ -713,14 +713,14 @@ filter_hwe <- function(
         ) +
         ggplot2::theme(
           panel.grid.major.x = ggplot2::element_blank(),
-          plot.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold", hjust = 0.5),
-          plot.subtitle = ggplot2::element_text(size = 10, family = "Helvetica", hjust = 0.5),
+          plot.title = ggplot2::element_text(size = 12, face = "bold", hjust = 0.5),
+          plot.subtitle = ggplot2::element_text(size = 10, hjust = 0.5),
           axis.line.x = ggplot2::element_blank(),
           axis.title.x = ggplot2::element_blank(),
           axis.text.x = ggplot2::element_blank(),
           axis.ticks.x = ggplot2::element_blank(),
-          axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-          axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
+          axis.title.y = ggplot2::element_text(size = 10, face = "bold"),
+          axis.text.y = ggplot2::element_text(size = 8)
         ) +
         ggplot2::theme_bw() +
         ggplot2::facet_grid(GROUPINGS ~ POP_ID, scales = "free")

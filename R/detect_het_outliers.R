@@ -240,10 +240,10 @@ detect_het_outliers <- function (
     ggplot2::labs(y= "Heterozygote miscall rate", x = "Number of MCMC sweeps") +
     ggplot2::theme(
       legend.position = "none",
-      axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      axis.text.x = ggplot2::element_text(size = 10, family = "Helvetica"),
-      axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      axis.text.y = ggplot2::element_text(size = 10, family = "Helvetica")
+      axis.title.x = ggplot2::element_text(size = 10, face = "bold"),
+      axis.text.x = ggplot2::element_text(size = 10),
+      axis.title.y = ggplot2::element_text(size = 10, face = "bold"),
+      axis.text.y = ggplot2::element_text(size = 10)
     ) +
     ggplot2::theme_bw()
   if (!is.null(path.folder)) {
@@ -449,10 +449,10 @@ plot_het_outliers <- function(data, path.folder = NULL) {
     ggplot2::labs(x = "Genotypes (expected frequency) ", y = "Genotypes (observed frequency)") +
     ggplot2::theme(
       legend.position = "none",
-      axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      axis.text.x = ggplot2::element_text(size = 10, family = "Helvetica"),
-      axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      axis.text.y = ggplot2::element_text(size = 10, family = "Helvetica")
+      axis.title.x = ggplot2::element_text(size = 10, face = "bold"),
+      axis.text.x = ggplot2::element_text(size = 10),
+      axis.title.y = ggplot2::element_text(size = 10, face = "bold"),
+      axis.text.y = ggplot2::element_text(size = 10)
     ) +
     ggplot2::theme_bw() +
     ggplot2::facet_grid(POP_ID ~ GENOTYPES)

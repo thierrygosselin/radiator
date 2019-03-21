@@ -50,7 +50,7 @@ ind_total_reads <- function(x, path.folder = NULL) {
 
   # plots
   element.text <- ggplot2::element_text(size = 10,
-                                        family = "Helvetica", face = "bold")
+                                        face = "bold")
   n.pop <- dplyr::n_distinct(x$POP_ID)
   ind.plot <- suppressWarnings(
     ggplot2::ggplot(
@@ -61,8 +61,8 @@ ind_total_reads <- function(x, path.folder = NULL) {
                     title = "Individuals total read counts") +
       ggplot2::theme(
         legend.position = "none",
-        plot.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold", hjust = 0.5),
-        # plot.subtitle = ggplot2::element_text(size = 10, family = "Helvetica", hjust = 0.5),
+        plot.title = ggplot2::element_text(size = 12, face = "bold", hjust = 0.5),
+        # plot.subtitle = ggplot2::element_text(size = 10, hjust = 0.5),
         axis.title.y = element.text,
         axis.title.x = element.text,
         axis.text.x = element.text))
@@ -176,10 +176,10 @@ markers_genotyped_helper <- function(x, y, overall.only = FALSE) {
     ggplot2::scale_x_continuous(name = "Marker's missing genotype threshold (percent)", breaks = c(0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100)) +
     ggplot2::scale_y_continuous(name = "Markers\n(whitelisted number)", breaks = y.breaks, limits = c(0, y.breaks.max)) +
     ggplot2::theme(
-      axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica"),#, angle = 90, hjust = 1, vjust = 0.5),
-      strip.text.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold")
+      axis.title.x = ggplot2::element_text(size = 10, face = "bold"),
+      axis.title.y = ggplot2::element_text(size = 10, face = "bold"),
+      axis.text.x = ggplot2::element_text(size = 8),#, angle = 90, hjust = 1, vjust = 0.5),
+      strip.text.x = ggplot2::element_text(size = 10, face = "bold")
     ) +
     ggplot2::theme_bw() +
     ggplot2::facet_grid(~POP_ID)
@@ -253,7 +253,7 @@ boxplot_stats <- function(
 
   n.group <- dplyr::n_distinct(data$GROUP)
   element.text <- ggplot2::element_text(size = 10,
-                                        family = "Helvetica", face = "bold")
+                                        face = "bold")
 
   if (facet.columns) {
     data <- dplyr::mutate(data, X = "1")
@@ -307,8 +307,7 @@ boxplot_stats <- function(
 
   fig.boxplot <- fig.boxplot +
     ggplot2::theme(
-      plot.title = ggplot2::element_text(size = 12, family = "Helvetica",
-                                         face = "bold", hjust = 0.5),
+      plot.title = ggplot2::element_text(size = 12, face = "bold", hjust = 0.5),
       legend.position = "none",
       axis.title.y = element.text,
       axis.text.y = element.text
@@ -335,7 +334,7 @@ boxplot_stats <- function(
   if (!is.null(subtitle)) {
     fig.boxplot <- fig.boxplot +
       ggplot2::theme(
-        plot.subtitle = ggplot2::element_text(size = 10, family = "Helvetica"))
+        plot.subtitle = ggplot2::element_text(size = 10))
   }
 
   if (facet.columns) {
@@ -407,11 +406,11 @@ plot_density_distribution_coverage <- function(data, aes.colour, adjust.bin) {
     ggplot2::expand_limits(x = 0) +
     ggplot2::theme(
       legend.position = "none",
-      axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      legend.title = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      legend.text = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      strip.text.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"))
+      axis.title.x = ggplot2::element_text(size = 10, face = "bold"),
+      axis.title.y = ggplot2::element_text(size = 10, face = "bold"),
+      legend.title = ggplot2::element_text(size = 10, face = "bold"),
+      legend.text = ggplot2::element_text(size = 10, face = "bold"),
+      strip.text.x = ggplot2::element_text(size = 10, face = "bold"))
 }
 
 
@@ -440,11 +439,11 @@ plot_boxplot_coverage <- function(data) {
     ggplot2::facet_wrap(facets = ~COVERAGE_GROUP, scales = "free") +
     ggplot2::theme(
       legend.position = "none",
-      axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      legend.title = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      legend.text = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      strip.text.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold")
+      axis.title.x = ggplot2::element_text(size = 10, face = "bold"),
+      axis.title.y = ggplot2::element_text(size = 10, face = "bold"),
+      legend.title = ggplot2::element_text(size = 10, face = "bold"),
+      legend.text = ggplot2::element_text(size = 10, face = "bold"),
+      strip.text.x = ggplot2::element_text(size = 10, face = "bold")
     )
 }
 
@@ -532,12 +531,12 @@ plot_coverage_imbalance_diagnostic <- function(tidy.vcf.file, pop.levels, read.d
     ggplot2::labs(x = "Coverage imbalance between REF and ALT alleles (ratio)") +
     ggplot2::labs(y = "Distribution of genotypes") +
     ggplot2::theme(
-      axis.title.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      axis.title.y = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      legend.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      legend.text = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      strip.text.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      strip.text.y = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold")
+      axis.title.x = ggplot2::element_text(size = 12, face = "bold"),
+      axis.title.y = ggplot2::element_text(size = 12, face = "bold"),
+      legend.title = ggplot2::element_text(size = 12, face = "bold"),
+      legend.text = ggplot2::element_text(size = 12, face = "bold"),
+      strip.text.x = ggplot2::element_text(size = 12, face = "bold"),
+      strip.text.y = ggplot2::element_text(size = 12, face = "bold")
     )
 
 }
@@ -588,12 +587,12 @@ plot_density_distribution_maf <- function(data, maf.group, aes.colour = ggplot2:
     ggplot2::labs(y = "Density of SNP (scaled)") +
     ggplot2::expand_limits(y = 0) +
     ggplot2::theme(
-      axis.title.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      axis.title.y = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      legend.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      legend.text = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      strip.text.y = ggplot2::element_text(angle = 0, size = 12, family = "Helvetica", face = "bold"),
-      strip.text.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold")
+      axis.title.x = ggplot2::element_text(size = 12, face = "bold"),
+      axis.title.y = ggplot2::element_text(size = 12, face = "bold"),
+      legend.title = ggplot2::element_text(size = 12, face = "bold"),
+      legend.text = ggplot2::element_text(size = 12, face = "bold"),
+      strip.text.y = ggplot2::element_text(angle = 0, size = 12, face = "bold"),
+      strip.text.x = ggplot2::element_text(size = 12, face = "bold")
     )
 }
 
@@ -659,12 +658,12 @@ plot_density_distribution_het <- function(data, pop.levels, het.group, aes.colou
     ggplot2::labs(y = "Density of SNP (scaled)") +
     ggplot2::expand_limits(y = 0) +
     ggplot2::theme(
-      axis.title.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      axis.title.y = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      legend.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      legend.text = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      strip.text.y = ggplot2::element_text(angle = 0, size = 12, family = "Helvetica", face = "bold"),
-      strip.text.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold")
+      axis.title.x = ggplot2::element_text(size = 12, face = "bold"),
+      axis.title.y = ggplot2::element_text(size = 12, face = "bold"),
+      legend.title = ggplot2::element_text(size = 12, face = "bold"),
+      legend.text = ggplot2::element_text(size = 12, face = "bold"),
+      strip.text.y = ggplot2::element_text(angle = 0, size = 12, face = "bold"),
+      strip.text.x = ggplot2::element_text(size = 12, face = "bold")
     )
 
 }
@@ -717,11 +716,11 @@ plot_snp_number_loci <- function(before.filter.data, after.filter.data) {
     ggplot2::labs(x = "Number of SNP per haplotypes") +
     ggplot2::labs(y = "Distribution (number)") +
     ggplot2::facet_wrap(~GROUP, nrow = 1, ncol = 2) +
-    ggplot2::theme(axis.title.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-                   axis.title.y = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-                   legend.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-                   legend.text = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-                   strip.text.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"))
+    ggplot2::theme(axis.title.x = ggplot2::element_text(size = 12, face = "bold"),
+                   axis.title.y = ggplot2::element_text(size = 12, face = "bold"),
+                   legend.title = ggplot2::element_text(size = 12, face = "bold"),
+                   legend.text = ggplot2::element_text(size = 12, face = "bold"),
+                   strip.text.x = ggplot2::element_text(size = 12, face = "bold"))
 
   graph
 }
@@ -752,11 +751,11 @@ plot_snp_position_read <- function(data, aes.colour, y.title) {
     ggplot2::labs(y = y.title) +
     ggplot2::expand_limits(x = 0) +
     ggplot2::theme(
-      axis.title.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      axis.title.y = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      legend.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      legend.text = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      strip.text.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold")
+      axis.title.x = ggplot2::element_text(size = 12, face = "bold"),
+      axis.title.y = ggplot2::element_text(size = 12, face = "bold"),
+      legend.title = ggplot2::element_text(size = 12, face = "bold"),
+      legend.text = ggplot2::element_text(size = 12, face = "bold"),
+      strip.text.x = ggplot2::element_text(size = 12, face = "bold")
     )
 }
 
@@ -792,12 +791,12 @@ plot_distribution_diversity <- function(data, aes.x, aes.colour, x.title, y.titl
     ggplot2::expand_limits(y = 0) +
     ggplot2::theme(
       legend.position = "none",
-      axis.title.x = ggplot2::element_text(size = 12, family = "Helvetica",face = "bold"),
-      axis.title.y = ggplot2::element_text(size = 12, family = "Helvetica",face = "bold"),
-      legend.title = ggplot2::element_text(size = 12, family = "Helvetica",face = "bold"),
-      legend.text = ggplot2::element_text(size = 12, family = "Helvetica",face = "bold"),
-      strip.text.y = ggplot2::element_text(angle = 0,size = 12, family = "Helvetica",face = "bold"),
-      strip.text.x = ggplot2::element_text(size = 12, family = "Helvetica",face = "bold")
+      axis.title.x = ggplot2::element_text(size = 12,face = "bold"),
+      axis.title.y = ggplot2::element_text(size = 12,face = "bold"),
+      legend.title = ggplot2::element_text(size = 12,face = "bold"),
+      legend.text = ggplot2::element_text(size = 12,face = "bold"),
+      strip.text.y = ggplot2::element_text(angle = 0,size = 12,face = "bold"),
+      strip.text.x = ggplot2::element_text(size = 12,face = "bold")
     )
 }
 
@@ -822,11 +821,11 @@ plot_boxplot_diversity <- function(data, aes.x.y, y.title) {
     ggplot2::labs(y = y.title) +
     ggplot2::theme(
       legend.position = "none",
-      axis.title.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      axis.title.y = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      legend.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      legend.text = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      strip.text.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold")
+      axis.title.x = ggplot2::element_text(size = 12, face = "bold"),
+      axis.title.y = ggplot2::element_text(size = 12, face = "bold"),
+      legend.title = ggplot2::element_text(size = 12, face = "bold"),
+      legend.text = ggplot2::element_text(size = 12, face = "bold"),
+      strip.text.x = ggplot2::element_text(size = 12, face = "bold")
     )
 }
 

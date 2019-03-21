@@ -167,12 +167,12 @@ detect_allele_problems <- function(
     # scale_x_continuous(breaks = c(0, 0.05, 0.1, 0.2, 0.5, 1),
     # labels = c("0", "0.05", "0.1", "0.2", "0.5", "1.0")) +
     ggplot2::theme(
-      axis.title.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      axis.title.y = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      legend.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      legend.text = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      strip.text.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica")#, angle = 90, hjust = 1, vjust = 0.5)
+      axis.title.x = ggplot2::element_text(size = 12, face = "bold"),
+      axis.title.y = ggplot2::element_text(size = 12, face = "bold"),
+      legend.title = ggplot2::element_text(size = 12, face = "bold"),
+      legend.text = ggplot2::element_text(size = 12, face = "bold"),
+      strip.text.x = ggplot2::element_text(size = 12, face = "bold"),
+      axis.text.x = ggplot2::element_text(size = 8)#, angle = 90, hjust = 1, vjust = 0.5)
     )
   # alt.allele.count.plot
 
@@ -265,12 +265,12 @@ detect_allele_problems <- function(
     ggplot2::labs(y = "Distribution (marker number)") +
     ggplot2::scale_x_continuous(name = waiver(), breaks = 1:10, labels = 1:10) +
     ggplot2::theme(
-      axis.title.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      axis.title.y = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      legend.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      legend.text = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      strip.text.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-      axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica")#, angle = 90, hjust = 1, vjust = 0.5)
+      axis.title.x = ggplot2::element_text(size = 12, face = "bold"),
+      axis.title.y = ggplot2::element_text(size = 12, face = "bold"),
+      legend.title = ggplot2::element_text(size = 12, face = "bold"),
+      legend.text = ggplot2::element_text(size = 12, face = "bold"),
+      strip.text.x = ggplot2::element_text(size = 12, face = "bold"),
+      axis.text.x = ggplot2::element_text(size = 8)#, angle = 90, hjust = 1, vjust = 0.5)
     ) +
     ggplot2::facet_grid(~ ALLELE_COPIES)
   # alt.depth.count.distribution.plot

@@ -338,8 +338,8 @@ filter_mac <- function(
       ggplot2::labs(y = "Number of SNPs", x = "Minor Allele Count (MAC)") +
       ggplot2::theme(
         legend.position = "none",
-        axis.title.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-        axis.title.y = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold")
+        axis.title.x = ggplot2::element_text(size = 12, face = "bold"),
+        axis.title.y = ggplot2::element_text(size = 12, face = "bold")
       ) +
       ggplot2::theme_minimal()
     print(histo.mac.global)
@@ -382,10 +382,10 @@ filter_mac <- function(
       ggplot2::scale_x_continuous(name = "Minor Allele Count threshold (MAC)", breaks = seq(1, 25, by = 1)) +
       ggplot2::scale_y_continuous(name = "Number of markers")+#, breaks = y.breaks, limits = c(0, y.breaks.max)) +
       ggplot2::theme(
-        axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-        axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-        axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica"), #angle = 90, hjust = 1, vjust = 0.5),
-        strip.text.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold")
+        axis.title.x = ggplot2::element_text(size = 10, face = "bold"),
+        axis.title.y = ggplot2::element_text(size = 10, face = "bold"),
+        axis.text.x = ggplot2::element_text(size = 8), #angle = 90, hjust = 1, vjust = 0.5),
+        strip.text.x = ggplot2::element_text(size = 10, face = "bold")
       ) +
       ggplot2::theme_bw()+
       ggplot2::facet_grid(LIST ~. , scales = "free", space = "free")
