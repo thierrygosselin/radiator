@@ -209,22 +209,6 @@ filter_individuals <- function(
     # Note to myself: for now it's better not to subsample, because of filtering
     variant.select <- subsample <- NULL
     subsample.markers.stats <- 1
-    # if (is.null(id.stats)) {
-    #   if (is.null(subsample)) {
-    #     variant.id <- SeqArray::seqGetData(
-    #       gdsfile = data, var.name = "variant.id")
-    #     n.markers <- length(variant.id)
-    #     if (n.markers > 200000 && subsample.markers.stats < 1) {
-    #       variant.select <- sample(
-    #         x = variant.id,
-    #         size = round(subsample.markers.stats * n.markers, 0))
-    #     } else {
-    #       subsample <- NULL
-    #       variant.select <- NULL
-    #     }
-    #   } else {
-    #
-    #   }
 
     id.stats <- generate_id_stats(
       gds = data,
@@ -283,7 +267,8 @@ The maximum amount of missingness you tolerate for a sample:", minmax = c(0, 1))
             "filter.individuals.missing", FILTERS
           )
         )
-      update_radiator_gds(gds = data, node.name = "individuals.meta", value = individuals, sync = TRUE)
+      update_radiator_gds(
+        gds = data, node.name = "individuals.meta", value = individuals, sync = TRUE)
 
       if (n.bl > 0) {
         filter.monomorphic <- TRUE

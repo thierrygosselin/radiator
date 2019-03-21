@@ -109,7 +109,7 @@ filter_coverage <- function(
     # filename = NULL
     # parallel.core = parallel::detectCores() - 1
     # verbose = TRUE
-    # path.folder = "coverage_test2"
+    # path.folder = NULL
     # parameters <- NULL
     # force.stats <- NULL
 
@@ -230,10 +230,6 @@ filter_coverage <- function(
     out.low <- floor(stats$OUTLIERS_LOW[stats$GROUP == "mean coverage"]*1000)/1000
     out.high <- floor(stats$OUTLIERS_HIGH[stats$GROUP == "mean coverage"]*1000)/1000
     if (verbose) message("Generating coverage statistics: without outliers")
-    # variant.wo.out <- dplyr::filter(info, COVERAGE_MEAN >= out.low &
-    #                                   COVERAGE_MEAN <= out.high) %$%
-    #   VARIANT_ID %>%
-    #   as.integer
 
     # Helper table -------------------------------------------------------------
     # filter.coverage <- "outliers"
@@ -243,7 +239,6 @@ filter_coverage <- function(
         combined.info <- TRUE
         cov.low <- filter.coverage[1]
         cov.high <- filter.coverage[2]
-        # if (verbose) message("\nRemoving markers based on mean coverage statistics: ", cov.low, " / ", cov.high)
       } else {
         if (is.character(filter.coverage)) {
           combined.info <- FALSE
@@ -262,6 +257,7 @@ filter_coverage <- function(
     # cov.low <- 10
     # cov.high <- 100
     min.c <- floor(stats$MIN[stats$GROUP == "mean coverage"]*1000)/1000
+    med.c <- floor(stats$MEDIAN[stats$GROUP == "mean coverage"]*1000)/1000
     max.c <- floor(stats$MAX[stats$GROUP == "mean coverage"]*1000)/1000
 
     if (combined.info) {
@@ -271,7 +267,7 @@ filter_coverage <- function(
       if (out.low != cov.low) {
         cl.range <- min(out.low,cov.low):max(out.low,cov.low)
       } else {
-        cl.range <- out.low
+        cl.range <- out.low:med.c
       }
 
       if (out.high != cov.high) {
@@ -286,7 +282,7 @@ filter_coverage <- function(
       if (min.c != out.low) {
         cl.range <- out.low:min.c
       } else {
-        cl.range <- min.c
+        cl.range <- min.c:med.c
       }
 
       #MAX
