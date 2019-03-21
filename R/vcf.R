@@ -1193,6 +1193,16 @@ read_vcf <- function(
 
 #' @section VCF file format:
 #'
+#' \strong{GATK:} radiator fills the \code{LOCUS} column of PLINK VCFs with
+#' a unique integer based on the \code{CHROM} column
+#' (\code{as.integer(factor(x = CHROM))}).
+#' The \code{COL} column is filled with 1L for lack of bettern info on this.
+#' Not what you need ? Open an issue on GitHub for a request.
+#'
+#' \strong{ipyrad:} the pattern \code{locus_} in the \code{CHROM} column
+#' is removed and used. The \code{COL} column is filled with the same value as
+#' \code{POS}.
+#'
 #' \strong{GATK:} Some VCF have an \code{ID} column filled with \code{.},
 #' the LOCUS information is all contained along the linkage group in the
 #' \code{CHROM} column. To make it work with
@@ -1270,7 +1280,7 @@ read_vcf <- function(
 #' With \code{vcf.metadata = TRUE},
 #' all the metadata contained in the \code{FORMAT} field will be kept in
 #' the tidy data file. radiator is currently keeping and cleaning these metadata:
-#' \code{"DP", "AD", "GL", "PL", "GQ", "HQ", "GOF", "NR", "NV"}.
+#' \code{"DP", "AD", "GL", "PL", "GQ", "HQ", "GOF", "NR", "NV", "CATG"}.
 #' e.g. you only want AD and PL, \code{vcf.metadata = c("AD", "PL")}.
 #' Need another metadata ? Submit a request on github...
 #' Default: \code{vcf.metadata = TRUE}.
@@ -1776,7 +1786,7 @@ tidy_vcf <- function(
         # want <- c("DP", "AD", "GL", "PL", "HQ", "GQ", "GOF", "NR", "NV", "RO", "QR", "AO", "QA")
 
         if (length(have) > 0) {
-          want <- c("DP", "AD", "GL", "PL", "HQ", "GQ", "GOF", "NR", "NV")
+          want <- c("DP", "AD", "GL", "PL", "HQ", "GQ", "GOF", "NR", "NV", "CATG")
 
           if (!is.null(overwrite.metadata)) want <- overwrite.metadata
           if (verbose) message("    genotypes metadata: ", stringi::stri_join(want, collapse = ", "))
@@ -1847,6 +1857,25 @@ tidy_vcf <- function(
 
       # NOTE TO MYSELF: might be faster to screen stacks here in data.source...
       if (vcf.metadata) {
+
+        catg.depth <- rlang::has_name(tidy.data, "C_DEPTH")
+        if (catg.depth) {
+          tidy.data %<>%
+            dplyr::mutate(
+              ALLELE_REF_DEPTH = dplyr::case_when(
+                REF == "C" ~ C_DEPTH,
+                REF == "A" ~ A_DEPTH,
+                REF == "T" ~ T_DEPTH,
+                REF == "G" ~ G_DEPTH
+              ),
+              ALLELE_ALT_DEPTH = dplyr::case_when(
+                ALT == "C" ~ C_DEPTH,
+                ALT == "A" ~ A_DEPTH,
+                ALT == "T" ~ T_DEPTH,
+                ALT == "G" ~ G_DEPTH
+              )
+            )
+        }#catg.depth
 
         if (rlang::has_name(tidy.data, "ALLELE_REF_DEPTH") &&
             rlang::has_name(tidy.data, "ALLELE_ALT_DEPTH") &&
@@ -1964,10 +1993,10 @@ parse_gds_metadata <- function(
   x,
   gds = NULL,
   verbose = TRUE,
-  parallel.core = parallel::detectCores() - 1) {
+  parallel.core = parallel::detectCores() - 1
+  ) {
 
-  res <- list()
-  format.name <- x
+  # x <- parse.format.list
   # format.name <- x <- "DP"
   # format.name <- x <- "AD"
   # format.name <- x <- "GL"
@@ -1981,7 +2010,8 @@ parse_gds_metadata <- function(
   # format.name <- x <- "QR" # not yet implemented
   # format.name <- x <- "AO" # not yet implemented
   # format.name <- x <- "QA" # not yet implemented
-
+  res <- list()
+  format.name <- x
   if (verbose) message("\nParsing and tidying: ", format.name)
 
   # Allele Depth
@@ -2010,7 +2040,7 @@ parse_gds_metadata <- function(
       x = res$AD$ALLELE_ALT_DEPTH,
       split.vec = split.vec,
       parallel.core = parallel.core)
-    split.vec <- NULL
+    split.vec <- column.vec <- NULL
     # test1 <- res$AD
   } # End AD
 
@@ -2077,6 +2107,7 @@ parse_gds_metadata <- function(
                                as.matrix(.) %>%
                                as.vector(.))
     res$GL[res$GL == "NaN"] <- NA
+    column.vec <- NULL
   } # End GL
 
   # Cleaning GOF: Goodness of fit value
@@ -2105,6 +2136,34 @@ parse_gds_metadata <- function(
       var.name = "annotation/format/NV")$data %>% as.vector(.))
     # test <- res$NV
   }#End cleaning NV column
+
+
+  # CATG from ipyrad...
+  if (format.name == "CATG") {
+    if (verbose) message("CATG columns: cleaning and renaming C_DEPTH, A_DEPTH, T_DEPTH, G_DEPTH")
+    res$CATG <- tibble::as_tibble(
+      SeqArray::seqGetData(gdsfile = gds,var.name = "annotation/format/CATG")$data
+    )
+    column.vec <- seq_along( res$CATG)
+
+    res$CATG <- tibble::tibble(
+      C_DEPTH =  res$CATG[, column.vec %% 4 == 1] %>%
+        as.matrix(.) %>%
+        as.integer(.),
+      A_DEPTH =  res$CATG[, column.vec %% 4 == 2] %>%
+        as.matrix(.) %>%
+        as.integer(.),
+      T_DEPTH =  res$CATG[, column.vec %% 4 == 3] %>%
+        as.matrix(.) %>%
+        as.integer(.),
+      G_DEPTH =  res$CATG[, column.vec %% 4 == 0] %>%
+        as.matrix(.) %>%
+        as.integer(.)
+      )
+    column.vec <- NULL
+  } # End CATG
+
+
 
   # RO
   # Cleaning RO: Reference allele observation count

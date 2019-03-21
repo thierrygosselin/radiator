@@ -50,6 +50,16 @@ several other filtering options.
 \section{VCF file format}{
 
 
+\strong{GATK:} radiator fills the \code{LOCUS} column of PLINK VCFs with
+a unique integer based on the \code{CHROM} column
+(\code{as.integer(factor(x = CHROM))}).
+The \code{COL} column is filled with 1L for lack of bettern info on this.
+Not what you need ? Open an issue on GitHub for a request.
+
+\strong{ipyrad:} the pattern \code{locus_} in the \code{CHROM} column
+is removed and used. The \code{COL} column is filled with the same value as
+\code{POS}.
+
 \strong{GATK:} Some VCF have an \code{ID} column filled with \code{.},
 the LOCUS information is all contained along the linkage group in the
 \code{CHROM} column. To make it work with
@@ -127,7 +137,7 @@ in the tidy dataset.
 With \code{vcf.metadata = TRUE},
 all the metadata contained in the \code{FORMAT} field will be kept in
 the tidy data file. radiator is currently keeping and cleaning these metadata:
-\code{"DP", "AD", "GL", "PL", "GQ", "HQ", "GOF", "NR", "NV"}.
+\code{"DP", "AD", "GL", "PL", "GQ", "HQ", "GOF", "NR", "NV", "CATG"}.
 e.g. you only want AD and PL, \code{vcf.metadata = c("AD", "PL")}.
 Need another metadata ? Submit a request on github...
 Default: \code{vcf.metadata = TRUE}.

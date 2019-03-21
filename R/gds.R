@@ -29,7 +29,7 @@ radiator_gds <- function(
     arg = geno.coding,
     choices = c("alt.dos", "ref.dos"),
     several.ok = FALSE
-    )
+  )
 
   # Filename
   if (is.null(filename)) {
@@ -708,6 +708,14 @@ extract_coverage <- function(
   parallel.core = parallel::detectCores() - 2,
   verbose = FALSE
 ) {
+  #Test
+  # markers = TRUE
+  # ind = TRUE
+  # update.gds = FALSE
+  # parallel.core = parallel::detectCores() - 2
+  # verbose = FALSE
+
+
   coverage.info <- list()
   data.source <- extract_data_source(gds)
   n.markers<- summary_gds(gds, verbose = FALSE)$n.markers
@@ -729,7 +737,7 @@ extract_coverage <- function(
         check = "none", verbose = FALSE)$ID
 
       if (length(have) > 0) {
-        want <- c("DP", "AD")
+        want <- c("DP", "AD", "CATG")
         parse.format.list <- purrr::keep(.x = have, .p = have %in% want)
         if (verbose) message("Extracting ", paste0(parse.format.list, collapse = ", "), " information...")
         # work on parallelization of this part
@@ -753,8 +761,34 @@ extract_coverage <- function(
       have <- NULL
     }
 
-
     if (!is.null(depth)) {
+      # detect.catg
+      catg.depth <- rlang::has_name(depth, "C_DEPTH")
+      if (catg.depth) {
+        depth %<>%
+          dplyr::mutate(MARKERS = as.character(MARKERS)) %>%
+          dplyr::left_join(
+            extract_markers_metadata(
+              gds = gds,
+              markers.meta.select = c("MARKERS", "REF", "ALT"),
+              whitelist = TRUE
+            ), by = "MARKERS") %>%
+          dplyr::mutate(
+            ALLELE_REF_DEPTH = dplyr::case_when(
+              REF == "C" ~ C_DEPTH,
+              REF == "A" ~ A_DEPTH,
+              REF == "T" ~ T_DEPTH,
+              REF == "G" ~ G_DEPTH
+            ),
+            ALLELE_ALT_DEPTH = dplyr::case_when(
+              ALT == "C" ~ C_DEPTH,
+              ALT == "A" ~ A_DEPTH,
+              ALT == "T" ~ T_DEPTH,
+              ALT == "G" ~ G_DEPTH
+            )
+          )
+      }#catg.depth
+
       want <- c("READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH")
       have <- colnames(depth)
       want <- purrr::keep(.x = have, .p = have %in% want)
@@ -777,6 +811,8 @@ extract_coverage <- function(
         }
         return(x)
       }#End colnames_rep
+
+
 
       if (markers) {
         m <- dplyr::group_by(depth, MARKERS) %>%
