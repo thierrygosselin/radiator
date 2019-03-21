@@ -392,7 +392,7 @@ update_radiator_gds <- function(
       }
     }
 
-    if (node.name == "individuals") {
+    if (node.name == "individuals.meta") {
       if (verbose) message("Synchronizing individuals")
       if (rlang::has_name(value, "FILTERS")) {
         sync_gds(gds = gds, samples = value$INDIVIDUALS[value$FILTERS == "whitelist"])
@@ -705,7 +705,8 @@ extract_coverage <- function(
   markers = TRUE,
   ind = TRUE,
   update.gds = FALSE,
-  parallel.core = parallel::detectCores() - 2
+  parallel.core = parallel::detectCores() - 2,
+  verbose = FALSE
 ) {
   coverage.info <- list()
   data.source <- extract_data_source(gds)
@@ -730,7 +731,7 @@ extract_coverage <- function(
       if (length(have) > 0) {
         want <- c("DP", "AD")
         parse.format.list <- purrr::keep(.x = have, .p = have %in% want)
-        message("Extracting ", paste0(parse.format.list, collapse = ", "), " information...")
+        if (verbose) message("Extracting ", paste0(parse.format.list, collapse = ", "), " information...")
         # work on parallelization of this part
         depth <- tidy2wide(
           x = purrr::map(
