@@ -69,13 +69,13 @@ filter_common_markers <- function(
   ...
 ) {
   # Test
-  filter.common.markers = TRUE
-  fig = TRUE
-  parallel.core = parallel::detectCores() - 1
-  verbose = TRUE
-  path.folder <- NULL
-  parameters <- NULL
-  internal <- FALSE
+  # filter.common.markers = TRUE
+  # fig = TRUE
+  # parallel.core = parallel::detectCores() - 1
+  # verbose = TRUE
+  # path.folder <- NULL
+  # parameters <- NULL
+  # internal <- FALSE
   # parameters = filters.parameters
   # path.folder = wf
 
