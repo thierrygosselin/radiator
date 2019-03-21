@@ -5,7 +5,7 @@
 \title{extract_coverage}
 \usage{
 extract_coverage(gds, markers = TRUE, ind = TRUE, update.gds = FALSE,
-  parallel.core = parallel::detectCores() - 2)
+  parallel.core = parallel::detectCores() - 2, verbose = FALSE)
 }
 \description{
 Extract coverage information from a GDS file

@@ -2062,14 +2062,19 @@ missing_per_pop <- function(
       sample.id = id.select$INDIVIDUALS,
       action = "set",
       verbose = FALSE)
-
+    n.ind <- length(id.select$INDIVIDUALS)
+    if (n.ind < parallel.core) {
+      parallel.core.temp <- n.ind
+    } else {
+      parallel.core.temp = parallel.core
+    }
     res <- markers.meta %>%
       dplyr::mutate(
         MISSING_PROP = SeqArray::seqMissing(
           gdsfile = gds,
           per.variant = TRUE,
           .progress = TRUE,
-          parallel = parallel.core - 1
+          parallel = parallel.core.temp
         )
       )
 
