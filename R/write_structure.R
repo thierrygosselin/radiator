@@ -14,15 +14,6 @@
 
 #' @inheritParams read_strata
 
-
-#' @param markers.line (optional, logical) In the structure
-#' file, you can write the markers on a single line separated by
-#' commas \code{markers.line = TRUE},
-#' or have markers on a separate line, i.e. in one column, for the structure file
-#' (not very useful with thousands of markers) and not printed at all for the
-#' structure file.
-#' Default: \code{markers.line = TRUE}.
-
 #' @param filename (optional) The file name prefix for the structure file
 #' written to the working directory. With default: \code{filename = NULL},
 #' the date and time is appended to \code{radiator_structure_}.
@@ -49,7 +40,6 @@
 write_structure <- function(
   data,
   pop.levels = NULL,
-  markers.line = TRUE,
   filename = NULL,
   ...
 ) {
@@ -60,21 +50,21 @@ write_structure <- function(
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {
     data <- radiator::tidy_wide(data = data, import.metadata = FALSE)
-  } else {
-    data$INDIVIDUALS <- clean_ind_names(data$INDIVIDUALS)
-    data$POP_ID <- clean_pop_names(data$POP_ID)
-    data$MARKERS <- clean_markers_names(data$MARKERS)
   }
 
-
+  # else {
+  #   data$INDIVIDUALS <- clean_ind_names(data$INDIVIDUALS)
+  #   data$POP_ID <- clean_pop_names(data$POP_ID)
+  #   data$MARKERS <- clean_markers_names(data$MARKERS)
+  # }
 
   # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-  if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
-    data <- dplyr::rename(.data = data, MARKERS = LOCUS)
-  }
+  # if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
+  #   data <- dplyr::rename(.data = data, MARKERS = LOCUS)
+  # }
 
 
-  data <- dplyr::select(.data = data, POP_ID, INDIVIDUALS, MARKERS, GT)
+  data %<>% dplyr::select(POP_ID, INDIVIDUALS, MARKERS, GT)
 
   # pop.levels -----------------------------------------------------------------
   if (!is.null(pop.levels)) {
@@ -95,7 +85,7 @@ write_structure <- function(
     purrr::flatten_chr(.)
 
   # Structure format ----------------------------------------------------------------
-  data <- data %>%
+  data %<>%
     tidyr::separate(col = GT, into = c("A1", "A2"), sep = 3, extra = "drop", remove = TRUE) %>%
     tidyr::gather(data = ., key = ALLELES, value = GT, -c(POP_ID, INDIVIDUALS, MARKERS)) %>%
     dplyr::mutate(
