@@ -19,9 +19,9 @@
 #'   \item \strong{Output:} 24 output file formats are supported (see \code{output} argument below)
 #' }
 
-#' @param output 24 genomic data formats can be exported: tidy (by default),
+#' @param output 26 genomic data formats can be exported: tidy (by default),
 #' genepop, genind, genlight, vcf (for file format version, see details below),
-#' plink, structure, arlequin, hierfstat, gtypes (strataG), bayescan, betadiv,
+#' plink, structure, faststructure, arlequin, hierfstat, gtypes (strataG), bayescan, betadiv,
 #' pcadapt, hzar, fineradstructure, related, seqarray, snprelate and maverick.
 #' Use a character string,
 #' e.g. \code{output = c("genind", "genepop", "structure")}, to have preferred
@@ -39,6 +39,7 @@
 #' @inheritParams write_genind
 #' @inheritParams write_genlight
 #' @inheritParams write_structure
+#' @inheritParams write_faststructure
 #' @inheritParams write_arlequin
 #' @inheritParams write_plink
 #' @inheritParams write_vcf
@@ -250,6 +251,9 @@
 #' molecular markers.
 #' Molecular Ecology Resources, 15, 557-561.
 
+#' @references Raj A, Stephens M, Pritchard JK (2014)
+#' fastSTRUCTURE: Variational Inference of Population Structure in Large SNP
+#' Datasets. Genetics, 197, 573-589.
 
 #' @references Verity R, Nichols RA (2016) Estimating the Number of
 #' Subpopulations (K) in Structured Populations.
@@ -588,6 +592,16 @@ genomic_converter <- function(
     #   )
     # }
   } # end structure output
+
+  # faststructure --------------------------------------------------------------------
+  if ("faststructure" %in% output) {
+    if (verbose) message("Generating faststructure file")
+    radiator::write_faststructure(
+      data = input,
+      pop.levels = pop.levels,
+      filename = filename
+    )
+  } # end faststructure output
 
   # betadiv --------------------------------------------------------------------
   if ("betadiv" %in% output) {

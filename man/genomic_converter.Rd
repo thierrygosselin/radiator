@@ -22,9 +22,9 @@ The strata file is a tab delimited file with a minimum of 2 columns headers:
 \code{INDIVIDUALS} and \code{STRATA}. Documented in \code{\link{read_strata}}.
 Default: \code{strata = NULL}.}
 
-\item{output}{24 genomic data formats can be exported: tidy (by default),
+\item{output}{26 genomic data formats can be exported: tidy (by default),
 genepop, genind, genlight, vcf (for file format version, see details below),
-plink, structure, arlequin, hierfstat, gtypes (strataG), bayescan, betadiv,
+plink, structure, faststructure, arlequin, hierfstat, gtypes (strataG), bayescan, betadiv,
 pcadapt, hzar, fineradstructure, related, seqarray, snprelate and maverick.
 Use a character string,
 e.g. \code{output = c("genind", "genepop", "structure")}, to have preferred
@@ -258,6 +258,10 @@ Pew J, Muir PH, Wang J, Frasier TR (2015)
 related: an R package for analysing pairwise relatedness from codominant
 molecular markers.
 Molecular Ecology Resources, 15, 557-561.
+
+Raj A, Stephens M, Pritchard JK (2014)
+fastSTRUCTURE: Variational Inference of Population Structure in Large SNP
+Datasets. Genetics, 197, 573-589.
 
 Verity R, Nichols RA (2016) Estimating the Number of
 Subpopulations (K) in Structured Populations.

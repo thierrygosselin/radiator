@@ -27,9 +27,9 @@ be interactive. Figures of distribution are shown before asking for filtering
 thresholds.
 Default: \code{interactive.filter = TRUE}.}
 
-\item{output}{24 genomic data formats can be exported: tidy (by default),
+\item{output}{26 genomic data formats can be exported: tidy (by default),
 genepop, genind, genlight, vcf (for file format version, see details below),
-plink, structure, arlequin, hierfstat, gtypes (strataG), bayescan, betadiv,
+plink, structure, faststructure, arlequin, hierfstat, gtypes (strataG), bayescan, betadiv,
 pcadapt, hzar, fineradstructure, related, seqarray, snprelate and maverick.
 Use a character string,
 e.g. \code{output = c("genind", "genepop", "structure")}, to have preferred
