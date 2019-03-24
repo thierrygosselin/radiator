@@ -110,9 +110,9 @@ write_faststructure <- function(
     }
 
     # Create a marker vector  ------------------------------------------------
-    markers <- dplyr::distinct(.data = data, MARKERS) %>%
-      dplyr::arrange(MARKERS) %>%
-      purrr::flatten_chr(.)
+    # markers <- dplyr::distinct(.data = data, MARKERS) %>%
+    #   dplyr::arrange(MARKERS) %>%
+    #   purrr::flatten_chr(.)
 
     # faststructure format ----------------------------------------------------------------
     if (rlang::has_name(data, "GT_BIN")) {
@@ -172,16 +172,16 @@ write_faststructure <- function(
     # Filename
     if (is.null(filename)) {
       file.date <- format(Sys.time(), "%Y%m%d@%H%M")
-      filename <- stringi::stri_join("radiator_", file.date, ".faststructure")
+      filename <- stringi::stri_join("radiator_", file.date, ".faststructure.str")
     } else {
-      filename <- stringi::stri_join(filename, ".faststructure")
+      filename <- stringi::stri_join(filename, ".faststructure.str")
     }
 
-    filename.connection <- file(filename, "w") # open the connection to the file
-    writeLines(text = stringi::stri_join(markers, sep = "\t", collapse = "\t"),
-               con = filename.connection, sep = "\n")
-    close(filename.connection) # close the connection
-    readr::write_tsv(x = data, path = filename, append = TRUE, col_names = FALSE)
+    # filename.connection <- file(filename, "w") # open the connection to the file
+    # writeLines(text = stringi::stri_join(markers, sep = "\t", collapse = "\t"),
+    #            con = filename.connection, sep = "\n")
+    # close(filename.connection) # close the connection
+    readr::write_tsv(x = data, path = filename, append = FALSE, col_names = FALSE)
   }
   return(filename)
 } # end write_faststructure
