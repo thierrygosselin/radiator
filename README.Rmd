@@ -141,9 +141,9 @@ Imputations can be conducted **overall samples** or **by populations/strata/grou
 space to be included in package, without CRAN complaining.
 Consequently, vignettes are gradually being excluded from the package and
 distributed separately, follow the links below.
-* **installation problems** [notebook vignette](https://www.dropbox.com/s/5npumwdo0cxtxi4/rad_genomics_computer_setup.nb.html?dl=0)
-* **parallel computing during imputations** [notebook vignette](https://www.dropbox.com/s/5npumwdo0cxtxi4/rad_genomics_computer_setup.nb.html?dl=0)
-* **vcf2dadi** [Rmd](https://www.dropbox.com/s/bl0mv6kavz97ibz/vignette_vcf2dadi.Rmd?dl=0) or [html](https://www.dropbox.com/s/xbgxk2valwl5o44/vignette_vcf2dadi.html?dl=0)
+* **installation problems** [notebook vignette](https://www.dropbox.com/s/1kz59xpolb5y52m/rad_genomics_computer_setup.nb.html?dl=0)
+* **parallel computing during imputations** [notebook vignette](https://www.dropbox.com/s/1kz59xpolb5y52m/rad_genomics_computer_setup.nb.html?dl=0)
+* **vcf2dadi** [Rmd](https://www.dropbox.com/s/bl0mv6kavz97ibz/vignette_vcf2dadi.Rmd?dl=0) or [html](https://www.dropbox.com/s/qo0ujxmye7g7ora/vignette_vcf2dadi.html?dl=0)
 
 
 **R Notebooks:**
