@@ -105,14 +105,6 @@
 
 #' @export
 #' @rdname detect_allele_problems
-#' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join funs
-#' @importFrom stringi stri_replace_all_fixed stri_join stri_sub
-#' @importFrom tibble has_name
-#' @importFrom tidyr gather
-#' @importFrom readr write_tsv
-#' @importFrom ggplot2 ggplot aes geom_violin geom_boxplot stat_summary labs theme element_blank element_text geom_jitter scale_colour_manual scale_y_reverse theme_light geom_bar facet_grid
-
-
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 detect_allele_problems <- function(

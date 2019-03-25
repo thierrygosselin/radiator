@@ -28,8 +28,6 @@
 #' }
 
 #' @rdname detect_genomic_format
-#' @importFrom stringi stri_detect_fixed stri_replace_all_fixed
-#' @importFrom tibble has_name
 # @keywords internal
 #' @export
 #' @examples

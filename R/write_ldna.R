@@ -29,12 +29,6 @@
 
 #' @export
 #' @rdname write_ldna
-
-#' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join
-#' @importFrom stringi stri_replace_all_fixed
-#' @importFrom tibble has_name
-#' @importFrom tidyr spread
-
 #' @references Kemppainen P, Knight CG, Sarma DK et al. (2015)
 #' Linkage disequilibrium network analysis (LDna) gives a global view of
 #' chromosomal inversions, local adaptation and geographic structure.

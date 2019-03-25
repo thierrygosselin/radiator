@@ -90,18 +90,6 @@
 
 #' @rdname detect_het_outliers
 #' @export
-#' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange
-#' tally filter if_else mutate summarise left_join inner_join right_join anti_join
-#' semi_join full_join funs
-#' @importFrom ggplot2 as_labeller ggplot theme_classic theme aes geom_jitter
-#' scale_y_continuous scale_y_continuous scale_color_discrete
-#' scale_size_continuous theme element_blank element_text geom_hline labeller
-#' facet_grid ggsave geom_boxplot labs geom_polygon geom_abline theme_bw
-#' @importFrom tibble tibble
-#' @importFrom tidyr complete gather unite spread nesting
-#' @importFrom parallel detectCores
-#' @importFrom stats rnorm rbeta runif rbinom
-#' @importFrom fst read.fst
 
 
 #' @author Eric Anderson \email{eric.anderson@noaa.gov} and

@@ -2279,13 +2279,6 @@ gds2tidy <- function(
 
 #' @export
 #' @rdname write_gds
-
-
-#' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join
-#' @importFrom stringi stri_replace_all_fixed
-#' @importFrom tibble has_name
-#' @importFrom tidyr spread
-
 #' @references Zheng X, Levine D, Shen J, Gogarten SM, Laurie C, Weir BS.
 #' A high-performance computing toolset for relatedness and principal component
 #' analysis of SNP data. Bioinformatics. 2012;28: 3326-3328.
@@ -2425,12 +2418,6 @@ write_gds <- function(
 
 #' @export
 #' @rdname write_snprelate
-
-#' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join
-#' @importFrom stringi stri_replace_all_fixed
-#' @importFrom tibble has_name
-#' @importFrom tidyr spread
-# @importFrom SNPRelate snpgdsOpen snpgdsClose snpgdsCreateGeno
 
 #' @references Zheng X, Levine D, Shen J, Gogarten SM, Laurie C, Weir BS.
 #' A high-performance computing toolset for relatedness and principal component

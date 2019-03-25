@@ -22,11 +22,6 @@
 #' @export
 #' @rdname write_fineradstructure
 
-#' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join funs
-#' @importFrom data.table as.data.table dcast.data.table
-#' @importFrom stringi stri_join stri_replace_all_fixed
-#' @importFrom tibble has_name as_data_frame
-
 #' @references Malinsky M, Trucchi E, Lawson D, Falush D (2018)
 #' RADpainter and fineRADstructure: population inference from RADseq data.
 #' bioRxiv, 057711.

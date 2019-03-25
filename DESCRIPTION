@@ -14,12 +14,20 @@ Depends:
 Imports:
     amap,
     data.table,
+    dplyr,
     fst (>= 0.8.4),
+    ggplot2,
+    magrittr,
     methods,
     parallel,
     pbmcapply,
+    purrr,
+    readr,
+    rlang,
     stats,
     stringi,
+    tibble,
+    tidyr,
     tidyverse,
     utils
 Suggests:

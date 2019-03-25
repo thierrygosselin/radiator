@@ -32,12 +32,6 @@
 
 #' @export
 #' @rdname write_hzar
-#' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join
-#' @importFrom stringi stri_join stri_replace_all_fixed stri_sub
-#' @importFrom tidyr spread unite complete nesting separate gather
-#' @importFrom readr write_delim write_tsv write_file write_lines write_csv
-#' @importFrom parallel detectCores
-
 #' @references Derryberry EP, Derryberry GE, Maley JM, Brumfield RT.
 #' hzar: hybrid zone analysis using an R software package.
 #' Molecular Ecology Resources. 2013;14: 652-663. doi:10.1111/1755-0998.12209
@@ -133,7 +127,7 @@ write_hzar <- function(
       filename <- stringi::stri_join(filename, "_hzar", ".csv")
     }
   }
-  header.line <- stringi::stri_join("# HZAR v.0.2-5 file generated with radiator v.", packageVersion(pkg = "radiator"), " ", file.date)
+  header.line <- stringi::stri_join("# HZAR v.0.2-5 file generated with radiator v.", utils::packageVersion(pkg = "radiator"), " ", file.date)
   readr::write_lines(x = header.line, path = filename)
   readr::write_csv(x = output, path = filename, append = TRUE, col_names = TRUE)
 

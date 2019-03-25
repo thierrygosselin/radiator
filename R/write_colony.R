@@ -73,16 +73,6 @@
 
 #' @export
 #' @rdname write_colony
-
-#' @importFrom dplyr select distinct group_by ungroup rename arrange tally filter mutate summarise semi_join mutate_all sample_n count
-#' @importFrom stringi stri_join stri_replace_all_fixed stri_extract_all_fixed stri_replace_all_regex stri_sub stri_pad_left stri_count_fixed stri_replace_na stri_trim_right
-#' @importFrom tibble as_data_frame has_name
-#' @importFrom tidyr spread gather unite
-#' @importFrom utils write.table
-#' @importFrom readr write_file
-#' @importFrom parallel detectCores
-#' @importFrom purrr flatten_chr
-
 #' @references Jones OR, Wang J (2010) COLONY: a program for parentage and
 #' sibship inference from multilocus genotype data.
 #' Molecular Ecology Resources, 10, 551–555.

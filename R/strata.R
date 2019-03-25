@@ -305,10 +305,6 @@ summary_strata <- function(strata) {
 
 #' @export
 #' @rdname individuals2strata
-#' @importFrom stringi stri_sub
-#' @importFrom dplyr mutate
-#' @importFrom readr write_tsv read_tsv
-#' @importFrom tibble as_data_frame
 
 
 #' @examples
@@ -373,9 +369,6 @@ individuals2strata <- function(
 #' @rdname change_pop_names
 #' @export
 #'
-#' @importFrom stringi stri_replace_all_regex stri_join stri_replace_all_fixed
-#' @importFrom dplyr n_distinct
-
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 
@@ -438,10 +431,6 @@ change_pop_names <- function(data, pop.levels = NULL, pop.labels = NULL) {
 
 #' @rdname check_pop_levels
 #' @export
-#'
-#' @importFrom stringi stri_replace_all_regex stri_join stri_replace_all_fixed
-#' @importFrom dplyr n_distinct
-
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 

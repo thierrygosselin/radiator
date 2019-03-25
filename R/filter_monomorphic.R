@@ -28,10 +28,6 @@
 
 #' @export
 #' @rdname filter_monomorphic
-#' @importFrom dplyr select mutate group_by ungroup rename tally filter semi_join n_distinct
-#' @importFrom stringi stri_replace_all_fixed stri_join
-#' @importFrom tibble has_name
-
 #' @seealso
 #' \code{\link{filter_rad}},
 #' \code{\link{tidy_genomic_data}}, \code{\link{read_vcf}},

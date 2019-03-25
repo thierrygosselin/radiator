@@ -21,10 +21,6 @@
 #' @return A list with private haplotypes per markers and strata and a summary of
 #' overall number of private haplotypes per strata.
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
-#' @importFrom tibble has_name
-#' @importFrom stringi stri_join stri_replace_all_fixed stri_sub
-#' @importFrom dplyr select distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join funs summarise_at bind_rows
-#' @importFrom tidyr complete gather unite spread nesting
 
 
 private_haplotypes <- function(data, strata = NULL, verbose = TRUE) {

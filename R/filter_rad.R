@@ -130,14 +130,6 @@
 
 #' @export
 #' @rdname filter_rad
-#' @importFrom dplyr group_by select rename filter mutate summarise distinct n_distinct arrange left_join semi_join anti_join inner_join full_join tally bind_rows
-#' @importFrom parallel detectCores
-#' @importFrom stringi stri_replace_all_fixed stri_join stri_sub stri_replace_na stri_pad_left
-#' @importFrom purrr discard
-#' @importFrom readr read_tsv write_tsv
-#' @importFrom tibble as_data_frame data_frame
-#' @importFrom tidyr spread gather unite separate
-#' @importFrom stats IQR
 
 #' @examples
 #' \dontrun{

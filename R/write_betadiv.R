@@ -18,11 +18,6 @@
 
 #' @export
 #' @rdname write_betadiv
-#' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join
-#' @importFrom stringi stri_replace_all_fixed
-#' @importFrom tidyr spread
-
-
 
 #' @references Lamy T, Legendre P, Chancerelle Y, Siu G, Claudet J (2015)
 #' Understanding the Spatio-Temporal Response of Coral Reef Fish Communities to

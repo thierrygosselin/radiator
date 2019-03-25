@@ -10,8 +10,6 @@
 #' @param filename (optional) Name of the file written to the working directory.
 #' @rdname diagnostic_maf
 #' @export
-#' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join funs ntile
-#' @importFrom readr read_tsv write_tsv
 #' @details Highly recommended to look at the distribution of MAF
 
 #' @examples

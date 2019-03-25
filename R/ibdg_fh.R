@@ -112,15 +112,6 @@
 
 #' @export
 #' @rdname ibdg_fh
-
-#' @importFrom dplyr distinct rename arrange mutate select summarise group_by ungroup filter inner_join left_join
-#' @importFrom stringi stri_join stri_replace_all_fixed stri_replace_all_regex
-#' @importFrom utils count.fields
-#' @importFrom readr read_tsv write_tsv
-#' @importFrom tibble data_frame
-#' @importFrom ggplot2 ggplot aes geom_violin geom_boxplot stat_summary labs theme element_blank element_text geom_jitter scale_colour_manual scale_y_reverse theme_light geom_bar facet_grid geom_histogram
-
-
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 ibdg_fh <- function(

@@ -20,14 +20,6 @@
 
 #' @export
 #' @rdname extract_dart_target_id
-#' @importFrom dplyr group_by select rename filter mutate summarise distinct n_distinct arrange left_join semi_join anti_join inner_join full_join tally bind_rows
-#' @importFrom parallel detectCores
-#' @importFrom stringi stri_replace_all_fixed stri_join stri_sub stri_replace_na stri_pad_left
-#' @importFrom purrr discard
-# @importFrom data.table as.data.table dcast.data.table
-#' @importFrom readr read_tsv write_tsv read_lines read_table
-#' @importFrom tibble as_data_frame data_frame
-#' @importFrom tidyr spread gather unite separate
 
 #' @examples
 #' \dontrun{
@@ -151,17 +143,6 @@ If you're still encountering problem, email author for help")
 #' @inheritParams tidy_genomic_data
 #' @inheritParams read_dart
 #' @inheritParams radiator_common_arguments
-
-
-#' @importFrom stringi stri_replace_all_fixed stri_replace_na stri_join stri_count_fixed
-#' @importFrom tibble as_data_frame data_frame add_column add_row
-#' @importFrom dplyr select rename n_distinct distinct mutate summarise group_by ungroup arrange left_join full_join semi_join anti_join bind_rows bind_cols if_else
-#' @importFrom readr write_tsv read_tsv
-#' @importFrom tidyr separate gather
-#' @importFrom parallel detectCores
-#' @importFrom ggplot2 ggplot aes geom_violin geom_boxplot stat_summary labs theme element_blank element_text geom_jitter scale_colour_manual scale_y_reverse theme_light geom_bar facet_grid stat_smooth
-#' @importFrom purrr flatten_chr map_df flatten_dbl
-
 #' @details
 #' The function average across markers the columns: CALL_RATE, REP_AVG,
 #' AVG_COUNT_REF and AVG_COUNT_SNP, when found in the data.
@@ -418,14 +399,6 @@ merge_dart <- function(
 
 #' @export
 #' @rdname tidy_dart_metadata
-#' @importFrom dplyr group_by select rename filter mutate summarise distinct n_distinct arrange left_join semi_join anti_join inner_join full_join tally bind_rows
-#' @importFrom parallel detectCores
-#' @importFrom stringi stri_replace_all_fixed stri_join stri_sub stri_replace_na stri_pad_left
-#' @importFrom purrr discard
-# @importFrom data.table as.data.table dcast.data.table
-#' @importFrom readr read_tsv write_tsv read_lines read_table
-#' @importFrom tibble as_data_frame data_frame
-#' @importFrom tidyr spread gather unite separate
 
 #' @examples
 #' \dontrun{
@@ -737,14 +710,6 @@ tidy_dart_metadata <- function(
 
 #' @export
 #' @rdname read_dart
-#' @importFrom dplyr group_by select rename filter mutate summarise distinct n_distinct arrange left_join semi_join anti_join inner_join full_join tally bind_rows
-#' @importFrom parallel detectCores
-#' @importFrom stringi stri_replace_all_fixed stri_join stri_sub stri_replace_na stri_pad_left
-#' @importFrom purrr discard
-#' @importFrom data.table as.data.table dcast.data.table melt.data.table
-#' @importFrom readr read_tsv write_tsv read_lines read_table
-#' @importFrom tibble as_data_frame data_frame
-#' @importFrom tidyr spread gather unite separate
 
 #' @examples
 #' \dontrun{

@@ -63,12 +63,6 @@
 
 #' @export
 #' @rdname calibrate_alleles
-#' @importFrom dplyr select mutate group_by ungroup rename tally filter if_else arrange summarise top_n distinct coalesce if_else full_join
-#' @importFrom stringi stri_replace_all_fixed stri_join stri_sub
-#' @importFrom tibble has_name
-#' @importFrom tidyr spread gather
-#' @importFrom purrr flatten_chr
-
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 calibrate_alleles <- function(

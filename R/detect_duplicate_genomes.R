@@ -115,17 +115,6 @@
 
 #' @export
 #' @rdname detect_duplicate_genomes
-#' @importFrom stringi stri_paste stri_replace_all_fixed
-#' @importFrom dplyr arrange rename select group_by filter mutate rename_ filter_ bind_cols bind_rows summarise n_distinct intersect desc
-#' @importFrom utils combn
-#' @importFrom stats na.omit var median quantile dist
-#' @importFrom amap Dist
-#' @importFrom readr write_tsv
-#' @importFrom parallel detectCores
-#' @importFrom purrr flatten map
-#' @importFrom tibble as_tibble remove_rownames column_to_rownames
-#' @importFrom ggplot2 ggplot aes geom_violin geom_boxplot stat_summary labs theme element_blank element_text geom_jitter scale_colour_manual scale_y_reverse theme_light ggsave
-
 
 #' @examples
 #' \dontrun{

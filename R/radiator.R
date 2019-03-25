@@ -1,6 +1,5 @@
 # radiator package startup message ---------------------------------------------
-#' @importFrom utils packageDescription
-#' @importFrom stringi stri_join
+
 
 .onAttach <- function(libname, pkgname) {
   radiator.version <- utils::packageDescription("radiator", fields = "Version")
@@ -72,16 +71,6 @@
 
 
 # @inheritParams radiator_common_arguments
-
-#' @importFrom dplyr group_by select rename filter mutate summarise distinct n_distinct arrange left_join semi_join anti_join inner_join full_join tally bind_rows
-#' @importFrom parallel detectCores
-#' @importFrom stringi stri_replace_all_fixed stri_join stri_sub stri_replace_na stri_pad_left
-#' @importFrom purrr discard
-#' @importFrom readr read_tsv write_tsv
-#' @importFrom tibble tibble as_tibble
-#' @importFrom rlang has_name
-#' @importFrom tidyr spread gather unite separate
-#' @importFrom stats IQR
 
 
 radiator_common_arguments <- function (

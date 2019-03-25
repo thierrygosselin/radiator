@@ -232,13 +232,6 @@ tidy_genlight <- function(
 #' @export
 #' @rdname write_genlight
 
-#' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join
-#' @importFrom stringi stri_replace_all_fixed
-#' @importFrom methods new
-# @importFrom adegenet indNames pop chromosome locNames position
-#' @importFrom tibble has_name
-#' @importFrom tidyr spread
-
 #' @references Jombart T (2008) adegenet: a R package for the multivariate
 #' analysis of genetic markers. Bioinformatics, 24, 1403-1405.
 #' @references Jombart T, Ahmed I (2011) adegenet 1.3-1:

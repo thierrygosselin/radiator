@@ -29,13 +29,6 @@
 
 #' @export
 #' @rdname write_related
-
-#' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join
-#' @importFrom stringi stri_join stri_replace_all_fixed stri_extract_all_fixed stri_sub stri_pad_left
-#' @importFrom purrr flatten_chr
-#' @importFrom tidyr spread gather
-#' @importFrom readr write_delim
-
 #' @references Pew J, Muir PH, Wang J, Frasier TR (2015)
 #' related: an R package for analysing pairwise relatedness from codominant
 #' molecular markers.

@@ -59,12 +59,6 @@
 
 #' @export
 #' @rdname write_pcadapt
-#' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join
-#' @importFrom stringi stri_join stri_replace_all_fixed stri_sub
-#' @importFrom tidyr spread unite complete nesting separate
-#' @importFrom readr write_delim write_tsv write_file
-#' @importFrom parallel detectCores
-
 #' @references Luu, K., Bazin, E., & Blum, M. G. (2017).
 #' pcadapt: an R package to perform genome scans for selection based on principal component analysis.
 #' Molecular Ecology Resources, 17(1), 67-77.

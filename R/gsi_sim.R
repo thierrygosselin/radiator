@@ -49,13 +49,6 @@
 #' @return A gsi_sim input file is saved to the working directory.
 #' @export
 #' @rdname write_gsi_sim
-
-#' @importFrom tibble as_data_frame
-#' @importFrom tidyr separate gather unite
-#' @importFrom dplyr n_distinct rename mutate select left_join arrange
-#' @importFrom stringi stri_replace_all_regex stri_join stri_replace_all_fixed
-#' @importFrom readr write_delim
-
 #' @references Anderson, Eric C., Robin S. Waples, and Steven T. Kalinowski. (2008)
 #' An improved method for predicting the accuracy of genetic stock identification.
 #' Canadian Journal of Fisheries and Aquatic Sciences 65, 7:1475-1486.

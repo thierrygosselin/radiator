@@ -197,14 +197,6 @@
 
 #' @rdname filter_het
 #' @export
-
-#' @importFrom stringi stri_join stri_replace_all_fixed stri_sub
-#' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join funs
-#' @importFrom readr write_tsv
-#' @importFrom tibble data_frame
-#' @importFrom tidyr complete gather unite spread nesting
-#' @importFrom ggplot2 ggplot geom_jitter labs aes scale_y_continuous as_labeller waiver scale_color_discrete scale_size_continuous theme element_blank element_text geom_hline facet_grid labeller geom_boxplot theme_classic geom_line expand_limits ggsave theme_minimal element_line
-
 #' @seealso \link{plot_density_distribution_het}
 
 

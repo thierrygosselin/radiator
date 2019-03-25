@@ -104,16 +104,6 @@
 
 #' @export
 #' @rdname tidy_genepop
-
-
-#' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join slice bind_cols bind_rows
-#' @importFrom purrr invoke flatten_chr
-#' @importFrom stringi stri_split_fixed stri_replace_all_fixed stri_join stri_trim_both stri_trim_right stri_pad_left
-#' @importFrom readr write_tsv read_tsv read_delim
-#' @importFrom utils count.fields
-#' @importFrom tidyr separate gather unite spread
-#' @importFrom tibble as_data_frame
-
 #' @examples
 #' \dontrun{
 #' We will use the genepop dataset provided with adegenet package

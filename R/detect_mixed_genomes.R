@@ -97,15 +97,6 @@
 
 #' @rdname detect_mixed_genomes
 #' @export
-
-#' @importFrom ggplot2 as_labeller ggplot theme_classic theme aes geom_jitter scale_y_continuous scale_y_continuous scale_color_discrete scale_size_continuous theme element_blank element_text geom_hline labeller facet_grid ggsave geom_boxplot labs
-#' @importFrom stringi stri_join stri_replace_all_fixed stri_sub
-#' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join funs
-#' @importFrom readr write_tsv
-#' @importFrom tibble data_frame
-#' @importFrom tidyr complete gather unite spread nesting
-#' @importFrom stats median sd
-
 #' @examples
 #' \dontrun{
 #' #Step1: highlight outlier individuals, the simplest way to run:
@@ -581,14 +572,14 @@ detect_mixed_genomes <- function(
           dplyr::mutate(
             FILTERS = dplyr::if_else(
               INDIVIDUALS %in% blacklist.ind.het$INDIVIDUALS,
-              "filter.individuals.heterozygosity", FILTERS
+              "detect_mixed_genomes", FILTERS
             )
           )
 
         update_radiator_gds(gds = data, node.name = "individuals.meta", value = id.info, sync = TRUE)
 
       } else {
-        input  %<>% dplyr::filter(!INDIVIDUALS %in% blacklist.ind.het$INDIVIDUALS)
+        data  %<>% dplyr::filter(!INDIVIDUALS %in% blacklist.ind.het$INDIVIDUALS)
       }
     }#End blacklisted
 

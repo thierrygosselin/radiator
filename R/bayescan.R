@@ -59,10 +59,6 @@
 
 #' @rdname run_bayescan
 #' @export
-#' @importFrom stringi stri_join stri_replace_all_fixed stri_sub
-#' @importFrom dplyr mutate filter distinct
-#' @importFrom purrr keep
-#' @importFrom tibble data_frame
 #' @return For specific \href{http://cmpg.unibe.ch/software/BayeScan/}{BayeScan}
 #' output files, see \href{http://cmpg.unibe.ch/software/BayeScan/}{BayeScan}
 #' documentation, please read the manual.

@@ -86,16 +86,6 @@
 
 #' @rdname filter_mac
 #' @export
-
-#' @importFrom ggplot2 ggplot aes geom_violin geom_boxplot stat_summary labs theme element_blank element_text geom_jitter scale_colour_manual scale_y_reverse theme_light geom_bar facet_grid geom_histogram aes_string scale_fill_manual theme_bw stat_smooth geom_boxplot ggsave scale_size_area
-#' @importFrom stringi stri_join stri_replace_all_fixed stri_sub
-#' @importFrom dplyr select distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join funs summarise_at bind_rows
-#' @importFrom readr write_tsv
-#' @importFrom tibble data_frame has_name
-#' @importFrom tidyr complete gather unite spread nesting
-#' @importFrom fst read.fst
-
-
 #' @return With \code{interactive.filter = FALSE}, a list in the global environment,
 #' with 7 objects:
 #' \enumerate{

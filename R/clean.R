@@ -8,7 +8,6 @@
 #' and might be of interest for users.
 #' @param x (character string) Markers character string.
 #' @rdname clean_markers_names
-#' @importFrom stringi stri_replace_all_fixed
 #' @export
 clean_markers_names <- function(x) {
   x <- stringi::stri_replace_all_fixed(
@@ -27,7 +26,6 @@ clean_markers_names <- function(x) {
 #' and might be of interest for users.
 #' @param x (character string) Individuals character string.
 #' @rdname clean_ind_names
-#' @importFrom stringi stri_replace_all_fixed
 #' @export
 clean_ind_names <- function(x) {
   x <- stringi::stri_replace_all_fixed(
@@ -46,7 +44,6 @@ clean_ind_names <- function(x) {
 #' @param x (character string) Population character string.
 #' @rdname clean_pop_names
 #' @export
-#' @importFrom stringi stri_replace_all_fixed
 clean_pop_names <- function(x) {
 clean_pop <- function(x) {
   stringi::stri_replace_all_fixed(

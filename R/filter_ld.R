@@ -58,13 +58,6 @@
 #' @export
 #' @rdname filter_ld
 
-
-#' @importFrom stringi stri_replace_all_fixed stri_join
-#' @importFrom tibble has_name
-#' @importFrom dplyr select distinct group_by sample_n summarise semi_join n_distinct
-
-
-
 #' @details The function requires \href{https://github.com/zhengxwen/SNPRelate}{SNPRelate}
 #' (see example below on how to install).
 #'
@@ -834,7 +827,7 @@ filter_ld <- function(
 
       if (ld.method == "r2") {
         ld.m <- "r"
-        filter.long.ld <- sqrt(filter.long.ld)
+        # filter.long.ld <- sqrt(filter.long.ld)
       } else {
         ld.m <- ld.method
       }
@@ -858,12 +851,13 @@ filter_ld <- function(
         method = ld.m,
         ld.threshold = filter.long.ld,
         num.thread = 1L,# more not supported
-        verbose = FALSE) %>%
+        verbose = TRUE) %>%
         unlist(.)
       timing <- proc.time() - timing
       if (verbose) message("LD pruning computation time: ", round(timing[[3]]), " sec")
 
       wl.n <- length(wl.variant.id)
+      message("Number of markers whitelised: ", wl.n)
       # if (verbose) message("Number of markers whitelised: ", wl.n)
       # summary_gds(data, check.sync = TRUE, verbose = TRUE)
       # sync_gds(gds)
@@ -1051,7 +1045,7 @@ ld_boxplot <- function(
 
   # generate a vector
   ld.res <- as.vector(ld.res) %>% magrittr::extract(!is.na(.))
-
+  ld.res <- 1 - ld.res
   # stats
   ld.summary <- tibble_stats(x = ld.res, group = "Long LD")
   outlier.ld <- round(ld.summary$OUTLIERS_HIGH, 2)

@@ -16,8 +16,6 @@
 #' @export
 # @keywords internal
 #' @rdname detect_all_missing
-#' @importFrom dplyr select mutate group_by filter distinct
-
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 

@@ -21,11 +21,6 @@
 
 #' @export
 #' @rdname allele_frequencies
-#' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join funs
-#' @importFrom stringi stri_replace_all_fixed stri_sub stri_join
-#' @importFrom tibble has_name
-#' @importFrom tidyr gather spread complete nesting
-
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 allele_frequencies <- function(data, verbose = TRUE) {

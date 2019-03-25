@@ -48,9 +48,6 @@
 #' GDS object (with read/write permissions) in the global environment.
 #' @export
 #' @rdname read_rad
-#' @importFrom fst read_fst
-#' @importFrom purrr safely
-#'
 #' @seealso
 #' \href{https://github.com/fstpackage/fst}{fst}
 #' \href{https://github.com/zhengxwen/gdsfmt}{GDS}
@@ -221,7 +218,6 @@ read_rad <- function(
 #' @return A file written in the working directory or nothing if it's a GDS connection file.
 #' @export
 #' @rdname write_rad
-#' @importFrom fst write_fst
 #'
 #'
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}

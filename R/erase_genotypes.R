@@ -57,7 +57,7 @@ erase_genotypes <- function(tidy.vcf.file, haplotypes.file, read.depth.threshold
   erased.genotype.number <- length(blacklist$INDIVIDUALS)
   total.genotype.number <- length(tidy.vcf.file$GT[tidy.vcf.file$GT != "./."])
   percent <- paste(round(((erased.genotype.number/total.genotype.number)*100), 2), "%", sep = " ")
-  message.vcf.erasing.geno <- stri_paste("Out of a total of ", total.genotype.number, " genotypes, ", percent, " (", erased.genotype.number, ")"," will be erased")
+  message.vcf.erasing.geno <- stringi::stri_join("Out of a total of ", total.genotype.number, " genotypes, ", percent, " (", erased.genotype.number, ")"," will be erased")
   message(message.vcf.erasing.geno)
 
   # VCF ------------------------------------------------------------------------
@@ -113,7 +113,7 @@ erase_genotypes <- function(tidy.vcf.file, haplotypes.file, read.depth.threshold
 
     # consensus
     consensus.pop <- haplo.prep %>%
-      mutate(CONSENSUS = stri_count_fixed(HAPLOTYPES, "consensus")) %>%
+      mutate(CONSENSUS = stringi::stri_count_fixed(HAPLOTYPES, "consensus")) %>%
       group_by(LOCUS) %>%
       summarise(CONSENSUS_MAX = max(CONSENSUS)) %>%
       filter(CONSENSUS_MAX > 0) %>%
@@ -125,7 +125,7 @@ erase_genotypes <- function(tidy.vcf.file, haplotypes.file, read.depth.threshold
 
     total.genotype.number.haplo <- length(haplo.number$HAPLOTYPES)
     percent.haplo <- paste(round(((erased.genotype.number/total.genotype.number.haplo)*100), 2), "%", sep = " ")
-    message.haplo.erasing.geno <- stri_paste("Out of a total of ", total.genotype.number.haplo, " genotypes, ", percent.haplo, " (", erased.genotype.number, ")"," will be erased")
+    message.haplo.erasing.geno <- stringi::stri_join("Out of a total of ", total.genotype.number.haplo, " genotypes, ", percent.haplo, " (", erased.genotype.number, ")"," will be erased")
     message(message.haplo.erasing.geno)
     message("Erasing... Erasing...")
 
@@ -148,7 +148,7 @@ erase_genotypes <- function(tidy.vcf.file, haplotypes.file, read.depth.threshold
       rename(`Catalog ID` = LOCUS) %>%
       tidyr::spread(INDIVIDUALS, HAPLOTYPES)
 
-    haplo.erase.filename <- stri_replace_all_fixed(str = haplotypes.file, pattern = ".tsv", replacement = "_erased_geno.tsv", vectorize_all = FALSE)
+    haplo.erase.filename <- stringi::stri_replace_all_fixed(str = haplotypes.file, pattern = ".tsv", replacement = "_erased_geno.tsv", vectorize_all = FALSE)
     message("Saving the modified haplotypes file in your working directory")
     write_tsv(haplo.erased, haplo.erase.filename, append = FALSE, col_names = TRUE)
   }

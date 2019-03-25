@@ -11,12 +11,6 @@
 
 #' @export
 #' @rdname tidy_gtypes
-
-#' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join
-#' @importFrom stringi stri_replace_all_fixed stri_replace_all_regex stri_join stri_pad_left
-#' @importFrom tibble rownames_to_column data_frame as_data_frame
-#' @importFrom tidyr gather unite
-
 #' @references Archer FI, Adams PE, Schneiders BB.
 #' strataG: An r package for manipulating, summarizing and analysing population
 #' genetic data.

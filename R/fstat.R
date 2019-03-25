@@ -39,15 +39,6 @@
 #' @export
 #' @rdname tidy_fstat
 
-
-#' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join slice bind_cols bind_rows
-#' @importFrom purrr invoke flatten_chr
-#' @importFrom stringi stri_split_fixed stri_replace_all_fixed stri_join stri_pad_left stri_replace_all_regex
-#' @importFrom readr write_tsv read_tsv read_delim
-#' @importFrom utils count.fields
-#' @importFrom tidyr separate gather
-#' @importFrom tibble as_data_frame
-
 #' @examples
 #' \dontrun{
 #' We will use the fstat dataset provided with adegenet package
@@ -237,12 +228,6 @@ tidy_fstat <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
 
 #' @export
 #' @rdname write_hierfstat
-#' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join
-#' @importFrom stringi stri_join stri_replace_all_fixed stri_sub
-#' @importFrom purrr flatten_chr
-#' @importFrom tidyr spread unite
-#' @importFrom readr write_delim
-
 #' @references Goudet, J. (1995) FSTAT (Version 1.2): A computer program to
 #' calculate F- statistics. Journal of Heredity, 86, 485-486.
 #' @references Goudet, J. (2005) hierfstat, a package for r to compute and test hierarchical F-statistics. Molecular Ecology Notes, 5, 184-186.

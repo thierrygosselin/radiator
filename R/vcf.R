@@ -169,10 +169,6 @@
 
 #' @export
 #' @rdname read_vcf
-#' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join
-#' @importFrom stringi stri_replace_all_fixed
-#' @importFrom tibble has_name
-#' @importFrom tidyr spread
 
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
@@ -2460,12 +2456,6 @@ clean_nv <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) 
 
 #' @export
 #' @rdname write_vcf
-#' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join everything
-#' @importFrom stringi stri_join stri_replace_all_fixed stri_extract_all_fixed stri_replace_all_regex stri_sub stri_pad_left stri_count_fixed stri_replace_na
-#' @importFrom readr write_tsv write_delim
-#' @importFrom utils write.table packageVersion
-#' @importFrom tibble has_name data_frame
-#' @importFrom tidyr spread
 
 #' @references Danecek P, Auton A, Abecasis G et al. (2011)
 #' The variant call format and VCFtools.
@@ -2760,14 +2750,6 @@ check_header_source_vcf <- function(vcf) {
 #' @inheritParams tidy_genomic_data
 #' @inheritParams radiator_common_arguments
 
-#' @importFrom stringi stri_replace_all_fixed stri_replace_na stri_join stri_count_fixed
-#' @importFrom tibble as_data_frame data_frame add_column add_row
-#' @importFrom dplyr select rename n_distinct distinct mutate summarise group_by ungroup arrange left_join full_join semi_join anti_join bind_rows bind_cols if_else
-#' @importFrom readr write_tsv read_tsv
-#' @importFrom tidyr separate gather
-#' @importFrom parallel detectCores
-#' @importFrom ggplot2 ggplot aes geom_violin geom_boxplot stat_summary labs theme element_blank element_text geom_jitter scale_colour_manual scale_y_reverse theme_light geom_bar facet_grid stat_smooth
-#' @importFrom purrr flatten_chr map_df flatten_dbl
 
 #' @return The function returns in the global environment a list with
 #' the different tidy dataset from the split vcf. In the working directory,
@@ -2919,15 +2901,6 @@ split_vcf <- function(
 # Default: \code{filename = NULL}.
 # @inheritParams tidy_genomic_data
 
-# @importFrom stringi stri_replace_all_fixed stri_replace_na stri_join stri_count_fixed
-# @importFrom tibble as_data_frame data_frame add_column add_row
-# @importFrom dplyr select rename n_distinct distinct mutate summarise group_by ungroup arrange left_join full_join semi_join anti_join bind_rows bind_cols if_else
-# @importFrom readr write_tsv read_tsv
-# @importFrom tidyr separate gather
-# @importFrom parallel detectCores
-# @importFrom ggplot2 ggplot aes geom_violin geom_boxplot stat_summary labs theme element_blank element_text geom_jitter scale_colour_manual scale_y_reverse theme_light geom_bar facet_grid stat_smooth
-# @importFrom purrr flatten_chr map_df flatten_dbl
-
 # @return The function returns in the global environment a tidy dataset with
 # the merged VCF files and the merged VCF in the working directory.
 
@@ -3063,8 +3036,6 @@ split_vcf <- function(
 
 #' @export
 #' @rdname vcf_strata
-#' @importFrom purrr detect_index
-#' @importFrom utils write.table count.fields
 
 #' @return A VCF file in the working directory with new \code{FORMAT} field(s)
 #' correponding to the strata column(s).

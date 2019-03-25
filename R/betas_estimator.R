@@ -30,13 +30,6 @@
 #' @rdname betas_estimator
 
 #' @import ggplot2
-
-#' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join summarise_at funs
-#' @importFrom stringi stri_join stri_replace_all_fixed stri_extract_all_fixed stri_replace_all_regex stri_sub stri_pad_left stri_count_fixed stri_replace_na
-#' @importFrom utils combn
-#' @importFrom readr read_tsv write_tsv
-#' @importFrom tibble data_frame has_name
-
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 betas_estimator <- function(

@@ -280,13 +280,6 @@ tidy_genind <- function(
 #' @export
 #' @rdname write_genind
 
-#' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join funs
-#' @importFrom tidyr spread gather separate complete
-#' @importFrom stringi stri_join stri_replace_all_fixed stri_sub stri_replace_na
-#' @importFrom tibble has_name as_data_frame
-# @importFrom adegenet genind
-#' @importFrom data.table as.data.table melt.data.table dcast.data.table
-
 #' @references Jombart T (2008) adegenet: a R package for the multivariate
 #' analysis of genetic markers. Bioinformatics, 24, 1403-1405.
 #' @references Jombart T, Ahmed I (2011) adegenet 1.3-1:

@@ -43,3 +43,11 @@ NULL
 #' @importFrom dplyr n
 #' @usage n()
 NULL
+
+# importFrom -------------------------------------------------------------------
+#' @importFrom pbmcapply pbmclapply
+#' @importFrom stringi stri_replace_all_fixed stri_join stri_sub stri_replace_na stri_pad_left
+#' @importFrom stats IQR
+#' @importFrom utils sessionInfo packageDescription
+#' @importFrom parallel detectCores makeCluster clusterExport mclapply parLapply stopCluster
+#' @importFrom stringi stri_join stri_replace_all_fixed stri_sub stri_detect_fixed

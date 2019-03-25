@@ -29,11 +29,6 @@
 
 #' @export
 #' @rdname write_arlequin
-#' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join
-#' @importFrom stringi stri_join stri_replace_all_fixed stri_extract_all_fixed stri_replace_all_regex stri_sub stri_pad_left stri_count_fixed stri_replace_na
-#' @importFrom tibble has_name
-#' @importFrom tidyr spread gather separate
-
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 

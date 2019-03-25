@@ -18,10 +18,6 @@
 #' @inheritParams tidy_genomic_data
 #' @rdname filter_fis
 #' @export
-#' @importFrom stringi stri_join stri_replace_all_fixed stri_sub stri_detect_fixed
-#' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join funs
-#' @importFrom readr read_tsv write_tsv
-
 
 filter_fis <- function(data, approach = "haplotype", fis.min.threshold, fis.max.threshold, fis.diff.threshold, pop.threshold, percent, filename) {
 

@@ -22,9 +22,6 @@
 
 #' @export
 #' @rdname discard_monomorphic_markers
-#' @importFrom dplyr select mutate group_by ungroup rename tally filter semi_join n_distinct
-#' @importFrom stringi stri_replace_all_fixed stri_join
-#' @importFrom tibble has_name
 #' @keywords internal
 
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
@@ -176,10 +173,6 @@ discard_monomorphic_markers <- function(data, verbose = FALSE) {
 #' @keywords internal
 
 #' @rdname keep_common_markers
-#' @importFrom dplyr select mutate group_by ungroup rename tally filter semi_join n_distinct
-#' @importFrom stringi stri_replace_all_fixed stri_join
-#' @importFrom tibble has_name
-# @importFrom UpSetR upset
 
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 #' @section Life cycle:
@@ -381,12 +374,6 @@ filter_dart <- function(...) {
 
 #' @rdname filter_individual
 #' @export
-#' @importFrom ggplot2 ggplot aes geom_violin geom_boxplot stat_summary labs theme element_blank element_text geom_jitter scale_colour_manual scale_y_reverse theme_light geom_bar facet_grid geom_histogram geom_bar aes_string scale_fill_manual theme_bw stat_smooth geom_boxplot ggsave
-#' @importFrom stringi stri_join stri_replace_all_fixed stri_sub stri_detect_fixed
-#' @importFrom dplyr select distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join funs
-#' @importFrom readr write_tsv
-#' @importFrom tidyr spread gather
-#' @importFrom tibble data_frame has_name
 
 #' @details
 #' \strong{Interactive version}
@@ -959,11 +946,6 @@ filter_individual <- function(
 
 #' @rdname filter_population
 #' @export
-#' @importFrom ggplot2 ggplot aes geom_violin geom_boxplot stat_summary labs theme element_blank element_text geom_jitter scale_colour_manual scale_y_reverse theme_light geom_bar facet_grid geom_histogram geom_bar aes_string scale_fill_manual theme_bw stat_smooth geom_boxplot ggsave
-#' @importFrom stringi stri_join stri_replace_all_fixed stri_sub stri_detect_fixed
-#' @importFrom dplyr select distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join funs
-#' @importFrom readr write_tsv
-#' @importFrom tibble data_frame has_name
 
 #' @details
 #' \strong{Interactive version}

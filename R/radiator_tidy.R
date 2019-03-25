@@ -25,9 +25,6 @@
 #' @return A tidy data frame in the global environment.
 #' @export
 #' @rdname tidy_wide
-#' @importFrom stringi stri_replace_all_fixed stri_pad_left
-#' @importFrom dplyr mutate select
-#' @importFrom tidyr gather spread
 
 #' @details \strong{Input data:}
 #'
@@ -355,17 +352,6 @@ tidy2wide <- function(
 
 #' @export
 #' @rdname tidy_genomic_data
-#' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join funs
-#' @importFrom stringi stri_join stri_replace_all_fixed stri_extract_all_fixed stri_replace_all_regex stri_sub stri_pad_left stri_count_fixed stri_replace_na
-#' @importFrom stats var median quantile
-#' @importFrom purrr map flatten keep discard
-#' @importFrom data.table fread as.data.table
-#' @importFrom tidyr spread gather unite separate
-#' @importFrom utils count.fields
-#' @importFrom readr write_tsv read_tsv
-#' @importFrom tibble as_tibble
-#' @importFrom rlang has_name
-#' @importFrom parallel detectCores
 
 #' @seealso \code{\link{detect_genomic_format}} and \code{\link{genomic_converter}}
 

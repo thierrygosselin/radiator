@@ -53,10 +53,6 @@
 
 #' @export
 #' @rdname filter_common_markers
-#' @importFrom dplyr select mutate group_by ungroup rename tally filter semi_join n_distinct
-#' @importFrom stringi stri_replace_all_fixed stri_join
-#' @importFrom tibble has_name
-# @importFrom UpSetR upset
 
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 

@@ -32,12 +32,6 @@
 
 #' @export
 #' @rdname detect_biallelic_markers
-#' @importFrom dplyr select mutate group_by ungroup rename tally filter
-#' @importFrom stringi stri_replace_all_fixed stri_sub
-#' @importFrom tibble has_name
-#' @importFrom tidyr gather
-#' @importFrom purrr flatten_chr
-
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 detect_biallelic_markers <- function(data, verbose = FALSE, parallel.core = parallel::detectCores() - 1) {

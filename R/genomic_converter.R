@@ -161,13 +161,6 @@
 
 #' @export
 #' @rdname genomic_converter
-#' @importFrom dplyr n_distinct summarise group_by ungroup mutate select tally distinct summarise
-#' @importFrom stringi stri_join stri_replace_all_fixed stri_sub
-#' @importFrom purrr flatten_chr
-#' @importFrom tidyr gather
-#' @importFrom parallel detectCores
-#' @importFrom utils installed.packages
-
 #' @examples
 #' \dontrun{
 #' #To verify your file is detected by radiator as the correct format:
