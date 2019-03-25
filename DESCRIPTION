@@ -13,22 +13,14 @@ Depends:
     R (>= 3.5.0)
 Imports:
     amap,
-    broom,
     data.table,
-    dplyr (>= 0.7.0),
     fst (>= 0.8.4),
-    ggplot2 (>= 3.0.0),
-    magrittr,
     methods,
     parallel,
     pbmcapply,
-    purrr,
-    readr,
-    rlang,
     stats,
     stringi,
-    tibble,
-    tidyr,
+    tidyverse,
     utils
 Suggests:
     adegenet,
