@@ -535,7 +535,7 @@ install.packages("UpSetR")
 
   strata <- extract_individuals_metadata(
     gds = gds,
-    ind.field.select = c("INDIVIDUALS", "STRATA"),
+    # ind.field.select = c("INDIVIDUALS", "STRATA"),
     whitelist = TRUE)
 
   sync_gds(
