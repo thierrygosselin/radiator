@@ -38,7 +38,7 @@ special section)}
 A list with the filtered input, whitelist and blacklist of markers..
 }
 \description{
-Filter monomorphic (| ˌmänəˈmôrfik |) markers.
+Filter monomorphic markers.
 This filter will remove from the dataset
 markers with just \emph{one genotype phenotype}:
 \itemize{

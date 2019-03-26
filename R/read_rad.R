@@ -91,7 +91,7 @@ read_rad <- function(
       fst::read_fst(
         path = data, columns = NULL, from = 1, to = 2,
         as.data.table = FALSE, old_format = FALSE) %>%
-        tibble::as_data_frame(.)
+        tibble::as_tibble(.)
     }
 
 
@@ -102,7 +102,7 @@ read_rad <- function(
       data <- fst::read_fst(
         path = data, columns = columns, from = from, to = to,
         as.data.table = as.data.table, old_format = old.format) %>%
-        tibble::as_data_frame(.)
+        tibble::as_tibble(.)
       return(data)
     } else {
       data.old <- suppressWarnings(fst::read_fst(path = data, old_format = TRUE)) %>%
@@ -111,7 +111,7 @@ read_rad <- function(
       data <- fst::read_fst(
         path = data, columns = columns, from = from, to = to,
         as.data.table = as.data.table, old_format = old.format) %>%
-        tibble::as_data_frame(.)
+        tibble::as_tibble(.)
       message("\nThis .rad file was created with an earlier version of the fst package")
       message("A new version with the same name was written")
     }
@@ -294,7 +294,7 @@ write_rad <- function(
         return(gds.filename)
       } else {
         if (is.null(path)) rlang::abort("The function requires the path of the file")
-        tibble::as_data_frame(data) %>%
+        tibble::as_tibble(data) %>%
           fst::write_fst(x = ., path = path, compress = 85)
         if (!is.null(write.message) && verbose) {
           if (write.message == "standard") {
