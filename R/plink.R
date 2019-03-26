@@ -174,7 +174,7 @@ tidy_plink <- function(data, strata = NULL, verbose = FALSE, ...) {
     col.names = c("POP_ID", "INDIVIDUALS"),
     showProgress = TRUE,
     data.table = FALSE) %>%
-    tibble::as_data_frame(.) %>%
+    tibble::as_tibble(.) %>%
     dplyr::mutate_at(.tbl = ., .vars = "INDIVIDUALS",
                      .funs = clean_ind_names) %>%
     dplyr::mutate_at(.tbl = ., .vars = "POP_ID",
@@ -219,7 +219,7 @@ tidy_plink <- function(data, strata = NULL, verbose = FALSE, ...) {
     col.names = tped.header.names,
     showProgress = TRUE,
     data.table = FALSE) %>%
-    tibble::as_data_frame(.) %>%
+    tibble::as_tibble(.) %>%
     dplyr::mutate(LOCUS = as.character(LOCUS))
 
   # Filter with whitelist of markers
@@ -259,7 +259,7 @@ tidy_plink <- function(data, strata = NULL, verbose = FALSE, ...) {
 
   if (TRUE %in% unique(gt.letters %in% detect.gt.coding)) {
     if (verbose) message("    genotypes coded with letters")
-    gt.letters.df <- tibble::data_frame(GT = c("A", "C", "G", "T", "0"), NEW_GT = c("001", "002", "003", "004", "000"))
+    gt.letters.df <- tibble::tibble(GT = c("A", "C", "G", "T", "0"), NEW_GT = c("001", "002", "003", "004", "000"))
     input  %<>% dplyr::left_join(
       gt.letters.df, by = "GT") %>%
       dplyr::select(-GT) %>%
