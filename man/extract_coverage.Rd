@@ -7,7 +7,23 @@
 extract_coverage(gds, markers = TRUE, ind = TRUE, update.gds = FALSE,
   parallel.core = parallel::detectCores() - 2, verbose = FALSE)
 }
+\arguments{
+\item{gds}{The gds object.}
+
+\item{markers}{(optional, logical) Default:\code{markers = TRUE}.}
+
+\item{ind}{(optional, logical) Default:\code{ind = TRUE}.}
+
+\item{update.gds}{(optional, logical) Default:\code{update.gds = FALSE}.}
+
+\item{parallel.core}{(optional) The number of core used for parallel
+execution during import.
+Default: \code{parallel.core = parallel::detectCores() - 1}.}
+
+\item{verbose}{(optional, logical) When \code{verbose = TRUE}
+the function is a little more chatty during execution.
+Default: \code{verbose = TRUE}.}
+}
 \description{
 Extract coverage information from a GDS file
 }
-\keyword{internal}

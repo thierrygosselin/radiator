@@ -9,7 +9,25 @@ extract_genotypes_metadata(gds, genotypes.meta.select = NULL,
   sync.markers.individuals = TRUE, whitelist = FALSE,
   blacklist = FALSE, verbose = FALSE)
 }
+\arguments{
+\item{gds}{The gds object.}
+
+\item{genotypes.meta.select}{(optional, character) Default:\code{ind.field.select = NULL}.}
+
+\item{radiator.node}{(optional, logical) Default:\code{radiator.node = TRUE}.}
+
+\item{index.only}{(optional, logical) Default:\code{index.only = FALSE}.}
+
+\item{sync.markers.individuals}{(optional, logical) Default:\code{sync.markers.individuals = TRUE}.}
+
+\item{whitelist}{(optional, logical) Default:\code{whitelist = FALSE}.}
+
+\item{blacklist}{(optional, logical) Default:\code{blacklist = FALSE}.}
+
+\item{verbose}{(optional, logical) When \code{verbose = TRUE}
+the function is a little more chatty during execution.
+Default: \code{verbose = TRUE}.}
+}
 \description{
 Import gds or radiator genotypes meta node
 }
-\keyword{internal}

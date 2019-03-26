@@ -423,7 +423,14 @@ extract_data_source <- function(gds) {
 #' @description Import gds or radiator markers meta node
 #' @name extract_markers_metadata
 #' @rdname extract_markers_metadata
-#' @keywords internal
+#' @param gds The gds object.
+#' @param markers.meta.select (optional, character) Default:\code{markers.meta.select = NULL}.
+#' @param radiator.node (optional, logical) Default:\code{radiator.node = TRUE}.
+#' @param whitelist (optional, logical) Default:\code{whitelist = FALSE}.
+#' @param blacklist (optional, logical) Default:\code{blacklist = FALSE}.
+#' @inheritParams radiator_common_arguments
+
+# @keywords internal
 #' @export
 extract_markers_metadata <- function(
   gds,
@@ -532,7 +539,13 @@ extract_markers_metadata <- function(
 #' @description Import gds or radiator individuals node
 #' @name extract_individuals_metadata
 #' @rdname extract_individuals_metadata
-#' @keywords internal
+#' @param gds The gds object.
+#' @param ind.field.select (optional, character) Default:\code{ind.field.select = NULL}.
+#' @param radiator.node (optional, logical) Default:\code{radiator.node = TRUE}.
+#' @param whitelist (optional, logical) Default:\code{whitelist = FALSE}.
+#' @param blacklist (optional, logical) Default:\code{blacklist = FALSE}.
+#' @inheritParams radiator_common_arguments
+# @keywords internal
 #' @export
 extract_individuals_metadata <- function(
   gds,
@@ -614,7 +627,15 @@ extract_individuals_metadata <- function(
 #' @description Import gds or radiator genotypes meta node
 #' @name extract_genotypes_metadata
 #' @rdname extract_genotypes_metadata
-#' @keywords internal
+#' @param gds The gds object.
+#' @param genotypes.meta.select (optional, character) Default:\code{ind.field.select = NULL}.
+#' @param radiator.node (optional, logical) Default:\code{radiator.node = TRUE}.
+#' @param index.only (optional, logical) Default:\code{index.only = FALSE}.
+#' @param sync.markers.individuals (optional, logical) Default:\code{sync.markers.individuals = TRUE}.
+#' @param whitelist (optional, logical) Default:\code{whitelist = FALSE}.
+#' @param blacklist (optional, logical) Default:\code{blacklist = FALSE}.
+#' @inheritParams radiator_common_arguments
+# @keywords internal
 #' @export
 extract_genotypes_metadata <- function(
   gds,
@@ -698,7 +719,13 @@ extract_genotypes_metadata <- function(
 #' @title extract_coverage
 #' @description Extract coverage information from a GDS file
 #' @rdname extract_coverage
-#' @keywords internal
+#' @param gds The gds object.
+#' @param markers (optional, logical) Default:\code{markers = TRUE}.
+#' @param ind (optional, logical) Default:\code{ind = TRUE}.
+#' @param update.gds (optional, logical) Default:\code{update.gds = FALSE}.
+#' @inheritParams radiator_common_arguments
+
+# @keywords internal
 #' @export
 extract_coverage <- function(
   gds,
@@ -1011,6 +1038,7 @@ sync_gds <- function(
   }
   # return(gds)
 }#End sync_gds
+
 # list_filters------------------------------------------------------------------
 #' @name list_filters
 #' @rdname list_filters

@@ -8,7 +8,21 @@ extract_markers_metadata(gds, markers.meta.select = NULL,
   radiator.node = TRUE, whitelist = FALSE, blacklist = FALSE,
   verbose = FALSE)
 }
+\arguments{
+\item{gds}{The gds object.}
+
+\item{markers.meta.select}{(optional, character) Default:\code{markers.meta.select = NULL}.}
+
+\item{radiator.node}{(optional, logical) Default:\code{radiator.node = TRUE}.}
+
+\item{whitelist}{(optional, logical) Default:\code{whitelist = FALSE}.}
+
+\item{blacklist}{(optional, logical) Default:\code{blacklist = FALSE}.}
+
+\item{verbose}{(optional, logical) When \code{verbose = TRUE}
+the function is a little more chatty during execution.
+Default: \code{verbose = TRUE}.}
+}
 \description{
 Import gds or radiator markers meta node
 }
-\keyword{internal}
