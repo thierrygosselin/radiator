@@ -4,7 +4,7 @@
 
 #' @title Filter monomorphic markers
 
-#' @description Filter monomorphic (| ˌmänəˈmôrfik |) markers.
+#' @description Filter monomorphic markers.
 #' This filter will remove from the dataset
 #' markers with just \emph{one genotype phenotype}:
 #' \itemize{
