@@ -106,7 +106,7 @@ write_maverick <- function(
         variable.name = "ALLELES",
         value.name = "GT"
       ) %>%
-      tibble::as_data_frame(.) %>%
+      tibble::as_tibble(.) %>%
       dplyr::mutate(
         GT = stringi::stri_replace_all_fixed(
           str = GT, pattern = "000", replacement = "-9", vectorize_all = FALSE),
@@ -121,7 +121,7 @@ write_maverick <- function(
         formula = INDIVIDUALS + POP_ID ~ MARKERS + ALLELES,
         value.var = "GT"
       ) %>%
-      tibble::as_data_frame(.) %>%
+      tibble::as_tibble(.) %>%
       dplyr::mutate(POP_ID = as.integer(POP_ID)) %>%
       dplyr::arrange(POP_ID, INDIVIDUALS)
 
