@@ -71,9 +71,9 @@
 #' }
 
 filter_snp_number <- function(
-  interactive.filter = TRUE,
   data,
   strata = NULL,
+  interactive.filter = TRUE,
   filter.snp.number = NULL,
   filename = NULL,
   parallel.core = parallel::detectCores() - 1,

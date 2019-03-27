@@ -150,8 +150,8 @@
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 filter_mac <- function(
-  interactive.filter = TRUE,
   data,
+  interactive.filter = TRUE,
   filter.mac = NULL,
   filename = NULL,
   parallel.core = parallel::detectCores() - 1,

@@ -151,8 +151,8 @@
 
 
 filter_ld <- function(
-  interactive.filter = TRUE,
   data,
+  interactive.filter = TRUE,
   filter.short.ld = "mac",
   filter.long.ld = NULL,
   parallel.core = parallel::detectCores() - 1,

@@ -72,9 +72,9 @@
 #' }
 
 filter_snp_position_read <- function(
-  interactive.filter = TRUE,
   data,
   strata = NULL,
+  interactive.filter = TRUE,
   filter.snp.position.read = NULL,
   filename = NULL,
   parallel.core = parallel::detectCores() - 1,

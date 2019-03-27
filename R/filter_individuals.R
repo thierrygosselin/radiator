@@ -76,8 +76,8 @@
 
 
 filter_individuals <- function(
-  interactive.filter = TRUE,
   data,
+  interactive.filter = TRUE,
   filter.individuals.missing = NULL,
   filter.individuals.heterozygosity = NULL,
   # coverage.mean = NULL,

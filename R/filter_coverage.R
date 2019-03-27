@@ -83,8 +83,8 @@
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 filter_coverage <- function(
-  interactive.filter = TRUE,
   data,
+  interactive.filter = TRUE,
   filter.coverage = NULL,
   filename = NULL,
   parallel.core = parallel::detectCores() - 1,

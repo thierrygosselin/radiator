@@ -56,8 +56,8 @@
 #' }
 
 filter_dart_reproducibility <- function(
-  interactive.filter = TRUE,
   data,
+  interactive.filter = TRUE,
   filter.reproducibility = NULL,
   parallel.core = parallel::detectCores() - 1,
   verbose = TRUE,

@@ -107,7 +107,6 @@ heterozygotes and negative Fis values are not a bad thing \emph{per se}.
 Genomic regions under balancing selection may contain such markers and
 statistics.
 
-
 \strong{Advance mode, using \emph{dots-dots-dots ...}}
 \enumerate{
 \item \code{whitelist.markers}: detailed in \code{\link[radiator]{filter_whitelist}}.
