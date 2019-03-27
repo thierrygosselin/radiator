@@ -244,18 +244,30 @@ The maximum amount of missingness you tolerate for a sample:", minmax = c(0, 1))
       }
     }
     if (!is.null(filter.individuals.missing)) {
-
       if (!purrr::is_double(filter.individuals.missing)) {
-        outlier.id.missing <- floor(id.stats$stats$OUTLIERS_HIGH[1]*100)/100
+        # if max and outliers high are the same leave the value
+        # if max and outliers high are not the same do gymnastic
+        if (id.stats$stats$OUTLIERS_HIGH[1] == id.stats$stats$MAX[1]) {
+          higher.eq <- FALSE
+        } else {
+          higher.eq <- TRUE
+        }
+        outlier.id.missing <- id.stats$stats$OUTLIERS_HIGH[1]
         if (verbose) message("\nRemoving outliers individuals based on genotyping statistics: ", outlier.id.missing)
         filter.individuals.missing <- outlier.id.missing
       } else {
         message("\nRemoving individuals based on genotyping statistics: ", filter.individuals.missing)
+        higher.eq <- FALSE
       }
 
-      bl <- id.stats$info %>%
-        dplyr::filter(MISSING_PROP > filter.individuals.missing) %>%
-        dplyr::ungroup(.) %>%
+      bl <- dplyr::ungroup(id.stats$info)
+
+      if (higher.eq) {
+        bl %<>% dplyr::filter(MISSING_PROP >= filter.individuals.missing)
+      } else {
+        bl %<>% dplyr::filter(MISSING_PROP > filter.individuals.missing)
+      }
+      bl %<>%
         dplyr::distinct(INDIVIDUALS, .keep_all = TRUE) %>%
         dplyr::mutate(FILTER = "filter.individuals.missing")
       n.bl <- nrow(bl)
@@ -334,19 +346,45 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
         het.low <- filter.individuals.heterozygosity[1]
         het.high <- filter.individuals.heterozygosity[2]
         if (verbose) message("\nRemoving individuals based on heterozygosity statistics: ", het.low, " / ", het.high)
+        higher.eq <- FALSE
+        lower.eq <- FALSE
       } else {
         if (is.character(filter.individuals.heterozygosity)) {
-          het.low <- floor(id.stats$stats$OUTLIERS_LOW[2]*1000)/1000
-          het.high <- floor(id.stats$stats$OUTLIERS_HIGH[2]*1000)/1000
+          if (id.stats$stats$OUTLIERS_LOW[2] == id.stats$stats$MIN[2]) {
+            lower.eq <- FALSE
+          } else {
+            lower.eq <- TRUE
+          }
+          if (id.stats$stats$OUTLIERS_HIGH[2] == id.stats$stats$MAX[2]) {
+            higher.eq <- FALSE
+          } else {
+            higher.eq <- TRUE
+          }
+          het.low <- id.stats$stats$OUTLIERS_LOW[2]
+          het.high <- id.stats$stats$OUTLIERS_HIGH[2]
           if (verbose) message("\nRemoving outliers individuals based on heterozygosity statistics: ", het.low, " / ", het.high)
         } else {
           rlang::abort("Unknown filter.individuals.heterozygosity thresholds used")
         }
       }
 
-      bl <- id.stats$info %>%
-        dplyr::filter(HETEROZYGOSITY > het.high | HETEROZYGOSITY < het.low) %>%
-        dplyr::ungroup(.) %>%
+      bl <- dplyr::ungroup(id.stats$info)
+
+      # fl & fh for filter high and low
+      if (lower.eq) {
+        fl <- "HETEROZYGOSITY <= het.low"
+      } else {
+        fl <- "HETEROZYGOSITY < het.low"
+      }
+      if (higher.eq) {
+        fh <- "HETEROZYGOSITY >= het.high"
+      } else {
+        fh <- "HETEROZYGOSITY > het.high"
+      }
+
+      filter.het <- stringi::stri_join(fh, fl, sep = " | ")
+      bl %<>%
+        dplyr::filter(!!rlang::parse_expr(filter.het)) %>%
         dplyr::distinct(INDIVIDUALS) %>%
         dplyr::mutate(FILTER = "filter.individuals.heterozygosity")
       n.bl <- nrow(bl)
@@ -432,16 +470,43 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
           if (verbose) message("\nRemoving individuals based on total coverage statistics: ", cov.low, " / ", cov.high)
         } else {
           if (is.character(filter.individuals.coverage.total)) {
-            cov.low <- floor(id.stats$stats$OUTLIERS_LOW[3]*1000)/1000
-            cov.high <- floor(id.stats$stats$OUTLIERS_HIGH[3]*1000)/1000
+            if (id.stats$stats$OUTLIERS_LOW[3] == id.stats$stats$MIN[3]) {
+              lower.eq <- FALSE
+            } else {
+              lower.eq <- TRUE
+            }
+            if (id.stats$stats$OUTLIERS_HIGH[3] == id.stats$stats$MAX[3]) {
+              higher.eq <- FALSE
+            } else {
+              higher.eq <- TRUE
+            }
+            # cov.low <- floor(id.stats$stats$OUTLIERS_LOW[3]*1000)/1000
+            # cov.high <- floor(id.stats$stats$OUTLIERS_HIGH[3]*1000)/1000
+            cov.low <- id.stats$stats$OUTLIERS_LOW[3]
+            cov.high <- id.stats$stats$OUTLIERS_HIGH[3]
             if (verbose) message("\nRemoving outliers individuals based on total coverage statistics: ", cov.low, " / ", cov.high)
-          } else {
+            } else {
             rlang::abort("Unknown coverage total thresholds used")
           }
         }
-        bl <- id.stats$info %>%
-          dplyr::filter(COVERAGE_TOTAL > cov.high | COVERAGE_TOTAL < cov.low) %>%
-          dplyr::ungroup(.) %>%
+
+        bl <- dplyr::ungroup(id.stats$info)
+
+        # fl & fh for filter high and low
+        if (lower.eq) {
+          fl <- "COVERAGE_TOTAL <= cov.low"
+        } else {
+          fl <- "COVERAGE_TOTAL < cov.low"
+        }
+        if (higher.eq) {
+          fh <- "COVERAGE_TOTAL >= cov.high"
+        } else {
+          fh <- "COVERAGE_TOTAL > cov.high"
+        }
+
+        filter.cov <- stringi::stri_join(fh, fl, sep = " | ")
+        bl %<>%
+          dplyr::filter(!!rlang::parse_expr(filter.cov)) %>%
           dplyr::distinct(INDIVIDUALS) %>%
           dplyr::mutate(FILTER = "filter.individuals.coverage.total")
         n.bl <- nrow(bl)
@@ -462,7 +527,7 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
           readr::write_tsv(x = bl, path = file.path(path.folder, bl.filename))
           # bl.i <- update_bl_individuals(gds = data, update = bl)
           # id.stats$info  %<>%
-            # dplyr::filter(!INDIVIDUALS %in% bl$INDIVIDUALS)
+          # dplyr::filter(!INDIVIDUALS %in% bl$INDIVIDUALS)
 
           # update_radiator_gds(gds = data, node.name = "individuals.meta", value = id.stats$info, sync = TRUE)
         }
