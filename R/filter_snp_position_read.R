@@ -293,18 +293,20 @@ filter_snp_position_read <- function(
 
     # Step 2. Thresholds selection ---------------------------------------------
     if (interactive.filter) {
-      if (verbose) message("\nStep 2. Filtering markers based on the SNPs position on the read\n")
+      if (verbose) message("\nStep 2. Filtering markers based on the SNPs position on the read ('all' turn the filter off)\n")
       filter.snp.position.read <- radiator_question(
-        x = "Choice of stats are: 'outliers', 'q75', 'iqr'", answer.opt = c("outliers", "q75", "iqr"))
+        x = "Choice of stats are: 'outliers', 'q75', 'iqr', 'all'", answer.opt = c("outliers", "q75", "iqr", "all"))
     }
     filter.snp.position.read <- match.arg(
       filter.snp.position.read,
-      choices = c("outliers", "q75", "iqr"),
+      choices = c("outliers", "q75", "iqr", "all"),
       several.ok = FALSE)
 
     # readr::write_tsv(x = stats, path = "testing.stats.tsv")
 
     # Filtering ----------------------------------------------------------------
+    # if (filter.snp.position.read == "all") not necessary wl already exists...
+
     if (filter.snp.position.read == "outliers") {
       wl %<>% dplyr::filter(COL <= stats[[9]])
     }

@@ -366,27 +366,32 @@ filter_snp_number <- function(
     }
 
     # Filtering ----------------------------------------------------------------
-    if (!purrr::is_double(filter.snp.number)) {
-      out.high <- round(stats$OUTLIERS_HIGH[stats$GROUP == "SNPs per locus"])
-      if (verbose) message("\nRemoving outliers markers based on the number of SNPs per locus statistic: ", out.high)
-      filter.snp.number <- out.high
+    if (!is.null(filter.snp.number)) {
+      if (!purrr::is_double(filter.snp.number)) {
+        out.high <- round(stats$OUTLIERS_HIGH[stats$GROUP == "SNPs per locus"])
+        if (verbose) message("\nRemoving outliers markers based on the number of SNPs per locus statistic: ", out.high)
+        filter.snp.number <- out.high
+      } else {
+        if (verbose) message("\nRemoving markers based on the number of SNPs per locus statistic: ", filter.snp.number)
+      }
     } else {
-      if (verbose) message("\nRemoving markers based on the number of SNPs per locus statistic: ", filter.snp.number)
+      filter.snp.number <- 1000000000000
     }
 
-
     # Whitelist and Blacklist of markers
-    wl %<>% dplyr::filter(SNP_PER_LOCUS <= filter.snp.number)
+    if (!is.null(filter.snp.number)) {
+      wl %<>% dplyr::filter(SNP_PER_LOCUS <= filter.snp.number)
+    }
     readr::write_tsv(
-        x = wl,
-        path = file.path(path.folder, "whitelist.snp.per.locus.tsv"),
-        append = FALSE, col_names = TRUE)
+      x = wl,
+      path = file.path(path.folder, "whitelist.snp.per.locus.tsv"),
+      append = FALSE, col_names = TRUE)
     bl %<>% dplyr::setdiff(wl) %>% dplyr::mutate(FILTERS = "filter.snp.number")
 
     readr::write_tsv(
-        x = bl,
-        path = file.path(path.folder, "blacklist.snp.per.locus.tsv"),
-        append = FALSE, col_names = TRUE)
+      x = bl,
+      path = file.path(path.folder, "blacklist.snp.per.locus.tsv"),
+      append = FALSE, col_names = TRUE)
     # saving whitelist and blacklist
     if (verbose) message("File written: whitelist.markers.genotyping.tsv")
     if (verbose) message("File written: blacklist.markers.genotyping.tsv")

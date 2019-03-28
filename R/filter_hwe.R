@@ -361,6 +361,9 @@ filter_hwe <- function(
       }
       gds.bk <- data
       data <- gds2tidy(gds = data, parallel.core = parallel.core)
+      if (rlang::has_name(data, "STRATA") && !rlang::has_name(data, "POP_ID")) {
+        data %<>% dplyr::rename(POP_ID = STRATA)
+      }
       data.type <- "tbl_df"
     } else {
       gds.bk <- NULL
@@ -449,7 +452,7 @@ filter_hwe <- function(
       if (verbose) message("File written: genotypes.summary.tsv")
 
       # HWE analysis -------------------------------------------------------------
-      data.sum <- hwe_analysis(x = data.sum, parallel.core = parallel.core) %>%
+      data.sum <- hwe_analysis(x = data.sum, parallel.core = 1) %>%
         dplyr::mutate(
           POP_ID = factor(POP_ID, levels = pop.levels),
           GROUPINGS = factor(
@@ -874,7 +877,7 @@ hwe_analysis <- function(x, parallel.core = parallel::detectCores() - 1) {
     message("HWE analysis for pop: ", pop)
     if (tibble::has_name(x, "POP_ID")) x <- dplyr::select(x, -POP_ID)
     hwe_radiator <- function(x) {
-      if (tibble::has_name(x, "SPLIT_VEC")) x <- dplyr::select(x, -SPLIT_VEC)
+      if (tibble::has_name(x, "SPLIT_VEC")) x %<>% dplyr::select(-SPLIT_VEC)
       mono <- function(x) {
         mono <- length(x$AA[x$AA == 0]) + length(x$AB[x$AB == 0]) + length(x$BB[x$BB == 0])
         if (mono >= 2) {
@@ -933,7 +936,8 @@ hwe_analysis <- function(x, parallel.core = parallel::detectCores() - 1) {
     return(x)
   }#hwe_map
 
-  x <- x %>% split(x = ., f = .$POP_ID) %>%
+  x <- x %>%
+    split(x = ., f = .$POP_ID) %>%
     purrr::map_df(.x = ., .f = hwe_map, parallel.core = parallel.core)
 }#hwe_analysis
 

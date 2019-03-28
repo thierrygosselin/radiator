@@ -894,9 +894,12 @@ extract_coverage <- function(
       coverage.info$ref.mean <- as.integer(round(depth$AVG_COUNT_REF, 0))
       coverage.info$alt.mean <- as.integer(round(depth$AVG_COUNT_SNP, 0))
       depth <- NULL
+      markers <- ind <- FALSE
     } else {
       coverage.info <- NULL
+      markers <- ind <- FALSE
     }
+
   }#End DART 1row and 2 rows
 
 
@@ -1549,7 +1552,7 @@ generate_id_stats <- function (
   if (coverage) {
     # info
     dp <- extract_coverage(gds, markers = FALSE)
-    if (!is.null(dp)) {
+    if (!is.null(dp) && "ind.cov.tot" %in% names(dp)) {
       id.info %<>%
         dplyr::mutate(
           COVERAGE_TOTAL = dp$ind.cov.tot,
@@ -1697,6 +1700,7 @@ generate_markers_stats <- function (
   # fig.filename = NULL
   # plot = TRUE
 
+  if (is.null(path.folder)) path.folder <- getwd()
   if (is.null(file.date)) file.date <- format(Sys.time(), "%Y%m%d@%H%M")
   data.source <- extract_data_source(gds)
 
@@ -2242,22 +2246,8 @@ gds2tidy <- function(
   )
 
 
-  # re-calibration of ref/alt alleles ------------------------------------------
-  # if (verbose) message("\nCalculating REF/ALT alleles...")
-  if (calibrate.alleles) {
-    tidy.data <- radiator::calibrate_alleles(
-      data = tidy.data,
-      # biallelic = TRUE,
-      parallel.core = parallel.core,
-      verbose = FALSE,
-      gt = FALSE, gt.vcf = FALSE
-    ) %$% input
-  }
-
   # should make this optional --------------------------------------------------
- if (!rlang::has_name(tidy.data, "STRATA") && !rlang::has_name(tidy.data, "POP_ID")) {
-   tidy.data %<>% dplyr::mutate(POP_ID = 1L)
- }
+
 
   if (pop.id) {
     # include strata
@@ -2272,7 +2262,6 @@ gds2tidy <- function(
           dplyr::left_join(dplyr::select(individuals, INDIVIDUALS, POP_ID), by = "INDIVIDUALS")
       )
     }
-
     tidy.data %<>% dplyr::arrange(POP_ID, INDIVIDUALS)
   } else {
     # include strata
@@ -2286,6 +2275,20 @@ gds2tidy <- function(
         tidy.data %<>%
           dplyr::left_join(dplyr::select(individuals, INDIVIDUALS, STRATA), by = "INDIVIDUALS")
       )
+    }
+    if (!rlang::has_name(tidy.data, "STRATA") && !rlang::has_name(tidy.data, "POP_ID")) {
+      tidy.data %<>% dplyr::mutate(POP_ID = 1L)
+    }
+    # re-calibration of ref/alt alleles ------------------------------------------
+    # if (verbose) message("\nCalculating REF/ALT alleles...")
+    if (calibrate.alleles) {
+      tidy.data <- radiator::calibrate_alleles(
+        data = tidy.data,
+        # biallelic = TRUE,
+        parallel.core = parallel.core,
+        verbose = FALSE,
+        gt = FALSE, gt.vcf = FALSE
+      ) %$% input
     }
 
     tidy.data %<>% dplyr::arrange(STRATA, INDIVIDUALS)

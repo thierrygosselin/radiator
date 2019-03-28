@@ -92,6 +92,11 @@ calibrate_alleles <- function(
     data <- dplyr::rename(.data = data, MARKERS = LOCUS)
   }
 
+  # Here we want pop.id
+  if (rlang::has_name(data, "STRATA") && !rlang::has_name(data, "POP_ID")) {
+    data %<>% dplyr::rename(POP_ID = STRATA)
+  }
+
   # dotslist -------------------------------------------------------------------
   dotslist <- list(...)
   want <- c("gt.vcf.nuc", "gt.vcf", "gt", "gt.bin")
