@@ -4,7 +4,7 @@
 \alias{gds2tidy}
 \title{gds2tidy}
 \usage{
-gds2tidy(gds, markers.meta = NULL, individuals = NULL,
+gds2tidy(gds, markers.meta = NULL, individuals = NULL, pop.id = TRUE,
   calibrate.alleles = TRUE, parallel.core = parallel::detectCores() -
   1, ...)
 }

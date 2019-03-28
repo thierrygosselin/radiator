@@ -962,9 +962,9 @@ read_dart <- function(
       dplyr::select(FILTERS, VARIANT_ID, MARKERS, CHROM, LOCUS, POS, COL, REF, ALT, dplyr::everything(.))
   )
 
-  if (dart.format != "1row") {
-    markers.meta %<>% dplyr::select(-AVG_COUNT_REF, -AVG_COUNT_SNP)
-  }
+  # if (dart.format != "1row") {
+  #   markers.meta %<>% dplyr::select(-AVG_COUNT_REF, -AVG_COUNT_SNP)
+  # }
 
   write_rad(
     data = markers.meta,
@@ -1071,10 +1071,16 @@ read_dart <- function(
     readr::write_tsv(x = strata, path = strata.filename$filename)
 
     if (!is.null(strata)) {
+      if (rlang::has_name(tidy.data, "TARGET_ID")) {
       tidy.data %<>%
         dplyr::left_join(strata, by = "TARGET_ID") %>%
         dplyr::select(-TARGET_ID) %>%
         dplyr::rename(POP_ID = STRATA)
+      } else {
+        tidy.data %<>%
+          dplyr::left_join(strata, by = "INDIVIDUALS") %>%
+          dplyr::rename(POP_ID = STRATA)
+      }
     } else {
       tidy.data %<>% dplyr::mutate(POP_ID = 1L)
     }

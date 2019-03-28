@@ -2193,12 +2193,16 @@ missing_per_pop <- function(
 #' @title gds2tidy
 #' @description GDS to tidy...
 #' @rdname gds2tidy
+# @param pop.id (logical) When \code{pop.id = TRUE}, the strata returns
+# the stratification colname \code{POP_ID}.
+# Default: \code{pop.id = FALSE}, returns \code{STRATA}.
 #' @keywords internal
 #' @export
 gds2tidy <- function(
   gds,
   markers.meta = NULL,
   individuals = NULL,
+  pop.id = TRUE,
   calibrate.alleles = TRUE,
   parallel.core = parallel::detectCores() - 1,
   ...
@@ -2250,22 +2254,43 @@ gds2tidy <- function(
     ) %$% input
   }
 
-  # include strata
-  colnames(individuals) <- stringi::stri_replace_all_fixed(
-    str = colnames(individuals),
-    pattern = "STRATA",
-    replacement = "POP_ID",
-    vectorize_all = FALSE)
-  if (rlang::has_name(individuals, "POP_ID")) {
-    suppressWarnings(
-      tidy.data %<>%
-        dplyr::left_join(dplyr::select(individuals, INDIVIDUALS, POP_ID), by = "INDIVIDUALS")
-    )
-  } else {
-    tidy.data %<>% dplyr::mutate(POP_ID = 1L)
-  }
+  # should make this optional --------------------------------------------------
+ if (!rlang::has_name(tidy.data, "STRATA") && !rlang::has_name(tidy.data, "POP_ID")) {
+   tidy.data %<>% dplyr::mutate(POP_ID = 1L)
+ }
 
-  tidy.data %<>% dplyr::arrange(POP_ID, INDIVIDUALS)
+  if (pop.id) {
+    # include strata
+    colnames(individuals) <- stringi::stri_replace_all_fixed(
+      str = colnames(individuals),
+      pattern = "STRATA",
+      replacement = "POP_ID",
+      vectorize_all = FALSE)
+    if (rlang::has_name(individuals, "POP_ID")) {
+      suppressWarnings(
+        tidy.data %<>%
+          dplyr::left_join(dplyr::select(individuals, INDIVIDUALS, POP_ID), by = "INDIVIDUALS")
+      )
+    }
+
+    tidy.data %<>% dplyr::arrange(POP_ID, INDIVIDUALS)
+  } else {
+    # include strata
+    colnames(individuals) <- stringi::stri_replace_all_fixed(
+      str = colnames(individuals),
+      pattern = "POP_ID",
+      replacement = "STRATA",
+      vectorize_all = FALSE)
+    if (rlang::has_name(individuals, "STRATA")) {
+      suppressWarnings(
+        tidy.data %<>%
+          dplyr::left_join(dplyr::select(individuals, INDIVIDUALS, STRATA), by = "INDIVIDUALS")
+      )
+    }
+
+    tidy.data %<>% dplyr::arrange(STRATA, INDIVIDUALS)
+
+  }
   return(tidy.data)
 } #End tidy gds
 
