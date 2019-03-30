@@ -314,7 +314,7 @@ write_genlight <- function(
     )
   }
 
-  # Detect if biallelic data
+  # Detect if biallelic data ---------------------------------------------------
   if (is.null(biallelic)) biallelic <- radiator::detect_biallelic_markers(data)
   if (!biallelic) rlang::abort("genlight object requires biallelic genotypes")
 
@@ -341,7 +341,7 @@ write_genlight <- function(
       vectorize_all = FALSE
     )
   }
-
+  # dartR-----------------------------------------------------------------------
   if (dartr) {
     if (verbose) message("Calculating read depth for each SNP\n")
 
@@ -381,7 +381,7 @@ write_genlight <- function(
                 dplyr::summarise(
                   rdepth = mean(READ_DEPTH, na.rm = TRUE),
                   AVG_COUNT_REF = mean(ALLELE_REF_DEPTH, na.rm = TRUE),
-                  AVG_COUNT_ALT = mean(ALLELE_ALT_DEPTH, na.rm = TRUE),
+                  AVG_COUNT_SNP = mean(ALLELE_ALT_DEPTH, na.rm = TRUE),
                   CALL_RATE = length(INDIVIDUALS[!is.na(GT_BIN)]) / length(INDIVIDUALS),
                   ONE_RATIO_REF = length(INDIVIDUALS[GT_BIN == 0]) + length(INDIVIDUALS[GT_BIN == 1]) / length(INDIVIDUALS),
                   ONE_RATIO_SNP = length(INDIVIDUALS[GT_BIN == 2]) + length(INDIVIDUALS[GT_BIN == 1]) / length(INDIVIDUALS)
