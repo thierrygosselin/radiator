@@ -25,7 +25,7 @@ devtools::install_github("thierrygosselin/radiator")
 library(radiator)
 ```
 
-To minimize dependencies, just the basic required packages are installed with the command above. IF you want the full suits of functions and don't want to be preoccupied download the `.R` ([radiator\_pkg\_install.r](/Users/thierry/Dropbox/partage/r_packages_vignettes/radiator_pkg_install.R)) file and run:
+To minimize dependencies, just the basic required packages are installed with the command above. If you want the full suits of functions and don't want to be preoccupied, download this `.R` file ([radiator\_pkg\_install.r](https://www.dropbox.com/s/7ekjvqx2qahg8mg/radiator_pkg_install.R?dl=0)) and run:
 
 ``` r
 source("radiator_pkg_install.R") #giving the full path of the file.
