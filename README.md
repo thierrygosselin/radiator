@@ -1,7 +1,7 @@
 <!-- badges: start -->
 [![lifecycle](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://tidyverse.org/lifecycle/#maturing) [![Travis-CI Build Status](https://travis-ci.org/thierrygosselin/radiator.svg?branch=master)](https://travis-ci.org/thierrygosselin/radiator) [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/thierrygosselin/radiator?branch=master&svg=true)](https://ci.appveyor.com/project/thierrygosselin/radiator) [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/radiator)](http://cran.r-project.org/package=radiator) [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active) [![DOI](https://zenodo.org/badge/14548/thierrygosselin/radiator.svg)](https://zenodo.org/badge/latestdoi/14548/thierrygosselin/radiator)
 
-[![packageversion](https://img.shields.io/badge/Package%20version-1.0.0-orange.svg)](commits/master) [![Last-changedate](https://img.shields.io/badge/last%20change-2019--03--30-brightgreen.svg)](/commits/master)
+[![packageversion](https://img.shields.io/badge/Package%20version-1.0.0-orange.svg)](commits/master) [![Last-changedate](https://img.shields.io/badge/last%20change-2019--03--31-brightgreen.svg)](/commits/master)
 
 ------------------------------------------------------------------------
 
@@ -23,6 +23,13 @@ To try out the dev version of **radiator**, copy/paste the code below:
 if (!require("devtools")) install.packages("devtools") # to install
 devtools::install_github("thierrygosselin/radiator")
 library(radiator)
+```
+
+To minimize dependencies, just the basic required packages are installed with the command above. IF you want the full suits of functions and don't want to be preoccupied download the `.R` ([radiator\_pkg\_install.r](/Users/thierry/Dropbox/partage/r_packages_vignettes/radiator_pkg_install.R)) file and run:
+
+``` r
+source("radiator_pkg_install.R") #giving the full path of the file.
+rad <- radiator_pkg_install() # that's it. It will install radiator as well...
 ```
 
 Learning radiator

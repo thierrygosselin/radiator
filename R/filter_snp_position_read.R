@@ -81,9 +81,9 @@ filter_snp_position_read <- function(
   verbose = TRUE,
   ...
 ) {
-
-  # interactive.filter <- TRUE
+  # TEST
   # data <- gds
+  # interactive.filter <- TRUE
   # path.folder <- "testing_snp_position"
   # force.stats <- TRUE
   # parameters <- NULL
@@ -148,7 +148,7 @@ filter_snp_position_read <- function(
     # Message about steps taken during the process ---------------------------------
     if (interactive.filter) {
       message("2 steps to visualize and filter the data based on the number of SNP on the read/locus:")
-      message("Step 1. Visualization")
+      message("Step 1. Visualization (boxplot, distribution")
       message("Step 2. Threshold selection")
     }
 
@@ -225,7 +225,7 @@ filter_snp_position_read <- function(
 
     snp.col.iqr.threshold <- c(stats$Q25, stats$Q75)
 
-    # Generate box plot
+    # Generate box plot --------------------------------------------------------
     read.length <- max(wl$COL)
 
     fig <- boxplot_stats(
@@ -240,6 +240,33 @@ filter_snp_position_read <- function(
       y.axis.title = "SNP position on the read (bp)",
       bp.filename = stringi::stri_join("snp.position.read.boxplot_", file.date, ".pdf"),
       path.folder = path.folder)
+
+    # Distribution -------------------------------------------------------------
+    d.plot <- wl %>%
+      dplyr::distinct(MARKERS,COL) %>%
+      ggplot2::ggplot(data = ., ggplot2::aes(factor(COL))) +
+      ggplot2::geom_bar() +
+      ggplot2::labs(y = "Number of SNPs", x = "SNP position on the read (bp)") +
+      ggplot2::theme_bw()+
+      ggplot2::theme(
+        axis.title.x = ggplot2::element_text(size = 12, face = "bold"),
+        axis.title.y = ggplot2::element_text(size = 12, face = "bold"),
+        legend.title = ggplot2::element_text(size = 12, face = "bold"),
+        legend.text = ggplot2::element_text(size = 12, face = "bold"),
+        strip.text.x = ggplot2::element_text(size = 12, face = "bold")
+        # axis.text.x = ggplot2::element_text(size = 12, angle = 90, hjust = 1, vjust = 0.5)
+      )
+    print(d.plot)
+
+    # save
+    d.plot.filename <- stringi::stri_join("snp.position.read.distribution_", file.date, ".pdf")
+
+    ggplot2::ggsave(
+      filename = file.path(path.folder, d.plot.filename),
+      plot = d.plot,
+      width = read.length, height = 10, dpi = 300, units = "cm", useDingbats = FALSE)
+
+
 
     # Helper table -------------------------------------------------------------
     if (verbose) message("Generating helper table...")
@@ -293,10 +320,17 @@ filter_snp_position_read <- function(
 
     # Step 2. Thresholds selection ---------------------------------------------
     if (interactive.filter) {
-      if (verbose) message("\nStep 2. Filtering markers based on the SNPs position on the read ('all' turn the filter off)\n")
+      message("\nStep 2. Filtering markers based on the SNPs position on the read\n")
       filter.snp.position.read <- radiator_question(
-        x = "Choice of stats are: 'outliers', 'q75', 'iqr', 'all'", answer.opt = c("outliers", "q75", "iqr", "all"))
+        x = "Choice of stats are: \n1: all (filter off)\n2: outliers\n3: q75\n4: iqr",
+        answer.opt = c("1", "2", "3", "4"))
+      filter.snp.position.read <- stringi::stri_replace_all_fixed(
+        str = filter.snp.position.read,
+        pattern = c("1", "2", "3", "4"),
+        replacement = c("all", "outliers", "q75", "iqr"),
+        vectorize_all = FALSE)
     }
+
     filter.snp.position.read <- match.arg(
       filter.snp.position.read,
       choices = c("outliers", "q75", "iqr", "all"),
@@ -325,7 +359,7 @@ filter_snp_position_read <- function(
 
     bl %<>% dplyr::filter(!MARKERS %in% wl$MARKERS) %>%
       dplyr::mutate(FILTERS = "filter.snp.position.read")
-      # dplyr::setdiff(wl) %>% # crash RStudio...
+    # dplyr::setdiff(wl) %>% # crash RStudio...
 
     if (nrow(bl) > 0) {
       readr::write_tsv(

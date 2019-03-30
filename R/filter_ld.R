@@ -375,13 +375,18 @@ filter_ld <- function(
             # axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
           )
         print(short.ld.fig)
-
-
-        if (verbose) message("Options include: first, middle, last, random or mac")
-        if (verbose) message("Not sure ? use mac...")
+      }
+      # Short LD threshold selection -----------------------------------------
+      if (interactive.filter) {
         filter.short.ld <- radiator_question(
-          x = "Choose the filter.short.ld threshold: ",
-          answer.opt = c("first", "random", "last", "middle", "mac"))
+          x = "Choose the filter.short.ld threshold\nOptions include:\n1: mac (Not sure ? use mac...)\n2: random\n3: first\n4: middle\n5: last",
+          answer.opt = c("1", "2", "3", "4", "5"))
+        filter.short.ld <- stringi::stri_replace_all_fixed(
+          str = filter.short.ld,
+          pattern = c("1", "2", "3", "4", "5"),
+          replacement = c("first", "random", "last", "middle", "mac"),
+          vectorize_all = FALSE)
+        filter.short.ld <- match.arg(filter.short.ld, c("first", "random", "last", "middle", "mac"))
       }
 
 
@@ -769,15 +774,15 @@ filter_ld <- function(
       if (interactive.filter) {
         if (verbose) message("\nStep 4. Threshold selection")
         if (verbose) message("Look at the boxplot, a threshold of 0.2 will blacklist more markers than a threshold of 0.8")
-          filter.long.ld <- radiator_question(
-            x = "\nEnter the long LD threshold (filter.long.ld threshold, double/proportion):", minmax = c(0,1))
+        filter.long.ld <- radiator_question(
+          x = "\nEnter the long LD threshold (filter.long.ld threshold, double/proportion):", minmax = c(0,1))
 
       }
 
-        if (interactive.filter) message("\nStep 5. Filtering markers based on long distance LD")
-        wl.bl.ld <- magrittr::extract2(wl.bl.ld, as.name(filter.long.ld))
-        wl <- wl.bl.ld %$% wl
-        bl <- wl.bl.ld %$% bl
+      if (interactive.filter) message("\nStep 5. Filtering markers based on long distance LD")
+      wl.bl.ld <- magrittr::extract2(wl.bl.ld, as.name(filter.long.ld))
+      wl <- wl.bl.ld %$% wl
+      bl <- wl.bl.ld %$% bl
 
       # updating the GDS object
       if (data.type == "tbl_df") {

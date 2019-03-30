@@ -57,6 +57,17 @@ devtools::install_github("thierrygosselin/radiator")
 library(radiator)
 ```
 
+To minimize dependencies, just the basic required packages are installed with
+the command above. IF you want the full suits of functions and don't want to
+be preoccupied download the `.R` ([radiator_pkg_install.r](/Users/thierry/Dropbox/partage/r_packages_vignettes/radiator_pkg_install.R)) file and run:
+
+```r
+source("radiator_pkg_install.R") #giving the full path of the file.
+rad <- radiator_pkg_install() # that's it. It will install radiator as well...
+```
+
+
+
 ## Learning radiator
 
 See if radiator as the right tools for you:
