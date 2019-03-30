@@ -32,6 +32,14 @@
 #' filled with "1", the LOCUS column correspond to the CHROM section in stacks VCF and
 #' the COL column is POS -1. With a reference genome, the ID column in stacks VCF is
 #' separated into "LOCUS", "COL", "STRANDS".
+#' \item \strong{DArT VCFs:} CHROM with \code{.} are replaced by \code{denovo}.
+#' \code{POS} with \code{NA} are replaced by {50}.
+#' \code{COL}: the position of the SNP on the read is extracted from the
+#' \code{LOCUS} as any other DArT data.
+#' \code{LOCUS}: are the first group of digits the rest of the info is discarded
+#' and \code{LOCUS} is then joined with \code{POS} by a \code{_}.
+#' \code{POS} is replaced by \code{COL}, (col info is duplicated).
+#' This is necessary to make the lines in the VCF unique.
 #' }
 
 
@@ -483,8 +491,13 @@ read_vcf <- function(
   radiator.gds <- radiator_gds_skeleton(gds)
 
   # VCF: source ----------------------------------------------------------------
-  update_radiator_gds(gds = gds, node.name = "data.source", value = data.source)
-  if (verbose) message("VCF source: ", data.source)
+  if (length(data.source) > 0) {
+    update_radiator_gds(gds = gds, node.name = "data.source", value = data.source)
+    if (verbose) message("VCF source: ", data.source)
+  } else {
+    data.source <- "unknown"
+  }
+
   # VCF: bi- or multi-alllelic--------------------------------------------------
   biallelic <- detect_biallelic_markers(data = gds, verbose = verbose)
 
@@ -611,7 +624,17 @@ read_vcf <- function(
   }
 
   # VCF: LOCUS cleaning and Strands detection ----------------------------------
-  if (stringi::stri_detect_regex(str = markers.meta[1,3], pattern = "[^[:alnum:]]+")) {
+  if (isTRUE(unique(stringi::stri_detect_fixed(
+    str = markers.meta[1,3],
+    pattern = c("|", "-", ":", ">")
+  )))
+  ) {
+    data.source <- "dart.vcf"
+    update_radiator_gds(gds = gds, node.name = "data.source", value = data.source)
+    if (verbose) message("VCF source: ", data.source)
+  }
+
+  if (data.source != "dart.vcf" && stringi::stri_detect_regex(str = markers.meta[1,3], pattern = "[^[:alnum:]]+")) {
     locus.sep <- unique(stringi::stri_extract_all_regex(
       str = markers.meta[1,3],
       pattern = "[^a-zA-Z0-9-+-]",
@@ -634,7 +657,21 @@ read_vcf <- function(
   } else {
     detect.strand <- FALSE
   }
-
+  # VCF: DART LOCUS cleaning----------------------------------------------------
+  if (data.source == "dart.vcf") {
+    markers.meta %<>%
+      dplyr::mutate(
+        CHROM = stringi::stri_replace_all_fixed(
+          str = CHROM, pattern = ".", replacement = "denovo", vectorize_all = FALSE),
+        POS = stringi::stri_replace_na(str = POS, replacement = "50"),
+        COL = stringi::stri_extract_first_regex(str = LOCUS, pattern = "[-][0-9]+[\\:]"),
+        COL = stringi::stri_replace_all_fixed(str = COL, pattern = c("-", ":"), replacement = c("", ""), vectorize_all = FALSE),
+        COL = as.integer(COL),
+        LOCUS = stringi::stri_extract_first_regex(str = LOCUS, pattern = "^[0-9]+"),
+        LOCUS = stringi::stri_join(LOCUS, POS, sep = "_"),
+        POS = COL
+      )
+  }
   # Generate MARKERS column and fix types --------------------------------------
   markers.meta %<>%
     dplyr::mutate_at(
@@ -651,14 +688,14 @@ read_vcf <- function(
   dup.markers <- length(markers.meta$MARKERS) - length(unique(markers.meta$MARKERS))
   if (dup.markers > 0) {
     message("\nNumber of duplicate MARKERS id: ", dup.markers)
-    message("adding integer number at the end of names differentiate...")
+    message("Adding integer to differentiate...")
     markers.meta %<>%
       dplyr::arrange(MARKERS) %>%
       dplyr::mutate(MARKERS_NEW = MARKERS) %>%
       dplyr::group_by(MARKERS_NEW) %>%
       dplyr::mutate(
         MARKERS = stringi::stri_join(MARKERS, seq(1, n(), by = 1), sep = "_")
-        ) %>%
+      ) %>%
       dplyr::ungroup(.) %>%
       dplyr::select(-MARKERS_NEW)
   }
@@ -1989,7 +2026,7 @@ parse_gds_metadata <- function(
   gds = NULL,
   verbose = TRUE,
   parallel.core = parallel::detectCores() - 1
-  ) {
+) {
 
   # x <- parse.format.list
   # format.name <- x <- "DP"
@@ -2154,7 +2191,7 @@ parse_gds_metadata <- function(
       G_DEPTH =  res$CATG[, column.vec %% 4 == 0] %>%
         as.matrix(.) %>%
         as.integer(.)
-      )
+    )
     column.vec <- NULL
   } # End CATG
 
@@ -2703,8 +2740,16 @@ check_header_source_vcf <- function(vcf) {
   }
   # check.header$format
 
+  # DArT vcf problem
+  probl.dart <- check.header$format[check.header$format$ID == "GT", "Type"] == "Integer"
+  if (probl.dart) check.header$format[check.header$format$ID == "GT", "Type"] <- "String"
+
   check.source <- check.header$header$value[check.header$header$id == "source"]
-  is.stacks <- stringi::stri_detect_fixed(str = check.source, pattern = "Stacks")
+  if (length(check.source) == 0) {
+    is.stacks <- FALSE
+  } else {
+    is.stacks <- stringi::stri_detect_fixed(str = check.source, pattern = "Stacks")
+  }
   if (is.stacks) {
     stacks.2 <- keep.stacks.gl <- stringi::stri_detect_fixed(
       str = check.source,

@@ -170,9 +170,9 @@
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 detect_duplicate_genomes <- function(
+  data,
   interactive.filter = TRUE,
   detect.duplicate.genomes = TRUE,
-  data,
   # subsample.markers = NULL,
   # random.seed = NULL,
   distance.method = "manhattan",

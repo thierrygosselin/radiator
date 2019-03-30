@@ -7,8 +7,30 @@
 extract_dart_target_id(data, write = TRUE)
 }
 \arguments{
-\item{data}{DArT output file. Note that most popular formats used by DArT are
-recognised (1- and 2- rows format, also called binary, and count data.).
+\item{data}{One of the DArT output files. 6 formats used by DArT are recognized
+by radiator.
+recognised:
+\enumerate{
+\item \code{1row}: Genotypes are in 1 row and coded (0, 1, 2, -).
+\code{0 for 2 reference alleles REF/REF}, \code{1 for 2 alternate alleles ALT/ALT},
+\code{2 for heterozygote REF/ALT}, \code{- for missing}.
+\item \code{2rows}: No genotypes. It's absence/presence, 0/1, of the REF and ALT alleles.
+Sometimes called binary format.
+\item \code{counts}: No genotypes, It's counts/read depth for the REF and ALT alleles.
+Sometimes just called count data.
+\item \code{silico.dart}: SilicoDArT data. No genotypes, no REF or ALT alleles.
+It's a file coded as absence/presence, 0/1, for the presence of sequence in
+the clone id.
+\item \code{silico.dart.counts}: SilicoDArT data. No genotypes, no REF or ALT alleles.
+It's a file coded as absence/presence, with counts for the presence of sequence in
+the clone id.
+\item \code{dart.vcf}: For DArT VCFs, please use \code{\link{read_vcf}}.
+}
+
+Depending on the number of markers, these format will be recoded similarly to
+VCF files (dosage of alternate allele, see details).
+
+
 If you encounter a problem, sent me your data so that I can update
 the function. The function can import \code{.csv} or \code{.tsv} files.}
 

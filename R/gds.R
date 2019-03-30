@@ -2218,7 +2218,10 @@ gds2tidy <- function(
   if (is.null(markers.meta)) {
     markers.meta <- extract_markers_metadata(gds = gds, whitelist = TRUE, verbose = TRUE)
   }
-  want <- intersect(c("MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF", "ALT"),
+  want <- intersect(
+    c("MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF", "ALT",
+      "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG",
+      "ONE_RATIO_REF", "ONE_RATIO_SNP"),
                     names(markers.meta))
 
   # summary_gds(gds)
@@ -2399,7 +2402,7 @@ write_gds <- function(
 
   want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF",
             "ALT", "CALL_RATE", "REP_AVG", "AVG_COUNT_REF",
-            "AVG_COUNT_SNP", "SEQUENCE")
+            "AVG_COUNT_SNP", "ONE_RATIO_REF", "ONE_RATIO_SNP", "SEQUENCE")
   markers.meta <-
     suppressWarnings(
       data %>%

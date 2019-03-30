@@ -8,9 +8,10 @@ read_dart(data, strata, filename = NULL, tidy.dart = FALSE,
   verbose = FALSE, parallel.core = parallel::detectCores() - 1, ...)
 }
 \arguments{
-\item{data}{DArT output files. 4 formats used by DArT are
+\item{data}{One of the DArT output files. 6 formats used by DArT are recognized
+by radiator.
 recognised:
-\itemize{
+\enumerate{
 \item \code{1row}: Genotypes are in 1 row and coded (0, 1, 2, -).
 \code{0 for 2 reference alleles REF/REF}, \code{1 for 2 alternate alleles ALT/ALT},
 \code{2 for heterozygote REF/ALT}, \code{- for missing}.
@@ -20,7 +21,11 @@ Sometimes called binary format.
 Sometimes just called count data.
 \item \code{silico.dart}: SilicoDArT data. No genotypes, no REF or ALT alleles.
 It's a file coded as absence/presence, 0/1, for the presence of sequence in
-the cloneid.
+the clone id.
+\item \code{silico.dart.counts}: SilicoDArT data. No genotypes, no REF or ALT alleles.
+It's a file coded as absence/presence, with counts for the presence of sequence in
+the clone id.
+\item \code{dart.vcf}: For DArT VCFs, please use \code{\link{read_vcf}}.
 }
 
 Depending on the number of markers, these format will be recoded similarly to

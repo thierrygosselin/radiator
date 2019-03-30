@@ -163,9 +163,9 @@
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com} and Peter Grewe \email{peter.grewe@@csiro.au}
 
 detect_mixed_genomes <- function(
+  data,
   interactive.filter = TRUE,
   detect.mixed.genomes = TRUE,
-  data,
   ind.heterozygosity.threshold = NULL,
   verbose = TRUE,
   parallel.core = parallel::detectCores() - 1,

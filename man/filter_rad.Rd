@@ -73,11 +73,19 @@ The function requires 2 packages (not installed automatically with radiator):
 \dontrun{
 require(HardyWeinberg)
 require(ggtern)
+
+# Very simple:
+shark <- radiator::filter_rad(
+    data = "data.shark.vcf",
+    strata = "strata.shark.tsv")
+
+
+# With filename and output
 shark <- radiator::filter_rad(
     data = "data.shark.vcf",
     strata = "strata.shark.tsv",
     output = "genind",
-    filename = "shark.filters")
+    filename = "shark")
 }
 }
 \author{

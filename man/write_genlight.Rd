@@ -4,7 +4,7 @@
 \alias{write_genlight}
 \title{Write a genlight object from a tidy data frame or GDS file or object.}
 \usage{
-write_genlight(data, biallelic = TRUE, write = FALSE,
+write_genlight(data, biallelic = TRUE, write = FALSE, dartr = FALSE,
   verbose = FALSE)
 }
 \arguments{
@@ -28,14 +28,38 @@ object. The file is written with \code{radiator_genlight_DATE@TIME.RData} and
 can be open with load or readRDS.
 Default: \code{write = FALSE}.}
 
+\item{dartr}{(logical, optional) For non-dartR users who wants to have a genlight
+object ready for the package. This option transfer or generates:
+\code{CALL_RATE, AVG_COUNT_REF, AVG_COUNT_SNP, REP_AVG,
+ONE_RATIO_REF, ONE_RATIO_SNP}. These markers metadata are stored into
+the genlight slot: \code{genlight.obj@other$loc.metrics}.
+Default: \code{dartr = FALSE}.}
+
 \item{verbose}{(optional, logical) When \code{verbose = TRUE}
 the function is a little more chatty during execution.
 Default: \code{verbose = TRUE}.}
 }
 \description{
-Write a genlight object from a tidy data frame.
+Write a genlight object from a tidy data frame or GDS file or object.
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and might be of interest for users.
+}
+\examples{
+\dontrun{
+# With defaults:
+turtle <- radiator::write_genlight(data = "my.radiator.gds.rad")
+
+# Write gl object in directory:
+turtle <- radiator::write_genlight(data = "my.radiator.gds.rad", write = TRUE)
+
+# Generate a dartR ready genlight and verbose = TRUE:
+turtle <- radiator::write_genlight(
+    data = "my.radiator.gds.rad",
+    write = TRUE,
+    dartr = TRUE,
+    verbose = TRUE
+ )
+}
 }
 \references{
 Jombart T (2008) adegenet: a R package for the multivariate

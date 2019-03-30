@@ -135,11 +135,19 @@
 #' \dontrun{
 #' require(HardyWeinberg)
 #' require(ggtern)
+#'
+#' # Very simple:
+#' shark <- radiator::filter_rad(
+#'     data = "data.shark.vcf",
+#'     strata = "strata.shark.tsv")
+#'
+#'
+#' # With filename and output
 #' shark <- radiator::filter_rad(
 #'     data = "data.shark.vcf",
 #'     strata = "strata.shark.tsv",
 #'     output = "genind",
-#'     filename = "shark.filters")
+#'     filename = "shark")
 #' }
 
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com} and

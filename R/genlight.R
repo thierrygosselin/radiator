@@ -214,7 +214,7 @@ tidy_genlight <- function(
 # write_genlight ----------------------------------------------------------------
 #' @name write_genlight
 #' @title Write a genlight object from a tidy data frame or GDS file or object.
-#' @description Write a genlight object from a tidy data frame.
+#' @description Write a genlight object from a tidy data frame or GDS file or object.
 #' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 #' and might be of interest for users.
 
@@ -229,6 +229,13 @@ tidy_genlight <- function(
 #' can be open with load or readRDS.
 #' Default: \code{write = FALSE}.
 
+#' @param dartr (logical, optional) For non-dartR users who wants to have a genlight
+#' object ready for the package. This option transfer or generates:
+#' \code{CALL_RATE, AVG_COUNT_REF, AVG_COUNT_SNP, REP_AVG,
+#' ONE_RATIO_REF, ONE_RATIO_SNP}. These markers metadata are stored into
+#' the genlight slot: \code{genlight.obj@other$loc.metrics}.
+#' Default: \code{dartr = FALSE}.
+
 #' @export
 #' @rdname write_genlight
 
@@ -238,11 +245,33 @@ tidy_genlight <- function(
 #' new tools for the analysis of genome-wide SNP data.
 #' Bioinformatics, 27, 3070-3071.
 
+#' @examples
+#' \dontrun{
+#' # With defaults:
+#' turtle <- radiator::write_genlight(data = "my.radiator.gds.rad")
+#'
+#' # Write gl object in directory:
+#' turtle <- radiator::write_genlight(data = "my.radiator.gds.rad", write = TRUE)
+#'
+#' # Generate a dartR ready genlight and verbose = TRUE:
+#' turtle <- radiator::write_genlight(
+#'     data = "my.radiator.gds.rad",
+#'     write = TRUE,
+#'     dartr = TRUE,
+#'     verbose = TRUE
+#'  )
+#' }
 
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 
-write_genlight <- function(data, biallelic = TRUE, write = FALSE, verbose = FALSE) {
+write_genlight <- function(
+  data,
+  biallelic = TRUE,
+  write = FALSE,
+  dartr = FALSE,
+  verbose = FALSE
+) {
 
   # Checking for missing and/or default arguments ------------------------------
   if (!requireNamespace("adegenet", quietly = TRUE)) {
@@ -260,11 +289,24 @@ write_genlight <- function(data, biallelic = TRUE, write = FALSE, verbose = FALS
     if (data.type == "gds.file") {
       data <- radiator::read_rad(data, verbose = verbose)
     }
-    data <- gds2tidy(gds = data, parallel.core = parallel::detectCores() - 1)
+    biallelic <- radiator::detect_biallelic_markers(data)
+    data.source <- radiator::extract_data_source(data)
+    if (dartr && !any(unique(c("1row", "2rows") %in% data.source))) {
+      genotypes.meta <- radiator::extract_genotypes_metadata(gds = data)
+    } else {
+      genotypes.meta <- NULL
+    }
+    # data.bk <- data
+    data <- gds2tidy(gds = data,
+                     parallel.core = parallel::detectCores() - 1,
+                     calibrate.alleles = FALSE)
     data.type <- "tbl_df"
   } else {
     if (rlang::has_name(data, "STRATA")) data %<>% dplyr::rename(POP_ID = STRATA)
-    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "POP_ID", "INDIVIDUALS", "REF", "ALT", "GT_VCF", "GT_BIN")
+    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "POP_ID", "INDIVIDUALS",
+              "REF", "ALT", "GT_VCF", "GT_BIN",
+              "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG",
+              "ONE_RATIO_REF", "ONE_RATIO_SNP")
     data <- suppressWarnings(
       radiator::tidy_wide(data = data, import.metadata = TRUE) %>%
         dplyr::select(dplyr::one_of(want)) %>%
@@ -276,7 +318,9 @@ write_genlight <- function(data, biallelic = TRUE, write = FALSE, verbose = FALS
   if (is.null(biallelic)) biallelic <- radiator::detect_biallelic_markers(data)
   if (!biallelic) rlang::abort("genlight object requires biallelic genotypes")
 
-  want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT")
+  want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT",
+            "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG",
+            "ONE_RATIO_REF", "ONE_RATIO_SNP")
   markers.meta <- suppressWarnings(
     dplyr::select(data, dplyr::one_of(want)) %>%
       dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
@@ -289,7 +333,6 @@ write_genlight <- function(data, biallelic = TRUE, write = FALSE, verbose = FALS
   )
   data %<>% dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
 
-
   if (!rlang::has_name(data, "GT_BIN") && rlang::has_name(data, "GT_VCF")) {
     data$GT_BIN <- stringi::stri_replace_all_fixed(
       str = data$GT_VCF,
@@ -298,6 +341,73 @@ write_genlight <- function(data, biallelic = TRUE, write = FALSE, verbose = FALS
       vectorize_all = FALSE
     )
   }
+
+  if (dartr) {
+    if (verbose) message("Calculating read depth for each SNP\n")
+
+    if (any(unique(c("1row", "2rows") %in% data.source))) {
+      markers.meta %<>%
+        dplyr::left_join(
+          dplyr::select(data, MARKERS, GT_BIN) %>%
+            dplyr::filter(!is.na(GT_BIN)) %>%
+            dplyr::count(MARKERS, name = "N_IND"),
+          by = "MARKERS"
+        ) %>%
+        dplyr::group_by(MARKERS) %>%
+        dplyr::mutate(
+          rdepth = round(
+            ((N_IND * ONE_RATIO_REF * AVG_COUNT_REF) + (N_IND * ONE_RATIO_SNP * AVG_COUNT_SNP)) / N_IND
+          )
+        ) %>%
+        dplyr::ungroup(.)
+    } else {
+      if (!is.null(genotypes.meta) && rlang::has_name(genotypes.meta, "READ_DEPTH")) {
+        # dart 2 rows counts...
+        if (rlang::has_name(markers.meta, "AVG_COUNT_REF")) {
+
+          #NOTE TO MYSELF: will have to keep REP_AVG from count somehow... to do
+          # for now, I expect people will use this with filtered data so not important
+          # to fill with 1
+          if ("counts" %in% data.source) rep.avg <- markers.meta$REP_AVG
+          not.wanted <- c("CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP",
+                          "REP_AVG", "ONE_RATIO_REF", "ONE_RATIO_SNP")
+          markers.meta %<>% dplyr::select(-dplyr::one_of(not.wanted))
+        }
+        suppressWarnings(
+          markers.meta %<>% #dplyr::select(-CALL_RATE, -AVG_COUNT_REF, -AVG_COUNT_SNP, -REP_AVG, -ONE_RATIO_REF, -ONE_RATIO_SNP)
+            dplyr::left_join(
+              genotypes.meta %>%
+                dplyr::group_by(MARKERS) %>%
+                dplyr::summarise(
+                  rdepth = mean(READ_DEPTH, na.rm = TRUE),
+                  AVG_COUNT_REF = mean(ALLELE_REF_DEPTH, na.rm = TRUE),
+                  AVG_COUNT_ALT = mean(ALLELE_ALT_DEPTH, na.rm = TRUE),
+                  CALL_RATE = length(INDIVIDUALS[!is.na(GT_BIN)]) / length(INDIVIDUALS),
+                  ONE_RATIO_REF = length(INDIVIDUALS[GT_BIN == 0]) + length(INDIVIDUALS[GT_BIN == 1]) / length(INDIVIDUALS),
+                  ONE_RATIO_SNP = length(INDIVIDUALS[GT_BIN == 2]) + length(INDIVIDUALS[GT_BIN == 1]) / length(INDIVIDUALS)
+                ) %>%
+                dplyr::mutate(REP_AVG = 1L)
+              , by = "MARKERS"
+            ) %>%
+            dplyr::ungroup(.)
+        )
+      }
+    }
+
+    # ~25 times slower
+    # Calculate Read Depth (from Arthur Georges)
+    # gl.obj@other$loc.metrics$rdepth <- array(NA, adegenet::nLoc(gl.obj))
+    # for (i in 1:adegenet::nLoc(gl.obj)){
+    #   called.ind <- round(adegenet::nInd(gl.obj) * gl.obj@other$loc.metrics$CallRate[i],0)
+    #   ref.count <- called.ind * gl.obj@other$loc.metrics$OneRatioRef[i]
+    #   alt.count <- called.ind * gl.obj@other$loc.metrics$OneRatioSnp[i]
+    #   sum.count.ref <- ref.count * gl.obj@other$loc.metrics$AvgCountRef[i]
+    #   sum.count.alt <- ref.count * gl.obj@other$loc.metrics$AvgCountSnp[i]
+    #   gl.obj@other$loc.metrics$rdepth[i] <- round((sum.count.alt + sum.count.ref) / called.ind, 1)
+    # }
+
+    # gl.obj@other$loc.metrics$rdepth
+  }#End dartr
 
   data %<>%
     dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT_BIN) %>%
@@ -311,38 +421,57 @@ write_genlight <- function(data, biallelic = TRUE, write = FALSE, verbose = FALS
     tibble::as_tibble(.)
 
   # Generate genlight
-  genlight.object <- methods::new(
+  gl.obj <- methods::new(
     "genlight",
     data[,-(1:2)],
     parallel = FALSE
   )
-  adegenet::indNames(genlight.object)   <- data$INDIVIDUALS
-  adegenet::pop(genlight.object)        <- data$POP_ID
-  adegenet::chromosome(genlight.object) <- markers.meta$CHROM
-  adegenet::locNames(genlight.object)   <- markers.meta$LOCUS
-  adegenet::position(genlight.object)   <- markers.meta$POS
+  adegenet::indNames(gl.obj)   <- data$INDIVIDUALS
+  adegenet::pop(gl.obj)        <- data$POP_ID
+  adegenet::chromosome(gl.obj) <- markers.meta$CHROM
+  adegenet::locNames(gl.obj)   <- markers.meta$LOCUS
+  adegenet::position(gl.obj)   <- markers.meta$POS
+
+  if (dartr) {
+    gl.obj@other$loc.metrics$OneRatioRef <- markers.meta$ONE_RATIO_REF
+    gl.obj@other$loc.metrics$OneRatioSnp <- markers.meta$ONE_RATIO_SNP
+    gl.obj@other$loc.metrics$AvgCountRef <- markers.meta$AVG_COUNT_REF
+    gl.obj@other$loc.metrics$AvgCountSnp <- markers.meta$AVG_COUNT_SNP
+    gl.obj@other$loc.metrics$CallRate <- markers.meta$CALL_RATE
+    if ("counts" %in% data.source) {
+      gl.obj@other$loc.metrics$RepAvg <- rep.avg
+    } else {
+      gl.obj@other$loc.metrics$RepAvg <- markers.meta$REP_AVG
+    }
+    gl.obj@other$loc.metrics$rdepth <- markers.meta$rdepth
+  }#End dartr
+
 
 
   # Check
-  # genlight.object@n.loc
-  # genlight.object@ind.names
-  # genlight.object@chromosome
-  # genlight.object@position
-  # genlight.object@loc.names
-  # genlight.object@pop
-  # genlight.object@strata
-  # adegenet::nLoc(genlight.object)
-  # adegenet::popNames(genlight.object)
-  # adegenet::indNames(genlight.object)
-  # adegenet::nPop(genlight.object)
-  # adegenet::NA.posi(genlight.object)
+  # gl.obj@n.loc
+  # gl.obj@ind.names
+  # gl.obj@chromosome
+  # gl.obj@position
+  # length(gl.obj@position)
+  # gl.obj@loc.names
+  # length(gl.obj@loc.names)
+  # gl.obj@pop
+  # gl.obj@strata
+  # adegenet::nLoc(gl.obj)
+  # adegenet::popNames(gl.obj)
+  # adegenet::indNames(gl.obj)
+  # adegenet::nPop(gl.obj)
+  # adegenet::NA.posi(gl.obj)
+  # names(gl.obj@other$loc.metrics)
+
 
   if (write) {
     filename.temp <- generate_filename(extension = "genlight")
     filename.short <- filename.temp$filename.short
     filename.genlight <- filename.temp$filename
-    saveRDS(object = genlight.object, file = filename.genlight)
+    saveRDS(object = gl.obj, file = filename.genlight)
     if (verbose) message("File written: ", filename.short)
   }
-  return(genlight.object)
+  return(gl.obj)
 } # End write_genlight

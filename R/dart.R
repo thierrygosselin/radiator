@@ -7,10 +7,7 @@
 #' and might be of interest for users. The function allows to extract DArT
 #' target id from a DArT file. To help prepare the appropriate STRATA file.
 
-#' @param data DArT output file. Note that most popular formats used by DArT are
-#' recognised (1- and 2- rows format, also called binary, and count data.).
-#' If you encounter a problem, sent me your data so that I can update
-#' the function. The function can import \code{.csv} or \code{.tsv} files.
+#' @inheritParams read_dart
 
 #' @param write With default \code{write = TRUE}, the dart target id column is
 #' written in a file in the working directory.
@@ -600,9 +597,10 @@ tidy_dart_metadata <- function(
 #' and tidy dataset using
 #' \href{http://www.diversityarrays.com}{DArT} files.
 
-#' @param data DArT output files. 4 formats used by DArT are
+#' @param data One of the DArT output files. 6 formats used by DArT are recognized
+#' by radiator.
 #' recognised:
-#' \itemize{
+#' \enumerate{
 #' \item \code{1row}: Genotypes are in 1 row and coded (0, 1, 2, -).
 #' \code{0 for 2 reference alleles REF/REF}, \code{1 for 2 alternate alleles ALT/ALT},
 #' \code{2 for heterozygote REF/ALT}, \code{- for missing}.
@@ -612,7 +610,11 @@ tidy_dart_metadata <- function(
 #' Sometimes just called count data.
 #' \item \code{silico.dart}: SilicoDArT data. No genotypes, no REF or ALT alleles.
 #' It's a file coded as absence/presence, 0/1, for the presence of sequence in
-#' the cloneid.
+#' the clone id.
+#' \item \code{silico.dart.counts}: SilicoDArT data. No genotypes, no REF or ALT alleles.
+#' It's a file coded as absence/presence, with counts for the presence of sequence in
+#' the clone id.
+#' \item \code{dart.vcf}: For DArT VCFs, please use \code{\link{read_vcf}}.
 #' }
 #'
 #' Depending on the number of markers, these format will be recoded similarly to
@@ -747,6 +749,7 @@ read_dart <- function(
   # gt.bin = NULL
   # gt.vcf = NULL
   # gt.vcf.nuc = NULL
+  # pop.levels = NULL
 
   if (verbose) {
     cat("################################################################################\n")
@@ -948,10 +951,18 @@ read_dart <- function(
   }
 
   # dart2gds -------------------------------------------------------------------
+  # check if some rows are missing...
+  if (anyNA(unique(data$REF))) {
+    if (length(unique(data$MARKERS[!is.na(data$REF)])) != length(unique(data$MARKERS[is.na(data$REF)]))) {
+      rlang::abort("The DArT file is missing rows...")
+    }
+  }
+
   # Markers meta
   want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS", "COL",
             "REF", "ALT", "SEQUENCE",
-            "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")
+            "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG",
+            "ONE_RATIO_REF", "ONE_RATIO_SNP")
   markers.meta <- suppressWarnings(
     dplyr::ungroup(data) %>%
       dplyr::select(dplyr::one_of(want)) %>%
@@ -976,7 +987,7 @@ read_dart <- function(
 
   # if (verbose) message("File written: ", meta.filename$)
   notwanted <- c("FILTERS", "CHROM", "LOCUS", "POS", "COL", "CALL_RATE", "AVG_COUNT_REF",
-                 "AVG_COUNT_SNP", "REP_AVG", "SEQUENCE")
+                 "AVG_COUNT_SNP", "REP_AVG", "SEQUENCE", "ONE_RATIO_REF", "ONE_RATIO_SNP")
   suppressWarnings(
     data %<>%
       dplyr::select(-dplyr::one_of(notwanted)) %>%
@@ -1257,8 +1268,8 @@ import_dart <- function(data, strata, pop.levels = NULL, path.folder= NULL, verb
   } else {
     info <- c("ALLELEID", "SNP", "SNPPOSITION", "CALLRATE",
               "AVGCOUNTREF", "AVGCOUNTSNP", "REPAVG", "CLONEID", "AVGREADDEPTH",
-              "REPRODUCIBILITY", "CLUSTERCONSENSUSSEQUENCE")
-    info.type <- c("c", "c", "i", "d", "d", "d", "d", "c", "d", "d", "c")
+              "REPRODUCIBILITY", "CLUSTERCONSENSUSSEQUENCE", "ONERATIOREF", "ONERATIOSNP")
+    info.type <- c("c", "c", "i", "d", "d", "d", "d", "c", "d", "d", "c", "d", "d")
   }
 
   want <- tibble::tibble(INFO = info, COL_TYPE = info.type) %>%
@@ -1315,10 +1326,10 @@ import_dart <- function(data, strata, pop.levels = NULL, path.folder= NULL, verb
       str = .,
       pattern = c("AVGCOUNTREF", "AVGCOUNTSNP", "REPAVG", "ALLELEID",
                   "SNPPOSITION", "CALLRATE", "REPRODUCIBILITY", "AVGREADDEPTH",
-                  "CLUSTERCONSENSUSSEQUENCE"),
+                  "CLUSTERCONSENSUSSEQUENCE", "ONERATIOREF", "ONERATIOSNP"),
       replacement = c("AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG", "LOCUS",
                       "POS", "CALL_RATE", "REP_AVG", "AVG_READ_DEPTH",
-                      "SEQUENCE"),
+                      "SEQUENCE", "ONE_RATIO_REF", "ONE_RATIO_SNP"),
       vectorize_all = FALSE)
 
   if (silico.dart) {
@@ -1743,6 +1754,7 @@ generate_geno <- function(
   }#2rows genotypes
 
   # counts
+  # x <- genotypes.meta[[1]]
   if ("counts" %in% data.source) {
     res <- dplyr::filter(x, !is.na(REF)) %>%
       dplyr::arrange(MARKERS) %>%

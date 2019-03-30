@@ -115,7 +115,8 @@ separate_markers <- function(
   if (markers.meta.all.only) {
     want <- c("FILTERS", "VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS",
               "COL", "REF", "ALT", "CALL_RATE", "AVG_COUNT_REF",
-              "AVG_COUNT_SNP", "REP_AVG", "SEQUENCE")
+              "AVG_COUNT_SNP", "REP_AVG", "ONE_RATIO_REF", "ONE_RATIO_SNP",
+              "SEQUENCE")
     suppressWarnings(data %<>% dplyr::select(dplyr::one_of(want)) %>%
                        dplyr::distinct(MARKERS, .keep_all = TRUE))
     generate.markers.metadata <- generate.ref.alt <- TRUE
@@ -224,7 +225,8 @@ generate_markers_metadata <- function(
     }
 
     want <- c("FILTERS", "VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF",
-              "ALT", "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG", "SEQUENCE")
+              "ALT", "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG",
+              "ONE_RATIO_REF", "ONE_RATIO_SNP", "SEQUENCE")
     if (!unique.markers) {
       suppressWarnings(
         markers.meta <- data %>%

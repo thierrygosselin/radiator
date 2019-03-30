@@ -23,6 +23,14 @@ the \code{ID} column is filled with the \code{POS} column info.
 filled with "1", the LOCUS column correspond to the CHROM section in stacks VCF and
 the COL column is POS -1. With a reference genome, the ID column in stacks VCF is
 separated into "LOCUS", "COL", "STRANDS".
+\item \strong{DArT VCFs:} CHROM with \code{.} are replaced by \code{denovo}.
+\code{POS} with \code{NA} are replaced by {50}.
+\code{COL}: the position of the SNP on the read is extracted from the
+\code{LOCUS} as any other DArT data.
+\code{LOCUS}: are the first group of digits the rest of the info is discarded
+and \code{LOCUS} is then joined with \code{POS} by a \code{_}.
+\code{POS} is replaced by \code{COL}, (col info is duplicated).
+This is necessary to make the lines in the VCF unique.
 }}
 
 \item{strata}{(optional)
