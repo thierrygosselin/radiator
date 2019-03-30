@@ -270,8 +270,16 @@ write_genlight <- function(
   biallelic = TRUE,
   write = FALSE,
   dartr = FALSE,
-  verbose = FALSE
+  verbose = FALSE,
+  parallel.core = parallel::detectCores() - 2
 ) {
+
+  # TEST
+  # biallelic = TRUE
+  # write = FALSE
+  # dartr = TRUE
+  # verbose = TRUE
+  # parallel.core = parallel::detectCores() - 1
 
   # Checking for missing and/or default arguments ------------------------------
   if (!requireNamespace("adegenet", quietly = TRUE)) {
@@ -281,27 +289,128 @@ write_genlight <- function(
 
   if (missing(data)) rlang::abort("Input file missing")
 
+  if (verbose) message("Generating genlight...")
   # File type detection----------------------------------------------------------
   data.type <- radiator::detect_genomic_format(data)
 
   # Import data ---------------------------------------------------------------
   if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
+    # Check that SeqVarTools is installed (it requires automatically: SeqArray and gdsfmt)
+    if (!"SeqVarTools" %in% utils::installed.packages()[,"Package"]) {
+      rlang::abort('Please install SeqVarTools for this option:\n
+                   install.packages("BiocManager")
+                   BiocManager::install("SeqVarTools")
+                   ')
+    }
+
+
     if (data.type == "gds.file") {
       data <- radiator::read_rad(data, verbose = verbose)
     }
-    biallelic <- radiator::detect_biallelic_markers(data)
+    biallelic <- radiator::detect_biallelic_markers(data)# faster with GDS
+    if (!biallelic) rlang::abort("genlight object requires biallelic genotypes")
+
     data.source <- radiator::extract_data_source(data)
+
     if (dartr && !any(unique(c("1row", "2rows") %in% data.source))) {
       genotypes.meta <- radiator::extract_genotypes_metadata(gds = data)
+      # data.bk <- data
+      data <- gds2tidy(gds = data,
+                       parallel.core = parallel::detectCores() - 1,
+                       calibrate.alleles = FALSE)
     } else {
       genotypes.meta <- NULL
+      markers.meta <- radiator::extract_markers_metadata(gds = data, whitelist = TRUE)
+      data.bk <- data
+      # data <- data.bk
+      data <- radiator::extract_individuals_metadata(
+        gds = data, ind.field.select = c("INDIVIDUALS", "STRATA"), whitelist = TRUE) %>%
+        dplyr::bind_cols(
+          SeqArray::seqGetData(
+            gdsfile = data, var.name = "$dosage_alt") %>%
+            magrittr::set_colnames(x = ., value = markers.meta$MARKERS) %>%
+            tibble::as_tibble(.)
+        ) %>%
+        dplyr::rename(POP_ID = STRATA)
     }
-    # data.bk <- data
-    data <- gds2tidy(gds = data,
-                     parallel.core = parallel::detectCores() - 1,
-                     calibrate.alleles = FALSE)
+
+
+    # dartR-----------------------------------------------------------------------
+    if (dartr) {
+      if (verbose) message("Calculating read depth for each SNP\n")
+      if (any(unique(c("1row", "2rows") %in% data.source))) {
+        markers.meta %<>%
+          dplyr::mutate(
+            N_IND = SeqArray::seqApply(
+              gdsfile = data.bk,
+              var.name = "$dosage_alt",
+              FUN = function(g) length(g[!is.na(g)]),
+              margin = "by.variant", as.is = "integer",
+              parallel = parallel.core),
+            rdepth = round(
+              ((N_IND * ONE_RATIO_REF * AVG_COUNT_REF) +
+                 (N_IND * ONE_RATIO_SNP * AVG_COUNT_SNP)) / N_IND
+            )
+          ) %>%
+          dplyr::ungroup(.)
+      } else {
+        if (!is.null(genotypes.meta) && rlang::has_name(genotypes.meta, "READ_DEPTH")) {
+          # dart 2 rows counts...
+          if (rlang::has_name(markers.meta, "AVG_COUNT_REF")) {
+
+            #NOTE TO MYSELF: will have to keep REP_AVG from count somehow... to do
+            # for now, I expect people will use this with filtered data so not important
+            # to fill with 1
+            if ("counts" %in% data.source) rep.avg <- markers.meta$REP_AVG
+
+
+            not.wanted <- c("CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP",
+                            "REP_AVG", "ONE_RATIO_REF", "ONE_RATIO_SNP")
+            markers.meta %<>% dplyr::select(-dplyr::one_of(not.wanted))
+          }
+          suppressWarnings(
+            markers.meta %<>%
+              dplyr::left_join(
+                genotypes.meta %>%
+                  dplyr::group_by(MARKERS) %>%
+                  dplyr::summarise(
+                    rdepth = mean(READ_DEPTH, na.rm = TRUE),
+                    AVG_COUNT_REF = mean(ALLELE_REF_DEPTH, na.rm = TRUE),
+                    AVG_COUNT_SNP = mean(ALLELE_ALT_DEPTH, na.rm = TRUE),
+                    CALL_RATE = length(INDIVIDUALS[!is.na(GT_BIN)]) / length(INDIVIDUALS),
+                    ONE_RATIO_REF = length(INDIVIDUALS[GT_BIN == 0]) + length(INDIVIDUALS[GT_BIN == 1]) / length(INDIVIDUALS),
+                    ONE_RATIO_SNP = length(INDIVIDUALS[GT_BIN == 2]) + length(INDIVIDUALS[GT_BIN == 1]) / length(INDIVIDUALS)
+                  ) %>%
+                  dplyr::mutate(REP_AVG = 1L)
+                , by = "MARKERS"
+              ) %>%
+              dplyr::ungroup(.)
+          )
+
+          if ("counts" %in% data.source) {
+            markers.meta$REP_AVG <- rep.avg
+          }
+        }
+      }
+
+      # ~25 times slower
+      # Calculate Read Depth (from Arthur Georges)
+      # gl.obj@other$loc.metrics$rdepth <- array(NA, adegenet::nLoc(gl.obj))
+      # for (i in 1:adegenet::nLoc(gl.obj)){
+      #   called.ind <- round(adegenet::nInd(gl.obj) * gl.obj@other$loc.metrics$CallRate[i],0)
+      #   ref.count <- called.ind * gl.obj@other$loc.metrics$OneRatioRef[i]
+      #   alt.count <- called.ind * gl.obj@other$loc.metrics$OneRatioSnp[i]
+      #   sum.count.ref <- ref.count * gl.obj@other$loc.metrics$AvgCountRef[i]
+      #   sum.count.alt <- ref.count * gl.obj@other$loc.metrics$AvgCountSnp[i]
+      #   gl.obj@other$loc.metrics$rdepth[i] <- round((sum.count.alt + sum.count.ref) / called.ind, 1)
+      # }
+
+      # gl.obj@other$loc.metrics$rdepth
+    }#End dartr
+
     data.type <- "tbl_df"
   } else {
+    # Tidy data
     if (rlang::has_name(data, "STRATA")) data %<>% dplyr::rename(POP_ID = STRATA)
     want <- c("MARKERS", "CHROM", "LOCUS", "POS", "POP_ID", "INDIVIDUALS",
               "REF", "ALT", "GT_VCF", "GT_BIN",
@@ -312,119 +421,70 @@ write_genlight <- function(
         dplyr::select(dplyr::one_of(want)) %>%
         dplyr::arrange(POP_ID, INDIVIDUALS)
     )
-  }
 
-  # Detect if biallelic data ---------------------------------------------------
-  if (is.null(biallelic)) biallelic <- radiator::detect_biallelic_markers(data)
-  if (!biallelic) rlang::abort("genlight object requires biallelic genotypes")
-
-  want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT",
-            "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG",
-            "ONE_RATIO_REF", "ONE_RATIO_SNP")
-  markers.meta <- suppressWarnings(
-    dplyr::select(data, dplyr::one_of(want)) %>%
-      dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-      separate_markers(
-        data = .,
-        sep = "__",
-        markers.meta.all.only = TRUE,
-        biallelic = TRUE,
-        verbose = verbose)
-  )
-  data %<>% dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
-
-  if (!rlang::has_name(data, "GT_BIN") && rlang::has_name(data, "GT_VCF")) {
-    data$GT_BIN <- stringi::stri_replace_all_fixed(
-      str = data$GT_VCF,
-      pattern = c("0/0", "1/1", "0/1", "1/0", "./."),
-      replacement = c("0", "2", "1", "1", NA),
-      vectorize_all = FALSE
+    # Detect if biallelic data ---------------------------------------------------
+    if (is.null(biallelic)) biallelic <- radiator::detect_biallelic_markers(data)
+    if (!biallelic) rlang::abort("genlight object requires biallelic genotypes")
+    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT",
+              "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG",
+              "ONE_RATIO_REF", "ONE_RATIO_SNP")
+    data %<>% dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
+    markers.meta <- suppressWarnings(
+      dplyr::select(data, dplyr::one_of(want)) %>%
+        dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
+        separate_markers(
+          data = .,
+          sep = "__",
+          markers.meta.all.only = TRUE,
+          biallelic = TRUE,
+          verbose = verbose)
     )
-  }
-  # dartR-----------------------------------------------------------------------
-  if (dartr) {
-    if (verbose) message("Calculating read depth for each SNP\n")
 
-    if (any(unique(c("1row", "2rows") %in% data.source))) {
-      markers.meta %<>%
-        dplyr::left_join(
-          dplyr::select(data, MARKERS, GT_BIN) %>%
-            dplyr::filter(!is.na(GT_BIN)) %>%
-            dplyr::count(MARKERS, name = "N_IND"),
-          by = "MARKERS"
-        ) %>%
-        dplyr::group_by(MARKERS) %>%
-        dplyr::mutate(
-          rdepth = round(
-            ((N_IND * ONE_RATIO_REF * AVG_COUNT_REF) + (N_IND * ONE_RATIO_SNP * AVG_COUNT_SNP)) / N_IND
-          )
-        ) %>%
-        dplyr::ungroup(.)
-    } else {
-      if (!is.null(genotypes.meta) && rlang::has_name(genotypes.meta, "READ_DEPTH")) {
-        # dart 2 rows counts...
-        if (rlang::has_name(markers.meta, "AVG_COUNT_REF")) {
-
-          #NOTE TO MYSELF: will have to keep REP_AVG from count somehow... to do
-          # for now, I expect people will use this with filtered data so not important
-          # to fill with 1
-          if ("counts" %in% data.source) rep.avg <- markers.meta$REP_AVG
-          not.wanted <- c("CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP",
-                          "REP_AVG", "ONE_RATIO_REF", "ONE_RATIO_SNP")
-          markers.meta %<>% dplyr::select(-dplyr::one_of(not.wanted))
-        }
-        suppressWarnings(
-          markers.meta %<>% #dplyr::select(-CALL_RATE, -AVG_COUNT_REF, -AVG_COUNT_SNP, -REP_AVG, -ONE_RATIO_REF, -ONE_RATIO_SNP)
-            dplyr::left_join(
-              genotypes.meta %>%
-                dplyr::group_by(MARKERS) %>%
-                dplyr::summarise(
-                  rdepth = mean(READ_DEPTH, na.rm = TRUE),
-                  AVG_COUNT_REF = mean(ALLELE_REF_DEPTH, na.rm = TRUE),
-                  AVG_COUNT_SNP = mean(ALLELE_ALT_DEPTH, na.rm = TRUE),
-                  CALL_RATE = length(INDIVIDUALS[!is.na(GT_BIN)]) / length(INDIVIDUALS),
-                  ONE_RATIO_REF = length(INDIVIDUALS[GT_BIN == 0]) + length(INDIVIDUALS[GT_BIN == 1]) / length(INDIVIDUALS),
-                  ONE_RATIO_SNP = length(INDIVIDUALS[GT_BIN == 2]) + length(INDIVIDUALS[GT_BIN == 1]) / length(INDIVIDUALS)
-                ) %>%
-                dplyr::mutate(REP_AVG = 1L)
-              , by = "MARKERS"
-            ) %>%
-            dplyr::ungroup(.)
-        )
-      }
+    if (!rlang::has_name(data, "GT_BIN") && rlang::has_name(data, "GT_VCF")) {
+      data$GT_BIN <- stringi::stri_replace_all_fixed(
+        str = data$GT_VCF,
+        pattern = c("0/0", "1/1", "0/1", "1/0", "./."),
+        replacement = c("0", "2", "1", "1", NA),
+        vectorize_all = FALSE
+      )
     }
 
-    # ~25 times slower
-    # Calculate Read Depth (from Arthur Georges)
-    # gl.obj@other$loc.metrics$rdepth <- array(NA, adegenet::nLoc(gl.obj))
-    # for (i in 1:adegenet::nLoc(gl.obj)){
-    #   called.ind <- round(adegenet::nInd(gl.obj) * gl.obj@other$loc.metrics$CallRate[i],0)
-    #   ref.count <- called.ind * gl.obj@other$loc.metrics$OneRatioRef[i]
-    #   alt.count <- called.ind * gl.obj@other$loc.metrics$OneRatioSnp[i]
-    #   sum.count.ref <- ref.count * gl.obj@other$loc.metrics$AvgCountRef[i]
-    #   sum.count.alt <- ref.count * gl.obj@other$loc.metrics$AvgCountSnp[i]
-    #   gl.obj@other$loc.metrics$rdepth[i] <- round((sum.count.alt + sum.count.ref) / called.ind, 1)
-    # }
-
-    # gl.obj@other$loc.metrics$rdepth
-  }#End dartr
-
-  data %<>%
-    dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT_BIN) %>%
-    dplyr::mutate(GT_BIN = as.integer(GT_BIN)) %>%
-    data.table::as.data.table(.) %>%
-    data.table::dcast.data.table(
-      data = .,
-      formula = POP_ID + INDIVIDUALS ~ MARKERS,
-      value.var = "GT_BIN"
-    ) %>%
-    tibble::as_tibble(.)
+    data %<>%
+      dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT_BIN) %>%
+      dplyr::mutate(GT_BIN = as.integer(GT_BIN)) %>%
+      data.table::as.data.table(.) %>%
+      data.table::dcast.data.table(
+        data = .,
+        formula = POP_ID + INDIVIDUALS ~ MARKERS,
+        value.var = "GT_BIN"
+      ) %>%
+      tibble::as_tibble(.)
+  }# End tidy data
 
   # Generate genlight
+  if (length(markers.meta$MARKERS) > 10000) {
+    parallel.core.temp <- parallel.core
+  } else {
+    parallel.core.temp <- FALSE
+  }
+
+  # longer
+  # gl.obj2 <- methods::new(
+  #   "genlight",
+  #   gen = data[,-(1:2)],
+  #   ploidy = 2,
+  #   ind.names = data$INDIVIDUALS,
+  #   chromosome = markers.meta$CHROM,
+  #   loc.names = markers.meta$LOCUS,
+  #   position = markers.meta$POS,
+  #   pop = data$POP_ID,
+  #   parallel = parallel.core.temp)
+  # tictoc::toc()
+
   gl.obj <- methods::new(
     "genlight",
     data[,-(1:2)],
-    parallel = FALSE
+    parallel = parallel.core.temp
   )
   adegenet::indNames(gl.obj)   <- data$INDIVIDUALS
   adegenet::pop(gl.obj)        <- data$POP_ID
@@ -433,19 +493,17 @@ write_genlight <- function(
   adegenet::position(gl.obj)   <- markers.meta$POS
 
   if (dartr) {
-    gl.obj@other$loc.metrics$OneRatioRef <- markers.meta$ONE_RATIO_REF
-    gl.obj@other$loc.metrics$OneRatioSnp <- markers.meta$ONE_RATIO_SNP
-    gl.obj@other$loc.metrics$AvgCountRef <- markers.meta$AVG_COUNT_REF
-    gl.obj@other$loc.metrics$AvgCountSnp <- markers.meta$AVG_COUNT_SNP
-    gl.obj@other$loc.metrics$CallRate <- markers.meta$CALL_RATE
-    if ("counts" %in% data.source) {
-      gl.obj@other$loc.metrics$RepAvg <- rep.avg
-    } else {
-      gl.obj@other$loc.metrics$RepAvg <- markers.meta$REP_AVG
-    }
-    gl.obj@other$loc.metrics$rdepth <- markers.meta$rdepth
+    gl.obj@other$loc.metrics <- markers.meta %>%
+      dplyr::select(
+        OneRatioRef = ONE_RATIO_REF,
+        OneRatioSnp = ONE_RATIO_SNP,
+        AvgCountRef = AVG_COUNT_REF,
+        AvgCountSnp = AVG_COUNT_SNP,
+        CallRate = CALL_RATE,
+        RepAvg = REP_AVG,
+        rdepth
+      )
   }#End dartr
-
 
 
   # Check
