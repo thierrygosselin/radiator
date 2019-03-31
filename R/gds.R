@@ -1635,6 +1635,10 @@ generate_id_stats <- function (
       )
     }
 
+    if (missing) {
+      missing.out <- stringi::stri_join("Missing genotypes outlier: ", id.stats[[1, 9]])
+      corr.info <- stringi::stri_join(missing.out, "\n", corr.info)
+    }
 
     if (!is.null(subsample)) {
       subtitle.ind.stats <- stringi::stri_join(

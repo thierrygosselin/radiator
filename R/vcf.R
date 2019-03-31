@@ -275,6 +275,7 @@ read_vcf <- function(
   if (verbose) message("Execution date@time: ", file.date)
   old.dir <- getwd()
   opt.change <- getOption("width")
+  options(future.globals.maxSize= Inf)
   options(width = 70)
   timing <- proc.time()# for timing
   res <- list()
@@ -876,29 +877,27 @@ read_vcf <- function(
   blacklist.strands <- path.folder.strands <- NULL
 
   # Filter the vcf's FILTER column ---------------------------------------------
-  markers.meta$FILTER_VCF <- SeqArray::seqGetData(
+  # markers.meta$FILTER_VCF
+  filter.vcf <- tibble::tibble(
+    FILTER_VCF = SeqArray::seqGetData(
     gds, "annotation/filter")
-  filter.check.unique <- unique(markers.meta$FILTER_VCF)
+    ) %>%
+    dplyr::bind_cols(
+      markers.meta %>%
+        dplyr::filter(FILTERS == "whitelist") %>%
+        dplyr::select(VARIANT_ID)
+      )
+  filter.check.unique <- unique(filter.vcf$FILTER_VCF)
 
   if (length(filter.check.unique) > 1) {
     message("Filtering markers based on VCF FILTER column")
-    # n.markers.before <- nrow(markers.meta)
-
-    # bl <- markers.meta %>%
-    #   dplyr::filter(FILTER_VCF != "PASS") %>%
-    #   dplyr::select(MARKERS) %>%
-    #   dplyr::mutate(FILTER_VCF = "vcf filter column")
-
-    # bl.gds <- update_bl_markers(gds = gds, update = bl)
-
-    # markers.meta %<>%
-    #   dplyr::filter(FILTER_VCF == "PASS") %>%
-    #   dplyr::select(-FILTER_VCF)
-
+    filter.vcf %<>% dplyr::filter(FILTER_VCF != "PASS")
     markers.meta %<>%
       dplyr::mutate(
         FILTERS = dplyr::if_else(
-          FILTER_VCF != "PASS", "vcf filter column", FILTERS
+          VARIANT_ID %in% filter.vcf$VARIANT_ID,
+          "vcf filter column",
+          FILTERS
         )
       )
 
@@ -928,8 +927,6 @@ read_vcf <- function(
       internal,
       verbose
     )
-  } else {
-    markers.meta %<>% dplyr::select(-FILTER_VCF)
   }
 
   filter.check.unique <- NULL
@@ -2287,7 +2284,10 @@ clean_ad <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) 
 
   x <- split(x = x, f = split.vec) %>%
     .radiator_parallel(
-      X = ., FUN = clean, mc.cores = parallel.core) %>%
+      X = ., FUN = clean,
+      mc.cores = parallel.core,
+      max.vector.size = 1000000000000
+      ) %>%
     purrr::flatten_int(.)
   return(x)
 }#End clean_ad
@@ -2323,7 +2323,11 @@ clean_pl <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) 
       dplyr::select(GT_VCF, PL) %>%
       split(x = ., f = split.vec) %>%
       .radiator_parallel(
-        X = ., FUN = clean, mc.cores = parallel.core) %>%
+        X = .,
+        FUN = clean,
+        mc.cores = parallel.core,
+        max.vector.size = 1000000000000
+        ) %>%
       dplyr::bind_rows(.))
   return(x)
 }#End clean_pl
@@ -2381,7 +2385,11 @@ clean_gl <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) 
           dplyr::select(GL) %>%
           split(x = ., f = split.vec) %>%
           .radiator_parallel(
-            X = ., FUN = clean, mc.cores = parallel.core) %>%
+            X = .,
+            FUN = clean,
+            mc.cores = parallel.core,
+            max.vector.size = 1000000000000
+          ) %>%
           dplyr::bind_rows(.))
 
     } else {
@@ -2418,7 +2426,9 @@ clean_nr <- function(x, split.vec, parallel.core = parallel::detectCores() - 1){
       dplyr::select(NR) %>%
       split(x = ., f = split.vec) %>%
       .radiator_parallel_mc(
-        X = ., FUN = clean, mc.cores = parallel.core,
+        X = .,
+        FUN = clean,
+        mc.cores = parallel.core,
         nr.col.names = nr.col.names) %>%
       dplyr::bind_rows(.))
   return(x)
@@ -2919,7 +2929,12 @@ split_vcf <- function(
   split <- strata <- blacklist <- NULL
 
   .radiator_parallel(
-    X = input, FUN = split_vcf, mc.cores = parallel.core, filename = filename)
+    X = input,
+    FUN = split_vcf,
+    mc.cores = parallel.core,
+    filename = filename,
+    max.vector.size = 1000000000000
+  )
 
 
   # results --------------------------------------------------------------------

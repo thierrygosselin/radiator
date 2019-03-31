@@ -384,9 +384,9 @@ filter_ld <- function(
         filter.short.ld <- stringi::stri_replace_all_fixed(
           str = filter.short.ld,
           pattern = c("1", "2", "3", "4", "5"),
-          replacement = c("first", "random", "last", "middle", "mac"),
+          replacement = c("mac", "random", "first", "middle", "last"),
           vectorize_all = FALSE)
-        filter.short.ld <- match.arg(filter.short.ld, c("first", "random", "last", "middle", "mac"))
+        filter.short.ld <- match.arg(filter.short.ld, c("mac", "random", "first", "middle", "last"))
       }
 
 

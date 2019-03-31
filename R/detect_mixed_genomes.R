@@ -482,11 +482,11 @@ detect_mixed_genomes <- function(
                           labeller = ggplot2::labeller(MISSING_GROUP = facet_names))
     # het.manhattan
 
-
+    # n.pop <- 20
     ggplot2::ggsave(
       filename = file.path(path.folder, "individual.heterozygosity.manhattan.plot.pdf"),
       plot = het.manhattan,
-      width = 5 * n.pop, height = 10 * as.numeric(missing.group),
+      width = max(5 * n.pop, 20), height = 10 * as.numeric(missing.group),
       dpi = 600, units = "cm", useDingbats = FALSE, limitsize = FALSE)
 
 
@@ -518,7 +518,7 @@ detect_mixed_genomes <- function(
     ggplot2::ggsave(
       filename = file.path(path.folder, "individual.heterozygosity.boxplot.pdf"),
       plot = het.bp,
-      width = 4 * n.pop, height = 10, dpi = 600, units = "cm",
+      width = max(4 * n.pop, 20), height = 10, dpi = 600, units = "cm",
       useDingbats = FALSE, limitsize = FALSE)
     het.ind.overall <- NULL
 
