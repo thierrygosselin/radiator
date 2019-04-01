@@ -159,7 +159,7 @@ distributed separately, follow the links below.
 
 **R Notebooks:**
 
-* Missing data visualization and analysis [(html vignette)](https://www.dropbox.com/s/4zf032g6yjatj0a/vignette_missing_data_analysis.nb.html?dl=0) and [(Rmd)](https://www.dropbox.com/s/5fxw2h9w1l1j391/vignette_missing_data_analysis.Rmd?dl=0)
+* Missing data visualization and analysis [(html vignette)](https://www.dropbox.com/s/btw1jos6yfck407/vignette_missing_data_analysis.nb.html?dl=0) and [(Rmd)](https://www.dropbox.com/s/tjjld6jczefyrj2/vignette_missing_data_analysis.Rmd?dl=0)
 
 
 ## Citation:

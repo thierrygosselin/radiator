@@ -994,7 +994,8 @@ read_dart <- function(
       dplyr::arrange(MARKERS, REF))
 
   #GDS -----------------------------------------------------------------------
-  data <- dart2gds(
+  data <- suppressWarnings(
+    dart2gds(
     data = data,
     strata = strata,
     markers.meta = markers.meta,
@@ -1005,6 +1006,7 @@ read_dart <- function(
     gt = gt,
     parallel.core = parallel.core,
     verbose = verbose
+  )
   )
 
   # Tidy data -----------------------------------------------------------------
