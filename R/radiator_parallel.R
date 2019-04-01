@@ -33,8 +33,15 @@
 #' @keywords internal
 
 mclapply_win <- function(
-  X, FUN, ..., mc.preschedule = TRUE, mc.set.seed = TRUE,
-  mc.silent = FALSE, mc.cores = NULL, mc.cleanup = TRUE, mc.allow.recursive = TRUE
+  X,
+  FUN,
+  ...,
+  mc.preschedule = TRUE,
+  mc.set.seed = TRUE,
+  mc.silent = FALSE,
+  mc.cores = NULL,
+  mc.cleanup = TRUE,
+  mc.allow.recursive = TRUE
 ) {
 
   # Create a cluster
@@ -54,9 +61,12 @@ mclapply_win <- function(
       #Export the packages to the clusters
       parallel::clusterExport(cl, 'loaded.packages', envir = environment())
 
+      # parLapply --------------------------------------------------------------
       # Load the libraries on all the clusters
       parallel::parLapply(
-        cl, 1:length(cl), function(xx){
+        cl,
+        1:length(cl),
+        function(xx){
           lapply(loaded.packages, function(yy) {
             require(yy , character.only = TRUE)})
         }

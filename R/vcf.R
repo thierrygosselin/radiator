@@ -862,6 +862,7 @@ read_vcf <- function(
           values = filter.strands,
           path.folder = path.folder,
           file.date = file.date,
+          internal = internal,
           verbose = verbose)
         # results ------------------------------------------------------------------
         radiator_results_message(
@@ -2283,10 +2284,10 @@ clean_ad <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) 
   }
 
   x <- split(x = x, f = split.vec) %>%
-    .radiator_parallel(
+    .radiator_parallel_mc(
       X = ., FUN = clean,
-      mc.cores = parallel.core,
-      max.vector.size = 1000000000000
+      mc.cores = parallel.core
+      # max.vector.size = 1000000000000
       ) %>%
     purrr::flatten_int(.)
   return(x)
@@ -2322,11 +2323,11 @@ clean_pl <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) 
     dplyr::ungroup(x) %>%
       dplyr::select(GT_VCF, PL) %>%
       split(x = ., f = split.vec) %>%
-      .radiator_parallel(
+      .radiator_parallel_mc(
         X = .,
         FUN = clean,
-        mc.cores = parallel.core,
-        max.vector.size = 1000000000000
+        mc.cores = parallel.core
+        # max.vector.size = 1000000000000
         ) %>%
       dplyr::bind_rows(.))
   return(x)
@@ -2384,11 +2385,11 @@ clean_gl <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) 
         dplyr::ungroup(x) %>%
           dplyr::select(GL) %>%
           split(x = ., f = split.vec) %>%
-          .radiator_parallel(
+          .radiator_parallel_mc(
             X = .,
             FUN = clean,
-            mc.cores = parallel.core,
-            max.vector.size = 1000000000000
+            mc.cores = parallel.core
+            # max.vector.size = 1000000000000
           ) %>%
           dplyr::bind_rows(.))
 
@@ -2928,12 +2929,11 @@ split_vcf <- function(
 
   split <- strata <- blacklist <- NULL
 
-  .radiator_parallel(
+  .radiator_parallel_mc(
     X = input,
     FUN = split_vcf,
     mc.cores = parallel.core,
-    filename = filename,
-    max.vector.size = 1000000000000
+    filename = filename#,max.vector.size = 1000000000000
   )
 
 
