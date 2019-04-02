@@ -286,7 +286,8 @@ filter_snp_number <- function(
     ggplot2::ggsave(
       filename = file.path(path.folder, d.plot.filename),
       plot = d.plot,
-      width = 20, height = 10, dpi = 300, units = "cm", useDingbats = FALSE)
+      width = 20, height = 10, dpi = 300, units = "cm", useDingbats = FALSE,
+      limitsize = FALSE)
 
 
     # Helper table -------------------------------------------------------------
@@ -336,7 +337,8 @@ filter_snp_number <- function(
       height = 15,
       dpi = 300,
       units = "cm",
-      useDingbats = FALSE)
+      useDingbats = FALSE,
+      limitsize = FALSE)
     helper.table <- markers.plot <- NULL
     if (verbose) message("Files written: helper tables and plots")
 

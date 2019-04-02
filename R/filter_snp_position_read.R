@@ -243,8 +243,14 @@ filter_snp_position_read <- function(
 
     # Distribution -------------------------------------------------------------
     d.plot <- wl %>%
-      dplyr::distinct(MARKERS,COL) %>%
-      ggplot2::ggplot(data = ., ggplot2::aes(factor(COL))) +
+      dplyr::distinct(MARKERS, COL)
+
+    col.levels <- sort(unique(wl$COL))
+
+    d.plot %<>% dplyr::mutate(COL = factor(x = COL, levels = col.levels))
+
+    d.plot <- ggplot2::ggplot(
+      data = d.plot, ggplot2::aes(factor(sort(as.integer(COL))))) +
       ggplot2::geom_bar() +
       ggplot2::labs(y = "Number of SNPs", x = "SNP position on the read (bp)") +
       ggplot2::theme_bw()+
@@ -264,7 +270,9 @@ filter_snp_position_read <- function(
     ggplot2::ggsave(
       filename = file.path(path.folder, d.plot.filename),
       plot = d.plot,
-      width = read.length, height = 10, dpi = 300, units = "cm", useDingbats = FALSE)
+      width = read.length, height = 10, dpi = 300, units = "cm",
+      useDingbats = FALSE,
+      limitsize = FALSE)
 
 
 
@@ -314,7 +322,8 @@ filter_snp_position_read <- function(
       height = 15,
       dpi = 300,
       units = "cm",
-      useDingbats = FALSE)
+      useDingbats = FALSE,
+      limitsize = FALSE)
     helper.table <- markers.plot <- NULL
     if (verbose) message("Files written: helper tables and plots")
 

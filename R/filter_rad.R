@@ -337,6 +337,20 @@ install.packages("UpSetR")
       gt = FALSE,
       gt.bin = TRUE
     )
+    data.type <- radiator::detect_genomic_format(gds)
+  }
+
+  if (data.type == "tbl_df") {
+    want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF",
+                      "ALT")
+    markers.meta <- suppressWarnings(
+      gds %>%
+      dplyr::select(dplyr::one_of(want)) %>%
+      dplyr::distinct(.)
+      )
+    notwanted <- c("VARIANT_ID", "CHROM", "LOCUS", "POS", "COL", "REF","ALT")
+    gds <- suppressWarnings(gds %>% dplyr::select(-dplyr::one_of(notwanted)))
+    gds <- radiator_gds(genotypes.df = gds, markers.meta = markers.meta, open = TRUE)
   }
 
   source <- extract_data_source(gds) # to know if dart data or not...

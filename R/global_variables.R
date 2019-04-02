@@ -125,7 +125,10 @@ if (getRversion() >= "2.15.1") {
       "REF_DEPTH_TOTAL", "MARKERS1", "SWITCH", "TARGET_ID1", "VARIANT_ID.x",
       "VARIANT_ID.y", "variant.id", "problem.filename", "FILTER_VCF", "fig.upsetr",
       "MARKERS_NEW", "C3", "C4", "C5", "C6", "ONE_RATIO_REF", "ONE_RATIO_SNP",
-      "rdepth"
+      "rdepth", "GENETIC_SEX", "M", "MEAN_HET_F", "MEAN_HET_M",
+      "MEAN_READ_DEPTH_F", "MEAN_READ_DEPTH_M", "PRESENCE_ABSENCE_F",
+      "PRESENCE_ABSENCE_M", "QR_RESIDUALS", "RATIO", "Species", "U",
+      "coverage.thresholds", "population", "residuals", "species", "tau", "yw"
     )
   )
 }

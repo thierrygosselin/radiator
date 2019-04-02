@@ -317,6 +317,7 @@ filter_monomorphic <- function(
 #' @keywords internal
 #' @export
 count_monomorphic <- function(x, parallel.core = parallel::detectCores() - 1) {
+  if (Sys.info()[['sysname']] == "Windows") parallel.core <- 1
   variants <- SeqArray::seqGetData(gdsfile = x, var.name = "variant.id")
   # Function proposed by Xiuwen doesnt work below line 329 it missed some markers
   # in some datasets...

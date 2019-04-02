@@ -1554,7 +1554,7 @@ dart2gds <- function(
   if (dart.format == "1row") data.source <- c("dart", "1row")
   if (dart.format == "2rows") data.source <- c("dart", "2rows")
   if (dart.format == "counts") data.source <- c("dart", "counts")
-  parallel.core.temp <- 2 * floor(parallel.core / 2)
+  parallel.core.temp <- max(1, 2 * floor(parallel.core / 2))
   geno.coding <- "alt.dos"
   dp <- NULL
 
