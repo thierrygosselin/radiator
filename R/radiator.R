@@ -235,7 +235,11 @@ radiator_parameters <- function(
     res$filters.parameters <- tibble::tibble(
       FILTERS = filter.name,
       PARAMETERS = param.name,
-      VALUES = values,
+      VALUES = if (!is.null(values)) {
+        values
+      } else {
+        "not filtering"
+      },
       BEFORE = paste(info$n.ind, info$n.pop, info$n.chrom, info$n.locus, info$n.snp, sep = " / "),
       AFTER = paste(info.new$n.ind, info.new$n.pop, info.new$n.chrom, info.new$n.locus, info.new$n.snp, sep = " / "),
       BLACKLIST = paste(info$n.ind - info.new$n.ind, info$n.pop - info.new$n.pop, info$n.chrom - info.new$n.chrom, info$n.locus - info.new$n.locus, info$n.snp - info.new$n.snp, sep = " / "),

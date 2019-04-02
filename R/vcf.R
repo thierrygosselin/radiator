@@ -465,7 +465,10 @@ read_vcf <- function(
 
   # for small VCF SeqArray not that good with parallel...
   parallel.temp <- parallel.core
-  if (big.vcf < 10000000) parallel.temp <- 1
+  if (big.vcf < 10000000) {
+    parallel.temp <- FALSE
+    # parallel_core_opt(parallel.core = parallel.core, max.core = parallel::detectCores())
+  }
   big.vcf <- NULL
   gds <- suppressWarnings(
     SeqArray::seqVCF2GDS(
@@ -2282,12 +2285,12 @@ clean_ad <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) 
   clean <- function(x) {
     x <- as.integer(replace_by_na(data = x, what = 0))
   }
-
+  # future::plan(multiprocess)
   x <- split(x = x, f = split.vec) %>%
+    # furrr::future_map(.x = ., .f = clean, .progress = TRUE) %>%
     .radiator_parallel_mc(
       X = ., FUN = clean,
       mc.cores = parallel.core
-      # max.vector.size = 1000000000000
       ) %>%
     purrr::flatten_int(.)
   return(x)
@@ -2452,7 +2455,6 @@ clean_nv <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) 
       sep = ",", extra = "drop", remove = FALSE)
     return(res)
   }
-
   x <- dplyr::bind_cols(
     dplyr::select(x, -NV),
     dplyr::ungroup(x) %>%
@@ -2461,8 +2463,10 @@ clean_nv <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) 
       split(x = ., f = split.vec) %>%
       .radiator_parallel_mc(
         X = ., FUN = clean, mc.cores = parallel.core,
-        nv.col.names = nv.col.names) %>%
-      dplyr::bind_rows(.))
+        nv.col.names = nv.col.names
+        ) %>%
+      dplyr::bind_rows(.)
+    )
   return(x)
 }#End clean_nv
 

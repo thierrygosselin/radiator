@@ -363,21 +363,25 @@ update_radiator_gds <- function(
       radiator.gds <- gdsfmt::index.gdsn(
         node = gds, path = "radiator", silent = TRUE)
 
-      gdsfmt::add.gdsn(
+      suppressWarnings(
+        gdsfmt::add.gdsn(
         node = radiator.gds,
         name = node.name,
         val = value,
         replace = replace,
         compress = "ZIP_RA",
         closezip = TRUE)
+      )
     } else {
-      gdsfmt::add.gdsn(
+      suppressWarnings(
+        gdsfmt::add.gdsn(
         node = gds,
         name = node.name,
         val = value,
         replace = replace,
         compress = "ZIP_RA",
         closezip = TRUE)
+      )
     }
   }
 

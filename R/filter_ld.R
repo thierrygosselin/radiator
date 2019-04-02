@@ -175,6 +175,7 @@ filter_ld <- function(
   # verbose = TRUE
   # path.folder <- "testing_LD"
   # parameters <- NULL
+  # internal <- FALSE
   if (!interactive.filter && is.null(filter.short.ld) && is.null(filter.long.ld)) {
     return(data)
   }
