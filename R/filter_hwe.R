@@ -253,7 +253,8 @@ filter_hwe <- function(
   verbose = TRUE,
   ...
 ) {
-  if (interactive.filter || filter.hwe) {
+
+    if (interactive.filter || filter.hwe) {
     if (interactive.filter) verbose <- TRUE
     # # Testing
     # interactive.filter = TRUE
