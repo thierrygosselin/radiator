@@ -37,6 +37,7 @@ Suggests:
     ggtern,
     HardyWeinberg,
     knitr,
+    quantreg,
     rmarkdown,
     SeqArray,
     SeqVarTools,

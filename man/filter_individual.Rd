@@ -25,6 +25,8 @@ Documented in \strong{Input genomic datasets} of \code{\link{tidy_genomic_data}}
 \item{strata}{(optional)
 The strata file is a tab delimited file with a minimum of 2 columns headers:
 \code{INDIVIDUALS} and \code{STRATA}. Documented in \code{\link{read_strata}}.
+DArT data: a third column \code{TARGET_ID} is required.
+Documented on \code{\link{read_dart}}.
 Default: \code{strata = NULL}.}
 
 \item{ind.approach}{(character).

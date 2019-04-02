@@ -2,12 +2,12 @@
 % Please edit documentation in R/sex_markers.R
 \name{sexy_markers}
 \alias{sexy_markers}
-\title{This function identifies sex-linked SNPs}
+\title{sexy_markers finds sex-linked markers and re-assign sex}
 \usage{
-sexy_markers(data, silicodata = NULL, strata = NULL,
-  coverage.thresholds = 1, residual.threshold = NULL, filters = TRUE,
-  interactive.filter = TRUE, parallel.core = parallel::detectCores() -
-  1, ...)
+sexy_markers(data, silicodata = NULL, boost.analysis = FALSE,
+  strata = NULL, coverage.thresholds = 1, residual.threshold = NULL,
+  filters = TRUE, interactive.filter = TRUE,
+  parallel.core = parallel::detectCores() - 1, ...)
 }
 \arguments{
 \item{data}{(object or file) DArT file \code{.csv or .tsv}, VCF file \code{.vcf},
@@ -15,8 +15,14 @@ GDS file or object (\code{.gds} or \code{.gds.rad}).
 See Input data section data for more details.}
 
 \item{silicodata}{(optional, file) A silico DArT file (.csv or .tsv). This can be
-count or genotyped data.
-Default: \code{silicodata = NULL}}
+count or genotyped data. Note that both \code{data} and \code{silicodata} can
+be used at the same time.
+Default: \code{silicodata = NULL}.}
+
+\item{boost.analysis}{(logical, optional) This method uses machine learning
+approaches to find sex markers and re-assign samples in sex group.
+The approach is currently been tested and will be available for uses soon.#'
+Default: \code{boost.analysis = FALSE}.}
 
 \item{strata}{(file) A tab delimited file with a minimum of
 2 columns \code{INDIVIDUALS, STRATA} for VCF files and 3 columns for DArT files
@@ -63,9 +69,11 @@ special section)}
 A list with ...
 }
 \description{
-This function identifies sex-linked SNPs putatively located on
-homogametic or heterogametic chromosomes. Datasets accepted: RADseq and
-DArT's silico dart.
+This function identifies sex-linked markers putatively located on
+homogametic or heterogametic chromosomes and re-assign the sex in a dataset
+based on findings. The function work best in: DArT silico (counts) >
+DArT counts or RADseq with allele read depth > DArT silico (genotypes) >
+RADseq (genotypes) and DArT (1-row, 2-rows genotypes).
 }
 \details{
 This function takes DArT and RAD data to find markers that have a specific
@@ -73,9 +81,8 @@ This function takes DArT and RAD data to find markers that have a specific
 The function hypothesizes the presence of sex-chromosomes in you
 species/population. The tests are designed to identify markers that are
 located on putative heterogametic (Y or W) or homogametic (X or Z) chromosomes.
-\emph{Note:} If no sex-linked markers are detected, this could be
-explained by the current data not meeting the assumptions or prerequisites
-(see below), instead of the absence of sex chromosomes in the species/data.
+\emph{Note:} Violating Assumptions or Prerequisites (see below) can lead to
+false positive or the absence of detection of sex-linked markers.
 }
 \section{Assumptions}{
 
@@ -96,14 +103,22 @@ results.
 \section{Prerequisites}{
 
 \enumerate{
-\item Ideally, the data must have enough individuals (n > 100).
-\item Start with a dataset with equal ratio.
-\item DArT data: if the minimum call rate is 0.5 ask DArT to lower their filtering threshold.
-\item RADseq data: lower markers missingness thresholds during filtering (e.g. stacks \code{r} and \code{p}).
-\item Low genotyping error rate (see \code{\link{detect_het_outliers}} and \href{https://github.com/eriqande/whoa}{whoa}).
-\item Low heterozygosity miscall rate (see \code{\link{detect_het_outliers}} and \href{https://github.com/eriqande/whoa}{whoa}).
-\item Absence of pattern of heterozygosity driven by missingness \code{\link{detect_mixed_genomes}}.
-\item Absence of paralogous sequences in the data.
+\item \strong{Sample size:} Ideally, the data must have enough individuals (n > 100).
+\item \strong{Batch effect:} Sex should be randomized on lanes/chips during sequencing.
+\item \strong{Sex ratio:} Dataset with equal ratio work best.
+\item \strong{Genotyping rate}: for DArT data, if the minimum call rate is
+> 0.5 ask DArT to lower their filtering threshold.
+RADseq data, lower markers missingness thresholds during filtering
+(e.g. stacks \code{r} and \code{p}).
+\item \strong{Identity-by-Missingness:} Absence of artifactual pattern
+of missingness (\href{https://github.com/thierrygosselin/grur}{see missing visualization})
+\item \strong{Low genotyping error rate:} see \code{\link{detect_het_outliers}}
+and \href{https://github.com/eriqande/whoa}{whoa}.
+\item \strong{Low heterozygosity miscall rate:} see \code{\link{detect_het_outliers}} and
+\href{https://github.com/eriqande/whoa}{whoa}.
+\item \strong{Absence of pattern of heterozygosity driven by missingness:}
+see \code{\link{detect_mixed_genomes}}.
+\item \strong{Absence of paralogous sequences in the data}.
 }
 }
 
@@ -129,6 +144,14 @@ markers that have double the number of counts for either of the sexes.
 For example if an XY/XX system is present, females are expected to have
 double the number of counts for markers on the X chromosome.
 }
+}
+
+\section{Life cycle}{
+
+
+Machine Learning approaches (Random Forest and Extreme Gradient Boosting Trees)
+are currently been tested. They usually show a lower discovery rate but tend to
+perform better with new samples.
 }
 
 \examples{

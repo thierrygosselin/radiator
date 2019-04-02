@@ -82,7 +82,7 @@ and might be of interest for users.
 }
 \details{
 The strata file used in radiator is a tab delimited file with
-a minimum of 2 columns headers:
+a minimum of 2 columns headers (3 for DArT data users):
 \code{INDIVIDUALS} and \code{STRATA}.
 If a \code{strata} file is specified with all file formats that don't
 require it, the strata argument will have precedence on the population
@@ -100,6 +100,8 @@ make sure you
 have the required column names (\code{INDIVIDUALS} and \code{STRATA}).
 The strata column is cleaned of a white spaces that interfere with some
 packages or codes: space is changed to an underscore \code{_}.
+
+For DArT data see \code{\link{read_dart}}
 }
 \section{VCF}{
 
