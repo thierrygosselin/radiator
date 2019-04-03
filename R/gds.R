@@ -633,6 +633,7 @@ extract_individuals_metadata <- function(
 #' @rdname extract_genotypes_metadata
 #' @param gds The gds object.
 #' @param genotypes.meta.select (optional, character) Default:\code{ind.field.select = NULL}.
+#' @param genotypes (optional, character) Default: \code{genotypes = FALSE).
 #' @param radiator.node (optional, logical) Default:\code{radiator.node = TRUE}.
 #' @param index.only (optional, logical) Default:\code{index.only = FALSE}.
 #' @param sync.markers.individuals (optional, logical) Default:\code{sync.markers.individuals = TRUE}.
@@ -644,6 +645,7 @@ extract_individuals_metadata <- function(
 extract_genotypes_metadata <- function(
   gds,
   genotypes.meta.select = NULL,
+  genotypes = FALSE,
   radiator.node = TRUE,
   index.only = FALSE,
   sync.markers.individuals = TRUE,
@@ -727,6 +729,10 @@ extract_genotypes_metadata <- function(
 #' @param markers (optional, logical) Default:\code{markers = TRUE}.
 #' @param ind (optional, logical) Default:\code{ind = TRUE}.
 #' @param update.gds (optional, logical) Default:\code{update.gds = FALSE}.
+#' @param depth.tibble (optional, logical) Returns the depth info in a tibble instead of list
+#' with total and mean coverage info.
+#' Used internally.
+#' Default:\code{depth.tibble = FALSE}.
 #' @inheritParams radiator_common_arguments
 
 # @keywords internal
@@ -736,6 +742,7 @@ extract_coverage <- function(
   markers = TRUE,
   ind = TRUE,
   update.gds = FALSE,
+  depth.tibble = FALSE,
   parallel.core = parallel::detectCores() - 2,
   verbose = FALSE
 ) {
@@ -819,6 +826,8 @@ extract_coverage <- function(
             )
           )
       }#catg.depth
+
+      if (depth.tibble) return(depth)
 
       want <- c("READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH")
       have <- colnames(depth)
@@ -2213,6 +2222,7 @@ missing_per_pop <- function(
 gds2tidy <- function(
   gds,
   markers.meta = NULL,
+  markers.meta.select = NULL,
   individuals = NULL,
   pop.id = TRUE,
   calibrate.alleles = TRUE,
@@ -2224,10 +2234,23 @@ gds2tidy <- function(
   }
 
   if (is.null(markers.meta)) {
-    markers.meta <- extract_markers_metadata(gds = gds, whitelist = TRUE, verbose = TRUE)
+    if (is.null(markers.meta.select)) {
+      markers.meta <- extract_markers_metadata(
+        gds = gds,
+        whitelist = TRUE,
+        verbose = TRUE
+        )
+    } else {
+      markers.meta <- extract_markers_metadata(
+        gds = gds,
+        markers.meta.select = markers.meta.select,
+        whitelist = TRUE,
+        verbose = TRUE
+        )
+    }
   }
   want <- intersect(
-    c("MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF", "ALT",
+    c("MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF", "ALT", "COL",
       "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG",
       "ONE_RATIO_REF", "ONE_RATIO_SNP"),
                     names(markers.meta))
@@ -2301,9 +2324,7 @@ gds2tidy <- function(
         gt = FALSE, gt.vcf = FALSE
       ) %$% input
     }
-
     tidy.data %<>% dplyr::arrange(STRATA, INDIVIDUALS)
-
   }
   return(tidy.data)
 } #End tidy gds

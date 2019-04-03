@@ -234,6 +234,7 @@ tidy_genlight <- function(
 #' \code{CALL_RATE, AVG_COUNT_REF, AVG_COUNT_SNP, REP_AVG,
 #' ONE_RATIO_REF, ONE_RATIO_SNP}. These markers metadata are stored into
 #' the genlight slot: \code{genlight.obj@other$loc.metrics}.
+#' \strong{Use the radiator generated GDS data for best result}.
 #' Default: \code{dartr = FALSE}.
 
 #' @export
@@ -276,7 +277,7 @@ write_genlight <- function(
 
   # TEST
   # biallelic = TRUE
-  # write = FALSE
+  # write = TRUE
   # dartr = TRUE
   # verbose = TRUE
   # parallel.core = parallel::detectCores() - 1
@@ -313,12 +314,40 @@ write_genlight <- function(
     data.source <- radiator::extract_data_source(data)
 
     if (dartr && !any(unique(c("1row", "2rows") %in% data.source))) {
-      genotypes.meta <- radiator::extract_genotypes_metadata(gds = data)
-      # data.bk <- data
-      data <- gds2tidy(gds = data,
-                       parallel.core = parallel::detectCores() - 1,
-                       calibrate.alleles = FALSE)
-    } else {
+      # counts data and data with read depth alleles depth info...
+      genotypes.meta <- radiator::extract_genotypes_metadata(gds = data, whitelist = TRUE)
+      markers.meta <- gds2tidy(gds = data,
+                               parallel.core = parallel.core,
+                               calibrate.alleles = FALSE)
+      if (nrow(genotypes.meta) == 0) {
+        genotypes.meta <- extract_coverage(
+          gds = data,
+          ind = FALSE,
+          depth.tibble = TRUE,
+          parallel.core = parallel.core
+          )
+        if (!rlang::has_name(genotypes.meta, "GT_BIN")) {
+          suppressWarnings(
+            genotypes.meta %<>%
+            dplyr::left_join(
+              dplyr::select(markers.meta, MARKERS, INDIVIDUALS, GT_BIN, POP_ID),
+              by = c("INDIVIDUALS", "MARKERS"))
+          )
+        }
+      }
+      data.bk <- data
+      # data <- data.bk
+      data <- dplyr::select(markers.meta, MARKERS, INDIVIDUALS, POP_ID, GT_BIN)
+      want <- c("MARKERS", "CHROM", "LOCUS", "POS",
+                "REF", "ALT",
+                "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG",
+                "ONE_RATIO_REF", "ONE_RATIO_SNP")
+      suppressWarnings(
+        markers.meta  %<>%
+          dplyr::select(dplyr::one_of(want)) %>%
+          dplyr::distinct(MARKERS, .keep_all = TRUE)
+      )
+    }
       genotypes.meta <- NULL
       markers.meta <- radiator::extract_markers_metadata(gds = data, whitelist = TRUE)
       data.bk <- data
@@ -332,7 +361,6 @@ write_genlight <- function(
             tibble::as_tibble(.)
         ) %>%
         dplyr::rename(POP_ID = STRATA)
-    }
 
 
     # dartR-----------------------------------------------------------------------
@@ -386,7 +414,8 @@ write_genlight <- function(
               ) %>%
               dplyr::ungroup(.)
           )
-
+          genotypes.meta <- NULL
+          #Note to myself: will have to remove duplicated info in code between genotypes.meta and data...
           if ("counts" %in% data.source) {
             markers.meta$REP_AVG <- rep.avg
           }
