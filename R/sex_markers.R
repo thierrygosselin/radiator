@@ -303,7 +303,7 @@ sexy_markers <- function(data,
       parallel.core = parallel.core,
       path.folder = path.folder,
       internal = TRUE,
-      verbose = TRUE
+      verbose = FALSE
     )
   }
 
@@ -446,7 +446,13 @@ sexy_markers <- function(data,
 
   # Summarise DArT counts and VCFs--------------------------------------------------------
   # Summarise silico --------------------------------------------------------------------
-  res$sum <- summarize_sex(data = data, silicodata = silicodata, data.source = data.source, tau = tau)
+  res$sum <- summarize_sex(
+    data = data,
+    silicodata = silicodata,
+    coverage.thresholds = coverage.thresholds,
+    data.source = data.source,
+    tau = tau
+  )
   data.sum <- res$sum$data.sum
   silico.sum <- res$sum$silico.sum
 
@@ -800,7 +806,13 @@ sexy_markers <- function(data,
 
     # silico
     if (sex.id.input != 1){
-      sum <- summarize_sex(data = data.genetic, silicodata = data.silico.genetic, data.source = data.source, tau = tau)
+      sum <- summarize_sex(
+        data = data,
+        silicodata = silicodata,
+        coverage.thresholds = coverage.thresholds,
+        data.source = data.source,
+        tau = tau
+      )
       data.sum <- sum$data.sum
       silico.sum <- sum$silico.sum
     }
@@ -1023,7 +1035,7 @@ sexy_markers <- function(data,
   # Export -------------------------------------------------------------------
 
   # summary of all sex-markers per method (PA, HET, RD)
-return(res)
+  return(res)
 }#End sexy_markers
 
 
@@ -1100,7 +1112,7 @@ sex_markers_plot <- function(
 #' @keywords internal
 #' @export
 
-summarize_sex <- function (data, silicodata, data.source, tau = 0.3) {
+summarize_sex <- function (data, silicodata, data.source, coverage.thresholds = NULL, tau = 0.3) {
   if (tibble::has_name(data, "READ_DEPTH")) {
     # With DArT count data and VCFs
 

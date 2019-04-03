@@ -4,7 +4,8 @@
 \alias{summarize_sex}
 \title{summarize_sex}
 \usage{
-summarize_sex(data, silicodata, data.source, tau = 0.3)
+summarize_sex(data, silicodata, data.source, coverage.thresholds = NULL,
+  tau = 0.3)
 }
 \description{
 Function to generate the different figures required.
