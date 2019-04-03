@@ -5,9 +5,9 @@
 \title{sexy_markers finds sex-linked markers and re-assign sex}
 \usage{
 sexy_markers(data, silicodata = NULL, boost.analysis = FALSE,
-  strata = NULL, coverage.thresholds = 1, residual.threshold = NULL,
-  filters = TRUE, interactive.filter = TRUE,
-  parallel.core = parallel::detectCores() - 1, ...)
+  strata = NULL, coverage.thresholds = 1, filters = TRUE,
+  interactive.filter = TRUE, parallel.core = parallel::detectCores() -
+  1, ...)
 }
 \arguments{
 \item{data}{(object or file) DArT file \code{.csv or .tsv}, VCF file \code{.vcf},
@@ -42,9 +42,6 @@ functions: \code{\link{extract_dart_target_id}} and \code{\link{extract_individu
 \item{coverage.thresholds}{(optional, integer) The minimum coverage required
 to account for the genotype.
 Default: \code{coverage.thresholds = 1}.}
-
-\item{residual.threshold}{(optional, double)
-Default: \code{residual.threshold = NULL}.}
 
 \item{filters}{(optional, logical) When \code{filters = TRUE}, the data will
 be filtered for
