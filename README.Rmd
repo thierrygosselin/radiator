@@ -89,7 +89,11 @@ radiator::summary_strata("my.strata.tsv")
 **2. Filter your RADseq data: ONE FUNCTION TO RULE THEM ALL**
 
 ```r
-data <- radiator::filter_rad(data = "my.vcf", strata = "my.strata.tsv", output = c("genind", "hierfstat"))
+data <- radiator::filter_rad(
+    data = "my.vcf",
+    strata = "my.strata.tsv", 
+    output = c("genind", "stockr")
+    )
 ```
 
 * There's a built-in interactive mode that requires users to visualize the data before choosing thresholds.
