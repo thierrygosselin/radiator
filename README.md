@@ -25,11 +25,10 @@ devtools::install_github("thierrygosselin/radiator")
 library(radiator)
 ```
 
-To minimize dependencies, just the basic required packages are installed with the command above. If you want the full suits of functions and don't want to be preoccupied, download this `.R` file ([radiator\_pkg\_install.r](https://www.dropbox.com/s/7ekjvqx2qahg8mg/radiator_pkg_install.R?dl=0)) and run:
+To minimize dependencies, just the basic required packages are installed with the command above. If you want the full suits of functions and don't want to be preoccupied, run:
 
 ``` r
-source("radiator_pkg_install.R") #giving the full path of the file.
-rad <- radiator_pkg_install() # that's it. It will install radiator as well...
+radiator::radiator_pkg_install() # that's it. It will update, when necessary, radiator.
 ```
 
 Learning radiator
@@ -39,17 +38,17 @@ See if radiator is the right tool for you:
 
 **1. Prepare a strata file**
 
--   It's a tab separated file, e.g. [example.dart.strata.tsv](https://www.dropbox.com/s/utq2h6o00v55kep/example.dart.strata.tsv?dl=0).
+-   It's a tab separated file, e.g. [example.strata.tsv](https://www.dropbox.com/s/g0vsek0dmtpxntt/example.strata.tsv?dl=0).
 -   A minimum of 2 columns: `INDIVIDUALS` and `STRATA` is required.
 -   The `STRATA` column identifies the individuals stratification, the hierarchical groupings: populations, sampling sites or any grouping you want.
 -   It's like *stacks* population map file with header...
+-   DArT users: the strata requires 3 columns and is described in `??radiator::readr_dart` [example.dart.strata.tsv](https://www.dropbox.com/s/utq2h6o00v55kep/example.dart.strata.tsv?dl=0).
 
-To make sure it's going to work properly, try reading it in `R` with:
+To make sure it's going to work properly, try:
 
 ``` r
-strata <- radiator::read_strata("my.strata.tsv")
-names(strata)
-# more details in with `??radiator::read_strata`
+radiator::summary_strata("my.strata.tsv")
+# more details in with `??radiator::summary_strata`
 ```
 
 **2. Filter your RADseq data: ONE FUNCTION TO RULE THEM ALL**

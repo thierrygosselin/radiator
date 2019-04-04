@@ -59,11 +59,10 @@ library(radiator)
 
 To minimize dependencies, just the basic required packages are installed with
 the command above. If you want the full suits of functions and don't want to
-be preoccupied, download this `.R` file ([radiator_pkg_install.r](https://www.dropbox.com/s/7ekjvqx2qahg8mg/radiator_pkg_install.R?dl=0)) and run:
+be preoccupied, run:
 
 ```r
-source("radiator_pkg_install.R") #giving the full path of the file.
-rad <- radiator_pkg_install() # that's it. It will install radiator as well...
+radiator::radiator_pkg_install() # that's it. It will update, when necessary, radiator.
 ```
 
 
