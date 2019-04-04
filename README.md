@@ -39,7 +39,7 @@ See if radiator is the right tool for you:
 
 **1. Prepare a strata file**
 
--   It's a tab separated file, e.g. `radiator.strata.tsv`.
+-   It's a tab separated file, e.g. [example.dart.strata.tsv](https://www.dropbox.com/s/utq2h6o00v55kep/example.dart.strata.tsv?dl=0).
 -   A minimum of 2 columns: `INDIVIDUALS` and `STRATA` is required.
 -   The `STRATA` column identifies the individuals stratification, the hierarchical groupings: populations, sampling sites or any grouping you want.
 -   It's like *stacks* population map file with header...
