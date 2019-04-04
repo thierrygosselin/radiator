@@ -594,7 +594,7 @@ tidy_dart_metadata <- function(
 
 #' @description Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 #' and might be of interest for users. The function generate a GDS object/file
-#' and tidy dataset using
+#' and optionally, a tidy dataset using
 #' \href{http://www.diversityarrays.com}{DArT} files.
 
 #' @param data One of the DArT output files. 6 formats used by DArT are recognized
@@ -620,21 +620,30 @@ tidy_dart_metadata <- function(
 #' Depending on the number of markers, these format will be recoded similarly to
 #' VCF files (dosage of alternate allele, see details).
 #'
+#' The function can import \code{.csv} or \code{.tsv} files.
+#'
 #'
 #' If you encounter a problem, sent me your data so that I can update
-#' the function. The function can import \code{.csv} or \code{.tsv} files.
+#' the function.
 
 #' @param strata A tab delimited file or object with 3 columns.
 #' Columns header is:
 #' \code{TARGET_ID}, \code{INDIVIDUALS} and \code{STRATA}.
 #' Note: the column \code{STRATA} refers to any grouping of individuals.
 #' You need to make sure that
-#' the column \code{TARGET_ID} match the id used by DArT.
+#' the column \code{TARGET_ID} match the id used by DArT. With the \code{counts}
+#' format the \code{TARGET_ID} is a series of integer.
+#' With \code{1row} and \code{2rows} the \code{TARGET_ID} is actually the sample
+#' name submitted to DArT.
 #' The column \code{INDIVIDUALS} and \code{STRATA} will be kept in the tidy data.
 #' Only individuals in the strata file are kept in the tidy, i.e. that the strata
 #' is also used as a whitelist of individuals/strata.
 #' Silico DArT data is currently used to detect sex markers, so the \code{STRATA}
 #' column should be filed with sex information: \code{M} or \code{F}.
+#'
+#' See example on how to extract the TARGET_ID of your DArT file.
+#'
+#' \href{https://www.dropbox.com/s/utq2h6o00v55kep/example.dart.strata.tsv?dl=0)}{example.dart.strata.tsv}.
 
 #' @param tidy.dart (logical, optional) Generate a tidy dataset.
 #' Default:\code{tidy.dart = FALSE}.
@@ -694,7 +703,9 @@ tidy_dart_metadata <- function(
 #' \code{MARKERS, CHROM, LOCUS, POS, REF, ALT}.
 #' }
 
-#' \strong{Advance mode, using \emph{dots-dots-dots ...}}
+#' @section Advance mode:
+#'
+#' \emph{dots-dots-dots ...} allows to pass several arguments for fine-tuning the function:
 #' \enumerate{
 #' \item \code{whitelist.markers}: detailed in \code{\link[radiator]{filter_whitelist}}.
 #' Defautl: \code{whitelist.markers = NULL}.

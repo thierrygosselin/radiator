@@ -1158,7 +1158,7 @@ ld2df <- function(x) {
 #' directory.
 #' @export
 #' @keywords internal
-#' @rdname remove_duplicates
+#' @rdname ld_pruning
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 ld_pruning <- function(

@@ -30,9 +30,11 @@ the clone id.
 Depending on the number of markers, these format will be recoded similarly to
 VCF files (dosage of alternate allele, see details).
 
+The function can import \code{.csv} or \code{.tsv} files.
+
 
 If you encounter a problem, sent me your data so that I can update
-the function. The function can import \code{.csv} or \code{.tsv} files.}
+the function.}
 
 \item{write}{With default \code{write = TRUE}, the dart target id column is
 written in a file in the working directory.}

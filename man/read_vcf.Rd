@@ -67,21 +67,7 @@ Default: \code{verbose = TRUE}.}
 \item{...}{(optional) To pass further arguments for fine-tuning the function.}
 }
 \value{
-The function returns a list with:
-\enumerate{
-\item \code{vcf.connection}: the name of the GDS file.
-To close the connection with the GDS file: use \code{SeqArray::seqClose(OBJECT_NAME$vcf.connection)}
-\item \code{individuals}: a tibble with the names of samples in the original
-VCF \code{INDIVIDUALS_VCF} and corrected for use in radiator \code{INDIVIDUALS}
-\item \code{biallelic}: is the data biallelic or not.
-\item \code{markers.meta}: a tibble with the markers metadata, including:
-\code{VARIANT_ID, CHROM, LOCUS, POS, COL, MARKERS, REF, ALT} when available.
-\item \code{n.ind}: the number of individuals
-\item \code{n.markers}: the number of markers
-\item \code{n.chromosome}: the numer of chromosome
-\item \code{n.locus}: the number of locus
-\item \code{filename}: the name of the file used.
-}
+The function returns a GDS object.
 }
 \description{
 The function reads VCF files for radiator and
@@ -116,8 +102,11 @@ markers (for other stats) are blacklisted. Why ? The reason is that an excess of
 heterozygotes and negative Fis values are not a bad thing \emph{per se}.
 Genomic regions under balancing selection may contain such markers and
 statistics.
+}
+\section{Advance mode}{
 
-\strong{Advance mode, using \emph{dots-dots-dots ...}}
+
+\emph{dots-dots-dots ...} allows to pass several arguments for fine-tuning the function:
 \enumerate{
 \item \code{whitelist.markers}: detailed in \code{\link[radiator]{filter_whitelist}}.
 \item \code{blacklist.id}: detailed in \code{\link[radiator]{tidy_genomic_data}}.
@@ -189,6 +178,7 @@ In doubt, overwrite this value by using 1 (all markers selected) and
 expect a small computational cost.
 }
 }
+
 \examples{
 \dontrun{
 #require(SeqVarTools)
@@ -199,6 +189,7 @@ expect a small computational cost.
 prep.data <- radiator::read_vcf(
     data = "populations.snps.vcf",
     strata = "strata_salamander.tsv",
+    path.folder = "salamander",
     filter.individuals.missing = "outliers",
     filter.common.markers = TRUE,
     filter.strands = "blacklist",
@@ -207,8 +198,8 @@ prep.data <- radiator::read_vcf(
     filter.snp.position.read = "outliers",
     filter.short.ld = "mac",
     filter.long.ld = NULL,
-    path.folder = "salamander",
-    verbose = TRUE)
+    verbose = TRUE
+    )
 }
 }
 \references{

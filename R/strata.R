@@ -77,6 +77,11 @@
 #' packages or codes: space is changed to an underscore \code{_}.
 #'
 #' For DArT data see \code{\link{read_dart}}
+#'
+#' \href{https://www.dropbox.com/s/g0vsek0dmtpxntt/example.strata.tsv?dl=0}{example.strata.tsv}.
+#'
+#' \href{https://www.dropbox.com/s/utq2h6o00v55kep/example.dart.strata.tsv?dl=0}{example.dart.strata.tsv}.
+
 
 #' @section VCF:
 #' VCF file users, not sure about the sample id inside your file ?
@@ -92,7 +97,7 @@
 
 #' @rdname read_strata
 #' @export
-#' @return
+#' @return A list with several components.
 #' \enumerate{
 #' \item Number of strata/populations
 #' \item Number of individuals

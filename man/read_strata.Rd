@@ -66,6 +66,7 @@ the function is a little more chatty during execution.
 Default: \code{verbose = TRUE}.}
 }
 \value{
+A list with several components.
 \enumerate{
 \item Number of strata/populations
 \item Number of individuals
@@ -102,6 +103,10 @@ The strata column is cleaned of a white spaces that interfere with some
 packages or codes: space is changed to an underscore \code{_}.
 
 For DArT data see \code{\link{read_dart}}
+
+\href{https://www.dropbox.com/s/g0vsek0dmtpxntt/example.strata.tsv?dl=0}{example.strata.tsv}.
+
+\href{https://www.dropbox.com/s/utq2h6o00v55kep/example.dart.strata.tsv?dl=0}{example.dart.strata.tsv}.
 }
 \section{VCF}{
 

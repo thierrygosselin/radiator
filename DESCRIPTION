@@ -33,6 +33,7 @@ Imports:
 Suggests:
     adegenet,
     BiocManager,
+    devtools,
     gdsfmt,
     ggtern,
     HardyWeinberg,

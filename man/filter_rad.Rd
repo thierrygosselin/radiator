@@ -64,17 +64,219 @@ several \code{filter_} functions of \pkg{radiator}.
 Rapidly get an idea of what you can and cannot do with your dataset.
 Novices, start with this one!
 }
-\note{
-The function requires 2 packages (not installed automatically with radiator):
+\section{Filtering steps and folders generated}{
+
+\enumerate{
+\item \strong{radiator}:
 \itemize{
-\item HardyWeinberg: to filter markers in HWD
-\item ggtern: to generate ternary graph
+\item the GDS file ending with \code{.gds.rad}. To open in R use \code{\link{read_rad}}.
+\item \code{filters_parameters.tsv}: file containing all the parameters and
+values of the filtering process.
+\item \code{radiator_filter_rad_args.tsv}: the function calls and values, for
+reproducibility.
+\item \code{radiator_tidy_dart_metadata.rad}: for DArT data, this is the markers
+metadata file. To open in R use \code{\link{read_rad}}.
+\item \code{random.seed}: for reproducibility.
+}
+\item \strong{filter_dart_reproducibility}: filter reproducibility of markers (DArT data only)
+\itemize{
+\item \code{blacklist.dart.reproducibility.tsv}: blacklisted markers.
+\item \code{whitelist.dart.reproducibility.tsv}: whitelisted markers.
+\item \code{dart_reproducibility_boxplot.pdf}: the boxplot of reproducibility.
+\item \code{dart_reproducibility_stats.tsv}: reproducibility associated summary statistics.
+\item \code{dart.reproducibility.helper.plot.pdf}: the helper plot showing
+the impact of thresholds
+on the number of markers blacklisted and whitelisted.
+\item \code{dart.reproducibility.helper.table.tsv}: a tibble with
+the impact of thresholds on the the number
+of markers blacklisted and whitelisted.
+\item \code{radiator_filter_dart_reproducibility_args.tsv}: the function calls and values.
+}
+
+\item \strong{filter_monomorphic}: removes monomorphic markers
+\itemize{
+\item \code{blacklist.monomorphic.markers.tsv}: blacklisted markers.
+\item \code{whitelist.polymorphic.markers}: whitelisted markers.
+\item \code{radiator_filter_monomorphic_args}: the function calls and values.
+}
+\item \strong{filter_common_markers}: keep only markers in common between strata.
+\itemize{
+\item \code{common.markers.upsetrplot.pdf}: the UpSetR plot highlight the number
+of markers in common between strata.
+\item \code{blacklist.common.markers.tsv}: blacklisted markers.
+\item \code{whitelist.common.markers.tsv}: whitelisted markers.
+\item \code{radiator_filter_common_markers_args.tsv}: the function calls and values.
+}
+
+\item \strong{filter_individuals}: blacklist individuals based on missingness
+and/or heterozygosity and/or total coverage.
+\itemize{
+\item \code{individuals.qc.pdf}: several boxplots showing different individual
+quality metrics.
+\item \code{individuals.qc.stats.tsv}: tibble with individual's
+proportion of missing genotypes, heterozygosity, total and mean coverage.
+\item \code{individuals.qc.stats.summary.tsv}: individual's summary statistics.
+\item \code{blacklist.individuals.missing.tsv}: blacklisted individuals based
+on missingness (genotyping rate of individuals).
+\item \code{radiator_filter_individuals_args.tsv}: the function calls and values.
+}
+The function will remove automatically monomorphic markers if individuals are removed.
+\item \strong{filter_mac}: remove/blacklist markers based on Minor/Alternate Allele Count (MAC).
+\itemize{
+\item \code{distribution.mac.global.pdf}: distribution of overall MAC.
+\item \code{mac.boxplot.pdf}: boxplot of the MAC.
+\item \code{mac.global.tsv}: a tibble with the global MAC and MAF.
+\item \code{mac.markers.plot.pdf}: the helper plot showing
+the impact of thresholds
+on the number of markers blacklisted and whitelisted.
+\item \code{mac.helper.table.tsv}: a tibble with
+the impact of thresholds on the the number
+of markers blacklisted and whitelisted.
+\item \code{mac.summary.stats.tsv}: MAC summary statistics.
+\item \code{blacklist.markers.mac.tsv}: blacklisted markers.
+\item \code{whitelist.markers.mac.tsv}: whitelisted markers.
+\item \code{radiator_filter_mac_args.tsv}: the function calls and values.
+}
+\item \strong{filter_coverage}: remove/blacklist markers based on mean coverage information.
+\itemize{
+\item \code{markers_metadata.tsv}: all the markers coverage metadata available.
+\item \code{markers_metadata_stats.tsv}: summary statistics of coverage information.
+\item \code{markers_qc.pdf}: several coverage boxplots (total coverage, mean coverage, etc.)
+\item \code{coverage.low.helper.plot.pdf}: the helper plot showing
+the impact of thresholds
+on the number of markers blacklisted and whitelisted.
+\item \code{coverage.low.helper.table.tsv}: a tibble with
+the impact of thresholds on the the number
+of markers blacklisted and whitelisted.
+\item \code{coverage.high.helper.plot.pdf}: the helper plot showing
+the impact of thresholds
+on the number of markers blacklisted and whitelisted.
+\item \code{coverage.high.helper.table.tsv}: a tibble with
+the impact of thresholds on the the number
+of markers blacklisted and whitelisted.
+\item \code{blacklist.markers.coverage.tsv}: blacklisted markers.
+\item \code{whitelist.markers.coverage.tsv}: whitelisted markers.
+\item \code{radiator_filter_coverage_args.tsv}: the function calls and values.
+}
+\item \strong{filter_genotyping}: remove/blacklist markers based on genotyping/call rate.
+\itemize{
+\item \code{markers_qc.pdf}: the missing genotypes boxplot.
+\item \code{markers_metadata.tsv}: the missing proportion per markers along other stats.
+\item \code{markers_metadata_stats.tsv}: the summary statistics of markes genotyping rate..
+\item \code{markers.genotyping.helper.plot.pdf}: the helper plot showing
+the impact of thresholds
+on the number of markers blacklisted and whitelisted.
+\item \code{genotyping.helper.table.tsv}: a tibble with
+the impact of thresholds on the the number
+of markers blacklisted and whitelisted (overall).
+\item \code{markers.pop.missing.helper.table.tsv}: a tibble with
+the impact of thresholds on the the number
+of markers blacklisted and whitelisted (strata).
+\item \code{blacklist.markers.genotyping.tsv}: blacklisted markers.
+\item \code{whitelist.markers.genotyping.tsv}: whitelisted markers.
+\item \code{radiator_filter_genotyping_args.tsv}: the function calls and values.
+}
+\item \strong{filter_snp_position_read}: removes markers/SNPs based on their
+position on the read
+\itemize{
+\item \code{snp.position.read.boxplot.pdf}: boxplot of SNP position on the read
+\item \code{snp.position.read.helper.table.tsv}: a tibble with
+the impact of thresholds on the the number
+of markers blacklisted and whitelisted.
+\item \code{snp.position.read.distribution.pdf}: distribution of the SNP position
+on the read.
+\item \code{blacklits.markers.snp.position.read.tsv}: blacklisted markers.
+\item \code{whitelist.markers.snp.position.read.tsv}: whitelisted markers.
+\item \code{radiator_filter_snp_position_read_args.tsv}: the function calls and values.
+}
+\item \strong{filter_snp_number}: removes outlier markers with too many SNP
+number per locus/read.
+\itemize{
+\item \code{markers_metadata.tsv}: metadata associated with the number of SNP/locus
+\item \code{snp_per_locus.pdf}: boxplot of number of SNP/locus.
+\item \code{snp_per_locus_distribution.pdf}: distribution on the number od
+\item \code{snp.per.locus.helper.plot.pdf}: the helper plot showing
+the impact of thresholds
+on the number of markers blacklisted and whitelisted.
+\item \code{blacklist.snp.per.locus.tsv}: blacklisted markers.
+\item \code{whitelist.snp.per.locus.tsv}: whitelisted markers.
+\item \code{radiator_filter_snp_number_args.tsv}: the function calls and values.
+}
+\item \strong{filter_ld}: SNP short and long distance linkage disequilibrium
+pruning.
+\itemize{
+\item \code{short.ld.locus.stats.tsv}: number of locus with more than 1, 2, 3 SNPs.
+\item \code{blacklist.short.ld.tsv}: blacklisted markers.
+\item \code{whitelist.short.ld.tsv}: whitelisted markers.
+\item \code{blacklist.long.ld.tsv}: blacklisted markers.
+\item \code{whitelist.long.ld.tsv}: whitelisted markers.
+\item \code{radiator_filter_ld_args.tsv}: the function calls and values.
+}
+\item \strong{detect_mixed_genomes}: highlight outliers individual's.
+observed heterozygosity.
+\itemize{
+\item \code{individuals.qc.stats.tsv}: individual's heterozygosity and
+missingness proportion.
+\item \code{individuals.qc.stats.summary.tsv}: heterozygosity summary statistics.
+\item \code{heterozygosity.statistics.tsv}: heterozygosity summary statistics
+per strata and overall.
+\item \code{individual.heterozygosity.manhattan.plot.pdf}: manhattan plot
+highlighting potential patterns of heterozygosity and missingness.
+\item \code{individual.heterozygosity.boxplot.pdf}: boxplot
+highlighting potential patterns of heterozygosity and missingness.
+\item \code{blacklist.ind.het.tsv}: blacklisted individuals.
+\item \code{radiator_detect_mixed_genomes_args.tsv}: the function calls and values.
+}
+The function will remove automatically monomorphic markers if individuals are removed.
+\item \strong{detect_duplicate_genomes}: highligh potential duplicate individuals.
+\itemize{
+\item \code{genotyped.statistics.tsv}: genotyping statistics used in the analysis.
+\item \code{individuals.pairwise.dist.tsv}: pairwise distances measures.
+\item \code{individuals.pairwise.distance.stats.tsv}: summary statistics of
+pairwise distances measures.
+\item \code{individuals.qc.stats.tsv}: individuals summary produced by default.
+\item \code{individuals.qc.stats.summary.tsv}: individuals summary produced by default.
+\item \code{manhattan.plot.distance.pdf}: manhattan plot highlighting duplicates.
+\item \code{violin.plot.distance.pdf}: boxplot highlighting duplicates.
+\item \code{blacklist.id.similar.tsv}: blacklisted individuals.
+\item \code{radiator_detect_duplicate_genomes_args.tsv}: the function calls and values.
+}
+\item \strong{filter_hwe}: remove/blacklist markers based on Hardy-Weinberg Equilibrium
+\itemize{
+\item \code{genotypes.summary.tsv}: summary of genotypes groups.
+\item \code{hwd.helper.table.tsv}: number of markers blacklisted based on thresholds.
+\item \code{hw.pop.sum.tsv}: summary of hwe/hwd.
+\item \code{hwd.plot.blacklist.markers.pdf}: helper plot.
+\item \code{hwe.manhattan.plot.pdf}: overview of markers in HWD.
+\item \code{hwe.ternary.plots.missing.data.pdf}: overview of markers in HWD.
+\item \code{blacklisted and whitelisted markers based on thresholds}.
+\item \code{radiator_filter_hwe_args.tsv}: the function calls and values.
+}
+
+\item \strong{filtered}:
+\itemize{
+\item \code{.rad} file is the tidy data set. To open in R use \code{\link{read_rad}}.
+\item \code{strata.filtered.tsv} the filtered strata file.
+\item \code{blacklist.id.tsv}: blacklisted individuals (total).
+\item \code{blacklist.markers.tsv}: blacklisted markers.
+\item \code{whitelist.markers.tsv}: whitelisted markers.
+\item \code{markers_qc.pdf}: markers qc after filters.
+\item \code{individuals.qc.pdf}: individuals qc after filters.
+\item \code{individuals.qc.stats.tsv}: individuals qc stats.
+\item \code{individuals.qc.stats.summary.tsv}: individuals qc stats summary.
+\item \code{markers_metadata.tsv}: markers final metadata.
+\item \code{markers_metadata_stats.tsv}: markers metadata stats.
+\item \code{radiator_genind_.RData} and \code{radiator_stockr.RData}, the
+genind and stockr files generated by the output argument.
 }
 }
+}
+
 \examples{
 \dontrun{
-require(HardyWeinberg)
-require(ggtern)
+# Some of the packages used in this function are not installed by default.
+# Installed the required packages:
+radiator_pkg_install()
 
 # Very simple:
 shark <- radiator::filter_rad(
