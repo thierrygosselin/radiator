@@ -70,7 +70,7 @@ rad <- radiator_pkg_install() # that's it. It will install radiator as well...
 
 ## Learning radiator
 
-See if radiator as the right tools for you:
+See if radiator is the right tool for you:
 
 **1. Prepare a strata file**
 
