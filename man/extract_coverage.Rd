@@ -5,7 +5,8 @@
 \title{extract_coverage}
 \usage{
 extract_coverage(gds, markers = TRUE, ind = TRUE, update.gds = FALSE,
-  parallel.core = parallel::detectCores() - 2, verbose = FALSE)
+  depth.tibble = FALSE, parallel.core = parallel::detectCores() - 2,
+  verbose = FALSE)
 }
 \arguments{
 \item{gds}{The gds object.}
@@ -15,6 +16,11 @@ extract_coverage(gds, markers = TRUE, ind = TRUE, update.gds = FALSE,
 \item{ind}{(optional, logical) Default:\code{ind = TRUE}.}
 
 \item{update.gds}{(optional, logical) Default:\code{update.gds = FALSE}.}
+
+\item{depth.tibble}{(optional, logical) Returns the depth info in a tibble instead of list
+with total and mean coverage info.
+Used internally.
+Default:\code{depth.tibble = FALSE}.}
 
 \item{parallel.core}{(optional) The number of core used for parallel
 execution during import.

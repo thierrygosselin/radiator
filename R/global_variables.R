@@ -128,7 +128,8 @@ if (getRversion() >= "2.15.1") {
       "rdepth", "GENETIC_SEX", "M", "MEAN_HET_F", "MEAN_HET_M",
       "MEAN_READ_DEPTH_F", "MEAN_READ_DEPTH_M", "PRESENCE_ABSENCE_F",
       "PRESENCE_ABSENCE_M", "QR_RESIDUALS", "RATIO", "Species", "U",
-      "coverage.thresholds", "population", "residuals", "species", "tau", "yw"
+      "coverage.thresholds", "population", "residuals", "species", "tau", "yw",
+      "MEAN_RD", "MISSINGNESS"
     )
   )
 }

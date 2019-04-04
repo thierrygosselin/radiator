@@ -275,6 +275,8 @@ write_genlight <- function(
   parallel.core = parallel::detectCores() - 2
 ) {
 
+
+  # NOTE: Make sure it's the same levels.... id, markers etc...
   # TEST
   # biallelic = TRUE
   # write = TRUE
@@ -312,46 +314,48 @@ write_genlight <- function(
     if (!biallelic) rlang::abort("genlight object requires biallelic genotypes")
 
     data.source <- radiator::extract_data_source(data)
-
+    # markers.meta <- extract_markers_metadata(gds = data, whitelist = TRUE)
+    data.bk <- data
+    # data.bk -> data
     if (dartr && !any(unique(c("1row", "2rows") %in% data.source))) {
       # counts data and data with read depth alleles depth info...
-      genotypes.meta <- radiator::extract_genotypes_metadata(gds = data, whitelist = TRUE)
-      markers.meta <- gds2tidy(gds = data,
-                               parallel.core = parallel.core,
-                               calibrate.alleles = FALSE)
-      if (nrow(genotypes.meta) == 0) {
+      if (!"counts" %in% data.source) {
+        genotypes.meta <- radiator::extract_genotypes_metadata(gds = data, whitelist = TRUE)
+      } else {
+        genotypes.meta <- NULL
+      }
+      data <- gds2tidy(gds = data.bk,
+                       wide = FALSE,
+                       # markers.meta.select = "MARKERS",
+                       parallel.core = parallel.core,
+                       calibrate.alleles = FALSE)
+      markers.levels <- unique(data$MARKERS)
+      ind.levels <- unique(data$INDIVIDUALS)
+
+      if (!"counts" %in% data.source) {
         genotypes.meta <- extract_coverage(
-          gds = data,
+          gds = data.bk,
           ind = FALSE,
           depth.tibble = TRUE,
           parallel.core = parallel.core
-          )
-        if (!rlang::has_name(genotypes.meta, "GT_BIN")) {
-          suppressWarnings(
-            genotypes.meta %<>%
-            dplyr::left_join(
-              dplyr::select(markers.meta, MARKERS, INDIVIDUALS, GT_BIN, POP_ID),
-              by = c("INDIVIDUALS", "MARKERS"))
-          )
-        }
+        )
+        suppressWarnings(
+          data %<>%
+            dplyr::left_join(genotypes.meta, by = c("INDIVIDUALS", "MARKERS"))
+        )
       }
-      data.bk <- data
-      # data <- data.bk
-      data <- dplyr::select(markers.meta, MARKERS, INDIVIDUALS, POP_ID, GT_BIN)
+
+      genotypes.meta <- NULL
       want <- c("MARKERS", "CHROM", "LOCUS", "POS",
                 "REF", "ALT",
                 "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG",
                 "ONE_RATIO_REF", "ONE_RATIO_SNP")
       suppressWarnings(
-        markers.meta  %<>%
+        markers.meta <- data %>%
           dplyr::select(dplyr::one_of(want)) %>%
           dplyr::distinct(MARKERS, .keep_all = TRUE)
       )
-    }
-      genotypes.meta <- NULL
-      markers.meta <- radiator::extract_markers_metadata(gds = data, whitelist = TRUE)
-      data.bk <- data
-      # data <- data.bk
+    } else {
       data <- radiator::extract_individuals_metadata(
         gds = data, ind.field.select = c("INDIVIDUALS", "STRATA"), whitelist = TRUE) %>%
         dplyr::bind_cols(
@@ -361,12 +365,14 @@ write_genlight <- function(
             tibble::as_tibble(.)
         ) %>%
         dplyr::rename(POP_ID = STRATA)
-
+    }
 
     # dartR-----------------------------------------------------------------------
     if (dartr) {
+      # That bits of code below generate what's nenessary for dartR
       if (verbose) message("Calculating read depth for each SNP\n")
-      if (any(unique(c("1row", "2rows") %in% data.source))) {
+      if ("dart" %in% data.source) {
+      # if (any(unique(c("1row", "2rows") %in% data.source))) {
         markers.meta %<>%
           dplyr::mutate(
             N_IND = SeqArray::seqApply(
@@ -382,7 +388,7 @@ write_genlight <- function(
           ) %>%
           dplyr::ungroup(.)
       } else {
-        if (!is.null(genotypes.meta) && rlang::has_name(genotypes.meta, "READ_DEPTH")) {
+        if (rlang::has_name(data, "READ_DEPTH")) {
           # dart 2 rows counts...
           if (rlang::has_name(markers.meta, "AVG_COUNT_REF")) {
 
@@ -390,16 +396,15 @@ write_genlight <- function(
             # for now, I expect people will use this with filtered data so not important
             # to fill with 1
             if ("counts" %in% data.source) rep.avg <- markers.meta$REP_AVG
-
-
             not.wanted <- c("CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP",
                             "REP_AVG", "ONE_RATIO_REF", "ONE_RATIO_SNP")
             markers.meta %<>% dplyr::select(-dplyr::one_of(not.wanted))
           }
+
           suppressWarnings(
             markers.meta %<>%
               dplyr::left_join(
-                genotypes.meta %>%
+                data %>%
                   dplyr::group_by(MARKERS) %>%
                   dplyr::summarise(
                     rdepth = mean(READ_DEPTH, na.rm = TRUE),
@@ -435,6 +440,16 @@ write_genlight <- function(
       # }
 
       # gl.obj@other$loc.metrics$rdepth
+      data %<>%
+        dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT_BIN) %>%
+        dplyr::mutate(GT_BIN = as.integer(GT_BIN)) %>%
+        data.table::as.data.table(.) %>%
+        data.table::dcast.data.table(
+          data = .,
+          formula = POP_ID + INDIVIDUALS ~ MARKERS,
+          value.var = "GT_BIN"
+        ) %>%
+        tibble::as_tibble(.)
     }#End dartr
 
     data.type <- "tbl_df"
@@ -509,6 +524,7 @@ write_genlight <- function(
   #   pop = data$POP_ID,
   #   parallel = parallel.core.temp)
   # tictoc::toc()
+
 
   gl.obj <- methods::new(
     "genlight",

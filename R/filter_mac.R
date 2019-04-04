@@ -165,7 +165,7 @@ filter_mac <- function(
   # filename = NULL
   # parallel.core = parallel::detectCores() - 1
   # verbose = TRUE
-  # path.folder = "00_filter_mac"
+  # path.folder = NULL
   # parameters <- NULL
   if (!is.null(filter.mac) || interactive.filter) {
     if (interactive.filter) verbose <- TRUE
@@ -274,9 +274,12 @@ filter_mac <- function(
     # Whitelist and blacklist --------------------------------------------------
     want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS")
     if (data.type == "tbl_df") {
-      wl <- bl <- radiator::separate_markers(data = data, sep = "__",
-                                             markers.meta.all.only = TRUE,
-                                             parallel.core = parallel.core)
+      wl <- bl <- radiator::separate_markers(
+        data = data,
+        sep = "__",
+        biallelic = radiator::detect_biallelic_markers(data = data),
+        markers.meta.all.only = TRUE,
+        parallel.core = parallel.core)
       markers.meta <- NULL
     } else {
       markers.meta <- extract_markers_metadata(gds = data)

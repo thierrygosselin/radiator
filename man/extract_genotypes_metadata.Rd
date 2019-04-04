@@ -5,7 +5,7 @@
 \title{extract_genotypes_metadata}
 \usage{
 extract_genotypes_metadata(gds, genotypes.meta.select = NULL,
-  radiator.node = TRUE, index.only = FALSE,
+  genotypes = FALSE, radiator.node = TRUE, index.only = FALSE,
   sync.markers.individuals = TRUE, whitelist = FALSE,
   blacklist = FALSE, verbose = FALSE)
 }
@@ -14,15 +14,17 @@ extract_genotypes_metadata(gds, genotypes.meta.select = NULL,
 
 \item{genotypes.meta.select}{(optional, character) Default:\code{ind.field.select = NULL}.}
 
-\item{radiator.node}{(optional, logical) Default:\code{radiator.node = TRUE}.}
+\item{genotypes}{(optional, character) Default: \code{genotypes = FALSE}.}
 
-\item{index.only}{(optional, logical) Default:\code{index.only = FALSE}.}
+\item{radiator.node}{(optional, logical) Default: \code{radiator.node = TRUE}.}
 
-\item{sync.markers.individuals}{(optional, logical) Default:\code{sync.markers.individuals = TRUE}.}
+\item{index.only}{(optional, logical) Default: \code{index.only = FALSE}.}
 
-\item{whitelist}{(optional, logical) Default:\code{whitelist = FALSE}.}
+\item{sync.markers.individuals}{(optional, logical) Default: \code{sync.markers.individuals = TRUE}.}
 
-\item{blacklist}{(optional, logical) Default:\code{blacklist = FALSE}.}
+\item{whitelist}{(optional, logical) Default: \code{whitelist = FALSE}.}
+
+\item{blacklist}{(optional, logical) Default: \code{blacklist = FALSE}.}
 
 \item{verbose}{(optional, logical) When \code{verbose = TRUE}
 the function is a little more chatty during execution.

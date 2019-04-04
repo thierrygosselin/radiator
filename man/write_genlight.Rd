@@ -33,6 +33,7 @@ object ready for the package. This option transfer or generates:
 \code{CALL_RATE, AVG_COUNT_REF, AVG_COUNT_SNP, REP_AVG,
 ONE_RATIO_REF, ONE_RATIO_SNP}. These markers metadata are stored into
 the genlight slot: \code{genlight.obj@other$loc.metrics}.
+\strong{Use the radiator generated GDS data for best result}.
 Default: \code{dartr = FALSE}.}
 
 \item{verbose}{(optional, logical) When \code{verbose = TRUE}

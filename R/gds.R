@@ -365,22 +365,22 @@ update_radiator_gds <- function(
 
       suppressWarnings(
         gdsfmt::add.gdsn(
-        node = radiator.gds,
-        name = node.name,
-        val = value,
-        replace = replace,
-        compress = "ZIP_RA",
-        closezip = TRUE)
+          node = radiator.gds,
+          name = node.name,
+          val = value,
+          replace = replace,
+          compress = "ZIP_RA",
+          closezip = TRUE)
       )
     } else {
       suppressWarnings(
         gdsfmt::add.gdsn(
-        node = gds,
-        name = node.name,
-        val = value,
-        replace = replace,
-        compress = "ZIP_RA",
-        closezip = TRUE)
+          node = gds,
+          name = node.name,
+          val = value,
+          replace = replace,
+          compress = "ZIP_RA",
+          closezip = TRUE)
       )
     }
   }
@@ -633,12 +633,12 @@ extract_individuals_metadata <- function(
 #' @rdname extract_genotypes_metadata
 #' @param gds The gds object.
 #' @param genotypes.meta.select (optional, character) Default:\code{ind.field.select = NULL}.
-#' @param genotypes (optional, character) Default: \code{genotypes = FALSE).
-#' @param radiator.node (optional, logical) Default:\code{radiator.node = TRUE}.
-#' @param index.only (optional, logical) Default:\code{index.only = FALSE}.
-#' @param sync.markers.individuals (optional, logical) Default:\code{sync.markers.individuals = TRUE}.
-#' @param whitelist (optional, logical) Default:\code{whitelist = FALSE}.
-#' @param blacklist (optional, logical) Default:\code{blacklist = FALSE}.
+#' @param genotypes (optional, character) Default: \code{genotypes = FALSE}.
+#' @param radiator.node (optional, logical) Default: \code{radiator.node = TRUE}.
+#' @param index.only (optional, logical) Default: \code{index.only = FALSE}.
+#' @param sync.markers.individuals (optional, logical) Default: \code{sync.markers.individuals = TRUE}.
+#' @param whitelist (optional, logical) Default: \code{whitelist = FALSE}.
+#' @param blacklist (optional, logical) Default: \code{blacklist = FALSE}.
 #' @inheritParams radiator_common_arguments
 # @keywords internal
 #' @export
@@ -2223,6 +2223,7 @@ gds2tidy <- function(
   gds,
   markers.meta = NULL,
   markers.meta.select = NULL,
+  wide = FALSE,
   individuals = NULL,
   pop.id = TRUE,
   calibrate.alleles = TRUE,
@@ -2233,56 +2234,60 @@ gds2tidy <- function(
     individuals <- extract_individuals_metadata(gds = gds, whitelist = TRUE, verbose = FALSE)
   }
 
+  if (wide) markers.meta.select <- c("MARKERS")
   if (is.null(markers.meta)) {
     if (is.null(markers.meta.select)) {
       markers.meta <- extract_markers_metadata(
         gds = gds,
         whitelist = TRUE,
         verbose = TRUE
-        )
+      )
     } else {
       markers.meta <- extract_markers_metadata(
         gds = gds,
         markers.meta.select = markers.meta.select,
         whitelist = TRUE,
         verbose = TRUE
-        )
+      )
     }
   }
   want <- intersect(
     c("MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF", "ALT", "COL",
       "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG",
       "ONE_RATIO_REF", "ONE_RATIO_SNP"),
-                    names(markers.meta))
+    names(markers.meta))
 
   # summary_gds(gds)
-  tidy.data <- suppressWarnings(
+  tidy.data <-
     SeqArray::seqGetData(
       gdsfile = gds, var.name = "$dosage_alt") %>%
       magrittr::set_colnames(x = ., value = markers.meta$MARKERS) %>%
       magrittr::set_rownames(x = ., value = individuals$INDIVIDUALS) %>%
-      data.table::as.data.table(x = ., keep.rownames = "INDIVIDUALS") %>%
-      data.table::melt.data.table(
-        data = .,
-        id.vars = "INDIVIDUALS",
-        variable.name = "MARKERS",
-        value.name = "GT_BIN",
-        variable.factor = FALSE) %>%
-      tibble::as_tibble(.) %>%
-      dplyr::left_join(dplyr::select(markers.meta, dplyr::one_of(want)), by = "MARKERS") %>%
-      dplyr::mutate(
-        MARKERS = factor(x = MARKERS,
-                         levels = markers.meta$MARKERS, ordered = TRUE),
-        INDIVIDUALS = factor(x = INDIVIDUALS,
-                             levels = individuals$INDIVIDUALS,
-                             ordered = TRUE)) %>%
-      dplyr::arrange(MARKERS, INDIVIDUALS)
-  )
+      tibble::as_tibble(x = ., rownames = "INDIVIDUALS")
+
+  if (!wide) {
+    tidy.data <- suppressWarnings(
+      data.table::as.data.table(x = tidy.data) %>%
+        data.table::melt.data.table(
+          data = .,
+          id.vars = "INDIVIDUALS",
+          variable.name = "MARKERS",
+          value.name = "GT_BIN",
+          variable.factor = FALSE) %>%
+        tibble::as_tibble(.) %>%
+        dplyr::left_join(dplyr::select(markers.meta, dplyr::one_of(want)), by = "MARKERS") %>%
+        dplyr::mutate(
+          MARKERS = factor(x = MARKERS,
+                           levels = markers.meta$MARKERS, ordered = TRUE),
+          INDIVIDUALS = factor(x = INDIVIDUALS,
+                               levels = individuals$INDIVIDUALS,
+                               ordered = TRUE)) %>%
+        dplyr::arrange(MARKERS, INDIVIDUALS)
+    )
+  }
 
 
   # should make this optional --------------------------------------------------
-
-
   if (pop.id) {
     # include strata
     colnames(individuals) <- stringi::stri_replace_all_fixed(
@@ -2315,7 +2320,7 @@ gds2tidy <- function(
     }
     # re-calibration of ref/alt alleles ------------------------------------------
     # if (verbose) message("\nCalculating REF/ALT alleles...")
-    if (calibrate.alleles) {
+    if (calibrate.alleles && !wide) {
       tidy.data <- radiator::calibrate_alleles(
         data = tidy.data,
         # biallelic = TRUE,
