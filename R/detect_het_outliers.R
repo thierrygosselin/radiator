@@ -104,6 +104,13 @@ detect_het_outliers <- function (
   parallel.core = parallel::detectCores() - 1,
   ...
 ) {
+  # TEST
+  # nreps = 2000
+  # burn.in = NULL
+  # strata = NULL
+  # filename = NULL
+  # parallel.core = parallel::detectCores() - 1
+
   opt.change <- getOption("width")
   options(width = 70)
   timing <- proc.time()
@@ -136,138 +143,112 @@ detect_het_outliers <- function (
     want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS", "POP_ID", "REF", "ALT", "GT", "GT_BIN")
     message("    using tidy data frame of genotypes as input")
     message("    skipping all filters except removal of monomorphic markers")
-
-    if (data.type == "tbl_df") {
-      res$input <- suppressWarnings(dplyr::select(data, dplyr::one_of(want)))
-    }
-    if (data.type == "fst.file") {
-      import.col <- colnames(fst::read.fst(path = data, from = 1, to = 1))
-      import.col <- purrr::discard(.x = import.col, .p = !import.col %in% want)
-      res$input <- fst::read.fst(path = data, columns = import.col)
-      import.col <- want <- NULL
-    }
-
-    # Remove blacklisted markers -------------------------------------------------
-    # Note to myself: I think this argument is useful because it allows to test
-    # quickly the impact of different HWE thresholds.
-    # if (!is.null(blacklist.markers)) {
-    #   message("Removing markers in the blacklist")
-    #   blacklist.markers <- readr::read_tsv(
-    #     file = blacklist.markers,
-    #     col_types = readr::cols(.default = readr::col_character()))
-    #   res$input <- dplyr::filter(res$input, !MARKERS %in% blacklist.markers$MARKERS)
-    # }
-
-    # # because this step skip the import and filter process we include monomorphic filter
-    # mono.out <- discard_monomorphic_markers(res$input, verbose = TRUE)
-    # mono.markers <- mono.out$blacklist.monomorphic.markers
-    # if (nrow(mono.markers) > 0) {
-    #   res$input <- mono.out$input
-    #   readr::write_tsv(mono.markers, file.path(path.folder, "blacklist.monomorphic.markers.tsv"))
-    # }
-    # mono.out <- mono.markers <- NULL
-
-    # Keeping common markers -----------------------------------------------------
-    res$input <- radiator::filter_common_markers(data = res$input, verbose = TRUE) %$% input
-
-
-    # Removing monomorphic markers -----------------------------------------------
-    res$input <- radiator::filter_monomorphic(data = res$input, verbose = TRUE) %$% input
-
-
-  } else {
-    res$input <- radiator::tidy_genomic_data(
-      data = data,
-      vcf.metadata = FALSE,
-      filter.monomorphic = TRUE,
-      filter.common.markers = TRUE,
-      strata = strata,
-      # pop.select = pop.select,
-      filename = filename,
-      parallel.core = parallel.core,
-      verbose = FALSE
+    res$input <- suppressWarnings(
+      radiator::tidy_wide(data = data, import.metadata = TRUE) %>%
+        dplyr::select(dplyr::one_of(want))
     )
-  }
-  data <- NULL # no need to store this extra data
 
-  # Quick check that dataset is biallelic --------------------------------------
-  biallelic <- detect_biallelic_markers(res$input)
-  if (!biallelic) stop("Analysis requires a biallelic dataset")
-
-  # Generate the summary statistics and plot -----------------------------------
-  message("\nGenerating genotypes summary statistics and plot with boundaries...")
-  res$outlier.summary <- plot_het_outliers(data = res$input, path.folder = path.folder)
-
-  res$summary.alt.allele <-  dplyr::ungroup(res$outlier.summary$het.summary) %>%
-    dplyr::filter(POP_ID == "OVERALL") %>%
-    dplyr::summarise(
-      TOTAL = n(),
-      NO_HOM_ALT = length(MARKERS[HOM_ALT == 0]),
-      NO_HET = length(MARKERS[HET == 0]),
-      ONE_HOM_ALT = length(MARKERS[HOM_ALT == 1]),
-      ONE_HET = length(MARKERS[HET == 1]),
-      ONE_HOM_ALT_ONLY = length(MARKERS[HOM_ALT == 1 & HET == 0]),
-      ONE_HET_ONLY = length(MARKERS[HOM_ALT == 0 & HET == 1]),
-      ONE_HOM_ALT_ONE_HET_ONLY = length(MARKERS[HOM_ALT == 1 & HET == 1])
-    ) %>%
-    tidyr::gather(data = ., key = MARKERS, value = NUMBERS) %>%
-    dplyr::mutate(PROPORTION = NUMBERS / (NUMBERS[MARKERS == "TOTAL"]))
-
-  # Estimate heterozygotes miscall rate -------------------------------------------
-  message("\nCalculating heterozygotes miscall rate...")
-
-  mest <- estimate_m(data = res$input, nreps = nreps, m_init = 0.1)
-  res$m.nreps <- tibble::tibble(iter = 1:nreps, m = mest$m)
-  res$simmed_genos <- mest$simmed_genos
-  res$overall.genotyping.error.rate <- tibble::tibble(overall.genotyping.error.rate = mest$overall_geno_err_est)
-  mest <- NULL
+  # Keeping common markers -----------------------------------------------------
+  res$input <- radiator::filter_common_markers(data = res$input, verbose = TRUE)
 
 
-  res$trace.mcmc.plot <- ggplot2::ggplot(res$m.nreps, ggplot2::aes(x = iter, y = m)) +
-    ggplot2::geom_line() +
-    ggplot2::labs(y= "Heterozygote miscall rate", x = "Number of MCMC sweeps") +
-    ggplot2::theme(
-      legend.position = "none",
-      axis.title.x = ggplot2::element_text(size = 10, face = "bold"),
-      axis.text.x = ggplot2::element_text(size = 10),
-      axis.title.y = ggplot2::element_text(size = 10, face = "bold"),
-      axis.text.y = ggplot2::element_text(size = 10)
-    ) +
-    ggplot2::theme_bw()
-  if (!is.null(path.folder)) {
-    ggplot2::ggsave(
-      filename = file.path(path.folder, "trace.mcmc.plot.pdf"),
-      plot = res$trace.mcmc.plot,
-      width = 20, height = 10,
-      dpi = 600, units = "cm",
-      useDingbats = FALSE, limitsize = FALSE)
-  }
+  # Removing monomorphic markers -----------------------------------------------
+  res$input <- radiator::filter_monomorphic(data = res$input, verbose = TRUE)
 
-  print(res$trace.mcmc.plot)
 
-  if (is.null(burn.in)) {
-    message("    The plot shows the heterozygote miscall rate for all the MCMC sweeps")
-    message("    after the burn-in, the remaining MCMC sweeps will be used
+} else {
+  res$input <- radiator::tidy_genomic_data(
+    data = data,
+    vcf.metadata = FALSE,
+    filter.monomorphic = TRUE,
+    filter.common.markers = TRUE,
+    strata = strata,
+    # pop.select = pop.select,
+    filename = filename,
+    parallel.core = parallel.core,
+    verbose = FALSE
+  )
+}
+data <- NULL # no need to store this extra data
+
+# Quick check that dataset is biallelic --------------------------------------
+biallelic <- detect_biallelic_markers(res$input)
+if (!biallelic) stop("Analysis requires a biallelic dataset")
+
+# Generate the summary statistics and plot -----------------------------------
+message("\nGenerating genotypes summary statistics and plot with boundaries...")
+res$outlier.summary <- plot_het_outliers(data = res$input, path.folder = path.folder)
+
+res$summary.alt.allele <-  dplyr::ungroup(res$outlier.summary$het.summary) %>%
+  dplyr::filter(POP_ID == "OVERALL") %>%
+  dplyr::summarise(
+    TOTAL = n(),
+    NO_HOM_ALT = length(MARKERS[HOM_ALT == 0]),
+    NO_HET = length(MARKERS[HET == 0]),
+    ONE_HOM_ALT = length(MARKERS[HOM_ALT == 1]),
+    ONE_HET = length(MARKERS[HET == 1]),
+    ONE_HOM_ALT_ONLY = length(MARKERS[HOM_ALT == 1 & HET == 0]),
+    ONE_HET_ONLY = length(MARKERS[HOM_ALT == 0 & HET == 1]),
+    ONE_HOM_ALT_ONE_HET_ONLY = length(MARKERS[HOM_ALT == 1 & HET == 1])
+  ) %>%
+  tidyr::gather(data = ., key = MARKERS, value = NUMBERS) %>%
+  dplyr::mutate(PROPORTION = NUMBERS / (NUMBERS[MARKERS == "TOTAL"]))
+
+# Estimate heterozygotes miscall rate -------------------------------------------
+message("\nCalculating heterozygotes miscall rate...")
+
+mest <- estimate_m(data = res$input, nreps = nreps, m_init = 0.1)
+res$m.nreps <- tibble::tibble(iter = 1:nreps, m = mest$m)
+res$simmed_genos <- mest$simmed_genos
+res$overall.genotyping.error.rate <- tibble::tibble(overall.genotyping.error.rate = mest$overall_geno_err_est)
+mest <- NULL
+
+
+res$trace.mcmc.plot <- ggplot2::ggplot(res$m.nreps, ggplot2::aes(x = iter, y = m)) +
+  ggplot2::geom_line() +
+  ggplot2::labs(y= "Heterozygote miscall rate", x = "Number of MCMC sweeps") +
+  ggplot2::theme(
+    legend.position = "none",
+    axis.title.x = ggplot2::element_text(size = 10, face = "bold"),
+    axis.text.x = ggplot2::element_text(size = 10),
+    axis.title.y = ggplot2::element_text(size = 10, face = "bold"),
+    axis.text.y = ggplot2::element_text(size = 10)
+  ) +
+  ggplot2::theme_bw()
+if (!is.null(path.folder)) {
+  ggplot2::ggsave(
+    filename = file.path(path.folder, "trace.mcmc.plot.pdf"),
+    plot = res$trace.mcmc.plot,
+    width = 20, height = 10,
+    dpi = 600, units = "cm",
+    useDingbats = FALSE, limitsize = FALSE)
+}
+
+print(res$trace.mcmc.plot)
+
+if (is.null(burn.in)) {
+  message("    The plot shows the heterozygote miscall rate for all the MCMC sweeps")
+  message("    after the burn-in, the remaining MCMC sweeps will be used
     to average the heterozygote miscall rate")
-    message("\n    enter the max number of burn-in reps:")
+  message("\n    enter the max number of burn-in reps:")
 
-    burn.in <- as.integer(readLines(n = 1))
-  }
+  burn.in <- as.integer(readLines(n = 1))
+}
 
-  res$m.post.means <- dplyr::filter(res$m.nreps, iter > burn.in) %>%
-    dplyr::summarise(POSTERIOR_MEAN = mean(m))
+res$m.post.means <- dplyr::filter(res$m.nreps, iter > burn.in) %>%
+  dplyr::summarise(POSTERIOR_MEAN = mean(m))
 
-  tibble::tibble(
-    OVERALL_GENOTYPING_ERROR_RATE = res$overall.genotyping.error.rate$overall.genotyping.error.rate,
-    OVERALL_HETEROZYGOTES_MISCALL_RATE = res$m.post.means$POSTERIOR_MEAN) %>%
-    readr::write_tsv(x = ., path = file.path(path.folder, "overall_error_rate.tsv"))
+tibble::tibble(
+  OVERALL_GENOTYPING_ERROR_RATE = res$overall.genotyping.error.rate$overall.genotyping.error.rate,
+  OVERALL_HETEROZYGOTES_MISCALL_RATE = res$m.post.means$POSTERIOR_MEAN) %>%
+  readr::write_tsv(x = ., path = file.path(path.folder, "overall_error_rate.tsv"))
 
-  message("\n    Overall genotyping error rate = ", round(res$overall.genotyping.error.rate, digits = 4))
-  message("    Overall heterozygotes miscall rate = ", round(res$m.post.means, digits = 4))
-  message("\nComputation time: ", round((proc.time() - timing)[[3]]), " sec")
-  cat("################################## completed ##################################\n")
-  options(width = opt.change)
-  return(res)
+message("\n    Overall genotyping error rate = ", round(res$overall.genotyping.error.rate, digits = 4))
+message("    Overall heterozygotes miscall rate = ", round(res$m.post.means, digits = 4))
+message("\nComputation time: ", round((proc.time() - timing)[[3]]), " sec")
+cat("################################## completed ##################################\n")
+options(width = opt.change)
+return(res)
 }#End detect_het_outliers
 
 

@@ -71,16 +71,19 @@ tidy_gtypes <- function(data) {
 # write_gtypes -----------------------------------------------------------------
 
 #' @name write_gtypes
-#' @title Write a \href{https://github.com/EricArcher/}{strataG} object from a tidy data frame
+#' @title Write a \href{https://github.com/EricArcher/}{strataG} object from
+#' radiator GDS and tidy data file or object.
 
 #' @description Write a\href{https://github.com/EricArcher/}{strataG} object from a tidy data frame.
 #' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 #' and might be of interest for users.
 
-#' @param data A tidy data frame object in the global environment or
-#' a tidy data frame in wide or long format in the working directory.
-#' \emph{How to get a tidy data frame ?}
-#' Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
+#' @inheritParams radiator_common_arguments
+
+#' @param write (logical, optional) To write in the working directory the gtypes
+#' object. The file is written with \code{radiator_gtypes_DATE@TIME.RData} and
+#' can be open with load or readRDS.
+#' Default: \code{write = FALSE}.
 
 #' @return An object of the class \href{https://github.com/EricArcher/}{strataG} is returned.
 
@@ -106,9 +109,21 @@ tidy_gtypes <- function(data) {
 #' genetic data.
 #' Molecular Ecology Resources. 2017; 17: 5-11. doi:10.1111/1755-0998.12559
 
+#' @examples
+#' \dontrun{
+#' require(strataG)
+#' # with radiator GDS
+#' turtle <- radiator::write_gtypes(data = "my.radiator.gds.rad")
+#'
+#' # with tidy data
+#' turtle <- radiator::write_gtypes(data = "my.radiator.rad")
+#' }
+
+
+
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
-write_gtypes <- function(data) {
+write_gtypes <- function(data, write = FALSE) {
   # Check that strataG is installed --------------------------------------------
   if (!"strataG" %in% utils::installed.packages()[,"Package"]) {
     rlang::abort("Please install strataG for this output option:\n
@@ -117,46 +132,129 @@ write_gtypes <- function(data) {
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("Input file missing")
 
-  # Import data ---------------------------------------------------------------
-  if (is.vector(data)) {
+  # File type detection---------------------------------------------------------
+  data.type <- radiator::detect_genomic_format(data)
+
+  # Import data ----------------------------------------------------------------
+  if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
+    # Check that SeqVarTools is installed (it requires automatically: SeqArray and gdsfmt)
+    if (!"SeqVarTools" %in% utils::installed.packages()[,"Package"]) {
+      rlang::abort('Please install SeqVarTools for this option:\n
+                   install.packages("BiocManager")
+                   BiocManager::install("SeqVarTools")
+                   ')
+    }
+
+
+    if (data.type == "gds.file") {
+      data <- radiator::read_rad(data, verbose = FALSE)
+    }
+    # biallelic <- radiator::detect_biallelic_markers(data)# faster with GDS
+    markers.meta <- extract_markers_metadata(gds = data, markers.meta.select = "MARKERS", whitelist = TRUE)
+    strata <- extract_individuals_metadata(gds = data, ind.field.select = c("INDIVIDUALS", "STRATA"), whitelist = TRUE) %>%
+      dplyr::rename(POP_ID = STRATA)
+    data <- SeqArray::seqGetData(
+      gdsfile = data, var.name = "$dosage_alt") %>%
+      magrittr::set_colnames(x = ., value = markers.meta$MARKERS) %>%
+      magrittr::set_rownames(x = ., value = strata$INDIVIDUALS) %>%
+      data.table::as.data.table(., keep.rownames = "INDIVIDUALS") %>%
+      data.table::melt.data.table(
+        data = .,
+        id.vars = "INDIVIDUALS",
+        variable.name = "MARKERS",
+        value.name = "GT_BIN"
+      ) %>%
+      dplyr::left_join(strata, by = "INDIVIDUALS") %>%
+      dplyr::mutate(
+        `1` = dplyr::if_else(GT_BIN == 0L, 1L, GT_BIN),
+        `2` = switch_genotypes(GT_BIN),
+        GT_BIN = NULL
+      ) %>%
+      data.table::as.data.table(.) %>%
+      data.table::melt.data.table(
+        data = .,
+        id.vars = c("INDIVIDUALS", "POP_ID", "MARKERS"),
+        variable.name = "ALLELES",
+        value.name = "GT"
+      ) %>%
+      data.table::dcast.data.table(
+        data = .,
+        formula = POP_ID + INDIVIDUALS ~ MARKERS + ALLELES,
+        value.var = "GT",
+        sep = "."
+      ) %>%
+      tibble::as_tibble(.) %>%
+      dplyr::arrange(POP_ID, INDIVIDUALS)
+
+    markers.meta <- strata <- NULL
+
+
+  } else {#Tidy data
     data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
+    # data <- data.bk
+    # data.bk <- data
+    if (rlang::has_name(data, "GT_BIN")) {
+      data %<>%
+        dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT_BIN) %>%
+        dplyr::mutate(
+          `1` = dplyr::if_else(GT_BIN == 0L, 1L, GT_BIN),
+          `2` = switch_genotypes(GT_BIN),
+          GT_BIN = NULL
+        ) %>%
+        data.table::as.data.table(.) %>%
+        data.table::melt.data.table(
+          data = .,
+          id.vars = c("INDIVIDUALS", "POP_ID", "MARKERS"),
+          variable.name = "ALLELES",
+          value.name = "GT"
+        ) %>%
+        data.table::dcast.data.table(
+          data = .,
+          formula = POP_ID + INDIVIDUALS ~ MARKERS + ALLELES,
+          value.var = "GT",
+          sep = "."
+        ) %>%
+        tibble::as_tibble(.) %>%
+        dplyr::arrange(POP_ID, INDIVIDUALS)
+
+
+    } else {
+      if (!rlang::has_name(data, "GT")) data <- calibrate_alleles(data = data) %$% input
+      data <- dplyr::select(.data = data, POP_ID, INDIVIDUALS, MARKERS, GT) %>%
+        dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS) %>%
+        dplyr::mutate(
+          GT = replace(GT, which(GT == "000000"), NA),
+          POP_ID = as.character(POP_ID),
+          `1` = stringi::stri_sub(str = GT, from = 1, to = 3), # most of the time: faster than tidyr::separate
+          `2` = stringi::stri_sub(str = GT, from = 4, to = 6)
+        ) %>%
+        dplyr::select(-GT) %>%
+        data.table::as.data.table(.) %>%
+        data.table::melt.data.table(
+          data = .,
+          id.vars = c("INDIVIDUALS", "POP_ID", "MARKERS"),
+          variable.name = "ALLELES",
+          value.name = "GT"
+        ) %>%
+        data.table::dcast.data.table(
+          data = .,
+          formula = POP_ID + INDIVIDUALS ~ MARKERS + ALLELES,
+          value.var = "GT",
+          sep = "."
+        ) %>%
+        tibble::as_tibble(.) %>%
+        dplyr::arrange(POP_ID, INDIVIDUALS)
+
+    }
   }
 
-
-  data <- dplyr::select(.data = data, POP_ID, INDIVIDUALS, MARKERS, GT) %>%
-    dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS) %>%
-    dplyr::mutate(
-      GT = replace(GT, which(GT == "000000"), NA),
-      POP_ID = as.character(POP_ID),
-      `1` = stringi::stri_sub(str = GT, from = 1, to = 3), # most of the time: faster than tidyr::separate
-      `2` = stringi::stri_sub(str = GT, from = 4, to = 6)
-    ) %>%
-    dplyr::select(-GT) %>%
-    tidyr::gather(
-      data = .,
-      key = ALLELES,
-      value = GT,
-      -c(MARKERS, INDIVIDUALS, POP_ID)
-    ) %>%
-    data.table::as.data.table(.) %>%
-    data.table::dcast.data.table(
-      data = .,
-      formula = POP_ID + INDIVIDUALS ~ MARKERS + ALLELES,
-      value.var = "GT",
-      sep = "."
-    ) %>%
-    tibble::as_data_frame(.)
-
-  # dcast is slightly faster using microbenchmark then unite and spread
-  # tidyr::unite(data = ., MARKERS_ALLELES, MARKERS, ALLELES, sep = ".") %>%
-  # tidyr::spread(data = ., key = MARKERS_ALLELES, value = GT)
-
+  # gtypes----------------------------------------------------------------------
   safe_gtypes <-  purrr::safely(.f = methods::new)
 
   res <- suppressWarnings(
     safe_gtypes(
       "gtypes",
-      gen.data = data[, -(1:2)],
+      gen.data = data[,-c(1,2)],
       ploidy = 2,
       ind.names = data$INDIVIDUALS,
       strata = data$POP_ID,
@@ -173,5 +271,28 @@ write_gtypes <- function(data) {
     rlang::abort("strataG package must be installed and loaded: library('strataG')")
   }
 
+  if (write) {
+    filename.temp <- generate_filename(extension = "gtypes")
+    filename.short <- filename.temp$filename.short
+    filename.genlight <- filename.temp$filename
+    saveRDS(object = gl.obj, file = filename.genlight)
+    if (verbose) message("File written: ", filename.short)
+  }
+
   return(res)
-  }# End write_gtypes
+}# End write_gtypes
+
+# switch_allele_count ------------------------------------------------------------------
+#' @name switch_allele_count
+#' @title switch_allele_count
+#' @description Summary of gds object or file: number of samples and markers
+#' @rdname summary_gds
+#' @keywords internal
+#' @export
+switch_genotypes <- function(x) {
+  x <- dplyr::case_when(
+    x == 1L ~ 2L,
+    x == 2L ~ 2L,
+    x == 0L ~ 1L
+  )
+}

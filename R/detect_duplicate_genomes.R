@@ -57,6 +57,8 @@
 #' e.g. 2 samples might have 100% markers in common, but if they only have
 #' 30% of their genotyped markers in common, this is a poor fit.
 #' Default: \code{threshold.common.markers = NULL}.
+#'
+#' @param dup.threshold Default: \code{dup.threshold = 0}. Turn off filter.
 
 #' @param blacklist.duplicates (optional, logical)
 #' With \code{blacklist.duplicates = TRUE}, after visualization,
@@ -173,6 +175,7 @@ detect_duplicate_genomes <- function(
   data,
   interactive.filter = TRUE,
   detect.duplicate.genomes = TRUE,
+  dup.threshold = 0,
   # subsample.markers = NULL,
   # random.seed = NULL,
   distance.method = "manhattan",
@@ -477,26 +480,26 @@ detect_duplicate_genomes <- function(
 
       res$distance <- suppressWarnings(
         dplyr::bind_cols(
-        res$distance,
-        dplyr::select(res$distance, ID1, ID2, PAIRS) %>%
-          dplyr::left_join(dplyr::rename(geno.stats, ID1 = INDIVIDUALS, ID1_G = GENOTYPED_PROP), by = "ID1") %>%
-          dplyr::left_join(dplyr::rename(geno.stats, ID2 = INDIVIDUALS, ID2_G = GENOTYPED_PROP), by = "ID2") %>%
-          data.table::as.data.table(.) %>%
-          data.table::melt.data.table(
-            data = ., id.vars = c("ID1", "ID2", "PAIRS"),
-            variable.name = "GENOTYPED_MAX",
-            value.name = "GENOTYPED_PROP",
-            variable.factor = FALSE) %>%
-          tibble::as_tibble(.) %>%
-          dplyr::group_by(PAIRS) %>%
-          dplyr::filter(GENOTYPED_PROP == max(GENOTYPED_PROP)) %>%
-          dplyr::ungroup(.) %>%
-          dplyr::distinct(PAIRS, .keep_all = TRUE) %>%
-          dplyr::select(-GENOTYPED_PROP) %>%
-          dplyr::mutate(GENOTYPED_MAX = dplyr::if_else(GENOTYPED_MAX == "ID1_G", ID1, ID2)) %>%
-          dplyr::arrange(PAIRS) %>%
-          dplyr::select(-ID1, -ID2, -PAIRS)
-      )
+          res$distance,
+          dplyr::select(res$distance, ID1, ID2, PAIRS) %>%
+            dplyr::left_join(dplyr::rename(geno.stats, ID1 = INDIVIDUALS, ID1_G = GENOTYPED_PROP), by = "ID1") %>%
+            dplyr::left_join(dplyr::rename(geno.stats, ID2 = INDIVIDUALS, ID2_G = GENOTYPED_PROP), by = "ID2") %>%
+            data.table::as.data.table(.) %>%
+            data.table::melt.data.table(
+              data = ., id.vars = c("ID1", "ID2", "PAIRS"),
+              variable.name = "GENOTYPED_MAX",
+              value.name = "GENOTYPED_PROP",
+              variable.factor = FALSE) %>%
+            tibble::as_tibble(.) %>%
+            dplyr::group_by(PAIRS) %>%
+            dplyr::filter(GENOTYPED_PROP == max(GENOTYPED_PROP)) %>%
+            dplyr::ungroup(.) %>%
+            dplyr::distinct(PAIRS, .keep_all = TRUE) %>%
+            dplyr::select(-GENOTYPED_PROP) %>%
+            dplyr::mutate(GENOTYPED_MAX = dplyr::if_else(GENOTYPED_MAX == "ID1_G", ID1, ID2)) %>%
+            dplyr::arrange(PAIRS) %>%
+            dplyr::select(-ID1, -ID2, -PAIRS)
+        )
       )
 
 
@@ -912,6 +915,10 @@ detect_duplicate_genomes <- function(
         }
         blacklist.id.similar <- NULL
       }
+    } else {
+      dup.threshold <- 0L
+      n.ind.blacklisted <- 0L
+      check.mono <- FALSE
     }# End blacklist.duplicates
 
     # updating parameters --------------------------------------------------
