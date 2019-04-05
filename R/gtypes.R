@@ -275,8 +275,8 @@ write_gtypes <- function(data, write = FALSE) {
     filename.temp <- generate_filename(extension = "gtypes")
     filename.short <- filename.temp$filename.short
     filename.genlight <- filename.temp$filename
-    saveRDS(object = gl.obj, file = filename.genlight)
-    if (verbose) message("File written: ", filename.short)
+    saveRDS(object = res, file = filename.genlight)
+    message("File written: ", filename.short)
   }
 
   return(res)

@@ -557,7 +557,7 @@ genomic_converter <- function(
   # strataG --------------------------------------------------------------------
   if ("gtypes" %in% output) {
     if (verbose) message("Generating strataG gtypes object")
-    res$gtypes <- radiator::write_gtypes(data = input)
+    res$gtypes <- radiator::write_gtypes(data = input, write = TRUE)
 
     # if (!is.null(imputation.method)) {
     #   if (verbose) message("Generating strataG gtypes object WITH imputations")
