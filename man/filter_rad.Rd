@@ -21,7 +21,8 @@ Documented in \strong{Input genomic datasets} of \code{\link{tidy_genomic_data}}
 The strata file is a tab delimited file with a minimum of 2 columns headers:
 \code{INDIVIDUALS} and \code{STRATA}. Documented in \code{\link{read_strata}}.
 DArT data: a third column \code{TARGET_ID} is required.
-Documented on \code{\link{read_dart}}.
+Documented on \code{\link{read_dart}}. Also use the strata read function to
+blacklist individuals.
 Default: \code{strata = NULL}.}
 
 \item{interactive.filter}{(optional, logical) Do you want the filtering session to
@@ -78,7 +79,8 @@ reproducibility.
 metadata file. To open in R use \code{\link{read_rad}}.
 \item \code{random.seed}: for reproducibility.
 }
-\item \strong{filter_dart_reproducibility}: filter reproducibility of markers (DArT data only)
+\item \strong{filter_dart_reproducibility}: filter reproducibility of markers
+(DArT data only). Described in \code{\link[radiator]{filter_dart_reproducibility}}.
 \itemize{
 \item \code{blacklist.dart.reproducibility.tsv}: blacklisted markers.
 \item \code{whitelist.dart.reproducibility.tsv}: whitelisted markers.
@@ -93,13 +95,15 @@ of markers blacklisted and whitelisted.
 \item \code{radiator_filter_dart_reproducibility_args.tsv}: the function calls and values.
 }
 
-\item \strong{filter_monomorphic}: removes monomorphic markers
+\item \strong{filter_monomorphic}: removes monomorphic markers.
+Described in \code{\link[radiator]{filter_monomorphic}}.
 \itemize{
 \item \code{blacklist.monomorphic.markers.tsv}: blacklisted markers.
 \item \code{whitelist.polymorphic.markers}: whitelisted markers.
 \item \code{radiator_filter_monomorphic_args}: the function calls and values.
 }
 \item \strong{filter_common_markers}: keep only markers in common between strata.
+Described in \code{\link[radiator]{filter_common_markers}}.
 \itemize{
 \item \code{common.markers.upsetrplot.pdf}: the UpSetR plot highlight the number
 of markers in common between strata.
@@ -110,6 +114,7 @@ of markers in common between strata.
 
 \item \strong{filter_individuals}: blacklist individuals based on missingness
 and/or heterozygosity and/or total coverage.
+Described in \code{\link[radiator]{filter_individuals}}.
 \itemize{
 \item \code{individuals.qc.pdf}: several boxplots showing different individual
 quality metrics.
@@ -122,6 +127,7 @@ on missingness (genotyping rate of individuals).
 }
 The function will remove automatically monomorphic markers if individuals are removed.
 \item \strong{filter_mac}: remove/blacklist markers based on Minor/Alternate Allele Count (MAC).
+Described in \code{\link[radiator]{filter_mac}}.
 \itemize{
 \item \code{distribution.mac.global.pdf}: distribution of overall MAC.
 \item \code{mac.boxplot.pdf}: boxplot of the MAC.
@@ -138,6 +144,7 @@ of markers blacklisted and whitelisted.
 \item \code{radiator_filter_mac_args.tsv}: the function calls and values.
 }
 \item \strong{filter_coverage}: remove/blacklist markers based on mean coverage information.
+Described in \code{\link[radiator]{filter_coverage}}.
 \itemize{
 \item \code{markers_metadata.tsv}: all the markers coverage metadata available.
 \item \code{markers_metadata_stats.tsv}: summary statistics of coverage information.
@@ -159,6 +166,7 @@ of markers blacklisted and whitelisted.
 \item \code{radiator_filter_coverage_args.tsv}: the function calls and values.
 }
 \item \strong{filter_genotyping}: remove/blacklist markers based on genotyping/call rate.
+Described in \code{\link[radiator]{filter_genotyping}}.
 \itemize{
 \item \code{markers_qc.pdf}: the missing genotypes boxplot.
 \item \code{markers_metadata.tsv}: the missing proportion per markers along other stats.
@@ -178,6 +186,7 @@ of markers blacklisted and whitelisted (strata).
 }
 \item \strong{filter_snp_position_read}: removes markers/SNPs based on their
 position on the read
+Described in \code{\link[radiator]{filter_snp_position_read}}.
 \itemize{
 \item \code{snp.position.read.boxplot.pdf}: boxplot of SNP position on the read
 \item \code{snp.position.read.helper.table.tsv}: a tibble with
@@ -191,6 +200,7 @@ on the read.
 }
 \item \strong{filter_snp_number}: removes outlier markers with too many SNP
 number per locus/read.
+Described in \code{\link[radiator]{filter_snp_number}}.
 \itemize{
 \item \code{markers_metadata.tsv}: metadata associated with the number of SNP/locus
 \item \code{snp_per_locus.pdf}: boxplot of number of SNP/locus.
@@ -204,6 +214,7 @@ on the number of markers blacklisted and whitelisted.
 }
 \item \strong{filter_ld}: SNP short and long distance linkage disequilibrium
 pruning.
+Described in \code{\link[radiator]{filter_ld}}.
 \itemize{
 \item \code{short.ld.locus.stats.tsv}: number of locus with more than 1, 2, 3 SNPs.
 \item \code{blacklist.short.ld.tsv}: blacklisted markers.
@@ -214,6 +225,7 @@ pruning.
 }
 \item \strong{detect_mixed_genomes}: highlight outliers individual's.
 observed heterozygosity.
+Described in \code{\link[radiator]{detect_mixed_genomes}}.
 \itemize{
 \item \code{individuals.qc.stats.tsv}: individual's heterozygosity and
 missingness proportion.
@@ -229,6 +241,7 @@ highlighting potential patterns of heterozygosity and missingness.
 }
 The function will remove automatically monomorphic markers if individuals are removed.
 \item \strong{detect_duplicate_genomes}: highligh potential duplicate individuals.
+Described in \code{\link[radiator]{detect_duplicate_genomes}}.
 \itemize{
 \item \code{genotyped.statistics.tsv}: genotyping statistics used in the analysis.
 \item \code{individuals.pairwise.dist.tsv}: pairwise distances measures.
@@ -242,6 +255,7 @@ pairwise distances measures.
 \item \code{radiator_detect_duplicate_genomes_args.tsv}: the function calls and values.
 }
 \item \strong{filter_hwe}: remove/blacklist markers based on Hardy-Weinberg Equilibrium
+Described in \code{\link[radiator]{filter_hwe}}.
 \itemize{
 \item \code{genotypes.summary.tsv}: summary of genotypes groups.
 \item \code{hwd.helper.table.tsv}: number of markers blacklisted based on thresholds.
@@ -269,6 +283,46 @@ pairwise distances measures.
 \item \code{radiator_genind_.RData} and \code{radiator_stockr.RData}, the
 genind and stockr files generated by the output argument.
 }
+}
+}
+
+\section{Advance mode}{
+
+
+Ideally, use the function in interactive mode and forget about this section.
+For advance user who want to run in batch mode with pre-defined arguments.
+Below are the arguments available. Read the function documentation associated
+with the arguments. Most of them reside in separate module that can be explored
+separately.
+\emph{dots-dots-dots ...} allows to pass several arguments for fine-tuning the function:
+\enumerate{
+\item \strong{filter.reproducibility}: detailed in \code{\link[radiator]{filter_dart_reproducibility}}.
+\item \strong{filter.monomorphic}: detailed in \code{\link[radiator]{filter_monomorphic}}.
+\item \strong{filter.common.markers}: detailed in \code{\link[radiator]{filter_common_markers}}.
+\item \code{whitelist.markers}: detailed in \code{\link[radiator]{filter_whitelist}}.
+\item \strong{filter.individuals.missing}: detailed in \code{\link[radiator]{filter_individuals}}.
+\item \strong{filter.individuals.heterozygosity}: detailed in \code{\link[radiator]{filter_individuals}}.
+\item \strong{filter.individuals.coverage.total}: detailed in \code{\link[radiator]{filter_individuals}}.
+\item \strong{filter.mac}: detailed in \code{\link[radiator]{filter_mac}}.
+\item \strong{filter.coverage}: detailed in \code{\link[radiator]{filter_coverage}}.
+\item \strong{filter.genotyping}: described in \code{\link[radiator]{filter_genotyping}}.
+\item \strong{filter.snp.position.read}: described in \code{\link[radiator]{filter_snp_position_read}}.
+\item \strong{filter.snp.number}: described in \code{\link[radiator]{filter_snp_number}}.
+\item \strong{filter.short.ld}: described in \code{\link[radiator]{filter_ld}}.
+\item \strong{filter.long.ld}: described in \code{\link[radiator]{filter_ld}}.
+\item \strong{long.ld.missing}: described in \code{\link[radiator]{filter_ld}}.
+\item \strong{ld.method}: described in \code{\link[radiator]{filter_ld}}.
+\item \strong{detect.mixed.genomes}: described in \code{\link[radiator]{detect_mixed_genomes}}.
+\item \strong{detect.duplicate.genomes}: described in \code{\link[radiator]{detect_duplicate_genomes}}.
+\item \strong{dup.threshold}: described in \code{\link[radiator]{detect_duplicate_genomes}}.
+\item \strong{filter.hwe}: described in \code{\link[radiator]{filter_hwe}}.
+\item \strong{hw.pop.threshold}: described in \code{\link[radiator]{filter_hwe}}.
+\item \strong{midp.threshold}: described in \code{\link[radiator]{filter_hwe}}.
+\item \strong{filter.hwe}: described in \code{\link[radiator]{filter_hwe}}.
+\item \strong{filter.hwe}: described in \code{\link[radiator]{filter_hwe}}.
+\item \strong{ind.heterozygosity.threshold}: described in \code{\link[radiator]{detect_mixed_genomes}}.
+\item \strong{ind.heterozygosity.threshold}: described in \code{\link[radiator]{detect_mixed_genomes}}.
+\item \strong{ind.heterozygosity.threshold}: described in \code{\link[radiator]{detect_mixed_genomes}}.
 }
 }
 

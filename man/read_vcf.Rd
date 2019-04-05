@@ -37,7 +37,8 @@ This is necessary to make the lines in the VCF unique.
 The strata file is a tab delimited file with a minimum of 2 columns headers:
 \code{INDIVIDUALS} and \code{STRATA}. Documented in \code{\link{read_strata}}.
 DArT data: a third column \code{TARGET_ID} is required.
-Documented on \code{\link{read_dart}}.
+Documented on \code{\link{read_dart}}. Also use the strata read function to
+blacklist individuals.
 Default: \code{strata = NULL}.}
 
 \item{filename}{(optional) The file name of the Genomic Data Structure (GDS) file.

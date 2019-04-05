@@ -1432,8 +1432,6 @@ import_dart <- function(data, strata, pop.levels = NULL, path.folder= NULL, verb
   return(res = list(data = data, strata = strata.df, dart.format = dart.format))
 }#End import_dart
 
-
-
 # clean_dart_locus--------------------------------------------------------------
 #' @title clean_dart_locus
 #' @description Clean LOCUS and generate VARIANT_ID and MARKERS

@@ -122,6 +122,10 @@
 #' \item \code{keep.allele.names} argument used when tidying genind object.
 #' Documented in \code{\link{tidy_genind}}.
 #' Default: \code{keep.allele.names = FALSE}.
+#'
+#' \item \code{blacklist.id} (optional) Default: \code{blacklist.id = NULL}.
+#' Ideally, managed in the strata file.
+#' Documented in \code{\link{read_strata}} and \code{\link{read_blacklist_id}}.
 #' }
 
 #' @section Life cycle:
@@ -356,7 +360,7 @@ genomic_converter <- function(
     keepers = c("path.folder", "keep.allele.names",
                 "whitelist.markers", "filter.common.markers",
                 "filter.monomorphic", "vcf.metadata", "vcf.stats",
-                "parameters", "blacklist.genotypes", "internal"),
+                "parameters", "blacklist.genotypes", "internal", "blacklist.id"),
     deprecated = c("maf.thresholds", "common.markers",
                    "max.marker","monomorphic.out", "snp.ld", "filter.call.rate",
                    "filter.markers.coverage", "filter.markers.missing",
@@ -364,7 +368,7 @@ genomic_converter <- function(
                    "mixed.genomes.analysis", "duplicate.genomes.analysis",
                    "maf.data",
                    "hierarchical.levels", "imputation.method",
-                   "pred.mean.matching", "num.tree", "blacklist.id",
+                   "pred.mean.matching", "num.tree",
                    "pop.levels", "pop.labels", "pop.select"
                    ),
     verbose = verbose
@@ -430,6 +434,7 @@ genomic_converter <- function(
     filename = filename,
     parallel.core = parallel.core,
     whitelist.markers = whitelist.markers,
+    blacklist.id = blacklist.id,
     vcf.metadata = vcf.metadata,
     vcf.stats = vcf.stats,
     keep.allele.names = keep.allele.names,

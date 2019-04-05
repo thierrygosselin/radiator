@@ -29,7 +29,8 @@ Documented in \strong{Input genomic datasets} of \code{\link{tidy_genomic_data}}
 The strata file is a tab delimited file with a minimum of 2 columns headers:
 \code{INDIVIDUALS} and \code{STRATA}. Documented in \code{\link{read_strata}}.
 DArT data: a third column \code{TARGET_ID} is required.
-Documented on \code{\link{read_dart}}.
+Documented on \code{\link{read_dart}}. Also use the strata read function to
+blacklist individuals.
 Default: \code{strata = NULL}.}
 
 \item{ind.heterozygosity.threshold}{(string, double, optional)

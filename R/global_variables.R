@@ -129,7 +129,7 @@ if (getRversion() >= "2.15.1") {
       "MEAN_READ_DEPTH_F", "MEAN_READ_DEPTH_M", "PRESENCE_ABSENCE_F",
       "PRESENCE_ABSENCE_M", "QR_RESIDUALS", "RATIO", "Species", "U",
       "coverage.thresholds", "population", "residuals", "species", "tau", "yw",
-      "MEAN_RD", "MISSINGNESS"
+      "MEAN_RD", "MISSINGNESS", "dup.threshold"
     )
   )
 }
