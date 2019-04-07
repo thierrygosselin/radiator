@@ -81,7 +81,7 @@ radiator_gds <- function(
   }
 
   # Genotypes coding
-  if (!is.matrix(genotypes.df)) genotypes.df %<>% data.matrix(.)
+  genotypes.df %<>% data.matrix(.)
 
   # 4 steps for SNPRelate genotype coding (change from ALT to REF dosage)
   if (geno.coding == "alt.dos") {

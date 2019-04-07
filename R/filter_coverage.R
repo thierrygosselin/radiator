@@ -354,6 +354,7 @@ filter_coverage <- function(
         ggplot2::aes(x = COVERAGE_HIGH, y = MARKERS)) +
         ggplot2::geom_line() +
         ggplot2::geom_point(size = 2, shape = 21, fill = "white") +
+        ggplot2::geom_vline(ggplot2::aes(xintercept = as.numeric(out.high)), color = "yellow") +
         ggplot2::scale_x_continuous(name = "Maximum mean coverage allowed", breaks = ch.range) +
         ggplot2::scale_y_continuous(name = "Number of markers")+
         ggplot2::theme(
@@ -381,11 +382,11 @@ filter_coverage <- function(
       filter.coverage <- c(min.c, max.c)
       message("\nStep 2. Filtering markers based on mean coverage\n")
       filter.coverage[1] <- radiator_question(
-        x = "Choose the min mean coverage threshold: ", minmax = c(1, 10000))
+        x = "Choose the min mean coverage threshold(e.g. 7 or 10): ", minmax = c(1, 10000))
     }
     if (interactive.filter) {
       filter.coverage[2] <- radiator_question(
-        x = "Choose the max mean coverage threshold: ", minmax = c(1, 10000))
+        x = "Choose the max mean coverage threshold (e.g. 100 or 300): ", minmax = c(1, 10000))
     }
 
     # Whitelist and blacklist --------------------------------------------------

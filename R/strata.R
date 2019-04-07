@@ -121,7 +121,7 @@ read_strata <- function(
   verbose = FALSE
 ) {
   if (missing(strata)) rlang::abort("\nMissing strata argument...\n")
-  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
+  # file.date <- format(Sys.time(), "%Y%m%d@%H%M")
 
   if (is.null(strata)) {
     return(res = NULL)
@@ -208,9 +208,15 @@ read_strata <- function(
 
 
     if (!is.null(blacklist.id) || !is.null(pop.select)) {
-      if (is.null(path.folder)) path.folder <- getwd()
-      strata.fn <- stringi::stri_join("strata_radiator_filtered_", file.date, ".tsv")
-      readr::write_tsv(x = strata, path = file.path(path.folder, strata.fn))
+      # if (is.null(path.folder)) path.folder <- getwd()
+      strata.fn <- generate_filename(
+        name.shortcut = "strata_radiator_filtered",
+        path.folder = path.folder,
+        date = TRUE,
+        extension = "tsv")
+      write_rad(data = strata, filename = strata.fn$filename, tsv = TRUE, verbose = TRUE)
+      # strata.fn <- stringi::stri_join("strata_radiator_filtered_", file.date, ".tsv")
+      # readr::write_tsv(x = strata, path = file.path(path.folder, strata.fn))
     }
 
     res = list(
@@ -220,6 +226,7 @@ read_strata <- function(
       pop.select = pop.select,
       blacklist.id = blacklist.id)
   }
+  if (verbose) message("This function returns an object (list), not a strata object")
   return(res)
 }#End read_strata
 

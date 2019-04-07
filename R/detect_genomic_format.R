@@ -105,17 +105,26 @@ detect_genomic_format <- function(data){
 #' @export
 #' @keywords internal
 check_dart <- function(data) {
-  data.type <- readChar(con = data, nchars = 16L, useBytes = TRUE)
+  if (stringi::stri_detect_fixed(
+    str = stringi::stri_sub(str = data, from = -4, to = -1),
+    pattern = ".csv")) {
+    tokenizer.dart <- ","
+  } else {
+    tokenizer.dart <- "\t"
+  }
+  data.type <- readChar(con = data, nchars = 200L, useBytes = TRUE)
   dart.with.header <- TRUE %in% (stringi::stri_detect_fixed(str = data.type, pattern = c("*\t", "*,")))
+
   if (dart.with.header) {
     temp.file <- suppressWarnings(suppressMessages(readr::read_table(file = data, n_max = 20, col_names = "HEADER")))
-    # skip.number <- which(stringi::stri_detect_fixed(str = temp.file$HEADER,
-    #                                                 pattern = "AlleleID")) -1
-    skip.number <- which(stringi::stri_detect_regex(str = temp.file$HEADER,
-                                                    pattern = "^[:Letter:]")) -1
-    data.type <- readr::read_lines(file = data, skip = skip.number, n_max = skip.number + 1)[1] #%>% stringi::stri_sub(str = ., from = 1, to = 16)
+    skip.number <- which(
+      stringi::stri_detect_regex(str = temp.file$HEADER,pattern = "^[:Letter:]")
+    ) -1
+    star.number <- stringi::stri_count_fixed(str = data.type, pattern = "*")
+    data.type <- readr::read_lines(file = data, skip = skip.number, n_max = skip.number + 1)[1]
   } else {
     skip.number <- 0
+    star.number <- 0
   }
   dart.clone.id <- stringi::stri_detect_fixed(str = data.type, pattern = "CloneID")
   dart.allele.id <- stringi::stri_detect_fixed(str = data.type, pattern = "AlleleID")
@@ -128,5 +137,15 @@ check_dart <- function(data) {
   if (dart.clone.id && !dart.allele.id) {
     data.type <- "silico.dart"
   }
-  return(res = list(data.type = data.type, skip.number = skip.number))
+  # if (!data.type %in% c("dart", "silico.dart")) {
+  #   rlang::abort("Contact author to show your DArT data, problem during import")
+  # }
+  return(
+    res = list(
+      data.type = data.type,
+      skip.number = skip.number,
+      star.number = star.number,
+      tokenizer.dart = tokenizer.dart
+    )
+  )
 }#End check_dart

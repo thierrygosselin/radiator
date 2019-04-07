@@ -236,7 +236,7 @@ filter_individuals <- function(
         } else {
           filter.individuals.missing <- radiator_question(
             x = "Enter the proportion threshold (0-1)
-The maximum amount of missingness you tolerate for a sample:", minmax = c(0, 1))
+The maximum amount of missingness you tolerate for a sample (e.g. 0.3): ", minmax = c(0, 1))
         }
         outlier.stats <- NULL
       } else {
