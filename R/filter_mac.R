@@ -167,6 +167,7 @@ filter_mac <- function(
   # verbose = TRUE
   # path.folder = NULL
   # parameters <- NULL
+  # internal <- FALSE
   if (!is.null(filter.mac) || interactive.filter) {
     if (interactive.filter) verbose <- TRUE
     if (verbose) {
@@ -402,7 +403,7 @@ filter_mac <- function(
       bl %<>%
         dplyr::filter(MARKERS %in% mac.data$MARKERS) %>%
         dplyr::mutate(FILTERS = "filter.mac")
-      wl %<>% dplyr::setdiff(bl)
+      wl %<>% dplyr::filter(!MARKERS %in% mac.data$MARKERS)
       data %<>% dplyr::filter(MARKERS %in% wl$MARKERS)
     } else {
       # Whitelist and Blacklist of markers

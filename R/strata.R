@@ -97,7 +97,7 @@
 
 #' @rdname read_strata
 #' @export
-#' @return A list with several components.
+#' @return \strong{A list} with several components.
 #' \enumerate{
 #' \item Number of strata/populations
 #' \item Number of individuals
@@ -226,7 +226,7 @@ read_strata <- function(
       pop.select = pop.select,
       blacklist.id = blacklist.id)
   }
-  if (verbose) message("This function returns an object (list), not a strata object")
+  # if (verbose) message("This function returns an object (list), not a strata object")
   return(res)
 }#End read_strata
 

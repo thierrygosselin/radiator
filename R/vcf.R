@@ -553,12 +553,8 @@ read_vcf <- function(
         node.name = "sample.id",
         value = individuals$NEW_ID,
         replace = TRUE)
-
       individuals %<>% dplyr::rename(INDIVIDUALS = NEW_ID, OLD_ID = INDIVIDUALS)
-
     }
-
-
   } else {
     individuals %<>% dplyr::mutate(STRATA = 1L, FILTERS = "whitelist")
   }

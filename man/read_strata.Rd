@@ -66,7 +66,7 @@ the function is a little more chatty during execution.
 Default: \code{verbose = TRUE}.}
 }
 \value{
-A list with several components.
+\strong{A list} with several components.
 \enumerate{
 \item Number of strata/populations
 \item Number of individuals

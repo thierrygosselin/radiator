@@ -720,3 +720,19 @@ folder_prefix <- function(
   folder.prefix <- file.path(path.folder, folder.prefix)
   res = list(prefix_int = prefix_int, folder.prefix = folder.prefix)
 }#End folder_prefix
+
+
+# radiator_snakecase------------------------------------------------------------
+#' @title radiator_snakecase
+#' @description Transform CamelCase to snake_cases
+#' @name radiator_snakecase
+#' @rdname radiator_snakecase
+#' @keywords internal
+#' @export
+radiator_snakecase <- function(x) {
+  x <- base::gsub(pattern = "([A-Za-z])([A-Z])([a-z])", replacement = "\\1_\\2\\3", x = x) %>%
+    base::gsub(pattern = ".", replacement = "_", x =  ., fixed = TRUE) %>%
+    base::gsub(pattern = "([a-z])([A-Z])", replacement = "\\1_\\2", x = .) %>%
+    stringi::stri_trans_toupper(str = .)
+  return(x)
+}#End radiator_snakecase

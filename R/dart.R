@@ -50,27 +50,28 @@ extract_dart_target_id <- function(data, write = TRUE) {
     t %>%
     magrittr::set_colnames(x = ., value = "TARGET_ID") %>%
     tibble::as_tibble(.) %>%
-    dplyr::mutate(TARGET_ID = stringi::stri_trans_toupper(TARGET_ID))
+    dplyr::mutate(TARGET_ID = radiator_snakecase(TARGET_ID))
 
 
   if (dart.check$star.number > 0) {
     dart.target.id %<>% dplyr::filter(dplyr::row_number() > dart.check$star.number)
   } else {
-    # This is a string of col header not wanted
+    # This is a string of known DArT col header not wanted
     discard <- c(
-      "TARGET_ID", "ALLELEID", "CLONEID", "CLUSTERTEMPINDEX", "ALLELESEQUENCE",
-      "CLUSTERCONSENSUSSEQUENCE", "CLUSTERSIZE", "ALLELESEQDIST", "SNP",
-      "SNPPOSITION", "CALLRATE", "ONERATIOREF", "ONERATIOSNP", "FREQHOMREF",
-      "FREQHOMSNP", "FREQHETS", "PICREF", "PICSNP", "AVGPIC", "AVGCOUNTREF",
-      "AVGCOUNTSNP", "RATIOAVGCOUNTREFAVGCOUNTSNP", "FREQHETSMINUSFREQMINHOM",
-      "ALLELECOUNTSCORRELATION", "AGGREGATETAGSTOTAL", "DERIVEDCORRMINUSSEEDCORR",
-      "REPREF", "REPSNP", "REPAVG", "PICREPREF", "PICREPSNP", "TOTALPICREPREFTEST",
-      "TOTALPICREPSNPTEST", "BINID", "BIN.SIZE", "ALLELESEQUENCEREF",
-      "ALLELESEQUENCESNP", "TRIMMEDSEQUENCEREF", "TRIMMEDSEQUENCE", "ONERATIO",
-      "PIC", "AVGREADDEPTH", "STDEVREADDEPTH", "QPMR", "REPRODUCIBILITY", "MAF",
-      "TOTCOUNTS", "TOTALPICREPTEST", "PICREP")
+      "TARGET_ID", "ALLELE_ID", "CLONE_ID", "CLUSTER_TEMP_INDEX", "ALLELE_SEQUENCE",
+      "CLUSTER_CONSENSUS_SEQUENCE", "CLUSTER_SIZE", "ALLELE_SEQ_DIST", "SNP",
+      "SNP_POSITION", "CALL_RATE", "ONE_RATIO_REF", "ONE_RATIO_SNP", "FREQ_HOM_REF",
+      "FREQ_HOM_SNP", "FREQ_HETS", "PIC_REF", "PIC_SNP", "AVG_PIC", "AVG_COUNT_REF",
+      "AVG_COUNT_SNP", "RATIO_AVG_COUNT_REF_AVG_COUNT_SNP",
+      "FREQ_HETS_MINUS_FREQ_MIN_HOM",
+      "ALLELE_COUNTS_CORRELATION", "AGGREGATE_TAGS_TOTAL", "DERIVED_CORR_MINUS_SEED_CORR",
+      "REP_REF", "REP_SNP", "REP_AVG", "PIC_REP_REF", "PIC_REP_SNP", "TOTAL_PIC_REP_REF_TEST",
+      "TOTAL_PIC_REP_SNP_TEST", "BIN_ID", "BIN_SIZE", "ALLELE_SEQUENCE_REF",
+      "ALLELE_SEQUENCE_SNP", "TRIMMED_SEQUENCE_REF", "TRIMMED_SEQUENCE", "ONE_RATIO",
+      "PIC", "AVG_READ_DEPTH", "STDEV_READ_DEPTH", "Q_PMR", "REPRODUCIBILITY", "MAF",
+      "TOT_COUNTS", "TOTAL_PIC_REP_TEST", "PIC_REP")
 
-    discard.genome <- c("CHROM_|CHROMPOS_|ALNCNT_|ALNEVALUE_")
+    discard.genome <- c("CHROM_|CHROM_POS_|ALN_CNT_|ALN_EVALUE_")
 
     dart.target.id %<>%
       dplyr::filter(!TARGET_ID %in% discard) %>%
@@ -300,7 +301,7 @@ read_dart <- function(
                 "gt", "gt.bin", "gt.vcf", "gt.vcf.nuc",
                 "tidy.check"
     ),
-    verbose = verbose
+    verbose = FALSE
   )
   if (is.null(tidy.check)) tidy.check <- FALSE
   if (tidy.check) tidy.dart <- TRUE
@@ -672,7 +673,7 @@ import_dart <- function(
   path.folder = NULL,
   parallel.core = parallel::detectCores() - 1,
   verbose = TRUE
-  ) {
+) {
 
   # pop.levels = NULL
   # path.folder = NULL
@@ -723,13 +724,19 @@ import_dart <- function(
       rlang::abort("\nSome of the samples in the strata are not found in the DArT file.
                      For more info: ", problem.filename$filename.short)
     }
-    if (verbose) message("\nNote: Careful if using DArT statistics generated for all samples...\n")
+    if (verbose) message("\nNote: Careful if using DArT statistics generated for all samples...")
     strata.id.check <- NULL
   } else {
     if (!identical(sort(target.id$TARGET_ID), sort(strata.df$TARGET_ID))) {
       rlang::abort("\nThe DArT and strata files don't have the same TARGET_IDs")
     }
   }
+  blacklist.id <- c(
+    dplyr::filter(strata.df, !TARGET_ID %in% target.id$TARGET_ID) %$% TARGET_ID,
+    dplyr::filter(target.id, !TARGET_ID %in% strata.df$TARGET_ID) %$% TARGET_ID
+  ) %>% unique
+
+  message("Number of blacklisted samples: ", length(blacklist.id))
   target.id <- NULL
 
   # need to check for duplicate names... yes happening all the time
@@ -740,7 +747,7 @@ import_dart <- function(
     rlang::abort("\nFix the strata with unique names and\nverify the DArT file for the same issue, adjust accordingly...")
   }
 
-  use.readr <- FALSE
+  use.readr <- FALSE # fread is now a lot faster...switching to fread...
   if (use.readr) {
     dart.col.type <- readr::read_delim(
       file = data,
@@ -791,13 +798,25 @@ import_dart <- function(
       na = c("-", " ", "", "NA"),
       skip = dart.check$skip.numbe
     )
-
+    dart.col.type <- NULL
   } else {#fread
-    if (silico.dart) {
-      want <- c("CloneID", "AlleleSequence", "Sequence", "TrimmedSequence")
+    # There's no big difference really here if we import everything and filter after...
+    # but we have to use for this the original DArT cv file, not modified by the user...
+    # We need the * (star)
+    if (dart.check$star.number > 0) {
+      want <-  NULL
     } else {
-      want <- c("AlleleID", "CloneID", "SNP", "SnpPosition", "CallRate", "OneRatioRef", "OneRatioSnp", "AvgCountRef", "AvgCountSnp", "RepAvg", "AvgReadDepth", "ClusterConsensusSequence", strata.df$TARGET_ID)
+      if (silico.dart) {
+        want <- c("CloneID", "AlleleSequence", "Sequence", "TrimmedSequence",
+                  strata.df$TARGET_ID)
+      } else {
+        want <- c("AlleleID", "CloneID", "SNP", "SnpPosition", "CallRate",
+                  "OneRatioRef", "OneRatioSnp", "AvgCountRef", "AvgCountSnp",
+                  "RepAvg", "AvgReadDepth", "ClusterConsensusSequence",
+                  strata.df$TARGET_ID)
+      }
     }
+
     data <- suppressWarnings(
       data.table::fread(
         file = data,
@@ -813,21 +832,16 @@ import_dart <- function(
         tibble::as_tibble(.)
     )
   }
+  # We want snakecase not camelcase
+  colnames(data) %<>% radiator::radiator_snakecase(x = .)
 
+  # remove samples not in strata...
+  if (dart.check$star.number > 0) {
+    blacklist.id <- tibble::tibble(BLACKLIST_ID = colnames(data)) %>%
+      dplyr::filter(dplyr::row_number() > dart.check$star.number) %>%
+      dplyr::filter(!BLACKLIST_ID %in% strata.df$TARGET_ID) %$% BLACKLIST_ID
 
-  dart.col.type <- NULL
-  colnames(data) %<>%
-    stringi::stri_trans_toupper(str = .) %>%
-    clean_ind_names(.) %>%
-    stringi::stri_replace_all_fixed(
-      str = .,
-      pattern = c("AVGCOUNTREF", "AVGCOUNTSNP", "REPAVG", "ALLELEID",
-                  "SNPPOSITION", "CALLRATE", "REPRODUCIBILITY", "AVGREADDEPTH",
-                  "CLUSTERCONSENSUSSEQUENCE", "ONERATIOREF", "ONERATIOSNP"),
-      replacement = c("AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG", "LOCUS",
-                      "POS", "CALL_RATE", "REP_AVG", "AVG_READ_DEPTH",
-                      "SEQUENCE", "ONE_RATIO_REF", "ONE_RATIO_SNP"),
-      vectorize_all = FALSE)
+  }
 
   if (silico.dart) {
     check.data <- c("ALLELESEQUENCE", "SEQUENCE", "TRIMMEDSEQUENCE")
@@ -839,21 +853,21 @@ import_dart <- function(
 
       colnames(data) <- stringi::stri_replace_all_fixed(
         str = colnames(data),
-        pattern = c("ALLELESEQUENCE", "TRIMMEDSEQUENCE"),
+        pattern = c("ALLELE_SEQUENCE", "TRIMMED_SEQUENCE"),
         replacement = c("SEQUENCE", "SEQUENCE"),
         vectorize_all = FALSE)
     }
   }
 
   if (!silico.dart) {
-    if (rlang::has_name(data, "CLONEID")) {
+    if (rlang::has_name(data, "CLONE_ID")) {
       if (rlang::has_name(data, "LOCUS")) {
-        data %<>% dplyr::select(-CLONEID)
+        data %<>% dplyr::select(-CLONE_ID)
       } else {
         colnames(data) %<>%
           stringi::stri_replace_all_fixed(
             str = .,
-            pattern = "CLONEID",
+            pattern = "CLONE_ID",
             replacement = "LOCUS",
             vectorize_all = FALSE)
       }
@@ -920,38 +934,54 @@ import_dart <- function(
 #' @rdname clean_dart_locus
 #' @keywords internal
 #' @export
-clean_dart_locus <- function(x) {
-  want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS", "COL",
-            "REF", "ALT", "SEQUENCE",
-            "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")
-  suppressWarnings(
+clean_dart_locus <- function(x, fast = FALSE) {
+
+  if (fast) {
     x %<>%
-      tidyr::separate(col = LOCUS,
-                      into = c("LOCUS", "NOT_USEFUL"),
-                      sep = "\\|",
-                      extra = "drop"
-      ) %>%
-      dplyr::select(-NOT_USEFUL) %>%
-      tidyr::separate(col = SNP,
-                      into = c("NOT_USEFUL", "KEEPER"),
-                      sep = ":",
-                      extra = "drop") %>%
-      dplyr::select(-NOT_USEFUL) %>%
-      tidyr::separate(col = KEEPER, into = c("REF", "ALT"), sep = ">") %>%
       dplyr::mutate(
-        CHROM = rep("CHROM_1", n()),
-        MARKERS = stringi::stri_join(CHROM, LOCUS, POS, sep = "__"),
-        VARIANT_ID = as.integer(factor(MARKERS)),
-        COL = POS
-      ) %>%
-      dplyr::select(dplyr::one_of(want), dplyr::everything()) %>%
-      dplyr::mutate_at(
-        .tbl = .,
-        .vars = c("MARKERS", "CHROM", "LOCUS", "POS"),
-        .funs = as.character
-      ) %>%
-      dplyr::arrange(CHROM, LOCUS, POS, REF)
-  )
+        CHROM = stringi::stri_replace_all_fixed(
+          str = CHROM, pattern = ".", replacement = "denovo", vectorize_all = FALSE),
+        POS = stringi::stri_replace_na(str = POS, replacement = "50"),
+        COL = stringi::stri_extract_first_regex(str = LOCUS, pattern = "[-][0-9]+[\\:]"),
+        COL = stringi::stri_replace_all_fixed(str = COL, pattern = c("-", ":"), replacement = c("", ""), vectorize_all = FALSE),
+        COL = as.integer(COL),
+        LOCUS = stringi::stri_extract_first_regex(str = LOCUS, pattern = "^[0-9]+"),
+        LOCUS = stringi::stri_join(LOCUS, POS, sep = "_"),
+        POS = COL
+      )
+  } else {
+    want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS", "COL",
+              "REF", "ALT", "SEQUENCE",
+              "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")
+    suppressWarnings(
+      x %<>%
+        tidyr::separate(col = LOCUS,
+                        into = c("LOCUS", "NOT_USEFUL"),
+                        sep = "\\|",
+                        extra = "drop"
+        ) %>%
+        dplyr::select(-NOT_USEFUL) %>%
+        tidyr::separate(col = SNP,
+                        into = c("NOT_USEFUL", "KEEPER"),
+                        sep = ":",
+                        extra = "drop") %>%
+        dplyr::select(-NOT_USEFUL) %>%
+        tidyr::separate(col = KEEPER, into = c("REF", "ALT"), sep = ">") %>%
+        dplyr::mutate(
+          CHROM = rep("CHROM_1", n()),
+          MARKERS = stringi::stri_join(CHROM, LOCUS, POS, sep = "__"),
+          VARIANT_ID = as.integer(factor(MARKERS)),
+          COL = POS
+        ) %>%
+        dplyr::select(dplyr::one_of(want), dplyr::everything()) %>%
+        dplyr::mutate_at(
+          .tbl = .,
+          .vars = c("MARKERS", "CHROM", "LOCUS", "POS"),
+          .funs = as.character
+        ) %>%
+        dplyr::arrange(CHROM, LOCUS, POS, REF)
+    )
+  }
 }#End clean_dart_locus
 
 # detect_dart_format-------------------------------------------------------------
