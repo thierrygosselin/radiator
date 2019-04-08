@@ -4,7 +4,7 @@
 \alias{clean_dart_locus}
 \title{clean_dart_locus}
 \usage{
-clean_dart_locus(x, fast = FALSE)
+clean_dart_locus(x, fast = TRUE)
 }
 \description{
 Clean LOCUS and generate VARIANT_ID and MARKERS

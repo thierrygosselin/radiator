@@ -253,7 +253,7 @@ read_dart <- function(
   ...
 ) {
 
-  # for testing
+  # # for testing
   # filename = NULL
   # verbose = TRUE
   # parallel.core = parallel::detectCores() - 1
@@ -467,13 +467,9 @@ read_dart <- function(
   }
 
   # Markers meta
-  want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS", "COL",
-            "REF", "ALT", "SEQUENCE",
-            "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG",
-            "ONE_RATIO_REF", "ONE_RATIO_SNP")
   markers.meta <- suppressWarnings(
     dplyr::ungroup(data) %>%
-      dplyr::select(dplyr::one_of(want)) %>%
+      dplyr::select(-dplyr::one_of(strata$TARGET_ID)) %>%
       dplyr::filter(!is.na(REF) | !is.na(ALT)) %>%
       dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
       dplyr::arrange(MARKERS) %>%
@@ -490,11 +486,10 @@ read_dart <- function(
   )
 
   # if (verbose) message("File written: ", meta.filename$)
-  notwanted <- c("FILTERS", "CHROM", "LOCUS", "POS", "COL", "CALL_RATE", "AVG_COUNT_REF",
-                 "AVG_COUNT_SNP", "REP_AVG", "SEQUENCE", "ONE_RATIO_REF", "ONE_RATIO_SNP")
+  want <- c("VARIANT_ID", "MARKERS", "REF", "ALT", strata$TARGET_ID)
   suppressWarnings(
     data %<>%
-      dplyr::select(-dplyr::one_of(notwanted)) %>%
+      dplyr::select(dplyr::one_of(want)) %>%
       dplyr::arrange(MARKERS, REF))
 
   #GDS -----------------------------------------------------------------------
@@ -735,6 +730,7 @@ import_dart <- function(
     dplyr::filter(strata.df, !TARGET_ID %in% target.id$TARGET_ID) %$% TARGET_ID,
     dplyr::filter(target.id, !TARGET_ID %in% strata.df$TARGET_ID) %$% TARGET_ID
   ) %>% unique
+  if (length(blacklist.id) == 0) blacklist.id <- NULL
 
   message("Number of blacklisted samples: ", length(blacklist.id))
   target.id <- NULL
@@ -801,22 +797,6 @@ import_dart <- function(
     dart.col.type <- NULL
   } else {#fread
     # There's no big difference really here if we import everything and filter after...
-    # but we have to use for this the original DArT cv file, not modified by the user...
-    # We need the * (star)
-    if (dart.check$star.number > 0) {
-      want <-  NULL
-    } else {
-      if (silico.dart) {
-        want <- c("CloneID", "AlleleSequence", "Sequence", "TrimmedSequence",
-                  strata.df$TARGET_ID)
-      } else {
-        want <- c("AlleleID", "CloneID", "SNP", "SnpPosition", "CallRate",
-                  "OneRatioRef", "OneRatioSnp", "AvgCountRef", "AvgCountSnp",
-                  "RepAvg", "AvgReadDepth", "ClusterConsensusSequence",
-                  strata.df$TARGET_ID)
-      }
-    }
-
     data <- suppressWarnings(
       data.table::fread(
         file = data,
@@ -825,41 +805,54 @@ import_dart <- function(
         na.strings = c("-", "NA"),
         stringsAsFactors = FALSE,
         skip = "CallRate",
-        select = want,
+        drop = blacklist.id,
+        select = NULL,
         showProgress = TRUE,
         nThread = parallel.core,
         verbose = FALSE) %>%
         tibble::as_tibble(.)
     )
   }
+  # check <- tibble::tibble(BLACKLIST_ID = colnames(data)) %>%
+  #   dplyr::filter(BLACKLIST_ID %in% blacklist.id)
   # We want snakecase not camelcase
   colnames(data) %<>% radiator::radiator_snakecase(x = .)
 
-  # remove samples not in strata...
-  if (dart.check$star.number > 0) {
-    blacklist.id <- tibble::tibble(BLACKLIST_ID = colnames(data)) %>%
-      dplyr::filter(dplyr::row_number() > dart.check$star.number) %>%
-      dplyr::filter(!BLACKLIST_ID %in% strata.df$TARGET_ID) %$% BLACKLIST_ID
-
-  }
+  # Check sequence
+  # check.seq <- data %>%
+  #   dplyr::select(ALLELE_SEQUENCE, TRIMMED_SEQUENCE) %>%
+  #   dplyr::filter(ALLELE_SEQUENCE != TRIMMED_SEQUENCE)
 
   if (silico.dart) {
-    check.data <- c("ALLELESEQUENCE", "SEQUENCE", "TRIMMEDSEQUENCE")
-    check.data <- purrr::keep(.x = colnames(data), .p = colnames(data) %in% check.data)
-
-    if (length(check.data > 1)) {
-      data %<>%
-        dplyr::select(-dplyr::one_of(sample(check.data, size = 1)))
-
-      colnames(data) <- stringi::stri_replace_all_fixed(
-        str = colnames(data),
-        pattern = c("ALLELE_SEQUENCE", "TRIMMED_SEQUENCE"),
-        replacement = c("SEQUENCE", "SEQUENCE"),
+    colnames(data) <- stringi::stri_replace_all_fixed(
+      str = colnames(data),
+      pattern = c("ALLELE_SEQUENCE", "TRIMMED_SEQUENCE"),
+      replacement = c("SEQUENCE", "SEQUENCE"),
+      vectorize_all = FALSE)
+    # }
+  } else {# non silico dart data
+    colnames(data) %<>%
+      stringi::stri_replace_all_fixed(
+        str = .,
+        pattern = c("ALLELE_ID","SNP_POSITION"),
+        replacement = c("LOCUS", "POS"),
         vectorize_all = FALSE)
-    }
-  }
 
-  if (!silico.dart) {
+
+    # keep consensus sequence if found
+    # or rename TRIMMED_SEQUENCE
+    if (rlang::has_name(data, "CLUSTER_CONSENSUS_SEQUENCE")) {
+      data %<>% dplyr::rename(SEQUENCE = CLUSTER_CONSENSUS_SEQUENCE)
+    } else if (rlang::has_name(data, "TRIMMED_SEQUENCE")) {
+      data %<>% dplyr::rename(SEQUENCE = TRIMMED_SEQUENCE)
+    } else {
+      if (rlang::has_name(data, "ALLELE_SEQUENCE")) {
+        data %<>% dplyr::rename(SEQUENCE = ALLELE_SEQUENCE)
+      }
+    }
+
+
+
     if (rlang::has_name(data, "CLONE_ID")) {
       if (rlang::has_name(data, "LOCUS")) {
         data %<>% dplyr::select(-CLONE_ID)
@@ -877,15 +870,16 @@ import_dart <- function(
       rlang::abort("\nProblem tidying DArT dataset: contact author")
     }
 
-    # necessary steps...observed with DArT file using ref genome -----------------
+    # necessary steps...observed with DArT file using ref genome ---------------
     data %<>% dplyr::filter(!is.na(LOCUS))
+    # Check for duplicate rows (sometimes people combine DArT data...)
     if (rlang::has_name(data, "POS")) {
       data %<>% dplyr::arrange(LOCUS, POS)
+      data.dup <- nrow(dplyr::distinct(data, LOCUS, SNP, POS, CALL_RATE, .keep_all = FALSE))
     } else {
       data %<>% dplyr::arrange(LOCUS)
+      data.dup <- nrow(dplyr::distinct(data, LOCUS, SNP, CALL_RATE, .keep_all = FALSE))
     }
-    # Check for duplicate rows (sometimes people combine DArT data...)----------
-    data.dup <- nrow(dplyr::distinct(data, LOCUS, SNP, POS, CALL_RATE, .keep_all = FALSE))
 
     # make sure no duplicates
     if (nrow(data) != data.dup) {
@@ -900,7 +894,7 @@ import_dart <- function(
     id <- purrr::discard(
       .x = colnames(data),
       .p = colnames(data) %in% c("LOCUS", "SNP", "POS", "CALL_RATE", "AVG_COUNT_REF",
-                                 "AVG_COUNT_SNP", "REP_AVG", "SEQUENCE")
+                                 "AVG_COUNT_SNP", "REP_AVG")
     )
     dup.id <- length(id) - length(unique(id))
     if (dup.id > 0) {
@@ -934,21 +928,40 @@ import_dart <- function(
 #' @rdname clean_dart_locus
 #' @keywords internal
 #' @export
-clean_dart_locus <- function(x, fast = FALSE) {
+clean_dart_locus <- function(x, fast = TRUE) {
 
   if (fast) {
+    # x <- data
+    if (!rlang::has_name(x, "CHROM")) x %<>% dplyr::mutate(CHROM = "CHROM_1")
+    want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS", "COL",
+              "REF", "ALT", "SEQUENCE",
+              "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")
     x %<>%
       dplyr::mutate(
-        CHROM = stringi::stri_replace_all_fixed(
-          str = CHROM, pattern = ".", replacement = "denovo", vectorize_all = FALSE),
-        POS = stringi::stri_replace_na(str = POS, replacement = "50"),
-        COL = stringi::stri_extract_first_regex(str = LOCUS, pattern = "[-][0-9]+[\\:]"),
-        COL = stringi::stri_replace_all_fixed(str = COL, pattern = c("-", ":"), replacement = c("", ""), vectorize_all = FALSE),
+        COL = stringi::stri_extract_first_regex(
+          str = LOCUS,
+          pattern = "[-][0-9]+[\\:]"),
+        COL = stringi::stri_replace_all_fixed(
+          str = COL,
+          pattern = c("-", ":"),
+          replacement = c("", ""),
+          vectorize_all = FALSE),
         COL = as.integer(COL),
         LOCUS = stringi::stri_extract_first_regex(str = LOCUS, pattern = "^[0-9]+"),
-        LOCUS = stringi::stri_join(LOCUS, POS, sep = "_"),
-        POS = COL
-      )
+        REF = stringi::stri_extract_first_regex(str = SNP, pattern = "[A-Z]"),
+        ALT = stringi::stri_extract_last_regex(str = SNP, pattern = "[A-Z]"),
+        MARKERS = stringi::stri_join(CHROM, LOCUS, POS, sep = "__"),
+        VARIANT_ID = as.integer(factor(MARKERS)),
+        SNP = NULL
+      ) %>%
+      dplyr::select(dplyr::one_of(want), dplyr::everything()) %>%
+      dplyr::mutate_at(
+        .tbl = .,
+        .vars = c("MARKERS", "CHROM", "LOCUS", "POS"),
+        .funs = as.character
+      ) %>%
+      dplyr::arrange(CHROM, LOCUS, POS, REF)
+
   } else {
     want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS", "COL",
               "REF", "ALT", "SEQUENCE",
@@ -1193,7 +1206,6 @@ generate_geno <- function(
   if ("2rows" %in% data.source) {
     # x <- genotypes.meta[[1]]
     res <- dplyr::filter(x, !is.na(REF)) %>%
-      dplyr::arrange(MARKERS) %>%
       data.table::as.data.table(.) %>%
       data.table::melt.data.table(
         data = .,
