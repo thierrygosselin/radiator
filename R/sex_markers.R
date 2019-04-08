@@ -9,7 +9,7 @@
 #' RADseq (genotypes) and DArT (1-row, 2-rows genotypes).
 
 #' @param data (object or file) DArT file \code{.csv or .tsv}, VCF file \code{.vcf},
-#' GDS file or object (\code{.gds} or \code{.gds.rad}).
+#' GDS file or object (\code{.gds}).
 #' See Input data section data for more details.
 
 #' @param silicodata (optional, file) A silico DArT file (.csv or .tsv). This can be
@@ -170,9 +170,7 @@ sexy_markers <- function(data,
   # Test
   # library(radiator)
   # setwd("C:/Users/fdevloo/OneDrive - University of Tasmania/PhD/4.Sex markers/2.Code/Gosselin Function_Radiator")
-  # data = "SchoolShark_SNP_counts.csv"
-  # silicodata = "SchoolShark_silico_counts.csv"
-  # strata = "strata.POP1.dart.tsv"
+  # silicodata = NULL
   # coverage.thresholds = 1 ##NEEDS TO BE SET TO 1 if genotype data
   # boost.analysis = FALSE
   # filters = TRUE
@@ -188,6 +186,20 @@ sexy_markers <- function(data,
 
   # parallel.core = parallel::detectCores() - 1
   # setwd("/Users/thierry/Dropbox/partage/Sex-marker/1.Data/G.galeus")
+  # silicodata = "SchoolShark_silico_counts.csv"
+  # data = "SchoolShark_SNP_counts.csv"
+  # strata = "School_strata_Counts.tsv"
+
+  # data = "SchoolShark_SNP_genotype_2Row-Edited.csv"
+  # silicodata = "SchoolShark_silico_counts.csv"
+  # data = "Ggar_Report_DGl17-2561_4_moreOrders_SNP_singlerow_2.csv"
+  # strata = "Ggar_strata.tsv"
+  # data = "Silvertip.vcf"
+  # strata = "silvertip_strata.tsv"
+  # data = "Dusky_SNP_genotype_1row.csv"
+  # strata = "Dusky_strata.tsv"
+  # data = "example_vcf2dadi_ferchaud_2015.vcf"
+  # strata = "strata.stickleback.tsv"
 
 
   if (boost.analysis) message("Under construction: come back next week... ")
@@ -258,7 +270,7 @@ sexy_markers <- function(data,
   # Detect format --------------------------------------------------------------
   data.type <- radiator::detect_genomic_format(data)
 
-  if (!data.type %in% c("SeqVarGDSClass", "gds.file", "dart", "vcf")) {
+  if (!data.type %in% c("SeqVarGDSClass", "gds.file", "dart", "vcf.file")) {
     rlang::abort("Input not supported for this function: read function documentation")
   }
 
@@ -315,7 +327,7 @@ sexy_markers <- function(data,
 
   # Detect source --------------------------------------------------------------
   data.source <- radiator::extract_data_source(gds = data)
-  if (!data.type %in% c("SeqVarGDSClass", "gds.file", "dart", "vcf")) {
+  if (!data.type %in% c("SeqVarGDSClass", "gds.file", "dart", "vcf.file")) {
     rlang::abort("Input not supported for this function: read function documentation")
   }
 
@@ -346,7 +358,7 @@ sexy_markers <- function(data,
 
 
   ### add warning about not using count data
-  if (!("counts" %in% data.source)) {
+  if (!(any(c("counts", "vcf.file") %in% data.source))) {
     message(
       "Your data does not have Read Depth information; the analysis based on read depth will not be performed"
     )
@@ -404,10 +416,12 @@ sexy_markers <- function(data,
   gds.bk <- data
   # gds.bk -> data
 
-  # Extract from the GDS the tidy data...
+
+  # Extract from the GDS the tidy data... ###ISSUE FOR VCF & 1row
   data <- radiator::extract_genotypes_metadata(
     gds = data,
     genotypes.meta.select = c("MARKERS", "INDIVIDUALS", "GT_BIN", "READ_DEPTH"),
+    # genotypes.meta.select = c("MARKERS", "INDIVIDUALS", "GT_BIN"),
     whitelist = TRUE
   ) %>%
     radiator::join_strata(data = .,
@@ -416,6 +430,7 @@ sexy_markers <- function(data,
 
 
   # SILICO files ----------------------------------------------------------------
+
   if (!is.null(silicodata)) {
     data.type <- radiator::detect_genomic_format(silicodata)
     silicodata <- radiator::read_dart(
@@ -546,6 +561,8 @@ sexy_markers <- function(data,
       y.markers <- dplyr::filter(data.sum, DIFF > threshold.y.markers)$MARKERS
     }
     res$heterogametic.markers <- y.markers
+  } else{
+    y.markers <- NULL
   }
 
 
@@ -630,6 +647,8 @@ sexy_markers <- function(data,
       }
       res$heterogametic.silico.markers <- y.silico.markers
     }
+  } else{
+    y.silico.markers <- NULL
   }
 
   ####* SET GENETIC SEX STRATA ####
@@ -771,7 +790,7 @@ sexy_markers <- function(data,
         if (interactive.filter) {
           sex.id.input <- radiator::radiator_question(
             x = "Do you want to continue based on (1) visual or (2) genetic dart?\nWe advise (2) for better results",
-            answer.opt = c("1","2") # Not working with numbers...
+            answer.opt = c("1","2")
           )
           sex.id.input <- as.integer(sex.id.input)
         }
@@ -786,12 +805,16 @@ sexy_markers <- function(data,
         dplyr::left_join(y.data, by = "INDIVIDUALS") %>%
         dplyr::mutate(GENETIC_STRATA = STRATA)
         radiator::write_rad(data = data.genetic, path = file.path(wd, "sexy_markers_temp"))
-      data.silico.genetic <-
-        dplyr::rename(silicodata, VISUAL_STRATA = STRATA) %>%
-        dplyr::left_join(y.data, by = "INDIVIDUALS") %>%
-        dplyr::mutate(GENETIC_STRATA = STRATA)
-        radiator::write_rad(data = data.silico.genetic,
-                            path = file.path(wd, "sexy_markers_silico_temp"))
+
+        if ("silico.dart" %in% data.source) {
+          data.silico.genetic <-
+            dplyr::rename(silicodata, VISUAL_STRATA = STRATA) %>%
+            dplyr::left_join(y.data, by = "INDIVIDUALS") %>%
+            dplyr::mutate(GENETIC_STRATA = STRATA)
+          radiator::write_rad(data = data.silico.genetic,
+                              path = file.path(wd, "sexy_markers_silico_temp"))
+        }else{data.silico.genetic <- NULL}
+
     } else if (sex.id.input == 3) {
       SexID <- "genetically (SILICO)"
       ### recalculate data based on new sexID??
@@ -800,12 +823,14 @@ sexy_markers <- function(data,
         dplyr::mutate(GENETIC_STRATA = STRATA)
         radiator::write_rad(data = data.genetic, path = file.path(wd, "sexy_markers_temp"))
 
-      data.silico.genetic <-
-        dplyr::rename(silicodata, VISUAL_STRATA = STRATA) %>%
-        dplyr::left_join(y.silico.data, by = "INDIVIDUALS") %>%
-        dplyr::mutate(GENETIC_STRATA = STRATA)
-        radiator::write_rad(data = data.silico.genetic,
-                            path = file.path(wd, "sexy_markers_silico_temp"))
+        if ("silico.dart" %in% data.source) {
+          data.silico.genetic <-
+            dplyr::rename(silicodata, VISUAL_STRATA = STRATA) %>%
+            dplyr::left_join(y.silico.data, by = "INDIVIDUALS") %>%
+            dplyr::mutate(GENETIC_STRATA = STRATA)
+          radiator::write_rad(data = data.silico.genetic,
+                              path = file.path(wd, "sexy_markers_silico_temp"))
+        } else{data.silico.genetic <- NULL}
     }
 
 
@@ -826,8 +851,9 @@ sexy_markers <- function(data,
   # Remove markers that are already extracted and have high missingness
   ##SHOULD MAKE THE MISSINGNESS INTERACTIVE
   data.sum <- dplyr::filter(data.sum, !(MARKERS %in% y.markers | MISSINGNESS > 0.2))
-  silico.sum <- dplyr::filter(silico.sum, !(MARKERS %in% y.silico.markers| MISSINGNESS > 0.2))
-
+  if(!is.null(silicodata)){
+    silico.sum <- dplyr::filter(silico.sum, !(MARKERS %in% y.silico.markers| MISSINGNESS > 0.2))
+  }
 
 
 
@@ -1120,29 +1146,34 @@ sexy_markers <- function(data,
       plot.filename = plot.filename
     )
     print(scat.fig)
-  }
 
 
     # Interacive selection of threshold
     if (interactive.filter) {
-      filter.x.markers <- radiator::radiator_question(x = "Have a look at the figure: do you want to filter the data (y/n): ", answer.opt = c("y", "n"))
+      filter.x.markers <-
+        radiator::radiator_question(x = "Have a look at the figure: do you want to filter the data (y/n): ", answer.opt = c("y", "n"))
 
       if (filter.x.markers == "y") {
         threshold.x.markers.RD.silico <-
-          radiator::radiator_question(x = "Choose the RATIO threshold for x SILICO sex markers: ", minmax = c(-Inf,Inf))
+          radiator::radiator_question(x = "Choose the RATIO threshold for x SILICO sex markers: ", minmax = c(-Inf, Inf))
       } else {
         threshold.x.markers.RD.silico <- NULL
       }
     }
 
-  if (!is.null(threshold.x.markers.RD.silico)) {
-    if (threshold.x.markers.RD.silico < 1) {
-      x.markers <- dplyr::filter(silico.sum, RATIO > threshold.x.markers.RD.silico)$MARKERS
-    } else{
-      x.markers <- dplyr::filter(silico.sum, RATIO < threshold.x.markers.RD.silico)$MARKERS
+    if (!is.null(threshold.x.markers.RD.silico)) {
+      if (threshold.x.markers.RD.silico > 1) {
+        x.markers <-
+          dplyr::filter(silico.sum, RATIO > threshold.x.markers.RD.silico)$MARKERS
+      } else{
+        x.markers <-
+          dplyr::filter(silico.sum, RATIO < threshold.x.markers.RD.silico)$MARKERS
+      }
+      res$homogametic.RD.silico.markers <- x.markers
     }
-    res$homogametic.RD.silico.markers <- x.markers
   }
+
+
 
 
   ## TODO:
@@ -1284,7 +1315,55 @@ summarize_sex <- function (data, silicodata, data.source, coverage.thresholds = 
             residuals
         )
     )
-  } else {
+  } else if (tibble::has_name(data, "GT_BIN") ){  #genotype data
+    mis <-
+      dplyr::select(data, MARKERS, INDIVIDUALS, STRATA, GT_BIN) %>%
+      dplyr::group_by(MARKERS) %>%
+      dplyr::summarise(MISSINGNESS = length(INDIVIDUALS[is.na(GT_BIN)]) / length(INDIVIDUALS)) %>%
+      dplyr::ungroup(.)
+
+    data.sum <-
+      dplyr::select(data, MARKERS, INDIVIDUALS, STRATA, GT_BIN) %>%
+      dplyr::group_by(STRATA, MARKERS) %>%
+      dplyr::summarise(
+        PRESENCE_ABSENCE = length(INDIVIDUALS[READ_DEPTH < coverage.thresholds]) / length(INDIVIDUALS),
+        MEAN_HET = length(INDIVIDUALS[GT_BIN == 1]) / length(INDIVIDUALS)
+      ) %>%
+      dplyr::ungroup(.) %>%
+      data.table::as.data.table(.) %>%
+      data.table::dcast.data.table(
+        data = .,
+        formula = MARKERS ~ STRATA,
+        value.var = c("PRESENCE_ABSENCE", "MEAN_HET")
+      ) %>%
+      tibble::as_tibble(.) %>%
+      dplyr::mutate(
+        MEAN = (PRESENCE_ABSENCE_M + PRESENCE_ABSENCE_F) / 2,
+        DIFF = PRESENCE_ABSENCE_M - PRESENCE_ABSENCE_F
+      ) %>%
+      dplyr::ungroup(.) %>%
+      dplyr::left_join(mis, by = "MARKERS")
+
+
+    data.sum[is.na(data.sum)] <- NA
+    mis <- NULL
+
+    if (is.null(tau)) tau <- 0.03
+    #Quantile regression plot
+    data.sum <- dplyr::bind_rows(
+      dplyr::filter(data.sum, is.na(MEAN_HET_M) | is.na(MEAN_HET_F)),
+      dplyr::filter(data.sum, !is.na(MEAN_HET_M) &
+                      !is.na(MEAN_HET_F)) %>%
+        dplyr::mutate(
+          QR_RESIDUALS = quantreg::rq(MEAN_HET_M ~ MEAN_HET_F,
+                                      tau = tau,
+                                      data = .) %$%
+            residuals
+        )
+    )
+
+  }
+    else {
     data.sum <- NULL
   }
 
@@ -1354,8 +1433,8 @@ summarize_sex <- function (data, silicodata, data.source, coverage.thresholds = 
 }
 
 
-#' @title summarize_sex
-#' @description Function to generate the different figures required.
+#' @title Export FASTA
+#' @description Function to write fasta files for sex markers
 #' @keywords internal
 #' @export
 # FASTA from gds
