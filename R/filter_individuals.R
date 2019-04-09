@@ -113,6 +113,8 @@ filter_individuals <- function(
       cat("######################### radiator::filter_individuals #########################\n")
       cat("################################################################################\n")
     }
+    if (Sys.info()[['sysname']] == "Windows") parallel.core <- 1
+
     # Cleanup---------------------------------------------------------------------
     file.date <- format(Sys.time(), "%Y%m%d@%H%M")
     if (verbose) message("Execution date@time: ", file.date)

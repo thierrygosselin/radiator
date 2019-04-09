@@ -2,11 +2,11 @@
 % Please edit documentation in R/sex_markers.R
 \name{write_fasta}
 \alias{write_fasta}
-\title{summarize_sex}
+\title{Export FASTA}
 \usage{
 write_fasta(sexmarkdf, filename)
 }
 \description{
-Function to generate the different figures required.
+Function to write fasta files for sex markers
 }
 \keyword{internal}

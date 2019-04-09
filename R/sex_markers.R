@@ -185,6 +185,7 @@ sexy_markers <- function(data,
   # threshold.x.markers.qr = NULL
 
   # parallel.core = parallel::detectCores() - 1
+
   # setwd("/Users/thierry/Dropbox/partage/Sex-marker/1.Data/G.galeus")
   # silicodata = "SchoolShark_silico_counts.csv"
   # data = "SchoolShark_SNP_counts.csv"

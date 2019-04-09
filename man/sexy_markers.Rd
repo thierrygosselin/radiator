@@ -11,7 +11,7 @@ sexy_markers(data, silicodata = NULL, boost.analysis = FALSE,
 }
 \arguments{
 \item{data}{(object or file) DArT file \code{.csv or .tsv}, VCF file \code{.vcf},
-GDS file or object (\code{.gds} or \code{.gds.rad}).
+GDS file or object (\code{.gds}).
 See Input data section data for more details.}
 
 \item{silicodata}{(optional, file) A silico DArT file (.csv or .tsv). This can be
