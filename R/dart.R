@@ -32,6 +32,10 @@
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com} and Peter Grewe \email{peter.grewe@csiro.au}
 
 extract_dart_target_id <- function(data, write = TRUE) {
+  ##TEST
+  # write = FALSE
+  # write = TRUE
+
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("Input file missing")
 
@@ -49,12 +53,12 @@ extract_dart_target_id <- function(data, write = TRUE) {
     col_types = readr::cols(.default = readr::col_character())) %>%
     t %>%
     magrittr::set_colnames(x = ., value = "TARGET_ID") %>%
-    tibble::as_tibble(.) %>%
-    dplyr::mutate(TARGET_ID = radiator_snakecase(TARGET_ID))
+    tibble::as_tibble(.)
 
 
   if (dart.check$star.number > 0) {
-    dart.target.id %<>% dplyr::filter(dplyr::row_number() > dart.check$star.number)
+    dart.target.id %<>%
+      dplyr::filter(dplyr::row_number() > dart.check$star.number)
   } else {
     # This is a string of known DArT col header not wanted
     discard <- c(
@@ -74,13 +78,17 @@ extract_dart_target_id <- function(data, write = TRUE) {
     discard.genome <- c("CHROM_|CHROM_POS_|ALN_CNT_|ALN_EVALUE_")
 
     dart.target.id %<>%
-      dplyr::filter(!TARGET_ID %in% discard) %>%
-      dplyr::filter(stringi::stri_detect_regex(
+      dplyr::filter(!radiator_snakecase(x = TARGET_ID) %in% discard) %>%
+      dplyr::filter(!stringi::stri_detect_regex(
         str = stringi::stri_trans_toupper(TARGET_ID),
-        pattern = discard.genome, negate = TRUE))
+        pattern = discard.genome, negate = FALSE))
   }
 
-  dart.target.id %<>% dplyr::mutate(TARGET_ID = clean_ind_names(x = TARGET_ID))
+  dart.target.id %<>%
+    dplyr::mutate(
+      TARGET_ID = clean_ind_names(x = TARGET_ID),
+      TARGET_ID = stringi::stri_trans_toupper(TARGET_ID)
+      )
   if (write) readr::write_tsv(x = dart.target.id, path = "dart.target.id.tsv")
 
   # Check that DArT file as good target id written -----------------------------
@@ -269,6 +277,7 @@ read_dart <- function(
   # gt.vcf = NULL
   # gt.vcf.nuc = NULL
   # pop.levels = NULL
+
 
   if (verbose) {
     cat("################################################################################\n")
@@ -792,7 +801,7 @@ import_dart <- function(
       col_names = TRUE,
       col_types = dart.col.type,
       na = c("-", " ", "", "NA"),
-      skip = dart.check$skip.numbe
+      skip = dart.check$skip.number
     )
     dart.col.type <- NULL
   } else {#fread
@@ -810,13 +819,12 @@ import_dart <- function(
         showProgress = TRUE,
         nThread = parallel.core,
         verbose = FALSE) %>%
-        tibble::as_tibble(.)
+        tibble::as_tibble(.) %>%
+        clean_dart_colnames(data = ., strata = strata.df) # We want snakecase not camelcase
     )
   }
   # check <- tibble::tibble(BLACKLIST_ID = colnames(data)) %>%
   #   dplyr::filter(BLACKLIST_ID %in% blacklist.id)
-  # We want snakecase not camelcase
-  colnames(data) %<>% radiator::radiator_snakecase(x = .)
 
   # Check sequence
   # check.seq <- data %>%
@@ -1852,3 +1860,20 @@ tidy_dart_metadata <- function(
   }
   return(input)
 }#End dart_markers_metadata
+
+
+# generate_geno----------------------------------------------------------------
+#' @title clean_dart_colnames
+#' @description clean_dart_colnames (only the DArT columns = snakecase...)
+#' @rdname clean_dart_colnames
+#' @keywords internal
+#' @export
+clean_dart_colnames <- function(data, strata) {
+
+  keeper <- length(colnames(data)) - length(strata$TARGET_ID)
+  colnames(data) <- c(
+    radiator::radiator_snakecase(x = colnames(data)[1:keeper]),
+    strata$TARGET_ID
+  )
+  return(data)
+}#End clean_dart_colnames
