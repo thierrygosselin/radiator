@@ -192,28 +192,29 @@ radiator_gds <- function(
 
   # write_vcf(filename = radiator.temp.file, source = NULL, empty = TRUE)
   # /Users/thierry/Dropbox/partage/Sex-marker/problems/test_data/read_dart_20190409@1447/radiator_20190409@1447.gds.rad_radiator_temp.vcf
-
+  # paste0(radiator.temp.file, ".vcf")
   # TEST
-  data.gds <- SeqArray::seqSNP2GDS(
-    gds.fn = paste0(radiator.temp.file, ".vcf"),
-    out.fn = filename.gds,
-    storage.option = "ZIP_RA",
-    major.ref = FALSE,
-    verbose = TRUE) %>%
-    SeqArray::seqOpen(gds.fn = ., readonly = FALSE)
-  file.remove(radiator.temp.file)
-
-
-
-
-  data.gds <- SeqArray::seqSNP2GDS(
-    gds.fn = paste0(radiator.temp.file, ".vcf"),
-    out.fn = filename.gds,
-    storage.option = "ZIP_RA",
-    major.ref = TRUE,
-    verbose = TRUE) %>%
-    SeqArray::seqOpen(gds.fn = ., readonly = FALSE)
-  file.remove(radiator.temp.file)
+  # data.gds <- SeqArray::seqSNP2GDS(
+  #   gds.fn = "read_dart_20190409@2002/radiator_20190409@2002.gds.rad_radiator_temp.vcf",
+  #   # out.fn = filename.gds,
+  #   out.fn = ""read_dart_20190409@2002/testing
+  #   storage.option = "ZIP_RA",
+  #   major.ref = FALSE,
+  #   verbose = TRUE) %>%
+  #   SeqArray::seqOpen(gds.fn = ., readonly = FALSE)
+  # file.remove(radiator.temp.file)
+  #
+  #
+  #
+  #
+  # data.gds <- SeqArray::seqSNP2GDS(
+  #   gds.fn = paste0(radiator.temp.file, ".vcf"),
+  #   out.fn = filename.gds,
+  #   storage.option = "ZIP_RA",
+  #   major.ref = TRUE,
+  #   verbose = TRUE) %>%
+  #   SeqArray::seqOpen(gds.fn = ., readonly = FALSE)
+  # file.remove(radiator.temp.file)
 
 
   # 2. SeqArray
