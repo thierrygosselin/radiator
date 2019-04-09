@@ -4,7 +4,8 @@
 \alias{write_vcf}
 \title{Write a vcf file from a tidy data frame}
 \usage{
-write_vcf(data, pop.info = FALSE, filename = NULL)
+write_vcf(data, pop.info = FALSE, filename = NULL, source = NULL,
+  empty = FALSE)
 }
 \arguments{
 \item{data}{A tidy data frame object in the global environment or

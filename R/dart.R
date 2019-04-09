@@ -277,8 +277,6 @@ read_dart <- function(
   # gt.vcf = NULL
   # gt.vcf.nuc = NULL
   # pop.levels = NULL
-
-
   if (verbose) {
     cat("################################################################################\n")
     cat("############################## radiator::read_dart #############################\n")
@@ -402,6 +400,7 @@ read_dart <- function(
       ) %>%
       tibble::as_tibble(.)
 
+    # TODO : I don't think this is necessary with new technique
     strata %<>% dplyr::filter(TARGET_ID %in% data$TARGET_ID)
     if (nrow(strata) == 0) {
       rlang::abort("No more individuals in your data, check data and strata ID names...")
@@ -820,7 +819,9 @@ import_dart <- function(
         nThread = parallel.core,
         verbose = FALSE) %>%
         tibble::as_tibble(.) %>%
-        clean_dart_colnames(data = ., strata = strata.df) # We want snakecase not camelcase
+        # We want snakecase not camelcase
+        # Change the TARGET_ID by INDIVIDUALS...
+        clean_dart_colnames(data = ., strata = strata.df)
     )
   }
   # check <- tibble::tibble(BLACKLIST_ID = colnames(data)) %>%
@@ -1101,14 +1102,14 @@ dart2gds <- function(
     ) %>%
     dplyr::bind_rows(.) %>%
     tibble::add_column(.data = ., FILTERS = "whitelist", .before = 1) %>%
-    dplyr::arrange(MARKERS, TARGET_ID)
+    dplyr::arrange(MARKERS, INDIVIDUALS)
 
   data <- genotypes.meta %>%
-    dplyr::select(VARIANT_ID, TARGET_ID, GT_BIN) %>%
+    dplyr::select(VARIANT_ID, INDIVIDUALS, GT_BIN) %>%
     data.table::as.data.table(.) %>%
     data.table::dcast.data.table(
       data = .,
-      formula = VARIANT_ID ~ TARGET_ID,
+      formula = VARIANT_ID ~ INDIVIDUALS,
       value.var = "GT_BIN"
     ) %>%
     tibble::as_tibble(.) %>%
@@ -1176,7 +1177,7 @@ generate_geno <- function(
       data.table::melt.data.table(
         data = .,
         id.vars = c("VARIANT_ID", "MARKERS", "REF", "ALT"),
-        variable.name = "TARGET_ID",
+        variable.name = "INDIVIDUALS",
         value.name = "GT_BIN",
         variable.factor = FALSE) %>%
       tibble::as_tibble(.) %>%
@@ -1218,7 +1219,7 @@ generate_geno <- function(
       data.table::melt.data.table(
         data = .,
         id.vars = c("VARIANT_ID", "MARKERS", "REF", "ALT"),
-        variable.name = "TARGET_ID",
+        variable.name = "INDIVIDUALS",
         value.name = "A2",
         variable.factor = FALSE) %>%
       tibble::as_tibble(.) %>%
@@ -1229,7 +1230,7 @@ generate_geno <- function(
           data.table::melt.data.table(
             data = .,
             id.vars = "MARKERS",
-            variable.name = "TARGET_ID",
+            variable.name = "INDIVIDUALS",
             value.name = "A1",
             variable.factor = FALSE) %>%
           tibble::as_tibble(.)
@@ -1243,10 +1244,10 @@ generate_geno <- function(
       res %<>% dplyr::select(-MARKERS1)
     }
 
-    if (!identical(res$TARGET_ID, res$TARGET_ID1)) {
+    if (!identical(res$INDIVIDUALS, res$INDIVIDUALS1)) {
       rlang::abort("Contact author, DArT tiding problem")
     } else {
-      res %<>% dplyr::select(-TARGET_ID1)
+      res %<>% dplyr::select(-INDIVIDUALS1)
     }
 
     res %<>% dplyr::mutate(GT_BIN = switch_allele_count(A1, data.source) + A2, A1 = NULL, A2 = NULL)
@@ -1285,7 +1286,7 @@ generate_geno <- function(
       data.table::melt.data.table(
         data = .,
         id.vars = c("VARIANT_ID", "MARKERS", "REF", "ALT"),
-        variable.name = "TARGET_ID",
+        variable.name = "INDIVIDUALS",
         value.name = "ALLELE_ALT_DEPTH",
         variable.factor = FALSE) %>%
       tibble::as_tibble(.) %>%
@@ -1296,7 +1297,7 @@ generate_geno <- function(
           data.table::melt.data.table(
             data = .,
             id.vars = "MARKERS",
-            variable.name = "TARGET_ID",
+            variable.name = "INDIVIDUALS",
             value.name = "ALLELE_REF_DEPTH",
             variable.factor = FALSE) %>%
           tibble::as_tibble(.)
@@ -1309,10 +1310,10 @@ generate_geno <- function(
       res %<>% dplyr::select(-MARKERS1)
     }
 
-    if (!identical(res$TARGET_ID, res$TARGET_ID1)) {
+    if (!identical(res$INDIVIDUALS, res$INDIVIDUALS1)) {
       rlang::abort("Contact author, DArT tiding problem")
     } else {
-      res %<>% dplyr::select(-TARGET_ID1)
+      res %<>% dplyr::select(-INDIVIDUALS1)
     }
 
     res %<>%
@@ -1875,5 +1876,11 @@ clean_dart_colnames <- function(data, strata) {
     radiator::radiator_snakecase(x = colnames(data)[1:keeper]),
     strata$TARGET_ID
   )
+  colnames(data) <- stringi::stri_replace_all_fixed(
+    str = colnames(data),
+    pattern = strata$TARGET_ID,
+    replacement = strata$INDIVIDUALS,
+    vectorize_all = FALSE
+    )
   return(data)
 }#End clean_dart_colnames

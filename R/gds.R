@@ -157,21 +157,6 @@ radiator_gds <- function(
     }
 
     # Second check: order
-    if ("dart" %in% data.source) {
-      strata$TARGET_ID <- as.character(strata$TARGET_ID)
-      if (!identical(df.order, strata$TARGET_ID)) {
-        strata %<>%
-          dplyr::mutate(
-            TARGET_ID = factor(x = TARGET_ID, levels = df.order, ordered = TRUE)
-          ) %>%
-          dplyr::arrange(TARGET_ID) %>%
-          dplyr::mutate(TARGET_ID = as.character(TARGET_ID))
-
-        if (!identical(df.order, strata$TARGET_ID)) {
-          rlang::abort("Problem not identical order between strata and data")
-        }
-      }
-    } else {
       strata$INDIVIDUALS <- as.character(strata$INDIVIDUALS)
 
       if (!identical(df.order, strata$INDIVIDUALS)) {
@@ -186,7 +171,6 @@ radiator_gds <- function(
           rlang::abort("Problem not identical order between strata and data")
         }
       }
-    }
     df.order <- NULL
   }
   # Generate GDS format
@@ -205,6 +189,32 @@ radiator_gds <- function(
     compress.annotation = "ZIP_RA",
     compress.geno = ""
   )
+
+  # write_vcf(filename = radiator.temp.file, source = NULL, empty = TRUE)
+  # /Users/thierry/Dropbox/partage/Sex-marker/problems/test_data/read_dart_20190409@1447/radiator_20190409@1447.gds.rad_radiator_temp.vcf
+
+  # TEST
+  data.gds <- SeqArray::seqSNP2GDS(
+    gds.fn = paste0(radiator.temp.file, ".vcf"),
+    out.fn = filename.gds,
+    storage.option = "ZIP_RA",
+    major.ref = FALSE,
+    verbose = TRUE) %>%
+    SeqArray::seqOpen(gds.fn = ., readonly = FALSE)
+  file.remove(radiator.temp.file)
+
+
+
+
+  data.gds <- SeqArray::seqSNP2GDS(
+    gds.fn = paste0(radiator.temp.file, ".vcf"),
+    out.fn = filename.gds,
+    storage.option = "ZIP_RA",
+    major.ref = TRUE,
+    verbose = TRUE) %>%
+    SeqArray::seqOpen(gds.fn = ., readonly = FALSE)
+  file.remove(radiator.temp.file)
+
 
   # 2. SeqArray
   data.gds <- SeqArray::seqSNP2GDS(

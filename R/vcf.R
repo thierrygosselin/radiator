@@ -868,13 +868,13 @@ read_vcf <- function(
   # markers.meta$FILTER_VCF
   filter.vcf <- tibble::tibble(
     FILTER_VCF = SeqArray::seqGetData(
-    gds, "annotation/filter")
-    ) %>%
+      gds, "annotation/filter")
+  ) %>%
     dplyr::bind_cols(
       markers.meta %>%
         dplyr::filter(FILTERS == "whitelist") %>%
         dplyr::select(VARIANT_ID)
-      )
+    )
   filter.check.unique <- unique(filter.vcf$FILTER_VCF)
 
   if (length(filter.check.unique) > 1) {
@@ -2275,7 +2275,7 @@ clean_ad <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) 
     .radiator_parallel_mc(
       X = ., FUN = clean,
       mc.cores = parallel.core
-      ) %>%
+    ) %>%
     purrr::flatten_int(.)
   return(x)
 }#End clean_ad
@@ -2315,7 +2315,7 @@ clean_pl <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) 
         FUN = clean,
         mc.cores = parallel.core
         # max.vector.size = 1000000000000
-        ) %>%
+      ) %>%
       dplyr::bind_rows(.))
   return(x)
 }#End clean_pl
@@ -2448,9 +2448,9 @@ clean_nv <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) 
       .radiator_parallel_mc(
         X = ., FUN = clean, mc.cores = parallel.core,
         nv.col.names = nv.col.names
-        ) %>%
+      ) %>%
       dplyr::bind_rows(.)
-    )
+  )
   return(x)
 }#End clean_nv
 
@@ -2498,122 +2498,129 @@ clean_nv <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) 
 
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
-write_vcf <- function(data, pop.info = FALSE, filename = NULL) {
+write_vcf <- function(
+  data,
+  pop.info = FALSE,
+  filename = NULL,
+  source = NULL,
+  empty = FALSE
+) {
 
-  # Import data ---------------------------------------------------------------
-  if (is.vector(data)) {
-    data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-  }
+  if (!empty) {
+    # Import data ---------------------------------------------------------------
+    if (is.vector(data)) {
+      data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
+    }
 
-  # REF/ALT Alleles and VCF genotype format ------------------------------------
-  if (!tibble::has_name(data, "GT_VCF")) {
-    ref.change <- radiator::calibrate_alleles(data = data)$input
-    data <- dplyr::left_join(data, ref.change, by = c("MARKERS", "INDIVIDUALS"))
-  }
+    # REF/ALT Alleles and VCF genotype format ------------------------------------
+    if (!tibble::has_name(data, "GT_VCF")) {
+      ref.change <- radiator::calibrate_alleles(data = data)$input
+      data <- dplyr::left_join(data, ref.change, by = c("MARKERS", "INDIVIDUALS"))
+    }
 
-  # remove duplicate REF/ALT column
-  if (tibble::has_name(data, "REF.x")) {
-    data <- dplyr::select(.data = data, -c(REF.x, ALT.x)) %>%
-      dplyr::rename(REF = REF.y, ALT = ALT.y)
-  }
+    # remove duplicate REF/ALT column
+    if (tibble::has_name(data, "REF.x")) {
+      data <- dplyr::select(.data = data, -c(REF.x, ALT.x)) %>%
+        dplyr::rename(REF = REF.y, ALT = ALT.y)
+    }
 
-  # Include CHROM, LOCUS, POS --------------------------------------------------
-  if (!tibble::has_name(data, "CHROM")) {
-    data <- dplyr::mutate(
-      .data = data,
-      CHROM = rep("1", n()),
-      LOCUS = MARKERS,
-      POS = MARKERS
-    )
-  }
-
-  # Order/sort by pop and ind --------------------------------------------------
-  if (tibble::has_name(data, "POP_ID")) {
-    data <- dplyr::arrange(data, POP_ID, INDIVIDUALS)
-  } else {
-    data <- dplyr::arrange(data, INDIVIDUALS)
-  }
-
-  id.string <- unique(data$INDIVIDUALS)# keep to sort vcf columns
-  # Remove the POP_ID column ---------------------------------------------------
-  if (tibble::has_name(data, "POP_ID") && (!pop.info)) {
-    data <- dplyr::select(.data = data, -POP_ID)
-  }
-
-  # Info field -----------------------------------------------------------------
-  info.field <- suppressWarnings(
-    dplyr::select(.data = data, MARKERS, GT_VCF) %>%
-      dplyr::filter(GT_VCF != "./.") %>%
-      dplyr::count(x = ., MARKERS) %>%
-      dplyr::mutate(INFO = stringi::stri_join("NS=", n, sep = "")) %>%
-      dplyr::select(-n)
-  )
-
-  # VCF body  ------------------------------------------------------------------
-  GT_VCF_POP_ID <- NULL
-  if (pop.info) {
-    output <- suppressWarnings(
-      dplyr::left_join(data, info.field, by = "MARKERS") %>%
-        dplyr::select(MARKERS, CHROM, LOCUS, POS, REF, ALT, INFO, INDIVIDUALS, GT_VCF, POP_ID) %>%
-        dplyr::mutate(GT_VCF_POP_ID = stringi::stri_join(GT_VCF, POP_ID, sep = ":")) %>%
-        dplyr::select(-c(GT_VCF, POP_ID)) %>%
-        dplyr::group_by(MARKERS, CHROM, LOCUS, POS, INFO, REF, ALT) %>%
-        tidyr::spread(data = ., key = INDIVIDUALS, value = GT_VCF_POP_ID) %>%
-        dplyr::ungroup(.) %>%
-        dplyr::mutate(
-          QUAL = rep(".", n()),
-          FILTER = rep("PASS", n()),
-          FORMAT = rep("GT:POP", n())
-        )
-    )
-
-  } else {
-    output <- suppressWarnings(
-      dplyr::left_join(data, info.field, by = "MARKERS") %>%
-        dplyr::select(MARKERS, CHROM, LOCUS, POS, REF, ALT, INDIVIDUALS, GT_VCF, INFO) %>%
-        dplyr::group_by(MARKERS, CHROM, LOCUS, POS, INFO, REF, ALT) %>%
-        tidyr::spread(data = ., key = INDIVIDUALS, value = GT_VCF) %>%
-        dplyr::ungroup(.) %>%
-        dplyr::mutate(
-          QUAL = rep(".", n()),
-          FILTER = rep("PASS", n()),
-          FORMAT = rep("GT", n())
-        )
-    )
-  }
-
-  # Transform the REF/ALT format back to A/C/G/T if 001, 002, etc is found
-  ref.change <- TRUE %in% unique(c("001", "002", "003", "004") %in% unique(output$REF))
-
-  if (ref.change) {
-    output <- output %>%
-      dplyr::mutate(
-        REF = stringi::stri_replace_all_fixed(
-          str = REF,
-          pattern = c("001", "002", "003", "004"),
-          replacement = c("A", "C", "G", "T"),
-          vectorize_all = FALSE),
-        ALT = stringi::stri_replace_all_fixed(
-          str = ALT,
-          pattern = c("001", "002", "003", "004"),
-          replacement = c("A", "C", "G", "T"),
-          vectorize_all = FALSE)
+    # Include CHROM, LOCUS, POS --------------------------------------------------
+    if (!tibble::has_name(data, "CHROM")) {
+      data <- dplyr::mutate(
+        .data = data,
+        CHROM = rep("1", n()),
+        LOCUS = MARKERS,
+        POS = MARKERS
       )
+    }
+
+    # Order/sort by pop and ind --------------------------------------------------
+    if (tibble::has_name(data, "POP_ID")) {
+      data <- dplyr::arrange(data, POP_ID, INDIVIDUALS)
+    } else {
+      data <- dplyr::arrange(data, INDIVIDUALS)
+    }
+
+    id.string <- unique(data$INDIVIDUALS)# keep to sort vcf columns
+    # Remove the POP_ID column ---------------------------------------------------
+    if (tibble::has_name(data, "POP_ID") && (!pop.info)) {
+      data <- dplyr::select(.data = data, -POP_ID)
+    }
+
+    # Info field -----------------------------------------------------------------
+    info.field <- suppressWarnings(
+      dplyr::select(.data = data, MARKERS, GT_VCF) %>%
+        dplyr::filter(GT_VCF != "./.") %>%
+        dplyr::count(x = ., MARKERS) %>%
+        dplyr::mutate(INFO = stringi::stri_join("NS=", n, sep = "")) %>%
+        dplyr::select(-n)
+    )
+
+    # VCF body  ------------------------------------------------------------------
+    GT_VCF_POP_ID <- NULL
+    if (pop.info) {
+      output <- suppressWarnings(
+        dplyr::left_join(data, info.field, by = "MARKERS") %>%
+          dplyr::select(MARKERS, CHROM, LOCUS, POS, REF, ALT, INFO, INDIVIDUALS, GT_VCF, POP_ID) %>%
+          dplyr::mutate(GT_VCF_POP_ID = stringi::stri_join(GT_VCF, POP_ID, sep = ":")) %>%
+          dplyr::select(-c(GT_VCF, POP_ID)) %>%
+          dplyr::group_by(MARKERS, CHROM, LOCUS, POS, INFO, REF, ALT) %>%
+          tidyr::spread(data = ., key = INDIVIDUALS, value = GT_VCF_POP_ID) %>%
+          dplyr::ungroup(.) %>%
+          dplyr::mutate(
+            QUAL = rep(".", n()),
+            FILTER = rep("PASS", n()),
+            FORMAT = rep("GT:POP", n())
+          )
+      )
+
+    } else {
+      output <- suppressWarnings(
+        dplyr::left_join(data, info.field, by = "MARKERS") %>%
+          dplyr::select(MARKERS, CHROM, LOCUS, POS, REF, ALT, INDIVIDUALS, GT_VCF, INFO) %>%
+          dplyr::group_by(MARKERS, CHROM, LOCUS, POS, INFO, REF, ALT) %>%
+          tidyr::spread(data = ., key = INDIVIDUALS, value = GT_VCF) %>%
+          dplyr::ungroup(.) %>%
+          dplyr::mutate(
+            QUAL = rep(".", n()),
+            FILTER = rep("PASS", n()),
+            FORMAT = rep("GT", n())
+          )
+      )
+    }
+
+    # Transform the REF/ALT format back to A/C/G/T if 001, 002, etc is found
+    ref.change <- TRUE %in% unique(c("001", "002", "003", "004") %in% unique(output$REF))
+
+    if (ref.change) {
+      output <- output %>%
+        dplyr::mutate(
+          REF = stringi::stri_replace_all_fixed(
+            str = REF,
+            pattern = c("001", "002", "003", "004"),
+            replacement = c("A", "C", "G", "T"),
+            vectorize_all = FALSE),
+          ALT = stringi::stri_replace_all_fixed(
+            str = ALT,
+            pattern = c("001", "002", "003", "004"),
+            replacement = c("A", "C", "G", "T"),
+            vectorize_all = FALSE)
+        )
+    }
+
+    if (tibble::has_name(output, "COL")) {
+      output <- output %>% dplyr::mutate(LOCUS = stringi::stri_join(LOCUS, COL, sep = "_"))
+    } else {
+      output <- output %>% dplyr::mutate(LOCUS = stringi::stri_join(LOCUS, as.numeric(POS) - 1, sep = "_"))
+    }
+
+    # Keep the required columns
+    output <- dplyr::ungroup(output) %>%
+      dplyr::arrange(CHROM, LOCUS, POS) %>%
+      dplyr::select(-MARKERS) %>%
+      dplyr::select('#CHROM' = CHROM, POS, ID = LOCUS, REF, ALT, QUAL, FILTER, INFO, FORMAT, id.string)
+    # dplyr::select('#CHROM' = CHROM, POS, ID = LOCUS, REF, ALT, QUAL, FILTER, INFO, FORMAT, dplyr::everything())
   }
-
-  if (tibble::has_name(output, "COL")) {
-    output <- output %>% dplyr::mutate(LOCUS = stringi::stri_join(LOCUS, COL, sep = "_"))
-  } else {
-    output <- output %>% dplyr::mutate(LOCUS = stringi::stri_join(LOCUS, as.numeric(POS) - 1, sep = "_"))
-  }
-
-  # Keep the required columns
-  output <- dplyr::ungroup(output) %>%
-    dplyr::arrange(CHROM, LOCUS, POS) %>%
-    dplyr::select(-MARKERS) %>%
-    dplyr::select('#CHROM' = CHROM, POS, ID = LOCUS, REF, ALT, QUAL, FILTER, INFO, FORMAT, id.string)
-  # dplyr::select('#CHROM' = CHROM, POS, ID = LOCUS, REF, ALT, QUAL, FILTER, INFO, FORMAT, dplyr::everything())
-
 
   # Filename ------------------------------------------------------------------
   if (is.null(filename)) {
@@ -2630,31 +2637,72 @@ write_vcf <- function(data, pop.info = FALSE, filename = NULL) {
     path = filename, delim = " ", append = FALSE, col_names = FALSE)
 
   # File date ------------------------------------------------------------------
-  file.date <- stringi::stri_replace_all_fixed(Sys.Date(), pattern = "-", replacement = "")
-  file.date <- stringi::stri_join("##fileDate=", file.date, sep = "")
-  readr::write_delim(x = tibble::tibble(file.date), path = filename, delim = " ", append = TRUE, col_names = FALSE)
+  file.date <- stringi::stri_join("##fileDate=", format(Sys.time(), "%Y%m%d@%H%M"), sep = "")
+  readr::write_delim(
+    x = tibble::tibble(file.date),
+    path = filename,
+    delim = " ",
+    append = TRUE,
+    col_names = FALSE
+  )
 
   # Source ---------------------------------------------------------------------
-  readr::write_delim(x = tibble::tibble(stringi::stri_join("##source=radiator_v.", as.character(utils::packageVersion("radiator")))), path = filename, delim = " ", append = TRUE, col_names = FALSE)
+  if (is.null(source)) {
+    readr::write_delim(
+      x = tibble::tibble(
+        stringi::stri_join("##source=radiator_v.",
+                           as.character(utils::packageVersion("radiator")))),
+      path = filename,
+      delim = " ",
+      append = TRUE,
+      col_names = FALSE)
+  } else {
+    readr::write_delim(
+      x = tibble::tibble(
+        stringi::stri_join('##source=', rlang::quo_name(source))
+      ),
+      path = filename,
+      delim = " ",
+      append = TRUE,
+      col_names = FALSE
+    )
+  }
 
-  # Info field 1 ---------------------------------------------------------------
-  info1 <- as.data.frame('##INFO=<ID=NS,Number=1,Type=Integer,Description=\"Number of Samples With Data\">')
-  utils::write.table(x = info1, file = filename, sep = " ", append = TRUE, col.names = FALSE, row.names = FALSE, quote = FALSE)
+  if (!empty) {
+    # Info field 1 ---------------------------------------------------------------
+    info1 <- as.data.frame('##INFO=<ID=NS,Number=1,Type=Integer,Description=\"Number of Samples With Data\">')
+    utils::write.table(x = info1, file = filename, sep = " ", append = TRUE, col.names = FALSE, row.names = FALSE, quote = FALSE)
 
 
-  # Format field 1 -------------------------------------------------------------
-  format1 <- '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">'
-  format1 <- as.data.frame(format1)
-  utils::write.table(x = format1, file = filename, sep = " ", append = TRUE, col.names = FALSE, row.names = FALSE, quote = FALSE)
+    # Format field 1 -------------------------------------------------------------
+    format1 <- '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">'
+    format1 <- as.data.frame(format1)
+    utils::write.table(x = format1, file = filename, sep = " ", append = TRUE, col.names = FALSE, row.names = FALSE, quote = FALSE)
 
-  # Format field 2 ---------------------------------------------------------------
-  if (pop.info) {
-    format2 <- as.data.frame('##FORMAT=<ID=POP_ID,Number=1,Type=Character,Description="Population identification of Sample">')
-    utils::write.table(x = format2, file = filename, sep = " ", append = TRUE, col.names = FALSE, row.names = FALSE, quote = FALSE)
+    # Format field 2 ---------------------------------------------------------------
+    if (pop.info) {
+      format2 <- as.data.frame('##FORMAT=<ID=POP_ID,Number=1,Type=Character,Description="Population identification of Sample">')
+      utils::write.table(x = format2, file = filename, sep = " ", append = TRUE, col.names = FALSE, row.names = FALSE, quote = FALSE)
+    }
+
+  } else {
+    # Empty VCF-----------------------------------------------------------------
+    output <- tibble::tibble(
+      `#CHROM` = character(0),
+      POS = character(0),
+      ID = character(0),
+      REF = character(0),
+      ALT = character(0),
+      QUAL = character(0),
+      FILTER = character(0),
+      INFO = character(0),
+      FORMAT = character(0)
+    )
   }
 
   # Write the prunned vcf to the file ------------------------------------------
   suppressWarnings(readr::write_tsv(x = output, path = filename, append = TRUE, col_names = TRUE))
+
 }# end write_vcf
 
 

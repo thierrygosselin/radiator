@@ -131,9 +131,6 @@
 #'
 #'
 
-
-
-
 #' @seealso Eric Anderson's \href{https://github.com/eriqande/whoa}{whoa} package.
 
 #' @export
@@ -419,15 +416,21 @@ sexy_markers <- function(data,
 
 
   # Extract from the GDS the tidy data... ###ISSUE FOR VCF & 1row
-  data <- radiator::extract_genotypes_metadata(
-    gds = data,
-    genotypes.meta.select = c("MARKERS", "INDIVIDUALS", "GT_BIN", "READ_DEPTH"),
-    # genotypes.meta.select = c("MARKERS", "INDIVIDUALS", "GT_BIN"),
-    whitelist = TRUE
-  ) %>%
-    radiator::join_strata(data = .,
-                          strata = strata,
-                          verbose = FALSE)
+  # data <-
+
+  temp <- radiator::extract_genotypes_metadata(gds = data, index.only = TRUE)
+  if (is.null(temp)) {
+    temp <- radiator::extract_genotypes_metadata(gds = data)
+  }
+
+
+  #   genotypes.meta.select = c("MARKERS", "INDIVIDUALS", "GT_BIN", "READ_DEPTH"),
+  #   # genotypes.meta.select = c("MARKERS", "INDIVIDUALS", "GT_BIN"),
+  #   whitelist = TRUE
+  # ) %>%
+  #   radiator::join_strata(data = .,
+  #                         strata = strata,
+  #                         verbose = FALSE)
 
 
   # SILICO files ----------------------------------------------------------------
