@@ -1,6 +1,6 @@
 
 #' @name sexy_markers
-#' @title sexy_markers finds sex-linked markers and re-assign sex
+#' @title sexy_markers finds sex-linked markers and re-assigns sex
 #'
 #' @description This function identifies sex-linked markers putatively located on
 #' homogametic or heterogametic chromosomes and re-assign the sex in a dataset
@@ -1189,6 +1189,23 @@ sexy_markers <- function(data,
   # Export -------------------------------------------------------------------
 
   # summary of all sex-markers per method (PA, HET, RD)
+
+  # FASTA file with sex markers for all methods
+  if(class(data) == "SeqVarGDSClass"){
+    # Set sex-marker to whitelist and allign the sex-marker method with the markers
+    meta <- radiator::extract_markers_metadata(
+      gds = data,
+      markers.meta.select = c("MARKERS", "SEQUENCE"),
+      radiator.node = TRUE,
+      whitelist = FALSE,
+      blacklist = FALSE,
+      verbose = FALSE
+    )
+    # Extract individual meta (INDIVIDUAL, SEX)
+  }
+
+
+
   return(res)
 }#End sexy_markers
 
@@ -1442,6 +1459,7 @@ summarize_sex <- function (data, silicodata, data.source, coverage.thresholds = 
 #' @keywords internal
 #' @export
 # FASTA from gds
+
 
 # FASTA file (different for silico)
 write_fasta <- function (sexmarkdf, filename) {
