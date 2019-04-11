@@ -122,6 +122,12 @@ radiator_gds <- function(
     }
   }
 
+  if (!is.null(strata)) {
+    suppressWarnings(
+      markers.meta %<>% dplyr::select(-dplyr::one_of(strata$INDIVIDUALS))
+      )
+  }
+
   markers.meta  %<>%
     dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
     separate_markers(
@@ -157,25 +163,24 @@ radiator_gds <- function(
     }
 
     # Second check: order
-      strata$INDIVIDUALS <- as.character(strata$INDIVIDUALS)
+    strata$INDIVIDUALS <- as.character(strata$INDIVIDUALS)
+
+    if (!identical(df.order, strata$INDIVIDUALS)) {
+      strata %<>%
+        dplyr::mutate(
+          INDIVIDUALS = factor(x = INDIVIDUALS, levels = df.order, ordered = TRUE)
+        ) %>%
+        dplyr::arrange(INDIVIDUALS) %>%
+        dplyr::mutate(INDIVIDUALS = as.character(INDIVIDUALS))
 
       if (!identical(df.order, strata$INDIVIDUALS)) {
-        strata %<>%
-          dplyr::mutate(
-            INDIVIDUALS = factor(x = INDIVIDUALS, levels = df.order, ordered = TRUE)
-          ) %>%
-          dplyr::arrange(INDIVIDUALS) %>%
-          dplyr::mutate(INDIVIDUALS = as.character(INDIVIDUALS))
-
-        if (!identical(df.order, strata$INDIVIDUALS)) {
-          rlang::abort("Problem not identical order between strata and data")
-        }
+        rlang::abort("Problem not identical order between strata and data")
       }
+    }
     df.order <- NULL
   }
   # Generate GDS format
   # 1. SNPRelate
-
   SNPRelate::snpgdsCreateGeno(
     gds.fn = radiator.temp.file,
     genmat = genotypes.df,
@@ -189,34 +194,6 @@ radiator_gds <- function(
     compress.annotation = "ZIP_RA",
     compress.geno = ""
   )
-
-  # write_vcf(filename = radiator.temp.file, source = NULL, empty = TRUE)
-  # /Users/thierry/Dropbox/partage/Sex-marker/problems/test_data/read_dart_20190409@1447/radiator_20190409@1447.gds.rad_radiator_temp.vcf
-  # paste0(radiator.temp.file, ".vcf")
-  # TEST
-  # data.gds <- SeqArray::seqSNP2GDS(
-  #   gds.fn = "read_dart_20190409@2002/radiator_20190409@2002.gds.rad_radiator_temp.vcf",
-  #   # out.fn = filename.gds,
-  #   out.fn = ""read_dart_20190409@2002/testing
-  #   storage.option = "ZIP_RA",
-  #   major.ref = FALSE,
-  #   verbose = TRUE) %>%
-  #   SeqArray::seqOpen(gds.fn = ., readonly = FALSE)
-  # file.remove(radiator.temp.file)
-  #
-  #
-  #
-  #
-  # data.gds <- SeqArray::seqSNP2GDS(
-  #   gds.fn = paste0(radiator.temp.file, ".vcf"),
-  #   out.fn = filename.gds,
-  #   storage.option = "ZIP_RA",
-  #   major.ref = TRUE,
-  #   verbose = TRUE) %>%
-  #   SeqArray::seqOpen(gds.fn = ., readonly = FALSE)
-  # file.remove(radiator.temp.file)
-
-
   # 2. SeqArray
   data.gds <- SeqArray::seqSNP2GDS(
     gds.fn = radiator.temp.file,
@@ -225,6 +202,20 @@ radiator_gds <- function(
     major.ref = TRUE, verbose = FALSE) %>%
     SeqArray::seqOpen(gds.fn = ., readonly = FALSE)
   file.remove(radiator.temp.file)
+
+  # write_vcf(filename = radiator.temp.file, source = NULL, empty = TRUE)
+  # data.gds <- suppressMessages(suppressWarnings(
+  #   SeqArray::seqVCF2GDS(
+  #     vcf.fn = paste0(radiator.temp.file, ".vcf"),
+  #     out.fn = filename.gds,
+  #     parallel = 1,
+  #     storage.option = "ZIP_RA",
+  #     verbose = FALSE)%>%
+  #     SeqArray::seqOpen(gds.fn = ., readonly = FALSE)
+  # ))
+  #   file.remove(paste0(radiator.temp.file, ".vcf"))
+  #   # SeqArray::seqClose(object = data.gds)
+
 
   # radiator skeleton folder
   radiator.gds <- radiator_gds_skeleton(data.gds)
@@ -244,21 +235,45 @@ radiator_gds <- function(
 
   # Add STRATA to GDS
   update_radiator_gds(data.gds, node.name = "individuals.meta", value = strata)
+  update_radiator_gds(data.gds,
+                      node.name = "sample.id",
+                      value = strata$INDIVIDUALS,
+                      radiator.gds = FALSE,
+                      replace = TRUE)
 
   # ADD MARKERS META to GDS
   update_radiator_gds(data.gds, node.name = "markers.meta", value = markers.meta)
+  update_radiator_gds(data.gds,
+                      node.name = "variant.id",
+                      value = markers.meta$VARIANT_ID,
+                      radiator.gds = FALSE,
+                      replace = TRUE)
+  update_radiator_gds(data.gds,
+                      node.name = "chromosome",
+                      value = markers.meta$CHROM,
+                      radiator.gds = FALSE,
+                      replace = TRUE)
+  update_radiator_gds(data.gds,
+                      node.name = "position",
+                      value = markers.meta$POS,
+                      radiator.gds = FALSE,
+                      replace = TRUE)
+  update_radiator_gds(data.gds,
+                      node.name = "allele",
+                      value = stringi::stri_join(markers.meta$REF, markers.meta$ALT, sep = ","),
+                      radiator.gds = FALSE,
+                      replace = TRUE)
+
+  annotation <- gdsfmt::index.gdsn(
+    node = data.gds, path = "annotation", silent = TRUE)
+  update_radiator_gds(annotation,
+                      node.name = "id",
+                      value = markers.meta$LOCUS,
+                      radiator.gds = FALSE,
+                      replace = TRUE)
 
   # Add genotypes metadata
   if (!is.null(genotypes.meta)) {
-    if ("dart" %in% data.source && "counts" %in% data.source) {
-      suppressWarnings(
-        genotypes.meta %<>%
-          dplyr::left_join(dplyr::select(strata, TARGET_ID, INDIVIDUALS), by = "TARGET_ID") %>%
-          dplyr::select(-TARGET_ID) %>%
-          dplyr::select(FILTERS, VARIANT_ID, MARKERS, INDIVIDUALS, dplyr::everything(.))
-      )
-    }
-
     update_radiator_gds(
       data.gds,
       node.name = "genotypes.meta",
@@ -433,6 +448,94 @@ extract_data_source <- function(gds) {
   return(data.source)
 }# End extract_data_source
 
+# extract_individuals_metadata-----------------------------------------------------------
+#' @title extract_individuals_metadata
+#' @description Import gds or radiator individuals node
+#' @name extract_individuals_metadata
+#' @rdname extract_individuals_metadata
+#' @param gds The gds object.
+#' @param ind.field.select (optional, character) Default:\code{ind.field.select = NULL}.
+#' @param radiator.node (optional, logical) Default:\code{radiator.node = TRUE}.
+#' @param whitelist (optional, logical) Default:\code{whitelist = FALSE}.
+#' @param blacklist (optional, logical) Default:\code{blacklist = FALSE}.
+#' @inheritParams radiator_common_arguments
+# @keywords internal
+#' @export
+extract_individuals_metadata <- function(
+  gds,
+  ind.field.select = NULL,
+  radiator.node = TRUE,
+  whitelist = FALSE,
+  blacklist = FALSE,
+  verbose = FALSE
+) {
+
+  # For SNPRelate data
+  snprelate <- "SNPGDSFileClass" %in% class(gds)[1]
+  keep.one <- FALSE
+  if (whitelist) blacklist <- FALSE
+  if (blacklist) whitelist <- FALSE
+  if (snprelate) {
+    individuals <- tibble::tibble(
+      INDIVIDUALS = gdsfmt::read.gdsn(gdsfmt::index.gdsn(gds, "sample.id")))
+  } else {
+    # will switch radiator.mode to FALSE if returns null
+    if (radiator.node) {
+      id.index <- gdsfmt::ls.gdsn(gdsfmt::index.gdsn(
+        node = gds, path = "radiator/individuals.meta", silent = TRUE))
+      if (is.null(id.index)) radiator.node <- FALSE
+    }
+
+    if (radiator.node) {
+      if (!is.null(ind.field.select)) {
+        if (length(ind.field.select) == 1) keep.one <- TRUE
+
+        if (whitelist || blacklist) {
+          if (!"FILTERS" %in% ind.field.select) ind.field.select  %<>% c("FILTERS")
+        }
+        id.index %<>% intersect(ind.field.select)
+      }
+
+      id.index %<>% magrittr::set_names(x = ., value = .)
+
+      id.df <- list()
+      id_fields <- function(x, gds, id.df) {
+        id.df[[x]] <- gdsfmt::read.gdsn(
+          gdsfmt::index.gdsn(
+            node = gds,
+            path = stringi::stri_join("radiator/individuals.meta/", x),
+            silent = TRUE))
+      }
+
+      individuals <- purrr::map_df(.x = id.index, .f = id_fields, gds, id.df)
+    }
+
+    if (!radiator.node) {
+      individuals <- tibble::tibble(
+        INDIVIDUALS = SeqArray::seqGetData(gds, "sample.id")
+      )
+    }
+  }
+
+  if (!whitelist && !blacklist && !rlang::has_name(individuals, "FILTERS")) {
+    individuals %<>% dplyr::mutate(FILTERS = "whitelist")
+  }
+
+  if (whitelist && rlang::has_name(individuals, "FILTERS")){
+    individuals %<>%
+      dplyr::filter(FILTERS == "whitelist") %>%
+      dplyr::select(-FILTERS)
+  }
+  if (blacklist && rlang::has_name(individuals, "FILTERS")){
+    individuals %<>%
+      dplyr::filter(FILTERS != "whitelist") %>%
+      dplyr::select(-FILTERS)
+  }
+
+  return(individuals)
+}#End extract_individuals_metadata
+
+
 # extract_markers_metadata------------------------------------------------------
 #' @title extract_markers_metadata
 #' @description Import gds or radiator markers meta node
@@ -548,93 +651,6 @@ extract_markers_metadata <- function(
   }
   return(markers.meta)
 }#End import_metadata
-
-# extract_individuals_metadata-----------------------------------------------------------
-#' @title extract_individuals_metadata
-#' @description Import gds or radiator individuals node
-#' @name extract_individuals_metadata
-#' @rdname extract_individuals_metadata
-#' @param gds The gds object.
-#' @param ind.field.select (optional, character) Default:\code{ind.field.select = NULL}.
-#' @param radiator.node (optional, logical) Default:\code{radiator.node = TRUE}.
-#' @param whitelist (optional, logical) Default:\code{whitelist = FALSE}.
-#' @param blacklist (optional, logical) Default:\code{blacklist = FALSE}.
-#' @inheritParams radiator_common_arguments
-# @keywords internal
-#' @export
-extract_individuals_metadata <- function(
-  gds,
-  ind.field.select = NULL,
-  radiator.node = TRUE,
-  whitelist = FALSE,
-  blacklist = FALSE,
-  verbose = FALSE
-) {
-
-  # For SNPRelate data
-  snprelate <- "SNPGDSFileClass" %in% class(gds)[1]
-  keep.one <- FALSE
-  if (whitelist) blacklist <- FALSE
-  if (blacklist) whitelist <- FALSE
-  if (snprelate) {
-    individuals <- tibble::tibble(
-      INDIVIDUALS = gdsfmt::read.gdsn(gdsfmt::index.gdsn(gds, "sample.id")))
-  } else {
-    # will switch radiator.mode to FALSE if returns null
-    if (radiator.node) {
-      id.index <- gdsfmt::ls.gdsn(gdsfmt::index.gdsn(
-        node = gds, path = "radiator/individuals.meta", silent = TRUE))
-      if (is.null(id.index)) radiator.node <- FALSE
-    }
-
-    if (radiator.node) {
-      if (!is.null(ind.field.select)) {
-        if (length(ind.field.select) == 1) keep.one <- TRUE
-
-        if (whitelist || blacklist) {
-          if (!"FILTERS" %in% ind.field.select) ind.field.select  %<>% c("FILTERS")
-        }
-        id.index %<>% intersect(ind.field.select)
-      }
-
-      id.index %<>% magrittr::set_names(x = ., value = .)
-
-      id.df <- list()
-      id_fields <- function(x, gds, id.df) {
-        id.df[[x]] <- gdsfmt::read.gdsn(
-          gdsfmt::index.gdsn(
-            node = gds,
-            path = stringi::stri_join("radiator/individuals.meta/", x),
-            silent = TRUE))
-      }
-
-      individuals <- purrr::map_df(.x = id.index, .f = id_fields, gds, id.df)
-    }
-
-    if (!radiator.node) {
-      individuals <- tibble::tibble(
-        INDIVIDUALS = SeqArray::seqGetData(gds, "sample.id")
-      )
-    }
-  }
-
-  if (!whitelist && !blacklist && !rlang::has_name(individuals, "FILTERS")) {
-    individuals %<>% dplyr::mutate(FILTERS = "whitelist")
-  }
-
-  if (whitelist && rlang::has_name(individuals, "FILTERS")){
-    individuals %<>%
-      dplyr::filter(FILTERS == "whitelist") %>%
-      dplyr::select(-FILTERS)
-  }
-  if (blacklist && rlang::has_name(individuals, "FILTERS")){
-    individuals %<>%
-      dplyr::filter(FILTERS != "whitelist") %>%
-      dplyr::select(-FILTERS)
-  }
-
-  return(individuals)
-}#End extract_individuals_metadata
 
 
 # extract_genotypes_metadata----------------------------------------------------
@@ -2272,9 +2288,9 @@ gds2tidy <- function(
   tidy.data <-
     SeqArray::seqGetData(
       gdsfile = gds, var.name = "$dosage_alt") %>%
-      magrittr::set_colnames(x = ., value = markers.meta$MARKERS) %>%
-      magrittr::set_rownames(x = ., value = individuals$INDIVIDUALS) %>%
-      tibble::as_tibble(x = ., rownames = "INDIVIDUALS")
+    magrittr::set_colnames(x = ., value = markers.meta$MARKERS) %>%
+    magrittr::set_rownames(x = ., value = individuals$INDIVIDUALS) %>%
+    tibble::as_tibble(x = ., rownames = "INDIVIDUALS")
 
   if (!wide) {
     tidy.data <- suppressWarnings(

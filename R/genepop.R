@@ -473,13 +473,12 @@ write_genepop <- function(
 
 
   # # For test
-  # data
   # pop.levels = NULL
   # genepop.header = NULL
   # markers.line = TRUE
   # filename = NULL
 
-
+  options(stringsAsFactors = FALSE)
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("Input file missing")
 
@@ -523,8 +522,7 @@ write_genepop <- function(
   markers <- dplyr::distinct(data, MARKERS) %>% dplyr::arrange(MARKERS) %$% MARKERS
 
   # Wide format ----------------------------------------------------------------
-  data %<>%
-    dplyr::ungroup(.) %>%
+  data  %<>%
     dplyr::arrange(MARKERS) %>%
     data.table::as.data.table(.) %>%
     data.table::dcast.data.table(

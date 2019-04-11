@@ -22,6 +22,10 @@ Default: \code{pop.info = FALSE}. Experimental.}
 \item{filename}{(optional) The file name prefix for the vcf file
 written to the working directory. With default: \code{filename = NULL},
 the date and time is appended to \code{radiator_vcf_file_}.}
+
+\item{source}{source of vcf}
+
+\item{empty}{empty generate empty vcf}
 }
 \description{
 Write a vcf file (file format version 4.3, see details below)

@@ -559,7 +559,7 @@ read_vcf <- function(
     individuals %<>% dplyr::mutate(STRATA = 1L, FILTERS = "whitelist")
   }
 
-  strata <- generate_strata(data = dplyr::filter(individuals, FILTERS == "whitelist"))
+  strata <- generate_strata(data = dplyr::filter(individuals, FILTERS == "whitelist"), pop.id = FALSE)
   #Update GDS node
   update_radiator_gds(gds = gds, node.name = "individuals.meta", value = individuals, sync = TRUE)
   # summary_gds(gds, check.sync = TRUE, verbose = TRUE)
@@ -2470,7 +2470,8 @@ clean_nv <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) 
 #' \emph{How to get a tidy data frame ?}
 #' Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
 
-
+#' @param source source of vcf
+#' @param empty empty generate empty vcf
 #' @param pop.info (optional, logical) Should the population information be
 #' included in the FORMAT field (along the GT info for each samples ?). To make
 #' the VCF population-ready use \code{pop.info = TRUE}. The population information

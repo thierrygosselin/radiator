@@ -780,7 +780,7 @@ tidy_genomic_data <- function(
 
   # strata integration ---------------------------------------------------------
   if (!is.null(strata)) {
-    strata.df <-generate_strata(input)
+    strata.df <-generate_strata(input, pop.id = TRUE)
   } else {
     filter.common.markers <- FALSE # by default
   }

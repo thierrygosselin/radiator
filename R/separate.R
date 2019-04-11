@@ -113,11 +113,13 @@ separate_markers <- function(
   }
 
   if (markers.meta.all.only) {
-    want <- c("FILTERS", "VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS",
-              "COL", "REF", "ALT", "CALL_RATE", "AVG_COUNT_REF",
-              "AVG_COUNT_SNP", "REP_AVG", "ONE_RATIO_REF", "ONE_RATIO_SNP",
-              "SEQUENCE")
-    suppressWarnings(data %<>% dplyr::select(dplyr::one_of(want)) %>%
+    notwanted <- c("GT_BIN", "GT", "GT_VCF", "GT_VCF_NUC", "DP", "AD", "GL",
+                   "PL", "GQ", "HQ", "GOF", "NR", "NV", "CATG")
+    # want <- c("FILTERS", "VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS",
+    #           "COL", "REF", "ALT", "CALL_RATE", "AVG_COUNT_REF",
+    #           "AVG_COUNT_SNP", "REP_AVG", "ONE_RATIO_REF", "ONE_RATIO_SNP",
+    #           "SEQUENCE")
+    suppressWarnings(data %<>% dplyr::select(-dplyr::one_of(notwanted)) %>%
                        dplyr::distinct(MARKERS, .keep_all = TRUE))
     generate.markers.metadata <- generate.ref.alt <- TRUE
   }
@@ -227,13 +229,16 @@ generate_markers_metadata <- function(
     want <- c("FILTERS", "VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF",
               "ALT", "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG",
               "ONE_RATIO_REF", "ONE_RATIO_SNP", "SEQUENCE")
+    notwanted <- c("GT_BIN", "GT", "GT_VCF", "GT_VCF_NUC", "DP", "AD", "GL",
+                                "PL", "GQ", "HQ", "GOF", "NR", "NV", "CATG")
     if (!unique.markers) {
       suppressWarnings(
         markers.meta <- data %>%
-          dplyr::select(dplyr::one_of(want)) %>%
+          # dplyr::select(dplyr::one_of(want)) %>%
+          dplyr::select(-dplyr::one_of(notwanted)) %>%
           dplyr::distinct(MARKERS, .keep_all = TRUE))
     } else {
-      markers.meta <- suppressWarnings(dplyr::select(data, dplyr::one_of(want)))
+      markers.meta <- suppressWarnings(dplyr::select(data, -dplyr::one_of(notwanted)))
       data <- NULL
     }
 

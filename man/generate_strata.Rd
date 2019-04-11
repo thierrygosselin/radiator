@@ -4,11 +4,15 @@
 \alias{generate_strata}
 \title{Generate strata object from the data}
 \usage{
-generate_strata(data)
+generate_strata(data, pop.id = FALSE)
 }
 \arguments{
 \item{data}{A tidy dataset object.
 Documented in \code{\link[radiator]{tidy_genomic_data}}.}
+
+\item{pop.id}{(logical) When \code{pop.id = TRUE}, the strata returns
+the stratification colname \code{POP_ID}.
+Default: \code{pop.id = FALSE}, returns \code{STRATA}.}
 }
 \description{
 Generate a strata object from the data.
