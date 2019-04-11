@@ -2,7 +2,7 @@
 % Please edit documentation in R/sex_markers.R
 \name{sexy_markers}
 \alias{sexy_markers}
-\title{sexy_markers finds sex-linked markers and re-assign sex}
+\title{sexy_markers finds sex-linked markers and re-assigns sex}
 \usage{
 sexy_markers(data, silicodata = NULL, boost.analysis = FALSE,
   strata = NULL, coverage.thresholds = 1, filters = TRUE,
