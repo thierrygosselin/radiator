@@ -12,7 +12,7 @@ extract_genotypes_metadata(gds, genotypes.meta.select = NULL,
 \arguments{
 \item{gds}{The gds object.}
 
-\item{genotypes.meta.select}{(optional, character) Default:\code{ind.field.select = NULL}.}
+\item{genotypes.meta.select}{(optional, character) Default:\code{genotypes.meta.select = NULL}.}
 
 \item{genotypes}{(optional, character) Default: \code{genotypes = FALSE}.}
 

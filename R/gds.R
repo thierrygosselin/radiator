@@ -659,7 +659,7 @@ extract_markers_metadata <- function(
 #' @name extract_genotypes_metadata
 #' @rdname extract_genotypes_metadata
 #' @param gds The gds object.
-#' @param genotypes.meta.select (optional, character) Default:\code{ind.field.select = NULL}.
+#' @param genotypes.meta.select (optional, character) Default:\code{genotypes.meta.select = NULL}.
 #' @param genotypes (optional, character) Default: \code{genotypes = FALSE}.
 #' @param radiator.node (optional, logical) Default: \code{radiator.node = TRUE}.
 #' @param index.only (optional, logical) Default: \code{index.only = FALSE}.
