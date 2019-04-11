@@ -112,7 +112,9 @@ check_dart <- function(data) {
   } else {
     tokenizer.dart <- "\t"
   }
-  data.type <- readChar(con = data, nchars = 200L, useBytes = TRUE)
+  # data.type <- readChar(con = data, nchars = 200L, useBytes = TRUE)
+  data.type <- readLines(con = data, n = 1L)
+
   dart.with.header <- TRUE %in% (stringi::stri_detect_fixed(str = data.type, pattern = c("*\t", "*,")))
 
   if (dart.with.header) {
