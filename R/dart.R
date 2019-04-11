@@ -926,7 +926,7 @@ import_dart <- function(
   # "silico.dart"
   dart.format <- detect_dart_format(
     x = data,
-    target.id = strata.df$TARGET_ID,
+    target.id = strata.df$INDIVIDUALS,
     verbose = TRUE)
 
   return(res = list(data = data, strata = strata.df, dart.format = dart.format))
