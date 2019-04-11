@@ -47,7 +47,8 @@ detect_genomic_format <- function(data){
       if (!data.type %in% c("genind", "genlight", "gtypes", "SeqVarGDSClass")) rlang::abort("Input file not recognised")
     }
   } else {
-    data.type <- readChar(con = data, nchars = 16L, useBytes = TRUE)
+    data.type <- suppressWarnings(readLines(con = data, n = 1L))
+    # data.type <- readChar(con = data, nchars = 16L, useBytes = TRUE)
     file.ending <- stringi::stri_sub(str = data, from = -4, to = -1)
 
     if (identical(data.type, "##fileformat=VCF") || file.ending == ".vcf") {
@@ -113,7 +114,7 @@ check_dart <- function(data) {
     tokenizer.dart <- "\t"
   }
   # data.type <- readChar(con = data, nchars = 200L, useBytes = TRUE)
-  data.type <- readLines(con = data, n = 1L)
+  data.type <- suppressWarnings(readLines(con = data, n = 1L))
 
   dart.with.header <- TRUE %in% (stringi::stri_detect_fixed(str = data.type, pattern = c("*\t", "*,")))
 
