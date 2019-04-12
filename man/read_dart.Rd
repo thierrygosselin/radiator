@@ -78,7 +78,7 @@ Default: \code{parallel.core = parallel::detectCores() - 1}.}
 }
 \value{
 A radiator GDS file and tidy dataframe with several columns depending on DArT file:
-\code{silico.dart:} A tibble with 5 columns: \code{CLONEID, SEQUENCE, VALUE, INDIVIDUALS, STRATA}.
+\code{silico.dart:} A tibble with 5 columns: \code{CLONE_ID, SEQUENCE, VALUE, INDIVIDUALS, STRATA}.
 This object is also saved in the directory (file ending with .rad).
 
 Common to \code{1row, 2rows and counts}: A GDS file is automatically generated.

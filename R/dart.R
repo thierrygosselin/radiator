@@ -174,7 +174,7 @@ Solution: edit manually")
 #' @param ... (optional) To pass further argument for fine-tuning the function.
 
 #' @return A radiator GDS file and tidy dataframe with several columns depending on DArT file:
-#' \code{silico.dart:} A tibble with 5 columns: \code{CLONEID, SEQUENCE, VALUE, INDIVIDUALS, STRATA}.
+#' \code{silico.dart:} A tibble with 5 columns: \code{CLONE_ID, SEQUENCE, VALUE, INDIVIDUALS, STRATA}.
 #' This object is also saved in the directory (file ending with .rad).
 #'
 #' Common to \code{1row, 2rows and counts}: A GDS file is automatically generated.
@@ -394,7 +394,7 @@ read_dart <- function(
     data <- data.table::as.data.table(data) %>%
       data.table::melt.data.table(
         data = .,
-        id.vars = c("CLONEID", "SEQUENCE"),
+        id.vars = c("CLONE_ID", "SEQUENCE"),
         variable.name = "TARGET_ID",
         variable.factor = FALSE,
         value.name = "VALUE"
@@ -418,7 +418,7 @@ read_dart <- function(
         dplyr::mutate(VALUE = as.integer(VALUE))
     )
     strata <- generate_strata(data, pop.id = FALSE)
-    n.clone <- length(unique(data$CLONEID))
+    n.clone <- length(unique(data$CLONE_ID))
 
     filename <- generate_filename(
       name.shortcut = "radiator.silico.dart",
@@ -1020,7 +1020,7 @@ detect_dart_format <- function(x = NULL, target.id = NULL, verbose = TRUE) {
   # 2rows
   # counts
 
-  if (rlang::has_name(x, "CLONEID") && rlang::has_name(x, "SEQUENCE")) {
+  if (rlang::has_name(x, "CLONE_ID") && rlang::has_name(x, "SEQUENCE")) {
     if (verbose) message("DArT SNP format: silico DArT")
     dart.format <- "silico.dart"
   } else {

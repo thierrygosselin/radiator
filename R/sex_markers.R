@@ -188,7 +188,8 @@ sexy_markers <- function(data,
   # data = "SchoolShark_SNP_counts.csv"
   # strata = "School_strata_Counts.tsv"
 
-  # data = "SchoolShark_SNP_genotype_2Row-Edited.csv"
+  # data = "SchoolShark_SNP_genotype_2Row.csv"
+  # strata = "School_strata_2ROW.tsv"
   # silicodata = "SchoolShark_silico_counts.csv"
   # data = "Ggar_Report_DGl17-2561_4_moreOrders_SNP_singlerow_2.csv"
   # strata = "Ggar_strata.tsv"
@@ -343,7 +344,7 @@ sexy_markers <- function(data,
     rlang::abort("The strata requires a minimum of 2 groups: F and M")
   }
   if (length(strata.groups) == 2 &&
-      all(c("F", "M") %in% strata.groups) == TRUE) {
+      all(c("F", "M") %in% strata.groups) == FALSE) {
     rlang::abort("The strata requires a minimum of 2 groups: F and M")
   }
 
@@ -418,19 +419,20 @@ sexy_markers <- function(data,
   # Extract from the GDS the tidy data... ###ISSUE FOR VCF & 1row
   # data <-
 
-  temp <- radiator::extract_genotypes_metadata(gds = data, index.only = TRUE)
-  if (is.null(temp)) {
-    temp <- radiator::extract_genotypes_metadata(gds = data)
-  }
+  # temp <- radiator::extract_genotypes_metadata(gds = data, index.only = TRUE)
+  # if (is.null(temp)) {
+  #   temp <- radiator::extract_genotypes_metadata(gds = data)
+  # }
 
-
-  #   genotypes.meta.select = c("MARKERS", "INDIVIDUALS", "GT_BIN", "READ_DEPTH"),
-  #   # genotypes.meta.select = c("MARKERS", "INDIVIDUALS", "GT_BIN"),
-  #   whitelist = TRUE
-  # ) %>%
-  #   radiator::join_strata(data = .,
-  #                         strata = strata,
-  #                         verbose = FALSE)
+  data <- radiator::extract_genotypes_metadata(
+    gds = data,
+    genotypes.meta.select = c("MARKERS", "INDIVIDUALS", "GT_BIN", "READ_DEPTH"),
+    # genotypes.meta.select = c("MARKERS", "INDIVIDUALS", "GT_BIN"),
+    whitelist = TRUE
+  ) %>%
+    radiator::join_strata(data = .,
+                          strata = strata,
+                          verbose = FALSE)
 
 
   # SILICO files ----------------------------------------------------------------
@@ -860,7 +862,6 @@ sexy_markers <- function(data,
   }
 
 
-
   #### HET ####
   # You want to remove the Y-linked markers and do a filter on missingness
 
@@ -932,7 +933,7 @@ sexy_markers <- function(data,
   }
 
   if (!is.null(threshold.x.markers.qr)) {
-    if (threshold.y.markers < 0) {
+    if (threshold.x.markers.qr < 0) {
       x.markers <- dplyr::filter(data.sum, QR_RESIDUALS < threshold.x.markers.qr)$MARKERS
     } else{
       x.markers <- dplyr::filter(data.sum, QR_RESIDUALS > threshold.x.markers.qr)$MARKERS
@@ -1190,6 +1191,9 @@ sexy_markers <- function(data,
 
   # summary of all sex-markers per method (PA, HET, RD)
 
+  # common markers plot
+  #
+
   # FASTA file with sex markers for all methods
   if(class(data) == "SeqVarGDSClass"){
     # Set sex-marker to whitelist and allign the sex-marker method with the markers
@@ -1201,7 +1205,7 @@ sexy_markers <- function(data,
       blacklist = FALSE,
       verbose = FALSE
     )
-    # Extract individual meta (INDIVIDUAL, SEX)
+
   }
 
 
@@ -1347,7 +1351,7 @@ summarize_sex <- function (data, silicodata, data.source, coverage.thresholds = 
       dplyr::select(data, MARKERS, INDIVIDUALS, STRATA, GT_BIN) %>%
       dplyr::group_by(STRATA, MARKERS) %>%
       dplyr::summarise(
-        PRESENCE_ABSENCE = length(INDIVIDUALS[READ_DEPTH < coverage.thresholds]) / length(INDIVIDUALS),
+        PRESENCE_ABSENCE = length(INDIVIDUALS[is.na(GT_BIN)]) / length(INDIVIDUALS),##ISSUE
         MEAN_HET = length(INDIVIDUALS[GT_BIN == 1]) / length(INDIVIDUALS)
       ) %>%
       dplyr::ungroup(.) %>%
