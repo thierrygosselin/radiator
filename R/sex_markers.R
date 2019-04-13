@@ -356,14 +356,6 @@ sexy_markers <- function(data,
   #update strata in GDS
 
 
-  ### add warning about not using count data
-  if (!(any(c("counts", "vcf.file") %in% data.source))) {
-    message(
-      "Your data does not have Read Depth information; the analysis based on read depth will not be performed"
-    )
-  }
-
-
 
   # Filter monomorphic ---------------------------------------------------------
   data <- radiator::filter_monomorphic(
@@ -427,7 +419,6 @@ sexy_markers <- function(data,
   data <- radiator::extract_genotypes_metadata(
     gds = data,
     genotypes.meta.select = c("MARKERS", "INDIVIDUALS", "GT_BIN", "READ_DEPTH"),
-    # genotypes.meta.select = c("MARKERS", "INDIVIDUALS", "GT_BIN"),
     whitelist = TRUE
   ) %>%
     radiator::join_strata(data = .,
@@ -448,15 +439,21 @@ sexy_markers <- function(data,
       internal = TRUE,
       verbose = TRUE
     ) %>%
-      dplyr::rename(., MARKERS = CLONEID)
+      dplyr::rename(., MARKERS = CLONE_ID)
 
-    if (max(silicodata$VALUE) > 1) {
+    if (max(silicodata$VALUE, na.rm = TRUE) > 1) {
       data.source <- c("counts", data.type, data.source)
     } else{
       data.source <- c("genotype", data.type, data.source)
     }
   }
 
+  ### add warning about not using count data
+  if (!(any(c("counts", "vcf.file") %in% data.source))) {
+    message(
+      "Your data does not have Read Depth information; the analysis based on Read Depth will not be performed"
+    )
+  }
 
 
   # Sex markers-----------------------------------------------------------------
@@ -464,8 +461,9 @@ sexy_markers <- function(data,
   # 2. presence/absence per strata and markers: yw
   # 3. heterozygosity per strata and markers: xz
 
-  # Summarise DArT counts and VCFs--------------------------------------------------------
-  # Summarise silico --------------------------------------------------------------------
+  # Summarise DArT counts/silico and VCFs---------------------------------------
+  if (is.null(tau)) tau <- 0.03
+
   res$sum <- summarize_sex(
     data = data,
     silicodata = silicodata,
@@ -641,6 +639,7 @@ sexy_markers <- function(data,
                                       minmax = c(-1, 1))
       } else {
         threshold.y.silico.markers <- NULL
+        y.silico.markers <- NULL
       }
     }
 
@@ -789,17 +788,14 @@ sexy_markers <- function(data,
         )
         sex.id.input <- as.integer(sex.id.input)
       }
-    } else {
-      if (rlang::is_empty(y.silico.markers)) {
-        # Interacive selection which sex info
-        if (is.null(sex.id.input)) sex.id.input <- "1"
-        if (interactive.filter) {
-          sex.id.input <- radiator::radiator_question(
-            x = "Do you want to continue based on (1) visual or (2) genetic dart?\nWe advise (2) for better results",
-            answer.opt = c("1","2")
-          )
-          sex.id.input <- as.integer(sex.id.input)
-        }
+    } else if (rlang::is_empty(y.silico.markers)) {
+      # Interacive selection which sex info
+      if (is.null(sex.id.input))
+        sex.id.input <- "1"
+      if (interactive.filter) {
+        sex.id.input <- radiator::radiator_question(x = "Do you want to continue based on (1) visual or (2) genetic dart?\nWe advise (2) for better results",
+                                                    answer.opt = c("1", "2"))
+        sex.id.input <- as.integer(sex.id.input)
       }
     }
 
@@ -842,15 +838,15 @@ sexy_markers <- function(data,
 
     # silico
     if (sex.id.input != 1){
-      sum <- summarize_sex(
+      res$sum <- summarize_sex(
         data = data.genetic,
         silicodata = data.silico.genetic,
         coverage.thresholds = coverage.thresholds,
         data.source = data.source,
         tau = tau
       )
-      data.sum <- sum$data.sum
-      silico.sum <- sum$silico.sum
+      data.sum <- res$sum$data.sum
+      silico.sum <- res$sum$silico.sum
     }
   }
 
@@ -1373,7 +1369,6 @@ summarize_sex <- function (data, silicodata, data.source, coverage.thresholds = 
     data.sum[is.na(data.sum)] <- NA
     mis <- NULL
 
-    if (is.null(tau)) tau <- 0.03
     #Quantile regression plot
     data.sum <- dplyr::bind_rows(
       dplyr::filter(data.sum, is.na(MEAN_HET_M) | is.na(MEAN_HET_F)),
@@ -1442,8 +1437,7 @@ summarize_sex <- function (data, silicodata, data.source, coverage.thresholds = 
         tibble::as_tibble(.) %>%
         dplyr::rename(
           PRESENCE_ABSENCE_M = M,
-          PRESENCE_ABSENCE_F = F,
-          PRESENCE_ABSENCE_U = U
+          PRESENCE_ABSENCE_F = F
         ) %>%
         dplyr::mutate(
           MEAN = (PRESENCE_ABSENCE_M + PRESENCE_ABSENCE_F) / 2,
