@@ -1180,28 +1180,39 @@ sexy_markers <- function(data,
   ## TODO:
   # counts & vcf
   # silico
-  # res$homogametic.rd.silico.markers <- x.markers
 
 
   # Export -------------------------------------------------------------------
 
   # summary of all sex-markers per method (PA, HET, RD)
 
+  ##SEX MARKER SUMMARY
+  SEX_MARKERS <- c(res$heterogametic.markers, res$heterogametic.silico.markers, res$homogametic.het.markers, res$homogametic.RD.markers, res$homogametic.RD.silico.markers)
+  METHOD <- c(rep("PA_SNP", length(res$heterogametic.markers)),
+              rep("PA_SILICO", length(res$heterogametic.silico.markers)),
+              rep("HET_SNP", length(res$homogametic.het.markers)),
+              rep("RD_SNP", length(res$homogametic.RD.markers)),
+              rep("RD_SILICO", length(res$homogametic.RD.silico.markers))
+  )
+  MARKER_TYPE <- c(rep("Heterogametic sex-chrom", length(c(res$heterogametic.markers, res$heterogametic.silico.markers))),
+                   rep("Homogametic sex-chrom", length(c( res$homogametic.het.markers, res$homogametic.RD.markers, res$homogametic.RD.silico.markers)))
+  )
+
   # common markers plot
-  #
+
 
   # FASTA file with sex markers for all methods
   if(class(data) == "SeqVarGDSClass"){
     # Set sex-marker to whitelist and allign the sex-marker method with the markers
     meta <- radiator::extract_markers_metadata(
-      gds = data,
-      markers.meta.select = c("MARKERS", "SEQUENCE"),
+      gds = gds.bk,
+      markers.meta.select = c("MARKERS","SEQUENCE"),
       radiator.node = TRUE,
       whitelist = FALSE,
       blacklist = FALSE,
       verbose = FALSE
-    )
-
+    ) %>%
+      dplyr::filter(unique(MARKERS) %in% SEX_MARKERS)
   }
 
 
