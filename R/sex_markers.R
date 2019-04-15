@@ -318,43 +318,11 @@ sexy_markers <- function(data,
     )
   }
 
-
-  # clean the strata -----------------------------------------------------------
-  strata <- radiator::extract_individuals_metadata(gds = data)
-  # if (rlang::has_name(strata, "POP_ID")) data %<>% dplyr::rename(STRATA = POP_ID)
-
-
   # Detect source --------------------------------------------------------------
   data.source <- radiator::extract_data_source(gds = data)
   if (!data.type %in% c("SeqVarGDSClass", "gds.file", "dart", "vcf.file")) {
     rlang::abort("Input not supported for this function: read function documentation")
   }
-
-
-  # clean strata----------------------------------------------------------------
-  strata %<>%
-    dplyr::mutate(
-      STRATA = stringi::stri_trans_toupper(str = STRATA),
-      STRATA = stringi::stri_sub(str = STRATA, from = 1, to = 1),
-      STRATA = replace(x = STRATA, !STRATA %in% c("F", "M"), "U")
-    )
-  #checks
-  strata.groups <- unique(sort(strata$STRATA))
-  if (length(strata.groups) > 3 || length(strata.groups) < 2) {
-    rlang::abort("The strata requires a minimum of 2 groups: F and M")
-  }
-  if (length(strata.groups) == 2 &&
-      all(c("F", "M") %in% strata.groups) == FALSE) {
-    rlang::abort("The strata requires a minimum of 2 groups: F and M")
-  }
-
-  # Generate new strata and write to disk
-  # strata <- generate_strata(data)
-  readr::write_tsv(x = strata,
-                   path = file.path(path.folder, "strata.cleaned.tsv"))
-
-  #update strata in GDS
-
 
 
   # Filter monomorphic ---------------------------------------------------------
@@ -388,15 +356,39 @@ sexy_markers <- function(data,
         internal = FALSE,
         path.folder = path.folder
       )
-
   }
 
-  # New strata after filter in case id were removed
+
+  # clean the strata -----------------------------------------------------------
   strata <- radiator::extract_individuals_metadata(
     gds = data,
     ind.field.select = c("TARGET_ID", "INDIVIDUALS", "STRATA"),
     whitelist = TRUE
   )
+
+
+  # clean strata----------------------------------------------------------------
+  strata %<>%
+    dplyr::mutate(
+      STRATA = stringi::stri_trans_toupper(str = STRATA),
+      STRATA = stringi::stri_sub(str = STRATA, from = 1, to = 1),
+      STRATA = replace(x = STRATA, !STRATA %in% c("F", "M"), "U")
+    )
+  #checks
+  strata.groups <- unique(sort(strata$STRATA))
+  if (length(strata.groups) > 3 || length(strata.groups) < 2) {
+    rlang::abort("The strata requires a minimum of 2 groups: F and M")
+  }
+  if (length(strata.groups) == 2 &&
+      all(c("F", "M") %in% strata.groups) == FALSE) {
+    rlang::abort("The strata requires a minimum of 2 groups: F and M")
+  }
+
+  # Generate new strata and write to disk
+  # strata <- generate_strata(data)
+  readr::write_tsv(x = strata,
+                   path = file.path(path.folder, "strata.cleaned.tsv"))
+
 
   # check Sex Ratio ------------------------------------------------------------
   sex.ratio <- dplyr::filter(strata, STRATA != "U") %>%
@@ -1184,25 +1176,71 @@ sexy_markers <- function(data,
 
   # Export -------------------------------------------------------------------
 
-  # summary of all sex-markers per method (PA, HET, RD)
+  ## SEX MARKER SUMMARY ##
 
-  ##SEX MARKER SUMMARY
-  SEX_MARKERS <- c(res$heterogametic.markers, res$heterogametic.silico.markers, res$homogametic.het.markers, res$homogametic.RD.markers, res$homogametic.RD.silico.markers)
-  METHOD <- c(rep("PA_SNP", length(res$heterogametic.markers)),
-              rep("PA_SILICO", length(res$heterogametic.silico.markers)),
-              rep("HET_SNP", length(res$homogametic.het.markers)),
-              rep("RD_SNP", length(res$homogametic.RD.markers)),
-              rep("RD_SILICO", length(res$homogametic.RD.silico.markers))
-  )
-  MARKER_TYPE <- c(rep("Heterogametic sex-chrom", length(c(res$heterogametic.markers, res$heterogametic.silico.markers))),
-                   rep("Homogametic sex-chrom", length(c( res$homogametic.het.markers, res$homogametic.RD.markers, res$homogametic.RD.silico.markers)))
-  )
+  res$sexy.summary <-
+    tibble::tibble(
+      SEX_MARKERS =
+        c(
+          res$heterogametic.markers,
+          res$heterogametic.silico.markers,
+          res$homogametic.het.markers,
+          res$homogametic.RD.markers,
+          res$homogametic.RD.silico.markers
+        ),
+      METHOD =
+        c(
+          rep("PA_SNP", length(res$heterogametic.markers)),
+          rep("PA_SILICO", length(res$heterogametic.silico.markers)),
+          rep("HET_SNP", length(res$homogametic.het.markers)),
+          rep("RD_SNP", length(res$homogametic.RD.markers)),
+          rep("RD_SILICO", length(res$homogametic.RD.silico.markers))
+        ),
+      MARKER_TYPE =
+        c(
+          rep("Heterogametic sex-chrom", length(
+            c(res$heterogametic.markers, res$heterogametic.silico.markers)
+          )),
+          rep("Homogametic sex-chrom", length(
+            c(
+              res$homogametic.het.markers,
+              res$homogametic.RD.markers,
+              res$homogametic.RD.silico.markers
+            )
+          ))
+        )
+    ) %>%
+    dplyr::mutate(CLONE_ID = stringi::stri_split_fixed(SEX_MARKERS, "_", simplify = TRUE)[,4]
+    )
+
+summary(as.factor(res$sexy.summary$METHOD))
 
   # common markers plot
+  n.pop = length(unique(res$sexy.summary$METHOD))
+  plot.data <- dplyr::distinct(res$sexy.summary, CLONE_ID, METHOD) %>%
+    dplyr::mutate(
+      n = rep(1, n()),
+      POP_ID = stringi::stri_join("METHOD_", METHOD)
+    ) %>%
+    tidyr::spread(data = ., key = POP_ID, value = n, fill = 0) %>%
+    data.frame(.)
+
+  plot.filename <- stringi::stri_join(
+    "sex.markers.upsetrplot_", file.date, ".pdf")
+  plot.filename <- file.path(path.folder, plot.filename)
+
+  pdf(file = plot.filename, onefile = FALSE)
+  UpSetR::upset(
+    plot.data,
+    nsets = n.pop,
+    order.by = "freq",
+    empty.intersections = NULL)
+  dev.off()
 
 
-  # FASTA file with sex markers for all methods
-  if(class(data) == "SeqVarGDSClass"){
+  ## FASTA file with sex markers for all methods ##
+
+  if(class(gds.bk) == "SeqVarGDSClass"){
     # Set sex-marker to whitelist and allign the sex-marker method with the markers
     meta <- radiator::extract_markers_metadata(
       gds = gds.bk,
@@ -1212,9 +1250,8 @@ sexy_markers <- function(data,
       blacklist = FALSE,
       verbose = FALSE
     ) %>%
-      dplyr::filter(unique(MARKERS) %in% SEX_MARKERS)
+      dplyr::filter(unique(MARKERS) %in% res$sexy.summary$SEX_MARKERS)
   }
-
 
 
   return(res)
