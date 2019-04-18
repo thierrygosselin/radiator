@@ -2506,8 +2506,35 @@ write_vcf <- function(
   source = NULL,
   empty = FALSE
 ) {
+  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
 
-  if (!empty) {
+  if (empty) {
+    # output <- tibble::tibble(
+    #   '#CHROM' = c("chrom_1", "chrom_1"),
+    #   POS = c(50L, 100L),
+    #   ID = c(1000299L, 1000299L),
+    #   REF = c("A", "G"),
+    #   ALT = c("T", "C"),
+    #   QUAL = c(".", "."),
+    #   FILTER = c("PASS", "PASS"),
+    #   INFO = c("NS=3", "NS=3"),
+    #   FORMAT = c("GT:DP:AD:GL", "GT:DP:AD:GL"),
+    #   ID1 = c("./.:50:30,20:-0.00,-3.97,-17.8", "1/1:50:30,20:-0.00,-3.97,-17.8"),
+    #   ID2 = c("0/1:50:30,20:-0.00,-3.97,-17.8", "0/1:50:30,20:-0.00,-3.97,-17.8"),
+    #   ID3 = c("1/1:50:30,20:-0.00,-3.97,-17.8", "0/0:50:30,20:-0.00,-3.97,-17.8")
+    # )
+    output <- tibble::tibble(
+      '#CHROM' = character(0),
+      POS = integer(0),
+      ID = integer(0),
+      REF = character(0),
+      ALT = character(0),
+      QUAL = character(0),
+      FILTER = character(0),
+      INFO = character(0),
+      FORMAT = character(0)
+    )
+  } else {
     # Import data ---------------------------------------------------------------
     if (is.vector(data)) {
       data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
@@ -2626,7 +2653,6 @@ write_vcf <- function(
   # Filename ------------------------------------------------------------------
   if (is.null(filename)) {
     # Get date and time to have unique filenaming
-    file.date <- format(Sys.time(), "%Y%m%d@%H%M")
     filename <- stringi::stri_join("radiator_vcf_file_", file.date, ".vcf")
   } else {
     filename <- stringi::stri_join(filename, ".vcf")
@@ -2638,9 +2664,9 @@ write_vcf <- function(
     path = filename, delim = " ", append = FALSE, col_names = FALSE)
 
   # File date ------------------------------------------------------------------
-  file.date <- stringi::stri_join("##fileDate=", format(Sys.time(), "%Y%m%d@%H%M"), sep = "")
+  x <- paste0("##fileDate=", file.date)
   readr::write_delim(
-    x = tibble::tibble(file.date),
+    x = tibble::tibble(x),
     path = filename,
     delim = " ",
     append = TRUE,
@@ -2649,10 +2675,10 @@ write_vcf <- function(
 
   # Source ---------------------------------------------------------------------
   if (is.null(source)) {
+    source <- stringi::stri_join("##source=radiator_v.",
+                                 as.character(utils::packageVersion("radiator")))
     readr::write_delim(
-      x = tibble::tibble(
-        stringi::stri_join("##source=radiator_v.",
-                           as.character(utils::packageVersion("radiator")))),
+      x = tibble::tibble(source),
       path = filename,
       delim = " ",
       append = TRUE,
@@ -2669,37 +2695,54 @@ write_vcf <- function(
     )
   }
 
-  if (!empty) {
-    # Info field 1 ---------------------------------------------------------------
-    info1 <- as.data.frame('##INFO=<ID=NS,Number=1,Type=Integer,Description=\"Number of Samples With Data\">')
-    utils::write.table(x = info1, file = filename, sep = " ", append = TRUE, col.names = FALSE, row.names = FALSE, quote = FALSE)
+
+  # Info field 1 ---------------------------------------------------------------
+  info1 <- as.data.frame('##INFO=<ID=NS,Number=1,Type=Integer,Description=\"Number of Samples With Data\">')
+  utils::write.table(x = info1, file = filename, sep = " ", append = TRUE, col.names = FALSE, row.names = FALSE, quote = FALSE)
 
 
-    # Format field 1 -------------------------------------------------------------
-    format1 <- '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">'
-    format1 <- as.data.frame(format1)
-    utils::write.table(x = format1, file = filename, sep = " ", append = TRUE, col.names = FALSE, row.names = FALSE, quote = FALSE)
+  # Format field 1 -------------------------------------------------------------
+  format1 <- '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">'
+  format1 <- as.data.frame(format1)
+  utils::write.table(x = format1, file = filename, sep = " ", append = TRUE, col.names = FALSE, row.names = FALSE, quote = FALSE)
 
-    # Format field 2 ---------------------------------------------------------------
-    if (pop.info) {
-      format2 <- as.data.frame('##FORMAT=<ID=POP_ID,Number=1,Type=Character,Description="Population identification of Sample">')
-      utils::write.table(x = format2, file = filename, sep = " ", append = TRUE, col.names = FALSE, row.names = FALSE, quote = FALSE)
-    }
-
-  } else {
-    # Empty VCF-----------------------------------------------------------------
-    output <- tibble::tibble(
-      `#CHROM` = character(0),
-      POS = character(0),
-      ID = character(0),
-      REF = character(0),
-      ALT = character(0),
-      QUAL = character(0),
-      FILTER = character(0),
-      INFO = character(0),
-      FORMAT = character(0)
-    )
+  # Format field 2 ---------------------------------------------------------------
+  if (pop.info && !empty) {
+    format2 <- as.data.frame('##FORMAT=<ID=POP_ID,Number=1,Type=Character,Description="Population identification of Sample">')
+    utils::write.table(x = format2, file = filename, sep = " ", append = TRUE, col.names = FALSE, row.names = FALSE, quote = FALSE)
   }
+  # Format field DP ---------------------------------------------------------------
+  # if (empty) {
+  #   format3 <- as.data.frame('##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read Depth">')
+  #   utils::write.table(x = format3, file = filename, sep = " ", append = TRUE, col.names = FALSE, row.names = FALSE, quote = FALSE)
+  # }
+
+  # Format field AD ---------------------------------------------------------------
+  # if (empty) {
+  #   format4 <- as.data.frame('##FORMAT=<ID=AD,Number=.,Type=String,Description="Allele Depth">')
+  #   utils::write.table(x = format4, file = filename, sep = " ", append = TRUE, col.names = FALSE, row.names = FALSE, quote = FALSE)
+  # }
+
+  # Format field GL ---------------------------------------------------------------
+  # if (empty) {
+  #   format5 <- as.data.frame('##FORMAT=<ID=GL,Number=.,Type=String,Description="Genotype Likelihood">')
+  #   utils::write.table(x = format5, file = filename, sep = " ", append = TRUE, col.names = FALSE, row.names = FALSE, quote = FALSE)
+  # }
+
+  #else {
+  #   # Empty VCF-----------------------------------------------------------------
+  #   output <- tibble::tibble(
+  #     `#CHROM` = character(0),
+  #     POS = character(0),
+  #     ID = character(0),
+  #     REF = character(0),
+  #     ALT = character(0),
+  #     QUAL = character(0),
+  #     FILTER = character(0),
+  #     INFO = character(0),
+  #     FORMAT = character(0)
+  #   )
+  # }
 
   # Write the prunned vcf to the file ------------------------------------------
   suppressWarnings(readr::write_tsv(x = output, path = filename, append = TRUE, col_names = TRUE))

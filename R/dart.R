@@ -88,7 +88,7 @@ extract_dart_target_id <- function(data, write = TRUE) {
     dplyr::mutate(
       TARGET_ID = clean_ind_names(x = TARGET_ID),
       TARGET_ID = stringi::stri_trans_toupper(TARGET_ID)
-      )
+    )
   if (write) readr::write_tsv(x = dart.target.id, path = "dart.target.id.tsv")
 
   # Check that DArT file as good target id written -----------------------------
@@ -478,10 +478,10 @@ read_dart <- function(
   # Markers meta
   markers.meta <- suppressWarnings(
     dplyr::ungroup(data) %>%
-      dplyr::select(-dplyr::one_of(strata$TARGET_ID)) %>%
+      dplyr::select(-dplyr::one_of(strata$INDIVIDUALS)) %>%
       dplyr::filter(!is.na(REF) | !is.na(ALT)) %>%
       dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-      dplyr::arrange(MARKERS) %>%
+      dplyr::arrange(VARIANT_ID) %>%
       dplyr::mutate(FILTERS = "whitelist") %>%
       dplyr::select(FILTERS, VARIANT_ID, MARKERS, CHROM, LOCUS, POS, COL, REF, ALT, dplyr::everything(.))
   )
@@ -501,13 +501,15 @@ read_dart <- function(
       dplyr::select(dplyr::one_of(want)) %>%
       dplyr::arrange(MARKERS, REF))
 
-  #GDS -----------------------------------------------------------------------
+  #GDS
+  #filename = filename.gds
+
   data <- suppressWarnings(
     dart2gds(
       data = data,
       strata = strata,
       markers.meta = markers.meta,
-      filename = filename.gds$filename,
+      filename = filename.gds,
       dart.format = dart.format,
       gt.vcf = gt.vcf,
       gt.vcf.nuc = gt.vcf.nuc,
@@ -805,25 +807,25 @@ import_dart <- function(
   #   )
   #   dart.col.type <- NULL
   # } else {#fread
-    # There's no big difference really here if we import everything and filter after...
-    data <- suppressWarnings(
-      data.table::fread(
-        file = data,
-        header = TRUE,
-        strip.white = TRUE,
-        na.strings = c("-", "NA"),
-        stringsAsFactors = FALSE,
-        skip = "CallRate",
-        drop = blacklist.id,
-        select = NULL,
-        showProgress = TRUE,
-        nThread = parallel.core,
-        verbose = FALSE) %>%
-        tibble::as_tibble(.) %>%
-        # We want snakecase not camelcase
-        # Change the TARGET_ID by INDIVIDUALS...
-        clean_dart_colnames(data = ., strata = strata.df)
-    )
+  # There's no big difference really here if we import everything and filter after...
+  data <- suppressWarnings(
+    data.table::fread(
+      file = data,
+      header = TRUE,
+      strip.white = TRUE,
+      na.strings = c("-", "NA"),
+      stringsAsFactors = FALSE,
+      skip = "CallRate",
+      drop = blacklist.id,
+      select = NULL,
+      showProgress = TRUE,
+      nThread = parallel.core,
+      verbose = FALSE) %>%
+      tibble::as_tibble(.) %>%
+      # We want snakecase not camelcase
+      # Change the TARGET_ID by INDIVIDUALS...
+      clean_dart_colnames(data = ., strata = strata.df)
+  )
 
   # }
   # check <- tibble::tibble(BLACKLIST_ID = colnames(data)) %>%
@@ -979,16 +981,14 @@ clean_dart_locus <- function(x, fast = TRUE) {
     suppressWarnings(
       x %<>%
         tidyr::separate(col = LOCUS,
-                        into = c("LOCUS", "NOT_USEFUL"),
+                        into = c("LOCUS", NA),
                         sep = "\\|",
                         extra = "drop"
         ) %>%
-        dplyr::select(-NOT_USEFUL) %>%
         tidyr::separate(col = SNP,
-                        into = c("NOT_USEFUL", "KEEPER"),
+                        into = c(NA, "KEEPER"),
                         sep = ":",
                         extra = "drop") %>%
-        dplyr::select(-NOT_USEFUL) %>%
         tidyr::separate(col = KEEPER, into = c("REF", "ALT"), sep = ">") %>%
         dplyr::mutate(
           CHROM = rep("CHROM_1", n()),
@@ -1020,7 +1020,7 @@ detect_dart_format <- function(x = NULL, target.id = NULL, verbose = TRUE) {
   # 2rows
   # counts
 
-  if (rlang::has_name(x, "CLONEID") && rlang::has_name(x, "SEQUENCE")) {
+  if (rlang::has_name(x, "CLONE_ID") && rlang::has_name(x, "SEQUENCE")) {
     if (verbose) message("DArT SNP format: silico DArT")
     dart.format <- "silico.dart"
   } else {
@@ -1055,6 +1055,76 @@ detect_dart_format <- function(x = NULL, target.id = NULL, verbose = TRUE) {
   return(dart.format)
 }#End detect_dart_format
 
+# switch_allele_count----------------------------------------------------------------
+#' @title switch_allele_count
+#' @description Switch from dart genotyping 2 presence absence
+#' @rdname switch_allele_count
+#' @keywords internal
+#' @export
+
+switch_allele_count <- function(x, dart.group = FALSE, ref = TRUE) {
+  # dart.group (=1rows) vs presence/absence coding
+  if (dart.group) {
+    # 1 = HOM ALT
+    # 2 = HET
+    # 0 = HOM REF
+    if (ref) {#REF count
+      x <- dplyr::case_when(
+        x == 1L ~ 0L,
+        x == 2L ~ 1L,
+        x == 0L ~ 1L
+      )
+    } else {#ALT count
+      x <- dplyr::if_else(x == 2L, 1L, x)
+      # the other coding remain the same
+    }
+  } else {
+    # 2rows: presence/absence
+    # here we want count of alternate allele instead...
+    # x <- as.integer(dplyr::recode(.x = as.character(x), "0" = "1", "1" = "0"))
+    # case_when is much faster than recode...
+    x <- dplyr::case_when(
+      x == 0L ~ 1L,
+      x == 1L ~ 0L
+    )
+  }
+  return(x)
+}# End switch_allele_count
+
+# gt2array----------------------------------------------------------------------
+#' @title gt2array
+#' @description Alternate allele dosage gt (GT_BIN) to
+#' presence/absence array for the genotypes in GDS
+#' @rdname gt2array
+#' @keywords internal
+#' @export
+gt2array <- function(gt.bin, n.ind, n.snp) {
+  genotypes <- cbind(
+    dplyr::case_when(
+      gt.bin == 0L ~ 0L,
+      gt.bin == 1L ~ 0L,
+      gt.bin == 2L ~ 1L
+    ),
+    dplyr::if_else(gt.bin == 2L, 1L, gt.bin)
+  )
+  genotypes[is.na(genotypes)] <- 0x0F #NA...
+
+  # generate the array: gta
+  # genotypes <- cbind(replace(ard, ard > 0L, 0L), replace(aad, aad > 0L, 1L))
+
+  # dimensions
+  dim(genotypes) <- c(n.snp, n.ind, 2)
+
+  # permute the array: alleles, samples, markers
+  genotypes <- aperm(a = genotypes, c(3,2,1))
+
+  # dimension names
+  dimnames(genotypes) <- list(allele=NULL, sample=NULL, variant=NULL)
+  # stopifnot(!anyNA(genotypes))# we don't want NA here... it's 0 or 1
+  return(genotypes)
+}# End gt2array
+
+
 # dart2gds----------------------------------------------------------------
 #' @title dart2gds
 #' @description Transform dart to GDS format
@@ -1068,596 +1138,250 @@ dart2gds <- function(
   markers.meta,
   filename,
   dart.format,
-  gt.vcf = NULL,
-  gt.vcf.nuc = NULL,
-  gt = NULL,
+  gt.vcf = FALSE,
+  gt.vcf.nuc = FALSE,
+  gt = FALSE,
   parallel.core = parallel::detectCores() - 1,
   verbose = TRUE
 ) {
-  # gt.vcf <- gt.vcf.nuc <- gt <- NULL
-
-  message("Generating genotypes...")
+  # data.bk <- data
   if (dart.format == "1row") data.source <- c("dart", "1row")
   if (dart.format == "2rows") data.source <- c("dart", "2rows")
   if (dart.format == "counts") data.source <- c("dart", "counts")
   parallel.core.temp <- max(1, 2 * floor(parallel.core / 2))
   geno.coding <- "alt.dos"
-  dp <- NULL
+  dp <- gl <- NULL
 
-  genotypes.meta <- dplyr::left_join(
-    data,
-    dplyr::distinct(data, MARKERS) %>%
-      dplyr::mutate(
-        SPLIT_VEC = split_vec_row(., 4, parallel.core = parallel.core.temp)
+  if (gt.vcf.nuc || gt) {
+    ref.alt <- TRUE
+    want <- c("VARIANT_ID", "MARKERS","REF", "ALT")
+  } else {
+    ref.alt <- FALSE
+    want <- c("VARIANT_ID", "MARKERS")
+  }
+
+  message("Generating genotypes and calibrating REF/ALT alleles...")
+  #2-rows or counts
+  if (TRUE %in% (c("counts", "2rows") %in% data.source)) {
+    n.ind <- ncol(data) - 4
+    n.snp <- nrow(data) / 2
+    # alt <- dplyr::filter(data, !is.na(REF)) %>% dplyr::select(-REF, -ALT, -MARKERS)
+    # ref <- dplyr::filter(data, is.na(REF)) %>% dplyr::select(-REF, -ALT, -MARKERS)
+    alt <- dplyr::filter(data, !is.na(REF)) %>% dplyr::select(-REF, -ALT)
+    ref <- dplyr::filter(data, is.na(REF)) %>% dplyr::select(-REF, -ALT)
+  }#2rows genotypes
+
+  #1-row
+  if ("1row" %in% data.source) {
+    n.ind <- ncol(data) - 4
+    n.snp <- nrow(data)
+
+    # generate allele count from the 1 row dart-----------------------------------
+    alt <- dplyr::select(data, -REF, -ALT) %>%
+      dplyr::mutate_at(.tbl = .,
+                       .vars = strata$INDIVIDUALS,
+                       .funs = switch_allele_count,
+                       dart.group = TRUE,
+                       ref = FALSE
       )
-    , by = "MARKERS") %>%
-    dplyr::group_split(SPLIT_VEC, keep = FALSE) %>%
-    .radiator_parallel_mc(
-      X = .,
-      FUN = generate_geno_v1,
-      mc.cores = parallel.core.temp,
-      data.source = data.source,
-      gt.vcf = gt.vcf,
-      gt.vcf.nuc = gt.vcf.nuc,
-      gt = gt
-    ) %>%
-    dplyr::bind_rows(.) %>%
-    tibble::add_column(.data = ., FILTERS = "whitelist", .before = 1) %>%
-    dplyr::arrange(MARKERS, INDIVIDUALS)
 
-  data <- genotypes.meta %>%
-    dplyr::select(VARIANT_ID, INDIVIDUALS, GT_BIN) %>%
-    data.table::as.data.table(.) %>%
-    data.table::dcast.data.table(
+    ref <- dplyr::select(data, -REF, -ALT) %>%
+      dplyr::mutate_at(.tbl = .,
+                       .vars = strata$INDIVIDUALS,
+                       .funs = switch_allele_count,
+                       dart.group = TRUE,
+                       ref = TRUE
+      )
+  }#1row genotypes
+
+  # Common approach between all---------- -------------------------------------
+  switch <- ref$VARIANT_ID[
+    rowSums(x = dplyr::select(ref, -VARIANT_ID, -MARKERS), na.rm = TRUE) <
+      rowSums(x = dplyr::select(alt, -VARIANT_ID, -MARKERS), na.rm = TRUE)
+    ]
+  n.switch <- length(switch)
+  if (n.switch > 0) {
+    if ("counts" %in% data.source) {
+      count.what <- " read depth"
+    } else {
+      count.what <- ""
+    }
+    message("Number of markers recalibrated based on counts of allele", count.what,": ", n.switch)
+    alt.s <- dplyr::filter(alt, VARIANT_ID %in% switch)
+    alt <- dplyr::filter(alt, !VARIANT_ID %in% switch)
+    ref.s <- dplyr::filter(ref, VARIANT_ID %in% switch)
+    ref <- dplyr::filter(ref, !VARIANT_ID %in% switch)
+
+    alt %<>% dplyr::bind_rows(ref.s) %>%
+      dplyr::arrange(VARIANT_ID)
+    ref %<>% dplyr::bind_rows(alt.s)%>%
+      dplyr::arrange(VARIANT_ID)
+    alt.s <- ref.s <- NULL
+
+    # re-calibrate the markers.meta
+    markers.meta.s <- dplyr::filter(markers.meta, VARIANT_ID %in% switch)
+
+    switch.ref <- dplyr::select(markers.meta.s, dplyr::contains("REF")) %>%
+      dplyr::select(-dplyr::contains("REF_AVG"))
+    colnames(switch.ref) <- stringi::stri_replace_all_regex(
+      str = colnames(switch.ref), pattern = c("_REF", "^REF"),
+      replacement = c("_SNP", "ALT"), vectorize_all = FALSE
+    )
+    switch.alt <- dplyr::select(markers.meta.s, dplyr::contains("snp")) %>%
+      dplyr::select(-dplyr::contains("REF_AVG"))
+    colnames(switch.alt) <- stringi::stri_replace_all_fixed(
+      str = colnames(switch.alt), pattern = "SNP",
+      replacement = "REF", vectorize_all = FALSE
+    )
+    suppressWarnings(
+      markers.meta.s %<>%
+        dplyr::select(-dplyr::one_of(unique(c(colnames(switch.ref), colnames(switch.alt))))) %>%
+        dplyr::bind_cols(switch.ref) %>%
+        dplyr::bind_cols(switch.alt)
+    )
+    switch.alt <- switch.ref <- NULL
+
+    markers.meta %<>%
+      dplyr::filter(!VARIANT_ID %in% switch) %>%
+      dplyr::bind_rows(markers.meta.s) %>%
+      dplyr::arrange(VARIANT_ID)
+    markers.meta.s <- NULL
+  }#End if switching alleles
+
+  if (ref.alt) {
+    alt %<>% dplyr::left_join(
+      dplyr::select(markers.meta, VARIANT_ID, REF, ALT),
+      by = "VARIANT_ID")
+  }
+
+  genotypes.meta <- data.table::as.data.table(alt) %>%
+    data.table::melt.data.table(
       data = .,
-      formula = VARIANT_ID ~ INDIVIDUALS,
-      value.var = "GT_BIN"
-    ) %>%
+      id.vars = want,
+      variable.name = "INDIVIDUALS",
+      value.name = "ALLELE_ALT_DEPTH",
+      variable.factor = FALSE) %>%
     tibble::as_tibble(.) %>%
-    dplyr::arrange(VARIANT_ID) %>%
-    tibble::column_to_rownames(.data = ., var = "VARIANT_ID")
+    dplyr::bind_cols(
+      data.table::as.data.table(ref) %>%
+        data.table::melt.data.table(
+          data = .,
+          id.vars = c("VARIANT_ID", "MARKERS"),
+          variable.name = "INDIVIDUALS",
+          value.name = "ALLELE_REF_DEPTH",
+          variable.factor = FALSE) %>%
+        tibble::as_tibble(.)
+    )
+  ref <- alt <- NULL
+  if (!identical(genotypes.meta$VARIANT_ID, genotypes.meta$VARIANT_ID1)) {
+    rlang::abort("Contact author, DArT tiding problem")
+  } else {
+    genotypes.meta %<>% dplyr::select(-VARIANT_ID1)
+  }
+
+  if (!identical(genotypes.meta$MARKERS, genotypes.meta$MARKERS1)) {
+    rlang::abort("Contact author, DArT tiding problem")
+  } else {
+    genotypes.meta %<>% dplyr::select(-MARKERS1)
+  }
+
+  if (!identical(genotypes.meta$INDIVIDUALS, genotypes.meta$INDIVIDUALS1)) {
+    rlang::abort("Contact author, DArT tiding problem")
+  } else {
+    genotypes.meta %<>% dplyr::select(-INDIVIDUALS1)
+  }
+
+
+  # modify genotypes meta to generate GT_BIN
+  if ("counts" %in% data.source) {
+    genotypes.meta %<>%
+      dplyr::mutate(
+        READ_DEPTH = ALLELE_REF_DEPTH + ALLELE_ALT_DEPTH,
+        GT_BIN = dplyr::case_when(
+          ALLELE_REF_DEPTH > 0L & ALLELE_ALT_DEPTH == 0L ~ 0L,
+          ALLELE_REF_DEPTH > 0L & ALLELE_ALT_DEPTH > 0L ~ 1L,
+          ALLELE_REF_DEPTH == 0L & ALLELE_ALT_DEPTH > 0L ~ 2L
+        )
+      ) %>%
+      dplyr::mutate_at(
+        .tbl = .,
+        .vars = c("READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH"),
+        .funs = replace_by_na, what = 0
+      )
+  } else {
+    genotypes.meta %<>%
+      dplyr::mutate_at(
+        .tbl = .,
+        .vars = "ALLELE_REF_DEPTH",
+        .funs = switch_allele_count,
+        dart.group = FALSE) %>%
+      dplyr::mutate(
+        GT_BIN = ALLELE_REF_DEPTH + ALLELE_ALT_DEPTH,
+        ALLELE_ALT_DEPTH = NULL,
+        ALLELE_REF_DEPTH = NULL
+      )
+  }
+
+
+
+  # genotypes array ----------------------------------------------------------
+  genotypes <- gt2array(
+    gt.bin = genotypes.meta$GT_BIN, n.ind = n.ind, n.snp = n.snp
+  )
+
+  if (gt.vcf) {
+    res %<>%
+      dplyr::mutate(
+        GT_VCF = dplyr::case_when(
+          GT_BIN == 0 ~ "0/0", GT_BIN == 1 ~ "0/1", GT_BIN == 2 ~ "1/1",
+          is.na(GT_BIN) ~ "./.")
+      )
+  }
+  if (gt.vcf.nuc) {
+    res %<>%
+      dplyr::mutate(
+        GT_VCF_NUC = dplyr::case_when(
+          GT_BIN == 0 ~ stringi::stri_join(REF, REF, sep = "/"),
+          GT_BIN == 1 ~ stringi::stri_join(REF, ALT, sep = "/"),
+          GT_BIN == 2 ~ stringi::stri_join(ALT, ALT, sep = "/"),
+          is.na(GT_BIN) ~ "./.")
+      )
+  }
+  if (gt) {
+    res %<>%
+      dplyr::mutate(
+        GT = stringi::stri_replace_all_fixed(
+          str = GT_VCF_NUC,
+          pattern = c("A", "C", "G", "T", "/", ".."),
+          replacement = c("001", "002", "003", "004", "", "000000"),
+          vectorize_all = FALSE)
+      )
+  }
 
   # Generate GDS ---------------------------------------------------------------
+  ## test
+  # biallelic = TRUE
+  # ad = NULL
+  # gl = NULL
+  # open = TRUE
   data <- radiator_gds(
-    genotypes.df = data,
-    geno.coding = geno.coding,
     strata = strata,
-    biallelic = TRUE,
+    genotypes = genotypes,
     markers.meta = markers.meta,
     genotypes.meta = genotypes.meta,
-    dp = dp,
-    filename = filename,
+    biallelic = TRUE,
     data.source = data.source,
+    dp = dp,
+    ad = NULL,
+    geno.coding = geno.coding,
+    filename = filename,
     open = TRUE,
-    verbose = verbose)
+    verbose = verbose
+  )
+
   if (verbose) message("done!")
   return(data)
 }# End dart2gds
-
-# generate_geno----------------------------------------------------------------
-#' @title generate_geno_v1------------------------------------------------------
-#' @description Generate the genotypes and prep for GDS
-#' @rdname generate_geno_v1
-#' @keywords internal
-#' @export
-generate_geno_v1 <- function(
-  x,
-  data.source,
-  gt = FALSE,
-  gt.vcf.nuc = FALSE,
-  gt.vcf = FALSE
-) {
-  message("Generating genotypes and calibrating REF/ALT alleles...")
-  # required func:
-  switch_allele_count <- function(x, data.source) {
-    if ("1row" %in% data.source) {
-      x <- dplyr::case_when(
-        x == 1 ~ 2,
-        x == 2 ~ 1,
-        x == 0 ~ 0
-      )
-    }
-    if ("2rows" %in% data.source) {
-      # here we want count of alternate allele instead...
-      # x <- as.integer(dplyr::recode(.x = as.character(x), "0" = "1", "1" = "0"))
-      # case_when is much faster than recode...
-      x <- dplyr::case_when(
-        x == 0 ~ 1,
-        x == 1 ~ 0
-      )
-    }
-    return(x)
-  }# End switch_allele_count
-
-  #1-row
-  if ("1row" %in% data.source) {
-    # x <- genotypes.meta[[1]]
-    # x <- data
-    res <- x %>%
-      data.table::as.data.table(.) %>%
-      data.table::melt.data.table(
-        data = .,
-        id.vars = c("VARIANT_ID", "MARKERS", "REF", "ALT"),
-        variable.name = "INDIVIDUALS",
-        value.name = "GT_BIN",
-        variable.factor = FALSE) %>%
-      tibble::as_tibble(.) %>%
-      dplyr::mutate(GT_BIN = as.integer(GT_BIN))
-    x <- NULL
-
-
-    res %<>% dplyr::mutate(GT_BIN = switch_allele_count(GT_BIN, data.source = data.source))
-
-    # Counts for allele calibration
-    switch <- dplyr::select(res, MARKERS, GT_BIN) %>%
-      dplyr::filter(!is.na(GT_BIN)) %>%
-      dplyr::count(GT_BIN, MARKERS) %>%
-      dplyr::group_by(MARKERS) %>%
-      dplyr::summarise(
-        REF_COUNT = sum((2 * n[GT_BIN == 0]), n[GT_BIN == 1], na.rm = TRUE),
-        ALT_COUNT = sum((2 * n[GT_BIN == 2]), n[GT_BIN == 1], na.rm = TRUE)
-      ) %>%
-      dplyr::ungroup(.) %>%
-      dplyr::filter(dplyr::if_else(REF_COUNT < ALT_COUNT, TRUE, FALSE)) %$%
-      MARKERS
-
-    n.switch <- length(switch)
-    if (n.switch > 0) {
-      message("Calibration REF/ALT based on counts of alleles: ", n.switch)
-      res <- dplyr::filter(res, !MARKERS %in% switch) %>%
-        dplyr::bind_rows(
-          dplyr::filter(res, MARKERS %in% switch) %>%
-            dplyr::rename(ALT = REF, REF = ALT)
-        )
-    }
-    switch <- NULL
-  }#1row genotypes
-  #2-rows
-  if ("2rows" %in% data.source) {
-    # x <- genotypes.meta[[1]]
-    res <- dplyr::filter(x, !is.na(REF)) %>%
-      data.table::as.data.table(.) %>%
-      data.table::melt.data.table(
-        data = .,
-        id.vars = c("VARIANT_ID", "MARKERS", "REF", "ALT"),
-        variable.name = "INDIVIDUALS",
-        value.name = "A2",
-        variable.factor = FALSE) %>%
-      tibble::as_tibble(.) %>%
-      dplyr::bind_cols(
-        dplyr::filter(x, is.na(REF)) %>%
-          dplyr::select(-REF, -ALT, -VARIANT_ID) %>%
-          data.table::as.data.table(.) %>%
-          data.table::melt.data.table(
-            data = .,
-            id.vars = "MARKERS",
-            variable.name = "INDIVIDUALS",
-            value.name = "A1",
-            variable.factor = FALSE) %>%
-          tibble::as_tibble(.)
-      ) %>%
-      dplyr::mutate_at(.tbl = ., .vars = c("A1", "A2"), .funs = as.integer)
-    x <- NULL
-
-    if (!identical(res$MARKERS, res$MARKERS1)) {
-      rlang::abort("Contact author, DArT tiding problem")
-    } else {
-      res %<>% dplyr::select(-MARKERS1)
-    }
-
-    if (!identical(res$INDIVIDUALS, res$INDIVIDUALS1)) {
-      rlang::abort("Contact author, DArT tiding problem")
-    } else {
-      res %<>% dplyr::select(-INDIVIDUALS1)
-    }
-
-    res %<>% dplyr::mutate(GT_BIN = switch_allele_count(A1, data.source) + A2, A1 = NULL, A2 = NULL)
-
-    # Counts for allele calibration
-    switch <- dplyr::select(res, MARKERS, GT_BIN) %>%
-      dplyr::filter(!is.na(GT_BIN)) %>%
-      dplyr::count(GT_BIN, MARKERS) %>%
-      dplyr::group_by(MARKERS) %>%
-      dplyr::summarise(
-        REF_COUNT = sum((2 * n[GT_BIN == 0]), n[GT_BIN == 1], na.rm = TRUE),
-        ALT_COUNT = sum((2 * n[GT_BIN == 2]), n[GT_BIN == 1], na.rm = TRUE)
-      ) %>%
-      dplyr::ungroup(.) %>%
-      dplyr::filter(dplyr::if_else(REF_COUNT < ALT_COUNT, TRUE, FALSE)) %$%
-      MARKERS
-
-    n.switch <- length(switch)
-    if (n.switch > 0) {
-      message("Calibration REF/ALT based on counts of alleles: ", n.switch)
-      res <- dplyr::filter(res, !MARKERS %in% switch) %>%
-        dplyr::bind_rows(
-          dplyr::filter(res, MARKERS %in% switch) %>%
-            dplyr::rename(ALT = REF, REF = ALT)
-        )
-    }
-    switch <- NULL
-  }#2rows genotypes
-
-  # counts
-  # x <- genotypes.meta[[1]]
-  if ("counts" %in% data.source) {
-    res <- dplyr::filter(x, !is.na(REF)) %>%
-      dplyr::arrange(MARKERS) %>%
-      data.table::as.data.table(.) %>%
-      data.table::melt.data.table(
-        data = .,
-        id.vars = c("VARIANT_ID", "MARKERS", "REF", "ALT"),
-        variable.name = "INDIVIDUALS",
-        value.name = "ALLELE_ALT_DEPTH",
-        variable.factor = FALSE) %>%
-      tibble::as_tibble(.) %>%
-      dplyr::bind_cols(
-        dplyr::filter(x, is.na(REF)) %>%
-          dplyr::select(-REF, -ALT, -VARIANT_ID) %>%
-          data.table::as.data.table(.) %>%
-          data.table::melt.data.table(
-            data = .,
-            id.vars = "MARKERS",
-            variable.name = "INDIVIDUALS",
-            value.name = "ALLELE_REF_DEPTH",
-            variable.factor = FALSE) %>%
-          tibble::as_tibble(.)
-      )
-    x <- NULL
-
-    if (!identical(res$MARKERS, res$MARKERS1)) {
-      rlang::abort("Contact author, DArT tiding problem")
-    } else {
-      res %<>% dplyr::select(-MARKERS1)
-    }
-
-    if (!identical(res$INDIVIDUALS, res$INDIVIDUALS1)) {
-      rlang::abort("Contact author, DArT tiding problem")
-    } else {
-      res %<>% dplyr::select(-INDIVIDUALS1)
-    }
-
-    res %<>%
-      dplyr::mutate_at(
-        .tbl = .,
-        .vars = c("ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH"),
-        .funs = as.numeric
-      ) %>%
-      dplyr::mutate(READ_DEPTH = ALLELE_REF_DEPTH + ALLELE_ALT_DEPTH)
-
-    # Coverage for allele calibration
-    want <- c("ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH")
-    switch <- dplyr::group_by(res, MARKERS) %>%
-      dplyr::summarise_at(.tbl = ., .vars = want, .funs = sum, na.rm = TRUE) %>%
-      dplyr::mutate_at(.tbl = ., .vars = want, .funs = round, digits = 0) %>%
-      dplyr::mutate_at(.tbl = ., .vars = want, .funs = as.integer) %>%
-      dplyr::ungroup(.) %>%
-      dplyr::filter(dplyr::if_else(ALLELE_ALT_DEPTH > ALLELE_REF_DEPTH, TRUE, FALSE)) %$%
-      MARKERS
-    n.switch <- length(switch)
-    if (n.switch > 0) {
-      message("Calibration REF/ALT based on read depth of alleles: ", n.switch)
-      res <- dplyr::filter(res, !MARKERS %in% switch) %>%
-        dplyr::bind_rows(
-          dplyr::filter(res, MARKERS %in% switch) %>%
-            dplyr::rename(
-              ALT = REF,
-              REF = ALT,
-              ALLELE_REF_DEPTH = ALLELE_ALT_DEPTH,
-              ALLELE_ALT_DEPTH = ALLELE_REF_DEPTH
-            )
-        )
-    }
-    switch <- NULL
-
-    # GT_BIN
-    res %<>%
-      dplyr::mutate(
-        GT_BIN = dplyr::case_when(
-          ALLELE_REF_DEPTH > 0 & ALLELE_ALT_DEPTH == 0 ~ 0,
-          ALLELE_REF_DEPTH > 0 & ALLELE_ALT_DEPTH > 0 ~ 1,
-          ALLELE_REF_DEPTH == 0 & ALLELE_ALT_DEPTH > 0 ~ 2
-        )
-      ) %>%
-      dplyr::mutate_at(
-        .tbl = .,
-        .vars = c("READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH"),
-        .funs = replace_by_na, what = 0
-      )
-  }# Counts
-  if (gt.vcf) {
-    res %<>%
-      dplyr::mutate(
-        GT_VCF = dplyr::case_when(
-          GT_BIN == 0 ~ "0/0", GT_BIN == 1 ~ "0/1", GT_BIN == 2 ~ "1/1",
-          is.na(GT_BIN) ~ "./.")
-      )
-  }
-  if (gt.vcf.nuc) {
-    res %<>%
-      dplyr::mutate(
-        GT_VCF_NUC = dplyr::case_when(
-          GT_BIN == 0 ~ stringi::stri_join(REF, REF, sep = "/"),
-          GT_BIN == 1 ~ stringi::stri_join(REF, ALT, sep = "/"),
-          GT_BIN == 2 ~ stringi::stri_join(ALT, ALT, sep = "/"),
-          is.na(GT_BIN) ~ "./.")
-      )
-  }
-  if (gt) {
-    res %<>%
-      dplyr::mutate(
-        GT = stringi::stri_replace_all_fixed(
-          str = GT_VCF_NUC,
-          pattern = c("A", "C", "G", "T", "/", ".."),
-          replacement = c("001", "002", "003", "004", "", "000000"),
-          vectorize_all = FALSE)
-      )
-  }
-
-  return(res)
-}# End generate_geno_v1
-
-#' @title generate_geno
-#' @description Generate the genotypes and prep for GDS
-#' @rdname generate_geno_v2
-#' @keywords internal
-#' @export
-generate_geno_v2 <- function(
-  x,
-  data.source,
-  gt = FALSE,
-  gt.vcf.nuc = FALSE,
-  gt.vcf = FALSE
-) {
-  message("Generating genotypes and calibrating REF/ALT alleles...")
-  # required func:
-  switch_allele_count <- function(x, data.source) {
-    if ("1row" %in% data.source) {
-      x <- dplyr::case_when(
-        x == 1 ~ 2,
-        x == 2 ~ 1,
-        x == 0 ~ 0
-      )
-    }
-    if ("2rows" %in% data.source) {
-      # here we want count of alternate allele instead...
-      # x <- as.integer(dplyr::recode(.x = as.character(x), "0" = "1", "1" = "0"))
-      # case_when is much faster than recode...
-      x <- dplyr::case_when(
-        x == 0 ~ 1,
-        x == 1 ~ 0
-      )
-    }
-    return(x)
-  }# End switch_allele_count
-
-  #1-row
-  if ("1row" %in% data.source) {
-    # x <- genotypes.meta[[1]]
-    # x <- data
-    res <- x %>%
-      data.table::as.data.table(.) %>%
-      data.table::melt.data.table(
-        data = .,
-        id.vars = c("VARIANT_ID", "MARKERS", "REF", "ALT"),
-        variable.name = "INDIVIDUALS",
-        value.name = "GT_BIN",
-        variable.factor = FALSE) %>%
-      tibble::as_tibble(.) %>%
-      dplyr::mutate(GT_BIN = as.integer(GT_BIN))
-    x <- NULL
-
-
-    res %<>% dplyr::mutate(GT_BIN = switch_allele_count(GT_BIN, data.source = data.source))
-
-    # Counts for allele calibration
-    switch <- dplyr::select(res, MARKERS, GT_BIN) %>%
-      dplyr::filter(!is.na(GT_BIN)) %>%
-      dplyr::count(GT_BIN, MARKERS) %>%
-      dplyr::group_by(MARKERS) %>%
-      dplyr::summarise(
-        REF_COUNT = sum((2 * n[GT_BIN == 0]), n[GT_BIN == 1], na.rm = TRUE),
-        ALT_COUNT = sum((2 * n[GT_BIN == 2]), n[GT_BIN == 1], na.rm = TRUE)
-      ) %>%
-      dplyr::ungroup(.) %>%
-      dplyr::filter(dplyr::if_else(REF_COUNT < ALT_COUNT, TRUE, FALSE)) %$%
-      MARKERS
-
-    n.switch <- length(switch)
-    if (n.switch > 0) {
-      message("Calibration REF/ALT based on counts of alleles: ", n.switch)
-      res <- dplyr::filter(res, !MARKERS %in% switch) %>%
-        dplyr::bind_rows(
-          dplyr::filter(res, MARKERS %in% switch) %>%
-            dplyr::rename(ALT = REF, REF = ALT)
-        )
-    }
-    switch <- NULL
-  }#1row genotypes
-  #2-rows
-  if ("2rows" %in% data.source) {
-    # x <- genotypes.meta[[1]]
-    res <- dplyr::filter(x, !is.na(REF)) %>%
-      data.table::as.data.table(.) %>%
-      data.table::melt.data.table(
-        data = .,
-        id.vars = c("VARIANT_ID", "MARKERS", "REF", "ALT"),
-        variable.name = "INDIVIDUALS",
-        value.name = "A2",
-        variable.factor = FALSE) %>%
-      tibble::as_tibble(.) %>%
-      dplyr::bind_cols(
-        dplyr::filter(x, is.na(REF)) %>%
-          dplyr::select(-REF, -ALT, -VARIANT_ID) %>%
-          data.table::as.data.table(.) %>%
-          data.table::melt.data.table(
-            data = .,
-            id.vars = "MARKERS",
-            variable.name = "INDIVIDUALS",
-            value.name = "A1",
-            variable.factor = FALSE) %>%
-          tibble::as_tibble(.)
-      ) %>%
-      dplyr::mutate_at(.tbl = ., .vars = c("A1", "A2"), .funs = as.integer)
-    x <- NULL
-
-    if (!identical(res$MARKERS, res$MARKERS1)) {
-      rlang::abort("Contact author, DArT tiding problem")
-    } else {
-      res %<>% dplyr::select(-MARKERS1)
-    }
-
-    if (!identical(res$INDIVIDUALS, res$INDIVIDUALS1)) {
-      rlang::abort("Contact author, DArT tiding problem")
-    } else {
-      res %<>% dplyr::select(-INDIVIDUALS1)
-    }
-
-    res %<>% dplyr::mutate(GT_BIN = switch_allele_count(A1, data.source) + A2, A1 = NULL, A2 = NULL)
-
-    # Counts for allele calibration
-    switch <- dplyr::select(res, MARKERS, GT_BIN) %>%
-      dplyr::filter(!is.na(GT_BIN)) %>%
-      dplyr::count(GT_BIN, MARKERS) %>%
-      dplyr::group_by(MARKERS) %>%
-      dplyr::summarise(
-        REF_COUNT = sum((2 * n[GT_BIN == 0]), n[GT_BIN == 1], na.rm = TRUE),
-        ALT_COUNT = sum((2 * n[GT_BIN == 2]), n[GT_BIN == 1], na.rm = TRUE)
-      ) %>%
-      dplyr::ungroup(.) %>%
-      dplyr::filter(dplyr::if_else(REF_COUNT < ALT_COUNT, TRUE, FALSE)) %$%
-      MARKERS
-
-    n.switch <- length(switch)
-    if (n.switch > 0) {
-      message("Calibration REF/ALT based on counts of alleles: ", n.switch)
-      res <- dplyr::filter(res, !MARKERS %in% switch) %>%
-        dplyr::bind_rows(
-          dplyr::filter(res, MARKERS %in% switch) %>%
-            dplyr::rename(ALT = REF, REF = ALT)
-        )
-    }
-    switch <- NULL
-  }#2rows genotypes
-
-  # counts
-  # x <- genotypes.meta[[1]]
-  if ("counts" %in% data.source) {
-    res <- dplyr::filter(x, !is.na(REF)) %>%
-      dplyr::arrange(MARKERS) %>%
-      data.table::as.data.table(.) %>%
-      data.table::melt.data.table(
-        data = .,
-        id.vars = c("VARIANT_ID", "MARKERS", "REF", "ALT"),
-        variable.name = "INDIVIDUALS",
-        value.name = "ALLELE_ALT_DEPTH",
-        variable.factor = FALSE) %>%
-      tibble::as_tibble(.) %>%
-      dplyr::bind_cols(
-        dplyr::filter(x, is.na(REF)) %>%
-          dplyr::select(-REF, -ALT, -VARIANT_ID) %>%
-          data.table::as.data.table(.) %>%
-          data.table::melt.data.table(
-            data = .,
-            id.vars = "MARKERS",
-            variable.name = "INDIVIDUALS",
-            value.name = "ALLELE_REF_DEPTH",
-            variable.factor = FALSE) %>%
-          tibble::as_tibble(.)
-      )
-    x <- NULL
-
-    if (!identical(res$MARKERS, res$MARKERS1)) {
-      rlang::abort("Contact author, DArT tiding problem")
-    } else {
-      res %<>% dplyr::select(-MARKERS1)
-    }
-
-    if (!identical(res$INDIVIDUALS, res$INDIVIDUALS1)) {
-      rlang::abort("Contact author, DArT tiding problem")
-    } else {
-      res %<>% dplyr::select(-INDIVIDUALS1)
-    }
-
-    res %<>%
-      dplyr::mutate_at(
-        .tbl = .,
-        .vars = c("ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH"),
-        .funs = as.numeric
-      ) %>%
-      dplyr::mutate(READ_DEPTH = ALLELE_REF_DEPTH + ALLELE_ALT_DEPTH)
-
-    # Coverage for allele calibration
-    want <- c("ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH")
-    switch <- dplyr::group_by(res, MARKERS) %>%
-      dplyr::summarise_at(.tbl = ., .vars = want, .funs = sum, na.rm = TRUE) %>%
-      dplyr::mutate_at(.tbl = ., .vars = want, .funs = round, digits = 0) %>%
-      dplyr::mutate_at(.tbl = ., .vars = want, .funs = as.integer) %>%
-      dplyr::ungroup(.) %>%
-      dplyr::filter(dplyr::if_else(ALLELE_ALT_DEPTH > ALLELE_REF_DEPTH, TRUE, FALSE)) %$%
-      MARKERS
-    n.switch <- length(switch)
-    if (n.switch > 0) {
-      message("Calibration REF/ALT based on read depth of alleles: ", n.switch)
-      res <- dplyr::filter(res, !MARKERS %in% switch) %>%
-        dplyr::bind_rows(
-          dplyr::filter(res, MARKERS %in% switch) %>%
-            dplyr::rename(
-              ALT = REF,
-              REF = ALT,
-              ALLELE_REF_DEPTH = ALLELE_ALT_DEPTH,
-              ALLELE_ALT_DEPTH = ALLELE_REF_DEPTH
-            )
-        )
-    }
-    switch <- NULL
-
-    # GT_BIN
-    res %<>%
-      dplyr::mutate(
-        GT_BIN = dplyr::case_when(
-          ALLELE_REF_DEPTH > 0 & ALLELE_ALT_DEPTH == 0 ~ 0,
-          ALLELE_REF_DEPTH > 0 & ALLELE_ALT_DEPTH > 0 ~ 1,
-          ALLELE_REF_DEPTH == 0 & ALLELE_ALT_DEPTH > 0 ~ 2
-        )
-      ) %>%
-      dplyr::mutate_at(
-        .tbl = .,
-        .vars = c("READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH"),
-        .funs = replace_by_na, what = 0
-      )
-  }# Counts
-  if (gt.vcf) {
-    res %<>%
-      dplyr::mutate(
-        GT_VCF = dplyr::case_when(
-          GT_BIN == 0 ~ "0/0", GT_BIN == 1 ~ "0/1", GT_BIN == 2 ~ "1/1",
-          is.na(GT_BIN) ~ "./.")
-      )
-  }
-  if (gt.vcf.nuc) {
-    res %<>%
-      dplyr::mutate(
-        GT_VCF_NUC = dplyr::case_when(
-          GT_BIN == 0 ~ stringi::stri_join(REF, REF, sep = "/"),
-          GT_BIN == 1 ~ stringi::stri_join(REF, ALT, sep = "/"),
-          GT_BIN == 2 ~ stringi::stri_join(ALT, ALT, sep = "/"),
-          is.na(GT_BIN) ~ "./.")
-      )
-  }
-  if (gt) {
-    res %<>%
-      dplyr::mutate(
-        GT = stringi::stri_replace_all_fixed(
-          str = GT_VCF_NUC,
-          pattern = c("A", "C", "G", "T", "/", ".."),
-          replacement = c("001", "002", "003", "004", "", "000000"),
-          vectorize_all = FALSE)
-      )
-  }
-
-  return(res)
-}# End generate_geno_v2
 
 ## Merge dart-------------------------------------------------------------------
 
@@ -2143,7 +1867,7 @@ clean_dart_colnames <- function(data, strata) {
     dplyr::mutate(
       INDIVIDUALS = dplyr::if_else(
         is.na(INDIVIDUALS), TARGET_ID, INDIVIDUALS)
-      ) %$% INDIVIDUALS
+    ) %$% INDIVIDUALS
 
   # Below generate errors when some id are very close... ID-10 and ID-1
   # colnames(data) <- stringi::stri_replace_all_fixed(

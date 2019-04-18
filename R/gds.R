@@ -6,128 +6,120 @@
 #' @keywords internal
 #' @export
 radiator_gds <- function(
-  genotypes.df,
+  genotypes = NULL,
+  biallelic = TRUE,
+  data.source = NULL,
   geno.coding = c("alt.dos", "ref.dos"),
   strata = NULL,
-  biallelic = TRUE,
   markers.meta = NULL,
   genotypes.meta = NULL,
-  dp = NULL,
-  ad = NULL,
+  dp = NULL, # read depth
+  ad = NULL, # allele depth
+  gl = NULL, # genotype likelihood
   filename = NULL,
-  data.source = NULL,
   open = FALSE,
   verbose = TRUE
 ) {
-  # genotypes.df <- data
+  # genotypes <- data
   message("Generating GDS...")
   if (!biallelic) rlang::abort("Biallelic data required")
 
   # Types of genotypes coding.
-  # Generating a GDS file using SNPRelate requires ref allele dosage... the inverse of plink.
+  # Generating a GDS file using SNPRelate requires ref allele dosage...
+  # the inverse of plink.
   geno.coding <- match.arg(
     arg = geno.coding,
     choices = c("alt.dos", "ref.dos"),
     several.ok = FALSE
   )
 
-  # Filename
+  # Filename -------------------------------------------------------------------
   if (is.null(filename)) {
-    filename.temp.gds <- generate_filename(
-      name.shortcut = filename,
-      extension = "gds.rad")
-    filename.short.gds <- filename.temp.gds$filename.short
-    filename.gds <- filename.temp.gds$filename
-    filename.temp.gds <- NULL
-    radiator.temp.file <- stringi::stri_join(filename.gds, "_radiator_temp")
-  } else {
-    filename.short.gds <- folder_short(filename)
-    radiator.temp.file <- stringi::stri_join(filename, "_radiator_temp")
-    filename.gds <- filename
+    filename <- generate_filename(
+      name.shortcut = filename, extension = "gds.rad"
+    ) %$% filename
   }
 
-  if (rlang::has_name(genotypes.df, "MARKERS")) {
-    variant.id <- as.integer(factor(order(unique(genotypes.df$MARKERS))))
-    n.markers <- length(variant.id)
-  } else {
-    n.markers <- nrow(genotypes.df)
-    variant.id <- rownames(genotypes.df)
-  }
+  temp.file <- stringi::stri_join("radiator_temp_", format(Sys.time(), "%Y%m%d@%H%M"))
 
-  # check if data is long or wide format...
-  if (rlang::has_name(genotypes.df, "MARKERS") &&
-      rlang::has_name(genotypes.df, "INDIVIDUALS")) {
-    genotypes.df %<>%
-      dplyr::ungroup(.) %>%
-      dplyr::select(MARKERS, INDIVIDUALS, GT_BIN) %>%
-      dplyr::arrange(MARKERS, INDIVIDUALS) %>%
-      data.table::as.data.table(.) %>%
-      data.table::dcast.data.table(
-        data = .,
-        formula = MARKERS ~ INDIVIDUALS,
-        value.var = "GT_BIN"
+  #Empty vcf -------------------------------------------------------------------
+  write_vcf(filename = temp.file, source = NULL, empty = TRUE)
+
+  # Empty GDS ------------------------------------------------------------------
+  data.gds <- suppressMessages(
+    suppressWarnings(
+      SeqArray::seqVCF2GDS(
+        vcf.fn = paste0(temp.file, ".vcf"),
+        out.fn = if (length(filename) > 1) {
+          filename$filename
+        } else {
+          filename
+        },
+        parallel = 1L,
+        storage.option = "ZIP_RA",
+        verbose = FALSE
       ) %>%
-      dplyr::arrange(MARKERS) %>%
-      dplyr::select(-MARKERS) %>%
-      data.matrix(.) %>%
-      magrittr::set_rownames(x = ., value = variant.id)
-  }
-
-  if (rlang::has_name(genotypes.df, "MARKERS")) {
-    genotypes.df %<>%
-      dplyr::select(-MARKERS) %>%
-      data.matrix(.) %>%
-      magrittr::set_rownames(x = ., value = variant.id)
-  }
-
-  # Genotypes coding
-  genotypes.df %<>% data.matrix(.)
-
-  # 4 steps for SNPRelate genotype coding (change from ALT to REF dosage)
-  if (geno.coding == "alt.dos") {
-    genotypes.df %<>%
-      magrittr::inset(is.na(.), 3L) %>%
-      magrittr::inset(. == 0L, 9L) %>%
-      magrittr::inset(. == 2L, 0L) %>%
-      magrittr::inset(. == 9L, 2L)
-  }
-  if (geno.coding == "ref.dos") {
-    genotypes.df %<>% magrittr::inset(is.na(.), 3L)
-  }
-
-
-  # STRATA
-  if (is.null(strata)) {
-    strata <- tibble::tibble(
-      STRATA = rep("pop", length(colnames(genotypes.df))),
-      INDIVIDUALS = colnames(genotypes.df)
+        SeqArray::seqOpen(gds.fn = ., readonly = FALSE)
     )
-  } else {
-    if (!rlang::has_name(strata, "POP_ID") && !rlang::has_name(strata, "STRATA")) {
-      strata %<>% dplyr::mutate(STRATA = "pop")
-    }
-    if (!rlang::has_name(strata, "INDIVIDUALS")) {
-      strata %<>% dplyr::mutate(INDIVIDUALS = colnames(genotypes.df))
-    }
+  )
+
+  # Removing VCF file
+  file.remove(paste0(temp.file, ".vcf"))
+  # data.gds <- SeqArray::seqClose(object = data.gds)
+  # data.gds <- SeqArray::seqOpen(gds.fn = filename$filename)
+  # data.gds <- SeqArray::seqOpen(gds.fn = data.gds$)
+
+  # Add genotype node now...
+  genotype.node <- gdsfmt::addfolder.gdsn(node = data.gds,
+                                          visible = TRUE,
+                                          name = "genotype",
+                                          replace = TRUE)
+
+  # radiator skeleton folder ---------------------------------------------------
+  radiator.gds <- radiator_gds_skeleton(data.gds)
+
+  # data.source ----------------------------------------------------------------
+  if (is.null(data.source)) data.source <- "radiator"
+  update_radiator_gds(data.gds, node.name = "data.source", value = data.source)
+
+  # bi- or multi-alllelic VCF --------------------------------------------------
+  update_radiator_gds(data.gds, node.name = "biallelic", value = biallelic)
+
+  # Coverage -------------------------------------------------------------------
+  update_radiator_gds(data.gds, node.name = "DP", value = dp)
+  update_radiator_gds(data.gds, node.name = "AD", value = ad)
+  update_radiator_gds(data.gds, node.name = "GL", value = gl)
+
+  # STRATA ---------------------------------------------------------------------
+  # rare case #1
+  # if (is.null(strata)) {
+  #   strata <- tibble::tibble(
+  #     STRATA = rep("pop", length(colnames(genotypes))),
+  #     INDIVIDUALS = colnames(genotypes)
+  #   )
+  # }
+  # rare case #2
+  if (!rlang::has_name(strata, "POP_ID") && !rlang::has_name(strata, "STRATA")) {
+    strata %<>% dplyr::mutate(STRATA = "pop")
+  }
+  # rare case #3
+  if (!rlang::has_name(strata, "INDIVIDUALS")) {
+    strata %<>% dplyr::mutate(INDIVIDUALS = colnames(genotypes))
   }
 
   strata %<>% dplyr::distinct(INDIVIDUALS, .keep_all = TRUE)
+  n.ind <- nrow(strata)
 
-  # MARKERS META
-  if (is.null(markers.meta)) {
-    if (rlang::has_name(genotypes.df, "MARKERS")) {
-      markers.meta <- unique(genotypes.df$MARKERS)
-    } else{
-      markers.meta <- rownames(genotypes.df)
-    }
-  }
-
+  # MARKERS META ---------------------------------------------------------------
+  # rare case (usually DArT) where some IDs are still in the metadata...
   if (!is.null(strata)) {
     suppressWarnings(
       markers.meta %<>% dplyr::select(-dplyr::one_of(strata$INDIVIDUALS))
-      )
+    )
   }
 
+  # check <- markers.meta$MARKERS
+  # generate all the markers metadata
   markers.meta  %<>%
     dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
     separate_markers(
@@ -136,92 +128,7 @@ radiator_gds <- function(
       markers.meta.all.only = TRUE,
       biallelic = TRUE,
       verbose = verbose)
-
-  if (!rlang::has_name(markers.meta, "VARIANT_ID") &&
-      nrow(markers.meta) == n.markers) {
-    markers.meta %<>% dplyr::mutate(VARIANT_ID = variant.id)
-  }
-
-  if (is.null(data.source)) {
-    if (rlang::has_name(markers.meta, "CALL_RATE") ||
-        rlang::has_name(markers.meta, "REP_AVG")) {
-      data.source <- "dart"
-    } else {
-      data.source <- "radiator"
-    }
-  }
-
-  markers.meta %<>% dplyr::arrange(MARKERS)
-
-  # Check the order of samples in strata and data
-  if (!is.null(strata)) {
-    df.order <- as.character(colnames(genotypes.df))
-
-    # First check that numbers are correct
-    if (length(df.order) != nrow(strata)) {
-      rlang::abort("Problem between strata and data, contact author")
-    }
-
-    # Second check: order
-    strata$INDIVIDUALS <- as.character(strata$INDIVIDUALS)
-
-    if (!identical(df.order, strata$INDIVIDUALS)) {
-      strata %<>%
-        dplyr::mutate(
-          INDIVIDUALS = factor(x = INDIVIDUALS, levels = df.order, ordered = TRUE)
-        ) %>%
-        dplyr::arrange(INDIVIDUALS) %>%
-        dplyr::mutate(INDIVIDUALS = as.character(INDIVIDUALS))
-
-      if (!identical(df.order, strata$INDIVIDUALS)) {
-        rlang::abort("Problem not identical order between strata and data")
-      }
-    }
-    df.order <- NULL
-  }
-  # Generate GDS format
-  # 1. SNPRelate
-  SNPRelate::snpgdsCreateGeno(
-    gds.fn = radiator.temp.file,
-    genmat = genotypes.df,
-    sample.id = strata$INDIVIDUALS,
-    snp.id = markers.meta$VARIANT_ID,
-    snp.rs.id = markers.meta$LOCUS,
-    snp.chromosome = markers.meta$CHROM,
-    snp.position = markers.meta$POS,
-    snp.allele = stringi::stri_join(markers.meta$REF, markers.meta$ALT, sep = "/"),
-    snpfirstdim = TRUE,
-    compress.annotation = "ZIP_RA",
-    compress.geno = ""
-  )
-  # 2. SeqArray
-  data.gds <- SeqArray::seqSNP2GDS(
-    gds.fn = radiator.temp.file,
-    out.fn = filename.gds,
-    storage.option = "ZIP_RA",
-    major.ref = TRUE, verbose = FALSE) %>%
-    SeqArray::seqOpen(gds.fn = ., readonly = FALSE)
-  file.remove(radiator.temp.file)
-
-  # write_vcf(filename = radiator.temp.file, source = NULL, empty = TRUE)
-  # data.gds <- suppressMessages(suppressWarnings(
-  #   SeqArray::seqVCF2GDS(
-  #     vcf.fn = paste0(radiator.temp.file, ".vcf"),
-  #     out.fn = filename.gds,
-  #     parallel = 1,
-  #     storage.option = "ZIP_RA",
-  #     verbose = FALSE)%>%
-  #     SeqArray::seqOpen(gds.fn = ., readonly = FALSE)
-  # ))
-  #   file.remove(paste0(radiator.temp.file, ".vcf"))
-  #   # SeqArray::seqClose(object = data.gds)
-
-
-  # radiator skeleton folder
-  radiator.gds <- radiator_gds_skeleton(data.gds)
-
-  # data.source
-  update_radiator_gds(data.gds, node.name = "data.source", value = data.source)
+  n.markers <- nrow(markers.meta)
 
   # reference genome or de novo
   update_radiator_gds(
@@ -229,17 +136,6 @@ radiator_gds <- function(
     node.name = "reference.genome",
     value = detect_ref_genome(chromosome = markers.meta$CHROM, verbose = FALSE)
   )
-
-  # bi- or multi-alllelic VCF
-  update_radiator_gds(data.gds, node.name = "biallelic", value = biallelic)
-
-  # Add STRATA to GDS
-  update_radiator_gds(data.gds, node.name = "individuals.meta", value = strata)
-  update_radiator_gds(data.gds,
-                      node.name = "sample.id",
-                      value = strata$INDIVIDUALS,
-                      radiator.gds = FALSE,
-                      replace = TRUE)
 
   # ADD MARKERS META to GDS
   update_radiator_gds(data.gds, node.name = "markers.meta", value = markers.meta)
@@ -272,6 +168,195 @@ radiator_gds <- function(
                       radiator.gds = FALSE,
                       replace = TRUE)
 
+  if ("dart" %in% data.source) {
+    annotation <- gdsfmt::index.gdsn(
+      node = data.gds, path = "annotation/info", silent = TRUE)
+    update_radiator_gds(annotation,
+                        node.name = "NS",
+                        value = NULL,
+                        radiator.gds = FALSE,
+                        replace = TRUE)
+  }
+
+  # variant.id <- markers.meta$VARIANT_ID
+  n.snp <- nrow(markers.meta)
+  markers.meta <- NULL
+
+  # Genotypes  -------------------------------------------------------------------
+  # Genotypes coding ---------------------------------------------------------
+  # 4 steps for SNPRelate genotype coding (change from ALT to REF dosage)
+  # Check genotypes dimension...----------------------------------------------
+  # df.order <- as.character(colnames(genotypes))
+  # if (length(dim(genotypes)) != 3 || !is.array(genotypes)) {
+  #     if (!is.null(genotypes)) {
+  #       # transform long -> wide
+  #       if (rlang::has_name(genotypes, "MARKERS") &&
+  #           rlang::has_name(genotypes, "INDIVIDUALS")) {
+  #         genotypes %<>%
+  #           dplyr::ungroup(.) %>%
+  #           dplyr::select(MARKERS, INDIVIDUALS, GT_BIN) %>%
+  #           dplyr::arrange(MARKERS, INDIVIDUALS) %>%
+  #           data.table::as.data.table(.) %>%
+  #           data.table::dcast.data.table(
+  #             data = .,
+  #             formula = MARKERS ~ INDIVIDUALS,
+  #             value.var = "GT_BIN"
+  #           ) %>%
+  #           dplyr::arrange(MARKERS) %>%
+  #           dplyr::select(-MARKERS) %>%
+  #           data.matrix(.) %>%
+  #           magrittr::set_rownames(x = ., value = variant.id)
+  #       }
+  #       if (!rlang::has_name(genotypes, "INDIVIDUALS") && !is.array(genotypes)) {
+  #         suppressWarnings(
+  #           genotypes %<>%
+  #             dplyr::select(-dplyr::one_of(c("MARKERS", "VARIANT_ID"))) %>%
+  #             data.matrix(.) %>%
+  #             magrittr::set_rownames(x = ., value = variant.id)
+  #         )
+  #       }
+  #       # Genotypes coding ---------------------------------------------------------
+  #       # 4 steps for SNPRelate genotype coding (change from ALT to REF dosage)
+  #       if (geno.coding == "ref.dos") {
+  #         genotypes %<>%
+  #           magrittr::inset(is.na(.), 3L) %>%
+  #           magrittr::inset(. == 0L, 9L) %>%
+  #           magrittr::inset(. == 2L, 0L) %>%
+  #           magrittr::inset(. == 9L, 2L)
+  #       }
+  #       #Note to myself: necessary to have "alt.dos" ?
+  #
+  #
+  #   }
+  #
+  # }#End genotypes
+
+  # Check the order of samples in strata and data
+  # if (!is.null(strata)) {
+  #   # First check that numbers are correct
+  #   if (length(df.order) != nrow(strata)) {
+  #     rlang::abort("Problem between strata and data, contact author")
+  #   }
+  #
+  #   # Second check: order
+  #   strata$INDIVIDUALS <- as.character(strata$INDIVIDUALS)
+  #
+  #   if (!identical(df.order, strata$INDIVIDUALS)) {
+  #     strata %<>%
+  #       dplyr::mutate(
+  #         INDIVIDUALS = factor(x = INDIVIDUALS, levels = df.order, ordered = TRUE)
+  #       ) %>%
+  #       dplyr::arrange(INDIVIDUALS) %>%
+  #       dplyr::mutate(INDIVIDUALS = as.character(INDIVIDUALS))
+  #
+  #     if (!identical(df.order, strata$INDIVIDUALS)) {
+  #       rlang::abort("Problem not identical order between strata and data")
+  #     }
+  #   }
+  #   df.order <- NULL
+  # }
+
+  # Add individuals.meta
+  update_radiator_gds(gds = data.gds, node.name = "individuals.meta", value = strata)
+  update_radiator_gds(gds = data.gds,
+                      node.name = "sample.id",
+                      value = strata$INDIVIDUALS,
+                      radiator.gds = FALSE,
+                      replace = TRUE)
+
+  # gdsfmt::readmode.gdsn(node = genotype.node)
+  # gdsfmt::compression.gdsn(node = genotype.node, compress="")
+  suppressWarnings(
+    gdsfmt::add.gdsn(
+      node = genotype.node,
+      name = "data",
+      val = genotypes,
+      # valdim = c(2L, n.ind, 0L),
+      valdim = c(2L, n.ind, n.snp),
+      replace = TRUE,
+      compress = "ZIP_RA",
+      storage = "bit2",
+      closezip = TRUE)
+  )
+  # gdsfmt::readmode.gdsn(node = genotype.node)
+
+  # gdsfmt::compression.gdsn(node = genotype.node, compress="ZIP_RA")
+
+  # data.node <- gdsfmt::index.gdsn(node = genotype.node, path = "data", silent = TRUE)
+  # gdsfmt::write.gdsn(node = genotype.node, val = genotypes)
+
+
+  gdsfmt::put.attr.gdsn(genotype.node, "VariableName", "GT")
+  gdsfmt::put.attr.gdsn(genotype.node, "Description", "Genotype")
+  # gdsfmt::get.attr.gdsn(node = genotype.node)
+  gdsfmt::add.gdsn(
+    node = genotype.node,
+    name = "@data",
+    val = rep(1L, n.snp),
+    replace = TRUE,
+    compress = "ZIP_RA",
+    storage = "uint8",
+    visible = FALSE,
+    closezip = TRUE)
+
+  genotypes <- NULL
+
+  # data.gds <- radiator::write_rad(data = data.gds)
+  # data.gds <- radiator::read_rad(data = data.gds, allow.dup = FALSE)
+  # genotype.node <- gdsfmt::index.gdsn(
+  # node = data.gds, path = "genotype", silent = TRUE)
+  # dim(genotypes)
+  # suppressWarnings(
+
+
+  # gdsfmt::add.gdsn(
+  #   node = genotype.node,
+  #   name = "extra.index",
+  #   val = NULL,
+  #   replace = TRUE,
+  #   compress = "ZIP_RA",
+  #   storage = "bit2",
+  #   closezip = TRUE)
+  #
+  # gdsfmt::add.gdsn(
+  #   node = genotype.node,
+  #   name = "extra",
+  #   val = NULL,
+  #   replace = TRUE,
+  #   compress = "ZIP_RA",
+  #   storage = "uint8",
+  #   visible = FALSE,
+  #   closezip = TRUE)
+  #
+  # phase.node <- gdsfmt::index.gdsn(
+  #   node = data.gds, path = "phase", silent = TRUE)
+  # gdsfmt::add.gdsn(
+  #   node = phase.node,
+  #   name = "data",
+  #   val = array(rep(0L, n.ind*n.snp), c(n.snp, n.ind)),
+  #   replace = TRUE,
+  #   compress = "ZIP_RA",
+  #   storage = "bit1",
+  #   closezip = TRUE)
+  #
+  # gdsfmt::add.gdsn(
+  #   node = phase.node,
+  #   name = "extra.index",
+  #   val = NULL,
+  #   replace = TRUE,
+  #   compress = "ZIP_RA",
+  #   storage = "bit1",
+  #   closezip = TRUE)
+  #
+  # gdsfmt::add.gdsn(
+  #   node = phase.node,
+  #   name = "extra",
+  #   val = NULL,
+  #   replace = TRUE,
+  #   compress = "ZIP_RA",
+  #   storage = "bit1",
+  #   closezip = TRUE)
+
   # Add genotypes metadata
   if (!is.null(genotypes.meta)) {
     update_radiator_gds(
@@ -281,25 +366,11 @@ radiator_gds <- function(
     )
   }
 
-
-  if (!is.null(dp)) {
-    update_radiator_gds(data.gds, node.name = "DP", value = dp)
-  }
-
-  if (!is.null(ad)) {
-    update_radiator_gds(data.gds, node.name = "AD", value = ad)
-  }
-
-  message("File written: ", filename.short.gds)
-
-  if (open) {
-    radiator::write_rad(data = data.gds)
-    data.gds <- radiator::read_rad(data = data.gds$filename)
-    return (data.gds)
-  } else {
-    radiator::write_rad(data = data.gds)
-    return(filename.gds)
-  }
+  genotypes.meta <- NULL
+  message("File written: ", folder_short(filename))
+  data.gds <- radiator::write_rad(data = data.gds)
+  if (open) data.gds <- radiator::read_rad(data = data.gds)
+  return (data.gds)
 } # End rad_gds
 
 # radiator_gds_skeleton---------------------------------------------------------
@@ -355,11 +426,11 @@ update_radiator_gds <- function(
   verbose = FALSE
 ) {
 
-  if (node.name %in% c("AD", "DP")) {
-    if (node.name == "AD") {
-      format <- gdsfmt::index.gdsn(
-        node = gds, path = "annotation/format", silent = TRUE)
+  if (node.name %in% c("AD", "DP", "GL")) {
+    format <- gdsfmt::index.gdsn(
+      node = gds, path = "annotation/format", silent = TRUE)
 
+    if (node.name == "AD") {
       gdsfmt::add.gdsn(
         node = format,
         name = "AD",
@@ -371,9 +442,6 @@ update_radiator_gds <- function(
     }
 
     if (node.name == "DP") {
-      format <- gdsfmt::index.gdsn(
-        node = gds, path = "annotation/format", silent = TRUE)
-
       gdsfmt::add.gdsn(
         node = format,
         name = "DP",
@@ -383,6 +451,17 @@ update_radiator_gds <- function(
         compress = "ZIP_RA",
         closezip = TRUE)
     }
+
+    if (node.name == "GL") {
+      gdsfmt::add.gdsn(
+        node = format,
+        name = "GL",
+        val = value,
+        replace = TRUE,
+        compress = "ZIP_RA",
+        closezip = TRUE)
+    }
+
   } else {
 
     if (radiator.gds) {
@@ -2488,7 +2567,7 @@ write_gds <- function(
   if (ncol(genotypes.meta) == 0) genotypes.meta <- NULL
 
   data.gds <- radiator_gds(
-    genotypes.df = data,
+    genotypes = data,
     strata = strata,
     biallelic = TRUE,
     markers.meta = markers.meta,

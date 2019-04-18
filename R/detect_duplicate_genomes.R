@@ -287,6 +287,10 @@ detect_duplicate_genomes <- function(
     # data.type <- radiator::detect_genomic_format(gds)
 
     if (!data.type %in% c("SeqVarGDSClass", "gds.file")) {
+      if (!"amap" %in% utils::installed.packages()[,"Package"]) {
+        rlang::abort('Please install amap for this option:\n
+                     install.packages("amp")')
+      }
       # Tidy data
       data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
 

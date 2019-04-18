@@ -603,7 +603,7 @@ install.packages("UpSetR")
       )
     notwanted <- c("VARIANT_ID", "CHROM", "LOCUS", "POS", "COL", "REF","ALT")
     gds <- suppressWarnings(gds %>% dplyr::select(-dplyr::one_of(notwanted)))
-    gds <- radiator_gds(genotypes.df = gds, markers.meta = markers.meta, open = TRUE)
+    gds <- radiator_gds(genotypes = gds, markers.meta = markers.meta, open = TRUE)
   }
 
   source <- extract_data_source(gds) # to know if dart data or not...

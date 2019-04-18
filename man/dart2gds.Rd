@@ -5,7 +5,7 @@
 \title{dart2gds}
 \usage{
 dart2gds(data, strata = NULL, markers.meta, filename, dart.format,
-  gt.vcf = NULL, gt.vcf.nuc = NULL, gt = NULL,
+  gt.vcf = FALSE, gt.vcf.nuc = FALSE, gt = FALSE,
   parallel.core = parallel::detectCores() - 1, verbose = TRUE)
 }
 \description{

@@ -242,6 +242,10 @@ generate_markers_metadata <- function(
       data <- NULL
     }
 
+    if (!rlang::has_name(markers.meta, "VARIANT_ID")) {#nrow(markers.meta) == n.markers
+      markers.meta %<>% dplyr::mutate(VARIANT_ID = as.integer(factor(MARKERS)))
+    }
+
     if (!tibble::has_name(markers.meta, "CHROM")) {
       markers.meta %<>% dplyr::mutate(CHROM = rep("CHROM_1", n.markers))
       if (verbose) message("CHROM info missing: 'CHROM_1' integer was added to dataset")

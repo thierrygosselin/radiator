@@ -17,7 +17,7 @@ radiator_pkg_install <- function(
   minimal.install = FALSE
 ) {
   required.pkg = c(
-    "devtools", "tidyverse",
+    "amap", "devtools", "tidyverse",
     "adegenet", "BiocManager", "UpSetR",
     "ggtern", "HardyWeinberg",
     "knitr", "rmarkdown", "stringdist", "quantreg",
@@ -62,7 +62,7 @@ radiator_pkg_install <- function(
   if (!minimal.install) {
     message("\n\nInstalling missing packages...")
     # CRAN packages---------------------------------------------------------------
-    cran.p <- c("BiocManager", "UpSetR", "adegenet", "ggtern",
+    cran.p <- c("amap", "BiocManager", "UpSetR", "adegenet", "ggtern",
                 "HardyWeinberg", "knitr", "rmarkdown", "stringdist", "quantreg")
     cran.p <- purrr::keep(.x = cran.p, cran.p %in% pm)
     purrr::walk(.x = cran.p, .f = utils::install.packages)
