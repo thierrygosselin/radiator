@@ -248,7 +248,7 @@ detect_duplicate_genomes <- function(
         "mixed.genomes.analysis",
         "duplicate.genomes.analysis",
         "subsample.markers"),
-      verbose = verbose
+      verbose = FALSE
     )
 
     # Manage missing arguments ---------------------------------------------------
@@ -263,6 +263,7 @@ detect_duplicate_genomes <- function(
       verbose = verbose)
 
     # write the dots file
+    message("Function call and arguments stored in a file")
     write_rad(
       data = rad.dots,
       path = path.folder,
@@ -818,13 +819,14 @@ detect_duplicate_genomes <- function(
         x = "    Do you need to blacklist individual(s) (y/n): ", answer.opt = c("y", "n"))
 
       if (remove.id == "y") {
-        message("\nRemoving duplicates can be accomplish in 2 ways: using a threshold or manually")
-        message("    manually: the function generate a blacklist that you populate")
-        message("    threshold: more powerful to fully remove duplicates")
+        message("\n2 options to remove duplicates:")
+        message("    1. threshold: using the figure you choose a threshold. It's more powerful to fully remove duplicates")
+        message("    2. manually: the function generate a blacklist that you have to complete")
+        message("    Note: not sure ? Use option 1, it's more powerful to fully remove duplicates")
         remove.dup <- radiator_question(
-          x = "    Do you want to use the threshold method ?(y/n): ", answer.opt = c("y", "n"))
+          x = "    Enter the option to remove duplicates (1/2): ", minmax = c(1,2))
 
-        if (remove.dup == "n") {
+        if (remove.dup == 2) {
           readr::write_tsv(
             x = tibble::tibble(INDIVIDUALS = as.character()),
             path = file.path(path.folder, "blacklist.id.similar.tsv"),
@@ -867,14 +869,16 @@ detect_duplicate_genomes <- function(
           }
           dup.threshold <- radiator_question(
             x = "\nEnter the threshold to remove duplicates: (between 0 and 1)", minmax = c(0, 1))
-          message("\nNow decide how to remove duplicates involved in pairs from different pop/group:")
-          message("    y: remove both samples in the pair")
-          message("    n: removes the sample in the pair with more missing genotypes")
+
+          message("\n2 options to remove duplicates involved in pairs from different strata/group:")
+          message("    (the black points on the figure, above your threshold)")
+          message("    1: blacklist both samples in the pair")
+          message("    2: blacklist only 1 sample, based on missingness")
           diff.pop.remove <- radiator_question(
-            x = "    Enter y/n: ", answer.opt = c("y", "n"))
+            x = "    Enter 1/2: ", minmax = c(1, 2))
 
 
-          if (diff.pop.remove == "n") {
+          if (diff.pop.remove == 2) {
             diff.pop.remove <- FALSE
           } else {
             diff.pop.remove <- TRUE

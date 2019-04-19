@@ -28,8 +28,6 @@
 
 #' @export
 #' @rdname betas_estimator
-
-#' @import ggplot2
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 betas_estimator <- function(

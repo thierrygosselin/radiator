@@ -2,7 +2,7 @@ Package: radiator
 Type: Package
 Title: RADseq Data Exploration, Manipulation and Visualization using R
 Version: 1.0.0
-Date: 2019-04-12
+Date: 2019-04-19
 Encoding: UTF-8
 Authors@R: c(
   person("Thierry", "Gosselin", email = "thierrygosselin@icloud.com", role = c("aut", "cre")),
@@ -16,22 +16,23 @@ Depends:
 biocViews:
 Imports:
     data.table,
+    dplyr,
     fst (>= 0.8.4),
+    ggtern,
+    HardyWeinberg,
+    magrittr,
     pbmcapply,
     tidyverse,
-    SeqVarTools
+    SeqVarTools,
+    UpSetR
 Suggests:
     adegenet,
     amap,
     BiocManager,
     devtools,
-    dplyr,
     gdsfmt,
     ggplot2,
-    ggtern,
-    HardyWeinberg,
     knitr,
-    magrittr,
     methods,
     quantreg,
     parallel,
@@ -46,7 +47,6 @@ Suggests:
     stringi,
     tibble,
     tidyr,
-    UpSetR,
     utils
 License: GPL (>=2)
 LazyLoad: yes

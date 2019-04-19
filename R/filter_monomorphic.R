@@ -88,7 +88,7 @@ filter_monomorphic <- function(
       args.list = as.list(environment()),
       dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
       keepers = c("path.folder", "parameters", "internal"),
-      verbose = verbose
+      verbose = FALSE
     )
 
     # Folders---------------------------------------------------------------------
@@ -107,6 +107,7 @@ filter_monomorphic <- function(
         "radiator_filter_monomorphic_args_", file.date, ".tsv"),
       tsv = TRUE,
       internal = internal,
+      write.message = "Function call and arguments stored in: ",
       verbose = verbose
     )
     # Detect format --------------------------------------------------------------

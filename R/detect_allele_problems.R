@@ -255,7 +255,7 @@ detect_allele_problems <- function(
     ggplot2::geom_bar(stat = "count", na.rm = TRUE) + #breaks = c(1:10), binwidth = 0.5, bins = 10) +
     ggplot2::labs(x = "Alternate allele depth (read number)") +
     ggplot2::labs(y = "Distribution (marker number)") +
-    ggplot2::scale_x_continuous(name = waiver(), breaks = 1:10, labels = 1:10) +
+    ggplot2::scale_x_continuous(name = ggplot2::waiver(), breaks = 1:10, labels = 1:10) +
     ggplot2::theme(
       axis.title.x = ggplot2::element_text(size = 12, face = "bold"),
       axis.title.y = ggplot2::element_text(size = 12, face = "bold"),

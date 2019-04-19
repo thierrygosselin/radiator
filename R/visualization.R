@@ -573,7 +573,7 @@ plot_density_distribution_maf <- function(data, maf.group, aes.colour = ggplot2:
   ..scaled.. <- NULL #get rid of R CMD check note
 
   if (is.vector(data)) {
-    data <- read_tsv(data, col_names = T)
+    data <- readr::read_tsv(data, col_names = T)
   } else {
     data <- data
   }

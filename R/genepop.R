@@ -441,13 +441,6 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
 
 #' @export
 #' @rdname write_genepop
-
-#' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join
-#' @importFrom stringi stri_join stri_replace_all_fixed stri_extract_all_fixed stri_sub stri_pad_left
-#' @importFrom purrr flatten_chr
-#' @importFrom tidyr spread gather
-#' @importFrom readr write_delim
-
 #' @references Raymond M. & Rousset F, (1995).
 #' GENEPOP (version 1.2): population genetics software for exact tests
 #' and ecumenicism.
@@ -501,6 +494,10 @@ write_genepop <- function(
 
   if (rlang::has_name(data, "STRATA") && !rlang::has_name(data, "POP_ID")) {
     data %<>% dplyr::rename(POP_ID = STRATA)
+  }
+
+  if (!rlang::has_name(data, "GT")) {
+    data <- calibrate_alleles(data = data, verbose = FALSE) %$% input
   }
 
   data %<>% dplyr::select(POP_ID, INDIVIDUALS, MARKERS, GT)
@@ -557,7 +554,7 @@ write_genepop <- function(
 
   # genepop construction
   pop <- data$POP_ID # Create a population vector
-  data <- split(select(.data = data, -POP_ID), pop) # split genepop by populations
+  data <- split(dplyr::select(.data = data, -POP_ID), pop) # split genepop by populations
   filename.connection <- file(filename, "w") # open the connection to the file
   writeLines(text = genepop.header, con = filename.connection, sep = "\n") # write the genepop header
   if (markers.line) { # write the markers on a single line

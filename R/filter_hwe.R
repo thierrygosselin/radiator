@@ -307,7 +307,7 @@ filter_hwe <- function(
       args.list = as.list(environment()),
       dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
       keepers = c("path.folder", "parameters", "internal"),
-      verbose = verbose
+      verbose = FALSE
     )
 
     # Checking for missing and/or default arguments ------------------------------
@@ -338,6 +338,7 @@ filter_hwe <- function(
       filename = stringi::stri_join("radiator_filter_hwe_args_", file.date, ".tsv"),
       tsv = TRUE,
       internal = internal,
+      write.message = "Function call and arguments stored in: ",
       verbose = verbose
     )
 
@@ -774,17 +775,15 @@ filter_hwe <- function(
         while (no.file) {
           if (interactive.filter) {
             message("\nChoosing the final filtered dataset")
-            message("   the tidy data object associated with this filter...")
             midp.threshold <- radiator_question(
-              x = "   choose the mid p-value threshold (one of: *, **, ***, **** or *****)", answer.opt = c("*", "**", "***", "****", "*****"))
-
+              x = "   select the mid p-value threshold (5 options):\n1: 0.05 *\n2. 0.01 **\n3. 0.001 ***\n4.0.0001 ****\n5.0.00001 *****", minmax = c(1, 2, 3, 4, 5))
           }
           midp.threshold <- dplyr::case_when(
-            midp.threshold == "*****" ~ 0.00001,
-            midp.threshold == "****" ~ 0.0001,
-            midp.threshold == "***" ~ 0.001,
-            midp.threshold == "**" ~ 0.01,
-            midp.threshold == "*" ~ 0.05) %>%
+            midp.threshold == 5 ~ 0.00001,
+            midp.threshold == 4 ~ 0.0001,
+            midp.threshold == 3 ~ 0.001,
+            midp.threshold == 2 ~ 0.01,
+            midp.threshold == 1 ~ 0.05) %>%
             format(., scientific = FALSE)
 
           # path.folder <- yft.hw$path.folder

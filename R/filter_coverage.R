@@ -135,7 +135,7 @@ filter_coverage <- function(
       args.list = as.list(environment()),
       dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
       keepers = c("path.folder", "parameters", "force.stats", "internal"),
-      verbose = verbose
+      verbose = FALSE
     )
 
     # Checking for missing and/or default arguments ----------------------------
@@ -156,6 +156,7 @@ filter_coverage <- function(
       filename = stringi::stri_join("radiator_filter_coverage_args_", file.date, ".tsv"),
       tsv = TRUE,
       internal = internal,
+      write.message = "Function call and arguments stored in: ",
       verbose = verbose
     )
 

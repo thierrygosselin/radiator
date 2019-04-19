@@ -209,7 +209,7 @@ filter_ld <- function(
     keepers = c("long.ld.missing", "ld.method", "ld.figures",
                 "subsample.markers.stats",
                 "path.folder", "parameters", "internal"),
-    verbose = verbose
+    verbose = FALSE
   )
 
   # Checking for missing and/or default arguments ------------------------------
@@ -229,6 +229,7 @@ filter_ld <- function(
     path = path.folder,
     filename = stringi::stri_join("radiator_filter_ld_args_", file.date, ".tsv"),
     tsv = TRUE,
+    write.message = "Function call and arguments stored in: ",
     internal = internal,
     verbose = verbose
   )
@@ -338,44 +339,44 @@ filter_ld <- function(
       if (interactive.filter) {
         if (verbose) message("\nStep 1. Short distance LD threshold selection")
         if (verbose) message("the goal is to keep only 1 SNP per read/locus")
-        short.ld.fig <- tibble::tibble(
-          GROUP = c("read", "read", "read", "first", "middle", "last"),
-          SNP = c(15, 60, 90, 15, 60, 90)) %>%
-          dplyr::mutate(
-            GROUP = factor(
-              x = GROUP,
-              levels = c("last", "middle", "first", "read"),
-              ordered = TRUE)
-          ) %>%
-          ggplot2::ggplot(
-            data = .,
-            ggplot2::aes(x = SNP, y = GROUP, colour = GROUP)) +
-          ggplot2::geom_point(size = 5, shape = 19) +
-          ggplot2::geom_segment(ggplot2::aes(x = 1, y = 1, xend = 100, yend = 1), colour = "black", size = 0.3) +
-          ggplot2::geom_segment(ggplot2::aes(x = 1, y = 2, xend = 100, yend = 2), colour = "black", size = 0.3) +
-          ggplot2::geom_segment(ggplot2::aes(x = 1, y = 3, xend = 100, yend = 3), colour = "black", size = 0.3) +
-          ggplot2::geom_segment(ggplot2::aes(x = 1, y = 4, xend = 100, yend = 4), colour = "black", size = 1) +
-          ggplot2::scale_x_continuous(name = "Read length (bp)",
-                                      breaks = 1:100, limits = c(1, 100)) +
-          ggplot2::labs(
-            title = "RAD short linkage disequilibrium filtering options",
-            y = "filter.short.ld values") +
-          ggplot2::theme_minimal() +
-          ggplot2::theme(
-            # panel.grid.major.x = ggplot2::element_blank(),
-            plot.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold", hjust = 0.5),
-            # axis.line.x = ggplot2::element_line(colour = "black", size = 2),
-            axis.title.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-            axis.text.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold", hjust = 1, vjust = 0.5, angle = 90),
-            axis.title.y = ggplot2::element_blank(),
-            # axis.title.y = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
-            # axis.ticks.y = ggplot2::element_blank(),
-            panel.grid.minor.x = ggplot2::element_blank(),
-            panel.grid.major.y = ggplot2::element_blank(),
-            legend.position = "none"
-            # axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
-          )
-        print(short.ld.fig)
+        # short.ld.fig <- tibble::tibble(
+        #   GROUP = c("read", "read", "read", "first", "middle", "last"),
+        #   SNP = c(15, 60, 90, 15, 60, 90)) %>%
+        #   dplyr::mutate(
+        #     GROUP = factor(
+        #       x = GROUP,
+        #       levels = c("last", "middle", "first", "read"),
+        #       ordered = TRUE)
+        #   ) %>%
+        #   ggplot2::ggplot(
+        #     data = .,
+        #     ggplot2::aes(x = SNP, y = GROUP, colour = GROUP)) +
+        #   ggplot2::geom_point(size = 5, shape = 19) +
+        #   ggplot2::geom_segment(ggplot2::aes(x = 1, y = 1, xend = 100, yend = 1), colour = "black", size = 0.3) +
+        #   ggplot2::geom_segment(ggplot2::aes(x = 1, y = 2, xend = 100, yend = 2), colour = "black", size = 0.3) +
+        #   ggplot2::geom_segment(ggplot2::aes(x = 1, y = 3, xend = 100, yend = 3), colour = "black", size = 0.3) +
+        #   ggplot2::geom_segment(ggplot2::aes(x = 1, y = 4, xend = 100, yend = 4), colour = "black", size = 1) +
+        #   ggplot2::scale_x_continuous(name = "Read length (bp)",
+        #                               breaks = 1:100, limits = c(1, 100)) +
+        #   ggplot2::labs(
+        #     title = "RAD short linkage disequilibrium filtering options",
+        #     y = "filter.short.ld values") +
+        #   ggplot2::theme_minimal() +
+        #   ggplot2::theme(
+        #     # panel.grid.major.x = ggplot2::element_blank(),
+        #     plot.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold", hjust = 0.5),
+        #     # axis.line.x = ggplot2::element_line(colour = "black", size = 2),
+        #     axis.title.x = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
+        #     axis.text.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold", hjust = 1, vjust = 0.5, angle = 90),
+        #     axis.title.y = ggplot2::element_blank(),
+        #     # axis.title.y = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold"),
+        #     # axis.ticks.y = ggplot2::element_blank(),
+        #     panel.grid.minor.x = ggplot2::element_blank(),
+        #     panel.grid.major.y = ggplot2::element_blank(),
+        #     legend.position = "none"
+        #     # axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
+        #   )
+        # print(short.ld.fig)
       }
       # Short LD threshold selection -----------------------------------------
       if (interactive.filter) {

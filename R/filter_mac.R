@@ -199,7 +199,7 @@ filter_mac <- function(
       args.list = as.list(environment()),
       dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
       keepers = c("path.folder", "parameters", "internal"),
-      verbose = verbose
+      verbose = FALSE
     )
 
     # Checking for missing and/or default arguments ------------------------------
@@ -220,6 +220,7 @@ filter_mac <- function(
       filename = stringi::stri_join("radiator_filter_mac_args_", file.date, ".tsv"),
       tsv = TRUE,
       internal = internal,
+      write.message = "Function call and arguments stored in: ",
       verbose = verbose
     )
 

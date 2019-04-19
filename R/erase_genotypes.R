@@ -30,13 +30,11 @@
 #' filename with "_erased_geno" is appended.
 #' @rdname erase_genotypes
 #' @export
-#' @import dplyr
-#' @import readr
 
 erase_genotypes <- function(tidy.vcf.file, haplotypes.file, read.depth.threshold, allele.depth.threshold, allele.imbalance.threshold, filename) {
 
   if (is.vector(tidy.vcf.file) == "TRUE") {
-    tidy.vcf.file <- read_tsv(tidy.vcf.file, col_names = T)
+    tidy.vcf.file <- readr::read_tsv(tidy.vcf.file, col_names = T)
     message("Using the tidy vcf file in your directory")
   } else {
     tidy.vcf.file <- tidy.vcf.file
@@ -44,14 +42,14 @@ erase_genotypes <- function(tidy.vcf.file, haplotypes.file, read.depth.threshold
   }
 
   blacklist <- tidy.vcf.file %>%
-    filter(GT != "./." & GT != "0/0" & GT != "1/1" ) %>%
-    filter(READ_DEPTH == read.depth.threshold) %>%
-    filter(ALLELE_REF_DEPTH < allele.depth.threshold | ALLELE_ALT_DEPTH < allele.depth.threshold) %>%
-    filter(ALLELE_COVERAGE_RATIO < -allele.imbalance.threshold | ALLELE_COVERAGE_RATIO > allele.imbalance.threshold) %>%
-    select(LOCUS, POS, POP_ID, INDIVIDUALS) %>%
-    arrange(LOCUS, POS, POP_ID, INDIVIDUALS)
+    dplyr::filter(GT != "./." & GT != "0/0" & GT != "1/1" ) %>%
+    dplyr::filter(READ_DEPTH == read.depth.threshold) %>%
+    dplyr::filter(ALLELE_REF_DEPTH < allele.depth.threshold | ALLELE_ALT_DEPTH < allele.depth.threshold) %>%
+    dplyr::filter(ALLELE_COVERAGE_RATIO < -allele.imbalance.threshold | ALLELE_COVERAGE_RATIO > allele.imbalance.threshold) %>%
+    dplyr::select(LOCUS, POS, POP_ID, INDIVIDUALS) %>%
+    dplyr::arrange(LOCUS, POS, POP_ID, INDIVIDUALS)
 
-  write_tsv(x = blacklist, path = "blacklist.genotypes.erased.txt", append = FALSE, col_names = T)
+  readr::write_tsv(x = blacklist, path = "blacklist.genotypes.erased.txt", append = FALSE, col_names = T)
 
   # interesting stats.
   erased.genotype.number <- length(blacklist$INDIVIDUALS)
@@ -66,7 +64,7 @@ erase_genotypes <- function(tidy.vcf.file, haplotypes.file, read.depth.threshold
 
   tidy.vcf.file <- suppressWarnings(
     tidy.vcf.file %>%
-      mutate(
+      dplyr::mutate(
         GT = ifelse(LOCUS %in% blacklist$LOCUS & POS %in% blacklist$POS & INDIVIDUALS %in% blacklist$INDIVIDUALS, "./.", GT),
         READ_DEPTH = as.numeric(ifelse(LOCUS %in% blacklist$LOCUS & POS %in% blacklist$POS & INDIVIDUALS %in% blacklist$INDIVIDUALS, "NA", READ_DEPTH))
       )
@@ -76,7 +74,7 @@ erase_genotypes <- function(tidy.vcf.file, haplotypes.file, read.depth.threshold
 
   tidy.vcf.file <- suppressWarnings(
     tidy.vcf.file %>%
-      mutate(
+      dplyr::mutate(
         ALLELE_REF_DEPTH = as.numeric(ifelse(LOCUS %in% blacklist$LOCUS & POS %in% blacklist$POS & INDIVIDUALS %in% blacklist$INDIVIDUALS, "NA", ALLELE_REF_DEPTH)),
         ALLELE_ALT_DEPTH = as.numeric(ifelse(LOCUS %in% blacklist$LOCUS & POS %in% blacklist$POS & INDIVIDUALS %in% blacklist$INDIVIDUALS, "NA", ALLELE_ALT_DEPTH))
       )
@@ -86,7 +84,7 @@ erase_genotypes <- function(tidy.vcf.file, haplotypes.file, read.depth.threshold
 
   tidy.vcf.file <- suppressWarnings(
     tidy.vcf.file %>%
-      mutate(
+      dplyr::mutate(
         ALLELE_COVERAGE_RATIO = as.numeric(ifelse(LOCUS %in% blacklist$LOCUS & POS %in% blacklist$POS & INDIVIDUALS %in% blacklist$INDIVIDUALS, "NA", ALLELE_COVERAGE_RATIO)),
         GL = as.numeric(ifelse(LOCUS %in% blacklist$LOCUS & POS %in% blacklist$POS & INDIVIDUALS %in% blacklist$INDIVIDUALS, "NA", GL))
       )
@@ -95,7 +93,7 @@ erase_genotypes <- function(tidy.vcf.file, haplotypes.file, read.depth.threshold
     message("Saving the tidy vcf not selected")
   } else {
     message("Writing the file to your working directory, this may take some time...")
-    write_tsv(x = tidy.vcf.file, path = filename, append = FALSE, col_names = TRUE)
+    readr::write_tsv(x = tidy.vcf.file, path = filename, append = FALSE, col_names = TRUE)
   }
 
   # Haplotype file -------------------------------------------------------------
@@ -103,25 +101,25 @@ erase_genotypes <- function(tidy.vcf.file, haplotypes.file, read.depth.threshold
     message("STACKS haplotypes file not provided")
   } else {
     message("Using the STACKS haplotypes file in your directory")
-    haplo <- read_tsv(haplotypes.file, col_names = T) %>%
-      rename(LOCUS =`Catalog ID`)
+    haplo <- readr::read_tsv(haplotypes.file, col_names = TRUE) %>%
+      dplyr::rename(LOCUS =`Catalog ID`)
 
     # haplotypes file preparation
     haplo.prep <- haplo %>%
       tidyr::gather(INDIVIDUALS, HAPLOTYPES, -c(LOCUS, Cnt)) %>%
-      mutate(INDIVIDUALS = as.character(INDIVIDUALS))
+      dplyr::mutate(INDIVIDUALS = as.character(INDIVIDUALS))
 
     # consensus
     consensus.pop <- haplo.prep %>%
-      mutate(CONSENSUS = stringi::stri_count_fixed(HAPLOTYPES, "consensus")) %>%
-      group_by(LOCUS) %>%
-      summarise(CONSENSUS_MAX = max(CONSENSUS)) %>%
-      filter(CONSENSUS_MAX > 0) %>%
-      select(LOCUS)
+      dplyr::mutate(CONSENSUS = stringi::stri_count_fixed(HAPLOTYPES, "consensus")) %>%
+      dplyr::group_by(LOCUS) %>%
+      dplyr::summarise(CONSENSUS_MAX = max(CONSENSUS)) %>%
+      dplyr::filter(CONSENSUS_MAX > 0) %>%
+      dplyr::select(LOCUS)
 
     haplo.number <- haplo.prep %>%
-      filter(HAPLOTYPES != "-") %>%
-      select(HAPLOTYPES)
+      dplyr::filter(HAPLOTYPES != "-") %>%
+      dplyr::select(HAPLOTYPES)
 
     total.genotype.number.haplo <- length(haplo.number$HAPLOTYPES)
     percent.haplo <- paste(round(((erased.genotype.number/total.genotype.number.haplo)*100), 2), "%", sep = " ")
@@ -131,26 +129,26 @@ erase_genotypes <- function(tidy.vcf.file, haplotypes.file, read.depth.threshold
 
     # Erasing genotype with the blacklist
     erase <- blacklist %>%
-      select(LOCUS, INDIVIDUALS) %>%
-      left_join(haplo.prep, by = c("LOCUS", "INDIVIDUALS")) %>%
-      mutate(HAPLOTYPES = rep("-", n()))
+      dplyr::select(LOCUS, INDIVIDUALS) %>%
+      dplyr::left_join(haplo.prep, by = c("LOCUS", "INDIVIDUALS")) %>%
+      dplyr::mutate(HAPLOTYPES = rep("-", n()))
 
     keep <- haplo.prep %>%
-      anti_join(consensus.pop, by = "LOCUS") %>%
-      anti_join(
+      dplyr::anti_join(consensus.pop, by = "LOCUS") %>%
+      dplyr::anti_join(
         blacklist %>%
-          select(LOCUS, INDIVIDUALS),
+          dplyr::select(LOCUS, INDIVIDUALS),
         by = c("LOCUS", "INDIVIDUALS")
       )
 
-    haplo.erased <- bind_rows(erase, keep) %>%
-      arrange(LOCUS, INDIVIDUALS) %>%
-      rename(`Catalog ID` = LOCUS) %>%
+    haplo.erased <- dplyr::bind_rows(erase, keep) %>%
+      dplyr::arrange(LOCUS, INDIVIDUALS) %>%
+      dplyr::rename(`Catalog ID` = LOCUS) %>%
       tidyr::spread(INDIVIDUALS, HAPLOTYPES)
 
     haplo.erase.filename <- stringi::stri_replace_all_fixed(str = haplotypes.file, pattern = ".tsv", replacement = "_erased_geno.tsv", vectorize_all = FALSE)
     message("Saving the modified haplotypes file in your working directory")
-    write_tsv(haplo.erased, haplo.erase.filename, append = FALSE, col_names = TRUE)
+    readr::write_tsv(haplo.erased, haplo.erase.filename, append = FALSE, col_names = TRUE)
   }
 
   res <- list()

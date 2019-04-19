@@ -371,7 +371,7 @@ genomic_converter <- function(
                    "pred.mean.matching", "num.tree",
                    "pop.levels", "pop.labels", "pop.select"
                    ),
-    verbose = verbose
+    verbose = FALSE
   )
 
   # Checking for missing and/or default arguments ------------------------------
@@ -409,6 +409,7 @@ genomic_converter <- function(
     filename = stringi::stri_join("radiator_genomic_converter_args_", file.date, ".tsv"),
     tsv = TRUE,
     internal = internal,
+    write.message = "Function call and arguments stored in: ",
     verbose = verbose
   )
 
@@ -799,12 +800,7 @@ genomic_converter <- function(
   # stockr --------------------------------------------------------------------
   if ("stockr" %in% output) {
     if (verbose) message("Generating stockR file")
-    res$stockr <- radiator::write_stockr(data = input)
-
-    # if (!is.null(imputation.method)) {
-    #   if (verbose) message("Generating stockR file WITH imputations")
-    #   res$stockr.imputed <- radiator::write_stockr(data = input.imp)
-    # }
+    res$stockr <- radiator::write_stockr(data = input, verbose = verbose)
   }
 
   # structure --------------------------------------------------------------------

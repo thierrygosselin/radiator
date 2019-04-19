@@ -33,13 +33,6 @@
 
 #' @export
 #' @rdname tidy_genind
-
-#' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join
-#' @importFrom stringi stri_replace_all_fixed stri_replace_all_regex stri_join
-# @importFrom adegenet indNames
-#' @importFrom tibble rownames_to_column data_frame
-#' @importFrom tidyr gather unite
-
 #' @references Jombart T (2008) adegenet: a R package for the multivariate
 #' analysis of genetic markers. Bioinformatics, 24, 1403-1405.
 #' @references Jombart T, Ahmed I (2011) adegenet 1.3-1:
@@ -82,7 +75,7 @@ tidy_genind <- function(
     alt.alleles <- tibble::tibble(
       MARKERS_ALLELES = colnames(data@tab),
       COUNT = colSums(x = data@tab, na.rm = TRUE)
-      ) %>%
+    ) %>%
       dplyr::mutate(
         MARKERS = stringi::stri_extract_first_regex(str = colnames(data@tab), pattern = "^[^.]+"),
         ALLELES = stringi::stri_extract_last_regex(str = colnames(data@tab), pattern = "(?<=\\.).*")
@@ -342,10 +335,10 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
             data = .,
             id.vars = c("INDIVIDUALS", "POP_ID", "MARKERS", "REF", "ALT"),
             variable.name = "ALLELES",
+            measure.vars = c("A1", "A2"),
             value.name = "n"
           ) %>%
           tibble::as_tibble(.) %>%
-          # tidyr::gather(data = ., key = ALLELES, value = n, -c(INDIVIDUALS, POP_ID, MARKERS)) %>%
           dplyr::mutate(
             ALLELES = dplyr::case_when(
               ALLELES == "A1" ~ REF,
@@ -359,12 +352,10 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
           data.table::dcast.data.table(
             data = .,
             formula = POP_ID + INDIVIDUALS ~ MARKERS_ALLELES,
-            value.var = "n"
+            value.var = "n",
+            fun.aggregate = length
           ) %>%
           tibble::as_tibble(.) %>%
-          # dplyr::group_by(POP_ID, INDIVIDUALS) %>%
-          # tidyr::spread(data =., key = MARKERS_ALLELES, value = n) %>%
-          # dplyr::ungroup(.) %>%
           dplyr::mutate(POP_ID = factor(as.character(POP_ID), levels = pop.levels)) %>%# xvalDapc doesn't accept pop as ordered factor
           dplyr::arrange(POP_ID, INDIVIDUALS))
     } else {

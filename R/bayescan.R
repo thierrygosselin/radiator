@@ -568,7 +568,6 @@ run_bayescan <- function(
 #' @rdname subsampling_data
 #' @export
 #' @keywords internal
-#' @importFrom dplyr mutate group_by ungroup arrange sample_n sample_frac
 
 
 subsampling_data <- function(
@@ -618,7 +617,6 @@ subsampling_data <- function(
 #' @rdname bayescan_one
 #' @export
 #' @keywords internal
-#' @importFrom dplyr mutate group_by ungroup arrange sample_n sample_frac
 
 
 bayescan_one <- function(
@@ -1003,7 +1001,6 @@ bayescan_one <- function(
 #' @rdname plot_bayescan
 #' @export
 #' @keywords internal
-#' @importFrom dplyr mutate group_by ungroup arrange sample_n sample_frac
 
 plot_bayescan <- function(data){
   plot <- ggplot2::ggplot(data, ggplot2::aes(x = LOG10_Q, y = FST)) +
@@ -1050,13 +1047,6 @@ plot_bayescan <- function(data){
 
 #' @export
 #' @rdname write_bayescan
-#' @importFrom dplyr select distinct n_distinct group_by ungroup rename arrange tally filter if_else mutate summarise left_join inner_join right_join anti_join semi_join full_join
-#' @importFrom stringi stri_join stri_replace_all_fixed stri_sub
-#' @importFrom purrr walk
-#' @importFrom tidyr spread unite complete nesting separate
-#' @importFrom readr write_delim write_tsv write_file
-#' @importFrom parallel detectCores
-#' @importFrom utils write.table
 
 #' @references Foll, M and OE Gaggiotti (2008) A genome scan method to identify
 #' selected loci appropriate

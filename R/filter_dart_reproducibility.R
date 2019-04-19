@@ -103,7 +103,7 @@ filter_dart_reproducibility <- function(
       args.list = as.list(environment()),
       dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
       keepers = c("path.folder", "parameters", "internal"),
-      verbose = verbose
+      verbose = FALSE
     )
 
     # Checking for missing and/or default arguments ------------------------------
@@ -124,6 +124,7 @@ filter_dart_reproducibility <- function(
       filename = stringi::stri_join("radiator_filter_dart_reproducibility_args_", file.date, ".tsv"),
       tsv = TRUE,
       internal = internal,
+      write.message = "Function call and arguments stored in: ",
       verbose = verbose
     )
 
@@ -260,10 +261,12 @@ filter_dart_reproducibility <- function(
         answer.opt = c("y", "n"))
 
       if (filter.reproducibility == "y") {
+        message("2 options to blacklist markers based on reproducibility:")
+        message("1. use the outlier statistic")
+        message("2. enter your own threshold")
         outlier.stats <- radiator_question(
-          x = "Do you want to remove markers based on the outlier statistics or not (y/n) ?
-(n: next question will be to enter your own threshold)", answer.opt = c("y", "n"))
-        if (outlier.stats == "y") {
+          x = "Enter the option (1 or 2): ", minmax = c(1, 2))
+        if (outlier.stats == 1) {
           filter.reproducibility <- "outliers"
         } else {
           filter.reproducibility <- radiator_question(

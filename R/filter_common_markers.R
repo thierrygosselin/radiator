@@ -110,7 +110,7 @@ filter_common_markers <- function(
       args.list = as.list(environment()),
       dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
       keepers = c("path.folder", "parameters", "internal"),
-      verbose = verbose
+      verbose = FALSE
     )
     if (internal) fig <- FALSE
     if (fig) {
@@ -135,6 +135,7 @@ filter_common_markers <- function(
         "radiator_filter_common_markers_args_", file.date, ".tsv"),
       tsv = TRUE,
       internal = internal,
+      write.message = "Function call and arguments stored in: ",
       verbose = verbose
     )
 
@@ -439,6 +440,11 @@ plot_upset <- function(
   parallel.core = parallel::detectCores() - 2,
   verbose = FALSE
 ) {
+
+  # For pc set the number of core to 1 -----------------------------------------
+  if (Sys.info()[['sysname']] == "Windows") parallel.core <- 1
+
+
   if (verbose) message("Generating UpSet plot to visualize markers in common")
 
   if (data.type == "SeqVarGDSClass") {

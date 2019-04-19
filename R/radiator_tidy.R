@@ -420,7 +420,7 @@ tidy_genomic_data <- function(
                    "hierarchical.levels", "imputation.method",
                    "pred.mean.matching", "num.tree",
                    "pop.levels", "pop.labels", "pop.select"
-    ),    verbose = verbose
+    ),    verbose = FALSE
   )
 
   # Checking for missing and/or default arguments ------------------------------
@@ -445,6 +445,7 @@ tidy_genomic_data <- function(
     filename = stringi::stri_join("radiator_tidy_genomic_data_args_", file.date, ".tsv"),
     tsv = TRUE,
     internal = internal,
+    write.message = "Function call and arguments stored in: ",
     verbose = verbose
   )
 

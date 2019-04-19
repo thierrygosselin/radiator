@@ -260,7 +260,7 @@ write_rad <- function(
         if (write.message == "standard") {
           message("File written: ", folder_short(filename))
         } else {
-          write.message
+          message(write.message,  folder_short(filename))
         }
       }
 

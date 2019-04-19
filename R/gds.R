@@ -430,29 +430,27 @@ update_radiator_gds <- function(
     format <- gdsfmt::index.gdsn(
       node = gds, path = "annotation/format", silent = TRUE)
 
-    if (node.name == "AD") {
+    if (node.name == "AD" && !is.null(value)) {
       gdsfmt::add.gdsn(
         node = format,
         name = "AD",
         val = value,
-        # storage = "vl_int",
         replace = TRUE,
         compress = "ZIP_RA",
         closezip = TRUE)
     }
 
-    if (node.name == "DP") {
+    if (node.name == "DP" && !is.null(value)) {
       gdsfmt::add.gdsn(
         node = format,
         name = "DP",
         val = value,
-        # storage = "vl_int",
         replace = TRUE,
         compress = "ZIP_RA",
         closezip = TRUE)
     }
 
-    if (node.name == "GL") {
+    if (node.name == "GL" && !is.null(value)) {
       gdsfmt::add.gdsn(
         node = format,
         name = "GL",

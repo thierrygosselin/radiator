@@ -32,7 +32,8 @@ thresholds.
 Default: \code{interactive.filter = TRUE}.}
 
 \item{filter.snp.position.read}{(character)
-Options are: \code{"outliers", "q75", "iqr"}. For a safe and conservative
+Options are: \code{"outliers", "q75", "iqr", c(min value,max value)}.
+For a safe and conservative
 value, use \code{"outliers"}, this will remove SNPs with outlier position on
 the reads.
 Default: \code{filter.snp.read.position = NULL}.}
@@ -91,17 +92,11 @@ Step 2. Choose the filtering thresholds
 }
 \examples{
 \dontrun{
-turtle.outlier.snp.number <- radiator::filter_snp_position_read(
+turtle <- radiator::filter_snp_position_read(
 data = "turtle.vcf",
 strata = "turtle.strata.tsv",
-max.snp.number = 4,
+filter.snp.position.read = "outliers",
 filename = "tidy.data.turtle.tsv"
 )
-
-tidy.data <- turtle.outlier.snp.number$tidy.filtered.snp.number
-
-#Inside the same list, to isolate the markers blacklisted:
-blacklist <- turtle.outlier.snp.number$blacklist.markers
-
 }
 }

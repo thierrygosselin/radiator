@@ -402,9 +402,6 @@
 #' \item \strong{ind.heterozygosity.threshold}: described in \code{\link[radiator]{detect_mixed_genomes}}.
 #' }
 
-
-
-
 #' @export
 #' @rdname filter_rad
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com} and
@@ -481,7 +478,7 @@ install.packages("UpSetR")
       "whitelist.markers",
       "write.tidy",
       "missing.memory", "internal"),
-    verbose = TRUE
+    verbose = FALSE
   )
   filter.common.markers.bk <- filter.common.markers
   filter.monomorphic.bk <- filter.monomorphic
@@ -516,6 +513,7 @@ install.packages("UpSetR")
       "radiator_filter_rad_args_", file.date, ".tsv"),
     tsv = TRUE,
     internal = internal,
+    write.message = "Function call and arguments stored in: ",
     verbose = verbose
   )
 

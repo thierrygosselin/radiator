@@ -120,7 +120,7 @@ filter_snp_number <- function(
       args.list = as.list(environment()),
       dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
       keepers = c("path.folder", "parameters", "internal", "force.stats"),
-      verbose = verbose
+      verbose = FALSE
     )
 
     # Checking for missing and/or default arguments ------------------------------
@@ -141,6 +141,7 @@ filter_snp_number <- function(
       filename = stringi::stri_join("radiator_filter_snp_number_args_", file.date, ".tsv"),
       tsv = TRUE,
       internal = internal,
+      write.message = "Function call and arguments stored in: ",
       verbose = verbose
     )
 
@@ -353,9 +354,8 @@ filter_snp_number <- function(
 
       if (filter.snp.number == "y") {
         outlier.stats <- radiator_question(
-          x = "Do you want to remove markers based on the outlier statistics or not (y/n) ?
-          (n: next question will be to enter your own threshold)", answer.opt = c("y", "n"))
-        if (outlier.stats == "y") {
+          x = "2 options to blacklist SNPs:\n1. based on the outlier statistics\n2. enter your own threshold", minmax = c(1, 2))
+        if (outlier.stats == 1) {
           filter.snp.number <- "outliers"
         } else {
           filter.snp.number <- radiator_question(

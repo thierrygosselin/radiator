@@ -137,7 +137,7 @@ filter_individuals <- function(
       dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
       keepers = c("path.folder", "parameters", "internal", "id.stats", "dp",
                   "subsample", "subsample.markers.stats"),
-      verbose = verbose
+      verbose = FALSE
     )
 
     # Checking for missing and/or default arguments ----------------------------
@@ -158,6 +158,7 @@ filter_individuals <- function(
       filename = stringi::stri_join("radiator_filter_individuals_args_", file.date, ".tsv"),
       tsv = TRUE,
       internal = internal,
+      write.message = "Function call and arguments stored in: ",
       verbose = verbose
     )
 
@@ -231,9 +232,8 @@ filter_individuals <- function(
 
       if (filter.individuals.missing == "y") {
         outlier.stats <- radiator_question(
-          x = "Do you want to remove samples based on the outlier statistics or not (y/n) ?
-(n: next question will be to enter your own threshold)", answer.opt = c("y", "n"))
-        if (outlier.stats == "y") {
+          x = "2 options to blacklist samples:\n1. based on the outlier statistics\n2. enter your own threshold", minmax = c(1, 2))
+        if (outlier.stats == 1) {
           filter.individuals.missing <- "outliers"
         } else {
           filter.individuals.missing <- radiator_question(
@@ -325,9 +325,8 @@ The maximum amount of missingness you tolerate for a sample (e.g. 0.3): ", minma
 
       if (filter.individuals.heterozygosity == "y") {
         outlier.stats <- radiator_question(
-          x = "Do you want to remove samples based on the outliers statistics or not (y/n) ?
-(n: next questions will be to enter your own thresholds)", answer.opt = c("y", "n"))
-        if (outlier.stats == "y") {
+          x = "2 options to blacklist samples:\n1. based on the outlier statistics\n2. enter your own threshold", minmax = c(1, 2))
+        if (outlier.stats == 1) {
           filter.individuals.heterozygosity <- "outliers"
         } else {
           filter.individuals.heterozygosity <- c(0,1)
@@ -447,9 +446,8 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
 
         if (filter.individuals.coverage.total == "y") {
           outlier.stats <- radiator_question(
-            x = "Do you want to remove samples based on the outliers statistics or not (y/n) ?
-          (n: next questions will be to enter your own thresholds)", answer.opt = c("y", "n"))
-          if (outlier.stats == "y") {
+            x = "2 options to blacklist samples:\n1. based on the outlier statistics\n2. enter your own threshold", minmax = c(1, 2))
+          if (outlier.stats == 1) {
             filter.individuals.coverage.total <- "outliers"
           } else {
             filter.individuals.coverage.total <- c(0,10000000000000000000000)

@@ -3320,7 +3320,7 @@ vcf_strata <- function(data, strata, filename = NULL) {
     # Get date and time to have unique filenaming
     file.date <- stringi::stri_replace_all_fixed(Sys.time(), pattern = " EDT", replacement = "", vectorize_all = FALSE)
     file.date <- stringi::stri_replace_all_fixed(file.date, pattern = c("-", " ", ":"), replacement = c("", "@", ""), vectorize_all = FALSE)
-    file.date <- stri_sub(file.date, from = 1, to = 13)
+    file.date <- stringi::stri_sub(file.date, from = 1, to = 13)
     filename <- stringi::stri_join("radiator_vcf_file_", file.date, ".vcf")
   } else {
     filename <- stringi::stri_join(filename, ".vcf")

@@ -91,17 +91,6 @@ tidy_gtypes <- function(data) {
 
 #' @export
 #' @rdname write_gtypes
-# @import strataG
-
-#' @importFrom tidyr gather
-#' @importFrom methods new
-#' @importFrom stringi stri_replace_all_fixed stri_sub
-#' @importFrom dplyr select arrange rename mutate
-#' @importFrom data.table dcast.data.table as.data.table
-#' @importFrom purrr safely
-#' @importFrom utils installed.packages
-
-
 #' @seealso \href{https://github.com/EricArcher/}{strataG}
 
 #' @references Archer FI, Adams PE, Schneiders BB.
@@ -282,11 +271,11 @@ write_gtypes <- function(data, write = FALSE) {
   return(res)
 }# End write_gtypes
 
-# switch_allele_count ------------------------------------------------------------------
-#' @name switch_allele_count
-#' @title switch_allele_count
-#' @description Summary of gds object or file: number of samples and markers
-#' @rdname summary_gds
+# switch_genotypes -------------------------------------------------------------
+#' @name switch_genotypes
+#' @title switch_genotypes
+#' @description todo
+#' @rdname switch_genotypes
 #' @keywords internal
 #' @export
 switch_genotypes <- function(x) {

@@ -18,7 +18,8 @@
 #' @inheritParams radiator_common_arguments
 
 #' @param filter.snp.position.read (character)
-#' Options are: \code{"outliers", "q75", "iqr"}. For a safe and conservative
+#' Options are: \code{"outliers", "q75", "iqr", c(min value,max value)}.
+#' For a safe and conservative
 #' value, use \code{"outliers"}, this will remove SNPs with outlier position on
 #' the reads.
 #' Default: \code{filter.snp.read.position = NULL}.
@@ -56,19 +57,12 @@
 
 #' @examples
 #' \dontrun{
-#' turtle.outlier.snp.number <- radiator::filter_snp_position_read(
+#' turtle <- radiator::filter_snp_position_read(
 #' data = "turtle.vcf",
 #' strata = "turtle.strata.tsv",
-#' max.snp.number = 4,
+#' filter.snp.position.read = "outliers",
 #' filename = "tidy.data.turtle.tsv"
 #' )
-
-#'
-#' tidy.data <- turtle.outlier.snp.number$tidy.filtered.snp.number
-#'
-#' #Inside the same list, to isolate the markers blacklisted:
-#' blacklist <- turtle.outlier.snp.number$blacklist.markers
-#'
 #' }
 
 filter_snp_position_read <- function(
@@ -121,7 +115,7 @@ filter_snp_position_read <- function(
       args.list = as.list(environment()),
       dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
       keepers = c("path.folder", "parameters", "internal"),
-      verbose = verbose
+      verbose = FALSE
     )
 
     # Checking for missing and/or default arguments ------------------------------
@@ -142,6 +136,7 @@ filter_snp_position_read <- function(
       filename = stringi::stri_join("radiator_filter_snp_position_read_args_", file.date, ".tsv"),
       tsv = TRUE,
       internal = internal,
+      write.message = "Function call and arguments stored in: ",
       verbose = verbose
     )
 
@@ -274,8 +269,6 @@ filter_snp_position_read <- function(
       useDingbats = FALSE,
       limitsize = FALSE)
 
-
-
     # Helper table -------------------------------------------------------------
     if (verbose) message("Generating helper table...")
     n.markers <- nrow(wl)
@@ -331,33 +324,45 @@ filter_snp_position_read <- function(
     if (interactive.filter) {
       message("\nStep 2. Filtering markers based on the SNPs position on the read\n")
       filter.snp.position.read <- radiator_question(
-        x = "Choice of stats are: \n1: all (filter off)\n2: outliers\n3: q75\n4: iqr",
-        answer.opt = c("1", "2", "3", "4"))
+        x = "Choice of stats are: \n1: all (filter off)\n2: outliers\n3: q75\n4: iqr\n5: choose your own min and max values",
+        answer.opt = c("1", "2", "3", "4", "5"))
       filter.snp.position.read <- stringi::stri_replace_all_fixed(
         str = filter.snp.position.read,
-        pattern = c("1", "2", "3", "4"),
-        replacement = c("all", "outliers", "q75", "iqr"),
+        pattern = c("1", "2", "3", "4", "5"),
+        replacement = c("all", "outliers", "q75", "iqr", "thresholds"),
         vectorize_all = FALSE)
+      if (filter.snp.position.read == "thresholds") {
+        filter.snp.position.read[1] <- radiator_question(
+          x = "Enter the min position of SNP on the read:",
+          minmax = c(1,10000))
+        filter.snp.position.read[2] <- radiator_question(
+          x = "Enter the max position of SNP on the read:",
+          minmax = c(1,10000))
+      }
     }
 
-    filter.snp.position.read <- match.arg(
-      filter.snp.position.read,
-      choices = c("outliers", "q75", "iqr", "all"),
-      several.ok = FALSE)
+    # filter.snp.position.read <- match.arg(
+    #   filter.snp.position.read,
+    #   choices = c("outliers", "q75", "iqr", "all"),
+    #   several.ok = FALSE)
 
     # readr::write_tsv(x = stats, path = "testing.stats.tsv")
 
     # Filtering ----------------------------------------------------------------
     # if (filter.snp.position.read == "all") not necessary wl already exists...
 
-    if (filter.snp.position.read == "outliers") {
-      wl %<>% dplyr::filter(COL <= stats[[9]])
-    }
-    if (filter.snp.position.read == "q75") {
-      wl %<>% dplyr::filter(COL <= stats[[5]])
-    }
-    if (filter.snp.position.read == "iqr") {
-      wl %<>% dplyr::filter(COL >= stats[[3]] & COL <= stats[[5]])
+    if (length(filter.snp.position.read) == 2) {
+      wl %<>% dplyr::filter(COL >= filter.snp.position.read[1] & COL <= filter.snp.position.read[2])
+    } else {
+      if (filter.snp.position.read == "outliers") {
+        wl %<>% dplyr::filter(COL <= stats[[9]])
+      }
+      if (filter.snp.position.read == "q75") {
+        wl %<>% dplyr::filter(COL <= stats[[5]])
+      }
+      if (filter.snp.position.read == "iqr") {
+        wl %<>% dplyr::filter(COL >= stats[[3]] & COL <= stats[[5]])
+      }
     }
 
     # Whitelist and Blacklist of markers

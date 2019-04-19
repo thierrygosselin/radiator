@@ -1330,7 +1330,7 @@ dart2gds <- function(
   )
 
   if (gt.vcf) {
-    res %<>%
+    genotypes.meta %<>%
       dplyr::mutate(
         GT_VCF = dplyr::case_when(
           GT_BIN == 0 ~ "0/0", GT_BIN == 1 ~ "0/1", GT_BIN == 2 ~ "1/1",
@@ -1338,7 +1338,7 @@ dart2gds <- function(
       )
   }
   if (gt.vcf.nuc) {
-    res %<>%
+    genotypes.meta %<>%
       dplyr::mutate(
         GT_VCF_NUC = dplyr::case_when(
           GT_BIN == 0 ~ stringi::stri_join(REF, REF, sep = "/"),
@@ -1348,7 +1348,7 @@ dart2gds <- function(
       )
   }
   if (gt) {
-    res %<>%
+    genotypes.meta %<>%
       dplyr::mutate(
         GT = stringi::stri_replace_all_fixed(
           str = GT_VCF_NUC,
