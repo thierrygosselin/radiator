@@ -416,7 +416,6 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
 
 #' @inheritParams radiator_common_arguments
 
-
 #' @param pop.levels (optional, string) A character string with your populations ordered.
 #' Default: \code{pop.levels = NULL}. Described in \code{\link{read_strata}}.
 

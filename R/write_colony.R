@@ -2,9 +2,9 @@
 
 #' @name write_colony
 #' @title Write a \code{COLONY} input file
-#' @description Write a \code{COLONY} input file from several genomic formats,
-#' look into \pkg{radiator} \code{\link{tidy_genomic_data}} for supported input
-#' files.
+#' @description Write a \code{COLONY} input file.
+
+#' @inheritParams radiator_common_arguments
 
 #' @param sample.markers (number) \code{COLONY} can take a long time to run,
 #' use a random subsample of your markers to speed test \code{COLONY}
@@ -42,7 +42,6 @@
 #' Default:\code{error.rate = 0.02}.
 #' @param print.all.colony.opt (logical) Should all \code{COLONY} options be printed in the file.
 #'
-#'
 #' \strong{This require manual curation, for the file to work directly with \code{COLONY}}.
 #' Default = \code{print.all.colony.opt = FALSE}.
 
@@ -55,9 +54,6 @@
 #' that will be used inside the function that requires randomness. With default,
 #' a random number is generated and printed in the appropriate output.
 #' Default: \code{random.seed = NULL}.
-
-#' @note
-#' By default, the function uses common markers between groupings and removes monomorphic markers.
 
 #' @details \strong{It is highly recommended to read (twice!) the user guide distributed with
 #' \code{COLONY} to find out the details for input and output of the software.}
@@ -85,25 +81,8 @@
 
 #' @examples
 #' \dontrun{
-#' # Simplest way to run the function:
-#' colony.file <- radiator::write_colony(
-#'     data = "batch_1.vcf",
-#'     strata = "strata.treefrog.tsv"
-#' )
-#'
-#' # With imputations and a STACKS haplotypes file:
-#' colony.file <- radiator::write_colony(
-#'     data = "batch_1.haplotypes.tsv",
-#'     strata = "strata.treefrog.tsv",
-#'     imputation.method = "rf"
-#' )
-#'
-#' # Now using a whitelist of markers and keeping only the first SNP on each read:
-#' colony.file <- radiator::write_colony(
-#'     data = "batch_1.haplotypes.tsv",
-#'     strata = "strata.treefrog.tsv",
-#'     whitelist.markers = "whitelist.vcf.txt"
-#' )
+#' # Simplest way to run the function with a tidy dataset:
+#' colony.file <- radiator::write_colony(data = "turtle.data.rad")
 #' }
 
 
@@ -137,144 +116,64 @@ write_colony <- function(
 
   # Checking for missing and/or default arguments-------------------------------
   if (missing(data)) rlang::abort("Input file missing")
-  if (!is.null(pop.levels) & is.null(pop.labels)) pop.labels <- pop.levels
-  if (!is.null(pop.labels) & is.null(pop.levels)) rlang::abort("pop.levels is required if you use pop.labels")
-
-
-  # dotslist -------------------------------------------------------------------
-  dotslist <- rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE)
-  want <- c(
-    "whitelist.markers", "blacklist.id",
-    "pop.levels", "pop.labels",
-    "filter.mac",
-    "filter.short.ld", "filter.long.ld", "long.ld.missing", "ld.method", "snp.ld",
-    "filter.common.markers", "common.markers",
-    "path.folder",
-    "filter.common.markers", "filter.monomorphic"
-  )
-  unknowned_param <- setdiff(names(dotslist), want)
-
-  if (length(unknowned_param) > 0) {
-    rlang::abort("Unknowned \"...\" parameters ",
-         stringi::stri_join(unknowned_param, collapse = " "))
-  }
-
-  radiator.dots <- dotslist[names(dotslist) %in% want]
-  # argument <- radiator.dots[["argument"]]
-
-  whitelist.markers <- radiator.dots[["whitelist.markers"]]
-  blacklist.id <- radiator.dots[["blacklist.id"]]
-
-  pop.levels <- radiator.dots[["pop.levels"]]
-  pop.labels <- radiator.dots[["pop.labels"]]
-  pop.select <- radiator.dots[["pop.select"]]
-
-  filter.mac <- radiator.dots[["filter.mac"]]
-
-  filter.short.ld <- radiator.dots[["filter.short.ld"]]
-  filter.long.ld <- radiator.dots[["filter.long.ld"]]
-  long.ld.missing <- radiator.dots[["long.ld.missing"]]
-  if (is.null(long.ld.missing)) long.ld.missing <- FALSE
-  ld.method <- radiator.dots[["ld.method"]]
-  if (is.null(ld.method)) ld.method <- "r2"
-
-  filter.common.markers <- radiator.dots[["filter.common.markers"]]
-  if (is.null(filter.common.markers)) filter.common.markers <- TRUE
-
-  filter.monomorphic <- radiator.dots[["filter.monomorphic"]]
-  if (is.null(filter.monomorphic)) filter.monomorphic <- TRUE
-
-  path.folder <- radiator.dots[["path.folder"]]
-  if (is.null(path.folder)) {
-    path.folder <- getwd()
-  } else {
-    if (!dir.exists(path.folder)) dir.create(path.folder)
-  }
-
-
 
   # Filename -------------------------------------------------------------------
-  imputation.method <- NULL
-  # Get date and time to have unique filenaming
-  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
+  file.date <- format(Sys.time(), "%Y%m%d@%H%M") # Get date and time
 
   if (is.null(filename)) {
     filename <- stringi::stri_join("radiator_colony_", file.date)
-
-    if (!is.null(imputation.method)) {
-      filename.imp <- stringi::stri_replace_all_fixed(
-        str = filename,
-        pattern = "radiator_colony_",
-        replacement = "radiator_colony_imputed_",
-        vectorize_all = FALSE
-      )
-    }
-  } else {
-    if (!is.null(imputation.method)) {
-      filename.imp <- stringi::stri_join(filename, "_imputed")
-    }
   }
 
   # Import----------------------------------------------------------------------
-  data.type <- detect_genomic_format(data = data)
-  message(paste("File type: ", data.type))
-
-  # Strata argument required for VCF and haplotypes files
-  if (data.type == "vcf.file" & is.null(strata)) rlang::abort("strata argument is required")
-
   message("Importing data...")
-  if (data.type == "tbl_df") {
-    input <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-    # For long tidy format, switch LOCUS to MARKERS column name, if found MARKERS not found
-    if (tibble::has_name(input, "LOCUS") && !tibble::has_name(input, "MARKERS")) {
-      input <- dplyr::rename(.data = input, MARKERS = LOCUS)
+  # File type detection----------------------------------------------------------
+  data.type <- radiator::detect_genomic_format(data)
+
+  # Import data ---------------------------------------------------------------
+
+  if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
+    if (data.type == "gds.file") {
+      data <- radiator::read_rad(data, verbose = FALSE)
     }
+    data <- gds2tidy(gds = data, parallel.core = parallel::detectCores() - 1)
+    data.type <- "tbl_df"
   } else {
-    input <- suppressMessages(
-      radiator::tidy_genomic_data(
-        data = data,
-        vcf.metadata = FALSE,
-        blacklist.id = blacklist.id,
-        whitelist.markers = whitelist.markers,
-        monomorphic.out = TRUE,
-        filter.short.ld = filter.short.ld,
-        filter.long.ld = filter.long.ld,
-        long.ld.missing = long.ld.missing,
-        filter.common.markers = TRUE,
-        filter.mac = filter.mac,
-        strata = strata,
-        pop.levels = pop.levels,
-        pop.labels = pop.labels,
-        pop.select = pop.select,
-        filename = NULL,
-        verbose = FALSE
-      )
-    )
+    if (is.vector(data)) {
+      data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
+    }
   }
 
-  input$GT <- stringi::stri_replace_all_fixed(
-    str = input$GT,
-    pattern = c("/", ":", "_", "-", "."),
-    replacement = c("", "", "", "", ""),
-    vectorize_all = FALSE
-  )
-  pop.levels <- levels(input$POP_ID)
-  pop.labels <- pop.levels
+  if (rlang::has_name(data, "STRATA") && !rlang::has_name(data, "POP_ID")) {
+    data %<>% dplyr::rename(POP_ID = STRATA)
+  }
+
+  if (!is.null(strata)) {
+    data <- join_strata(data = data, strata = strata, pop.id = TRUE)
+  }
+
+  if (!rlang::has_name(data, "GT")) {
+    data <- calibrate_alleles(data = data, verbose = FALSE) %$% input
+  }
+
+  if (!is.null(pop.select)) {
+    data %<>% dplyr::filter(POP_ID %in% pop.select)
+    data %<>% filter_monomorphic(data = .)
+  }
 
   # Subsampling markers --------------------------------------------------------
   if (!is.null(sample.markers)) {
-    message(stringi::stri_join("Randomly subsampling ", sample.markers, " markers..."))
+    message("Randomly subsampling ", sample.markers, " markers...")
     # sample.markers <- 500 # test
-    markers.list <- dplyr::distinct(input, MARKERS) %>%
+    markers.list <- dplyr::distinct(data, MARKERS) %>%
       dplyr::sample_n(tbl = ., size = sample.markers, replace = FALSE)
 
-    input <- suppressWarnings(dplyr::semi_join(input, markers.list, by = "MARKERS"))
+    data <- suppressWarnings(dplyr::semi_join(data, markers.list, by = "MARKERS"))
     markers.list <- NULL
   }
 
   # Generate colony without imputations ----------------------------------------
-  message("Generating COLONY file without imputations...\n")
-  radiator_colony(data = input, filename = filename)
+  message("Generating COLONY file...\n")
+  radiator_colony(data = data, filename = filename)
 
   # Imputations-----------------------------------------------------------------
   # if (!is.null(imputation.method)) {
@@ -295,8 +194,8 @@ write_colony <- function(
   #
   # } # End imputations
 
-  message("COLONY file(s) written in the working directory")
   res <- "COLONY file(s) written in the working directory"
+  message(res)
   # Imputations: colony with imputed haplotypes using Random Forest ------------
   timing <- proc.time() - timing
   message(stringi::stri_join("Computation time: ", round(timing[[3]]), " sec"))
@@ -327,12 +226,12 @@ radiator_colony <- function(
   # data <- input #test
 
   # Separate the alleles -------------------------------------------------------
-  input <- dplyr::select(.data = data, MARKERS, POP_ID, INDIVIDUALS, GT) %>%
+  data <- dplyr::select(.data = data, MARKERS, POP_ID, INDIVIDUALS, GT) %>%
     dplyr::mutate(
       A1 = stringi::stri_sub(GT, 1, 3),
-      A2 = stringi::stri_sub(GT, 4,6)
+      A2 = stringi::stri_sub(GT, 4, 6),
+      GT = NULL
     ) %>%
-    dplyr::select(-GT) %>%
     tidyr::gather(data = ., key = ALLELE_GROUP, value = ALLELES, -c(MARKERS, INDIVIDUALS, POP_ID)) %>%
     dplyr::mutate(ALLELES = as.numeric(ALLELES)) %>%
     dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
@@ -341,10 +240,10 @@ radiator_colony <- function(
   if (!is.null(allele.freq)) {
     message("Computing allele frequency")
     if (allele.freq != "overall") {
-      input.alleles <- dplyr::filter(.data = input, POP_ID %in% allele.freq) %>%
+      input.alleles <- dplyr::filter(.data = data, POP_ID %in% allele.freq) %>%
         dplyr::filter(ALLELES != 0)
     } else {
-      input.alleles <- dplyr::filter(.data = input, ALLELES != 0)
+      input.alleles <- dplyr::filter(.data = data, ALLELES != 0)
     }
 
     allele.per.locus <- dplyr::distinct(input.alleles, MARKERS, ALLELES) %>%
@@ -378,10 +277,10 @@ radiator_colony <- function(
     input.alleles <- NULL
   }
 
-  markers.name <- tibble::as_data_frame(t(dplyr::distinct(input, MARKERS) %>% dplyr::arrange(MARKERS)))
+  markers.name <- tibble::as_tibble(t(dplyr::distinct(data, MARKERS) %>% dplyr::arrange(MARKERS)))
   marker.num <- ncol(markers.name)
 
-  input <- tidyr::unite(data = input, col = MARKERS.ALLELE_GROUP, MARKERS, ALLELE_GROUP, sep = ".") %>%
+  data <- tidyr::unite(data = data, col = MARKERS.ALLELE_GROUP, MARKERS, ALLELE_GROUP, sep = ".") %>%
     dplyr::group_by(POP_ID, INDIVIDUALS) %>%
     tidyr::spread(data = ., key = MARKERS.ALLELE_GROUP, value = ALLELES) %>%
     dplyr::arrange(POP_ID, INDIVIDUALS) %>%
@@ -402,7 +301,7 @@ radiator_colony <- function(
   readr::write_file(x = colony.output.filename, path = filename, append = TRUE)
 
   # Line 3 = Offspring number---------------------------------------------------
-  off.num.opt <- paste(nrow(input), "                                  ! Number of offspring in the sample\n", sep = "")
+  off.num.opt <- paste(nrow(data), "                                  ! Number of offspring in the sample\n", sep = "")
   readr::write_file(x = off.num.opt, path = filename, append = TRUE)
 
   # Line 4 = Number of loci-----------------------------------------------------
@@ -523,7 +422,7 @@ radiator_colony <- function(
   readr::write_file(x = error, path = filename, append = TRUE)
 
   # Offspring IDs and genotype--------------------------------------------------
-  utils::write.table(x = input, file = filename, sep = " ", append = TRUE, col.names = FALSE, row.names = FALSE, quote = FALSE)
+  utils::write.table(x = data, file = filename, sep = " ", append = TRUE, col.names = FALSE, row.names = FALSE, quote = FALSE)
 
   # Probabilities that the father and mother of an offspring are included-------
   # in the candidate males and females. The two numbers must be provided even if
