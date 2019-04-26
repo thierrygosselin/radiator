@@ -171,8 +171,8 @@ radiator_dots <- function(
 
   # The deprecated args
   if (rdd) {
-    if (verbose) message("\nDeprecated arguments identified inside \"...\": ")
-    if (verbose) message("    ", stringi::stri_join(sort(names(dots.deprecated)),
+    message("\nDeprecated arguments identified inside \"...\": ")
+    message("    ", stringi::stri_join(sort(names(dots.deprecated)),
                                                     collapse = "\n    "))
     res %<>% dplyr::bind_rows(
       tibble::tibble(ARGUMENTS = names(dots.deprecated)) %>%
@@ -189,8 +189,8 @@ radiator_dots <- function(
     }
   }
   if (unk) {
-    if (verbose) message("\nUnknowned arguments identified inside \"...\": ")
-    if (verbose) message("    ", stringi::stri_join(unknowned_param, collapse = "\n    "))
+    message("\nUnknowned arguments identified inside \"...\": ")
+    message("    ", stringi::stri_join(unknowned_param, collapse = "\n    "))
     res %<>% dplyr::bind_rows(
       tibble::tibble(ARGUMENTS = unknowned_param) %>%
         dplyr::mutate(
@@ -200,7 +200,7 @@ radiator_dots <- function(
   }
 
   if (rdd || unk) {
-    if (verbose) message("\nRead documentation, for latest changes, and modify your codes!\n")
+    message("\nRead documentation, for latest changes, and modify your codes!\n")
   }
   options(width = opt.change)
   if (verbose) message("\n")

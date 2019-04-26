@@ -606,6 +606,7 @@ generate_folder <- function(
   f,
   rad.folder = NULL,
   internal = FALSE,
+  append.date = TRUE,
   file.date = NULL,
   prefix_int = TRUE,
   verbose = FALSE
@@ -628,7 +629,7 @@ generate_folder <- function(
     #working directory in the path?
     wd.present <- TRUE %in% unique(stringi::stri_detect_fixed(str = f, pattern = c(getwd(), paste0(getwd(), "/"))))
     date.present <- TRUE %in% unique(stringi::stri_detect_fixed(str = f, pattern = "@"))
-    if (!date.present) f <- stringi::stri_join(f, file.date, sep = "_")
+    if (!date.present && append.date) f <- stringi::stri_join(f, file.date, sep = "_")
     if (!wd.present) f <- file.path(getwd(), f)
     if (verbose && !identical(f.temp, f)) message("Folder created: ", folder_short(f))
   }

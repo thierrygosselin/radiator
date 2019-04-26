@@ -51,6 +51,11 @@ distance2tibble <- function(
       ID1 = factor(x = ID1, levels = pop.levels, ordered = TRUE),
       ID2 = factor(x = ID2, levels = pop.levels, ordered = TRUE)
     )
+  } else {
+    x  %<>% dplyr::mutate(
+      ID1 = factor(x = ID1),
+      ID2 = factor(x = ID2)
+    )
   }
 
   return(x)

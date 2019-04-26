@@ -494,13 +494,6 @@ read_dart <- function(
     verbose = verbose
   )
 
-  # if (verbose) message("File written: ", meta.filename$)
-  want <- c("VARIANT_ID", "MARKERS", "REF", "ALT", strata$INDIVIDUALS)
-  suppressWarnings(
-    data %<>%
-      dplyr::select(dplyr::one_of(want)) %>%
-      dplyr::arrange(MARKERS, REF))
-
   #GDS
   #filename = filename.gds
 
@@ -1151,6 +1144,13 @@ dart2gds <- function(
   parallel.core.temp <- max(1, 2 * floor(parallel.core / 2))
   geno.coding <- "alt.dos"
   dp <- gl <- NULL
+
+  want <- c("VARIANT_ID", "MARKERS", "REF", "ALT", strata$INDIVIDUALS)
+  suppressWarnings(
+    data %<>%
+      dplyr::select(dplyr::one_of(want)) %>%
+      dplyr::arrange(MARKERS, REF)
+    )
 
   if (gt.vcf.nuc || gt) {
     ref.alt <- TRUE

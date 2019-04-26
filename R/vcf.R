@@ -301,7 +301,7 @@ read_vcf <- function(
                 "path.folder",
                 "markers.info", "vcf.metadata",
                 "subsample.markers.stats", "parameters", "random.seed", "internal"),
-    verbose = verbose
+    verbose = FALSE
   )
 
 
@@ -383,6 +383,7 @@ read_vcf <- function(
     filename = stringi::stri_join("radiator_read_vcf_args_", file.date, ".tsv"),
     tsv = TRUE,
     internal = internal,
+    write.message = "Function call and arguments stored in: ",
     verbose = verbose
   )
 
@@ -1401,7 +1402,8 @@ tidy_vcf <- function(
   # blacklist.id = NULL
   # whitelist.markers = NULL
   # filename = NULL
-
+  # internal = FALSE
+  # path.folder = NULL
   # filter.individuals.missing = "outlier"
   # filter.common.markers = TRUE
   # filter.monomorphic = TRUE
@@ -1418,6 +1420,8 @@ tidy_vcf <- function(
   # gt.bin = TRUE
   # wide = FALSE
   # ref.calibration = FALSE
+  # random.seed = NULL
+  # parameters = NULL
 
   # Cleanup---------------------------------------------------------------------
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
@@ -1474,7 +1478,7 @@ tidy_vcf <- function(
       "internal",
       "tidy.check", "tidy.vcf"
     ),
-    verbose = verbose
+    verbose = FALSE
   )
 
   if (!is.null(filter.snp.position.read) ||
@@ -1600,19 +1604,14 @@ tidy_vcf <- function(
   # Tidy the data --------------------------------------------------------------
   if (tidy.vcf) {
     # Get info markers and individuals -----------------------------------------
-    wl.v <- SeqArray::seqGetData(data, "variant.id")
-    markers.meta <- extract_markers_metadata(gds = data, whitelist = TRUE) %>%
-      dplyr::filter(VARIANT_ID %in% wl.v)
-    wl.s <- SeqArray::seqGetData(data, "sample.id")
-
+    markers.meta <- extract_markers_metadata(gds = data, whitelist = TRUE)
     individuals <- extract_individuals_metadata(
       gds = data,
       ind.field.select = "INDIVIDUALS",
       whitelist = TRUE
-    ) %>%
-      dplyr::filter(INDIVIDUALS %in% wl.s) %$% INDIVIDUALS
-    n.markers <- length(markers.meta$VARIANT_ID)
-    n.individuals <- length(individuals)
+    )
+    n.markers <- nrow(markers.meta)
+    n.individuals <- nrow(individuals)
 
     # STRATEGY tidy vcf  ---------------------------------------------------------
     # Depending on the number of markers ...
@@ -1684,76 +1683,77 @@ tidy_vcf <- function(
 
     # Tidying TRUE  --------------------------------------------------------------
     if (tidy.vcf) {
-      tibble.size <- n.markers * n.individuals
-      tidy.data <- tibble::tibble(GT_BIN = numeric(tibble.size))
-      # When IDs are blacklisted...you want to recalibrate REF/ALT alleles
       if (!is.null(blacklist.id)) {
         ref.calibration <- TRUE
         if (verbose) message("\nRe-calibration of REF/ALT alleles: TRUE")
       }
 
+
+      tidy.data <- gds2tidy(
+        gds = data,
+        markers.meta = markers.meta,
+        calibrate.alleles = FALSE
+      )
+
       # bi- or multi-alllelic VCF ------------------------------------------------
       biallelic <- detect_biallelic_markers(data = data)
 
       # import genotypes ---------------------------------------------------------
-      # gt.bin
-      if (gt.bin) {
-        tidy.data %<>%
-          dplyr::mutate(
-            GT_BIN = as.vector(SeqArray::seqGetData(
-              gdsfile = data, var.name = "$dosage_alt")
-            )
-          )
-        # if (wide) {
-        #   tidy.data$GT_BIN <- tibble::as_tibble(x = SeqArray::seqGetData(
-        #     gdsfile = data, var.name = "$dosage_alt")) %>%
-        #     magrittr::set_colnames(x = ., value = data$markers.meta$MARKERS) %>%
-        #     tibble::add_column(.data = .,
-        #                        "INDIVIDUALS" = id.string,
-        #                        .before = 1)
-        # }
-      } else {
-        tidy.data %<>% dplyr::select(-GT_BIN)
-      }
+      tidy.data <- radiator::calibrate_alleles(
+        data = tidy.data,
+        biallelic = biallelic,
+        parallel.core = parallel.core,
+        verbose = FALSE,
+        gt = gt, gt.vcf = gt.vcf, gt.vcf.nuc = gt.vcf.nuc
+      ) %$% input
 
-      if (gt) gt.vcf.nuc <- TRUE
-      # nucleotides info required to generate genepop format 001, 002, 003, 004
-      # when gt is TRUE, gt.vcf.nuc is always TRUE
-      if (gt.vcf.nuc) {
-        tidy.data %<>%
-          dplyr::mutate(
-            GT_VCF_NUC = as.vector(SeqVarTools::getGenotypeAlleles(
-              gdsobj = data, use.names = TRUE))
-          )
-      }
+      # tibble.size <- n.markers * n.individuals
+      # tidy.data <- tibble::tibble(GT_BIN = numeric(tibble.size))
+      # When IDs are blacklisted...you want to recalibrate REF/ALT alleles
 
-      if (gt.vcf) {
-        tidy.data %<>%
-          dplyr::mutate(
-            GT_VCF = as.vector(SeqVarTools::getGenotype(gdsobj = data, use.names = TRUE))
-          )
-        tidy.data$GT_VCF[is.na(tidy.data$GT_VCF)] <- "./."
-      } else {
-        tidy.data %<>% dplyr::select(-GT_VCF)
-      }
+      # # gt.bin
+      # if (!gt.bin) tidy.data %<>% dplyr::select(-GT_BIN)
+      #
+      # if (gt) gt.vcf.nuc <- TRUE
+      # # nucleotides info required to generate genepop format 001, 002, 003, 004
+      # # when gt is TRUE, gt.vcf.nuc is always TRUE
+      # test <- SeqVarTools::getGenotypeAlleles(gdsobj = data, use.names = TRUE)
 
-      if (gt) {
-        tidy.data %<>%
-          dplyr::mutate(
-            GT = stringi::stri_replace_all_fixed(
-              str = GT_VCF_NUC,
-              pattern = c("A", "C", "G", "T", "/"),
-              replacement = c("001", "002", "003", "004", ""),
-              vectorize_all = FALSE) %>%
-              stringi::stri_replace_na(str = ., replacement = "000000")
-          )
-      }
+      # if (gt.vcf.nuc) {
+      #   tidy.data %<>%
+      #     dplyr::mutate(
+      #       GT_VCF_NUC = as.vector(SeqVarTools::getGenotypeAlleles(
+      #         gdsobj = data, use.names = TRUE))
+      #     )
+      # }
+
+      # if (gt.vcf) {
+      #   tidy.data %<>%
+      #     dplyr::mutate(
+      #       GT_VCF = as.vector(SeqVarTools::getGenotype(gdsobj = data, use.names = TRUE))
+      #     )
+      #   tidy.data$GT_VCF[is.na(tidy.data$GT_VCF)] <- "./."
+      # } else {
+      #   tidy.data %<>% dplyr::select(-GT_VCF)
+      # }
+
+      # if (gt) {
+      #   tidy.data %<>%
+      #     dplyr::mutate(
+      #       GT = stringi::stri_replace_all_fixed(
+      #         str = GT_VCF_NUC,
+      #         pattern = c("A", "C", "G", "T", "/"),
+      #         replacement = c("001", "002", "003", "004", ""),
+      #         vectorize_all = FALSE) %>%
+      #         stringi::stri_replace_na(str = ., replacement = "000000")
+      #     )
+      # }
 
 
-      # replace NA in gt.vcf.nuc
-      if (gt.vcf.nuc) {
-        tidy.data$GT_VCF_NUC[is.na(tidy.data$GT_VCF_NUC)] <- "./."
-      }
+      # # replace NA in gt.vcf.nuc
+      # if (gt.vcf.nuc) {
+      #   tidy.data$GT_VCF_NUC[is.na(tidy.data$GT_VCF_NUC)] <- "./."
+      # }
 
 
       # check missing genotypes
@@ -1806,13 +1806,13 @@ tidy_vcf <- function(
           want <- c("DP", "AD", "GL", "PL", "HQ", "GQ", "GOF", "NR", "NV", "CATG")
 
           if (!is.null(overwrite.metadata)) want <- overwrite.metadata
-          if (verbose) message("    genotypes metadata: ", stringi::stri_join(want, collapse = ", "))
 
           parse.format.list <- purrr::keep(.x = have, .p = have %in% want)
+          if (verbose) message("    genotypes metadata: ", stringi::stri_join(parse.format.list, collapse = ", "))
           # work on parallelization of this part
           tidy.data %<>%
             dplyr::bind_cols(
-              genotypes.meta = purrr::map(
+              purrr::map(
                 .x = parse.format.list, .f = parse_gds_metadata, gds = data,
                 verbose = verbose, parallel.core = parallel.core) %>%
                 purrr::flatten(.) %>%
@@ -1842,33 +1842,33 @@ tidy_vcf <- function(
       ## Note to myself: check timig with 1M SNPs to see
       ## if this is more efficient than data.table melt...
 
-      want <- intersect(c("MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF", "ALT"),
-                        names(markers.meta))
-      tidy.data <- suppressWarnings(
-        dplyr::select(markers.meta, dplyr::one_of(want))) %>%
-        dplyr::bind_cols(
-          tibble::as_tibble(
-            matrix(
-              data = NA,
-              nrow = n.markers, ncol = n.individuals)) %>%
-            magrittr::set_colnames(x = ., value = individuals)) %>%
-        data.table::as.data.table(.) %>%
-        data.table::melt.data.table(
-          data = .,
-          id.vars = want,
-          variable.name = "INDIVIDUALS",
-          value.name = "GT",
-          variable.factor = FALSE) %>%
-        tibble::as_tibble(.) %>%
-        dplyr::select(-GT) %>%
-        dplyr::mutate(
-          MARKERS = factor(x = MARKERS,
-                           levels = markers.meta$MARKERS, ordered = TRUE),
-          INDIVIDUALS = factor(x = INDIVIDUALS,
-                               levels = individuals,
-                               ordered = TRUE)) %>%
-        dplyr::arrange(MARKERS, INDIVIDUALS) %>%
-        dplyr::bind_cols(tidy.data)
+      # want <- intersect(c("MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF", "ALT"),
+      #                   names(markers.meta))
+      # tidy.data <- suppressWarnings(
+      #   dplyr::select(markers.meta, dplyr::one_of(want))) %>%
+      #   dplyr::bind_cols(
+      #     tibble::as_tibble(
+      #       matrix(
+      #         data = NA,
+      #         nrow = n.markers, ncol = n.individuals)) %>%
+      #       magrittr::set_colnames(x = ., value = individuals)) %>%
+      #   data.table::as.data.table(.) %>%
+      #   data.table::melt.data.table(
+      #     data = .,
+      #     id.vars = want,
+      #     variable.name = "INDIVIDUALS",
+      #     value.name = "GT",
+      #     variable.factor = FALSE) %>%
+      #   tibble::as_tibble(.) %>%
+      #   dplyr::select(-GT) %>%
+      #   dplyr::mutate(
+      #     MARKERS = factor(x = MARKERS,
+      #                      levels = markers.meta$MARKERS, ordered = TRUE),
+      #     INDIVIDUALS = factor(x = INDIVIDUALS,
+      #                          levels = individuals,
+      #                          ordered = TRUE)) %>%
+      #   dplyr::arrange(MARKERS, INDIVIDUALS) %>%
+      #   dplyr::bind_cols(tidy.data)
       # Check stacks AD problem --------------------------------------------------
       # Some genotypes with missing AD...
 
@@ -1965,8 +1965,7 @@ tidy_vcf <- function(
       # Re ordering columns
       want <- c("MARKERS", "CHROM", "LOCUS", "POS", "ID", "COL", "INDIVIDUALS",
                 "STRATA", "POP_ID",
-                "REF", "ALT", "GT_VCF", "GT_VCF_NUC", "GT", "GT_BIN",
-                "POLYMORPHIC")
+                "REF", "ALT", "GT_VCF", "GT_VCF_NUC", "GT", "GT_BIN")
 
       suppressWarnings(
         tidy.data %<>% dplyr::select(dplyr::one_of(want), dplyr::everything())
@@ -2033,7 +2032,9 @@ parse_gds_metadata <- function(
 
   # Allele Depth
   if (format.name == "AD") {
+    # NOTE TO MYSELF: THIS SHOULD BE DONE FOR BIALLELIC DATA ONLY...
     if (verbose) message("AD column: splitting into ALLELE_REF_DEPTH and ALLELE_ALT_DEPTH")
+    # PLAN A:
     res$AD <- SeqArray::seqGetData(
       gdsfile = gds,
       var.name = "annotation/format/AD"
@@ -2059,6 +2060,21 @@ parse_gds_metadata <- function(
       parallel.core = parallel.core)
     split.vec <- column.vec <- NULL
     # test1 <- res$AD
+    #PLAN B:
+    # SeqArray::seqApply(
+    #   gdsfile = gds,
+    #   var.name = "annotation/format/AD",
+    #   FUN = function(x) {
+    #     ad.sum <- colSums(x, na.rm = TRUE)
+    #     ref.col <- which(ad.sum == max(ad.sum, na.rm = TRUE))
+    #     ref <- mean(x[, ref.col], na.rm = TRUE)
+    #     alt <- mean(x[, -ref.col], na.rm = TRUE)
+    #     # return(list(ad.ref = ref, ad.alt = alt))
+    #     return(tibble::tibble(ALLELE_REF_DEPTH = ref, ALLELE_ALT_DEPTH = alt))
+    #   },
+    #   margin = "by.variant", as.is = "list",
+    #   parallel = 12) %>%
+    #   dplyr::bind_rows(.)
   } # End AD
 
 
@@ -2110,21 +2126,25 @@ parse_gds_metadata <- function(
   # GL cleaning
   if (format.name == "GL") {
     if (verbose) message("GL column: cleaning Genotype Likelihood column")
-    res$GL <- SeqArray::seqGetData(gdsfile = gds,
-                                   var.name = "annotation/format/GL")$data %>%
-      tibble::as_tibble(.)
-    column.vec <- seq_along(res$GL)
-    res$GL <- tibble::tibble(GL_HOM_REF = res$GL[, column.vec %% 3 == 1] %>%
-                               as.matrix(.) %>%
-                               as.vector(.),
-                             GL_HET = res$GL[, column.vec %% 3 == 2] %>%
-                               as.matrix(.) %>%
-                               as.vector(.),
-                             GL_HOM_ALT = res$GL[, column.vec %% 3 == 0] %>%
-                               as.matrix(.) %>%
-                               as.vector(.))
-    res$GL[res$GL == "NaN"] <- NA
-    column.vec <- NULL
+    gl <- unique(SeqArray::seqGetData(gdsfile = gds,
+                                      var.name = "annotation/format/GL")$length)
+    if (gl > 0) {
+      res$GL <- SeqArray::seqGetData(gdsfile = gds,
+                                     var.name = "annotation/format/GL")$data %>%
+        tibble::as_tibble(.)
+      column.vec <- seq_along(res$GL)
+      res$GL <- tibble::tibble(GL_HOM_REF = res$GL[, column.vec %% 3 == 1] %>%
+                                 as.matrix(.) %>%
+                                 as.vector(.),
+                               GL_HET = res$GL[, column.vec %% 3 == 2] %>%
+                                 as.matrix(.) %>%
+                                 as.vector(.),
+                               GL_HOM_ALT = res$GL[, column.vec %% 3 == 0] %>%
+                                 as.matrix(.) %>%
+                                 as.vector(.))
+      res$GL[res$GL == "NaN"] <- NA
+      column.vec <- NULL
+    }
   } # End GL
 
   # Cleaning GOF: Goodness of fit value

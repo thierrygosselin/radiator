@@ -5,7 +5,8 @@
 \title{generate_folder}
 \usage{
 generate_folder(f, rad.folder = NULL, internal = FALSE,
-  file.date = NULL, prefix_int = TRUE, verbose = FALSE)
+  append.date = TRUE, file.date = NULL, prefix_int = TRUE,
+  verbose = FALSE)
 }
 \arguments{
 \item{f}{Folder name}

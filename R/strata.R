@@ -519,15 +519,15 @@ join_strata <- function(data, strata = NULL, pop.id = FALSE, verbose = TRUE) {
     rlang::abort("No more individuals in your data, check data and strata ID names...")
   }
 
-  suppressWarnings(
-    data %<>% dplyr::left_join(strata, by = "INDIVIDUALS")
-  )
+  suppressWarnings(data %<>% dplyr::left_join(strata, by = "INDIVIDUALS"))
   if (verbose) {
     if (rlang::has_name(data, "POP_ID")) {
       message("    Number of strata: ", length(unique(data$POP_ID)))
+      data %<>% dplyr::select(POP_ID, INDIVIDUALS, dplyr::everything())
     }
     if (rlang::has_name(data, "STRATA")) {
       message("    Number of strata: ", length(unique(data$STRATA)))
+      data %<>% dplyr::select(STRATA, INDIVIDUALS, dplyr::everything())
     }
     message("    Number of individuals: ", length(unique(data$INDIVIDUALS)))
   }
@@ -535,6 +535,7 @@ join_strata <- function(data, strata = NULL, pop.id = FALSE, verbose = TRUE) {
   if (isTRUE(pop.id) && rlang::has_name(data, "STRATA")) {
     data %<>% dplyr::rename(POP_ID = STRATA)
   }
+
   return(data)
 }#End join_strata
 

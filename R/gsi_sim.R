@@ -73,7 +73,7 @@ write_gsi_sim <- function(
   # strata = NULL
   # filename = "gsi_sim.unname.txt"
 
-  # Checking for missing and/or default arguments ******************************
+  # Checking for missing and/or default arguments
   if (missing(data)) rlang::abort("Input file necessary to write the gsi_sim file is missing")
 
   # POP_ID in gsi_sim does not like spaces, we need to remove space in everything touching POP_ID...
@@ -87,34 +87,20 @@ write_gsi_sim <- function(
   # check <- NULL
 
   # Import data
-  if (is.vector(data)) {
-    data <- radiator::tidy_wide(data = data, import.metadata = FALSE)
-  } else {
-    colnames(data) <- stringi::stri_replace_all_fixed(
-      str = colnames(data),
-      pattern = "GENOTYPE",
-      replacement = "GT",
-      vectorize_all = FALSE)
+  data <- radiator::tidy_wide(data = data, import.metadata = FALSE)
 
-    # remove space in POP_ID
-    data$POP_ID <- clean_pop_names(data$POP_ID)
-    # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-    if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
-      data <- dplyr::rename(.data = data, MARKERS = LOCUS)
-    }
-    # change sep in individual name
-    data$INDIVIDUALS <- clean_ind_names(data$INDIVIDUALS)
-  }
-
-  # Info for gsi_sim input -----------------------------------------------------
+  # Info for gsi_sim input
   n.individuals <- dplyr::n_distinct(data$INDIVIDUALS)  # number of individuals
   n.markers <- dplyr::n_distinct(data$MARKERS)          # number of markers
   list.markers <- order(unique(data$MARKERS))           # list of markers
 
-  # Spread/dcast in wide format ------------------------------------------------------
-  data <- dplyr::select(data, MARKERS, POP_ID, INDIVIDUALS, GT) %>%
+  if (!rlang::has_name(data, "GT")) {
+    data <- calibrate_alleles(data = data, verbose = FALSE) %$% input
+  }
+
+  # Spread/dcast in wide format
+  data %<>% dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT) %>%
     tidyr::separate(data = ., col = GT, into = c("A1", "A2"), sep = 3, remove = TRUE) %>%
-    # tidyr::gather(data = ., key = ALLELES, value = GT, -c(MARKERS, INDIVIDUALS, POP_ID)) %>%
     data.table::as.data.table(.) %>%
     data.table::melt.data.table(
       data = .,
@@ -122,48 +108,36 @@ write_gsi_sim <- function(
       variable.name = "ALLELES",
       value.name = "GT"
     ) %>%
-    tibble::as_data_frame(.) %>%
+    tibble::as_tibble(.) %>%
     dplyr::arrange(MARKERS) %>%
     tidyr::unite(col = MARKERS_ALLELES, MARKERS , ALLELES, sep = "_") %>%
     dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS_ALLELES) %>%
-    # dplyr::group_by(POP_ID, INDIVIDUALS) %>%
-    # tidyr::spread(data = ., key = MARKERS_ALLELES, value = GT) %>%
     data.table::as.data.table(.) %>%
     data.table::dcast.data.table(
       data = .,
       formula = POP_ID + INDIVIDUALS ~ MARKERS_ALLELES,
       value.var = "GT"
     ) %>%
-    tibble::as_data_frame(.) %>%
+    tibble::as_tibble(.) %>%
     dplyr::ungroup(.)
 
-  # population levels and strata------------------------------------------------
+  # population levels and strata
   if (is.null(strata)) {
-    strata <- dplyr::distinct(data, INDIVIDUALS, POP_ID)
+    strata <- radiator::generate_strata(data = data, pop.id = TRUE)
+  } else {
+    strata <- read_strata(
+      strata = strata,
+      pop.id = TRUE,
+      pop.levels = pop.levels,
+      pop.labels = pop.labels,
+      verbose = FALSE) %$%
+      strata
+
+    data <- join_strata(data = data, strata = strata, pop.id = TRUE, verbose = FALSE)
   }
 
-  strata.df <- read_strata(
-    strata = strata,
-    pop.id = TRUE,
-    pop.levels = pop.levels,
-    pop.labels = pop.labels,
-    verbose = FALSE) %$%
-    strata
-
-  strata <- NULL #no longer needed
-
-  if (tibble::has_name(data, "POP_ID")) data <- dplyr::select(.data = data, -POP_ID)
-  data <- dplyr::left_join(data, strata.df, by = "INDIVIDUALS")
-
-  # using pop.levels and pop.labels info if present
-  data <- change_pop_names(
-    data = data,
-    pop.levels = pop.levels,
-    pop.labels = pop.labels)
-
-  # write gsi_sim file ---------------------------------------------------------
-  # open the connection to the file
-  filename.connection <- file(filename, "w")
+  # write gsi_sim file
+  filename.connection <- file(filename, "w") # open the connection
 
   # Line 1: number of individuals and the number of markers
   writeLines(text = stringi::stri_join(n.individuals, n.markers, sep = " "),
@@ -172,18 +146,14 @@ write_gsi_sim <- function(
   # Line 2 and + : List of markers
   writeLines(text = stringi::stri_join(list.markers, sep = "\n"),
              con = filename.connection, sep = "\n")
-
-  # close the connection to the file
   close(filename.connection) # close the connection
 
   # remaining lines, individuals and genotypes
   pop <- data$POP_ID # Create a vector with the population
-  data <- suppressWarnings(dplyr::select(.data = data, -POP_ID))  # remove pop id
+  suppressWarnings(data %<>% dplyr::select(-POP_ID))  # remove pop id
   gsi_sim.split <- split(data, pop)  # split gsi_sim by populations
   pop.string <- as.character(unique(pop))
   for (k in pop.string) {
-    # utils::write.table(x = as.data.frame(stringi::stri_join("pop", k, sep = " ")), file = filename, append = TRUE, quote = FALSE, sep = "\n", row.names = FALSE, col.names = FALSE)
-    # utils::write.table(x = gsi_sim.split[[k]], file = filename, append = TRUE, quote = FALSE, sep = " ", row.names = FALSE, col.names = FALSE)
     readr::write_delim(x = as.data.frame(stringi::stri_join("pop", k, sep = " ")),
                        path = filename, delim = "\n", append = TRUE, col_names = FALSE)
     readr::write_delim(x = gsi_sim.split[[k]],

@@ -523,6 +523,10 @@ detect_mixed_genomes <- function(
     het.ind.overall <- NULL
 
     if (interactive.filter) {
+      message("\nThe greatest value of a picture is when it forces us
+to notice what we never expected to see.
+\nJohn W. Tukey. Exploratory Data Analysis. 1977.")
+
       message("\n\nInspect plots and tables in folder created...")
       bl.id.het <- radiator_question(
         x = "    Do you want to exclude individuals based on heterozygosity ? (y/n): ", answer.opt = c("y", "n"))
