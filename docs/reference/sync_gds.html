@@ -75,19 +75,10 @@ An argument also allows to reset the filters." />
   <a href="../index.html">Installation</a>
 </li>
 <li>
-  <a href="../reference/index.html">Reference</a>
+  <a href="../articles/getting_started.html">Getting started</a>
 </li>
-<li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-    Articles
-     
-    <span class="caret"></span>
-  </a>
-  <ul class="dropdown-menu" role="menu">
-    <li>
-      <a></a>
-    </li>
-  </ul>
+<li>
+  <a href="../reference/index.html">Reference</a>
 </li>
 <li>
   <a href="../news/index.html">News</a>
@@ -126,9 +117,48 @@ An argument also allows to reset the filters.</p>
     
     </div>
 
-    <pre class="usage"><span class='fu'>sync_gds</span>(<span class='no'>gds</span>, <span class='kw'>samples</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>markers</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>reset.gds</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+    <pre class="usage"><span class='fu'>sync_gds</span>(<span class='no'>gds</span>, <span class='kw'>samples</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>variant.id</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>reset.gds</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
   <span class='kw'>reset.filters.m</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>reset.filters.i</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</pre>
-        
+    
+    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
+    <table class="ref-arguments">
+    <colgroup><col class="name" /><col class="desc" /></colgroup>
+    <tr>
+      <th>gds</th>
+      <td><p>The gds object.</p></td>
+    </tr>
+    <tr>
+      <th>samples</th>
+      <td><p>(optional, character string). Will sync the gds object/file with
+these samples. With default, uses the individuals in the radiator node.
+If not found, goes a level above and uses the individuals in the main GDS.
+Default: <code>samples = NULL</code>.</p></td>
+    </tr>
+    <tr>
+      <th>variant.id</th>
+      <td><p>(optional, integer string). Will sync the gds object/file with
+these variant.id With default, uses the variant.id in the radiator node.
+If not found, goes a level above and uses the variant.id in the main GDS.
+Default: <code>variant.id = NULL</code>.</p></td>
+    </tr>
+    <tr>
+      <th>reset.gds</th>
+      <td><p>(optional, logical) Default: <code>reset.gds = FALSE</code>.</p></td>
+    </tr>
+    <tr>
+      <th>reset.filters.m</th>
+      <td><p>(optional, logical) To reset only markers/variant. Default: <code>reset.filters.m = FALSE</code>.</p></td>
+    </tr>
+    <tr>
+      <th>reset.filters.i</th>
+      <td><p>(optional, logical) To reset only individuals. Default: <code>reset.filters.i = FALSE</code>.</p></td>
+    </tr>
+    <tr>
+      <th>verbose</th>
+      <td><p>(optional, logical) Default: <code>verbose = FALSE</code>.</p></td>
+    </tr>
+    </table>
+    
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
     <div class='dont-index'><p><code>sync_gds</code>, <code><a href='list_filters.html'>list_filters</a></code>.</p></div>
@@ -138,6 +168,7 @@ An argument also allows to reset the filters.</p>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>
     <ul class="nav nav-pills nav-stacked">
+      <li><a href="#arguments">Arguments</a></li>
       
       <li><a href="#see-also">See also</a></li>
           </ul>

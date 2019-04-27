@@ -493,9 +493,9 @@ update_radiator_gds <- function(
     if (verbose) message("Synchronizing markers.meta")
     if (node.name == "markers.meta") {
       if (rlang::has_name(value, "FILTERS")) {
-        sync_gds(gds = gds, markers = as.integer(value$VARIANT_ID[value$FILTERS == "whitelist"]))
+        sync_gds(gds = gds, variant.id = as.integer(value$VARIANT_ID[value$FILTERS == "whitelist"]))
       } else {
-        sync_gds(gds = gds, markers = as.integer(value$VARIANT_ID))
+        sync_gds(gds = gds, variant.id = as.integer(value$VARIANT_ID))
       }
     }
 
@@ -1087,14 +1087,27 @@ extract_coverage <- function(
 #' @description Synchronize gds with samples and markers. If left NULL, the info
 #' is first search in the radiator node, if not found, it goes in the level above.
 #' An argument also allows to reset the filters.
+#' @param gds The gds object.
+#' @param samples (optional, character string). Will sync the gds object/file with
+#' these samples. With default, uses the individuals in the radiator node.
+#' If not found, goes a level above and uses the individuals in the main GDS.
+#' Default: \code{samples = NULL}.
+#' @param variant.id (optional, integer string). Will sync the gds object/file with
+#' these variant.id With default, uses the variant.id in the radiator node.
+#' If not found, goes a level above and uses the variant.id in the main GDS.
+#' Default: \code{variant.id = NULL}.
+#' @param reset.gds (optional, logical) Default: \code{reset.gds = FALSE}.
+#' @param reset.filters.m (optional, logical) To reset only markers/variant. Default: \code{reset.filters.m = FALSE}.
+#' @param reset.filters.i (optional, logical) To reset only individuals. Default: \code{reset.filters.i = FALSE}.
+#' @param verbose (optional, logical) Default: \code{verbose = FALSE}.
 #' @rdname sync_gds
-#' @keywords internal
+# @keywords internal
 #' @seealso \code{\link{sync_gds}}, \code{\link{list_filters}}.
 #' @export
 sync_gds <- function(
   gds,
   samples = NULL,
-  markers = NULL,
+  variant.id = NULL,
   reset.gds = FALSE,
   reset.filters.m = FALSE,
   reset.filters.i = FALSE,
@@ -1128,17 +1141,17 @@ sync_gds <- function(
     }
 
   } else {
-    if (is.null(markers)) {
-      if (verbose) message("synchronizing GDS with current markers")
-      markers <- extract_markers_metadata(
+    if (is.null(variant.id)) {
+      if (verbose) message("synchronizing GDS with current variant.id")
+      variant.id <- extract_markers_metadata(
         gds = gds,
         markers.meta.select = "VARIANT_ID",
         whitelist = TRUE,
         verbose = verbose
       ) %$% VARIANT_ID
     } else {
-      if (verbose) message("synchronizing GDS with provided markers")
-      markers <- as.integer(markers)
+      if (verbose) message("synchronizing GDS with provided variant.id")
+      variant.id <- as.integer(variant.id)
     }
 
     if (is.null(samples)) {
@@ -1154,7 +1167,7 @@ sync_gds <- function(
     }
 
     SeqArray::seqSetFilter(
-      object = gds, sample.id = samples, variant.id = markers, verbose = verbose)
+      object = gds, sample.id = samples, variant.id = variant.id, verbose = verbose)
   }
   # return(gds)
 }#End sync_gds

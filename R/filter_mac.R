@@ -672,7 +672,7 @@ compute_mac <- function (
     # blacklist markers
     if (!is.null(blacklist.markers)) {
       markers.meta %<>% dplyr::filter(!MARKERS %in% blacklist.markers$MARKERS)
-      sync_gds(gds = data, markers = markers.meta$VARIANT_ID)
+      sync_gds(gds = data, variant.id = markers.meta$VARIANT_ID)
     }
     n.markers <- nrow(markers.meta)
     ad <- extract_coverage(gds = data, ind = FALSE)

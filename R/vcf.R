@@ -755,7 +755,7 @@ read_vcf <- function(
       if (filter.strands == "best.stats") {
         # bk variant
         variant.bk <- markers.meta$VARIANT_ID
-        sync_gds(gds = gds, markers = blacklist.strands$VARIANT_ID)
+        sync_gds(gds = gds, variant.id = blacklist.strands$VARIANT_ID)
         blacklist.strands <- SeqArray::seqAlleleCount(
           gdsfile = gds,
           ref.allele = NULL,
@@ -788,7 +788,7 @@ read_vcf <- function(
           dplyr::select(MARKERS)
 
         # come back to original variant
-        sync_gds(gds = gds, markers = variant.bk, verbose = FALSE)
+        sync_gds(gds = gds, variant.id = variant.bk, verbose = FALSE)
       }# End best stats
 
       if (filter.strands == "blacklist") {

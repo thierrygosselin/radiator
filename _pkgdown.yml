@@ -6,6 +6,7 @@ reference:
   - summary_strata
   - filter_rad
   - genomic_converter
+  - radiator_pkg_install
 
 - title: Working with strata
   contents:
@@ -21,6 +22,7 @@ reference:
   - starts_with("filter_")
   - reset_filters
   - list_filters
+  - sync_gds
 
 - title: Detection
   contents:
@@ -55,11 +57,7 @@ reference:
 - title: Utility functions
   desc: Internal modules
   contents:
-  - pi
-  - private_alleles
-  - private_haplotypes
   - allele_frequencies
-  - ibdg_fh
   - betas_estimator
   - calibrate_alleles
   - change_pop_names
@@ -67,6 +65,10 @@ reference:
   - clean_ind_names
   - clean_markers_names
   - clean_pop_names
+  - ibdg_fh
+  - pi
+  - private_alleles
+  - private_haplotypes
   - separate_markers
 
 - title: Run software
@@ -78,13 +80,10 @@ navbar:
   left:
   - text: Installation
     href: index.html
+  - text: Getting started
+    href: articles/getting_started.html
   - text: Reference
     href: reference/index.html
-  - text: Articles
-    href: articles/index.html
-    menu:
-    - text:
-      href:
   - text: News
     href: news/index.html
   right:

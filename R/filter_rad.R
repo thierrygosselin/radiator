@@ -815,7 +815,7 @@ install.packages("UpSetR")
   sync_gds(
     gds = gds,
     samples = strata$INDIVIDUALS,
-    markers = markers.meta$VARIANT_ID
+    variant.id = markers.meta$VARIANT_ID
   )
 
   # FINAL PREP

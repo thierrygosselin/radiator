@@ -4,8 +4,29 @@
 \alias{sync_gds}
 \title{sync_gds}
 \usage{
-sync_gds(gds, samples = NULL, markers = NULL, reset.gds = FALSE,
+sync_gds(gds, samples = NULL, variant.id = NULL, reset.gds = FALSE,
   reset.filters.m = FALSE, reset.filters.i = FALSE, verbose = FALSE)
+}
+\arguments{
+\item{gds}{The gds object.}
+
+\item{samples}{(optional, character string). Will sync the gds object/file with
+these samples. With default, uses the individuals in the radiator node.
+If not found, goes a level above and uses the individuals in the main GDS.
+Default: \code{samples = NULL}.}
+
+\item{variant.id}{(optional, integer string). Will sync the gds object/file with
+these variant.id With default, uses the variant.id in the radiator node.
+If not found, goes a level above and uses the variant.id in the main GDS.
+Default: \code{variant.id = NULL}.}
+
+\item{reset.gds}{(optional, logical) Default: \code{reset.gds = FALSE}.}
+
+\item{reset.filters.m}{(optional, logical) To reset only markers/variant. Default: \code{reset.filters.m = FALSE}.}
+
+\item{reset.filters.i}{(optional, logical) To reset only individuals. Default: \code{reset.filters.i = FALSE}.}
+
+\item{verbose}{(optional, logical) Default: \code{verbose = FALSE}.}
 }
 \description{
 Synchronize gds with samples and markers. If left NULL, the info
@@ -15,4 +36,3 @@ An argument also allows to reset the filters.
 \seealso{
 \code{\link{sync_gds}}, \code{\link{list_filters}}.
 }
-\keyword{internal}
