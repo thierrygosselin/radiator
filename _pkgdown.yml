@@ -20,6 +20,7 @@ reference:
   contents:
   - starts_with("filter_")
   - reset_filters
+  - list_filters
 
 - title: Detection
   contents:
