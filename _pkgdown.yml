@@ -25,7 +25,7 @@ reference:
   contents:
   - starts_with("detect_")
 
-- title: sex markers detection
+- title: Sex markers detection
   contents:
   - sexy_markers
 
@@ -52,7 +52,7 @@ reference:
   - starts_with("write_")
 
 - title: Utility functions
-  desc: <
+  desc: Internal modules
   contents:
   - pi
   - private_alleles
