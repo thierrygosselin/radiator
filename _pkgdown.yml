@@ -1,4 +1,12 @@
 reference:
+
+- title: Important functions
+  contents:
+  - read_strata
+  - summary_strata
+  - filter_rad
+  - genomic_converter
+
 - title: Filtering dataset
   contents:
   - starts_with("filter_")
@@ -16,20 +24,20 @@ reference:
   contents:
   - starts_with("summary_")
 
-- title: Reading data
+- title: Reading functions
   contents:
   - starts_with("read_")
 
 - title: Tidying functions
   contents:
-  - tidy_genomic_format
+  - tidy_genomic_data
   - starts_with("tidy_")
 
-- title: write tidy data to other formats
+- title: Writing functions
   contents:
   - starts_with("write_")
 
-- title: Utility
+- title: Utility functions
   contents:
   - calibrate_alleles
   - change_pop_names
@@ -38,7 +46,7 @@ reference:
   - clean_markers_names
   - clean_pop_names
 
-- title: Run outside software
+- title: Run software
   contents:
   - run_bayescan
 

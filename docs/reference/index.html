@@ -122,6 +122,38 @@
     <tbody>
       <tr>
         <th colspan="2">
+          <h2 id="section-important-functions" class="hasAnchor"><a href="#section-important-functions" class="anchor"></a>Important functions</h2>
+          <p class="section-desc"></p>
+        </th>
+      </tr>
+      <tr>
+        
+        <td>
+          <p><code><a href="read_strata.html">read_strata()</a></code> </p>
+        </td>
+        <td><p>read strata</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="summary_strata.html">summary_strata()</a></code> </p>
+        </td>
+        <td><p>Summary of strata</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="filter_rad.html">filter_rad()</a></code> </p>
+        </td>
+        <td><p>ONE FUNCTION TO RULE THEM ALL</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="genomic_converter.html">genomic_converter()</a></code> </p>
+        </td>
+        <td><p>Conversion tool among several genomic formats</p></td>
+      </tr>
+    </tbody><tbody>
+      <tr>
+        <th colspan="2">
           <h2 id="section-filtering-dataset" class="hasAnchor"><a href="#section-filtering-dataset" class="anchor"></a>Filtering dataset</h2>
           <p class="section-desc"></p>
         </th>
@@ -384,7 +416,7 @@ to highligh potential duplicate individuals</p></td>
     </tbody><tbody>
       <tr>
         <th colspan="2">
-          <h2 id="section-reading-data" class="hasAnchor"><a href="#section-reading-data" class="anchor"></a>Reading data</h2>
+          <h2 id="section-reading-functions" class="hasAnchor"><a href="#section-reading-functions" class="anchor"></a>Reading functions</h2>
           <p class="section-desc"></p>
         </th>
       </tr>
@@ -441,461 +473,9 @@ to highligh potential duplicate individuals</p></td>
       <tr>
         
         <td>
-          <p><code><a href="allele_frequencies.html">allele_frequencies()</a></code> </p>
+          <p><code><a href="tidy_genomic_data.html">tidy_genomic_data()</a></code> </p>
         </td>
-        <td><p>Compute allele frequencies per markers and populations</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="betas_estimator.html">betas_estimator()</a></code> </p>
-        </td>
-        <td><p>Estimate \(\beta\)s per population</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="calibrate_alleles.html">calibrate_alleles()</a></code> </p>
-        </td>
-        <td><p>Calibrate REF and ALT alleles based on count</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="change_pop_names.html">change_pop_names()</a></code> </p>
-        </td>
-        <td><p>Transform into a factor the POP_ID column, change names and reorder the levels</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="check_pop_levels.html">check_pop_levels()</a></code> </p>
-        </td>
-        <td><p>Check the use of pop.levels, pop.labels and pop.select arguments.</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="clean_ind_names.html">clean_ind_names()</a></code> </p>
-        </td>
-        <td><p>Clean individual's names for radiator and other packages</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="clean_markers_names.html">clean_markers_names()</a></code> </p>
-        </td>
-        <td><p>Clean marker's names for radiator and other packages</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="clean_pop_names.html">clean_pop_names()</a></code> </p>
-        </td>
-        <td><p>Clean population's names for radiator and other packages</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="detect_all_missing.html">detect_all_missing()</a></code> </p>
-        </td>
-        <td><p>Detect markers with all missing genotypes</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="detect_allele_problems.html">detect_allele_problems()</a></code> </p>
-        </td>
-        <td><p>Detect alternate allele problems</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="detect_biallelic_markers.html">detect_biallelic_markers()</a></code> </p>
-        </td>
-        <td><p>Detect biallelic data</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="detect_biallelic_problems.html">detect_biallelic_problems()</a></code> </p>
-        </td>
-        <td><p>Detect biallelic problems</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="detect_duplicate_genomes.html">detect_duplicate_genomes()</a></code> </p>
-        </td>
-        <td><p>Compute pairwise genome similarity or distance between individuals
-to highligh potential duplicate individuals</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="detect_genomic_format.html">detect_genomic_format()</a></code> </p>
-        </td>
-        <td><p>Used internally in radiator to detect the file format</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="detect_het_outliers.html">detect_het_outliers()</a></code> </p>
-        </td>
-        <td><p>Detect heterozygotes outliers and estimate miscall rate</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="detect_mixed_genomes.html">detect_mixed_genomes()</a></code> </p>
-        </td>
-        <td><p>Detect mixed genomes</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="detect_ref_genome.html">detect_ref_genome()</a></code> </p>
-        </td>
-        <td><p>Detect reference genome</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="diagnostic_maf.html">diagnostic_maf()</a></code> </p>
-        </td>
-        <td><p>MAF diagnostic</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="erase_genotypes.html">erase_genotypes()</a></code> </p>
-        </td>
-        <td><p>Erase genotypes</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="extract_coverage.html">extract_coverage()</a></code> </p>
-        </td>
-        <td><p>extract_coverage</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="extract_dart_target_id.html">extract_dart_target_id()</a></code> </p>
-        </td>
-        <td><p>Extract <a href='http://www.diversityarrays.com'>DArT</a> target id</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="extract_genotypes_metadata.html">extract_genotypes_metadata()</a></code> </p>
-        </td>
-        <td><p>extract_genotypes_metadata</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="extract_individuals_metadata.html">extract_individuals_metadata()</a></code> </p>
-        </td>
-        <td><p>extract_individuals_metadata</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="extract_individuals_vcf.html">extract_individuals_vcf()</a></code> </p>
-        </td>
-        <td><p>Extract individuals from vcf file</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="extract_markers_metadata.html">extract_markers_metadata()</a></code> </p>
-        </td>
-        <td><p>extract_markers_metadata</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="filter_blacklist_genotypes.html">filter_blacklist_genotypes()</a></code> </p>
-        </td>
-        <td><p>Filter dataset with blacklist of genotypes</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="filter_common_markers.html">filter_common_markers()</a></code> </p>
-        </td>
-        <td><p>Filter common markers between strata</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="filter_coverage.html">filter_coverage()</a></code> </p>
-        </td>
-        <td><p>Filter markers mean coverage</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="filter_dart.html">filter_dart()</a></code> </p>
-        </td>
-        <td><p>filter DArT file</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="filter_dart_reproducibility.html">filter_dart_reproducibility()</a></code> </p>
-        </td>
-        <td><p>Filter data based on DArT reproducibility statistics</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="filter_fis.html">filter_fis()</a></code> </p>
-        </td>
-        <td><p>Fis filter</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="filter_genotyping.html">filter_genotyping()</a></code> </p>
-        </td>
-        <td><p>Filter markers based on genotyping/missing rate</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="filter_het.html">filter_het()</a></code> </p>
-        </td>
-        <td><p>Heterozygosity filter</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="filter_hwe.html">filter_hwe()</a></code> </p>
-        </td>
-        <td><p>Filter markers based on Hardy-Weinberg Equilibrium</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="filter_individual.html">filter_individual()</a></code> </p>
-        </td>
-        <td><p>Individual filter</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="filter_individuals.html">filter_individuals()</a></code> </p>
-        </td>
-        <td><p>Filter individuals based on genotyping/missingness rate,
-heterozygosity and total coverage</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="filter_ld.html">filter_ld()</a></code> </p>
-        </td>
-        <td><p>GBS/RADseq short and long distance linkage disequilibrium pruning</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="filter_mac.html">filter_mac()</a></code> </p>
-        </td>
-        <td><p>MAC filter</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="filter_maf.html">filter_maf()</a></code> </p>
-        </td>
-        <td><p>MAF/MAC filter</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="filter_monomorphic.html">filter_monomorphic()</a></code> </p>
-        </td>
-        <td><p>Filter monomorphic markers</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="filter_population.html">filter_population()</a></code> </p>
-        </td>
-        <td><p>Population filter</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="filter_rad.html">filter_rad()</a></code> </p>
-        </td>
-        <td><p>ONE FUNCTION TO RULE THEM ALL</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="filter_snp_number.html">filter_snp_number()</a></code> </p>
-        </td>
-        <td><p>Filter SNP number per locus/read</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="filter_snp_position_read.html">filter_snp_position_read()</a></code> </p>
-        </td>
-        <td><p>Filter markers/SNP based on their position on the read</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="filter_whitelist.html">filter_whitelist()</a></code> </p>
-        </td>
-        <td><p>Filter dataset with whitelist of markers</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="folder_short.html">folder_short()</a></code> </p>
-        </td>
-        <td><p>folder_short</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="generate_folder.html">generate_folder()</a></code> </p>
-        </td>
-        <td><p>generate_folder</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="generate_markers_metadata.html">generate_markers_metadata()</a></code> </p>
-        </td>
-        <td><p>Generate markers metadata</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="generate_strata.html">generate_strata()</a></code> </p>
-        </td>
-        <td><p>Generate strata object from the data</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="genomic_converter.html">genomic_converter()</a></code> </p>
-        </td>
-        <td><p>Conversion tool among several genomic formats</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="ibdg_fh.html">ibdg_fh()</a></code> </p>
-        </td>
-        <td><p>FH measure of IBDg</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="individuals2strata.html">individuals2strata()</a></code> </p>
-        </td>
-        <td><p>Create a strata file from a list of individuals</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="join_strata.html">join_strata()</a></code> </p>
-        </td>
-        <td><p>Join the strata with the data</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="list_filters.html">list_filters()</a></code> </p>
-        </td>
-        <td><p>List current active filters (individuals and markers) in radiator GDS object.</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="merge_dart.html">merge_dart()</a></code> </p>
-        </td>
-        <td><p>Merge DArT files</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="pi.html">pi()</a></code> </p>
-        </td>
-        <td><p>Nucleotide diversity</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="private_alleles.html">private_alleles()</a></code> </p>
-        </td>
-        <td><p>Find private alleles</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="private_haplotypes.html">private_haplotypes()</a></code> </p>
-        </td>
-        <td><p>private haplotypes</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="radiator_dots.html">radiator_dots()</a></code> </p>
-        </td>
-        <td><p>radiator_dots</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="radiator_folder.html">radiator_folder()</a></code> </p>
-        </td>
-        <td><p>radiator_folder</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="radiator_pkg_install.html">radiator_pkg_install()</a></code> </p>
-        </td>
-        <td><p>radiator packages install helper</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="read_blacklist_genotypes.html">read_blacklist_genotypes()</a></code> </p>
-        </td>
-        <td><p>read blacklist of genotypes</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="read_blacklist_id.html">read_blacklist_id()</a></code> </p>
-        </td>
-        <td><p>read_blacklist_id</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="read_dart.html">read_dart()</a></code> </p>
-        </td>
-        <td><p>Read and tidy <a href='http://www.diversityarrays.com'>DArT</a> output files.</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="read_rad.html">read_rad()</a></code> </p>
-        </td>
-        <td><p>Read radiator file ending <code>.gds, .rad, .gds.rad</code>.</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="read_strata.html">read_strata()</a></code> </p>
-        </td>
-        <td><p>read strata</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="read_vcf.html">read_vcf()</a></code> </p>
-        </td>
-        <td><p>Read VCF files for radiator and also write a SeqArray GDS file.</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="read_whitelist.html">read_whitelist()</a></code> </p>
-        </td>
-        <td><p>read whitelist of markers</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="reset_filters.html">reset_filters()</a></code> </p>
-        </td>
-        <td><p>Reset filters (individuals and markers) in radiator GDS object.</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="run_bayescan.html">run_bayescan()</a></code> </p>
-        </td>
-        <td><p>Run BayeScan</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="separate_markers.html">separate_markers()</a></code> </p>
-        </td>
-        <td><p>Separate markers column into chrom, locus and pos</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="sexy_markers.html">sexy_markers()</a></code> </p>
-        </td>
-        <td><p>sexy_markers finds sex-linked markers and re-assigns sex</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="split_vcf.html">split_vcf()</a></code> </p>
-        </td>
-        <td><p>Split a VCF file</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="summary_gds.html">summary_gds()</a></code> </p>
-        </td>
-        <td><p>summary_gds</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="summary_rad.html">summary_rad()</a></code> </p>
-        </td>
-        <td><p>Summary statistics for RADseq data</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="summary_strata.html">summary_strata()</a></code> </p>
-        </td>
-        <td><p>Summary of strata</p></td>
+        <td><p>Transform common genomic dataset format in a tidy data frame</p></td>
       </tr><tr>
         
         <td>
@@ -929,12 +509,6 @@ heterozygosity and total coverage</p></td>
       </tr><tr>
         
         <td>
-          <p><code><a href="tidy_genomic_data.html">tidy_genomic_data()</a></code> </p>
-        </td>
-        <td><p>Transform common genomic dataset format in a tidy data frame</p></td>
-      </tr><tr>
-        
-        <td>
           <p><code><a href="tidy_gtypes.html">tidy_gtypes()</a></code> </p>
         </td>
         <td><p>Tidy a gtypes object to a tidy dataframe</p></td>
@@ -956,158 +530,11 @@ heterozygosity and total coverage</p></td>
           <p><code><a href="tidy_wide.html">tidy_wide()</a></code> </p>
         </td>
         <td><p>Read/Import a tidy genomic data frames.</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="write_arlequin.html">write_arlequin()</a></code> </p>
-        </td>
-        <td><p>Write an arlequin file from a tidy data frame</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="write_bayescan.html">write_bayescan()</a></code> </p>
-        </td>
-        <td><p>Write a <a href='http://cmpg.unibe.ch/software/BayeScan/'>BayeScan</a>
-file from a tidy data frame</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="write_betadiv.html">write_betadiv()</a></code> </p>
-        </td>
-        <td><p>Write a betadiv file from a tidy data frame</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="write_colony.html">write_colony()</a></code> </p>
-        </td>
-        <td><p>Write a <code>COLONY</code> input file</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="write_faststructure.html">write_faststructure()</a></code> </p>
-        </td>
-        <td><p>Write a faststructure file from a tidy data frame</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="write_fineradstructure.html">write_fineradstructure()</a></code> </p>
-        </td>
-        <td><p>Write a fineRADstructure file from a tidy data frame</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="write_gds.html">write_gds()</a></code> </p>
-        </td>
-        <td><p>Write a GDS object from a tidy data frame</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="write_genepop.html">write_genepop()</a></code> </p>
-        </td>
-        <td><p>Write a genepop file from a tidy data frame</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="write_genind.html">write_genind()</a></code> </p>
-        </td>
-        <td><p>Write a genind object from a tidy data frame or GDS file or object.</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="write_genlight.html">write_genlight()</a></code> </p>
-        </td>
-        <td><p>Write a genlight object from a tidy data frame or GDS file or object.</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="write_gsi_sim.html">write_gsi_sim()</a></code> </p>
-        </td>
-        <td><p>Write a gsi_sim file from a data frame (wide or long/tidy).</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="write_gtypes.html">write_gtypes()</a></code> </p>
-        </td>
-        <td><p>Write a <a href='https://github.com/EricArcher/'>strataG</a> object from
-radiator GDS and tidy data file or object.</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="write_hierfstat.html">write_hierfstat()</a></code> </p>
-        </td>
-        <td><p>Write a hierfstat file from a tidy data frame</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="write_hzar.html">write_hzar()</a></code> </p>
-        </td>
-        <td><p>Write a HZAR file from a tidy data frame.</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="write_ldna.html">write_ldna()</a></code> </p>
-        </td>
-        <td><p>Write a LDna object from a tidy data frame</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="write_maverick.html">write_maverick()</a></code> </p>
-        </td>
-        <td><p>Write a maverick file from a tidy data frame</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="write_pcadapt.html">write_pcadapt()</a></code> </p>
-        </td>
-        <td><p>Write a <a href='https://github.com/bcm-uga/pcadapt'>pcadapt</a>
-file from a tidy data frame</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="write_plink.html">write_plink()</a></code> </p>
-        </td>
-        <td><p>Write a plink tped/tfam file from a tidy data frame</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="write_rad.html">write_rad()</a></code> </p>
-        </td>
-        <td><p>Write tidy genomic data file or close GDS file</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="write_related.html">write_related()</a></code> </p>
-        </td>
-        <td><p>Write a related file from a tidy data frame</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="write_snprelate.html">write_snprelate()</a></code> </p>
-        </td>
-        <td><p>Write a SNPRelate object from a tidy data frame</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="write_stockr.html">write_stockr()</a></code> </p>
-        </td>
-        <td><p>Write a stockR dataset from a tidy data frame or GDS file or object.</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="write_structure.html">write_structure()</a></code> </p>
-        </td>
-        <td><p>Write a structure file from a tidy data frame</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="write_vcf.html">write_vcf()</a></code> </p>
-        </td>
-        <td><p>Write a vcf file from a tidy data frame</p></td>
       </tr>
     </tbody><tbody>
       <tr>
         <th colspan="2">
-          <h2 id="section-write-tidy-data-to-other-formats" class="hasAnchor"><a href="#section-write-tidy-data-to-other-formats" class="anchor"></a>write tidy data to other formats</h2>
+          <h2 id="section-writing-functions" class="hasAnchor"><a href="#section-writing-functions" class="anchor"></a>Writing functions</h2>
           <p class="section-desc"></p>
         </th>
       </tr>
@@ -1262,7 +689,7 @@ file from a tidy data frame</p></td>
     </tbody><tbody>
       <tr>
         <th colspan="2">
-          <h2 id="section-utility" class="hasAnchor"><a href="#section-utility" class="anchor"></a>Utility</h2>
+          <h2 id="section-utility-functions" class="hasAnchor"><a href="#section-utility-functions" class="anchor"></a>Utility functions</h2>
           <p class="section-desc"></p>
         </th>
       </tr>
@@ -1324,14 +751,15 @@ file from a tidy data frame</p></td>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>
     <ul class="nav nav-pills nav-stacked">
+      <li><a href="#section-important-functions">Important functions</a></li>
       <li><a href="#section-filtering-dataset">Filtering dataset</a></li>
       <li><a href="#section-detection">Detection</a></li>
       <li><a href="#section-extraction">Extraction</a></li>
       <li><a href="#section-summary-functions">Summary functions</a></li>
-      <li><a href="#section-reading-data">Reading data</a></li>
+      <li><a href="#section-reading-functions">Reading functions</a></li>
       <li><a href="#section-tidying-functions">Tidying functions</a></li>
-      <li><a href="#section-write-tidy-data-to-other-formats">write tidy data to other formats</a></li>
-      <li><a href="#section-utility">Utility</a></li>
+      <li><a href="#section-writing-functions">Writing functions</a></li>
+      <li><a href="#section-utility-functions">Utility functions</a></li>
       <li><a href="#section-run-outside-software">Run outside software</a></li>
     </ul>
   </div>
