@@ -3,26 +3,11 @@ output:
   md_document:
     variant: markdown_github
 ---
-<!-- badges: start -->
-[![lifecycle](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://tidyverse.org/lifecycle/#maturing)
-[![Travis-CI Build Status](https://travis-ci.org/thierrygosselin/radiator.svg?branch=master)](https://travis-ci.org/thierrygosselin/radiator)
-[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/thierrygosselin/radiator?branch=master&svg=true)](https://ci.appveyor.com/project/thierrygosselin/radiator)
-[![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/radiator)](http://cran.r-project.org/package=radiator)
-[![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active)
-[![DOI](https://zenodo.org/badge/14548/thierrygosselin/radiator.svg)](https://zenodo.org/badge/latestdoi/14548/thierrygosselin/radiator)
-
 ```{r, echo = FALSE}
 description <- readLines("DESCRIPTION")
 rvers <- stringr::str_match(grep("R \\(", description, value = TRUE), "[0-9]{1,4}\\.[0-9]{1,4}\\.[0-9]{1,4}")[1,1]
-```
-```{r, echo = FALSE}
-description <- readLines("DESCRIPTION")
 version <- gsub(" ", "", gsub("Version:", "", grep("Version:", description, value = TRUE)))
 ```
-[![packageversion](https://img.shields.io/badge/Package%20version-`r version`-orange.svg)](commits/master)
-[![Last-changedate](https://img.shields.io/badge/last%20change-`r gsub('-', '--', Sys.Date())`-brightgreen.svg)](/commits/master)
-
----
 
 ```{r, echo = FALSE}
 knitr::opts_chunk$set(
@@ -31,6 +16,18 @@ knitr::opts_chunk$set(
   fig.path = "README-"
 )
 ```
+<!-- badges: start -->
+[![lifecycle](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://tidyverse.org/lifecycle/#maturing)
+[![Travis-CI Build Status](https://travis-ci.org/thierrygosselin/radiator.svg?branch=master)](https://travis-ci.org/thierrygosselin/radiator)
+[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/thierrygosselin/radiator?branch=master&svg=true)](https://ci.appveyor.com/project/thierrygosselin/radiator)
+[![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/radiator)](http://cran.r-project.org/package=radiator)
+[![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active)
+[![DOI](https://zenodo.org/badge/14548/thierrygosselin/radiator.svg)](https://zenodo.org/badge/latestdoi/14548/thierrygosselin/radiator)
+[![packageversion](https://img.shields.io/badge/Package%20version-`r version`-orange.svg)](commits/master)
+[![Last-changedate](https://img.shields.io/badge/last%20change-`r gsub('-', '--', Sys.Date())`-brightgreen.svg)](/commits/master)
+
+---
+
 
 
 # radiator: an R package for RADseq Data Exploration, Manipulation and Visualization
