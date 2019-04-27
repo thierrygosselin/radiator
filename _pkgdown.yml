@@ -7,13 +7,27 @@ reference:
   - filter_rad
   - genomic_converter
 
+- title: Working with strata
+  contents:
+  - read_strata
+  - summary_strata
+  - join_strata
+  - individuals2strata
+  - change_pop_names
+  - generate_strata
+
 - title: Filtering dataset
   contents:
   - starts_with("filter_")
+  - reset_filters
 
 - title: Detection
   contents:
   - starts_with("detect_")
+
+- title: sex markers detection
+  contents:
+  - sexy_markers
 
 - title: Extraction
   contents:
@@ -38,13 +52,21 @@ reference:
   - starts_with("write_")
 
 - title: Utility functions
+  desc: <
   contents:
+  - pi
+  - private_alleles
+  - private_haplotypes
+  - allele_frequencies
+  - ibdg_fh
+  - betas_estimator
   - calibrate_alleles
   - change_pop_names
   - check_pop_levels
   - clean_ind_names
   - clean_markers_names
   - clean_pop_names
+  - separate_markers
 
 - title: Run software
   contents:

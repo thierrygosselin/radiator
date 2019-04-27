@@ -154,6 +154,50 @@
     </tbody><tbody>
       <tr>
         <th colspan="2">
+          <h2 id="section-working-with-strata" class="hasAnchor"><a href="#section-working-with-strata" class="anchor"></a>Working with strata</h2>
+          <p class="section-desc"></p>
+        </th>
+      </tr>
+      <tr>
+        
+        <td>
+          <p><code><a href="read_strata.html">read_strata()</a></code> </p>
+        </td>
+        <td><p>read strata</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="summary_strata.html">summary_strata()</a></code> </p>
+        </td>
+        <td><p>Summary of strata</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="join_strata.html">join_strata()</a></code> </p>
+        </td>
+        <td><p>Join the strata with the data</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="individuals2strata.html">individuals2strata()</a></code> </p>
+        </td>
+        <td><p>Create a strata file from a list of individuals</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="change_pop_names.html">change_pop_names()</a></code> </p>
+        </td>
+        <td><p>Transform into a factor the POP_ID column, change names and reorder the levels</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="generate_strata.html">generate_strata()</a></code> </p>
+        </td>
+        <td><p>Generate strata object from the data</p></td>
+      </tr>
+    </tbody><tbody>
+      <tr>
+        <th colspan="2">
           <h2 id="section-filtering-dataset" class="hasAnchor"><a href="#section-filtering-dataset" class="anchor"></a>Filtering dataset</h2>
           <p class="section-desc"></p>
         </th>
@@ -279,6 +323,12 @@ heterozygosity and total coverage</p></td>
           <p><code><a href="filter_whitelist.html">filter_whitelist()</a></code> </p>
         </td>
         <td><p>Filter dataset with whitelist of markers</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="reset_filters.html">reset_filters()</a></code> </p>
+        </td>
+        <td><p>Reset filters (individuals and markers) in radiator GDS object.</p></td>
       </tr>
     </tbody><tbody>
       <tr>
@@ -342,6 +392,20 @@ to highligh potential duplicate individuals</p></td>
           <p><code><a href="detect_ref_genome.html">detect_ref_genome()</a></code> </p>
         </td>
         <td><p>Detect reference genome</p></td>
+      </tr>
+    </tbody><tbody>
+      <tr>
+        <th colspan="2">
+          <h2 id="section-sex-markers-detection" class="hasAnchor"><a href="#section-sex-markers-detection" class="anchor"></a>sex markers detection</h2>
+          <p class="section-desc"></p>
+        </th>
+      </tr>
+      <tr>
+        
+        <td>
+          <p><code><a href="sexy_markers.html">sexy_markers()</a></code> </p>
+        </td>
+        <td><p>sexy_markers finds sex-linked markers and re-assigns sex</p></td>
       </tr>
     </tbody><tbody>
       <tr>
@@ -690,10 +754,46 @@ file from a tidy data frame</p></td>
       <tr>
         <th colspan="2">
           <h2 id="section-utility-functions" class="hasAnchor"><a href="#section-utility-functions" class="anchor"></a>Utility functions</h2>
-          <p class="section-desc"></p>
+          <p class="section-desc"><p>&lt;</p></p>
         </th>
       </tr>
       <tr>
+        
+        <td>
+          <p><code><a href="pi.html">pi()</a></code> </p>
+        </td>
+        <td><p>Nucleotide diversity</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="private_alleles.html">private_alleles()</a></code> </p>
+        </td>
+        <td><p>Find private alleles</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="private_haplotypes.html">private_haplotypes()</a></code> </p>
+        </td>
+        <td><p>private haplotypes</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="allele_frequencies.html">allele_frequencies()</a></code> </p>
+        </td>
+        <td><p>Compute allele frequencies per markers and populations</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="ibdg_fh.html">ibdg_fh()</a></code> </p>
+        </td>
+        <td><p>FH measure of IBDg</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="betas_estimator.html">betas_estimator()</a></code> </p>
+        </td>
+        <td><p>Estimate \(\beta\)s per population</p></td>
+      </tr><tr>
         
         <td>
           <p><code><a href="calibrate_alleles.html">calibrate_alleles()</a></code> </p>
@@ -729,11 +829,17 @@ file from a tidy data frame</p></td>
           <p><code><a href="clean_pop_names.html">clean_pop_names()</a></code> </p>
         </td>
         <td><p>Clean population's names for radiator and other packages</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="separate_markers.html">separate_markers()</a></code> </p>
+        </td>
+        <td><p>Separate markers column into chrom, locus and pos</p></td>
       </tr>
     </tbody><tbody>
       <tr>
         <th colspan="2">
-          <h2 id="section-run-outside-software" class="hasAnchor"><a href="#section-run-outside-software" class="anchor"></a>Run outside software</h2>
+          <h2 id="section-run-software" class="hasAnchor"><a href="#section-run-software" class="anchor"></a>Run software</h2>
           <p class="section-desc"></p>
         </th>
       </tr>
@@ -752,15 +858,17 @@ file from a tidy data frame</p></td>
     <h2>Contents</h2>
     <ul class="nav nav-pills nav-stacked">
       <li><a href="#section-important-functions">Important functions</a></li>
+      <li><a href="#section-working-with-strata">Working with strata</a></li>
       <li><a href="#section-filtering-dataset">Filtering dataset</a></li>
       <li><a href="#section-detection">Detection</a></li>
+      <li><a href="#section-sex-markers-detection">sex markers detection</a></li>
       <li><a href="#section-extraction">Extraction</a></li>
       <li><a href="#section-summary-functions">Summary functions</a></li>
       <li><a href="#section-reading-functions">Reading functions</a></li>
       <li><a href="#section-tidying-functions">Tidying functions</a></li>
       <li><a href="#section-writing-functions">Writing functions</a></li>
       <li><a href="#section-utility-functions">Utility functions</a></li>
-      <li><a href="#section-run-outside-software">Run outside software</a></li>
+      <li><a href="#section-run-software">Run software</a></li>
     </ul>
   </div>
 </div>
