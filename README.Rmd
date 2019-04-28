@@ -32,9 +32,6 @@ knitr::opts_chunk$set(
 
 # radiator: an R package for RADseq Data Exploration, Manipulation and Visualization
 
-This is the development page of the radiator. For main page: [https://thierrygosselin.github.io/radiator/](https://thierrygosselin.github.io/radiator/)
-
-
 Most genomic analysis look for patterns and trends with various statistics. 
 Bias, noise and outliers can have bounded influence on estimators and interfere
 with polymorphism discovery. Avoid bad data exploration and control the impact
@@ -54,3 +51,32 @@ pak::pkg_install("thierrygosselin/radiator")
 library(radiator)
 ```
 For more info to get started and vignettes: [https://thierrygosselin.github.io/radiator/](https://thierrygosselin.github.io/radiator/) 
+
+
+[Computer setup and troubleshooting vignette](https://thierrygosselin.github.io/radiator/articles/rad_genomics_computer_setup.html)
+
+
+## [Learning radiator](https://thierrygosselin.github.io/radiator/articles/getting_started.html)
+
+## [Overview of features](https://thierrygosselin.github.io/radiator/articles/getting_started.html#overview)
+
+## [Vignettes](https://thierrygosselin.github.io/radiator/articles/index.html)
+
+## Citation:
+To get the citation, inside R:
+```r
+citation("radiator")
+```
+
+## [Life cycle](https://thierrygosselin.github.io/radiator/articles/life_cycle.html)
+
+radiator is maturing, but in order to make the package better, changes are 
+inevitable. Experimental functions will change, argument names will change.
+
+* Philosophy, major changes and deprecated functions/arguments are documented in
+life cycle section of functions. 
+* The latest changes are documented ([here](https://thierrygosselin.github.io/radiator/articles/life_cycle.html)) and
+in the changelog.
+* [changelog, versions, new features and bug history](https://thierrygosselin.github.io/radiator/news/index.html)
+* [issues](https://github.com/thierrygosselin/radiator/issues/new/choose)
+* [contributions](https://github.com/thierrygosselin/radiator/issues/new/choose)

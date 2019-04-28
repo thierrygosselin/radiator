@@ -78,7 +78,7 @@ navbar:
   type: default
   left:
   - text: Installation
-    href: articles/installation.html
+    href: index.html
   - text: Get started
     href: articles/get_started.html
   - text: Reference
