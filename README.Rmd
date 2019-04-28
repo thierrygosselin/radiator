@@ -62,7 +62,7 @@ library(radiator)
 
 radiator is maturing, but in order to make the package better, changes are 
 inevitable. Experimental functions will change, argument names will change.
-Your codes and workflows might break from time to time until radiator is stable. Consequently, radiator might not be for you, depending on your tolerance to change.
+Your codes and workflows might break from time to time until radiator is stable. Consequently, depending on your tolerance to change, radiator might not be for you.
 
 * Philosophy, major changes and deprecated functions/arguments are documented in
 life cycle section of functions. 
