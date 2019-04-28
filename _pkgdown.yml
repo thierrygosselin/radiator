@@ -85,6 +85,8 @@ navbar:
     href: reference/index.html
   - text: Articles
     href: articles/index.html
+  - text: Troubleshooting
+    href: http://thierrygosselin.github.io/assigner/articles/rad_genomics_computer_setup.html
   - text: News
     href: news/index.html
   right:
