@@ -45,11 +45,20 @@
 <li>
   <a href="reference/index.html">Reference</a>
 </li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    Articles
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
 <li>
-  <a href="articles/index.html">Articles</a>
-</li>
-<li>
-  <a href="http://thierrygosselin.github.io/assigner/articles/rad_genomics_computer_setup.html">Troubleshooting</a>
+      <a href="articles/rad_genomics_computer_setup.html">Computer setup - Installation - Troubleshooting</a>
+    </li>
+    <li>
+      <a href="articles/life_cycle.html">Life cycle</a>
+    </li>
+  </ul>
 </li>
 <li>
   <a href="news/index.html">News</a>
@@ -102,29 +111,21 @@
 <a href="#learning-radiator" class="anchor"></a><a href="https://thierrygosselin.github.io/radiator/articles/getting_started.html">Learning radiator</a>
 </h2>
 </div>
-<div id="overview" class="section level2">
+<div id="overview-of-features" class="section level2">
 <h2 class="hasAnchor">
-<a href="#overview" class="anchor"></a><a href="https://thierrygosselin.github.io/radiator/articles/getting_started.html#overview">Overview</a>
+<a href="#overview-of-features" class="anchor"></a><a href="https://thierrygosselin.github.io/radiator/articles/getting_started.html#overview">Overview of features</a>
 </h2>
 </div>
-<div id="new-features" class="section level2">
+<div id="new-features-and-changelog" class="section level2">
 <h2 class="hasAnchor">
-<a href="#new-features" class="anchor"></a><a href="https://thierrygosselin.github.io/radiator/news/index.html">New features</a>
+<a href="#new-features-and-changelog" class="anchor"></a><a href="https://thierrygosselin.github.io/radiator/news/index.html">New features and changelog</a>
 </h2>
 <p>Change log, version, new features and bug history lives in the <a href="https://thierrygosselin.github.io/radiator/news/index.html">NEWS.md file</a></p>
 </div>
 <div id="life-cycle" class="section level2">
 <h2 class="hasAnchor">
 <a href="#life-cycle" class="anchor"></a>Life cycle</h2>
-<p><strong>DArT users</strong>:</p>
-<ul>
-<li>
-<code>filter_dart</code>: is now deprecated. Please use <code>filter_rad</code>.</li>
-<li>
-<code>tidy_dart</code> and <code>tidy_silico_dart</code>: are now deprecated. Please use <code>read_dart</code> for all the 4 DArT files recognized by radiator.</li>
-</ul>
-<p><strong>Missing data: visualization and imputations</strong></p>
-<p>Visualizing missing data and it’s imputations requires special attention that fall outside the scope of <strong>radiator</strong>. Inside my package called <a href="https://github.com/thierrygosselin/grur">grur</a>, users can <strong>visualize patterns of missingness</strong> associated with different variables (lanes, chips, sequencers, populations, sample sites, reads/samples, homozygosity, etc). Several <strong>Map-independent imputations</strong> of missing genotypes are available: <strong>Random Forests</strong> (on-the-fly-imputations or predictive modeling), <strong>Extreme Gradient Tree Boosting</strong>, Strawman imputations (~ max/mean/mode: the most frequently observed, non-missing genotypes is used). Imputations can be conducted <strong>overall samples</strong> or <strong>by populations/strata/grouping</strong>. <code><a href="reference/genomic_converter.html">radiator::genomic_converter</a></code> is integrated with the imputation function of <strong>grur</strong>.</p>
+<p>Philosophy, major changes and deprecated functions/arguments.</p>
 </div>
 <div id="vignettes" class="section level2">
 <h2 class="hasAnchor">

@@ -60,11 +60,11 @@ vignette](http://thierrygosselin.github.io/assigner/articles/rad_genomics_comput
 [Learning radiator](https://thierrygosselin.github.io/radiator/articles/getting_started.html)
 ---------------------------------------------------------------------------------------------
 
-[Overview](https://thierrygosselin.github.io/radiator/articles/getting_started.html#overview)
----------------------------------------------------------------------------------------------
+[Overview of features](https://thierrygosselin.github.io/radiator/articles/getting_started.html#overview)
+---------------------------------------------------------------------------------------------------------
 
-[New features](https://thierrygosselin.github.io/radiator/news/index.html)
---------------------------------------------------------------------------
+[New features and changelog](https://thierrygosselin.github.io/radiator/news/index.html)
+----------------------------------------------------------------------------------------
 
 Change log, version, new features and bug history lives in the [NEWS.md
 file](https://thierrygosselin.github.io/radiator/news/index.html)
@@ -72,26 +72,7 @@ file](https://thierrygosselin.github.io/radiator/news/index.html)
 Life cycle
 ----------
 
-**DArT users**:
-
--   `filter_dart`: is now deprecated. Please use `filter_rad`.
--   `tidy_dart` and `tidy_silico_dart`: are now deprecated. Please use
-    `read_dart` for all the 4 DArT files recognized by radiator.
-
-**Missing data: visualization and imputations**
-
-Visualizing missing data and it’s imputations requires special attention
-that fall outside the scope of **radiator**. Inside my package called
-[grur](https://github.com/thierrygosselin/grur), users can **visualize
-patterns of missingness** associated with different variables (lanes,
-chips, sequencers, populations, sample sites, reads/samples,
-homozygosity, etc). Several **Map-independent imputations** of missing
-genotypes are available: **Random Forests** (on-the-fly-imputations or
-predictive modeling), **Extreme Gradient Tree Boosting**, Strawman
-imputations (\~ max/mean/mode: the most frequently observed, non-missing
-genotypes is used). Imputations can be conducted **overall samples** or
-**by populations/strata/grouping**. `radiator::genomic_converter` is
-integrated with the imputation function of **grur**.
+Philosophy, major changes and deprecated functions/arguments.
 
 [Vignettes](https://thierrygosselin.github.io/radiator/articles/index.html)
 ---------------------------------------------------------------------------
