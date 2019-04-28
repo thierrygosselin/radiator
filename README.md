@@ -42,29 +42,16 @@ pak::pkg_install("thierrygosselin/radiator")
 library(radiator)
 ```
 
-For more info to get started and vignettes:
-<https://thierrygosselin.github.io/radiator/>
+<https://thierrygosselin.github.io/radiator/>:
 
-[Computer setup and troubleshooting
-vignette](https://thierrygosselin.github.io/radiator/articles/rad_genomics_computer_setup.html)
-
-[Learning radiator](https://thierrygosselin.github.io/radiator/articles/get_started.html)
------------------------------------------------------------------------------------------
-
-[Overview of features](https://thierrygosselin.github.io/radiator/articles/get_started.html#overview)
------------------------------------------------------------------------------------------------------
-
-[Vignettes](https://thierrygosselin.github.io/radiator/articles/index.html)
----------------------------------------------------------------------------
-
-Citation:
----------
-
-To get the citation, inside R:
-
-``` r
-citation("radiator")
-```
+-   [Computer setup and
+    troubleshooting](https://thierrygosselin.github.io/radiator/articles/rad_genomics_computer_setup.html)
+-   [Learning
+    radiator](https://thierrygosselin.github.io/radiator/articles/get_started.html)
+    \*[Overview of
+    features](https://thierrygosselin.github.io/radiator/articles/get_started.html#overview)
+-   [Vignettes](https://thierrygosselin.github.io/radiator/articles/index.html)
+-   Citation: inside R type `citation("radiator")`
 
 [Life cycle](https://thierrygosselin.github.io/radiator/articles/life_cycle.html)
 ---------------------------------------------------------------------------------
