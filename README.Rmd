@@ -56,12 +56,14 @@ library(radiator)
 * [Learning radiator](https://thierrygosselin.github.io/radiator/articles/get_started.html)
 * [Overview of features](https://thierrygosselin.github.io/radiator/articles/get_started.html#overview)
 * [Vignettes](https://thierrygosselin.github.io/radiator/articles/index.html)
-* Citation: inside R type `citation("radiator")`
+* How to cite radiator: inside R type `citation("radiator")`
 
 ## [Life cycle](https://thierrygosselin.github.io/radiator/articles/life_cycle.html)
 
 radiator is maturing, but in order to make the package better, changes are 
 inevitable. Experimental functions will change, argument names will change.
+Codes and workflow will change until radiator is stable. Consequently, radiator
+might not be for you depending on your tolerance to change.
 
 * Philosophy, major changes and deprecated functions/arguments are documented in
 life cycle section of functions. 
