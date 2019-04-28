@@ -42,13 +42,13 @@ pak::pkg_install("thierrygosselin/radiator")
 library(radiator)
 ```
 
-<https://thierrygosselin.github.io/radiator/>:
-
+-   web site and additional info:
+    <https://thierrygosselin.github.io/radiator/>
 -   [Computer setup and
     troubleshooting](https://thierrygosselin.github.io/radiator/articles/rad_genomics_computer_setup.html)
 -   [Learning
     radiator](https://thierrygosselin.github.io/radiator/articles/get_started.html)
-    \*[Overview of
+-   [Overview of
     features](https://thierrygosselin.github.io/radiator/articles/get_started.html#overview)
 -   [Vignettes](https://thierrygosselin.github.io/radiator/articles/index.html)
 -   Citation: inside R type `citation("radiator")`
