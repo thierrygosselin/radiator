@@ -83,7 +83,7 @@ navbar:
     href: articles/getting_started.html
   - text: Reference
     href: reference/index.html
-  - text: Articles
+  - text: Vignettes
     href: articles/index.html
     menu:
     - text: Computer setup - Installation - Troubleshooting
