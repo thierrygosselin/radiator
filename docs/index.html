@@ -37,17 +37,17 @@
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
 <li>
-  <a href="index.html">Installation</a>
+  <a href="installation.html">Installation</a>
 </li>
 <li>
-  <a href="articles/getting_started.html">Getting started</a>
+  <a href="articles/geting_started.html">Get started</a>
 </li>
 <li>
   <a href="reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
   <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-    Articles
+    Vignettes
      
     <span class="caret"></span>
   </a>
@@ -92,9 +92,9 @@
 <div id="radiator-an-r-package-for-radseq-data-exploration-manipulation-and-visualization" class="section level1">
 <div class="page-header"><h1 class="hasAnchor">
 <a href="#radiator-an-r-package-for-radseq-data-exploration-manipulation-and-visualization" class="anchor"></a>radiator: an R package for RADseq Data Exploration, Manipulation and Visualization</h1></div>
-<p>This is the development page of the <strong>radiator</strong>, if you want to help, see <a href="https://github.com/thierrygosselin/radiator#contributions">contributions section</a></p>
+<p>This is the development page of the radiator. For main page: <a href="https://thierrygosselin.github.io/radiator/">https://thierrygosselin.github.io/radiator/</a></p>
 <p>Most genomic analysis look for patterns and trends with various statistics. Bias, noise and outliers can have bounded influence on estimators and interfere with polymorphism discovery. Avoid bad data exploration and control the impact of filters on your downstream genetic analysis. Use radiator to: import, explore, manipulate, visualize, filter, impute and export your GBS/RADseq data.</p>
-<p><strong>radiator</strong> is designed and optimized for fast computations using Genomic Data Structure <a href="http://zhengxwen.github.io/gdsfmt">GDS</a> file format and data science packages in <a href="https://www.tidyverse.org">tiverse</a>. <strong>radiator</strong> handles VCF files with millions of SNPs and files of several GB.</p>
+<p><strong>radiator</strong> is designed and optimized for fast computations using Genomic Data Structure <a href="http://zhengxwen.github.io/gdsfmt">GDS</a> file format and data science packages in <a href="https://www.tidyverse.org">tidyverse</a>. <strong>radiator</strong> handles VCF files with millions of SNPs and files of several GB.</p>
 <div id="installation" class="section level2">
 <h2 class="hasAnchor">
 <a href="#installation" class="anchor"></a>Installation</h2>
@@ -102,41 +102,7 @@
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1"><span class="cf">if</span> (<span class="op">!</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">require</a></span>(<span class="st">"pak"</span>)) <span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/install.packages">install.packages</a></span>(<span class="st">"pak"</span>)</a>
 <a class="sourceLine" id="cb1-2" title="2">pak<span class="op">::</span><span class="kw"><a href="http://pak.r-lib.org/reference/pkg_install.html">pkg_install</a></span>(<span class="st">"thierrygosselin/radiator"</span>)</a>
 <a class="sourceLine" id="cb1-3" title="3"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(radiator)</a></code></pre></div>
-<p>To minimize dependencies, just the basic required packages are installed with the command above. If you want the full suits of functions and don’t want to be preoccupied, run:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1">radiator<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/radiator/topics/radiator_pkg_install">radiator_pkg_install</a></span>() <span class="co"># that's it. It will update, when necessary, radiator.</span></a></code></pre></div>
-<p><a href="http://thierrygosselin.github.io/assigner/articles/rad_genomics_computer_setup.html">Computer setup and troubleshooting vignette</a></p>
-</div>
-<div id="learning-radiator" class="section level2">
-<h2 class="hasAnchor">
-<a href="#learning-radiator" class="anchor"></a><a href="https://thierrygosselin.github.io/radiator/articles/getting_started.html">Learning radiator</a>
-</h2>
-</div>
-<div id="overview-of-features" class="section level2">
-<h2 class="hasAnchor">
-<a href="#overview-of-features" class="anchor"></a><a href="https://thierrygosselin.github.io/radiator/articles/getting_started.html#overview">Overview of features</a>
-</h2>
-</div>
-<div id="new-features-and-changelog" class="section level2">
-<h2 class="hasAnchor">
-<a href="#new-features-and-changelog" class="anchor"></a><a href="https://thierrygosselin.github.io/radiator/news/index.html">New features and changelog</a>
-</h2>
-<p>Change log, version, new features and bug history lives in the <a href="https://thierrygosselin.github.io/radiator/news/index.html">NEWS.md file</a></p>
-</div>
-<div id="life-cycle" class="section level2">
-<h2 class="hasAnchor">
-<a href="#life-cycle" class="anchor"></a>Life cycle</h2>
-<p>Philosophy, major changes and deprecated functions/arguments.</p>
-</div>
-<div id="vignettes" class="section level2">
-<h2 class="hasAnchor">
-<a href="#vignettes" class="anchor"></a><a href="https://thierrygosselin.github.io/radiator/articles/index.html">Vignettes</a>
-</h2>
-</div>
-<div id="citation" class="section level2">
-<h2 class="hasAnchor">
-<a href="#citation" class="anchor"></a>Citation:</h2>
-<p>To get the citation, inside R:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/citation">citation</a></span>(<span class="st">"radiator"</span>)</a></code></pre></div>
+<p>For more info to get started and vignettes: <a href="https://thierrygosselin.github.io/radiator/">https://thierrygosselin.github.io/radiator/</a></p>
 </div>
 </div>
   </div>

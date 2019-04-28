@@ -3,13 +3,14 @@ output:
   md_document:
     variant: markdown_github
 ---
-```{r, echo = FALSE}
+
+```r
 description <- readLines("DESCRIPTION")
 rvers <- stringr::str_match(grep("R \\(", description, value = TRUE), "[0-9]{1,4}\\.[0-9]{1,4}\\.[0-9]{1,4}")[1,1]
 version <- gsub(" ", "", gsub("Version:", "", grep("Version:", description, value = TRUE)))
 ```
 
-```{r, echo = FALSE}
+```r
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
@@ -32,9 +33,6 @@ knitr::opts_chunk$set(
 
 # radiator: an R package for RADseq Data Exploration, Manipulation and Visualization
 
-This is the development page of the radiator. For main page: [https://thierrygosselin.github.io/radiator/](https://thierrygosselin.github.io/radiator/)
-
-
 Most genomic analysis look for patterns and trends with various statistics. 
 Bias, noise and outliers can have bounded influence on estimators and interfere
 with polymorphism discovery. Avoid bad data exploration and control the impact
@@ -53,4 +51,35 @@ if (!require("pak")) install.packages("pak")
 pak::pkg_install("thierrygosselin/radiator")
 library(radiator)
 ```
-For more info to get started and vignettes: [https://thierrygosselin.github.io/radiator/](https://thierrygosselin.github.io/radiator/) 
+
+To minimize dependencies, just the basic required packages are installed with
+the command above. If you want the full suits of functions and don't want to
+be preoccupied, run:
+
+```r
+radiator::radiator_pkg_install() # that's it. It will update, when necessary, radiator.
+```
+[Computer setup and troubleshooting vignette](https://thierrygosselin.github.io/radiator/articles/rad_genomics_computer_setup.html)
+
+
+## [Learning radiator](https://thierrygosselin.github.io/radiator/articles/getting_started.html)
+
+## [Overview of features](https://thierrygosselin.github.io/radiator/articles/getting_started.html#overview)
+
+## [Vignettes](https://thierrygosselin.github.io/radiator/articles/index.html)
+
+## Citation:
+To get the citation, inside R:
+```r
+citation("radiator")
+```
+
+## [Life cycle](https://thierrygosselin.github.io/radiator/articles/life_cycle.html)
+
+radiator is maturing, but in order to make the package better, changes are 
+inevitable. Experimental functions will change, argument names will change.
+
+* Philosophy, major changes and deprecated functions/arguments ([link](https://thierrygosselin.github.io/radiator/articles/life_cycle.html)).
+* [changelog, versions, new features and bug history](https://thierrygosselin.github.io/radiator/news/index.html)
+* [issues](https://github.com/thierrygosselin/radiator/issues/new/choose)
+* [contributions](https://github.com/thierrygosselin/radiator/issues/new/choose)

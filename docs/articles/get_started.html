@@ -37,17 +37,17 @@
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
 <li>
-  <a href="../index.html">Installation</a>
+  <a href="../installation.html">Installation</a>
 </li>
 <li>
-  <a href="../articles/getting_started.html">Getting started</a>
+  <a href="../articles/geting_started.html">Get started</a>
 </li>
 <li>
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
   <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-    Articles
+    Vignettes
      
     <span class="caret"></span>
   </a>
@@ -88,13 +88,14 @@
             
             <h4 class="date">2019-04-28</h4>
       
-      <small class="dont-index">Source: <a href="https://github.com/thierrygosselin/radiator/blob/master/vignettes/getting_started.Rmd"><code>vignettes/getting_started.Rmd</code></a></small>
-      <div class="hidden name"><code>getting_started.Rmd</code></div>
+      <small class="dont-index">Source: <a href="https://github.com/thierrygosselin/radiator/blob/master/vignettes/get_started.Rmd"><code>vignettes/get_started.Rmd</code></a></small>
+      <div class="hidden name"><code>get_started.Rmd</code></div>
 
     </div>
 
     
     
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1">knitr<span class="op">::</span>opts_chunk<span class="op">$</span><span class="kw">set</span>(<span class="dt">echo =</span> <span class="ot">TRUE</span>)</a></code></pre></div>
 <div id="learning-radiator" class="section level1">
 <h1 class="hasAnchor">
 <a href="#learning-radiator" class="anchor"></a>Learning radiator</h1>
@@ -110,8 +111,8 @@
 <li>DArT users: the strata requires 3 columns and is described in <code>??radiator::readr_dart</code> <a href="https://www.dropbox.com/s/utq2h6o00v55kep/example.dart.strata.tsv?dl=0">example.dart.strata.tsv</a>.</li>
 </ul>
 <p>To make sure it’s going to work properly, try:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1">radiator<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/radiator/topics/summary_strata">summary_strata</a></span>(<span class="st">"my.strata.tsv"</span>)</a>
-<a class="sourceLine" id="cb1-2" title="2"><span class="co"># more details in with `??radiator::summary_strata`</span></a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1">radiator<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/radiator/topics/summary_strata">summary_strata</a></span>(<span class="st">"my.strata.tsv"</span>)</a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="co"># more details in with `??radiator::summary_strata`</span></a></code></pre></div>
 </div>
 <div id="filter-your-radseq-data" class="section level2">
 <h2 class="hasAnchor">
@@ -123,11 +124,11 @@
 <li>The function is made of filtering modules that user’s can also access separately or in combination.</li>
 <li>For 95% of users, <code>filter_rad</code> will be enough to start exploring the biology!</li>
 </ul>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1">data &lt;-<span class="st"> </span>radiator<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/radiator/topics/filter_rad">filter_rad</a></span>(</a>
-<a class="sourceLine" id="cb2-2" title="2">    <span class="dt">data =</span> <span class="st">"my.vcf"</span>,</a>
-<a class="sourceLine" id="cb2-3" title="3">    <span class="dt">strata =</span> <span class="st">"my.strata.tsv"</span>, </a>
-<a class="sourceLine" id="cb2-4" title="4">    <span class="dt">output =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"genind"</span>, <span class="st">"stockr"</span>)</a>
-<a class="sourceLine" id="cb2-5" title="5">    )</a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" title="1">data &lt;-<span class="st"> </span>radiator<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/radiator/topics/filter_rad">filter_rad</a></span>(</a>
+<a class="sourceLine" id="cb3-2" title="2">    <span class="dt">data =</span> <span class="st">"my.vcf"</span>,</a>
+<a class="sourceLine" id="cb3-3" title="3">    <span class="dt">strata =</span> <span class="st">"my.strata.tsv"</span>, </a>
+<a class="sourceLine" id="cb3-4" title="4">    <span class="dt">output =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"genind"</span>, <span class="st">"stockr"</span>)</a>
+<a class="sourceLine" id="cb3-5" title="5">    )</a></code></pre></div>
 </div>
 </div>
 <div id="overview" class="section level1">

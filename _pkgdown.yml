@@ -78,9 +78,9 @@ navbar:
   type: default
   left:
   - text: Installation
-    href: index.html
-  - text: Getting started
-    href: articles/getting_started.html
+    href: installation.html
+  - text: Get started
+    href: articles/geting_started.html
   - text: Reference
     href: reference/index.html
   - text: Vignettes

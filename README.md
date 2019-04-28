@@ -18,9 +18,8 @@ developed.](http://www.repostatus.org/badges/latest/active.svg)](http://www.repo
 radiator: an R package for RADseq Data Exploration, Manipulation and Visualization
 ==================================================================================
 
-This is the development page of the **radiator**, if you want to help,
-see [contributions
-section](https://github.com/thierrygosselin/radiator#contributions)
+This is the development page of the radiator. For main page:
+<https://thierrygosselin.github.io/radiator/>
 
 Most genomic analysis look for patterns and trends with various
 statistics. Bias, noise and outliers can have bounded influence on
@@ -32,7 +31,7 @@ filter, impute and export your GBS/RADseq data.
 **radiator** is designed and optimized for fast computations using
 Genomic Data Structure [GDS](http://zhengxwen.github.io/gdsfmt) file
 format and data science packages in
-[tiverse](https://www.tidyverse.org). **radiator** handles VCF files
+[tidyverse](https://www.tidyverse.org). **radiator** handles VCF files
 with millions of SNPs and files of several GB.
 
 Installation
@@ -46,42 +45,5 @@ pak::pkg_install("thierrygosselin/radiator")
 library(radiator)
 ```
 
-To minimize dependencies, just the basic required packages are installed
-with the command above. If you want the full suits of functions and
-don’t want to be preoccupied, run:
-
-``` r
-radiator::radiator_pkg_install() # that's it. It will update, when necessary, radiator.
-```
-
-[Computer setup and troubleshooting
-vignette](http://thierrygosselin.github.io/assigner/articles/rad_genomics_computer_setup.html)
-
-[Learning radiator](https://thierrygosselin.github.io/radiator/articles/getting_started.html)
----------------------------------------------------------------------------------------------
-
-[Overview of features](https://thierrygosselin.github.io/radiator/articles/getting_started.html#overview)
----------------------------------------------------------------------------------------------------------
-
-[New features and changelog](https://thierrygosselin.github.io/radiator/news/index.html)
-----------------------------------------------------------------------------------------
-
-Change log, version, new features and bug history lives in the [NEWS.md
-file](https://thierrygosselin.github.io/radiator/news/index.html)
-
-Life cycle
-----------
-
-Philosophy, major changes and deprecated functions/arguments.
-
-[Vignettes](https://thierrygosselin.github.io/radiator/articles/index.html)
----------------------------------------------------------------------------
-
-Citation:
----------
-
-To get the citation, inside R:
-
-``` r
-citation("radiator")
-```
+For more info to get started and
+vignettes:<https://thierrygosselin.github.io/radiator/>
