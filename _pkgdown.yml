@@ -17,6 +17,14 @@ reference:
   - change_pop_names
   - generate_strata
 
+- title: Reading functions
+  contents:
+  - starts_with("read_")
+
+- title: Tidying functions
+  contents:
+  - tidy_genomic_data
+  - starts_with("tidy_")
 - title: Filtering dataset
   contents:
   - starts_with("filter_")
@@ -39,15 +47,6 @@ reference:
 - title: Summary functions
   contents:
   - starts_with("summary_")
-
-- title: Reading functions
-  contents:
-  - starts_with("read_")
-
-- title: Tidying functions
-  contents:
-  - tidy_genomic_data
-  - starts_with("tidy_")
 
 - title: Writing functions
   contents:

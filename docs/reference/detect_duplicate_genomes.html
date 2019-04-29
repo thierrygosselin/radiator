@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>Compute pairwise genome similarity or distance between individuals
-to highligh potential duplicate individuals — detect_duplicate_genomes • radiator</title>
+to highlight potential duplicate individuals — detect_duplicate_genomes • radiator</title>
 
 <!-- jquery -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
@@ -32,7 +32,7 @@ to highligh potential duplicate individuals — detect_duplicate_genomes • rad
 
 
 <meta property="og:title" content="Compute pairwise genome similarity or distance between individuals
-to highligh potential duplicate individuals — detect_duplicate_genomes" />
+to highlight potential duplicate individuals — detect_duplicate_genomes" />
 
 <meta property="og:description" content="The function can compute two methods
 to highligh potential duplicate individuals.
@@ -124,7 +124,7 @@ pairwise genome similarity
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Compute pairwise genome similarity or distance between individuals
-to highligh potential duplicate individuals</h1>
+to highlight potential duplicate individuals</h1>
     <small class="dont-index">Source: <a href='https://github.com/thierrygosselin/radiator/blob/master/R/detect_duplicate_genomes.R'><code>R/detect_duplicate_genomes.R</code></a></small>
     <div class="hidden name"><code>detect_duplicate_genomes.Rd</code></div>
     </div>
@@ -178,10 +178,13 @@ Default: <code>detect.duplicate.genomes = TRUE</code>.</p></td>
     </tr>
     <tr>
       <th>distance.method</th>
-      <td><p>(character) The distance measure used inside <code><a href='https://www.rdocumentation.org/packages/stats/topics/dist'>stats::dist</a></code>
-(&lt;= 30000 markers) or <code><a href='https://www.rdocumentation.org/packages/amap/topics/dist'>amap::Dist</a></code> (&gt; 30000 markers).
-This must be one of "euclidean", "maximum", "manhattan", "canberra", "binary".
-Using <code>distance.method = NULL</code> will not run this method.
+      <td><p>(character) Depending on input data, 2 different methods
+are used (give similar results):</p><ul>
+<li><p>gds data The calculation is fast it's <code><a href='https://www.rdocumentation.org/packages/SNPRelate/topics/snpgdsIBS'>SNPRelate::snpgdsIBS</a></code> under
+the hood.</p></li>
+<li><p>tidy data The distance measure uses <code><a href='https://www.rdocumentation.org/packages/amap/topics/dist'>amap::Dist</a></code>.
+This must be one of "euclidean", "maximum", "manhattan", "canberra", "binary".</p></li>
+</ul><p>Using <code>distance.method = NULL</code> will not run this method.
 Default: <code>distance.method = "manhattan"</code>. This is very fast
 compared to the genome similarity method. It uses allele counts and the codes
 are tailored for biallelic and multiallelic markers.</p></td>
@@ -277,55 +280,56 @@ an extremely low number genotypes...</em></p>
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><span class='co'># NOT RUN {</span>
-<span class='co'># First run and simplest way (if you have the tidy df):</span>
-<span class='no'>dup</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>radiator</span><span class='kw ns'>::</span><span class='fu'><a href='https://www.rdocumentation.org/packages/radiator/topics/detect_duplicate_genomes'>detect_duplicate_genomes</a></span>(<span class='kw'>data</span> <span class='kw'>=</span> <span class='st'>"wombat_tidy.tsv"</span>)
+    <pre class="examples"># NOT RUN {
+# First run and simplest way (if you have the tidy tibble):
+dup <- radiator::detect_duplicate_genomes(data = "wombat_tidy.rad")
 
-<span class='co'>#If you need a tidy df:</span>
-<span class='no'>dup</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>radiator</span><span class='kw ns'>::</span><span class='fu'><a href='https://www.rdocumentation.org/packages/radiator/topics/tidy_genomic_data'>tidy_genomic_data</a></span>(
-<span class='kw'>data</span> <span class='kw'>=</span> <span class='st'>"wombat_tidy.tsv"</span>,
-<span class='kw'>strata</span> <span class='kw'>=</span> <span class='st'>"wombat.strata.tsv"</span>,
-<span class='kw'>vcf.metadata</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>
-) <span class='kw'>%&gt;%</span>
-<span class='kw pkg'>radiator</span><span class='kw ns'>::</span><span class='fu'><a href='https://www.rdocumentation.org/packages/radiator/topics/detect_duplicate_genomes'>detect_duplicate_genomes</a></span>(<span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>.</span>)
+# This will use by default:
+distance.method = "manhattan"
+genome = FALSE
+#parallel.core = all my CPUs - 1
 
-<span class='co'># This will use by defaul:</span>
-<span class='no'>distance.method</span> <span class='kw'>=</span> <span class='st'>"manhattan"</span>
-<span class='no'>genome</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>
-<span class='co'>#parallel.core = all my CPUs - 1</span>
+#If you need a tidy tibble: use one of radiator \code{tidy_} function or
+\code{radiator::tidy_genomic_data}
 
-<span class='co'># To view the manhattan plot:</span>
-<span class='no'>dup</span>$<span class='no'>manhattan.plot.distance</span>
 
-<span class='co'># to view the data stats</span>
-<span class='no'>dup.data.stats</span> <span class='kw'>&lt;-</span> <span class='no'>dup</span>$<span class='no'>distance.stats</span>
+# To view the manhattan plot:
+dup$manhattan.plot.distance
 
-<span class='co'># to view the data</span>
-<span class='no'>dup.data</span> <span class='kw'>&lt;-</span> <span class='no'>dup</span>$<span class='no'>distance</span>
+# to view the data stats
+dup.data.stats <- dup$distance.stats
 
-<span class='co'># Based on the look of the distribution using both manhattan and boxplot,</span>
-<span class='co'># I can filter the dataset to highlight potential duplicates.</span>
+# to view the data
+dup.data <- dup$distance
 
-<span class='co'># To run the distance (with euclidean distance instead of the default manhattan,</span>
-<span class='co'># and also carry the second analysis (with the genome method):</span>
-<span class='no'>dup</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>radiator</span><span class='kw ns'>::</span><span class='fu'><a href='https://www.rdocumentation.org/packages/radiator/topics/tidy_genomic_data'>tidy_genomic_data</a></span>(
-<span class='kw'>data</span> <span class='kw'>=</span> <span class='st'>"wombat_tidy.tsv"</span>,
-<span class='kw'>strata</span> <span class='kw'>=</span> <span class='st'>"wombat.strata.tsv"</span>,
-<span class='kw'>vcf.metadata</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>
-) <span class='kw'>%&gt;%</span>
-<span class='kw pkg'>radiator</span><span class='kw ns'>::</span><span class='fu'><a href='https://www.rdocumentation.org/packages/radiator/topics/detect_duplicate_genomes'>detect_duplicate_genomes</a></span>(<span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>.</span>, <span class='kw'>distance.method</span> <span class='kw'>=</span> <span class='st'>"euclidean"</span>, <span class='kw'>genome</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+# Based on the look of the distribution using both manhattan and boxplot,
+# I can filter the dataset to highlight potential duplicates.
 
-<span class='co'># to view the data of the genome data</span>
-<span class='no'>dup.data</span> <span class='kw'>&lt;-</span> <span class='no'>dup</span>$<span class='no'>pairwise.genome.similarity</span>
+# To run the distance (with euclidean distance instead of the default manhattan,
+# and also carry the second analysis (with the genome method):
+dup <- radiator::tidy_genomic_data(
+    data = "wombat.vcf",
+    strata = "strata_wombat.tsv") %>%
+radiator::detect_duplicate_genomes(
+    data = .,
+    distance.method = "euclidean",
+    genome = TRUE
+)
 
-<span class='co'># Based on the look of the distribution using both manhattan and boxplot,</span>
-<span class='co'># I can filter the dataset based on 98% of identical genotype proportion,</span>
-<span class='co'># to highlight potential duplicates:</span>
-<span class='no'>dup.filtered</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>dplyr</span><span class='kw ns'>::</span><span class='fu'><a href='https://dplyr.tidyverse.org/reference/filter.html'>filter</a></span>(<span class='kw'>.data</span> <span class='kw'>=</span> <span class='no'>dup.data</span>, <span class='no'>PROP_IDENTICAL</span> <span class='kw'>&gt;</span> <span class='fl'>0.98</span>)
+# to view the data of the genome data
+dup.data <- dup$pairwise.genome.similarity
 
-<span class='co'># Get the list of duplicates id</span>
-<span class='no'>dup.list.names</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/data.frame'>data.frame</a></span>(<span class='kw'>INDIVIDUALS</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/unique'>unique</a></span>(<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='no'>dup.filtered</span>$<span class='no'>ID1</span>, <span class='no'>dup.filtered</span>$<span class='no'>ID2</span>)))
-<span class='co'># }</span></pre>
+# Based on the look of the distribution using both manhattan and boxplot,
+# I can filter the dataset based on 98% of identical genotype proportion,
+# to highlight potential duplicates:
+dup.filtered <- dplyr::filter(.data = dup.data, PROP_IDENTICAL > 0.98)
+
+# Get the list of duplicates id
+dup.list.names <- tibble::tibble(
+INDIVIDUALS = unique(c(dup.filtered$ID1, dup.filtered$ID2))
+)
+# }
+</pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>

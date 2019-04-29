@@ -2,7 +2,7 @@
 
 #' @name detect_duplicate_genomes
 #' @title Compute pairwise genome similarity or distance between individuals
-#' to highligh potential duplicate individuals
+#' to highlight potential duplicate individuals
 #' @description The function can compute two methods
 #' to highligh potential duplicate individuals.
 #' \enumerate{
@@ -34,9 +34,14 @@
 # By default, a random number is generated and printed.
 # Default: \code{random.seed = NULL}.
 
-#' @param distance.method (character) The distance measure used inside \code{stats::dist}
-#' (<= 30000 markers) or \code{amap::Dist} (> 30000 markers).
+#' @param distance.method (character) Depending on input data, 2 different methods
+#' are used (give similar results):
+#' \itemize{
+#' \item gds data The calculation is fast it's \code{SNPRelate::snpgdsIBS} under
+#' the hood.
+#' \item tidy data The distance measure uses \code{amap::Dist}.
 #' This must be one of "euclidean", "maximum", "manhattan", "canberra", "binary".
+#' }
 #' Using \code{distance.method = NULL} will not run this method.
 #' Default: \code{distance.method = "manhattan"}. This is very fast
 #' compared to the genome similarity method. It uses allele counts and the codes
@@ -120,21 +125,17 @@
 
 #' @examples
 #' \dontrun{
-#' # First run and simplest way (if you have the tidy df):
-#' dup <- radiator::detect_duplicate_genomes(data = "wombat_tidy.tsv")
+#' # First run and simplest way (if you have the tidy tibble):
+#' dup <- radiator::detect_duplicate_genomes(data = "wombat_tidy.rad")
 #'
-#' #If you need a tidy df:
-#' dup <- radiator::tidy_genomic_data(
-#' data = "wombat_tidy.tsv",
-#' strata = "wombat.strata.tsv",
-#' vcf.metadata = FALSE
-#' ) %>%
-#' radiator::detect_duplicate_genomes(data = .)
-#'
-#' # This will use by defaul:
+#' # This will use by default:
 #' distance.method = "manhattan"
 #' genome = FALSE
 #' #parallel.core = all my CPUs - 1
+#'
+#' #If you need a tidy tibble: use one of radiator \code{tidy_} function or
+#' \code{radiator::tidy_genomic_data}
+#'
 #'
 #' # To view the manhattan plot:
 #' dup$manhattan.plot.distance
@@ -151,11 +152,13 @@
 #' # To run the distance (with euclidean distance instead of the default manhattan,
 #' # and also carry the second analysis (with the genome method):
 #' dup <- radiator::tidy_genomic_data(
-#' data = "wombat_tidy.tsv",
-#' strata = "wombat.strata.tsv",
-#' vcf.metadata = FALSE
-#' ) %>%
-#' radiator::detect_duplicate_genomes(data = ., distance.method = "euclidean", genome = TRUE)
+#'     data = "wombat.vcf",
+#'     strata = "strata_wombat.tsv") %>%
+#' radiator::detect_duplicate_genomes(
+#'     data = .,
+#'     distance.method = "euclidean",
+#'     genome = TRUE
+#' )
 #'
 #' # to view the data of the genome data
 #' dup.data <- dup$pairwise.genome.similarity
@@ -166,7 +169,9 @@
 #' dup.filtered <- dplyr::filter(.data = dup.data, PROP_IDENTICAL > 0.98)
 #'
 #' # Get the list of duplicates id
-#' dup.list.names <- data.frame(INDIVIDUALS = unique(c(dup.filtered$ID1, dup.filtered$ID2)))
+#' dup.list.names <- tibble::tibble(
+#' INDIVIDUALS = unique(c(dup.filtered$ID1, dup.filtered$ID2))
+#' )
 #' }
 
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
