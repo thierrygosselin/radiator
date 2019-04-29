@@ -43,14 +43,15 @@ library(radiator)
 ```
 
 Web site with additional info:
-<https://thierrygosselin.github.io/radiator/> \* [Computer setup and
-troubleshooting](https://thierrygosselin.github.io/radiator/articles/rad_genomics_computer_setup.html)
-\* [Learning
-radiator](https://thierrygosselin.github.io/radiator/articles/get_started.html)
-and [Overview of
-features](https://thierrygosselin.github.io/radiator/articles/get_started.html#overview)
-\*
-[Vignettes](https://thierrygosselin.github.io/radiator/articles/index.html)
+<https://thierrygosselin.github.io/radiator/>
+
+-   [Computer setup and
+    troubleshooting](https://thierrygosselin.github.io/radiator/articles/rad_genomics_computer_setup.html)
+-   [Learning
+    radiator](https://thierrygosselin.github.io/radiator/articles/get_started.html)
+    and [Overview of
+    features](https://thierrygosselin.github.io/radiator/articles/get_started.html#overview)
+-   [Vignettes](https://thierrygosselin.github.io/radiator/articles/index.html)
 
 [Life cycle](https://thierrygosselin.github.io/radiator/articles/life_cycle.html)
 ---------------------------------------------------------------------------------
