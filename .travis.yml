@@ -11,6 +11,11 @@ before_install:
   - Rscript -e 'update.packages(ask = FALSE)'
   - curl -OL http://raw.github.com/craigcitro/r-travis/master/scripts/travis-tool.sh
   - chmod 755 ./travis-tool.sh
+  # Add GDAL, GEOS, proj, and units2 dependencies.
+  - sudo apt-get install --yes libudunits2-dev libproj-dev libgeos-dev libgdal-dev libgsl0-dev
+
+
+
 # Install packages from github
 #r_github_packages:
 #  - zhengxwen/gdsfmt
@@ -20,11 +25,6 @@ notifications:
     on_success: change
     on_failure: change
 
-addons:
-  apt:
-    packages:
-      - libgsl0-dev
-      - libudunits2-dev
 os:
   - linux
   - osx
@@ -35,3 +35,16 @@ env:
     - R_CHECK_TIME="TRUE"
     - R_CHECK_TESTS="TRUE"
     - _R_CHECK_TIMINGS_="0"
+
+# Binary versions of packages to reduce build time.
+r_binary_packages:
+  - data.table
+  - dplyr
+  - markdown
+  - readr
+  - rlang
+  - rmarkdown
+  - stringi
+  - tidyr
+  - tibble
+  - ggplot2
