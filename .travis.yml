@@ -24,6 +24,7 @@ addons:
   apt:
     packages:
       - libgsl0-dev
+      - libudunits2-dev
 os:
   - linux
   - osx
