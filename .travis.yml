@@ -12,8 +12,8 @@ before_install:
   - curl -OL http://raw.github.com/craigcitro/r-travis/master/scripts/travis-tool.sh
   - chmod 755 ./travis-tool.sh
 # Install packages from github
-r_github_packages:
-  - zhengxwen/gdsfmt
+#r_github_packages:
+#  - zhengxwen/gdsfmt
 
 notifications:
   email:
