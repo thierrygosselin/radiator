@@ -37,8 +37,8 @@ Installation
 To try out the dev version of **radiator**, copy/paste the code below:
 
 ``` r
-if (!require("pak")) install.packages("pak")
-pak::pkg_install("thierrygosselin/radiator")
+if (!require("devtools")) install.packages("devtools")
+devtools::install_github("thierrygosselin/radiator")
 library(radiator)
 ```
 

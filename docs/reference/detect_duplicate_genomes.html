@@ -180,9 +180,9 @@ Default: <code>detect.duplicate.genomes = TRUE</code>.</p></td>
       <th>distance.method</th>
       <td><p>(character) Depending on input data, 2 different methods
 are used (give similar results):</p><ul>
-<li><p>gds data The calculation is fast it's <code><a href='https://www.rdocumentation.org/packages/SNPRelate/topics/snpgdsIBS'>SNPRelate::snpgdsIBS</a></code> under
+<li><p>gds data The calculation is fast it's <code>SNPRelate::snpgdsIBS</code> under
 the hood.</p></li>
-<li><p>tidy data The distance measure uses <code><a href='https://www.rdocumentation.org/packages/amap/topics/dist'>amap::Dist</a></code>.
+<li><p>tidy data The distance measure uses <code>amap::Dist</code>.
 This must be one of "euclidean", "maximum", "manhattan", "canberra", "binary".</p></li>
 </ul><p>Using <code>distance.method = NULL</code> will not run this method.
 Default: <code>distance.method = "manhattan"</code>. This is very fast
