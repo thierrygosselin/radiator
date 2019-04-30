@@ -78,7 +78,7 @@ write_gsi_sim <- function(
 
   # POP_ID in gsi_sim does not like spaces, we need to remove space in everything touching POP_ID...
   # pop.levels, pop.labels, pop.select, strata, etc
-  check <- check_pop_levels(pop.levels = pop.levels,
+  check <- radiator::check_pop_levels(pop.levels = pop.levels,
                             pop.labels = pop.labels,
                             pop.select = NULL)
   # list2env(x = ., globalenv())
@@ -92,10 +92,10 @@ write_gsi_sim <- function(
   # Info for gsi_sim input
   n.individuals <- dplyr::n_distinct(data$INDIVIDUALS)  # number of individuals
   n.markers <- dplyr::n_distinct(data$MARKERS)          # number of markers
-  list.markers <- order(unique(data$MARKERS))           # list of markers
+  list.markers <- sort(unique(data$MARKERS))           # list of markers
 
   if (!rlang::has_name(data, "GT")) {
-    data <- calibrate_alleles(data = data, verbose = FALSE) %$% input
+    data <- radiator::calibrate_alleles(data = data, verbose = FALSE) %$% input
   }
 
   # Spread/dcast in wide format
@@ -125,7 +125,7 @@ write_gsi_sim <- function(
   if (is.null(strata)) {
     strata <- radiator::generate_strata(data = data, pop.id = TRUE)
   } else {
-    strata <- read_strata(
+    strata <- radiator::read_strata(
       strata = strata,
       pop.id = TRUE,
       pop.levels = pop.levels,
@@ -133,7 +133,7 @@ write_gsi_sim <- function(
       verbose = FALSE) %$%
       strata
 
-    data <- join_strata(data = data, strata = strata, pop.id = TRUE, verbose = FALSE)
+    data <- radiator::join_strata(data = data, strata = strata, pop.id = TRUE, verbose = FALSE)
   }
 
   # write gsi_sim file
@@ -154,7 +154,7 @@ write_gsi_sim <- function(
   gsi_sim.split <- split(data, pop)  # split gsi_sim by populations
   pop.string <- as.character(unique(pop))
   for (k in pop.string) {
-    readr::write_delim(x = as.data.frame(stringi::stri_join("pop", k, sep = " ")),
+    readr::write_delim(x = tibble::as_tibble(stringi::stri_join("pop", k, sep = " ")),
                        path = filename, delim = "\n", append = TRUE, col_names = FALSE)
     readr::write_delim(x = gsi_sim.split[[k]],
                        path = filename, delim = " ", append = TRUE, col_names = FALSE)

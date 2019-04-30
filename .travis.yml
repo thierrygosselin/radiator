@@ -11,10 +11,10 @@ before_install:
   - Rscript -e 'update.packages(ask = FALSE)'
   - curl -OL http://raw.github.com/craigcitro/r-travis/master/scripts/travis-tool.sh
   - chmod 755 ./travis-tool.sh
-  # Add GDAL, GEOS, proj, and units2 dependencies.
+
+# Add GDAL, GEOS, proj, and units2 dependencies.
+apt_packages:
   - sudo apt-get install --yes libudunits2-dev libproj-dev libgeos-dev libgdal-dev libgsl0-dev
-
-
 
 # Install packages from github
 #r_github_packages:
