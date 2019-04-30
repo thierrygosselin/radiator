@@ -1,4 +1,4 @@
-  # DO NOT CHANGE the "init" and "install" sections below
+# DO NOT CHANGE the "init" and "install" sections below
 
 # Download script file from GitHub
 init:
@@ -8,19 +8,22 @@ init:
         Import-Module '..\appveyor-tool.ps1'
 
 install:
-  ps: |
-        Bootstrap
-        InstallRtools
+  ps: Bootstrap
+
+cache:
+  - C:\RLibrary
+
+environment:
+  NOT_CRAN: true
+  # env vars that may need to be set, at least temporarily, from time to time
+  # see https://github.com/krlmlr/r-appveyor#readme for details
+  USE_RTOOLS: true
+  # R_REMOTES_STANDALONE: true
 
 # Adapt as necessary starting from here
 
-environment:
-  global:
-    USE_RTOOLS: true
-
 build_script:
-  - set _R_CHECK_FORCE_SUGGESTS_=false
-  - travis-tool.sh install_deps install_r R.oo R.utils
+  - travis-tool.sh install_deps
 
 test_script:
   - travis-tool.sh run_tests

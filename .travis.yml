@@ -4,9 +4,10 @@ language: r
 r:
   - release
 cache: packages
+dist: trusty
+sudo: required
 warnings_are_errors: false
 bioc_required: true
-sudo: false
 before_install:
   - Rscript -e 'update.packages(ask = FALSE)'
   - curl -OL http://raw.github.com/craigcitro/r-travis/master/scripts/travis-tool.sh
