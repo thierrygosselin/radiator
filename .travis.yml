@@ -1,8 +1,6 @@
 # Sample .travis.yml for R projects
 
 language: r
-r:
-  - release
 cache: packages
 dist: trusty
 sudo: required
@@ -10,6 +8,7 @@ warnings_are_errors: false
 bioc_required: true
 
 # Add GDAL, GEOS, proj, and units2 dependencies.
+
 before_install:
   - Rscript -e 'update.packages(ask = FALSE)'
   - curl -OL http://raw.github.com/craigcitro/r-travis/master/scripts/travis-tool.sh
@@ -29,7 +28,7 @@ notifications:
 
 os:
   - linux
-  - osx
+  #- osx
 env:
   global:
     - NOT_CRAN: true
@@ -37,6 +36,12 @@ env:
     - R_CHECK_TIME="TRUE"
     - R_CHECK_TESTS="TRUE"
     - _R_CHECK_TIMINGS_="0"
+    - _R_CHECK_FORCE_SUGGESTS_=false
+    - MAKEFLAGS="-j 2"
+    - TRAVIS_CXXFLAGS="-Wall -Wextra -pedantic -Werror"
+    - R_REMOTES_NO_ERRORS_FROM_WARNINGS=true
+    - _R_CHECK_SYSTEM_CLOCK_=FALSE
+
 
 # Binary versions of packages to reduce build time.
 r_binary_packages:
