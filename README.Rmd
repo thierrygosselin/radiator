@@ -25,10 +25,8 @@ knitr::opts_chunk$set(
 [![DOI](https://zenodo.org/badge/14548/thierrygosselin/radiator.svg)](https://zenodo.org/badge/latestdoi/14548/thierrygosselin/radiator)
 [![packageversion](https://img.shields.io/badge/Package%20version-`r version`-orange.svg)](commits/master)
 [![Last-changedate](https://img.shields.io/badge/last%20change-`r gsub('-', '--', Sys.Date())`-brightgreen.svg)](/commits/master)
-
+<!-- badges: end -->
 ---
-
-
 
 # radiator: an R package for RADseq Data Exploration, Manipulation and Visualization
 
@@ -45,7 +43,7 @@ SNPs and files of several GB.
 ## Installation
 To try out the dev version of **radiator**, copy/paste the code below:
 
-```r
+```{r eval = FALSE}
 if (!require("devtools")) install.packages("devtools")
 devtools::install_github("thierrygosselin/radiator")
 library(radiator)
