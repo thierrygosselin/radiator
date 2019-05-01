@@ -1,21 +1,14 @@
 ---
-output:
-  md_document:
-    variant: markdown_github
+output: github_document
 ---
+
+
 ```{r, echo = FALSE}
 description <- readLines("DESCRIPTION")
 rvers <- stringr::str_match(grep("R \\(", description, value = TRUE), "[0-9]{1,4}\\.[0-9]{1,4}\\.[0-9]{1,4}")[1,1]
 version <- gsub(" ", "", gsub("Version:", "", grep("Version:", description, value = TRUE)))
 ```
 
-```{r, echo = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  fig.path = "README-"
-)
-```
 <!-- badges: start -->
 [![lifecycle](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://tidyverse.org/lifecycle/#maturing)
 [![Travis-CI Build Status](https://travis-ci.org/thierrygosselin/radiator.svg?branch=master)](https://travis-ci.org/thierrygosselin/radiator)
@@ -25,8 +18,14 @@ knitr::opts_chunk$set(
 [![packageversion](https://img.shields.io/badge/Package%20version-`r version`-orange.svg)](commits/master)
 [![Last-changedate](https://img.shields.io/badge/last%20change-`r gsub('-', '--', Sys.Date())`-brightgreen.svg)](/commits/master)
 <!-- badges: end -->
----
 
+```{r, echo = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "README-"
+)
+```
 # radiator: an R package for RADseq Data Exploration, Manipulation and Visualization
 
 Most genomic analysis look for patterns and trends with various statistics. 
