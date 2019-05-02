@@ -1,3 +1,5 @@
+# radiator 1.1.0
+
 # radiator 1.0.0 2019-05-01
 
 * There is still documentation and vignette to fix, but this is 
