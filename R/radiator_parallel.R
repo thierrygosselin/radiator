@@ -12,8 +12,6 @@
 #' \href{https://github.com/kvnkuang/pbmcapply}{Kevin Kuang},
 #' \href{https://github.com/psolymos/pbapply}{Peter Solymos} and
 #' \href{https://github.com/EricArcher/}{Eric Archer}.
-
-
 # @inheritParams parallel::mclapply
 # Doesnt work and throws an error for bad markup so have to do it manually until
 # parallel fix this bug
@@ -26,6 +24,7 @@
 #' @param mc.cores see \pkg{parallel} \code{\link{mclapply}}
 #' @param mc.cleanup see \pkg{parallel} \code{\link{mclapply}}
 #' @param mc.allow.recursive see \pkg{parallel} \code{\link{mclapply}}
+#' @param affinity.list see \pkg{parallel} \code{\link{mclapply}}
 
 # @return For mclapply, a list of the same length as X and named by X.
 #' @rdname radiator_parallel
@@ -39,9 +38,10 @@ mclapply_win <- function(
   mc.preschedule = TRUE,
   mc.set.seed = TRUE,
   mc.silent = FALSE,
-  mc.cores = NULL,
+  mc.cores = getOption("mc.cores", 2L),
   mc.cleanup = TRUE,
-  mc.allow.recursive = TRUE
+  mc.allow.recursive = TRUE,
+  affinity.list = NULL
 ) {
 
   # Create a cluster
@@ -106,6 +106,7 @@ mclapply_win <- function(
 # @inheritParams parallel::mclapply
 #' @return For mclapply, a list of the same length as X and named by X.
 #' @rdname radiator_parallel
+#' @inheritParams mclapply_win
 #' @keywords internal
 #' @export
 .radiator_parallel_mc <- switch(
@@ -124,6 +125,7 @@ mclapply_win <- function(
 # @inheritParams parallel::mclapply
 #' @return For mclapply, a list of the same length as X and named by X.
 #' @rdname radiator_parallel
+#' @inheritParams mclapply_win
 #' @keywords internal
 #' @export
 .radiator_parallel <- switch(

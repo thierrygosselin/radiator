@@ -7,8 +7,8 @@
 \title{hack to switch function for parallel computation based on OS}
 \usage{
 mclapply_win(X, FUN, ..., mc.preschedule = TRUE, mc.set.seed = TRUE,
-  mc.silent = FALSE, mc.cores = NULL, mc.cleanup = TRUE,
-  mc.allow.recursive = TRUE)
+  mc.silent = FALSE, mc.cores = getOption("mc.cores", 2L),
+  mc.cleanup = TRUE, mc.allow.recursive = TRUE, affinity.list = NULL)
 
 .radiator_parallel_mc(X, FUN, ..., mc.preschedule = TRUE,
   mc.set.seed = TRUE, mc.silent = FALSE,
@@ -39,6 +39,8 @@ mclapply_win(X, FUN, ..., mc.preschedule = TRUE, mc.set.seed = TRUE,
 \item{mc.cleanup}{see \pkg{parallel} \code{\link{mclapply}}}
 
 \item{mc.allow.recursive}{see \pkg{parallel} \code{\link{mclapply}}}
+
+\item{affinity.list}{see \pkg{parallel} \code{\link{mclapply}}}
 }
 \value{
 For mclapply, a list of the same length as X and named by X.

@@ -2,7 +2,7 @@
 
 #' @name detect_duplicate_genomes
 #' @title Compute pairwise genome similarity or distance between individuals
-#' to highlight potential duplicate individuals
+#' to highligh potential duplicate individuals
 #' @description The function can compute two methods
 #' to highligh potential duplicate individuals.
 #' \enumerate{
@@ -152,13 +152,11 @@
 #' # To run the distance (with euclidean distance instead of the default manhattan,
 #' # and also carry the second analysis (with the genome method):
 #' dup <- radiator::tidy_genomic_data(
-#'     data = "wombat.vcf",
-#'     strata = "strata_wombat.tsv") %>%
-#' radiator::detect_duplicate_genomes(
-#'     data = .,
-#'     distance.method = "euclidean",
-#'     genome = TRUE
-#' )
+#' data = wombat_tidy_object,
+#' strata = "wombat.strata.tsv",
+#' vcf.metadata = FALSE
+#' ) %>%
+#' radiator::detect_duplicate_genomes(data = ., distance.method = "euclidean", genome = TRUE)
 #'
 #' # to view the data of the genome data
 #' dup.data <- dup$pairwise.genome.similarity
@@ -169,9 +167,7 @@
 #' dup.filtered <- dplyr::filter(.data = dup.data, PROP_IDENTICAL > 0.98)
 #'
 #' # Get the list of duplicates id
-#' dup.list.names <- tibble::tibble(
-#' INDIVIDUALS = unique(c(dup.filtered$ID1, dup.filtered$ID2))
-#' )
+#' dup.list.names <- data.frame(INDIVIDUALS = unique(c(dup.filtered$ID1, dup.filtered$ID2)))
 #' }
 
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}

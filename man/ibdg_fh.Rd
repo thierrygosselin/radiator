@@ -48,7 +48,7 @@ under hypothetical random mating
 (Keller et al., 2011; Kardos et al., 2015; Hedrick & Garcia-Dorado, 2016).
 
 This function is using a modified version of the FH measure
-(constructed using \href{http://pngu.mgh.harvard.edu/~purcell/plink/}{PLINK}
+(constructed using \href{https://www.cog-genomics.org/plink2}{PLINK}
 \code{-het} option) described in (Keller et al., 2011; Kardos et al., 2015).
 
 The novelties are:

@@ -8,7 +8,6 @@ warnings_are_errors: false
 bioc_required: true
 
 # Add GDAL, GEOS, proj, and units2 dependencies.
-
 before_install:
   - Rscript -e 'update.packages(ask = FALSE)'
   - curl -OL http://raw.github.com/craigcitro/r-travis/master/scripts/travis-tool.sh
@@ -29,6 +28,11 @@ notifications:
 os:
   - linux
   #- osx
+
+#matrix:
+#  allow_failures:
+#    - os: osx
+
 env:
   global:
     - NOT_CRAN: true

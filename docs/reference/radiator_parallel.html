@@ -128,7 +128,7 @@ Eric Archer." />
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>hack to switch function for parallel computation based on OS</h1>
-    <small class="dont-index">Source: <a href='https://github.com/thierrygosselin/radiator/blob/master/R/radiator_parallel.R'><code>R/radiator_parallel.R</code></a></small>
+    
     <div class="hidden name"><code>radiator_parallel.Rd</code></div>
     </div>
 
@@ -149,8 +149,8 @@ The code below was inspired from
     </div>
 
     <pre class="usage"><span class='fu'>mclapply_win</span>(<span class='no'>X</span>, <span class='no'>FUN</span>, <span class='no'>...</span>, <span class='kw'>mc.preschedule</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>mc.set.seed</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>mc.silent</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>mc.cores</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>mc.cleanup</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>mc.allow.recursive</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+  <span class='kw'>mc.silent</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>mc.cores</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/options'>getOption</a></span>(<span class='st'>"mc.cores"</span>, <span class='fl'>2L</span>),
+  <span class='kw'>mc.cleanup</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>mc.allow.recursive</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>affinity.list</span> <span class='kw'>=</span> <span class='kw'>NULL</span>)
 
 <span class='fu'>.radiator_parallel_mc</span>(<span class='no'>X</span>, <span class='no'>FUN</span>, <span class='no'>...</span>, <span class='kw'>mc.preschedule</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
   <span class='kw'>mc.set.seed</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>mc.silent</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
@@ -200,6 +200,10 @@ The code below was inspired from
     </tr>
     <tr>
       <th>mc.allow.recursive</th>
+      <td><p>see <span class="pkg">parallel</span> <code>mclapply</code></p></td>
+    </tr>
+    <tr>
+      <th>affinity.list</th>
       <td><p>see <span class="pkg">parallel</span> <code>mclapply</code></p></td>
     </tr>
     </table>

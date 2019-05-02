@@ -28,7 +28,7 @@ Natural Disturbances: Insights from Beta-Diversity Decomposition.
 PLoS ONE, 10, e0138696.
 }
 \seealso{
-\code{beta.div} is available on Pierre Legendre web site \url{http://adn.biol.umontreal.ca/~numericalecology/Rcode/} \code{randomForestSRC} is available on CRAN \url{http://cran.r-project.org/web/packages/randomForestSRC/} and github \url{https://github.com/ehrlinger/randomForestSRC}
+\code{beta.div} is available on Pierre Legendre web site \url{http://adn.biol.umontreal.ca/~numericalecology/Rcode/}
 }
 \author{
 Laura Benestan \email{laura.benestan@icloud.com} and

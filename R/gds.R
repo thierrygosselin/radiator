@@ -2458,7 +2458,7 @@ gds2tidy <- function(
 #' @name write_gds
 #' @title Write a GDS object from a tidy data frame
 #' @description Write a Genomic Data Structure (GDS) file format
-#' \href{http://zhengxwen.github.io/gdsfmt}{gdsfmt}
+#' \href{https://github.com/zhengxwen/gdsfmt}{gdsfmt}
 #' and object of class \code{SeqVarGDSClass} from a tidy data frame.
 #'
 #' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}

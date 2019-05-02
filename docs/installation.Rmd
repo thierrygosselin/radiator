@@ -39,7 +39,7 @@ with polymorphism discovery. Avoid bad data exploration and control the impact
 of filters on your downstream genetic analysis. Use radiator to: import, explore,
 manipulate, visualize, filter, impute and export your GBS/RADseq data.
 
-**radiator** is designed and optimized for fast computations using Genomic Data Structure [GDS](http://zhengxwen.github.io/gdsfmt) file format and data science packages in 
+**radiator** is designed and optimized for fast computations using Genomic Data Structure [GDS](https://github.com/zhengxwen/gdsfmt) file format and data science packages in 
 [tidyverse](https://www.tidyverse.org). **radiator** handles VCF files with millions of
 SNPs and files of several GB.
 

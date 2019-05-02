@@ -3,10 +3,10 @@
 #' @name read_vcf
 #' @title Read VCF files for radiator and also write a SeqArray GDS file.
 #' @description The function reads VCF files for radiator and
-#' generate a connection SeqArray \href{http://zhengxwen.github.io/SeqArray/}{SeqArray}
+#' generate a connection SeqArray \href{https://github.com/zhengxwen/SeqArray}{SeqArray}
 #' GDS object/file of class \code{SeqVarGDSClass} (Zheng et al. 2017)
 #' The Genomic Data Structure (GDS) file format is detailed in
-#' \href{http://zhengxwen.github.io/gdsfmt}{gdsfmt}.
+#' \href{https://github.com/zhengxwen/gdsfmt}{gdsfmt}.
 #'
 #' The function as an advance mode that allows various filtering arguments to
 #' be used. Handy to prune the dataset based on various QCs but also to

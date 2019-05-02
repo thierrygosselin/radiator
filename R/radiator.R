@@ -1,21 +1,19 @@
 # radiator package startup message ---------------------------------------------
-
-
-.onAttach <- function(libname, pkgname) {
-  radiator.version <- utils::packageDescription("radiator", fields = "Version")
-  radiator.build <- utils::packageDescription("radiator", fields = "Built")
-  startup.message <- stringi::stri_join(
-    "******************************* IMPORTANT NOTICE *******************************\n",
-    "radiator v.", radiator.version, " was modified heavily.\n",
-    "Read functions documentation and available vignettes.\n\n",
-    "For reproducibility:\n",
-    "    radiator version: ", radiator.version,"\n",
-    "    radiator build date: ", radiator.build,"\n",
-    "    Keep zenodo DOI.\n",
-    "********************************************************************************",
-    sep = "")
-  packageStartupMessage(startup.message)
-}
+# .onAttach <- function(libname, pkgname) {
+#   radiator.version <- utils::packageDescription("radiator", fields = "Version")
+#   radiator.build <- utils::packageDescription("radiator", fields = "Built")
+#   startup.message <- stringi::stri_join(
+#     "******************************* IMPORTANT NOTICE *******************************\n",
+#     "radiator v.", radiator.version, " was modified heavily.\n",
+#     "Read functions documentation and available vignettes.\n\n",
+#     "For reproducibility:\n",
+#     "    radiator version: ", radiator.version,"\n",
+#     "    radiator build date: ", radiator.build,"\n",
+#     "    Keep zenodo DOI.\n",
+#     "********************************************************************************",
+#     sep = "")
+#   packageStartupMessage(startup.message)
+# }
 
 # radiator common arguments ----------------------------------------------------
 #' @name radiator_common_arguments

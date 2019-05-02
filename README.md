@@ -4,13 +4,12 @@
 [![lifecycle](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://tidyverse.org/lifecycle/#maturing)
 [![Travis-CI Build
 Status](https://travis-ci.org/thierrygosselin/radiator.svg?branch=master)](https://travis-ci.org/thierrygosselin/radiator)
-[![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/radiator)](http://cran.r-project.org/package=radiator)
 [![Project Status: Active – The project has reached a stable, usable
 state and is being actively
 developed.](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active)
 [![DOI](https://zenodo.org/badge/14548/thierrygosselin/radiator.svg)](https://zenodo.org/badge/latestdoi/14548/thierrygosselin/radiator)
 [![packageversion](https://img.shields.io/badge/Package%20version-1.0.0-orange.svg)](commits/master)
-[![Last-changedate](https://img.shields.io/badge/last%20change-2019--05--01-brightgreen.svg)](/commits/master)
+[![Last-changedate](https://img.shields.io/badge/last%20change-2019--05--02-brightgreen.svg)](/commits/master)
 <!-- badges: end -->
 
 # radiator: an R package for RADseq Data Exploration, Manipulation and Visualization
@@ -23,7 +22,7 @@ analysis. Use radiator to: import, explore, manipulate, visualize,
 filter, impute and export your GBS/RADseq data.
 
 **radiator** is designed and optimized for fast computations using
-Genomic Data Structure [GDS](http://zhengxwen.github.io/gdsfmt) file
+Genomic Data Structure [GDS](https://github.com/zhengxwen/gdsfmt) file
 format and data science packages in
 [tidyverse](https://www.tidyverse.org). **radiator** handles VCF files
 with millions of SNPs and files of several GB.

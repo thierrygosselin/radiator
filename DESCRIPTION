@@ -2,7 +2,7 @@ Package: radiator
 Type: Package
 Title: RADseq Data Exploration, Manipulation and Visualization using R
 Version: 1.0.0
-Date: 2019-04-29
+Date: 2019-05-02
 Encoding: UTF-8
 Authors@R: c(
   person("Thierry", "Gosselin", email = "thierrygosselin@icloud.com", role = c("aut", "cre")),
@@ -10,7 +10,7 @@ Authors@R: c(
   person("Floriaan", "Devloo-Delva", role = c("ctb", "aut"))
   )
 Maintainer: Thierry Gosselin <thierrygosselin@icloud.com>
-Description: radiator: an R package for RADseq Data Exploration, Manipulation and Visualization.
+Description: RADseq Data Exploration, Manipulation and Visualization using R.
 Depends:
     R (>= 3.5.0)
 biocViews:
@@ -48,10 +48,10 @@ Suggests:
     tibble,
     tidyr,
     utils
-License: GPL (>=2)
+License: GPL-3
 LazyLoad: yes
 VignetteBuilder: knitr
 RoxygenNote: 6.1.1
 ByteCompile: TRUE
-URL: https://github.com/thierrygosselin/radiator
+URL: https://thierrygosselin.github.io/radiator/
 BugReports: https://github.com/thierrygosselin/radiator/issues
