@@ -66,7 +66,7 @@ and might be of interest for users." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.0.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.0</span>
       </span>
     </div>
 
@@ -149,7 +149,8 @@ Look into <span class="pkg">radiator</span> <code><a href='tidy_genomic_data.htm
     </tr>
     <tr>
       <th>distances</th>
-      <td><p>(optional) A file with 2 columns, POP_ID The distance information per populations.
+      <td><p>(optional) A file with 2 columns, <code>POP_ID</code> and
+the distance information per populations.
 With default: <code>distances = NULL</code>, the column is left empty.</p></td>
     </tr>
     <tr>
@@ -172,9 +173,8 @@ Default: <code>parallel.core = parallel::detectCores() - 1</code>.</p></td>
     
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
-    <p><em>Integrated filters:</em> Only markers found in common between
-populations are used and monomorphic markers are automatically removed
-before generating HZAR file.</p>
+    <p><em>Integrated filters:</em> Only polymorphic markers found in
+common between populations/strata are used to generate the HZAR file.</p>
     
     <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
 
@@ -183,6 +183,26 @@ hzar: hybrid zone analysis using an R software package.
 Molecular Ecology Resources. 2013;14: 652-663. doi:10.1111/1755-0998.12209</p>
     
 
+    <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
+    <pre class="examples"><span class='co'># NOT RUN {</span>
+<span class='co'># The simplest form of the function:</span>
+<span class='no'>hzar.data</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>radiator</span><span class='kw ns'>::</span><span class='fu'><a href='https://www.rdocumentation.org/packages/radiator/topics/write_hzar'>write_hzar</a></span>(<span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>tidydata</span>)
+
+
+<span class='co'># Using genepop dataset, nancycats, from adegenet</span>
+<span class='co'># require(adegenet)</span>
+<span class='no'>nancycats</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/system.file'>system.file</a></span>(<span class='st'>"files/nancycats.gen"</span>, <span class='kw'>package</span> <span class='kw'>=</span> <span class='st'>"adegenet"</span>)
+
+
+<span class='co'># using genomic_converter:</span>
+<span class='no'>nanycats.hzar</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>radiator</span><span class='kw ns'>::</span><span class='fu'><a href='https://www.rdocumentation.org/packages/radiator/topics/genomic_converter'>genomic_converter</a></span>(<span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>nancycats</span>, <span class='kw'>output</span> <span class='kw'>=</span> <span class='st'>"hzar"</span>)
+
+
+<span class='co'># using the separate modules:</span>
+<span class='co'># tidy the genepop file then pipe the result in write_hzar</span>
+<span class='no'>nanycats.hzar</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>radiator</span><span class='kw ns'>::</span><span class='fu'><a href='https://www.rdocumentation.org/packages/radiator/topics/tidy_genepop'>tidy_genepop</a></span>(<span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>nancycats</span>) <span class='kw'>%&gt;%</span>
+    <span class='kw pkg'>radiator</span><span class='kw ns'>::</span><span class='fu'><a href='https://www.rdocumentation.org/packages/radiator/topics/write_hzar'>write_hzar</a></span>(<span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>.</span>)
+<span class='co'># }</span></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>
@@ -194,7 +214,9 @@ Molecular Ecology Resources. 2013;14: 652-663. doi:10.1111/1755-0998.12209</p>
       <li><a href="#details">Details</a></li>
 
       <li><a href="#references">References</a></li>
-          </ul>
+      
+      <li><a href="#examples">Examples</a></li>
+    </ul>
 
     <h2>Author</h2>
     <p>Thierry Gosselin <a href='mailto:thierrygosselin@icloud.com'>thierrygosselin@icloud.com</a></p>

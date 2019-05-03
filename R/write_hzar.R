@@ -13,7 +13,8 @@
 #' \emph{How to get a tidy data frame ?}
 #' Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
 
-#' @param distances (optional) A file with 2 columns, POP_ID The distance information per populations.
+#' @param distances (optional) A file with 2 columns, \code{POP_ID} and
+#' the distance information per populations.
 #' With default: \code{distances = NULL}, the column is left empty.
 
 
@@ -23,10 +24,8 @@
 #' written to the working directory. With default: \code{filename = NULL},
 #' the date and time is appended to \code{radiator_hzar_}.
 
-#' @details \emph{Integrated filters:} Only markers found in common between
-#' populations are used and monomorphic markers are automatically removed
-#' before generating HZAR file.
-
+#' @details \emph{Integrated filters:} Only polymorphic markers found in
+#' common between populations/strata are used to generate the HZAR file.
 
 #' @return A HZAR file is written in the working directory.
 
@@ -37,6 +36,28 @@
 #' Molecular Ecology Resources. 2013;14: 652-663. doi:10.1111/1755-0998.12209
 
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
+
+#' @examples
+#' \dontrun{
+#' # The simplest form of the function:
+#' hzar.data <- radiator::write_hzar(data = tidydata)
+#'
+#'
+#' # Using genepop dataset, nancycats, from adegenet
+#' # require(adegenet)
+#' nancycats <- system.file("files/nancycats.gen", package = "adegenet")
+#'
+#'
+#' # using genomic_converter:
+#' nanycats.hzar <- radiator::genomic_converter(data = nancycats, output = "hzar")
+#'
+#'
+#' # using the separate modules:
+#' # tidy the genepop file then pipe the result in write_hzar
+#' nanycats.hzar <- radiator::tidy_genepop(data = nancycats) %>%
+#'     radiator::write_hzar(data = .)
+#' }
+
 
 write_hzar <- function(
   data,
@@ -54,29 +75,30 @@ write_hzar <- function(
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) {
     data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-  } else {
-    data <- data
   }
 
   # necessary steps to make sure we work with unique markers and not duplicated LOCUS
   if (rlang::has_name(data, "LOCUS") && !rlang::has_name(data, "MARKERS")) {
-    data <- dplyr::rename(.data = data, MARKERS = LOCUS)
+    data %<>% dplyr::rename(MARKERS = LOCUS)
+  }
+
+  if (!rlang::has_name(data, "GT")) {
+    data <- calibrate_alleles(data = data, verbose = FALSE) %$% input
   }
 
   # Keeping common markers -----------------------------------------------------
-  data <- radiator::filter_common_markers(data = data, verbose = TRUE, internal = TRUE)
+  data <- radiator::filter_common_markers(data = data, verbose = FALSE, internal = TRUE)
 
   # Removing monomorphic markers -----------------------------------------------
-  data <- radiator::filter_monomorphic(data = data, verbose = TRUE, internal = TRUE)
+  data <- radiator::filter_monomorphic(data = data, verbose = FALSE, internal = TRUE)
 
   # detect biallelic markers ---------------------------------------------------
-  # biallelic <- radiator::detect_biallelic_markers(data = input)
-  n.ind <- dplyr::n_distinct(input$INDIVIDUALS)
-  n.pop <- dplyr::n_distinct(input$POP_ID)
-  n.markers <- dplyr::n_distinct(input$MARKERS)
+  n.ind <- dplyr::n_distinct(data$INDIVIDUALS)
+  n.pop <- dplyr::n_distinct(data$POP_ID)
+  n.markers <- dplyr::n_distinct(data$MARKERS)
 
   if (is.null(distances)) {
-    distances <- dplyr::distinct(input, POP_ID) %>%
+    distances <- dplyr::distinct(data, POP_ID) %>%
       dplyr::mutate(Distance = rep("", n()))
   } else {
     if (is.vector(distances)) {
@@ -84,14 +106,14 @@ write_hzar <- function(
     }
     # check same pop_id
     pop.distance <- dplyr::distinct(distances, POP_ID)
-    if (!identical(unique(input$POP_ID), pop.distance$POP_ID)) {
+    if (!identical(unique(data$POP_ID), pop.distance$POP_ID)) {
       rlang::abort("Populations in `distances` file doesn't match populations in `input` file")
     }
   }
   message("Generating HZAR file...")
-  output <- dplyr::filter(input, GT != "000000") %>%
+  output <- dplyr::filter(data, GT != "000000") %>%
     dplyr::left_join(
-      dplyr::distinct(input, MARKERS) %>%
+      dplyr::distinct(data, MARKERS) %>%
         dplyr::mutate(
           SPLIT_VEC = dplyr::ntile(x = 1:nrow(.), n = parallel.core * 3))
       , by = "MARKERS") %>%
@@ -111,7 +133,7 @@ write_hzar <- function(
     dplyr::select(POP_ID, Distance, dplyr::everything(.)) %>%
     dplyr::rename(Population = POP_ID)
 
-  input <- NULL
+  data <- NULL
 
   # writing file to directory  ------------------------------------------------
   # Filename: date and time to have unique filenaming
@@ -127,7 +149,12 @@ write_hzar <- function(
       filename <- stringi::stri_join(filename, "_hzar", ".csv")
     }
   }
-  header.line <- stringi::stri_join("# HZAR v.0.2-5 file generated with radiator v.", utils::packageVersion(pkg = "radiator"), " ", file.date)
+  suppressWarnings(
+    header.line <- stringi::stri_join("# HZAR v.0.2-5 file generated with radiator v.",
+    utils::packageVersion(pkg = "radiator"), " ",
+    file.date
+    )
+  )
   readr::write_lines(x = header.line, path = filename)
   readr::write_csv(x = output, path = filename, append = TRUE, col_names = TRUE)
 
@@ -142,7 +169,7 @@ write_hzar <- function(
 # Internal nested Function -----------------------------------------------------
 
 #' @title generate_hzar
-#' @description function to generate hzar function per groups of markes (to run in parallel)
+#' @description function to generate hzar function per groups of markers (to run in parallel)
 #' @rdname generate_hzar
 #' @keywords internal
 #' @export

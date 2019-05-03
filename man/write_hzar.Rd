@@ -13,7 +13,8 @@ a tidy data frame in wide or long format in the working directory.
 \emph{How to get a tidy data frame ?}
 Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.}
 
-\item{distances}{(optional) A file with 2 columns, POP_ID The distance information per populations.
+\item{distances}{(optional) A file with 2 columns, \code{POP_ID} and
+the distance information per populations.
 With default: \code{distances = NULL}, the column is left empty.}
 
 \item{filename}{(optional) The file name prefix for the HZAR file
@@ -34,9 +35,29 @@ Used internally in
 and might be of interest for users.
 }
 \details{
-\emph{Integrated filters:} Only markers found in common between
-populations are used and monomorphic markers are automatically removed
-before generating HZAR file.
+\emph{Integrated filters:} Only polymorphic markers found in
+common between populations/strata are used to generate the HZAR file.
+}
+\examples{
+\dontrun{
+# The simplest form of the function:
+hzar.data <- radiator::write_hzar(data = tidydata)
+
+
+# Using genepop dataset, nancycats, from adegenet
+# require(adegenet)
+nancycats <- system.file("files/nancycats.gen", package = "adegenet")
+
+
+# using genomic_converter:
+nanycats.hzar <- radiator::genomic_converter(data = nancycats, output = "hzar")
+
+
+# using the separate modules:
+# tidy the genepop file then pipe the result in write_hzar
+nanycats.hzar <- radiator::tidy_genepop(data = nancycats) \%>\%
+    radiator::write_hzar(data = .)
+}
 }
 \references{
 Derryberry EP, Derryberry GE, Maley JM, Brumfield RT.

@@ -7,6 +7,6 @@
 generate_hzar(x)
 }
 \description{
-function to generate hzar function per groups of markes (to run in parallel)
+function to generate hzar function per groups of markers (to run in parallel)
 }
 \keyword{internal}
