@@ -501,7 +501,8 @@ tidy_genomic_data <- function(
       gt.bin = TRUE,
       path.folder = path.folder,
       internal = TRUE,
-      tidy.check = FALSE
+      tidy.check = FALSE,
+      filter.common.markers = filter.common.markers
     )
     biallelic <- radiator::detect_biallelic_markers(input)
   } # End import VCF
