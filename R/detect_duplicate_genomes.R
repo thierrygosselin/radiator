@@ -190,6 +190,7 @@ detect_duplicate_genomes <- function(
 
   # Testing
   # data <- tidy.data
+  # data <- gds
   # interactive.filter = TRUE
   # detect.duplicate.genomes = TRUE
   # distance.method = "manhattan"
@@ -199,7 +200,7 @@ detect_duplicate_genomes <- function(
   # parallel.core = parallel::detectCores() - 1
   # verbose = TRUE
   # random.seed = NULL
-  # path.folder = "testing_dup"
+  # path.folder = NULL
   # parameters = NULL
 
   if (interactive.filter || detect.duplicate.genomes) {

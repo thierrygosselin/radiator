@@ -226,13 +226,17 @@ Default: <code>verbose = TRUE</code>.</p></td>
     
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>A list is created with 6 objects (function call, tables, manhattan,
-boxplot and distribution plot).
-FH measure is on average negative when the parents are less related than
+    <p>A list is created with 4 objects:</p><ul>
+<li><p><code>$fh</code>: the individual's FH values</p></li>
+<li><p><code>$fh.stats</code>: the population and overall FH values. These values are
+calculated by averaging individual FH across samples and populations.</p></li>
+<li><p><code>$fh.box.plot</code>: the boxplot.</p></li>
+<li><p><code>$fh.distribution.plot</code>: the histogram.</p></li>
+</ul>
+
+<p>FH measure is on average negative when the parents are less related than
 expected by random mating. The distribution <code>fh.distribution.plot</code>
-should be centered around 0 in samples of non-inbred individuals.
-The first table, <code>$fh</code>, gives the individual's value
-while the second table, <code>$fh.stats</code>, show the population and overall averaged.</p>
+should be centered around 0 in samples of non-inbred individuals.</p>
     
     <h2 class="hasAnchor" id="theory"><a class="anchor" href="#theory"></a>Theory</h2>
 

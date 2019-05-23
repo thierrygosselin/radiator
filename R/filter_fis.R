@@ -23,12 +23,7 @@ filter_fis <- function(data, approach = "haplotype", fis.min.threshold, fis.max.
 
   if (is.vector(data)) {
     data <- readr::read_tsv(data, col_names = T)
-    message("Using the file in your directory")
-  } else {
-    data <- data
-    message("Using the file from your global environment")
   }
-
   pop.number <- dplyr::n_distinct(data$POP_ID)
 
   if(stringi::stri_detect_fixed(pop.threshold, ".") & pop.threshold < 1) {

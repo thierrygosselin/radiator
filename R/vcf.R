@@ -243,7 +243,7 @@ read_vcf <- function(
   # parameters <- NULL
   # filter.individuals.missing <- NULL
   # filter.individuals.coverage.total <- NULL
-
+  # filter.snp.number <- NULL
 
   ## With filters
   # filter.individuals.missing <- "outliers"
@@ -412,17 +412,6 @@ read_vcf <- function(
   readr::write_lines(x = random.seed, path = file.path(radiator.folder, "random.seed"))
   if (verbose) message("File written: random.seed (", random.seed,")")
 
-  # # radiator_parameters: generate --------------------------------------------
-  # filters.parameters <- radiator_parameters(
-  #   generate = TRUE,
-  #   initiate = FALSE,
-  #   update = FALSE,
-  #   parameter.obj = parameters,
-  #   path.folder = radiator.folder,
-  #   file.date = file.date,
-  #   verbose = verbose,
-  #   internal = internal)
-
   # VCF: Read ------------------------------------------------------------------
   timing.vcf <- proc.time()
 
@@ -446,6 +435,7 @@ read_vcf <- function(
     str = detect.source$check.header$header$value
     [detect.source$check.header$header$id == "source"],
     pattern = "[\"]", replacement = "", vectorize_all = FALSE)
+  if (length(data.source) == 0) data.source <- "unknown"
   check.header <- detect.source$check.header
   dp <- "DP" %in% detect.source$check.header$format$ID # Check that DP is trere
 
@@ -1630,9 +1620,13 @@ tidy_vcf <- function(
     }
     # gt.vcf.nuc is genotype coding in the VCF but with nucleotides: A/C, ./.
     if (is.null(gt.vcf.nuc)) {
-      if (n.markers < 5000) gt.vcf.nuc <- TRUE
-      if (n.markers >= 5000 && n.markers < 30000) gt.vcf.nuc <- FALSE
-      if (n.markers >= 30000) gt.vcf.nuc <- FALSE
+      if (ref.calibration) {
+        gt.vcf.nuc <- TRUE
+      } else {
+        if (n.markers < 5000) gt.vcf.nuc <- TRUE
+        if (n.markers >= 5000 && n.markers < 30000) gt.vcf.nuc <- FALSE
+        if (n.markers >= 30000) gt.vcf.nuc <- FALSE
+      }
     }
     # gt is genotype coding a la genepop: 001002, 000000
     if (is.null(gt)) {
@@ -1681,13 +1675,12 @@ tidy_vcf <- function(
     message("    GT_VCF_NUC (the genotype coding in VCFs, but with nucleotides: A/C, ./.): ", gt.vcf.nuc)
     message("    GT (the genotype coding 'a la genepop': 001002, 001001, 000000): ", gt)
 
-    # Tidying TRUE  --------------------------------------------------------------
+    # Tidying TRUE  ------------------------------------------------------------
     if (tidy.vcf) {
       if (!is.null(blacklist.id)) {
         ref.calibration <- TRUE
         if (verbose) message("\nRe-calibration of REF/ALT alleles: TRUE")
       }
-
 
       tidy.data <- gds2tidy(
         gds = data,
@@ -1697,76 +1690,6 @@ tidy_vcf <- function(
 
       # bi- or multi-alllelic VCF ------------------------------------------------
       biallelic <- detect_biallelic_markers(data = data)
-
-      # import genotypes ---------------------------------------------------------
-      tidy.data <- radiator::calibrate_alleles(
-        data = tidy.data,
-        biallelic = biallelic,
-        parallel.core = parallel.core,
-        verbose = FALSE,
-        gt = gt, gt.vcf = gt.vcf, gt.vcf.nuc = gt.vcf.nuc
-      ) %$% input
-
-      # tibble.size <- n.markers * n.individuals
-      # tidy.data <- tibble::tibble(GT_BIN = numeric(tibble.size))
-      # When IDs are blacklisted...you want to recalibrate REF/ALT alleles
-
-      # # gt.bin
-      # if (!gt.bin) tidy.data %<>% dplyr::select(-GT_BIN)
-      #
-      # if (gt) gt.vcf.nuc <- TRUE
-      # # nucleotides info required to generate genepop format 001, 002, 003, 004
-      # # when gt is TRUE, gt.vcf.nuc is always TRUE
-      # test <- SeqVarTools::getGenotypeAlleles(gdsobj = data, use.names = TRUE)
-
-      # if (gt.vcf.nuc) {
-      #   tidy.data %<>%
-      #     dplyr::mutate(
-      #       GT_VCF_NUC = as.vector(SeqVarTools::getGenotypeAlleles(
-      #         gdsobj = data, use.names = TRUE))
-      #     )
-      # }
-
-      # if (gt.vcf) {
-      #   tidy.data %<>%
-      #     dplyr::mutate(
-      #       GT_VCF = as.vector(SeqVarTools::getGenotype(gdsobj = data, use.names = TRUE))
-      #     )
-      #   tidy.data$GT_VCF[is.na(tidy.data$GT_VCF)] <- "./."
-      # } else {
-      #   tidy.data %<>% dplyr::select(-GT_VCF)
-      # }
-
-      # if (gt) {
-      #   tidy.data %<>%
-      #     dplyr::mutate(
-      #       GT = stringi::stri_replace_all_fixed(
-      #         str = GT_VCF_NUC,
-      #         pattern = c("A", "C", "G", "T", "/"),
-      #         replacement = c("001", "002", "003", "004", ""),
-      #         vectorize_all = FALSE) %>%
-      #         stringi::stri_replace_na(str = ., replacement = "000000")
-      #     )
-      # }
-
-
-      # # replace NA in gt.vcf.nuc
-      # if (gt.vcf.nuc) {
-      #   tidy.data$GT_VCF_NUC[is.na(tidy.data$GT_VCF_NUC)] <- "./."
-      # }
-
-
-      # check missing genotypes
-      # head(tidy.data$GT[is.na(tidy.data$GT_BIN)])
-      # head(tidy.data$GT_VCF_NUC[is.na(tidy.data$GT_BIN)])
-      # head(tidy.data$GT_VCF[is.na(tidy.data$GT_BIN)])
-
-      # genotypes metadata ---------------------------------------------------------
-      # Check vcf.metadata
-      # vcf.metadata <- TRUE
-      # vcf.metadata <- FALSE
-      # vcf.metadata <- NULL
-      # vcf.metadata <- "GT"
 
       if (is.logical(vcf.metadata)) {
         if (vcf.metadata) {
@@ -1790,7 +1713,6 @@ tidy_vcf <- function(
       #Check
       # vcf.metadata
       # overwrite.metadata
-
 
       if (vcf.metadata) {
         if (verbose) message("\nKeeping vcf genotypes metadata: yes")
@@ -1825,8 +1747,6 @@ tidy_vcf <- function(
           vcf.metadata <- FALSE
         }
       }
-
-
 
       # Haplotypes or biallelic VCF-------------------------------------------------
       # # recoding genotype
@@ -1929,7 +1849,6 @@ tidy_vcf <- function(
       }
 
       # re-calibration of ref/alt alleles ------------------------------------------
-
       if (ref.calibration) {
         if (verbose) message("\nCalculating REF/ALT alleles...")
         tidy.data <- radiator::calibrate_alleles(
@@ -1990,12 +1909,11 @@ tidy_vcf <- function(
       if (verbose) message("Updating GDS with genotypes.meta values")
       update_radiator_gds(gds = data, node.name = "genotypes.meta", value = tidy.data)
       message("\nTidy data file written: ", filename.rad$filename.short)
+      return(tidy.data)
     } #tidy.vcf
+  } else {
+    return(data)
   }#tidy.vcf
-
-
-  # Results --------------------------------------------------------------------
-  return(tidy.data)
 }#End tidy_vcf
 
 

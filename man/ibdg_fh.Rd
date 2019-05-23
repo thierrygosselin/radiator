@@ -28,13 +28,18 @@ Default: \code{verbose = TRUE}.}
 \item{...}{(optional) To pass further arguments for fine-tuning the function.}
 }
 \value{
-A list is created with 6 objects (function call, tables, manhattan,
-boxplot and distribution plot).
+A list is created with 4 objects:
+\itemize{
+\item \code{$fh}: the individual's FH values
+\item \code{$fh.stats}: the population and overall FH values. These values are
+calculated by averaging individual FH across samples and populations.
+\item \code{$fh.box.plot}: the boxplot.
+\item \code{$fh.distribution.plot}: the histogram.
+}
+
 FH measure is on average negative when the parents are less related than
 expected by random mating. The distribution \code{fh.distribution.plot}
 should be centered around 0 in samples of non-inbred individuals.
-The first table, \code{$fh}, gives the individual's value
-while the second table, \code{$fh.stats}, show the population and overall averaged.
 }
 \description{
 FH is a proxy mesure of IBDg based on the excess in the observed

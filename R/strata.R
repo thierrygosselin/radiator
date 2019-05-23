@@ -97,16 +97,32 @@
 
 #' @rdname read_strata
 #' @export
-#' @return \strong{A list} with several components.
+#' @return \strong{A list} with several components:
 #' \enumerate{
-#' \item Number of strata/populations
-#' \item Number of individuals
-#' \item Number of individuals per populations
-#' \item Number of duplicate ids.
+#' \item $strata
+#' \item $pop.levels
+#' \item $pop.labels
+#' \item $pop.select
+#' \item $blacklist.id
 #' }
 #' @examples
 #' \dontrun{
-#' radiator::read_strata(strata)
+#' strata.info <- radiator::read_strata(strata)
+#'
+#' # the return object is a list with 5 objects:
+#' names(strata.info)
+#'
+#' # to get the strata
+#' new.strata <- strata.info$strata
+#'
+#' # if naything is changed from the original strata, a new strata file is
+#' # generated automatically:
+#'
+#' new.strata <- radiator::read_strata(
+#'     strata = strata,
+#'     blacklist.id = "blacklisted.ids.tsv"
+#'     )
+#'
 #' }
 
 read_strata <- function(

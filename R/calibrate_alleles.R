@@ -282,6 +282,7 @@ calibrate_alleles <- function(
     data <- dplyr::filter(data, !MARKERS %in% all.missing$MARKERS)
   }
 
+  if (rlang::has_name(data, "GT_BIN")) data$GT_BIN <- rlang::as_integer(data$GT_BIN)
   # Results --------------------------------------------------------------------
   return(list(input = data, biallelic = biallelic))
 }#End calibrate_alleles

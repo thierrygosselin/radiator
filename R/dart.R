@@ -268,7 +268,6 @@ read_dart <- function(
   # whitelist.markers = NULL
   # missing.memory <- NULL
   # path.folder = NULL
-  # radiator.pipeline = NULL
   # internal <- FALSE
   # tidy.dart = FALSE
   # tidy.check = FALSE
@@ -1849,7 +1848,7 @@ tidy_dart_metadata <- function(
 }#End dart_markers_metadata
 
 
-# generate_geno----------------------------------------------------------------
+# clean_dart_colnames----------------------------------------------------------------
 #' @title clean_dart_colnames
 #' @description clean_dart_colnames (only the DArT columns = snakecase...)
 #' @rdname clean_dart_colnames
@@ -1859,9 +1858,15 @@ clean_dart_colnames <- function(data, strata) {
   keeper <- length(colnames(data)) - length(strata$TARGET_ID)
   colnames(data) <- c(
     radiator::radiator_snakecase(x = colnames(data)[1:keeper]),
-    strata$TARGET_ID
+    colnames(data)[-c(1:keeper)]
+    # strata$TARGET_ID
   )
-
+  # test <- tibble::tibble(TARGET_ID = colnames(data)) %>%
+  #   dplyr::left_join(strata, by = "TARGET_ID") %>%
+  #   dplyr::mutate(
+  #     INDIVIDUALS = dplyr::if_else(
+  #       is.na(INDIVIDUALS), TARGET_ID, INDIVIDUALS)
+  #   ) %$% INDIVIDUALS
   colnames(data) <- tibble::tibble(TARGET_ID = colnames(data)) %>%
     dplyr::left_join(strata, by = "TARGET_ID") %>%
     dplyr::mutate(

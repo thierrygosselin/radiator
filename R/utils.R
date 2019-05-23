@@ -35,7 +35,7 @@ distance2tibble <- function(
       variable.factor = FALSE) %>%
     tibble::as_tibble(.)
 
-  if (!na.diag) x  %<>% dplyr::filter(!is.na(DISTANCE))
+  if (na.diag || remove.diag) x  %<>% dplyr::filter(!is.na(DISTANCE))
 
   if (distance.class.double) {
     x %<>% dplyr::mutate(DISTANCE = as.double(as.character(DISTANCE)))
@@ -44,7 +44,7 @@ distance2tibble <- function(
   x %<>% dplyr::arrange(DISTANCE)
 
   if (relative) {
-    x  %<>% dplyr::mutate(DISTANCE_RELATIVE = DISTANCE/max(DISTANCE))
+    x  %<>% dplyr::mutate(DISTANCE_RELATIVE = DISTANCE / max(DISTANCE))
   }
   if (!is.null(pop.levels)) {
     x  %<>% dplyr::mutate(

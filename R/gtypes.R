@@ -114,10 +114,11 @@ tidy_gtypes <- function(data) {
 
 write_gtypes <- function(data, write = FALSE) {
   # Check that strataG is installed --------------------------------------------
-  if (!"strataG" %in% utils::installed.packages()[,"Package"]) {
-    rlang::abort("Please install strataG for this output option:\n
-                 devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
+  if (!requireNamespace("strataG", quietly = TRUE)) {
+    rlang::abort("strataG needed for this function to work
+                 Install with install.packages('strataG')")
   }
+
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("Input file missing")
 
@@ -183,7 +184,8 @@ write_gtypes <- function(data, write = FALSE) {
     # data <- data.bk
     # data.bk <- data
     if (rlang::has_name(data, "GT_BIN")) {
-      data %<>%
+      data$GT_BIN <- rlang::as_integer(data$GT_BIN)
+      data  %<>%
         dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT_BIN) %>%
         dplyr::mutate(
           `1` = dplyr::if_else(GT_BIN == 0L, 1L, GT_BIN),
@@ -279,6 +281,7 @@ write_gtypes <- function(data, write = FALSE) {
 #' @keywords internal
 #' @export
 switch_genotypes <- function(x) {
+  x <- rlang::as_integer(x)
   x <- dplyr::case_when(
     x == 1L ~ 2L,
     x == 2L ~ 2L,

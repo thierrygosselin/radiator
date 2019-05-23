@@ -205,8 +205,10 @@ filter_common_markers <- function(
 
       # while SeqArray bug is fixed, PLAN B below uses tidy data
       markers.meta <- extract_markers_metadata(gds = data, whitelist = FALSE)
-      bl <- not_common_markers(x = data, strata = strata,
-                               parallel.core = parallel.core)
+      bl <- not_common_markers(
+        x = data, strata = strata,
+        parallel.core = 1 #parallel.core
+      )
 
       n.markers.removed <- length(bl)
       want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS")
@@ -442,8 +444,9 @@ plot_upset <- function(
 ) {
 
   # For pc set the number of core to 1 -----------------------------------------
-  if (Sys.info()[['sysname']] == "Windows") parallel.core <- 1
+  parallel.core <- 1
 
+  # if (Sys.info()[['sysname']] == "Windows") parallel.core <- 1
 
   if (verbose) message("Generating UpSet plot to visualize markers in common")
 
@@ -486,25 +489,6 @@ plot_upset <- function(
         action = "set",
         verbose = FALSE)
 
-      # mis <- function(x) {
-      #   if (all(is.na(x))) {
-      #     0L
-      #   } else{
-      #     1L
-      #   }
-      # }
-      #
-      # res <- list()
-      # res <- SeqArray::seqApply(
-      #   gdsfile = x,
-      #   var.name = "$dosage_alt",
-      #   FUN = mis,
-      #   margin = "by.variant",
-      #   as.is = "integer",
-      #   parallel = parallel.core.opt)
-      # # message("done!")
-      # # message("length: ", length(res))
-
       res <- tibble::tibble(
         STRATA = SeqArray::seqMissing(
           gdsfile = x,
@@ -517,9 +501,6 @@ plot_upset <- function(
           magrittr::inset(. == 9L, 0L)
       ) %>%
         magrittr::set_colnames(., unique(strata.split$STRATA))
-      # reset filter
-      # SeqArray::seqSetFilter(object = x, action = "pop", verbose = TRUE)
-      # message("done!")
       return(res)
     }#End not_common
 
@@ -530,7 +511,7 @@ plot_upset <- function(
         x = x,
         parallel.core = parallel.core
       ) %>%
-      data.frame(.)
+      data.frame(.)#UpSetR requires data.frame
 
     SeqArray::seqSetFilter(
       object = x,
@@ -551,7 +532,7 @@ plot_upset <- function(
         POP_ID = stringi::stri_join("POP_", POP_ID)
       ) %>%
       tidyr::spread(data = ., key = POP_ID, value = n, fill = 0) %>%
-      data.frame(.)
+      data.frame(.)#UpSetR requires data.frame
   }
 
   pdf(file = plot.filename, onefile = FALSE)

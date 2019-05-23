@@ -66,12 +66,13 @@ the function is a little more chatty during execution.
 Default: \code{verbose = TRUE}.}
 }
 \value{
-\strong{A list} with several components.
+\strong{A list} with several components:
 \enumerate{
-\item Number of strata/populations
-\item Number of individuals
-\item Number of individuals per populations
-\item Number of duplicate ids.
+\item $strata
+\item $pop.levels
+\item $pop.labels
+\item $pop.select
+\item $blacklist.id
 }
 }
 \description{
@@ -122,7 +123,22 @@ See the example in \code{\link{extract_dart_target_id}}
 
 \examples{
 \dontrun{
-radiator::read_strata(strata)
+strata.info <- radiator::read_strata(strata)
+
+# the return object is a list with 5 objects:
+names(strata.info)
+
+# to get the strata
+new.strata <- strata.info$strata
+
+# if naything is changed from the original strata, a new strata file is
+# generated automatically:
+
+new.strata <- radiator::read_strata(
+    strata = strata,
+    blacklist.id = "blacklisted.ids.tsv"
+    )
+
 }
 }
 \seealso{

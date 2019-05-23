@@ -54,13 +54,18 @@
 
 #' @param ... (optional) To pass further arguments for fine-tuning the function.
 
-#' @return A list is created with 6 objects (function call, tables, manhattan,
-#' boxplot and distribution plot).
+#' @return A list is created with 4 objects:
+#' \itemize{
+#' \item \code{$fh}: the individual's FH values
+#' \item \code{$fh.stats}: the population and overall FH values. These values are
+#' calculated by averaging individual FH across samples and populations.
+#' \item \code{$fh.box.plot}: the boxplot.
+#' \item \code{$fh.distribution.plot}: the histogram.
+#'}
+#'
 #' FH measure is on average negative when the parents are less related than
 #' expected by random mating. The distribution \code{fh.distribution.plot}
 #' should be centered around 0 in samples of non-inbred individuals.
-#' The first table, \code{$fh}, gives the individual's value
-#' while the second table, \code{$fh.stats}, show the population and overall averaged.
 
 #' @section Theory:
 #'
@@ -189,7 +194,7 @@ ibdg_fh <- function(
 
   # IBDg computations ----------------------------------------------------------
   message("Genome-Wide Identity-By-Descent calculations using FH...")
-  if (rlang::has_name(data, "GT_BIN") & biallelic) {
+  if (rlang::has_name(data, "GT_BIN") && biallelic) {
     # Remove missing
     data %<>% dplyr::filter(!is.na(GT_BIN))
 
@@ -213,14 +218,15 @@ ibdg_fh <- function(
     ) %>%
       dplyr::select(MARKERS, POP_ID, INDIVIDUALS, HOM_E) %>%
       dplyr::group_by(POP_ID, INDIVIDUALS) %>%
-      dplyr::summarise(HOM_E = mean(HOM_E, na.rm = TRUE))
+      dplyr::summarise(HOM_E = mean(HOM_E, na.rm = TRUE)) %>%
+      dplyr::ungroup(.)
 
     fh <- data %>%
       dplyr::group_by(POP_ID, INDIVIDUALS) %>%
       dplyr::summarise(
         N = n(),
         HOM_REF = length(GT_BIN[GT_BIN == 0]),
-        HOM_ALT = length(GT_BIN[GT_BIN == 1]),
+        HOM_ALT = length(GT_BIN[GT_BIN == 2]),
         HOM = HOM_REF + HOM_ALT
       ) %>%
       dplyr::mutate(HOM_O = HOM / N) %>%
@@ -263,7 +269,8 @@ ibdg_fh <- function(
         FREQ = n/sum(n),
         HOM_E = FREQ^2
       ) %>%
-      dplyr::summarise(HOM_E = sum(HOM_E))
+      dplyr::summarise(HOM_E = sum(HOM_E)) %>%
+      dplyr::ungroup(.)
 
     hom.e <- dplyr::full_join(
       dplyr::filter(.data = data, GT != "000000"),
@@ -272,7 +279,8 @@ ibdg_fh <- function(
     ) %>%
       dplyr::select(MARKERS, POP_ID, INDIVIDUALS, HOM_E) %>%
       dplyr::group_by(POP_ID, INDIVIDUALS) %>%
-      dplyr::summarise(HOM_E = mean(HOM_E, na.rm = TRUE))
+      dplyr::summarise(HOM_E = mean(HOM_E, na.rm = TRUE)) %>%
+      dplyr::ungroup(.)
 
     fh <- input.alleles %>%
       dplyr::group_by(POP_ID, INDIVIDUALS) %>%
@@ -302,7 +310,8 @@ ibdg_fh <- function(
   # FH statistics per pop
   fh.stats <- fh %>%
     dplyr::group_by(POP_ID) %>%
-    dplyr::summarise(FH = mean(FH))
+    dplyr::summarise(FH = mean(FH)) %>%
+    dplyr::ungroup(.)
 
   # per pop and overall combined
   fh.stats <- tibble::add_row(
@@ -348,20 +357,22 @@ ibdg_fh <- function(
     dpi = 300, units = "cm", useDingbats = FALSE)
 
   # Histogram
-  fh.distribution.plot <- ggplot2::ggplot(data = fh, ggplot2::aes(x = FH)) +
-    ggplot2::geom_histogram() +
-    ggplot2::labs(x = "Individual IBDg (FH)") +
-    ggplot2::labs(y = "Markers (number)") +
-    ggplot2::theme(
-      legend.position = "none",
-      axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      axis.text.y = ggplot2::element_text(size = 10, family = "Helvetica"),
-      axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-      axis.text.x = ggplot2::element_text(size = 10, family = "Helvetica"),
-      strip.text.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold")
-    ) +
-    ggplot2::theme_bw()
-  # fh.distribution.plot
+  fh.distribution.plot <- suppressWarnings(
+    ggplot2::ggplot(data = fh, ggplot2::aes(x = FH)) +
+      ggplot2::geom_histogram() +
+      ggplot2::labs(x = "Individual IBDg (FH)") +
+      ggplot2::labs(y = "Markers (number)") +
+      ggplot2::theme(
+        legend.position = "none",
+        axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+        axis.text.y = ggplot2::element_text(size = 10, family = "Helvetica"),
+        axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
+        axis.text.x = ggplot2::element_text(size = 10, family = "Helvetica"),
+        strip.text.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold")
+      ) +
+      ggplot2::theme_bw()
+  )
+    # fh.distribution.plot
   ggplot2::ggsave(
     limitsize = FALSE,
     plot = fh.distribution.plot,

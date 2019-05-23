@@ -21,7 +21,7 @@ Look into \code{\link{tidy_genomic_data}},
 \item{path.folder}{(path, optional) By default will print results in the working directory.
 Default: \code{path.folder = NULL}.}
 
-\item{digits}{(integer, optional). Default: \code{digits = 4}. For populatios stats.}
+\item{digits}{(integer, optional). Default: \code{digits = 4}.}
 
 \item{verbose}{(optional, logical) When \code{verbose = TRUE}
 the function is a little more chatty during execution.

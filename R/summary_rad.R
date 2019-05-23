@@ -17,7 +17,7 @@
 # @param filename (optional) Name of the file written to the working directory.
 #' @param path.folder (path, optional) By default will print results in the working directory.
 #' Default: \code{path.folder = NULL}.
-#' @param digits (integer, optional). Default: \code{digits = 4}. For populatios stats.
+#' @param digits (integer, optional). Default: \code{digits = 4}.
 #' @inheritParams radiator_common_arguments
 #' @rdname summary_rad
 #' @export
@@ -89,87 +89,88 @@ summary_rad <- function(
     if (is.vector(data)) data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
   }
   if (verbose) message("Summarizing...")
-  # ms: markers stats
-  ms <- data %>%
-    dplyr::filter(!is.na(GT_BIN)) %>%
-    dplyr::group_by(MARKERS) %>%
-    dplyr::summarise(
-      N = as.numeric(n()),
-      PP = as.numeric(length(GT_BIN[GT_BIN == 0])),
-      PQ = as.numeric(length(GT_BIN[GT_BIN == 1])),
-      QQ = as.numeric(length(GT_BIN[GT_BIN == 2]))
-    ) %>%
-    dplyr::ungroup(.) %>%
-    dplyr::mutate(
-      FREQ_REF = ((PP*2) + PQ)/(2*N),
-      FREQ_ALT = ((QQ*2) + PQ)/(2*N),
-      HET_O = PQ/N,
-      HET_E = 2 * FREQ_REF * FREQ_ALT,
-      FIS = dplyr::if_else(HET_O == 0, 1, round(((HET_E - HET_O) / HET_E), 6)),
-      PP = NULL, PQ = NULL, QQ= NULL
-    ) %>%
-    dplyr::rename(MAF_GLOBAL = FREQ_ALT)
+  # the function
+  sum_rad <- function(x, maf = c("global", "local"), digits = 6) {
+    maf <- match.arg(arg = maf, choices = c("global", "local"))
+    x %<>%
+      dplyr::summarise(
+        N = as.numeric(length(unique(INDIVIDUALS))),
+        PP = as.numeric(length(GT_BIN[GT_BIN == 0])),
+        PQ = as.numeric(length(GT_BIN[GT_BIN == 1])),
+        QQ = as.numeric(length(GT_BIN[GT_BIN == 2]))
+      ) %>%
+      dplyr::ungroup(.) %>%
+      dplyr::mutate(
+        FREQ_REF = ((PP*2) + PQ)/(2*N),
+        FREQ_ALT = ((QQ*2) + PQ)/(2*N),
+        HET_O = PQ/N,
+        HET_E = 2 * FREQ_REF * FREQ_ALT,
+        FIS = dplyr::if_else(HET_O == 0, 1, round(((HET_E - HET_O) / HET_E), digits)),
+        PP = NULL, PQ = NULL, QQ= NULL
+      )
 
+    if (maf == "global") {
+      x %<>%dplyr::rename(MAF_GLOBAL = FREQ_ALT)
+    } else {
+      x %<>%dplyr::rename(MAF_LOCAL = FREQ_ALT)
+    }
+
+    return(x)
+  }#End sum_rad
+
+  data  %<>% dplyr::filter(!is.na(GT_BIN))
+  # ms: markers stats
+
+  ms <- data %>%
+    dplyr::group_by(MARKERS) %>%
+    sum_rad(x = ., maf = "global", digits = digits)
+
+  # mps: markers pop stats
+  mps <- data %>%
+    dplyr::group_by(MARKERS, POP_ID) %>%
+    sum_rad(x = ., maf = "local", digits = digits)
+
+  # ps: pop stats
+  ps <- dplyr::bind_cols(
+    dplyr::group_by(data, POP_ID) %>% dplyr::summarise(N = length(unique(INDIVIDUALS))),
+    dplyr::group_by(mps, POP_ID) %>%
+      dplyr::summarise_at(
+      .tbl = .,
+      .vars = c("N", "FREQ_REF", "MAF_LOCAL", "HET_O", "HET_E"),
+      .funs = mean,
+      na.rm = TRUE) %>%
+      dplyr::rename(N_MEAN = N)
+  ) %>%
+    dplyr::mutate(
+      POP_ID1 = NULL,
+      FIS = dplyr::if_else(HET_O == 0, 1, round(((HET_E - HET_O) / HET_E), digits))
+    ) %>%
+    dplyr::mutate_at(
+      .tbl = .,
+      .vars = c("FREQ_REF", "MAF_LOCAL", "HET_O", "HET_E", "FIS"),
+      .funs = round,
+      digits = digits
+    )
+
+  # writting the results
   write_rad(
     data = ms,
     path = path.folder,
     filename = "summary.stats.markers.tsv",
     tsv = TRUE, verbose = verbose)
 
-  # mps: markers pop stats
-  mps <- data %>%
-    dplyr::filter(!is.na(GT_BIN)) %>%
-    dplyr::group_by(MARKERS, POP_ID) %>%
-    dplyr::summarise(
-      N = as.numeric(n()),
-      PP = as.numeric(length(GT_BIN[GT_BIN == 0])),
-      PQ = as.numeric(length(GT_BIN[GT_BIN == 1])),
-      QQ = as.numeric(length(GT_BIN[GT_BIN == 2]))
-    ) %>%
-    dplyr::ungroup(.) %>%
-    dplyr::mutate(
-      FREQ_REF = ((PP*2) + PQ)/(2*N),
-      FREQ_ALT = ((QQ*2) + PQ)/(2*N),
-      HET_O = PQ/N,
-      HET_E = 2 * FREQ_REF * FREQ_ALT,
-      FIS = dplyr::if_else(HET_O == 0, 1, round(((HET_E - HET_O) / HET_E), 6)),
-      PP = NULL, PQ = NULL, QQ= NULL
-    ) %>%
-    dplyr::rename(MAF_LOCAL = FREQ_ALT)
   write_rad(
     data = mps,
     path = path.folder,
     filename = "summary.stats.markers.pop.tsv",
     tsv = TRUE, verbose = verbose)
 
-  # global.maf <- data.sum %>%
-  #   dplyr::group_by(MARKERS) %>%
-  #   dplyr::summarise_at(.tbl = ., .vars = c("N", "PP", "PQ", "QQ"), .funs = sum, na.rm = TRUE) %>%
-  #   dplyr::mutate(MAF_GLOBAL = (PQ + (2 * QQ)) / (2*N)) %>%
-  #   dplyr::select(MARKERS, MAF_GLOBAL)
-
-  # mps <- dplyr::left_join(data.sum, global.maf, by = "MARKERS") %>%
-  #   dplyr::select(MARKERS, POP_ID, N, FREQ_REF, FREQ_ALT, MAF_GLOBAL, HET_O, HET_E, FIS)
-
-  # ps: pop stats
-  ps <- mps %>%
-    dplyr::group_by(POP_ID) %>%
-    dplyr::summarise_at(
-      .tbl = .,
-      .vars = c("N", "FREQ_REF", "MAF_LOCAL", "HET_O", "HET_E", "FIS"),
-      .funs = mean,
-      na.rm = TRUE) %>%
-    dplyr::mutate_at(
-      .tbl = .,
-      .vars = c("N", "FREQ_REF", "MAF_LOCAL", "HET_O", "HET_E", "FIS"),
-      .funs = round,
-      digits = digits
-      )
   write_rad(
     data = ps,
     path = path.folder,
     filename = "summary.stats.pop.tsv",
     tsv = TRUE, verbose = verbose)
+
   return(res = list(summary.stats.pop = ps,
                     summary.stats.markers.pop = mps,
                     summary.stats.markers = ms))

@@ -300,6 +300,10 @@ genomic_converter <- function(
   # whitelist.markers = NULL
   # filter.monomorphic = TRUE
   # filter.common.markers <- TRUE
+  # internal <- TRUE
+  # blacklist.id <- NULL
+  # blacklist.genotypes <- NULL
+  # parameters <- NULL
 
 
   # Check for specific format vs package required-----------------------------
@@ -370,7 +374,7 @@ genomic_converter <- function(
                    "hierarchical.levels", "imputation.method",
                    "pred.mean.matching", "num.tree",
                    "pop.levels", "pop.labels", "pop.select"
-                   ),
+    ),
     verbose = FALSE
   )
 
@@ -447,12 +451,6 @@ genomic_converter <- function(
     verbose = FALSE
   )
 
-  #   gt.vcf.nuc = TRUE,
-  #   gt.vcf = TRUE,
-  #   gt = TRUE,
-  #   gt.bin = TRUE,
-  #   keep.gds = FALSE
-
   if(verbose) message("\nPreparing data for output\n")
 
   if (!is.null(strata) || rlang::has_name(input, "POP_ID")) {
@@ -470,6 +468,17 @@ genomic_converter <- function(
     rlang::abort("output chosen doesn't work with multi-allelic data")
   }
 
+
+  # GT requirement -------------------------------------------------------------
+  if (TRUE %in% (c("genepop", "hierfstat", "structure", "hzar", "gsi_sim") %in% output)) {
+    input <- calibrate_alleles(
+      data = input,
+      biallelic = biallelic,
+      verbose = FALSE,
+      gt = TRUE
+    ) %$%
+      input
+  }
   # overide genind when marker number > 20K ------------------------------------
   if ("genind" %in% output & biallelic) {
     # detect the number of marker
@@ -564,11 +573,6 @@ genomic_converter <- function(
   if ("gtypes" %in% output) {
     if (verbose) message("Generating strataG gtypes object")
     res$gtypes <- radiator::write_gtypes(data = input, write = TRUE)
-
-    # if (!is.null(imputation.method)) {
-    #   if (verbose) message("Generating strataG gtypes object WITH imputations")
-    #   res$gtypes.imputed <- radiator::write_gtypes(data = input.imp)
-    # }
   } # end strataG output
 
   # structure --------------------------------------------------------------------

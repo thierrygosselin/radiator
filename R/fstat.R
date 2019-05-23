@@ -236,6 +236,7 @@ tidy_fstat <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
 
 
 write_hierfstat <- function(data, filename = NULL) {
+  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
 
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("Input file necessary to write the hierfstat file is missing")
@@ -245,9 +246,8 @@ write_hierfstat <- function(data, filename = NULL) {
     data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
   }
 
-  # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-  if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
-    data <- dplyr::rename(.data = data, MARKERS = LOCUS)
+  if (!rlang::has_name(data, "GT")) {
+    data <- calibrate_alleles(data = data, verbose = FALSE) %$% input
   }
 
   data <- dplyr::select(.data = data, POP_ID, INDIVIDUALS, MARKERS, GT) %>%
@@ -270,14 +270,14 @@ write_hierfstat <- function(data, filename = NULL) {
   nl.message <- stringi::stri_join("    * Number of markers, nl = ", nl, sep = "")
   message(nl.message)
 
-  data <- data %>%
+  data %<>%
     dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT) %>%
     dplyr::mutate(
       GT = replace(GT, which(GT == "000000"), NA),
       A1 = as.numeric(stringi::stri_sub(str = GT, from = 1, to = 3)),
-      A2 = as.numeric(stringi::stri_sub(str = GT, from = 4, to = 6))
-    ) %>%
-    dplyr::select(-GT)
+      A2 = as.numeric(stringi::stri_sub(str = GT, from = 4, to = 6)),
+      GT = NULL
+    )
 
   # Get the highest number used to label an allele -----------------------------
   nu <- max(c(unique(data$A1), unique(data$A2)), na.rm = TRUE)
@@ -293,8 +293,7 @@ write_hierfstat <- function(data, filename = NULL) {
       tidyr::spread(data = ., MARKERS, GT) %>%
       dplyr::ungroup(.) %>%
       dplyr::arrange(POP_ID, INDIVIDUALS) %>%
-      dplyr::mutate(POP_ID = as.integer(POP_ID)) %>%
-      dplyr::select(-INDIVIDUALS)
+      dplyr::mutate(POP_ID = as.integer(POP_ID), INDIVIDUALS = NULL)
   )
 
   # allele coding --------------------------------------------------------------
@@ -303,13 +302,9 @@ write_hierfstat <- function(data, filename = NULL) {
 
   # Filename -------------------------------------------------------------------
   if (is.null(filename)) {
-    # Get date and time to have unique filenaming
-    file.date <- stringi::stri_replace_all_fixed(Sys.time(), pattern = " EDT", replacement = "", vectorize_all = FALSE)
-    file.date <- stringi::stri_replace_all_fixed(file.date, pattern = c("-", " ", ":"), replacement = c("", "@", ""), vectorize_all = FALSE)
-    file.date <- stringi::stri_sub(file.date, from = 1, to = 13)
     filename <- stringi::stri_join("radiator_hierfstat_", file.date, ".dat")
   } else {
-    filename <- stringi::stri_join(filename, ".dat")
+    filename <- stringi::stri_join(filename, "_hierfstat.dat")
   }
 
 
