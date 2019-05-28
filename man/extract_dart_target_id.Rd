@@ -40,8 +40,11 @@ the function.}
 written in a file in the working directory.}
 }
 \value{
-A tidy dataframe with a \code{TARGET_ID} column. Spaces are remove and
+A tidy dataframe with a \code{TARGET_ID} column. For cleaning, the \code{TARGET_ID}
+column is treated like the column \code{INDIVIDUALS}. Spaces and \code{,}
+are removed, \code{_} and \code{:} are changed to a dash \code{-} and
 UPPER case is used.
+\href{https://thierrygosselin.github.io/radiator/reference/clean_ind_names.html}{see cleaning doc for logic behind this}.
 }
 \description{
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
