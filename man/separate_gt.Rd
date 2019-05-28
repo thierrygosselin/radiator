@@ -6,7 +6,8 @@
 \usage{
 separate_gt(x, sep = "/", gt = "GT_VCF_NUC", gather = TRUE,
   haplotypes = TRUE, exclude = c("LOCUS", "INDIVIDUALS", "POP_ID"),
-  cpu.rounds = 10, parallel.core = parallel::detectCores() - 1)
+  alleles.naming = c("ALLELE1", "ALLELE2"), cpu.rounds = 10,
+  parallel.core = parallel::detectCores() - 1)
 }
 \description{
 Separate genotype field

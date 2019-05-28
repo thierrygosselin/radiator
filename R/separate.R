@@ -302,15 +302,17 @@ separate_gt <- function(
   gather = TRUE,
   haplotypes = TRUE,
   exclude = c("LOCUS", "INDIVIDUALS", "POP_ID"),
+  alleles.naming = c("ALLELE1", "ALLELE2"),
   cpu.rounds = 10,
   parallel.core = parallel::detectCores() - 1
 ) {
   # sep <-  "/"
   # x <- input2
-  separate_genotype <- function(x, sep, gt, gather, haplotypes, exclude){
+  separate_genotype <- function(x, sep, gt, alleles.naming, gather, haplotypes, exclude){
     res <- tidyr::separate(
       data = x,
-      col = gt, into = c("ALLELE1", "ALLELE2"),
+      col = gt,
+      into = alleles.naming,
       sep = sep,
       extra = "drop", remove = TRUE
     )
@@ -349,6 +351,7 @@ separate_gt <- function(
         mc.cores = parallel.core,
         sep = sep,
         gt = gt,
+        alleles.naming = alleles.naming,
         gather = gather,
         haplotypes = haplotypes,
         exclude = exclude
@@ -359,6 +362,7 @@ separate_gt <- function(
       x = x,
       sep = sep,
       gt = gt,
+      alleles.naming = alleles.naming,
       gather = gather,
       haplotypes = haplotypes,
       exclude = exclude)
@@ -366,3 +370,102 @@ separate_gt <- function(
   return(res)
 }#End separate_gt
 
+# radiator_split_tibble ------------------------------------------------------------------
+#' @title radiator_split_tibble
+#' @description radiator alternative to data.table::tstrsplit
+#' @rdname radiator_split_tibble
+#' @keywords internal
+#' @export
+# radiator alternative to data.table::tstrsplit
+# required function that is identical to data.table::tstrsplit
+radiator_split_tibble <- function(x, parallel.core = parallel::detectCores() - 1) {
+
+  split_gt <- function(x) {
+    x %<>%
+      as.character(x = .) %>%
+      stringi::stri_split_fixed(str = ., pattern = "/") %>% # a bit faster than strsplit with large dataset
+      # strsplit(x = ., split = "/", fixed = TRUE) %>%
+      setNames(object = ., nm = paste0("V", seq_along(.))) %>%
+      tibble::as_tibble(x = .) %>%
+      t(x = .) %>%
+      tibble::as_tibble(x = .)
+  }#End split_gt
+
+  x %<>%
+    tibble::as_tibble(x = .) %>%
+    .radiator_parallel_mc(
+      X = .,
+      FUN = split_gt,
+      mc.cores = parallel.core
+    ) %>%
+    dplyr::bind_cols(.)
+  return(x)
+}#End radiator_split_tibble
+# Note to myself:
+# what was tried but was not adopted because to slow or else:
+
+# # fast for small dataset, doesn't scale well
+
+# split_bind_tibble <- function(x) {
+#   stringi::stri_split_fixed(str = x, pattern = "/") %>%
+#     # purrr::map(.x = ., .f = rbind) %>% # doesnt work because no names
+#     do.call(what = rbind) %>%
+#     tibble::as_tibble(.)
+# }
+
+# data.table alternative
+# # fast for small dataset, doesn't scale well
+# test <- purrr::map_dfc(.x = gt2, .f = data.table::tstrsplit, "/")
+
+# parallel version is fast, small cost with < 2000 markers
+# tictoc::tic()
+# test <- .radiator_parallel_mc(
+#   X = gt2,
+#   FUN = data.table::tstrsplit,
+#   "/",
+#   mc.cores = 12
+# ) %>%
+#   dplyr::bind_cols(.)
+# tictoc::toc()
+
+# melting and casting seems counter productive but it's actually pretty much the same as above
+# tictoc::tic()
+# test <- magrittr::set_colnames(x = gt, value = markers) %>%
+#   tibble::as_tibble(x = ., rownames = "INDIVIDUALS") %>%
+#   data.table::as.data.table(.) %>%
+#   data.table::melt.data.table(
+#     data = .,
+#     id.vars = "INDIVIDUALS",
+#     variable.name = "MARKERS",
+#     value.name = "GT_VCF_NUC",
+#     variable.factor = FALSE) %>%
+#   tibble::as_tibble(.) %>%
+#   # radiator::separate_gt(
+#     separate_gt(
+#       x = .,
+#     sep = "/",
+#     gather = TRUE,
+#     alleles.naming = c("A1", "A2"),
+#     haplotypes = FALSE,
+#     exclude = c("MARKERS", "INDIVIDUALS"),
+#     gt = "GT_VCF_NUC",
+#     parallel.core = parallel.core) %>%
+#   dplyr::mutate(
+#     # ALLELE_GROUP = stringi::stri_replace_all_fixed(
+#     #   str = ALLELE_GROUP,
+#     #   pattern = "ALLELE",
+#     #   replacement = "A",
+#     #   vectorize_all = FALSE),
+#     ALLELES = replace(x = ALLELES, which(ALLELES == "."), NA)
+#   ) %>%
+#   tidyr::unite(col = MARKERS_ALLELES, MARKERS , ALLELE_GROUP, sep = ".") %>%
+#   dplyr::arrange(INDIVIDUALS, MARKERS_ALLELES) %>%
+#   data.table::as.data.table(.) %>%
+#   data.table::dcast.data.table(
+#     data = .,
+#     formula = INDIVIDUALS ~ MARKERS_ALLELES,
+#     value.var = "ALLELES"
+#   ) %>%
+#   tibble::as_tibble(.) %>%
+#   dplyr::ungroup(.)
+# tictoc::toc()
