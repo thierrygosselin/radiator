@@ -601,6 +601,10 @@ genomic_converter <- function(
 
   # strataG --------------------------------------------------------------------
   if ("gtypes" %in% output) {
+    if (!requireNamespace("strataG", quietly = TRUE)) {
+      rlang::abort("strataG needed for this function to work
+                 Install with install.packages('strataG')")
+    }
     if (verbose) message("Generating strataG gtypes object")
     res$gtypes <- radiator::write_gtypes(data = input, write = TRUE)
   } # end strataG output

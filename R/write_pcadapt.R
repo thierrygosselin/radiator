@@ -149,13 +149,17 @@ write_pcadapt <- function(
   } # End of MAC filters
 
   # Linkage disequilibrium -----------------------------------------------------
-  data <- filter_ld(
-    data = data,
-    filter.short.ld = filter.short.ld,
-    filter.long.ld = filter.long.ld,
-    long.ld.missing = long.ld.missing,
-    ld.method =ld.method
+  if (!is.null(filter.short.ld) || !is.null(filter.long.ld)) {
+    data <- filter_ld(
+      data = data,
+      interactive.filter = FALSE,
+      filter.short.ld = filter.short.ld,
+      filter.long.ld = filter.long.ld,
+      long.ld.missing = long.ld.missing,
+      ld.method =ld.method
     )
+  }
+
   # Biallelic and GT_BIN -------------------------------------------------------
 
   n.ind <- dplyr::n_distinct(data$INDIVIDUALS)

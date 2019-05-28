@@ -34,7 +34,7 @@ and might be of interest for users.
 }
 \examples{
 \dontrun{
-require(strataG)
+# require(strataG)
 # with radiator GDS
 turtle <- radiator::write_gtypes(data = "my.radiator.gds.rad")
 

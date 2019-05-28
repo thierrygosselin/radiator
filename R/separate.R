@@ -385,7 +385,7 @@ radiator_split_tibble <- function(x, parallel.core = parallel::detectCores() - 1
       as.character(x = .) %>%
       stringi::stri_split_fixed(str = ., pattern = "/") %>% # a bit faster than strsplit with large dataset
       # strsplit(x = ., split = "/", fixed = TRUE) %>%
-      setNames(object = ., nm = paste0("V", seq_along(.))) %>%
+      stats::setNames(object = ., nm = paste0("V", seq_along(.))) %>%
       tibble::as_tibble(x = .) %>%
       t(x = .) %>%
       tibble::as_tibble(x = .)

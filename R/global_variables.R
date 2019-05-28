@@ -131,7 +131,9 @@ if (getRversion() >= "2.15.1") {
       "coverage.thresholds", "population", "residuals", "species", "tau", "yw",
       "MEAN_RD", "MISSINGNESS", "dup.threshold", "ALLELE_SEQUENCE",
       "CLONE_ID", "CLUSTER_CONSENSUS_SEQUENCE", "TRIMMED_SEQUENCE",
-      "INDIVIDUALS1", "SEX_MARKERS", "VARIANT_ID1"
+      "INDIVIDUALS1", "SEX_MARKERS", "VARIANT_ID1", "COLLECTION",
+      "NA_character", "REPUNIT", "SAMPLE_TYPE", "SampleNum", "repunit",
+      "sample_type"
     )
   )
 }
