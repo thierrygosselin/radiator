@@ -213,8 +213,6 @@ read_strata <- function(
       strata  %<>%
         dplyr::mutate(
           TARGET_ID = stringi::stri_trans_toupper(TARGET_ID),
-          TARGET_ID = stringi::stri_replace_all_fixed(
-            TARGET_ID, pattern = " ", replacement = "", vectorize_all = FALSE),
           TARGET_ID = clean_ind_names(TARGET_ID))
     }
 
