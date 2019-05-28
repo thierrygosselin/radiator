@@ -147,24 +147,29 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
 
   # Import data ------------------------------------------------------------------
   if (is.vector(data)) {
-    data <- readr::read_delim(file = data, delim = "?", skip = 1, trim_ws = TRUE, col_names = "data", col_types = "c")
+    data <- readr::read_delim(
+      file = data,
+      delim = "?",
+      skip = 1,
+      trim_ws = TRUE,
+      col_names = "data",
+      col_types = "c")
   } else {
-    data <- data %>%
+    data %<>%
       dplyr::rename(data = V1) %>%
       dplyr::slice(-1) %>% # removes genepop header
-      tibble::as_data_frame()
+      tibble::as_tibble()
   }
 
   # Replace white space with only 1 space
-  data$data <- stringi::stri_replace_all_regex(
-    str = data$data,
+  data$data %<>% stringi::stri_replace_all_regex(
+    str = .,
     pattern = "\\s+",
     replacement = " ",
     vectorize_all = FALSE
-  )
-
+  ) %>%
   # Remove unnecessary spaces
-  data$data <- stringi::stri_trim_right(str = data$data, pattern = "\\P{Wspace}")
+  stringi::stri_trim_right(str = ., pattern = "\\P{Wspace}")
 
   # Pop indices ----------------------------------------------------------------
   pop.indices <- which(data$data %in% c("Pop", "pop", "POP"))
@@ -176,7 +181,7 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
   markers <- unlist(stringi::stri_split_fixed(str = markers, pattern = ","))
 
   # Remove markers from the dataset --------------------------------------------
-  data <- dplyr::slice(.data = data, -(1:(pop.indices[1] - 1)))
+  data %<>% dplyr::slice(-(1:(pop.indices[1] - 1)))
 
   # New pop indices and pop string ---------------------------------------------
   pop.indices <- which(data$data %in% c("Pop", "pop", "POP"))
@@ -184,7 +189,7 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
   pop <- factor(rep.int(1:npop, times = pop.indices.lagged))
 
   # remove pop indices from dataset---------------------------------------------
-  data <- dplyr::slice(.data = data, -pop.indices)
+  data %<>% dplyr::slice(-pop.indices)
 
   # Scan for genotypes split on 2 lines ----------------------------------------
   # looks for lines without a comma
@@ -200,32 +205,17 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
 
   # preparing the dataset ------------------------------------------------------
   # separate the individuals based on the comma (",")
-  data <- tidyr::separate(
-    data = data,
-    col = data,
-    into = c("INDIVIDUALS", "GT"),
-    sep = ","
-  )
+  data %<>%
+    tidyr::separate(
+      data = .,
+      col = data,
+      into = c("INDIVIDUALS", "GT"),
+      sep = ","
+    )
 
   # Individuals
-  # remove "_", ":", "," and white space character.
-  # White space is defined as [\t\n\f\r\p{Z}].
-  individuals <- data %>%
-    dplyr::select(INDIVIDUALS) %>%
-    dplyr::mutate(
-      INDIVIDUALS = stringi::stri_replace_all_fixed(
-        str = INDIVIDUALS,
-        pattern = c("_", ",", ":"),
-        replacement = c("-", "", "-"),
-        vectorize_all = FALSE
-      ),
-      INDIVIDUALS = stringi::stri_replace_all_regex(
-        str = INDIVIDUALS,
-        pattern = "\\s+",
-        replacement = "",
-        vectorize_all = FALSE
-      )
-    )
+  individuals <- dplyr::select(.data = data, INDIVIDUALS) %>%
+    dplyr::mutate(INDIVIDUALS = radiator::clean_ind_names(x = INDIVIDUALS))
 
   # Check for duplicate individual names
   # some genepop format don't provide individuals
@@ -243,10 +233,9 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
     readr::write_tsv(x = bad.id, path = "radiator_genepop_id_conversion.tsv")
   }
 
-
-
   # isolate the genotypes
-  data <- dplyr::select(.data = data, GT) %>%
+  data %<>%
+    dplyr::select(GT) %>%
     dplyr::mutate(
       GT = stringi::stri_replace_all_fixed(
         str = GT,
@@ -270,7 +259,7 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
 
   # create a data frame --------------------------------------------------------
   # separate the dataset by space
-  data <- tibble::as_data_frame(
+  data <- tibble::as_tibble(
     purrr::invoke(#similar to do.call
       rbind, stringi::stri_split_fixed(str = data$GT, pattern = " ")
     )
@@ -282,53 +271,14 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
   # Population info ------------------------------------------------------------
   # Strata
   if (!is.null(strata)) {
-    if (is.vector(strata)) {
-      number.columns.strata <- max(utils::count.fields(strata, sep = "\t"))
-      col.types <- stringi::stri_join(rep("c", number.columns.strata), collapse = "")
-      strata.df <- readr::read_tsv(file = strata, col_names = TRUE, col_types = col.types) %>%
-        dplyr::rename(POP_ID = STRATA)
-    } else {
-      # message("strata object: yes")
-      colnames(strata) <- stringi::stri_replace_all_fixed(
-        str = colnames(strata),
-        pattern = "STRATA",
-        replacement = "POP_ID",
-        vectorize_all = FALSE
-      )
-      strata.df <- strata
-    }
-
-    # Remove potential whitespace in pop_id
-    strata.df$POP_ID <- stringi::stri_replace_all_fixed(
-      strata.df$POP_ID,
-      pattern = " ",
-      replacement = "_",
-      vectorize_all = FALSE
-    )
-
-    # Remove unwanted character in individual names
-    strata.df <- strata.df %>%
-      dplyr::mutate(
-        INDIVIDUALS =  stringi::stri_replace_all_fixed(
-          str = INDIVIDUALS,
-          pattern = c("_", ",", ":"),
-          replacement = c("-", "", "-"),
-          vectorize_all = FALSE
-        ),
-        INDIVIDUALS = stringi::stri_replace_all_regex(
-          str = INDIVIDUALS,
-          pattern = "\\s+",
-          replacement = "",
-          vectorize_all = FALSE
-        )
-      )
-
+    strata.df <- radiator::read_strata(strata = strata, pop.id = TRUE, verbose = FALSE)
     #join strata and data
-    individuals <- dplyr::left_join(x = individuals, y = strata.df, by = "INDIVIDUALS")
+    individuals %<>%
+      dplyr::left_join(strata.df, by = "INDIVIDUALS")
 
   } else {
     # add pop based on internal genepop: integer and reorder the columns
-    individuals <- individuals %>%
+    individuals %<>%
       dplyr::mutate(POP_ID = pop)
   }
 
@@ -407,9 +357,9 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
 # write_genepop-----------------------------------------------------------------
 #' @name write_genepop
 
-#' @title Write a genepop file from a tidy data frame
+#' @title Write a genepop file
 
-#' @description Write a genepop file from a tidy data frame.
+#' @description Write a genepop file from a tidy data frame or GDS file/object.
 #' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 #' and \href{https://github.com/thierrygosselin/assigner}{assigner}
 #' and might be of interest for users.

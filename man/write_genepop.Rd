@@ -2,7 +2,7 @@
 % Please edit documentation in R/genepop.R
 \name{write_genepop}
 \alias{write_genepop}
-\title{Write a genepop file from a tidy data frame}
+\title{Write a genepop file}
 \usage{
 write_genepop(data, pop.levels = NULL, genepop.header = NULL,
   markers.line = TRUE, filename = NULL, ...)
@@ -43,7 +43,7 @@ the date and time is appended to \code{radiator_genepop_}.}
 A genepop file is saved to the working directory.
 }
 \description{
-Write a genepop file from a tidy data frame.
+Write a genepop file from a tidy data frame or GDS file/object.
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and \href{https://github.com/thierrygosselin/assigner}{assigner}
 and might be of interest for users.

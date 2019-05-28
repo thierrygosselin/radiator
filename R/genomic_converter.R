@@ -16,13 +16,14 @@
 #'   \item \strong{Imputations:} deprecated module no longer available
 #'   in \emph{genomic_converter} (see \emph{Life cycle} section below).
 #'   \item \strong{Parallel:} Some parts of the function are designed to be conduncted on multiple CPUs
-#'   \item \strong{Output:} 24 output file formats are supported (see \code{output} argument below)
+#'   \item \strong{Output:} 28 output file formats are supported (see \code{output} argument below)
 #' }
 
-#' @param output 26 genomic data formats can be exported: tidy (by default),
+#' @param output 28 genomic data formats can be exported: tidy (by default),
 #' genepop, genind, genlight, vcf (for file format version, see details below),
 #' plink, structure, faststructure, arlequin, hierfstat, gtypes (strataG), bayescan, betadiv,
-#' pcadapt, hzar, fineradstructure, related, seqarray, snprelate and maverick.
+#' pcadapt, hzar, fineradstructure, related, seqarray, snprelate, maverick,
+#' genepopedit and rubias.
 #' Use a character string,
 #' e.g. \code{output = c("genind", "genepop", "structure")}, to have preferred
 #' output formats generated. With default, only the tidy format is generated.
@@ -52,6 +53,8 @@
 #' @inheritParams write_related
 #' @inheritParams write_snprelate
 #' @inheritParams write_stockr
+#' @inheritParams write_genepopedit
+#' @inheritParams write_rubias
 
 
 #' @section Input genomic datasets:
@@ -470,7 +473,8 @@ genomic_converter <- function(
 
 
   # GT requirement -------------------------------------------------------------
-  if (TRUE %in% (c("genepop", "hierfstat", "structure", "hzar", "gsi_sim") %in% output)) {
+  if (TRUE %in% (c("genepop", "hierfstat", "structure", "hzar", "gsi_sim",
+                   "genepopedit") %in% output)) {
     input <- calibrate_alleles(
       data = input,
       biallelic = biallelic,
@@ -551,6 +555,32 @@ genomic_converter <- function(
     #   )
     # }
   } # end genepop output
+
+  # GENEPOPEDIT --------------------------------------------------------------------
+  if ("genepopedit" %in% output) {
+    if (verbose) message("Generating genepopedit flatten object")
+    res$genepopedit <- radiator::write_genepopedit(data = input)
+  } # end genepopedit output
+
+
+  # GSI_SIM --------------------------------------------------------------------
+  if ("gsi_sim" %in% output) {
+    if (verbose) message("Generating gsi_sim output")
+    res$gsi_sim <- radiator::write_gsi_sim(data = input,
+                            pop.levels = pop.levels,
+                            strata = strata,
+                            filename = filename)
+  } # end gsi_sim output
+
+  # RUBIAS --------------------------------------------------------------------
+  if ("rubias" %in% output) {
+    if (verbose) message("Generating rubias output")
+    res$rubias <- radiator::write_rubias(data = input,
+                           strata = strata,
+                           filename = filename,
+                           parallel.core = parallel.core)
+  } # end rubias output
+
 
   # hierfstat --------------------------------------------------------------------
   if ("hierfstat" %in% output) {
