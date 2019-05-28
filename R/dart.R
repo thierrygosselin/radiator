@@ -12,8 +12,11 @@
 #' @param write With default \code{write = TRUE}, the dart target id column is
 #' written in a file in the working directory.
 
-#' @return A tidy dataframe with a \code{TARGET_ID} column. Spaces are remove and
+#' @return A tidy dataframe with a \code{TARGET_ID} column. For cleaning, the \code{TARGET_ID}
+#' column is treated like the column \code{INDIVIDUALS}. Spaces and \code{,}
+#' are removed, \code{_} and \code{:} are changed to a dash \code{-} and
 #' UPPER case is used.
+#' \href{https://thierrygosselin.github.io/radiator/reference/clean_ind_names.html}{see cleaning doc for logic behind this}.
 
 #' @export
 #' @rdname extract_dart_target_id
@@ -498,10 +501,6 @@ read_dart <- function(
   n.locus <- length(unique(markers.meta$LOCUS))
   n.snp <- length(unique(markers.meta$MARKERS))
 
-
-  # message("Closing the GDS connection")
-  # SeqArray::seqClose(object = data.gds)
-
   # Tidy check ---------------------------------------------------------------
   if (tidy.dart && tidy.check && n.markers > 20000) {
     cat("\n\n################################## IMPORTANT ###################################\n")
@@ -539,12 +538,14 @@ read_dart <- function(
 
   if (tidy.dart) {
     notwanted <- c("REF", "ALT")
-    tidy.data <- markers.meta %>%
-      dplyr::left_join(
-        extract_genotypes_metadata(gds = data, whitelist = TRUE) %>%
-          dplyr::select(-dplyr::one_of(notwanted))
-        , by = "MARKERS"
-      )
+    tidy.data <- suppressWarnings(
+      markers.meta %>%
+        dplyr::left_join(
+          extract_genotypes_metadata(gds = data, whitelist = TRUE) %>%
+            dplyr::select(-dplyr::one_of(notwanted))
+          , by = "MARKERS"
+        )
+    )
 
     # Check that merging was successful
     if (!identical(tidy.data$VARIANT_ID.x, tidy.data$VARIANT_ID.y)) {
@@ -655,6 +656,7 @@ import_dart <- function(
   verbose = TRUE
 ) {
 
+  # # TEST
   # pop.levels = NULL
   # path.folder = NULL
   # parallel.core = parallel::detectCores() - 1
@@ -692,8 +694,7 @@ import_dart <- function(
   if (verbose) message("Using individuals in strata file to filter individuals in DArT file")
   if (n.ind.dart != n.ind.strata) {
     strata.id.check <- strata.df %>%
-      dplyr::mutate(IN_DART = stringi::stri_trans_toupper(strata.df$TARGET_ID)
-                    %in% stringi::stri_trans_toupper(target.id$TARGET_ID))
+      dplyr::mutate(IN_DART = strata.df$TARGET_ID %in% target.id$TARGET_ID)
     strata.id.pass <- !FALSE %in% (unique(strata.id.check$IN_DART))
     if (!strata.id.pass) {
       problem.filename <- generate_filename(
@@ -732,59 +733,7 @@ import_dart <- function(
     rlang::abort("\nFix the strata with unique names and\nverify the DArT file for the same issue, adjust accordingly...")
   }
 
-  # use.readr <- FALSE # fread is now a lot faster...switching to fread...
-  # if (use.readr) {
-  #   dart.col.type <- readr::read_delim(
-  #     file = data,
-  #     delim = dart.check$tokenizer.dart,
-  #     skip = dart.check$skip.number,
-  #     n_max = 1,
-  #     na = "-",
-  #     col_names = FALSE,
-  #     col_types = readr::cols(.default = readr::col_character()))
-  #
-  #   if (silico.dart) {
-  #     info <- c("CLONEID", "ALLELESEQUENCE", "SEQUENCE", "TRIMMEDSEQUENCE")
-  #     info.type <- c("c", "c", "c", "c")
-  #   } else {
-  #     info <- c("ALLELEID", "SNP", "SNPPOSITION", "CALLRATE",
-  #               "AVGCOUNTREF", "AVGCOUNTSNP", "REPAVG", "CLONEID", "AVGREADDEPTH",
-  #               "REPRODUCIBILITY", "CLUSTERCONSENSUSSEQUENCE", "ONERATIOREF", "ONERATIOSNP")
-  #     info.type <- c("c", "c", "i", "d", "d", "d", "d", "c", "d", "d", "c", "d", "d")
-  #   }
-  #
-  #   want <- tibble::tibble(INFO = info, COL_TYPE = info.type) %>%
-  #     dplyr::bind_rows(
-  #       dplyr::select(strata.df, INFO = TARGET_ID) %>%
-  #         dplyr::mutate(
-  #           COL_TYPE = rep("c", n()),
-  #           INFO = stringi::stri_trans_toupper(INFO)))
-  #
-  #   dart.col.type %<>%
-  #     t %>%
-  #     magrittr::set_colnames(x = ., value = "INFO") %>%
-  #     tibble::as_tibble(.) %>%
-  #     dplyr::mutate(
-  #       INFO = stringi::stri_trans_toupper(INFO),
-  #       INFO = clean_ind_names(INFO)
-  #     ) %>%
-  #     dplyr::left_join(want, by = "INFO") %>%
-  #     dplyr::mutate(COL_TYPE = stringi::stri_replace_na(str = COL_TYPE, replacement = "_")) %>%
-  #     dplyr::select(COL_TYPE) %>%
-  #     purrr::flatten_chr(.) %>%
-  #     stringi::stri_join(collapse = "")
-  #   want <- NULL
-  #
-  #   data <- readr::read_delim(
-  #     file = data,
-  #     delim = dart.check$tokenizer.dart,
-  #     col_names = TRUE,
-  #     col_types = dart.col.type,
-  #     na = c("-", " ", "", "NA"),
-  #     skip = dart.check$skip.number
-  #   )
-  #   dart.col.type <- NULL
-  # } else {#fread
+
   # There's no big difference really here if we import everything and filter after...
   data <- suppressWarnings(
     data.table::fread(
@@ -1828,17 +1777,16 @@ tidy_dart_metadata <- function(
 #' @export
 clean_dart_colnames <- function(data, strata) {
   keeper <- length(colnames(data)) - length(strata$TARGET_ID)
+
+
+  # clean the dart header
+  # clean the dart target ids
+  # here doing all colnames is ok, because keeper above is allready upper caps
+  # added 20190528
   colnames(data) <- c(
     radiator::radiator_snakecase(x = colnames(data)[1:keeper]),
-    colnames(data)[-c(1:keeper)]
-    # strata$TARGET_ID
+    stringi::stri_trans_toupper(clean_ind_names(colnames(data)[-c(1:keeper)]))
   )
-  # test <- tibble::tibble(TARGET_ID = colnames(data)) %>%
-  #   dplyr::left_join(strata, by = "TARGET_ID") %>%
-  #   dplyr::mutate(
-  #     INDIVIDUALS = dplyr::if_else(
-  #       is.na(INDIVIDUALS), TARGET_ID, INDIVIDUALS)
-  #   ) %$% INDIVIDUALS
   colnames(data) <- tibble::tibble(TARGET_ID = colnames(data)) %>%
     dplyr::left_join(strata, by = "TARGET_ID") %>%
     dplyr::mutate(
