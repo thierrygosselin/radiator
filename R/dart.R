@@ -328,13 +328,6 @@ read_dart <- function(
     file.date = file.date,
     verbose = verbose)
 
-  # radiator.folder <- generate_folder(
-  #   f = path.folder,
-  #   rad.folder = "import_dart",
-  #   prefix_int = TRUE,
-  #   internal = FALSE,
-  #   file.date = file.date,
-  #   verbose = verbose)
 
   # write the dots file
   write_rad(
@@ -390,40 +383,29 @@ read_dart <- function(
 
   # Silico DArT ----------------------------------------------------------------
   if ("silico.dart" %in% dart.format) {
-    data <- data.table::as.data.table(data) %>%
-      data.table::melt.data.table(
-        data = .,
-        id.vars = c("CLONE_ID", "SEQUENCE"),
-        variable.name = "TARGET_ID",
-        variable.factor = FALSE,
-        value.name = "VALUE"
-      ) %>%
-      tibble::as_tibble(.)
-
-    # TODO : I don't think this is necessary with new technique
-    strata %<>% dplyr::filter(TARGET_ID %in% data$TARGET_ID)
-    if (nrow(strata) == 0) {
-      rlang::abort("No more individuals in your data, check data and strata ID names...")
-    }
-
-    data %<>% dplyr::filter(TARGET_ID %in% strata$TARGET_ID)
-    if (nrow(data) == 0) {
-      rlang::abort("No more individuals in your data, check data and strata ID names...")
-    }
-
+    want <- c("CLONE_ID", "SEQUENCE", strata$INDIVIDUALS)
     suppressWarnings(
-      data %<>% dplyr::left_join(strata, by = "TARGET_ID") %>%
-        dplyr::select(-TARGET_ID) %>%
-        dplyr::mutate(VALUE = as.integer(VALUE))
+      data %<>%
+        dplyr::select(dplyr::one_of(want)) %>%
+        data.table::as.data.table(x = .) %>%
+        data.table::melt.data.table(
+          data = .,
+          id.vars = c("CLONE_ID", "SEQUENCE"),
+          variable.name = "INDIVIDUALS",
+          variable.factor = FALSE,
+          value.name = "VALUE"
+        ) %>%
+        tibble::as_tibble(.)
     )
-    strata <- generate_strata(data, pop.id = FALSE)
     n.clone <- length(unique(data$CLONE_ID))
+    data <- radiator::join_strata(data = data, strata = strata)
 
     filename <- generate_filename(
       name.shortcut = "radiator.silico.dart",
       path.folder = path.folder,
       date = TRUE,
       extension = "rad")
+
     write_rad(
       data = data,
       path = filename$filename,
@@ -692,9 +674,13 @@ import_dart <- function(
   # Strata file ------------------------------------------------------------------
   strata.df <- radiator::read_strata(
     strata = strata,
-    pop.levels = pop.levels, pop.labels = NULL,
-    pop.select = NULL, blacklist.id = NULL,
-    keep.two = FALSE, verbose = verbose)
+    pop.levels = pop.levels,
+    pop.labels = NULL,
+    pop.select = NULL,
+    blacklist.id = NULL,
+    keep.two = FALSE,
+    verbose = verbose
+  )
   pop.levels <- strata.df$pop.levels
   pop.labels <- strata.df$pop.labels
   pop.select <- strata.df$pop.select
@@ -819,43 +805,29 @@ import_dart <- function(
       clean_dart_colnames(data = ., strata = strata.df)
   )
 
-  # }
-  # check <- tibble::tibble(BLACKLIST_ID = colnames(data)) %>%
-  #   dplyr::filter(BLACKLIST_ID %in% blacklist.id)
+  # keep consensus sequence if found
+  # or rename TRIMMED_SEQUENCE
 
-  # Check sequence
-  # check.seq <- data %>%
-  #   dplyr::select(ALLELE_SEQUENCE, TRIMMED_SEQUENCE) %>%
-  #   dplyr::filter(ALLELE_SEQUENCE != TRIMMED_SEQUENCE)
+  # how many columns with sequence in it
+  # test <- dplyr::select(.data = data, dplyr::ends_with("_SEQUENCE"))
 
-  if (silico.dart) {
-    colnames(data) <- stringi::stri_replace_all_fixed(
-      str = colnames(data),
-      pattern = c("ALLELE_SEQUENCE", "TRIMMED_SEQUENCE"),
-      replacement = c("SEQUENCE", "SEQUENCE"),
-      vectorize_all = FALSE)
-    # }
-  } else {# non silico dart data
+  if (rlang::has_name(data, "CLUSTER_CONSENSUS_SEQUENCE")) {
+    data %<>% dplyr::rename(SEQUENCE = CLUSTER_CONSENSUS_SEQUENCE)
+  } else if (rlang::has_name(data, "TRIMMED_SEQUENCE")) {
+    data %<>% dplyr::rename(SEQUENCE = TRIMMED_SEQUENCE)
+  } else {
+    if (rlang::has_name(data, "ALLELE_SEQUENCE")) {
+      data %<>% dplyr::rename(SEQUENCE = ALLELE_SEQUENCE)
+    }
+  }
+
+  if (!silico.dart) {
     colnames(data) %<>%
       stringi::stri_replace_all_fixed(
         str = .,
         pattern = c("ALLELE_ID","SNP_POSITION"),
         replacement = c("LOCUS", "POS"),
         vectorize_all = FALSE)
-
-
-    # keep consensus sequence if found
-    # or rename TRIMMED_SEQUENCE
-    if (rlang::has_name(data, "CLUSTER_CONSENSUS_SEQUENCE")) {
-      data %<>% dplyr::rename(SEQUENCE = CLUSTER_CONSENSUS_SEQUENCE)
-    } else if (rlang::has_name(data, "TRIMMED_SEQUENCE")) {
-      data %<>% dplyr::rename(SEQUENCE = TRIMMED_SEQUENCE)
-    } else {
-      if (rlang::has_name(data, "ALLELE_SEQUENCE")) {
-        data %<>% dplyr::rename(SEQUENCE = ALLELE_SEQUENCE)
-      }
-    }
-
 
     if (rlang::has_name(data, "CLONE_ID")) {
       if (rlang::has_name(data, "LOCUS")) {
