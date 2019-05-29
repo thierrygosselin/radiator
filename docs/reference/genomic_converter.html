@@ -43,7 +43,7 @@ Filters: see Advance mode section below for ways to
 Imputations: deprecated module no longer available
   in genomic_converter (see Life cycle section below).
 Parallel: Some parts of the function are designed to be conduncted on multiple CPUs
-Output: 24 output file formats are supported (see output argument below)
+Output: 28 output file formats are supported (see output argument below)
 " />
 <meta name="twitter:card" content="summary" />
 
@@ -75,7 +75,7 @@ Output: 24 output file formats are supported (see output argument below)
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.1</span>
       </span>
     </div>
 
@@ -147,7 +147,7 @@ reality of GBS/RADseq data while maintaining a reproducible workflow.</p>
 <li><p><strong>Imputations:</strong> deprecated module no longer available
   in <em>genomic_converter</em> (see <em>Life cycle</em> section below).</p></li>
 <li><p><strong>Parallel:</strong> Some parts of the function are designed to be conduncted on multiple CPUs</p></li>
-<li><p><strong>Output:</strong> 24 output file formats are supported (see <code>output</code> argument below)</p></li>
+<li><p><strong>Output:</strong> 28 output file formats are supported (see <code>output</code> argument below)</p></li>
 </ul>
     
     </div>
@@ -181,10 +181,11 @@ Default: <code>strata = NULL</code>.</p></td>
     </tr>
     <tr>
       <th>output</th>
-      <td><p>26 genomic data formats can be exported: tidy (by default),
+      <td><p>28 genomic data formats can be exported: tidy (by default),
 genepop, genind, genlight, vcf (for file format version, see details below),
 plink, structure, faststructure, arlequin, hierfstat, gtypes (strataG), bayescan, betadiv,
-pcadapt, hzar, fineradstructure, related, seqarray, snprelate and maverick.
+pcadapt, hzar, fineradstructure, related, seqarray, snprelate, maverick,
+genepopedit and rubias.
 Use a character string,
 e.g. <code>output = c("genind", "genepop", "structure")</code>, to have preferred
 output formats generated. With default, only the tidy format is generated.

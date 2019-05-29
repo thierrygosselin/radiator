@@ -65,7 +65,7 @@ target id from a DArT file. To help prepare the appropriate STRATA file." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.1</span>
       </span>
     </div>
 
@@ -174,8 +174,11 @@ written in a file in the working directory.</p></td>
     
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>A tidy dataframe with a <code>TARGET_ID</code> column. Spaces are remove and
-UPPER case is used.</p>
+    <p>A tidy dataframe with a <code>TARGET_ID</code> column. For cleaning, the <code>TARGET_ID</code>
+column is treated like the column <code>INDIVIDUALS</code>. Spaces and <code>,</code>
+are removed, <code>_</code> and <code>:</code> are changed to a dash <code>-</code> and
+UPPER case is used.
+<a href='https://thierrygosselin.github.io/radiator/reference/clean_ind_names.html'>see cleaning doc for logic behind this</a>.</p>
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
