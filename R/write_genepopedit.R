@@ -4,11 +4,29 @@
 #' @title Write a genepopedit flatten object
 
 #' @description Write a genepopedit object from a tidy data frame or GDS file/object.
+#'
+#' Why not use \code{genepopedit::genepop_flatten}?
+#' \itemize{
+#' \item genepopedit requires a
+#' \href{https://github.com/rystanley/genepopedit#genepopedit}{specific type of genepop},
+#' so if you don't want to manipulate your genepop file, radiator is an alternative.
+#' \item radiator follows guidelines highlighted here:
+#' \href{http://genepop.curtin.edu.au/help_input.html}{genepop format}, but the
+#' 3 functions in radiator that reads genepop files:
+#' \enumerate{
+#' \item \href{https://thierrygosselin.github.io/radiator/reference/genomic_converter.html}{genomic_converter}
+#' \item \href{https://thierrygosselin.github.io/radiator/reference/tidy_genomic_data.html}{tidy_genomic_data}
+#' \item the underlying module: \href{https://thierrygosselin.github.io/radiator/reference/tidy_genepop.html}{tidy_genepop}
+#' }
+#' imports a \emph{larger variety of genepop alternatives}, similarly to
+#' \href{https://github.com/thibautjombart/adegenet}{adegenet} \code{read.genepop}
+#'  function, only faster.
+#' }
 
 #' @inheritParams radiator_common_arguments
 
 #' @return A genepopedit object in the global environment.
-
+#' @seealso \href{https://github.com/rystanley/genepopedit}{genepopedit}
 #' @export
 #' @rdname write_genepopedit
 #' @references Stanley RRE, Jeffery NW, Wringe BF, DiBacco C, Bradbury IR (2017)

@@ -2,7 +2,7 @@
 % Please edit documentation in R/genepop.R
 \name{tidy_genepop}
 \alias{tidy_genepop}
-\title{genepop to tidy dataframe}
+\title{Import genepop file and convert to a tidy dataframe}
 \usage{
 tidy_genepop(data, strata = NULL, tidy = TRUE, filename = NULL)
 }

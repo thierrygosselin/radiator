@@ -43,6 +43,7 @@ Suggests:
     SeqArray,
     SNPRelate,
     stats,
+    strataG,
     stringdist,
     stringi,
     tibble,

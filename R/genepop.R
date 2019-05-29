@@ -1,7 +1,7 @@
 # tidy_genepop------------------------------------------------------------------
 #' @name tidy_genepop
 
-#' @title genepop to tidy dataframe
+#' @title Import genepop file and convert to a tidy dataframe
 
 #' @description Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 #' and might be of interest for users.
