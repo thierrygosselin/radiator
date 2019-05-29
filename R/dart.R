@@ -720,9 +720,8 @@ import_dart <- function(
     dplyr::filter(strata.df, !TARGET_ID %in% target.id$TARGET_ID) %$% TARGET_ID,
     dplyr::filter(target.id, !TARGET_ID %in% strata.df$TARGET_ID) %$% TARGET_ID
   ) %>% unique
-  if (length(blacklist.id) == 0) blacklist.id <- NULL
-
   message("Number of blacklisted samples: ", length(blacklist.id))
+  if (length(blacklist.id) == 0) blacklist.id <- NULL
   target.id <- NULL
 
   # need to check for duplicate names... yes happening all the time
@@ -743,16 +742,23 @@ import_dart <- function(
       na.strings = c("-", "NA"),
       stringsAsFactors = FALSE,
       skip = "CallRate",
-      drop = blacklist.id,
+      # drop = blacklist.id,
+      # cannot use this because of upper/lower case and all the shity way people name their samples...
       select = NULL,
       showProgress = TRUE,
       nThread = parallel.core,
       verbose = FALSE) %>%
-      tibble::as_tibble(.) %>%
-      # We want snakecase not camelcase
-      # Change the TARGET_ID by INDIVIDUALS...
-      clean_dart_colnames(data = ., strata = strata.df)
+      tibble::as_tibble(.)
   )
+
+  # We want snakecase not camelcase
+  # Change the TARGET_ID by INDIVIDUALS...
+  data %<>% clean_dart_colnames(
+    data = .,
+    blacklist.id = blacklist.id,
+    dart.col.num = dart.check$star.number,
+    strata = strata.df)
+
 
   # keep consensus sequence if found
   # or rename TRIMMED_SEQUENCE
@@ -1070,7 +1076,7 @@ dart2gds <- function(
     data %<>%
       dplyr::select(dplyr::one_of(want)) %>%
       dplyr::arrange(MARKERS, REF)
-    )
+  )
 
   if (gt.vcf.nuc || gt) {
     ref.alt <- TRUE
@@ -1775,9 +1781,17 @@ tidy_dart_metadata <- function(
 #' @rdname clean_dart_colnames
 #' @keywords internal
 #' @export
-clean_dart_colnames <- function(data, strata) {
-  keeper <- length(colnames(data)) - length(strata$TARGET_ID)
+clean_dart_colnames <- function(data, blacklist.id = NULL, dart.col.num = NULL, strata = NULL) {
 
+  if (dart.col.num > 0) {
+    keeper <- dart.col.num# the most reliable if available
+  } else {
+    if (is.null(blacklist.id)) {
+      keeper <- length(colnames(data)) - length(strata$TARGET_ID)
+    } else {
+      keeper <- length(colnames(data)) - length(strata$TARGET_ID) - length(blacklist.id)
+    }
+  }
 
   # clean the dart header
   # clean the dart target ids
@@ -1787,6 +1801,11 @@ clean_dart_colnames <- function(data, strata) {
     radiator::radiator_snakecase(x = colnames(data)[1:keeper]),
     stringi::stri_trans_toupper(clean_ind_names(colnames(data)[-c(1:keeper)]))
   )
+
+  if (!is.null(blacklist.id)) {
+    data %<>% dplyr::select(-dplyr::one_of(blacklist.id))
+  }
+
   colnames(data) <- tibble::tibble(TARGET_ID = colnames(data)) %>%
     dplyr::left_join(strata, by = "TARGET_ID") %>%
     dplyr::mutate(
