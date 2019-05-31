@@ -15,10 +15,11 @@ mclapply_win(X, FUN, ..., mc.preschedule = TRUE, mc.set.seed = TRUE,
   mc.cores = getOption("mc.cores", 2L), mc.cleanup = TRUE,
   mc.allow.recursive = TRUE, affinity.list = NULL)
 
-.radiator_parallel(X, FUN, ..., mc.preschedule = TRUE,
-  mc.set.seed = TRUE, mc.silent = FALSE,
-  mc.cores = getOption("mc.cores", 2L), mc.cleanup = TRUE,
-  mc.allow.recursive = TRUE, affinity.list = NULL)
+.radiator_parallel(X, FUN, ..., mc.style = "ETA", mc.substyle = NA,
+  mc.cores = getOption("mc.cores", 2L),
+  ignore.interactive = getOption("ignore.interactive", F),
+  mc.preschedule = TRUE, mc.set.seed = TRUE, mc.cleanup = TRUE,
+  mc.allow.recursive = TRUE)
 }
 \arguments{
 \item{X}{see \pkg{parallel} \code{\link{mclapply}}}

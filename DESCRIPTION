@@ -2,7 +2,7 @@ Package: radiator
 Type: Package
 Title: RADseq Data Exploration, Manipulation and Visualization using R
 Version: 1.1.1
-Date: 2019-05-28
+Date: 2019-05-31
 Encoding: UTF-8
 Authors@R: c(
   person("Thierry", "Gosselin", email = "thierrygosselin@icloud.com", role = c("aut", "cre")),

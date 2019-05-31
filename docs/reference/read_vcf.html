@@ -249,6 +249,35 @@ heterozygotes and negative Fis values are not a bad thing <em>per se</em>.
 Genomic regions under balancing selection may contain such markers and
 statistics.</p>
     
+    <h2 class="hasAnchor" id="vcf-file-format"><a class="anchor" href="#vcf-file-format"></a>VCF file format</h2>
+
+    
+    <p><strong>PLINK:</strong> radiator fills the <code>LOCUS</code> column of PLINK VCFs with
+a unique integer based on the <code>CHROM</code> column
+(<code><a href='https://www.rdocumentation.org/packages/base/topics/integer'>as.integer(factor(x = CHROM))</a></code>).
+The <code>COL</code> column is filled with 1L for lack of bettern info on this.
+Not what you need ? Open an issue on GitHub for a request.</p>
+<p><strong>ipyrad:</strong> the pattern <code>locus_</code> in the <code>CHROM</code> column
+is removed and used. The <code>COL</code> column is filled with the same value as
+<code>POS</code>.</p>
+<p><strong>GATK:</strong> Some VCF have an <code>ID</code> column filled with <code>.</code>,
+the LOCUS information is all contained along the linkage group in the
+<code>CHROM</code> column. To make it work with
+<a href='https://github.com/thierrygosselin/radiator'>radiator</a>,
+the <code>ID</code> column is filled with the <code>POS</code> column info.</p>
+<p><strong>platypus:</strong> Some VCF files don't have an ID filed with values,
+here the same thing is done as GATK VCF files above.</p>
+<p><strong>freebayes:</strong> Some VCF files don't have an ID filed with values,
+here the same thing is done as GATK VCF files above.</p>
+<p><strong>stacks:</strong> with <em>de novo</em> approaches, the CHROM column is
+filled with "1", the LOCUS column correspond to the CHROM section in stacks VCF and
+the COL column is POS -1. With a reference genome, the ID column in stacks VCF is
+separated into "LOCUS", "COL", "STRANDS".</p>
+<p><em>stacks problem: </em> current version as some intrinsic problem with
+missing allele depth info, during the tidying process a message will
+highlight the number of genotypes impacted by the problem. When possible, the
+problem is corrected by adding the read depth info into the allele depth field.</p>
+    
     <h2 class="hasAnchor" id="advance-mode"><a class="anchor" href="#advance-mode"></a>Advance mode</h2>
 
     
@@ -333,7 +362,9 @@ Bioinformatics, 27, 2156-2158.</p>
     
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
-    <div class='dont-index'><p><code><a href='filter_ld.html'>filter_ld</a></code> and <code><a href='tidy_genomic_data.html'>tidy_genomic_data</a></code></p></div>
+    <div class='dont-index'><p><code><a href='filter_ld.html'>filter_ld</a></code>
+<code><a href='tidy_genomic_data.html'>tidy_genomic_data</a></code>
+<code><a href='tidy_vcf.html'>tidy_vcf</a></code></p></div>
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
@@ -367,6 +398,8 @@ Bioinformatics, 27, 2156-2158.</p>
       <li><a href="#value">Value</a></li>
 
       <li><a href="#details">Details</a></li>
+
+      <li><a href="#vcf-file-format">VCF file format</a></li>
 
       <li><a href="#advance-mode">Advance mode</a></li>
 

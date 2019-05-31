@@ -1,4 +1,11 @@
-# radiator 1.1.0
+# radiator 1.1.0 2019-05-31
+
+* 2 new output formats: `genepopedit` and `rubias`
+* 1 new detect function: `detect_paralogs` that copy the method described in
+McKinney et al. 2017. This function is the logical step to make available for users
+after `detect_mixed_genomes`, `filter_hwe` and `sexy_markers`.
+* `sexy_markers`: couple of bug fixed. More testing with the different genomic
+format.
 
 # radiator 1.0.0 2019-05-01
 

@@ -104,6 +104,42 @@ heterozygotes and negative Fis values are not a bad thing \emph{per se}.
 Genomic regions under balancing selection may contain such markers and
 statistics.
 }
+\section{VCF file format}{
+
+
+\strong{PLINK:} radiator fills the \code{LOCUS} column of PLINK VCFs with
+a unique integer based on the \code{CHROM} column
+(\code{as.integer(factor(x = CHROM))}).
+The \code{COL} column is filled with 1L for lack of bettern info on this.
+Not what you need ? Open an issue on GitHub for a request.
+
+\strong{ipyrad:} the pattern \code{locus_} in the \code{CHROM} column
+is removed and used. The \code{COL} column is filled with the same value as
+\code{POS}.
+
+\strong{GATK:} Some VCF have an \code{ID} column filled with \code{.},
+the LOCUS information is all contained along the linkage group in the
+\code{CHROM} column. To make it work with
+\href{https://github.com/thierrygosselin/radiator}{radiator},
+the \code{ID} column is filled with the \code{POS} column info.
+
+\strong{platypus:} Some VCF files don't have an ID filed with values,
+here the same thing is done as GATK VCF files above.
+
+\strong{freebayes:} Some VCF files don't have an ID filed with values,
+here the same thing is done as GATK VCF files above.
+
+\strong{stacks:} with \emph{de novo} approaches, the CHROM column is
+filled with "1", the LOCUS column correspond to the CHROM section in stacks VCF and
+the COL column is POS -1. With a reference genome, the ID column in stacks VCF is
+separated into "LOCUS", "COL", "STRANDS".
+
+\emph{stacks problem: } current version as some intrinsic problem with
+missing allele depth info, during the tidying process a message will
+highlight the number of genotypes impacted by the problem. When possible, the
+problem is corrected by adding the read depth info into the allele depth field.
+}
+
 \section{Advance mode}{
 
 
@@ -214,7 +250,9 @@ The variant call format and VCFtools.
 Bioinformatics, 27, 2156-2158.
 }
 \seealso{
-\code{\link{filter_ld}} and \code{\link[radiator]{tidy_genomic_data}}
+\code{\link{filter_ld}}
+\code{\link[radiator]{tidy_genomic_data}}
+\code{\link[radiator]{tidy_vcf}}
 }
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}

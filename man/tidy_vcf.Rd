@@ -53,7 +53,7 @@ several other filtering options.
 \section{VCF file format}{
 
 
-\strong{GATK:} radiator fills the \code{LOCUS} column of PLINK VCFs with
+\strong{PLINK:} radiator fills the \code{LOCUS} column of PLINK VCFs with
 a unique integer based on the \code{CHROM} column
 (\code{as.integer(factor(x = CHROM))}).
 The \code{COL} column is filled with 1L for lack of bettern info on this.
@@ -70,7 +70,10 @@ the LOCUS information is all contained along the linkage group in the
 the \code{ID} column is filled with the \code{POS} column info.
 
 \strong{platypus:} Some VCF files don't have an ID filed with values,
-here the same thing as GATK VCF files above is done.
+here the same thing is done as GATK VCF files above.
+
+\strong{freebayes:} Some VCF files don't have an ID filed with values,
+here the same thing is done as GATK VCF files above.
 
 \strong{stacks:} with \emph{de novo} approaches, the CHROM column is
 filled with "1", the LOCUS column correspond to the CHROM section in stacks VCF and

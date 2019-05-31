@@ -197,7 +197,7 @@ generated is in the working directory under the name given during function execu
     <h2 class="hasAnchor" id="vcf-file-format"><a class="anchor" href="#vcf-file-format"></a>VCF file format</h2>
 
     
-    <p><strong>GATK:</strong> radiator fills the <code>LOCUS</code> column of PLINK VCFs with
+    <p><strong>PLINK:</strong> radiator fills the <code>LOCUS</code> column of PLINK VCFs with
 a unique integer based on the <code>CHROM</code> column
 (<code><a href='https://www.rdocumentation.org/packages/base/topics/integer'>as.integer(factor(x = CHROM))</a></code>).
 The <code>COL</code> column is filled with 1L for lack of bettern info on this.
@@ -211,7 +211,9 @@ the LOCUS information is all contained along the linkage group in the
 <a href='https://github.com/thierrygosselin/radiator'>radiator</a>,
 the <code>ID</code> column is filled with the <code>POS</code> column info.</p>
 <p><strong>platypus:</strong> Some VCF files don't have an ID filed with values,
-here the same thing as GATK VCF files above is done.</p>
+here the same thing is done as GATK VCF files above.</p>
+<p><strong>freebayes:</strong> Some VCF files don't have an ID filed with values,
+here the same thing is done as GATK VCF files above.</p>
 <p><strong>stacks:</strong> with <em>de novo</em> approaches, the CHROM column is
 filled with "1", the LOCUS column correspond to the CHROM section in stacks VCF and
 the COL column is POS -1. With a reference genome, the ID column in stacks VCF is

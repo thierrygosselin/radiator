@@ -133,7 +133,10 @@ if (getRversion() >= "2.15.1") {
       "CLONE_ID", "CLUSTER_CONSENSUS_SEQUENCE", "TRIMMED_SEQUENCE",
       "INDIVIDUALS1", "SEX_MARKERS", "VARIANT_ID1", "COLLECTION",
       "NA_character", "REPUNIT", "SAMPLE_TYPE", "SampleNum", "repunit",
-      "sample_type"
+      "sample_type", "CALIBRATE", "DEPTH_ALT", "DEPTH_REF", "HET_PROP",
+      "NUMBER_GENOTYPED", "NUMBER_HET", "NUMBER_MISSING", "TOTAL_COUNTS",
+      "Z_SCORE",
+      "MARKERS.x", "GT_BIN.x", "TARGET_ID.x"
     )
   )
 }
