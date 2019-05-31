@@ -166,8 +166,7 @@ sexy_markers <- function(data,
 
   # Test
   # library(radiator)
-  # setwd("C:/Users/fdevloo/OneDrive - University of Tasmania/PhD/4.Sex markers/2.Code/Gosselin Function_Radiator")
-  # silicodata = NULL
+  # setwd("C:/Users/fdevloo/OneDrive - University of Tasmania/PhD/4.Sex markers/3.Results")
   # coverage.thresholds = 1 ##NEEDS TO BE SET TO 1 if genotype data
   # boost.analysis = FALSE
   # filters = TRUE
@@ -180,13 +179,23 @@ sexy_markers <- function(data,
   # threshold.y.silico.markers = NULL
   # sex.id.input = NULL
   # threshold.x.markers.qr = NULL
+  # data = "../1.Data/G.galeus/SchoolShark_SNP_counts.csv"
+  # silicodata <- "../1.Data/G.galeus/SchoolShark_silico_counts.csv"
+  # strata = "../1.Data/G.galeus/School_strata_Counts.tsv"
 
-  # parallel.core = parallel::detectCores() - 1
+  # data = "../1.Data/G.garricki/Extra/Report_DGl17-2561_4_moreOrders_SNP_singlerow_2.csv"
+  # strata = "../1.Data/G.garricki/Extra/Ggar_Genotype_strata.tsv"
+
+  # data = "../1.Data/G.galeus/SchoolShark_SNP_genotype_2Row.csv"
+  # silicodata = NULL
+  # strata = "../1.Data/G.galeus/School_strata_2ROW.tsv"
+
 
   # setwd("/Users/thierry/Dropbox/partage/Sex-marker/1.Data/G.galeus")
   # silicodata = "SchoolShark_silico_counts.csv"
   # data = "SchoolShark_SNP_counts.csv"
   # strata = "School_strata_Counts.tsv"
+  # parallel.core = parallel::detectCores() - 1
 
   # data = "SchoolShark_SNP_genotype_2Row.csv"
   # strata = "School_strata_2ROW.tsv"
@@ -449,9 +458,9 @@ sexy_markers <- function(data,
 
 
   # Sex markers-----------------------------------------------------------------
-  # 1. read depth per strata and markers markers: xz
-  # 2. presence/absence per strata and markers: yw
-  # 3. heterozygosity per strata and markers: xz
+  # 1. presence/absence per strata and markers: yw
+  # 2. heterozygosity per strata and markers: xz
+  # 3. read depth per strata and markers markers: xz
 
   # Summarise DArT counts/silico and VCFs---------------------------------------
   if (is.null(tau)) tau <- 0.03
@@ -481,7 +490,7 @@ sexy_markers <- function(data,
 
   ###* For data.sum ####
   ### SCATTER
-  plot.filename <- "sex_markers_PA_scatter_plot"
+  plot.filename <- "sexy_markers_PA_scatter_plot"
   if (!is.null(species) && !is.null(population)) {
     plot.filename <-
       stringi::stri_join(plot.filename, species, population, sep = "_")
@@ -509,7 +518,7 @@ sexy_markers <- function(data,
   print(scat.fig)
 
   ### TUCKEY
-  plot.filename <- "sex_markers_PA_tuckey_plot"
+  plot.filename <- "sexy_markers_PA_tuckey_plot"
   if (!is.null(species) && !is.null(population)) {
     plot.filename <-
       stringi::stri_join(plot.filename, species, population, sep = "_")
@@ -538,7 +547,7 @@ sexy_markers <- function(data,
 
   # Interacive selection of threshold
   if (interactive.filter) {
-    filter.y.markers <- radiator::radiator_question(x = "Have a look at the figure: do you want to filter the data (y/n): ", answer.opt = c("y", "n"))
+    filter.y.markers <- radiator::radiator_question(x = "P/A method of SNPs: \nLook at the figures: Do you want to filter the data (y/n): ", answer.opt = c("y", "n"))
 
     if (filter.y.markers == "y") {
       threshold.y.markers <-
@@ -565,7 +574,7 @@ sexy_markers <- function(data,
   ###* For silico.sum ####
   if ("silico.dart" %in% data.source) {
     ### SCATTER
-    plot.filename <- "sex_markers_SILICO_PA_scatter_plot"
+    plot.filename <- "sexy_markers_SILICO_PA_scatter_plot"
     if (!is.null(species) && !is.null(population)) {
       plot.filename <-
         stringi::stri_join(plot.filename, species, population, sep = "_")
@@ -593,7 +602,7 @@ sexy_markers <- function(data,
     print(scat.fig)
 
     ### TUCKEY
-    plot.filename <- "sex_markers_SILICO_PA_tuckey_plot"
+    plot.filename <- "sexy_markers_SILICO_PA_tuckey_plot"
     if (!is.null(species) && !is.null(population)) {
       plot.filename <-
         stringi::stri_join(plot.filename, species, population, sep = "_")
@@ -623,7 +632,7 @@ sexy_markers <- function(data,
 
     # Interacive selection of threshold
     if (interactive.filter) {
-      filter.y.markers <- radiator::radiator_question(x = "Have a look at the figure: do you want to filter the data (y/n): ", answer.opt = c("y", "n"))
+      filter.y.markers <- radiator::radiator_question(x = "P/A method of SILICOs:\nLook at the figures: Do you want to filter the data (y/n): ", answer.opt = c("y", "n"))
 
       if (filter.y.markers == "y") {
         threshold.y.silico.markers <-
@@ -650,6 +659,7 @@ sexy_markers <- function(data,
 
   ####* SET GENETIC SEX STRATA ####
   if (exists("y.markers") && !rlang::is_empty(y.markers)) {
+    if (tibble::has_name(data, "READ_DEPTH")) {
     y.data <- dplyr::filter(data, MARKERS %in% y.markers) %>%
       dplyr::group_by(INDIVIDUALS) %>%
       dplyr::summarise(MEAN_RD = mean(READ_DEPTH)) %>%
@@ -668,6 +678,20 @@ sexy_markers <- function(data,
           )
       ) %>%
       dplyr::mutate(STRATA = GENETIC_SEX)
+    } else if(tibble::has_name(data, "GT_BIN") ){
+      y.data <- dplyr::filter(data, MARKERS %in% y.markers) %>%
+        # dplyr::left_join(strata, by = "INDIVIDUALS") %>%
+        dplyr::mutate(VISUAL_SEX = STRATA) %>%
+        dplyr::mutate(
+          GENETIC_SEX =
+            dplyr::case_when(
+              is.na(GT_BIN) ~ "F",
+              !(is.na(GT_BIN)) ~ "M",
+              VISUAL_SEX == "F" & is.na(GT_BIN) ~ "U"
+            )
+        ) %>%
+        dplyr::mutate(STRATA = GENETIC_SEX)
+    }
 
 
 
@@ -675,7 +699,7 @@ sexy_markers <- function(data,
     SumTable <-
       tibble::tibble(
         Visual_Sex = c("M", "M", "F", "F", "F", "U", "U"),
-        Genetic_Sex = c("M", "F", "F", "M", "U", "M", "F"),
+        Genetic_Sex_SNP = c("M", "F", "F", "M", "U", "M", "F"),
         Individuals = c(
           length(which(
             y.data$VISUAL_SEX == "M" & y.data$GENETIC_SEX == "M"
@@ -701,7 +725,7 @@ sexy_markers <- function(data,
         )
       )
     print(SumTable)
-    readr::write_tsv(x = SumTable, path = file.path(path.folder, "summary_table_visual_genetic_sex.tsv"))
+    readr::write_tsv(x = SumTable, path = file.path(path.folder, "sexy_markers_summary_table_visual.VS.geneticSNP_sex.tsv"))
 
     if (exists("y.silico.markers") && !rlang::is_empty(y.silico.markers)) {
       y.silico.data <-
@@ -722,7 +746,7 @@ sexy_markers <- function(data,
       SumTable <-
         tibble::tibble(
           Visual_Sex = c("M", "M", "F", "F", "U", "U"),
-          Genetic_Sex = c("M", "F", "F", "M", "M", "F"),
+          Genetic_Sex_SILICO = c("M", "F", "F", "M", "M", "F"),
           Individuals = c(
             length(which(y.silico.data$VISUAL_SEX == "M" & y.silico.data$GENETIC_SEX == "M"
             )),
@@ -740,13 +764,13 @@ sexy_markers <- function(data,
             )))
         )
       print(SumTable)
-      readr::write_tsv(x = SumTable, path = file.path(path.folder, "summary_table_visual_genetic_sex_silico.tsv"))
+      readr::write_tsv(x = SumTable, path = file.path(path.folder, "sexy_markers_summary_table_visual.VS.geneticSILICO_sex.tsv"))
 
 
       # print genetic SNP and gentic SILICO sex table
       SumTable <-
         tibble::tibble(
-          GENETIC_SEX_SNP = c("M", "M", "F", "F", "U", "U"),
+          Genetic_Sex_SNP = c("M", "M", "F", "F", "U", "U"),
           Genetic_Sex_SILICO = c("M", "F", "F", "M", "M", "F"),
           Individuals = c(
             length(which(y.data$GENETIC_SEX == "M" & y.silico.data$GENETIC_SEX == "M")
@@ -768,14 +792,14 @@ sexy_markers <- function(data,
             ))
         )
       print(SumTable)
-      readr::write_tsv(x = SumTable, path = file.path(path.folder, "summary_table_genetic_sex_silico.tsv"))
+      readr::write_tsv(x = SumTable, path = file.path(path.folder, "sexy_markers_summary_table_geneticSNP.VS.geneticSILICO_sex.tsv"))
 
 
       # Interacive selection which sex info
       if (is.null(sex.id.input)) sex.id.input <- "1"
       if (interactive.filter) {
         sex.id.input <- radiator::radiator_question(
-          x = "Do you want to continue based on (1) visual, (2) genetic dart or (3) genetic silico sex?\nWe advise (3) for better results",
+          x = "For further analysis, do you want to continue based on (1) visual, (2) genetic SNP or (3) genetic SILICO sex?\nWe advise (3) for better results",
           answer.opt = c("1","2", "3") # Not working with numbers...
         )
         sex.id.input <- as.integer(sex.id.input)
@@ -785,7 +809,7 @@ sexy_markers <- function(data,
       if (is.null(sex.id.input))
         sex.id.input <- "1"
       if (interactive.filter) {
-        sex.id.input <- radiator::radiator_question(x = "Do you want to continue based on (1) visual or (2) genetic dart?\nWe advise (2) for better results",
+        sex.id.input <- radiator::radiator_question(x = "For further analysis, do you want to continue based on (1) visual or (2) genetic SNP sex?\nWe advise (2) for better results",
                                                     answer.opt = c("1", "2"))
         sex.id.input <- as.integer(sex.id.input)
       }
@@ -797,6 +821,7 @@ sexy_markers <- function(data,
       ### recalculate data based on new sexID??
       data.genetic <- dplyr::rename(data, VISUAL_STRATA = STRATA) %>%
         dplyr::left_join(y.data, by = "INDIVIDUALS") %>%
+        dplyr::rename(MARKERS = MARKERS.x, GT_BIN = GT_BIN.x, TARGET_ID = TARGET_ID.x) %>%
         dplyr::mutate(GENETIC_STRATA = STRATA)
         radiator::write_rad(data = data.genetic, path = file.path(wd, "sexy_markers_temp"))
 
@@ -854,7 +879,7 @@ sexy_markers <- function(data,
   # You want to remove the Y-linked markers and do a filter on missingness
 
   ### SCATTER
-  plot.filename <- "sex_markers_HET_scat_plot"
+  plot.filename <- "sexy_markers_HET_scat_plot"
   if (!is.null(species) && !is.null(population)) {
     plot.filename <-
       stringi::stri_join(plot.filename, species, population, sep = "_")
@@ -881,7 +906,7 @@ sexy_markers <- function(data,
   print(scat.fig)
 
   ###QREG -> Tau value is important
-  plot.filename <- "sex_markers_HET_qr_plot"
+  plot.filename <- "sexy_markers_HET_qr_plot"
   if (!is.null(species) && !is.null(population)) {
     plot.filename <-
       stringi::stri_join(plot.filename, species, population, sep = "_")
@@ -909,7 +934,7 @@ sexy_markers <- function(data,
 
   # Interacive selection of threshold
   if (interactive.filter) {
-    filter.x.markers <- radiator::radiator_question(x = "Have a look at the figure: do you want to filter the data (y/n): ", answer.opt = c("y", "n"))
+    filter.x.markers <- radiator::radiator_question(x = "Heterozygosity method of SNPs:\nLook at the figures: Do you want to filter the data (y/n): ", answer.opt = c("y", "n"))
 
     if (filter.x.markers == "y") {
       threshold.x.markers.qr <-
@@ -935,7 +960,7 @@ sexy_markers <- function(data,
   ####* For data.sum ####
   if (all(c("dart", "counts") %in% data.source)) {
     ### SCATTER
-    plot.filename <- "sex_markers_RD_scat_plot"
+    plot.filename <- "sexy_markers_RD_scat_plot"
     if (!is.null(species) && !is.null(population)) {
       plot.filename <-
         stringi::stri_join(plot.filename, species, population, sep = "_")
@@ -966,7 +991,7 @@ sexy_markers <- function(data,
 
 
     ##HIST
-    plot.filename <- "sex_markers_RD_hist_plot"
+    plot.filename <- "sexy_markers_RD_hist_plot"
     if (!is.null(species) && !is.null(population)) {
       plot.filename <-
         stringi::stri_join(plot.filename, species, population, sep = "_")
@@ -996,7 +1021,7 @@ sexy_markers <- function(data,
     ##NEEDS AN INTERACTIVE ZOOM
 
     ##HIST2
-    plot.filename <- "sex_markers_RD_hist_subsetted_plot"
+    plot.filename <- "sexy_markers_RD_hist_subsetted_plot"
     if (!is.null(species) && !is.null(population)) {
       plot.filename <-
         stringi::stri_join(plot.filename, species, population, sep = "_")
@@ -1026,7 +1051,7 @@ sexy_markers <- function(data,
 
     # Interacive selection of threshold
     if (interactive.filter) {
-      filter.x.markers <- radiator::radiator_question(x = "Have a look at the figure: do you want to filter the data (y/n): ", answer.opt = c("y", "n"))
+      filter.x.markers <- radiator::radiator_question(x = "Coverage method of SNPs:\nLook at the figures: Do you want to filter the data (y/n): ", answer.opt = c("y", "n"))
 
       if (filter.x.markers == "y") {
         threshold.x.markers.RD <-
@@ -1053,7 +1078,7 @@ sexy_markers <- function(data,
   ####* For silico.sum ####
   if (all(c("silico.dart", "counts") %in% data.source)) {
     ### SCATTER
-    plot.filename <- "sex_markers_SILICO_RD_scat_plot"
+    plot.filename <- "sexy_markers_SILICO_RD_scat_plot"
     if (!is.null(species) && !is.null(population)) {
       plot.filename <-
         stringi::stri_join(plot.filename, species, population, sep = "_")
@@ -1084,7 +1109,7 @@ sexy_markers <- function(data,
 
 
     ##HIST
-    plot.filename <- "sex_markers_SILICO_RD_hist_plot"
+    plot.filename <- "sexy_markers_SILICO_RD_hist_plot"
     if (!is.null(species) && !is.null(population)) {
       plot.filename <-
         stringi::stri_join(plot.filename, species, population, sep = "_")
@@ -1113,7 +1138,7 @@ sexy_markers <- function(data,
 
 
     ##HIST2
-    plot.filename <- "sex_markers_SILICO_RD_hist_subsetted_plot"
+    plot.filename <- "sexy_markers_SILICO_RD_hist_subsetted_plot"
     if (!is.null(species) && !is.null(population)) {
       plot.filename <-
         stringi::stri_join(plot.filename, species, population, sep = "_")
@@ -1144,7 +1169,7 @@ sexy_markers <- function(data,
     # Interacive selection of threshold
     if (interactive.filter) {
       filter.x.markers <-
-        radiator::radiator_question(x = "Have a look at the figure: do you want to filter the data (y/n): ", answer.opt = c("y", "n"))
+        radiator::radiator_question(x = "Coverage method of SILICOs:\nLook at the figures: Do you want to filter the data (y/n): ", answer.opt = c("y", "n"))
 
       if (filter.x.markers == "y") {
         threshold.x.markers.RD.silico <-
@@ -1167,16 +1192,29 @@ sexy_markers <- function(data,
   }
 
 
-
-
-  ## TODO:
-  # counts & vcf
-  # silico
-
-
   # Export -------------------------------------------------------------------
 
   ## SEX MARKER SUMMARY ##
+
+  ### Get the sequence metadata from the gds object
+  if(class(gds.bk) == "SeqVarGDSClass"){
+    # Set sex-marker to whitelist and allign the sex-marker method with the markers
+    meta <- radiator::extract_markers_metadata(
+      gds = gds.bk,
+      markers.meta.select = c("MARKERS","SEQUENCE"),
+      radiator.node = TRUE,
+      whitelist = FALSE,
+      blacklist = FALSE,
+      verbose = FALSE
+    ) %>%
+      dplyr::distinct(MARKERS, .keep_all = TRUE)
+  }
+  if(!is.null(silicodata)){
+    silico <- dplyr::select(silicodata, MARKERS, SEQUENCE) %>%
+    dplyr::distinct(MARKERS, .keep_all = TRUE)
+  } else{
+    silico <- NULL
+  }
 
   res$sexy.summary <-
     tibble::tibble(
@@ -1190,18 +1228,30 @@ sexy_markers <- function(data,
         ),
       METHOD =
         c(
-          rep("PA_SNP", length(res$heterogametic.markers)),
-          rep("PA_SILICO", length(res$heterogametic.silico.markers)),
-          rep("HET_SNP", length(res$homogametic.het.markers)),
-          rep("RD_SNP", length(res$homogametic.RD.markers)),
-          rep("RD_SILICO", length(res$homogametic.RD.silico.markers))
+          rep(
+            "presence/absence_method-SNP",
+            length(res$heterogametic.markers)
+          ),
+          rep(
+            "presence/absence_method-SILICO",
+            length(res$heterogametic.silico.markers)
+          ),
+          rep(
+            "heterozygosity_method-SNP",
+            length(res$homogametic.het.markers)
+          ),
+          rep("Coverage_method-SNP", length(res$homogametic.RD.markers)),
+          rep(
+            "Coverage_method-SILICO",
+            length(res$homogametic.RD.silico.markers)
+          )
         ),
       MARKER_TYPE =
         c(
-          rep("Heterogametic sex-chrom", length(
+          rep("Heterogametic_sex-marker", length(
             c(res$heterogametic.markers, res$heterogametic.silico.markers)
           )),
-          rep("Homogametic sex-chrom", length(
+          rep("Homogametic_sex-marker", length(
             c(
               res$homogametic.het.markers,
               res$homogametic.RD.markers,
@@ -1209,11 +1259,46 @@ sexy_markers <- function(data,
             )
           ))
         )
-    ) %>%
-    dplyr::mutate(CLONE_ID = stringi::stri_split_fixed(SEX_MARKERS, "_", simplify = TRUE)[,4]
-    )
+    ) ## This is not extracting the CLONE_ID properly
+    if (all(c("dart", "counts") %in% data.source)) {
+      res$sexy.summary %<>% dplyr::mutate(
+        CLONE_ID = c(
+          stringi::stri_split_fixed(SEX_MARKERS[METHOD == "presence/absence_method-SNP"], "__", simplify = TRUE)[, 2],
+          SEX_MARKERS[METHOD == "presence/absence_method-SILICO"],
+          stringi::stri_split_fixed(SEX_MARKERS[METHOD == "heterozygosity_method-SNP"], "__", simplify = TRUE)[, 2],
+          stringi::stri_split_fixed(SEX_MARKERS[METHOD == "Coverage_method-SNP"], "__", simplify = TRUE)[, 2],
+          SEX_MARKERS[METHOD == "Coverage_method-SILICO"]
+        )
+      )
+    } else{
+      res$sexy.summary %<>% dplyr::mutate(
+        CLONE_ID = c(
+          stringi::stri_split_fixed(SEX_MARKERS[METHOD == "presence/absence_method-SNP"], "__", simplify = TRUE)[, 2],
+          SEX_MARKERS[METHOD == "presence/absence_method-SILICO"],
+          stringi::stri_split_fixed(SEX_MARKERS[METHOD == "heterozygosity_method-SNP"], "__", simplify = TRUE)[, 2],
+          SEX_MARKERS[METHOD == "Coverage_method-SILICO"]
+        )
+      )
+    }
+  res$sexy.summary %<>% dplyr::mutate(
+    SEQUENCE =
+      c(
+        meta$SEQUENCE[meta$MARKERS %in% SEX_MARKERS[METHOD == "presence/absence_method-SNP"]],
+        silico$SEQUENCE[silico$MARKERS %in% SEX_MARKERS[METHOD ==
+                                                          "presence/absence_method-SILICO"]],
+        meta$SEQUENCE[meta$MARKERS %in% SEX_MARKERS[METHOD ==
+                                                      "heterozygosity_method-SNP"]],
+        meta$SEQUENCE[meta$MARKERS %in% SEX_MARKERS[METHOD ==
+                                                      "Coverage_method-SNP"]],
+        silico$SEQUENCE[silico$MARKERS %in% SEX_MARKERS[METHOD ==
+                                                          "Coverage_method-SILICO"]]
+      )
+  )
 
-summary(as.factor(res$sexy.summary$METHOD))
+  message(
+    "Summary of sex-linked markers by method of discovery:"
+  )
+print(summary(as.factor(res$sexy.summary$METHOD)))
 
   # common markers plot
   n.pop = length(unique(res$sexy.summary$METHOD))
@@ -1225,34 +1310,35 @@ summary(as.factor(res$sexy.summary$METHOD))
     tidyr::spread(data = ., key = POP_ID, value = n, fill = 0) %>%
     data.frame(.)
 
-  plot.filename <- stringi::stri_join(
-    "sex.markers.upsetrplot_", file.date, ".pdf")
-  plot.filename <- file.path(path.folder, plot.filename)
+  message(
+    "The 'upset' plot shows any overlapping sex-linked markers between methods"
+  )
 
-  pdf(file = plot.filename, onefile = FALSE)
-  UpSetR::upset(
+  Upsetplot <- UpSetR::upset(
     plot.data,
     nsets = n.pop,
     order.by = "freq",
     empty.intersections = NULL)
+  print(Upsetplot)
+
+  plot.filename <- stringi::stri_join(
+    "sexy.markers_upsetrplot_", file.date, ".pdf")
+  plot.filename <- file.path(path.folder, plot.filename)
+
+  pdf(file = plot.filename, onefile = FALSE)
+  Upsetplot
   dev.off()
 
 
   ## FASTA file with sex markers for all methods ##
-
-  if(class(gds.bk) == "SeqVarGDSClass"){
-    # Set sex-marker to whitelist and allign the sex-marker method with the markers
-    meta <- radiator::extract_markers_metadata(
-      gds = gds.bk,
-      markers.meta.select = c("MARKERS","SEQUENCE"),
-      radiator.node = TRUE,
-      whitelist = FALSE,
-      blacklist = FALSE,
-      verbose = FALSE
-    ) %>%
-      dplyr::filter(unique(MARKERS) %in% res$sexy.summary$SEX_MARKERS)
-  }
-
+    afile <- file( paste0(path.folder, "sexy_markers_sequences.fasta"), open='w')
+    for(i in 1:length(res$sexy.summary$SEX_MARKERS)){
+      cat(paste('>', res$sexy.summary$MARKER_TYPE[i], "|", res$sexy.summary$METHOD[i], "|",res$sexy.summary$SEX_MARKERS[i], '\n',res$sexy.summary$SEQUENCE[i],'\n', sep = ''), sep='', file=afile)
+    }
+    close( afile)
+    message(
+      "Fasta file has been created"
+    )
 
   return(res)
 }#End sexy_markers
