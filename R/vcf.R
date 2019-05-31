@@ -176,7 +176,10 @@
 #' The variant call format and VCFtools.
 #' Bioinformatics, 27, 2156-2158.
 
-#' @seealso \code{\link{filter_ld}} and \code{\link[radiator]{tidy_genomic_data}}
+#' @seealso
+#' \code{\link{filter_ld}}
+#' \code{\link[radiator]{tidy_genomic_data}}
+#' \code{\link[radiator]{tidy_vcf}}
 
 #' @examples
 #' \dontrun{
@@ -716,7 +719,8 @@ read_vcf <- function(
     path.folder = path.folder,
     file.date = file.date,
     internal = internal,
-    verbose = verbose)
+    verbose = verbose
+  )
 
 
   ##______________________________________________________________________######
@@ -1825,9 +1829,12 @@ tidy_vcf <- function(
           stacks.ad.problem.n <- nrow(stacks.ad.problem)
 
           if (stacks.ad.problem.n > 0) {
+            non.missing.gt <- length(tidy.data$GT_BIN[!is.na(tidy.data$GT_BIN)])
+            stacks.ad.problem.prop <- round(stacks.ad.problem.n / non.missing.gt, 4)
+
             message("\n\nStacks problem detected")
             message("    missing allele depth info")
-            message("    number of genotypes with problem: ", stacks.ad.problem.n)
+            message("    number of genotypes with problem: ", stacks.ad.problem.n, " (prop: ", stacks.ad.problem.prop,")")
             message("    correcting problem by adding the read depth info into AD fields...\n\n")
 
             stacks.ad.problem <- dplyr::select(tidy.data, GT_BIN) %>%
