@@ -109,226 +109,210 @@ filter_whitelist <- function(
   whitelist.markers = NULL,
   verbose = TRUE,
   ...) {
-  if (!is.null(whitelist.markers)) {
+  if (is.null(whitelist.markers)) return(data)
 
-    # Cleanup-------------------------------------------------------------------
-    file.date <- format(Sys.time(), "%Y%m%d@%H%M")
-    if (verbose) message("Execution date@time: ", file.date)
-    old.dir <- getwd()
-    opt.change <- getOption("width")
-    options(width = 70)
-    timing <- proc.time()# for timing
-    #back to the original directory and options
-    on.exit(setwd(old.dir), add = TRUE)
-    on.exit(options(width = opt.change), add = TRUE)
-    on.exit(timing <- proc.time() - timing, add = TRUE)
-    on.exit(if (verbose) message("\nComputation time, overall: ", round(timing[[3]]), " sec"), add = TRUE)
-    on.exit(if (verbose) cat("########################## completed filter_whitelist ##########################\n"), add = TRUE)
+  # Cleanup---------------------------------------------------------------------
+  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
+  if (verbose) message("Execution date@time: ", file.date)
+  old.dir <- getwd()
+  opt.change <- getOption("width")
+  options(width = 70)
+  timing <- proc.time()# for timing
+  #back to the original directory and options
+  on.exit(setwd(old.dir), add = TRUE)
+  on.exit(options(width = opt.change), add = TRUE)
+  on.exit(timing <- proc.time() - timing, add = TRUE)
+  on.exit(if (verbose) message("\nComputation time, overall: ", round(timing[[3]]), " sec"), add = TRUE)
+  on.exit(if (verbose) cat("########################## completed filter_whitelist ##########################\n"), add = TRUE)
 
-    # Checking for missing and/or default arguments ------------------------------
-    if (missing(data)) rlang::abort("Input file missing")
+  # Checking for missing and/or default arguments ------------------------------
+  if (missing(data)) rlang::abort("Input file missing")
 
-    # Function call and dotslist -------------------------------------------------
-    rad.dots <- radiator_dots(
-      func.name = as.list(sys.call())[[1]],
-      fd = rlang::fn_fmls_names(),
-      args.list = as.list(environment()),
-      dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
-      keepers = c("path.folder", "parameters", "biallelic", "markers.meta", "internal"),
-      verbose = verbose
-    )
+  # Function call and dotslist -------------------------------------------------
+  rad.dots <- radiator_dots(
+    func.name = as.list(sys.call())[[1]],
+    fd = rlang::fn_fmls_names(),
+    args.list = as.list(environment()),
+    dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
+    keepers = c("path.folder", "parameters", "biallelic", "markers.meta", "internal"),
+    verbose = verbose
+  )
 
-    # Folders---------------------------------------------------------------------
-    path.folder <- generate_folder(
-      f = path.folder,
-      rad.folder = "filter_whitelist",
-      internal = internal,
-      file.date = file.date,
-      verbose = verbose)
+  # Folders---------------------------------------------------------------------
+  path.folder <- generate_folder(
+    f = path.folder,
+    rad.folder = "filter_whitelist",
+    internal = internal,
+    file.date = file.date,
+    verbose = verbose)
 
-    # write the dots file
-    write_rad(
-      data = rad.dots,
-      path = path.folder,
-      filename = stringi::stri_join(
-        "radiator_filter_whitelist_args_", file.date, ".tsv"),
-      tsv = TRUE,
-      internal = internal,
-      verbose = verbose
-    )
+  # write the dots file
+  write_rad(
+    data = rad.dots,
+    path = path.folder,
+    filename = stringi::stri_join(
+      "radiator_filter_whitelist_args_", file.date, ".tsv"),
+    tsv = TRUE,
+    internal = internal,
+    verbose = verbose
+  )
 
-    # read whitelist
-    whitelist.markers <- radiator::read_whitelist(
-      whitelist.markers = whitelist.markers,
-      verbose = verbose)
+  # read whitelist
+  whitelist.markers <- radiator::read_whitelist(
+    whitelist.markers = whitelist.markers,
+    verbose = verbose)
 
-    n.markers.w <- nrow(whitelist.markers)
+  n.markers.w <- nrow(whitelist.markers)
 
-    if (verbose) message("Whitelist of markers: ", n.markers.w)
+  if (verbose) message("Whitelist of markers: ", n.markers.w)
 
-    # Import data ---------------------------------------------------------------
-    data.type <- radiator::detect_genomic_format(data)
-    if (!data.type %in% c("tbl_df", "fst.file", "SeqVarGDSClass", "gds.file")) {
-      rlang::abort("Input not supported for this function: read function documentation")
-    }
+  # Import data ---------------------------------------------------------------
+  data.type <- radiator::detect_genomic_format(data)
+  if (!data.type %in% c("tbl_df", "fst.file", "SeqVarGDSClass", "gds.file")) {
+    rlang::abort("Input not supported for this function: read function documentation")
+  }
 
-    if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
-      if (!"SeqVarTools" %in% utils::installed.packages()[,"Package"]) {
-        rlang::abort('Please install SeqVarTools for this option:\n
+  if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
+    if (!"SeqVarTools" %in% utils::installed.packages()[,"Package"]) {
+      rlang::abort('Please install SeqVarTools for this option:\n
              install.packages("BiocManager")
              BiocManager::install("SeqVarTools")')
-      }
-
-      if (data.type == "gds.file") {
-        data <- radiator::read_rad(data, verbose = verbose)
-        data.type <- "SeqVarGDSClass"
-      }
-    } else {
-      if (is.vector(data)) data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-      data.type <- "tbl_df"
     }
 
+    if (data.type == "gds.file") {
+      data <- radiator::read_rad(data, verbose = verbose)
+      data.type <- "SeqVarGDSClass"
+    }
+  } else {
+    if (is.vector(data)) data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
+    data.type <- "tbl_df"
+  }
 
-    # Check biallelic ----------------------------------------------------------
-    if (is.null(biallelic)) biallelic <- detect_biallelic_markers(data = data)
-    if (!biallelic) {
-      if (ncol(whitelist.markers) >= 3) {
-        if (verbose) message("Note: whitelist with CHROM LOCUS POS columns and VCF haplotype:
+
+  # Check biallelic ----------------------------------------------------------
+  if (is.null(biallelic)) biallelic <- detect_biallelic_markers(data = data)
+  if (!biallelic) {
+    if (ncol(whitelist.markers) >= 3) {
+      if (verbose) message("Note: whitelist with CHROM LOCUS POS columns and VCF haplotype:
                 If the whitelist was not created from this VCF,
                 the filtering could result in losing all the markers.
                 The POS column is different in biallelic and multiallelic file...\n")
 
-        if (verbose) message("Discarding the POS column in the whitelist if present")
-        if (tibble::has_name(whitelist.markers, "POS")) {
-          whitelist.markers  %<>%  dplyr::select(-POS)
-        }
+      if (verbose) message("Discarding the POS column in the whitelist if present")
+      if (tibble::has_name(whitelist.markers, "POS")) {
+        whitelist.markers  %<>%  dplyr::select(-POS)
       }
     }
+  }
 
-    if (data.type == "SeqVarGDSClass") {
-      if (verbose) message("GDS filter reset")
-      sync_gds(gds = data, reset.gds = TRUE, verbose = FALSE)
+  # if (data.type == "SeqVarGDSClass") {
+  # if (verbose) message("GDS filter reset")
+  # sync_gds(gds = data, reset.gds = TRUE, verbose = FALSE)
+  # radiator::summary_gds(gds = data, check.sync = TRUE)
+  # }
+
+  # Filter parameter file: generate and initiate -----------------------------
+  filters.parameters <- radiator_parameters(
+    generate = TRUE,
+    initiate = TRUE,
+    update = FALSE,
+    parameter.obj = parameters,
+    data = data,
+    path.folder = path.folder,
+    file.date = file.date,
+    internal = internal,
+    verbose = verbose)
+
+  # filtering ----------------------------------------------------------------
+  # tidy data ----------------------------------------------------------------
+  if (data.type == "tbl_df") {
+    data <- suppressWarnings(dplyr::semi_join(
+      data,
+      whitelist.markers,
+      by = intersect(colnames(data), colnames(whitelist.markers))))
+
+    if (nrow(data) == 0) {
+      rlang::abort("No markers left in the dataset, check whitelist...")
     }
+  }
 
-    # Filter parameter file: generate and initiate -----------------------------
-    filters.parameters <- radiator_parameters(
-      generate = TRUE,
-      initiate = TRUE,
-      update = FALSE,
-      parameter.obj = parameters,
-      data = data,
-      path.folder = path.folder,
-      file.date = file.date,
-      internal = internal,
-      verbose = verbose)
+  # GDS
+  if (data.type == "SeqVarGDSClass") {
+    # extract all the markers
+    markers.meta <- extract_markers_metadata(
+      gds = data,
+      whitelist = FALSE
+    )
 
-    # filtering ----------------------------------------------------------------
-    # tidy data ----------------------------------------------------------------
-    if (data.type == "tbl_df") {
-      data <- suppressWarnings(dplyr::semi_join(
-        data,
-        whitelist.markers,
-        by = intersect(colnames(data), colnames(whitelist.markers))))
-
-      if (nrow(data) == 0) {
-        rlang::abort("No markers left in the dataset, check whitelist...")
-      }
-    }
-
-    # GDS
-    if (data.type == "SeqVarGDSClass") {
-
-      # if (!is.null(markers.meta)) {
-      #   if (nrow(markers.meta) < nrow(whitelist.markers)) {
-      #     markers.meta <- extract_markers_metadata(gds = data, whitelist = FALSE)
-      #     # bl <- markers.meta # for blacklist below
-      #     # markers.meta <- suppressWarnings(
-      #     #   dplyr::semi_join(markers.meta, whitelist.markers, by = "VARIANT_ID"))
-      #     markers.meta %<>%
-      #       dplyr::mutate(
-      #         FILTERS = dplyr::if_else(
-      #           !VARIANT_ID %in% whitelist.markers$VARIANT_ID, "filter.whitelist", FILTERS
-      #         )
-      #       )
-      #   } else {
-      #     # bl <- markers.meta # for blacklist below
-      #     markers.meta <- suppressWarnings(
-      #       dplyr::semi_join(markers.meta, whitelist.markers,
-      #                        by = intersect(colnames(markers.meta), colnames(whitelist.markers))))
-      #   }
-      # } else {
-      markers.meta <- extract_markers_metadata(
-        gds = data,
-        whitelist = FALSE
-      ) %>%
+    if (rlang::has_name(whitelist.markers, "VARIANT_ID") && rlang::has_name(markers.meta, "VARIANT_ID")) {
+      markers.meta %<>%
         dplyr::mutate(
           FILTERS = dplyr::if_else(
-            !VARIANT_ID %in% whitelist.markers$VARIANT_ID, "filter.whitelist", FILTERS
+            !VARIANT_ID %in% whitelist.markers$VARIANT_ID &
+              FILTERS == "whitelist",
+            "filter.whitelist",
+            FILTERS
           )
         )
-      # bl <- markers.meta # for blacklist below
-      # markers.meta <- suppressWarnings(
-      #   dplyr::semi_join(markers.meta, whitelist.markers, by = "VARIANT_ID"))
-      # }
+    } else {
+      markers.meta %<>%
+        dplyr::mutate(
+          FILTERS = dplyr::if_else(
+            !MARKERS %in% whitelist.markers$MARKERS &
+              FILTERS == "whitelist",
+            "filter.whitelist",
+            FILTERS
+          )
+        )
+    }
 
-      if (nrow(dplyr::filter(markers.meta, FILTERS == "whitelist")) == 0) {
-        rlang::abort("No markers left in the dataset, check whitelist...")
-      }
+    if (nrow(dplyr::filter(markers.meta, FILTERS == "whitelist")) == 0) {
+      rlang::abort("No markers left in the dataset, check whitelist...")
+    }
 
-      update_radiator_gds(
-        gds = data,
-        node.name = "markers.meta",
-        value = markers.meta,
-        replace = TRUE,
-        sync = TRUE,
-        verbose = TRUE
-      )
-
-      write_rad(
-        data = markers.meta %>% dplyr::filter(FILTERS == "filter.whitelist"),
-        path = path.folder,
-        filename = stringi::stri_join("blacklist.markers_", file.date, ".tsv"),
-        tsv = TRUE, internal = internal, verbose = verbose)
-      write_rad(
-        data = markers.meta %>% dplyr::filter(FILTERS == "whitelist"),
-        path = path.folder,
-        filename = stringi::stri_join("whitelist.markers_", file.date, ".tsv"),
-        tsv = TRUE, internal = internal, verbose = verbose)
-
-
-      # update bl gds
-      # bl %<>% dplyr::setdiff(markers.meta) %>%
-      #   dplyr::mutate(FILTER = "filter.whitelist.markers") %>%
-      #   readr::write_tsv(
-      #     x = .,
-      #     path = file.path(
-      #       path.folder,
-      #       (stringi::stri_join("blacklist.markers_", file.date, ".tsv"))))
-      # bl.gds <- update_bl_markers(gds = data, update = bl)
-    } # End GDS
-
-    # Filter parameter file: update --------------------------------------------
-    filters.parameters <- radiator_parameters(
-      generate = FALSE,
-      initiate = FALSE,
-      update = TRUE,
-      parameter.obj = filters.parameters,
-      data = data,
-      filter.name = "whitelist markers",
-      param.name = "whitelist.markers",
-      values = n.markers.w,
-      path.folder = path.folder,
-      file.date = file.date,
-      internal = internal,
-      verbose = verbose)
-    # results ------------------------------------------------------------------
-    radiator_results_message(
-      rad.message = stringi::stri_join("\nFilter whitelist : ", n.markers.w, "SNPs"),
-      filters.parameters,
-      internal,
-      verbose
+    update_radiator_gds(
+      gds = data,
+      node.name = "markers.meta",
+      value = markers.meta,
+      replace = TRUE,
+      sync = TRUE,
+      verbose = TRUE
     )
-  }# End !is.null
+
+    write_rad(
+      data = markers.meta %>% dplyr::filter(FILTERS == "filter.whitelist"),
+      path = path.folder,
+      filename = stringi::stri_join("blacklist.markers_", file.date, ".tsv"),
+      tsv = TRUE, internal = internal, verbose = verbose)
+
+    write_rad(
+      data = markers.meta %>% dplyr::filter(FILTERS == "whitelist"),
+      path = path.folder,
+      filename = stringi::stri_join("whitelist.markers_", file.date, ".tsv"),
+      tsv = TRUE, internal = internal, verbose = verbose)
+  } # End GDS
+
+  # Filter parameter file: update --------------------------------------------
+  filters.parameters <- radiator_parameters(
+    generate = FALSE,
+    initiate = FALSE,
+    update = TRUE,
+    parameter.obj = filters.parameters,
+    data = data,
+    filter.name = "whitelist markers",
+    param.name = "whitelist.markers",
+    values = n.markers.w,
+    path.folder = path.folder,
+    file.date = file.date,
+    internal = internal,
+    verbose = verbose)
+  # results ------------------------------------------------------------------
+  radiator_results_message(
+    rad.message = stringi::stri_join("\nFilter whitelist : ", n.markers.w, "SNPs"),
+    filters.parameters,
+    internal,
+    verbose
+  )
   return(data)
 }#End filter_whitelist
 
