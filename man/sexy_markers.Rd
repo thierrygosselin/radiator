@@ -40,7 +40,7 @@ You can easily build the strata file by starting with the output of these
 functions: \code{\link{extract_dart_target_id}} and \code{\link{extract_individuals_vcf}}}
 
 \item{coverage.thresholds}{(optional, integer) The minimum coverage required
-to account for the genotype.
+to call a marker absent. For silico genotype data this must be < 1.
 Default: \code{coverage.thresholds = 1}.}
 
 \item{filters}{(optional, logical) When \code{filters = TRUE}, the data will
