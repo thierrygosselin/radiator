@@ -659,18 +659,19 @@ sexy_markers <- function(data,
           )
       ) %>%
       dplyr::mutate(STRATA = GENETIC_SEX)
-    } else if(tibble::has_name(data, "GT_BIN") ){
+    } else if (tibble::has_name(data, "GT_BIN")) {
       y.data <- dplyr::filter(data, MARKERS %in% y.markers) %>%
-        # dplyr::left_join(strata, by = "INDIVIDUALS") %>%
+        dplyr::group_by(INDIVIDUALS) %>%
+        dplyr::summarise(MEAN_GT = mean(GT_BIN)) %>%
+        dplyr::ungroup(.) %>%
+        dplyr::left_join(strata, by = "INDIVIDUALS") %>%
         dplyr::mutate(VISUAL_SEX = STRATA) %>%
-        dplyr::mutate(
-          GENETIC_SEX =
-            dplyr::case_when(
-              is.na(GT_BIN) ~ "F",
-              !(is.na(GT_BIN)) ~ "M",
-              VISUAL_SEX == "F" & is.na(GT_BIN) ~ "U"
-            )
-        ) %>%
+        dplyr::mutate(GENETIC_SEX =
+                        dplyr::case_when(
+                          is.na(MEAN_GT) ~ "F",
+                          !(is.na(MEAN_GT)) ~ "M",
+                          VISUAL_SEX == "F" & is.na(MEAN_GT) ~ "U"
+                        )) %>%
         dplyr::mutate(STRATA = GENETIC_SEX)
     }
 
@@ -807,7 +808,8 @@ sexy_markers <- function(data,
       ### recalculate data based on new sexID??
       data.genetic <- dplyr::rename(data, VISUAL_STRATA = STRATA) %>%
         dplyr::left_join(y.data, by = "INDIVIDUALS") %>%
-        dplyr::rename(MARKERS = MARKERS.x, GT_BIN = GT_BIN.x, TARGET_ID = TARGET_ID.x) %>%
+        # dplyr::rename(MARKERS = MARKERS.x, GT_BIN = GT_BIN.x, TARGET_ID = TARGET_ID.x) %>%
+        dplyr::rename(TARGET_ID = TARGET_ID.x) %>%
         dplyr::mutate(GENETIC_STRATA = STRATA)
         radiator::write_rad(data = data.genetic, path = file.path(wd, "sexy_markers_temp"))
 
