@@ -179,9 +179,11 @@ sexy_markers <- function(data,
   # threshold.y.silico.markers = NULL
   # sex.id.input = NULL
   # threshold.x.markers.qr = NULL
+  # data <- "../1.Data/C.galapagensis/GalapagosShark_SNP_counts.csv"
+  # silicodata <- "../1.Data/C.galapagensis/GalapagosShark_Silico_counts.csv"
   # data = "../1.Data/G.galeus/SchoolShark_SNP_counts.csv"
   # silicodata <- "../1.Data/G.galeus/SchoolShark_silico_counts.csv"
-  # strata = "../1.Data/G.galeus/School_strata_Counts.tsv"
+  # strata = "../1.Data/G.galeus/SchoolShark_strata.tsv"
 
   # parallel.core = parallel::detectCores() - 1
   # data = "example_vcf2dadi_ferchaud_2015.vcf"
@@ -641,24 +643,24 @@ sexy_markers <- function(data,
   ####* SET GENETIC SEX STRATA ####
   if (exists("y.markers") && !rlang::is_empty(y.markers)) {
     if (tibble::has_name(data, "READ_DEPTH")) {
-    y.data <- dplyr::filter(data, MARKERS %in% y.markers) %>%
-      dplyr::group_by(INDIVIDUALS) %>%
-      dplyr::summarise(MEAN_RD = mean(READ_DEPTH)) %>%
-      dplyr::ungroup(.) %>%
-      dplyr::left_join(strata, by = "INDIVIDUALS") %>%
-      dplyr::mutate(VISUAL_SEX = STRATA) %>%
-      dplyr::mutate(
-        GENETIC_SEX =
-          dplyr::case_when(
-            is.na(MEAN_RD) | MEAN_RD < coverage.thresholds ~ "F",
-            !(is.na(MEAN_RD) |
-                MEAN_RD < coverage.thresholds) ~ "M",
-            VISUAL_SEX == "F" &
-              (is.na(MEAN_RD) |
-                 MEAN_RD < coverage.thresholds) ~ "U"
-          )
-      ) %>%
-      dplyr::mutate(STRATA = GENETIC_SEX)
+      y.data <- dplyr::filter(data, MARKERS %in% y.markers) %>%
+        dplyr::group_by(INDIVIDUALS) %>%
+        dplyr::summarise(MEAN_RD = mean(READ_DEPTH)) %>%
+        dplyr::ungroup(.) %>%
+        dplyr::left_join(strata, by = "INDIVIDUALS") %>%
+        dplyr::mutate(VISUAL_SEX = STRATA) %>%
+        dplyr::mutate(
+          GENETIC_SEX =
+            dplyr::case_when(
+              is.na(MEAN_RD) | MEAN_RD < coverage.thresholds ~ "F",
+              !(is.na(MEAN_RD) |
+                  MEAN_RD < coverage.thresholds) ~ "M",
+              VISUAL_SEX == "F" &
+                (is.na(MEAN_RD) |
+                   MEAN_RD < coverage.thresholds) ~ "U"
+            )
+        ) %>%
+        dplyr::mutate(STRATA = GENETIC_SEX)
     } else if (tibble::has_name(data, "GT_BIN")) {
       y.data <- dplyr::filter(data, MARKERS %in% y.markers) %>%
         dplyr::group_by(INDIVIDUALS) %>%
@@ -674,8 +676,6 @@ sexy_markers <- function(data,
                         )) %>%
         dplyr::mutate(STRATA = GENETIC_SEX)
     }
-
-
 
     # print visual and gentic sex table
     SumTable <-
@@ -707,142 +707,208 @@ sexy_markers <- function(data,
         )
       )
     print(SumTable)
-    readr::write_tsv(x = SumTable, path = file.path(path.folder, "sexy_markers_summary_table_visual.VS.geneticSNP_sex.tsv"))
+    readr::write_tsv(
+      x = SumTable,
+      path = file.path(
+        path.folder,
+        "sexy_markers_summary_table_visual.VS.geneticSNP_sex.tsv"
+      )
+    )
+  }
 
-    if (exists("y.silico.markers") && !rlang::is_empty(y.silico.markers)) {
-      y.silico.data <-
-        dplyr::filter(silicodata, MARKERS %in% y.silico.markers) %>%
-        dplyr::group_by(INDIVIDUALS) %>%
-        dplyr::summarise(MEAN_RD = mean(VALUE)) %>%
-        dplyr::ungroup(.) %>%
-        dplyr::left_join(strata, by = "INDIVIDUALS") %>%
-        dplyr::mutate(VISUAL_SEX = STRATA) %>%
-        dplyr::mutate(GENETIC_SEX =
-                        dplyr::if_else(condition =
-                                         is.na(MEAN_RD) |
-                                         MEAN_RD < coverage.thresholds, "F", "M"
-                        )) %>%
-        dplyr::mutate(STRATA = GENETIC_SEX)
+  if (exists("y.silico.markers") && !rlang::is_empty(y.silico.markers)) {
+    y.silico.data <-
+      dplyr::filter(silicodata, MARKERS %in% y.silico.markers) %>%
+      dplyr::group_by(INDIVIDUALS) %>%
+      dplyr::summarise(MEAN_RD = mean(VALUE)) %>%
+      dplyr::ungroup(.) %>%
+      dplyr::left_join(strata, by = "INDIVIDUALS") %>%
+      dplyr::mutate(VISUAL_SEX = STRATA) %>%
+      dplyr::mutate(GENETIC_SEX =
+                      dplyr::if_else(condition =
+                                       is.na(MEAN_RD) |
+                                       MEAN_RD < coverage.thresholds, "F", "M")) %>%
+      dplyr::mutate(STRATA = GENETIC_SEX)
 
-      # print visual and gentic sex table
-      SumTable <-
-        tibble::tibble(
-          Visual_Sex = c("M", "M", "F", "F", "U", "U"),
-          Genetic_Sex_SILICO = c("M", "F", "F", "M", "M", "F"),
-          Individuals = c(
-            length(which(y.silico.data$VISUAL_SEX == "M" & y.silico.data$GENETIC_SEX == "M"
-            )),
-            length(which(y.silico.data$VISUAL_SEX == "M" & y.silico.data$GENETIC_SEX == "F"
-            )),
-            length(which(y.silico.data$VISUAL_SEX == "F" & y.silico.data$GENETIC_SEX == "F"
-            )),
-            length(which(y.silico.data$VISUAL_SEX == "F" & y.silico.data$GENETIC_SEX == "M"
-            )),
-            # length(which(y.silico.data$VISUAL_SEX == "F" & y.silico.data$GENETIC_SEX == "U"
-            # )),
-            length(which(y.silico.data$VISUAL_SEX == "U" & y.silico.data$GENETIC_SEX == "M"
-            )),
-            length(which(y.silico.data$VISUAL_SEX == "U" & y.silico.data$GENETIC_SEX == "F"
-            )))
+    # print visual and gentic sex table
+    SumTable <-
+      tibble::tibble(
+        Visual_Sex = c("M", "M", "F", "F", "U", "U"),
+        Genetic_Sex_SILICO = c("M", "F", "F", "M", "M", "F"),
+        Individuals = c(
+          length(
+            which(
+              y.silico.data$VISUAL_SEX == "M" & y.silico.data$GENETIC_SEX == "M"
+            )
+          ),
+          length(
+            which(
+              y.silico.data$VISUAL_SEX == "M" & y.silico.data$GENETIC_SEX == "F"
+            )
+          ),
+          length(
+            which(
+              y.silico.data$VISUAL_SEX == "F" & y.silico.data$GENETIC_SEX == "F"
+            )
+          ),
+          length(
+            which(
+              y.silico.data$VISUAL_SEX == "F" & y.silico.data$GENETIC_SEX == "M"
+            )
+          ),
+          # length(which(y.silico.data$VISUAL_SEX == "F" & y.silico.data$GENETIC_SEX == "U"
+          # )),
+          length(
+            which(
+              y.silico.data$VISUAL_SEX == "U" & y.silico.data$GENETIC_SEX == "M"
+            )
+          ),
+          length(
+            which(
+              y.silico.data$VISUAL_SEX == "U" & y.silico.data$GENETIC_SEX == "F"
+            )
+          )
         )
-      print(SumTable)
-      readr::write_tsv(x = SumTable, path = file.path(path.folder, "sexy_markers_summary_table_visual.VS.geneticSILICO_sex.tsv"))
+      )
+    print(SumTable)
+    readr::write_tsv(
+      x = SumTable,
+      path = file.path(
+        path.folder,
+        "sexy_markers_summary_table_visual.VS.geneticSILICO_sex.tsv"
+      )
+    )
+  }
 
-
-      # print genetic SNP and gentic SILICO sex table
-      SumTable <-
-        tibble::tibble(
-          Genetic_Sex_SNP = c("M", "M", "F", "F", "U", "U"),
-          Genetic_Sex_SILICO = c("M", "F", "F", "M", "M", "F"),
-          Individuals = c(
-            length(which(y.data$GENETIC_SEX == "M" & y.silico.data$GENETIC_SEX == "M")
-            ),
-            length(
-              which(y.data$GENETIC_SEX == "M" & y.silico.data$GENETIC_SEX == "F")
-            ),
-            length(
-              which(y.data$GENETIC_SEX == "F" & y.silico.data$GENETIC_SEX == "F")
-            ),
-            length(
-              which(y.data$GENETIC_SEX == "F" & y.silico.data$GENETIC_SEX == "M")
-            ),
-            length(
-              which(y.data$GENETIC_SEX == "U" & y.silico.data$GENETIC_SEX == "M")
-            ),
-            length(
-              which(y.data$GENETIC_SEX == "U" & y.silico.data$GENETIC_SEX == "F")
-            ))
+  if (exists("y.markers") && !rlang::is_empty(y.markers) &&
+      exists("y.silico.markers") && !rlang::is_empty(y.silico.markers)) {
+    # print genetic SNP and gentic SILICO sex table
+    SumTable <-
+      tibble::tibble(
+        Genetic_Sex_SNP = c("M", "M", "F", "F", "U", "U"),
+        Genetic_Sex_SILICO = c("M", "F", "F", "M", "M", "F"),
+        Individuals = c(
+          length(
+            which(y.data$GENETIC_SEX == "M" & y.silico.data$GENETIC_SEX == "M")
+          ),
+          length(
+            which(y.data$GENETIC_SEX == "M" & y.silico.data$GENETIC_SEX == "F")
+          ),
+          length(
+            which(y.data$GENETIC_SEX == "F" & y.silico.data$GENETIC_SEX == "F")
+          ),
+          length(
+            which(y.data$GENETIC_SEX == "F" & y.silico.data$GENETIC_SEX == "M")
+          ),
+          length(
+            which(y.data$GENETIC_SEX == "U" & y.silico.data$GENETIC_SEX == "M")
+          ),
+          length(
+            which(y.data$GENETIC_SEX == "U" & y.silico.data$GENETIC_SEX == "F")
+          )
         )
-      print(SumTable)
-      readr::write_tsv(x = SumTable, path = file.path(path.folder, "sexy_markers_summary_table_geneticSNP.VS.geneticSILICO_sex.tsv"))
+      )
+    print(SumTable)
+    readr::write_tsv(
+      x = SumTable,
+      path = file.path(
+        path.folder,
+        "sexy_markers_summary_table_geneticSNP.VS.geneticSILICO_sex.tsv"
+      )
+    )
+  }
 
-
-      # Interacive selection which sex info
-      if (is.null(sex.id.input)) sex.id.input <- "1"
+  if (exists("y.markers") && !rlang::is_empty(y.markers) ||
+      exists("y.silico.markers") && !rlang::is_empty(y.silico.markers)) {
+    # Interacive selection which sex info
+    if (is.null(sex.id.input)) sex.id.input <- "1"
+    if (!rlang::is_empty(y.markers) &&
+        !rlang::is_empty(y.silico.markers)) {
       if (interactive.filter) {
-        sex.id.input <- radiator::radiator_question(
-          x = "For further analysis, do you want to continue based on (1) visual, (2) genetic SNP or (3) genetic SILICO sex?\nWe advise (3) for better results",
-          answer.opt = c("1","2", "3")
-        )
+        sex.id.input <-
+          radiator::radiator_question(x = "For further analysis, do you want to continue based on (1) visual, (2) genetic SNP or (3) genetic SILICO sex?\nWe advise (3) for better results",
+                                      answer.opt = c("1", "2", "3"))
         sex.id.input <- as.integer(sex.id.input)
       } else{
         sex.id.input <- as.integer(3)
       }
-    } else if (rlang::is_empty(y.silico.markers)) {
+    } else if (!rlang::is_empty(y.markers)) {
       # Interacive selection which sex info
       if (is.null(sex.id.input))
         sex.id.input <- "1"
       if (interactive.filter) {
-        sex.id.input <- radiator::radiator_question(x = "For further analysis, do you want to continue based on (1) visual or (2) genetic SNP sex?\nWe advise (2) for better results",
-                                                    answer.opt = c("1", "2"))
+        sex.id.input <-
+          radiator::radiator_question(x = "For further analysis, do you want to continue based on (1) visual or (2) genetic SNP sex?\nWe advise (2) for better results",
+                                      answer.opt = c("1", "2"))
         sex.id.input <- as.integer(sex.id.input)
       } else {
         sex.id.input <- as.integer(2)
       }
+    } else if (!rlang::is_empty(y.silico.markers)) {
+      # Interacive selection which sex info
+      if (is.null(sex.id.input))
+        sex.id.input <- "1"
+      if (interactive.filter) {
+        sex.id.input <-
+          radiator::radiator_question(x = "For further analysis, do you want to continue based on (1) visual or (3) genetic SILICO sex?\nWe advise (3) for better results",
+                                      answer.opt = c("1", "3"))
+        sex.id.input <- as.integer(sex.id.input)
+      } else {
+        sex.id.input <- as.integer(3)
+      }
     }
-    message("Sex and summary statistics will be calculated accoriding to: ", sex.id.input)
+    message("Sex and summary statistics will be calculated accoriding to: ",
+            sex.id.input)
 
     #set new sexID for Het analysis
     if (sex.id.input == 2) {
       SexID <- "genetically (SNP)"
       ### recalculate data based on new sexID??
-      data.genetic <- dplyr::rename(data, VISUAL_STRATA = STRATA) %>%
+      data.genetic <-
+        dplyr::rename(data, VISUAL_STRATA = STRATA) %>%
         dplyr::left_join(y.data, by = "INDIVIDUALS") %>%
         # dplyr::rename(MARKERS = MARKERS.x, GT_BIN = GT_BIN.x, TARGET_ID = TARGET_ID.x) %>%
         dplyr::rename(TARGET_ID = TARGET_ID.x) %>%
         dplyr::mutate(GENETIC_STRATA = STRATA)
-        radiator::write_rad(data = data.genetic, path = file.path(wd, "sexy_markers_temp"))
+      radiator::write_rad(data = data.genetic,
+                          path = file.path(wd, "sexy_markers_temp"))
 
-        if ("silico.dart" %in% data.source) {
-          data.silico.genetic <-
-            dplyr::rename(silicodata, VISUAL_STRATA = STRATA) %>%
-            dplyr::left_join(y.data, by = "INDIVIDUALS") %>%
-            dplyr::mutate(GENETIC_STRATA = STRATA)
-          radiator::write_rad(data = data.silico.genetic,
-                              path = file.path(wd, "sexy_markers_silico_temp"))
-        }else{data.silico.genetic <- NULL}
+      if ("silico.dart" %in% data.source) {
+        data.silico.genetic <-
+          dplyr::rename(silicodata, VISUAL_STRATA = STRATA) %>%
+          dplyr::left_join(y.data, by = "INDIVIDUALS") %>%
+          dplyr::mutate(GENETIC_STRATA = STRATA)
+        radiator::write_rad(data = data.silico.genetic,
+                            path = file.path(wd, "sexy_markers_silico_temp"))
+      } else{
+        data.silico.genetic <- NULL
+      }
 
     } else if (sex.id.input == 3) {
       SexID <- "genetically (SILICO)"
       ### recalculate data based on new sexID??
-      data.genetic <- dplyr::rename(data, VISUAL_STRATA = STRATA) %>%
+      data.genetic <-
+        dplyr::rename(data, VISUAL_STRATA = STRATA) %>%
         dplyr::left_join(y.silico.data, by = "INDIVIDUALS") %>%
         dplyr::mutate(GENETIC_STRATA = STRATA)
-        radiator::write_rad(data = data.genetic, path = file.path(wd, "sexy_markers_temp"))
+      radiator::write_rad(data = data.genetic,
+                          path = file.path(wd, "sexy_markers_temp"))
 
-        if ("silico.dart" %in% data.source) {
-          data.silico.genetic <-
-            dplyr::rename(silicodata, VISUAL_STRATA = STRATA) %>%
-            dplyr::left_join(y.silico.data, by = "INDIVIDUALS") %>%
-            dplyr::mutate(GENETIC_STRATA = STRATA)
-          radiator::write_rad(data = data.silico.genetic,
-                              path = file.path(wd, "sexy_markers_silico_temp"))
-        } else{data.silico.genetic <- NULL}
+      if ("silico.dart" %in% data.source) {
+        data.silico.genetic <-
+          dplyr::rename(silicodata, VISUAL_STRATA = STRATA) %>%
+          dplyr::left_join(y.silico.data, by = "INDIVIDUALS") %>%
+          dplyr::mutate(GENETIC_STRATA = STRATA)
+        radiator::write_rad(data = data.silico.genetic,
+                            path = file.path(wd, "sexy_markers_silico_temp"))
+      } else{
+        data.silico.genetic <- NULL
+      }
     }
 
 
     # silico
-    if (sex.id.input != 1){
+    if (sex.id.input != 1) {
       res$sum <- summarize_sex(
         data = data.genetic,
         silicodata = data.silico.genetic,
@@ -852,11 +918,23 @@ sexy_markers <- function(data,
       )
       data.sum <- res$sum$data.sum
       silico.sum <- res$sum$silico.sum
+
+      # Add new summary for number F and M and ratio, because Unknown are now included
+      sex.ratio <-
+        dplyr::filter(data.genetic, !duplicated(INDIVIDUALS)) %>%
+        dplyr::count(., GENETIC_SEX)
+      message(
+        "\n\nIndividuals with unknown sex ID are now included in the analysis.
+        The new sex-ratio (F/M) is: ",
+        round(sex.ratio$n[1] / sex.ratio$n[2], 2)
+      )
+      print(sex.ratio)
     }
   }
 
   # Remove markers that are already extracted and have high missingness
-  ##SHOULD MAKE THE MISSINGNESS INTERACTIVE
+  ## TODO SHOULD MAKE THE MISSINGNESS INTERACTIVE
+  message("For detecting heterogametic marker the data is first filtered on a missingness > 0.2")
   data.sum <- dplyr::filter(data.sum, !(MARKERS %in% y.markers | MISSINGNESS > 0.2))
   if(!is.null(silicodata)){
     silico.sum <- dplyr::filter(silico.sum, !(MARKERS %in% y.silico.markers| MISSINGNESS > 0.2))
@@ -893,7 +971,7 @@ sexy_markers <- function(data,
   )
   print(scat.fig)
 
-  ###QREG -> Tau value is important
+  ### QREG -> Tau value is important
   plot.filename <- "3B.sexy_markers_HET_qr_plot"
   if (!is.null(species) && !is.null(population)) {
     plot.filename <-
@@ -969,14 +1047,14 @@ sexy_markers <- function(data,
       qreg = FALSE,
       tuckey = FALSE,
       RD = TRUE,
-      x.title = "Mean counts for females",
-      y.title = "Mean counts for males",
+      x.title = "Mean coverage for females",
+      y.title = "Mean coverage for males",
       subtitle = if (is.null(population)) {
         paste0("Sex is ", SexID, " assigned")
       } else {
         paste0(population, ": Sex is ", SexID, " assigned")
       },
-      title = "Average counts of each marker between females and males",
+      title = "Average coverage of each marker between females and males",
       plot.filename = plot.filename
     )
     print(scat.fig)
@@ -998,14 +1076,14 @@ sexy_markers <- function(data,
       qreg = FALSE,
       tuckey = FALSE,
       hist = TRUE,
-      x.title = "Female - male count ratio",
+      x.title = "Female - male coverage ratio",
       y.title = "",
       subtitle = if (is.null(population)) {
         paste0("Sex is ", SexID, " assigned")
       } else {
         paste0(population, ": Sex is ", SexID, " assigned")
       },
-      title = "Histogram of females counts over males counts for each marker",
+      title = "Histogram of females over males coverage for each marker",
       plot.filename = plot.filename
     )
     print(scat.fig)
@@ -1091,14 +1169,14 @@ sexy_markers <- function(data,
       qreg = FALSE,
       tuckey = FALSE,
       RD = TRUE,
-      x.title = "Mean counts for females",
-      y.title = "Mean counts for males",
+      x.title = "Mean coverage for females",
+      y.title = "Mean coverage for males",
       subtitle = if (is.null(population)) {
         paste0("Sex is ", SexID, " assigned")
       } else {
         paste0(population, ": Sex is ", SexID, " assigned")
       },
-      title = "Average counts of each silico marker between females and males",
+      title = "Average coverage of each silico marker between females and males",
       plot.filename = plot.filename
     )
     print(scat.fig)
@@ -1120,14 +1198,14 @@ sexy_markers <- function(data,
       qreg = FALSE,
       tuckey = FALSE,
       hist = TRUE,
-      x.title = "Female - male count ratio",
+      x.title = "Female - male coverage ratio",
       y.title = "",
       subtitle = if (is.null(population)) {
         paste0("Sex is ", SexID, " assigned")
       } else {
         paste0(population, ": Sex is ", SexID, " assigned")
       },
-      title = "Histogram of females counts over males counts for each SILICO",
+      title = "Histogram of females coverage over males coverage for each SILICO",
       plot.filename = plot.filename
     )
     print(scat.fig)
@@ -1150,14 +1228,14 @@ sexy_markers <- function(data,
       qreg = FALSE,
       tuckey = FALSE,
       hist = TRUE,
-      x.title = "Female - male count ratio",
+      x.title = "Female - male coverage ratio",
       y.title = "",
       subtitle = if (is.null(population)) {
         paste0("Sex is ", SexID, " assigned")
       } else {
         paste0(population, ": Sex is ", SexID, " assigned")
       },
-      title = "Histogram of females counts over males counts for each SILICO",
+      title = "Histogram of females coverage over males coverage for each SILICO",
       plot.filename = plot.filename
     )
     print(scat.fig)
@@ -1201,7 +1279,7 @@ sexy_markers <- function(data,
     # Set sex-marker to whitelist and allign the sex-marker method with the markers
     meta <- radiator::extract_markers_metadata(
       gds = gds.bk,
-      markers.meta.select = c("MARKERS","SEQUENCE"),
+      markers.meta.select = c("MARKERS","SEQUENCE", "LOCUS"), #LOCUS is CLONE_ID
       radiator.node = TRUE,
       whitelist = FALSE,
       blacklist = FALSE,
@@ -1224,6 +1302,14 @@ sexy_markers <- function(data,
           res$heterogametic.silico.markers,
           res$homogametic.het.markers,
           res$homogametic.RD.markers,
+          res$homogametic.RD.silico.markers
+        ),
+      CLONE_ID =
+        c(
+          meta$LOCUS[meta$MARKERS %in% res$heterogametic.markers],
+          res$heterogametic.silico.markers,
+          meta$LOCUS[meta$MARKERS %in% res$homogametic.het.markers],
+          meta$LOCUS[meta$MARKERS %in% res$homogametic.RD.markers],
           res$homogametic.RD.silico.markers
         ),
       METHOD =
@@ -1259,27 +1345,7 @@ sexy_markers <- function(data,
             )
           ))
         )
-    ) ## This is not extracting the CLONE_ID properly
-    if (all(c("dart", "counts") %in% data.source)) {
-      res$sexy.summary %<>% dplyr::mutate(
-        CLONE_ID = c(
-          stringi::stri_split_fixed(SEX_MARKERS[METHOD == "presence/absence_method-SNP"], "__", simplify = TRUE)[, 2],
-          SEX_MARKERS[METHOD == "presence/absence_method-SILICO"],
-          stringi::stri_split_fixed(SEX_MARKERS[METHOD == "heterozygosity_method-SNP"], "__", simplify = TRUE)[, 2],
-          stringi::stri_split_fixed(SEX_MARKERS[METHOD == "Coverage_method-SNP"], "__", simplify = TRUE)[, 2],
-          SEX_MARKERS[METHOD == "Coverage_method-SILICO"]
-        )
-      )
-    } else{
-      res$sexy.summary %<>% dplyr::mutate(
-        CLONE_ID = c(
-          stringi::stri_split_fixed(SEX_MARKERS[METHOD == "presence/absence_method-SNP"], "__", simplify = TRUE)[, 2],
-          SEX_MARKERS[METHOD == "presence/absence_method-SILICO"],
-          stringi::stri_split_fixed(SEX_MARKERS[METHOD == "heterozygosity_method-SNP"], "__", simplify = TRUE)[, 2],
-          SEX_MARKERS[METHOD == "Coverage_method-SILICO"]
-        )
-      )
-    }
+    )
   res$sexy.summary %<>% dplyr::mutate(
     SEQUENCE =
       c(
@@ -1296,13 +1362,13 @@ sexy_markers <- function(data,
   )
 
   message(
-    "Summary of sex-linked markers by method of discovery:"
+    "Summary table of sex-linked markers by method of discovery:"
   )
 print(summary(as.factor(res$sexy.summary$METHOD)))
 
   # common markers plot
   n.pop = length(unique(res$sexy.summary$METHOD))
-  plot.data <- dplyr::distinct(res$sexy.summary, CLONE_ID, METHOD) %>%
+  plot.data <- dplyr::distinct(res$sexy.summary, SEX_MARKERS, METHOD) %>%
     dplyr::mutate(
       n = rep(1, n()),
       METHOD = stringi::stri_join("METHOD_", METHOD)
