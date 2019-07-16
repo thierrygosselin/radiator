@@ -68,6 +68,8 @@
 #' \emph{Note:} Violating Assumptions or Prerequisites (see below) can lead to
 #' false positive or the absence of detection of sex-linked markers.
 
+
+
 #' @section Assumptions:
 #' \enumerate{
 #' \item \strong{Genetic Sex Determination System} over a e.g. environmental-sex-determination system.
@@ -157,7 +159,7 @@
 #' if \code{interactive.filter = FALSE}.
 #' }
 #'
-
+#'
 #' @section Life cycle:
 #'
 #' Machine Learning approaches (Random Forest and Extreme Gradient Boosting Trees)
@@ -171,12 +173,12 @@
 #' @export
 #' @rdname sexy_markers
 
-#' @return: The created object contains:
+#' @return The created object contains:
 #' \enumerate{
-#' \item  \code{sum} A list with (1) the summarised SNP data per sex and
+#' \item A list with (1) the summarised SNP data per sex and
 #' (2) the summarised silico data per sex. This should allow you to re-create the various plots.
 #' \item A vector with the names of the sex-linked marker. One vector for each method.
-#' \item A dataframe with a summary of the sex-linked markers and their sequence (if available)
+#' \item A dataframe with a summary of the sex-linked markers and their sequence (if available).
 #' }
 
 #' @examples
