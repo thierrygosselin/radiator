@@ -51,7 +51,9 @@
 #' false positve or false negative detections.
 #' Default: \code{filters = TRUE}.
 #'
-#' @param interactive.filter (optional, logical)
+#' @param interactive.filter (optional, logical) When \code{interactive.filter = TRUE}
+#' the function will ask for your input to define thresholds. If \code{interactive.filter = FALSE}
+#' the function expects additional arguments (see advanced mode).
 #' Default: \code{interactive.filter = TRUE}.
 #'
 #' @inheritParams radiator_common_arguments
@@ -113,15 +115,48 @@
 #' \strong{Homogametic sex-markers:}
 #' We have two different methods to identify markers on X or Z chromosomes:
 #' \itemize{
-#' \item \strong{Heterozygosity method:} By looking at the heterozygosity of a marker between sexes, we can
+#' \item \strong{Heterozygosity method:} By looking at the heterozygosity of a
+#' marker between sexes, we can
 #' identify markers that are always homozygous in one sex (e.g. males for an
 #' XY system), while exhibiting an intermediate range of heterozygosity in the
 #' other sex (0.1 - 0.5).
-#' \item \strong{Coverage method:} If the data includes count information, this function will look for
+#' \item \strong{Coverage method:} If the data includes count information, this
+#' function will look for
 #' markers that have double the number of counts for either of the sexes.
 #' For example if an XY/XX system is present, females are expected to have
 #' double the number of counts for markers on the X chromosome.
 #' }
+
+#' @section Advance mode:
+#'
+#' \emph{dots-dots-dots ...} allows to pass several arguments for fine-tuning the function:
+#' \enumerate{
+#' \item \code{mis.threshold.data}: Threshold to filter the SNP data on missingness.
+#' Only if \code{interactive.filter = FALSE}.
+#' \item \code{mis.threshold.silicodata}  Threshold to filter the silico data on
+#' missingness. Only if \code{interactive.filter = FALSE}.
+#' \item \code{threshold.y.markers}: Threshold to select heterogametic sex-linked
+#' markers from the SNP data with the \strong{presence/absence method}. Only
+#' if \code{interactive.filter = FALSE}.
+#' \item \code{tau}:The quantile used in regression to distinguish homogametic markers
+#' with the \strong{heterozygosity method}. Default \code{tau = 0.03}.
+#' \item \code{threshold.x.markers.qr}: Threshold to select homogametic sex-linked
+#' markers from the SNP data with the \strong{heterozygosity method}. Only
+#' if \code{interactive.filter = FALSE}.
+#' \item \code{zoom.data}: Threshold to subset the F/M ratio of mean SNP coverage.
+#' Used to improve the histogrom resolution to select a better \code{threshold.x.markers.RD}
+#' threshold. Only if \code{interactive.filter = FALSE}.
+#' \item \code{threshold.x.markers.RD}: Threshold to select homogametic sex-linked
+#' markers from the SNP data with the \strong{coverage method}. Only
+#' if \code{interactive.filter = FALSE}.
+#' \item \code{zoom.silicodata}: Threshold to subset the F/M ratio of mean silico coverage.
+#' Used to improve the histogrom resolution to select a better \code{threshold.x.markers.RD.silico}
+#' threshold. Only if \code{interactive.filter = FALSE}.
+#' \item \code{threshold.x.markers.RD.silico}: Threshold to select homogametic sex-linked
+#' markers from the silico data with the \strong{coverage method}. Only
+#' if \code{interactive.filter = FALSE}.
+#' }
+#'
 
 #' @section Life cycle:
 #'
@@ -179,8 +214,6 @@ sexy_markers <- function(data,
   # threshold.y.silico.markers = NULL
   # sex.id.input = NULL
   # threshold.x.markers.qr = NULL
-  # data <- "../1.Data/C.galapagensis/GalapagosShark_SNP_counts.csv"
-  # silicodata <- "../1.Data/C.galapagensis/GalapagosShark_Silico_counts.csv"
   # data = "../1.Data/G.galeus/SchoolShark_SNP_counts.csv"
   # silicodata <- "../1.Data/G.galeus/SchoolShark_silico_counts.csv"
   # strata = "../1.Data/G.galeus/SchoolShark_strata.tsv"
@@ -231,7 +264,8 @@ sexy_markers <- function(data,
     keepers = c("species", "population", "tau",
                 "threshold.y.markers", "threshold.y.silico.markers",
                 "sex.id.input", "threshold.x.markers.qr", "threshold.x.markers.RD",
-                "threshold.x.markers.RD.silico"
+                "threshold.x.markers.RD.silico", "mis.threshold.data",
+                "mis.threshold.silicodata", "zoom.data", "zoom.silicodata"
 ),
     verbose = FALSE
   )
@@ -278,9 +312,6 @@ sexy_markers <- function(data,
       data <- radiator::read_rad(data, verbose = verbose)
       data.type <- "SeqVarGDSClass"
     }
-
-    # data <- gds2tidy(gds = data, parallel.core = parallel.core)
-    # data.type <- "tbl_df"
   }
 
   # VCF files ------------------------------------------------------------------
@@ -456,13 +487,12 @@ sexy_markers <- function(data,
   # Here we start to generate the figures for each sex determination mechanism
   # The function for figures was moved outside the function below
   # you need to load the function first so that it's accessible
-  # e.g.
 
   SexID <- "visually"
 
   #### P/A #####
 
-  # perhaps for count data, set coverage threshold, based on plot
+  # TODO perhaps for count data, set coverage threshold, based on plot
 
   ###* For data.sum ####
   ### SCATTER
@@ -548,6 +578,11 @@ sexy_markers <- function(data,
     res$heterogametic.markers <- y.markers
   } else{
     y.markers <- NULL
+    res$heterogametic.markers <- NULL
+  }
+
+  if (length(y.markers) == 0){
+    res$heterogametic.markers <- NULL
   }
 
 
@@ -638,6 +673,10 @@ sexy_markers <- function(data,
     }
   } else{
     y.silico.markers <- NULL
+    res$heterogametic.silico.markers <- NULL
+  }
+  if (length(y.silico.markers) == 0){
+    res$heterogametic.silico.markers <- NULL
   }
 
   ####* SET GENETIC SEX STRATA ####
@@ -717,7 +756,8 @@ sexy_markers <- function(data,
   }
 
   if (exists("y.silico.markers") && !rlang::is_empty(y.silico.markers)) {
-    y.silico.data <-
+    if (max(silicodata$VALUE, na.rm = TRUE) > 1) {
+      y.silico.data <-
       dplyr::filter(silicodata, MARKERS %in% y.silico.markers) %>%
       dplyr::group_by(INDIVIDUALS) %>%
       dplyr::summarise(MEAN_RD = mean(VALUE)) %>%
@@ -729,6 +769,45 @@ sexy_markers <- function(data,
                                        is.na(MEAN_RD) |
                                        MEAN_RD < coverage.thresholds, "F", "M")) %>%
       dplyr::mutate(STRATA = GENETIC_SEX)
+    } else if (length(y.silico.markers) > 1) {
+      y.silico.data <-
+        dplyr::filter(silicodata, MARKERS %in% y.silico.markers) %>%
+        dplyr::group_by(INDIVIDUALS) %>%
+        dplyr::summarise(MEAN_RD = mean(VALUE, na.rm = TRUE)) %>%
+        dplyr::ungroup(.) %>%
+        dplyr::left_join(strata, by = "INDIVIDUALS") %>%
+        dplyr::mutate(VISUAL_SEX = STRATA) %>%
+        dplyr::mutate(GENETIC_SEX =
+                        dplyr::case_when(
+                          MEAN_RD < coverage.threshold/length(y.silico.markers) ~ "F",
+                          !(is.na(MEAN_RD)) ~ "M",
+                          VISUAL_SEX == "F" & is.na(MEAN_RD) ~ "U"
+                        )) %>%
+        dplyr::mutate(GENETIC_SEX =
+                        dplyr::case_when(
+                          MEAN_RD < coverage.threshold/length(y.silico.markers) ~ "F",
+                          is.na(MEAN_RD) ~ "U",
+                          MEAN_RD >= coverage.threshold/length(y.silico.markers) & !is.na(MEAN_RD)~ "M"
+                        )) %>%
+        dplyr::mutate(STRATA = GENETIC_SEX)
+    } else {
+      y.silico.data <-
+        dplyr::filter(silicodata, MARKERS %in% y.silico.markers) %>%
+        # dplyr::group_by(INDIVIDUALS) %>%
+        # dplyr::summarise(MEAN_RD = mean(VALUE, na.rm = TRUE)) %>%
+        # dplyr::ungroup(.) %>%
+        dplyr::mutate(MEAN_RD = VALUE) %>%
+        dplyr::left_join(strata, by = "INDIVIDUALS") %>%
+        dplyr::mutate(VISUAL_SEX = STRATA) %>%
+        dplyr::mutate(GENETIC_SEX =
+                        dplyr::case_when(
+                          MEAN_RD < coverage.threshold ~ "F",
+                          is.na(MEAN_RD) ~ "U",
+                          MEAN_RD >= coverage.threshold & !is.na(MEAN_RD)~ "M"
+                        )) %>%
+        dplyr::mutate(STRATA = GENETIC_SEX)
+    }
+
 
     # print visual and gentic sex table
     SumTable <-
@@ -863,7 +942,7 @@ sexy_markers <- function(data,
     #set new sexID for Het analysis
     if (sex.id.input == 2) {
       SexID <- "genetically (SNP)"
-      ### recalculate data based on new sexID??
+      ### recalculate data based on new sexID
       data.genetic <-
         dplyr::rename(data, VISUAL_STRATA = STRATA) %>%
         dplyr::left_join(y.data, by = "INDIVIDUALS") %>%
@@ -871,7 +950,7 @@ sexy_markers <- function(data,
         dplyr::rename(TARGET_ID = TARGET_ID.x) %>%
         dplyr::mutate(GENETIC_STRATA = STRATA)
       radiator::write_rad(data = data.genetic,
-                          path = file.path(wd, "sexy_markers_temp"))
+                          path = file.path(wd, "sexy_markers_temp.rad"))
 
       if ("silico.dart" %in% data.source) {
         data.silico.genetic <-
@@ -879,14 +958,14 @@ sexy_markers <- function(data,
           dplyr::left_join(y.data, by = "INDIVIDUALS") %>%
           dplyr::mutate(GENETIC_STRATA = STRATA)
         radiator::write_rad(data = data.silico.genetic,
-                            path = file.path(wd, "sexy_markers_silico_temp"))
+                            path = file.path(wd, "sexy_markers_silico_temp.rad"))
       } else{
         data.silico.genetic <- NULL
       }
 
     } else if (sex.id.input == 3) {
       SexID <- "genetically (SILICO)"
-      ### recalculate data based on new sexID??
+      ### recalculate data based on new sexID
       data.genetic <-
         dplyr::rename(data, VISUAL_STRATA = STRATA) %>%
         dplyr::left_join(y.silico.data, by = "INDIVIDUALS") %>%
@@ -932,17 +1011,51 @@ sexy_markers <- function(data,
     }
   }
 
+
   # Remove markers that are already extracted and have high missingness
-  ## TODO SHOULD MAKE THE MISSINGNESS INTERACTIVE
-  message("For detecting heterogametic marker the data is first filtered on a missingness > 0.2")
-  data.sum <- dplyr::filter(data.sum, !(MARKERS %in% y.markers | MISSINGNESS > 0.2))
-  if(!is.null(silicodata)){
-    silico.sum <- dplyr::filter(silico.sum, !(MARKERS %in% y.silico.markers| MISSINGNESS > 0.2))
+  if(interactive.filter) {
+    print(ggplot2::qplot(data.sum$MISSINGNESS, xlab = "Missingness per SNP marker"))
+    mis.threshold.data <-
+      radiator::radiator_question(x = "Have a look at the plot: Choose the upper threshold for missingness per SNP marker (e.g. 0.2).", minmax = c(0, 1))
+
+    message(
+      "For detecting heterogametic markers, the SILICO data is filtered on a missingness >: ",
+      mis.threshold.data
+    )
+    data.sum <-
+      dplyr::filter(data.sum,
+                    !(MARKERS %in% y.markers | MISSINGNESS > mis.threshold.data))
+
+    if (!is.null(silicodata)) {
+      print(ggplot2::qplot(silico.sum$MISSINGNESS, xlab = "Missingness per SILICO marker"))
+      mis.threshold.silicodata <-
+        radiator::radiator_question(x = "Have a look at the plot: Choose the upper threshold for missingness per SILICO marker (e.g. 0.2).", minmax = c(0, 1))
+      message(
+        "For detecting heterogametic markers, the SILICO data is filtered on a missingness >: ",
+        mis.threshold.silicodata
+      )
+      silico.sum <-
+        dplyr::filter(silico.sum, !(MARKERS %in% y.silico.markers |
+              MISSINGNESS > mis.threshold.silicodata
+          ))
+    }
+  } else {
+    message(
+      "For detecting heterogametic markers, the SNP data is filtered on a missingness >: ",
+      mis.threshold.data)
+    data.sum <-
+      dplyr::filter(data.sum, !(MARKERS %in% y.markers | MISSINGNESS > mis.threshold.data))
+    if (!is.null(silicodata)) {
+      message(
+        "For detecting heterogametic markers, the SILICO data is filtered on a missingness >: ",
+        mis.threshold.silicodata)
+      silico.sum <-
+        dplyr::filter(silico.sum, !(MARKERS %in% y.silico.markers | MISSINGNESS > mis.threshold.silicodata))
+    }
   }
 
 
   #### HET ####
-  # You want to remove the Y-linked markers and do a filter on missingness
 
   ### SCATTER
   plot.filename <- "3A.sexy_markers_HET_scat_plot"
@@ -999,7 +1112,7 @@ sexy_markers <- function(data,
   print(qr.fig)
 
   message(
-    "Files written: 'sexy_markers_HET_scat_plot.pdf' & 'sexy_markers_HET_qr_plot.pdf'"
+    "Files written: '3A.sexy_markers_HET_scat_plot.pdf' & '3B.sexy_markers_HET_qr_plot.pdf'"
   )
 
   # Interacive selection of threshold
@@ -1022,6 +1135,12 @@ sexy_markers <- function(data,
       x.markers <- dplyr::filter(data.sum, QR_RESIDUALS > threshold.x.markers.qr)$MARKERS
     }
     res$homogametic.het.markers <- x.markers
+  } else {
+    x.markers <- NULL
+    res$homogametic.het.markers <- NULL
+  }
+  if (length(x.markers) == 0){
+    res$homogametic.het.markers <- NULL
   }
 
 
@@ -1070,7 +1189,7 @@ sexy_markers <- function(data,
     plot.filename <-
       stringi::stri_join(path.folder, "/", plot.filename, "_", file.date, ".pdf")
 
-    scat.fig <- sex_markers_plot(
+    hist1.fig <- sex_markers_plot(
       data = data.sum,
       x = "RATIO",
       qreg = FALSE,
@@ -1086,10 +1205,15 @@ sexy_markers <- function(data,
       title = "Histogram of females over males coverage for each marker",
       plot.filename = plot.filename
     )
-    print(scat.fig)
+    print(hist1.fig)
 
-    ## TODO NEEDS AN INTERACTIVE ZOOM
-
+    ## INTERACTIVE ZOOM
+    if(interactive.filter){
+      zoom.data <-
+        radiator::radiator_question(x = "Choose the lower OR upper threshold to subset the histogram (e.g. scaling the plot to a ratio < 0.8 or ratio > 1.2)",minmax = c(-2,2))
+    } else {
+      zoom.data <- zoom.data
+    }
     ##HIST2
     plot.filename <- "4C.sexy_markers_RD_hist_subsetted_plot"
     if (!is.null(species) && !is.null(population)) {
@@ -1100,8 +1224,12 @@ sexy_markers <- function(data,
     plot.filename <-
       stringi::stri_join(path.folder, "/", plot.filename, "_", file.date, ".pdf")
 
-    scat.fig <- sex_markers_plot(
-      data = dplyr::filter(data.sum, RATIO > 1.2),
+    hist2.fig <- sex_markers_plot(
+      if(zoom.data > 1){
+        data = dplyr::filter(data.sum, RATIO > zoom.data)
+      } else if(zoom.data < 1){
+        data = dplyr::filter(data.sum, RATIO < zoom.data)
+      },
       x = "RATIO",
       qreg = FALSE,
       tuckey = FALSE,
@@ -1116,7 +1244,7 @@ sexy_markers <- function(data,
       title = "Histogram of females counts over males counts for each marker",
       plot.filename = plot.filename
     )
-    print(scat.fig)
+    print(hist2.fig)
 
     message(
       "Files written: '4A.sexy_markers_RD_scat_plot.pdf' & '4B.sexy_markers_RD_hist_plot.pdf' & '4C.sexy_markers_RD_hist_subsetted_plot.pdf'"
@@ -1142,6 +1270,12 @@ sexy_markers <- function(data,
         x.markers <- dplyr::filter(data.sum, RATIO < threshold.x.markers.RD)$MARKERS
       }
       res$homogametic.RD.markers <- x.markers
+    } else {
+      x.markers <- NULL
+      res$homogametic.RD.markers <- NULL
+    }
+    if (length(x.markers) == 0){
+      res$homogametic.RD.markers <- NULL
     }
   }
 
@@ -1192,7 +1326,7 @@ sexy_markers <- function(data,
     plot.filename <-
       stringi::stri_join(path.folder, "/", plot.filename, "_", file.date, ".pdf")
 
-    scat.fig <- sex_markers_plot(
+    hist1.fig <- sex_markers_plot(
       data = silico.sum,
       x = "RATIO",
       qreg = FALSE,
@@ -1208,10 +1342,16 @@ sexy_markers <- function(data,
       title = "Histogram of females coverage over males coverage for each SILICO",
       plot.filename = plot.filename
     )
-    print(scat.fig)
+    print(hist1.fig)
 
 
-    ## TODO NEEDS AN INTERACTIVE ZOOM
+    ## INTERACTIVE ZOOM
+    if(interactive.filter){
+      zoom.silicodata <-
+        radiator::radiator_question(x = "Choose the lower OR upper threshold to subset the histogram (e.g. scaling the plot to a ratio < 0.8 or ratio > 1.2)",minmax = c(-2,2))
+    } else {
+      zoom.silicodata <- zoom.silicodata
+    }
     ##HIST2
     plot.filename <- "5C.sexy_markers_SILICO_RD_hist_subsetted_plot"
     if (!is.null(species) && !is.null(population)) {
@@ -1222,8 +1362,12 @@ sexy_markers <- function(data,
     plot.filename <-
       stringi::stri_join(path.folder, "/", plot.filename, "_", file.date, ".pdf")
 
-    scat.fig <- sex_markers_plot(
-      data = dplyr::filter(silico.sum, RATIO > 1.2),
+    hist2.fig <- sex_markers_plot(
+      if(zoom.silicodata > 1){
+        data = dplyr::filter(data.sum, RATIO > zoom.silicodata)
+      } else if(zoom.silicodata < 1){
+        data = dplyr::filter(data.sum, RATIO < zoom.silicodata)
+      },
       x = "RATIO",
       qreg = FALSE,
       tuckey = FALSE,
@@ -1238,7 +1382,7 @@ sexy_markers <- function(data,
       title = "Histogram of females coverage over males coverage for each SILICO",
       plot.filename = plot.filename
     )
-    print(scat.fig)
+    print(hist2.fig)
 
     message(
       "Files written: '5A.sexy_markers_SILICO_RD_scat_plot.pdf' & '5B.sexy_markers_SILICO_RD_hist_plot.pdf' & '5C.sexy_markers_SILICO_RD_hist_subsetted_plot.pdf'"
@@ -1266,6 +1410,12 @@ sexy_markers <- function(data,
           dplyr::filter(silico.sum, RATIO < threshold.x.markers.RD.silico)$MARKERS
       }
       res$homogametic.RD.silico.markers <- x.markers
+    } else {
+      x.markers <- NULL
+      res$homogametic.RD.silico.markers <- NULL
+    }
+    if (length(x.markers) == 0){
+      res$homogametic.RD.silico.markers <- NULL
     }
   }
 
@@ -1294,121 +1444,173 @@ sexy_markers <- function(data,
     silico <- NULL
   }
 
-  res$sexy.summary <-
-    tibble::tibble(
-      SEX_MARKERS =
-        c(
-          res$heterogametic.markers,
-          res$heterogametic.silico.markers,
-          res$homogametic.het.markers,
-          res$homogametic.RD.markers,
-          res$homogametic.RD.silico.markers
-        ),
-      CLONE_ID =
-        c(
-          meta$LOCUS[meta$MARKERS %in% res$heterogametic.markers],
-          res$heterogametic.silico.markers,
-          meta$LOCUS[meta$MARKERS %in% res$homogametic.het.markers],
-          meta$LOCUS[meta$MARKERS %in% res$homogametic.RD.markers],
-          res$homogametic.RD.silico.markers
-        ),
-      METHOD =
-        c(
-          rep(
-            "presence/absence_method-SNP",
-            length(res$heterogametic.markers)
+  if (!is.null(
+    c(
+      res$heterogametic.markers,
+      res$heterogametic.silico.markers,
+      res$homogametic.het.markers,
+      res$homogametic.RD.markers,
+      res$homogametic.RD.silico.markers
+    )
+  )) {
+    res$sexy.summary <-
+      tibble::tibble(
+        SEX_MARKERS =
+          c(
+            res$heterogametic.markers,
+            res$heterogametic.silico.markers,
+            res$homogametic.het.markers,
+            res$homogametic.RD.markers,
+            res$homogametic.RD.silico.markers
           ),
-          rep(
-            "presence/absence_method-SILICO",
-            length(res$heterogametic.silico.markers)
+        CLONE_ID =
+          c(
+            meta$LOCUS[meta$MARKERS %in% res$heterogametic.markers],
+            res$heterogametic.silico.markers,
+            meta$LOCUS[meta$MARKERS %in% res$homogametic.het.markers],
+            meta$LOCUS[meta$MARKERS %in% res$homogametic.RD.markers],
+            res$homogametic.RD.silico.markers
           ),
-          rep(
-            "heterozygosity_method-SNP",
-            length(res$homogametic.het.markers)
-          ),
-          rep("Coverage_method-SNP", length(res$homogametic.RD.markers)),
-          rep(
-            "Coverage_method-SILICO",
-            length(res$homogametic.RD.silico.markers)
-          )
-        ),
-      MARKER_TYPE =
-        c(
-          rep("Heterogametic_sex-marker", length(
-            c(res$heterogametic.markers, res$heterogametic.silico.markers)
-          )),
-          rep("Homogametic_sex-marker", length(
-            c(
-              res$homogametic.het.markers,
-              res$homogametic.RD.markers,
-              res$homogametic.RD.silico.markers
+        METHOD =
+          c(
+            rep(
+              "presence/absence_method-SNP",
+              length(res$heterogametic.markers)
+            ),
+            rep(
+              "presence/absence_method-SILICO",
+              length(res$heterogametic.silico.markers)
+            ),
+            rep(
+              "heterozygosity_method-SNP",
+              length(res$homogametic.het.markers)
+            ),
+            rep("Coverage_method-SNP", length(res$homogametic.RD.markers)),
+            rep(
+              "Coverage_method-SILICO",
+              length(res$homogametic.RD.silico.markers)
             )
-          ))
+          ),
+        MARKER_TYPE =
+          c(
+            rep("Heterogametic_sex-marker", length(
+              c(
+                res$heterogametic.markers,
+                res$heterogametic.silico.markers
+              )
+            )),
+            rep("Homogametic_sex-marker", length(
+              c(
+                res$homogametic.het.markers,
+                res$homogametic.RD.markers,
+                res$homogametic.RD.silico.markers
+              )
+            ))
+          )
+      )
+    res$sexy.summary %<>% dplyr::mutate(
+      SEQUENCE =
+        c(
+          meta$SEQUENCE[meta$MARKERS %in% SEX_MARKERS[METHOD == "presence/absence_method-SNP"]],
+          silico$SEQUENCE[silico$MARKERS %in% SEX_MARKERS[METHOD ==
+                                                            "presence/absence_method-SILICO"]],
+          meta$SEQUENCE[meta$MARKERS %in% SEX_MARKERS[METHOD ==
+                                                        "heterozygosity_method-SNP"]],
+          meta$SEQUENCE[meta$MARKERS %in% SEX_MARKERS[METHOD ==
+                                                        "Coverage_method-SNP"]],
+          silico$SEQUENCE[silico$MARKERS %in% SEX_MARKERS[METHOD ==
+                                                            "Coverage_method-SILICO"]]
         )
     )
-  res$sexy.summary %<>% dplyr::mutate(
-    SEQUENCE =
-      c(
-        meta$SEQUENCE[meta$MARKERS %in% SEX_MARKERS[METHOD == "presence/absence_method-SNP"]],
-        silico$SEQUENCE[silico$MARKERS %in% SEX_MARKERS[METHOD ==
-                                                          "presence/absence_method-SILICO"]],
-        meta$SEQUENCE[meta$MARKERS %in% SEX_MARKERS[METHOD ==
-                                                      "heterozygosity_method-SNP"]],
-        meta$SEQUENCE[meta$MARKERS %in% SEX_MARKERS[METHOD ==
-                                                      "Coverage_method-SNP"]],
-        silico$SEQUENCE[silico$MARKERS %in% SEX_MARKERS[METHOD ==
-                                                          "Coverage_method-SILICO"]]
-      )
-  )
+    message("Summary table of sex-linked markers by method of discovery:")
+    print(summary(as.factor(res$sexy.summary$METHOD)))
+  } else {
+    res$sexy.summary <- NULL
+  }
 
-  message(
-    "Summary table of sex-linked markers by method of discovery:"
-  )
-print(summary(as.factor(res$sexy.summary$METHOD)))
 
-  # common markers plot
-  n.pop = length(unique(res$sexy.summary$METHOD))
-  plot.data <- dplyr::distinct(res$sexy.summary, SEX_MARKERS, METHOD) %>%
-    dplyr::mutate(
-      n = rep(1, n()),
-      METHOD = stringi::stri_join("METHOD_", METHOD)
-    ) %>%
-    tidyr::spread(data = ., key = METHOD, value = n, fill = 0) %>%
-    data.frame(.)
+  ## Upsetr plot
+  if (sum(
+    !is.null(res$heterogametic.markers),
+    !is.null(res$heterogametic.silico.markers),
+    !is.null(res$homogametic.het.markers),
+    !is.null(res$homogametic.RD.markers),
+    !is.null(res$homogametic.RD.silico.markers)) > 1) {
+    # common markers plot
+    n.pop = length(unique(res$sexy.summary$METHOD))
+    plot.data <-
+      dplyr::distinct(res$sexy.summary, SEX_MARKERS, METHOD) %>%
+      dplyr::mutate(n = rep(1, n()),
+                    METHOD = stringi::stri_join("METHOD_", METHOD)) %>%
+      tidyr::spread(
+        data = .,
+        key = METHOD,
+        value = n,
+        fill = 0
+      ) %>%
+      data.frame(.)
 
-  message(
-    "The 'upset' plot shows any overlapping sex-linked markers between methods"
-  )
+    message("The 'upset' plot shows any overlapping sex-linked markers between methods")
 
-  Upsetplot <- UpSetR::upset(
-    plot.data,
-    nsets = n.pop,
-    order.by = "freq",
-    empty.intersections = NULL)
-  print(Upsetplot)
+    Upsetplot <- UpSetR::upset(
+      plot.data,
+      nsets = n.pop,
+      order.by = "freq",
+      empty.intersections = NULL
+    )
+    print(Upsetplot)
 
-  plot.filename <- stringi::stri_join(
-    "6.sexy.markers_upsetrplot_", file.date, ".pdf")
-  plot.filename <- file.path(path.folder, plot.filename)
+    plot.filename <-
+      stringi::stri_join("6.sexy.markers_upsetrplot_", file.date, ".pdf")
+    plot.filename <- file.path(path.folder, plot.filename)
 
-  pdf(file = plot.filename, onefile = FALSE)
-  Upsetplot
-  dev.off()
-  message(
-    "File written: '6.sexy.markers_upsetrplot.pdf'"
-  )
-
+    pdf(file = plot.filename, onefile = FALSE)
+    UpSetR::upset(
+      plot.data,
+      nsets = n.pop,
+      order.by = "freq",
+      empty.intersections = NULL
+    )
+    dev.off()
+    message("File written: '6.sexy.markers_upsetrplot.pdf'")
+  } else{
+    message("Not enough markers found with different methods to analyse the overlap between methods (i.e. upsetR plot")
+  }
 
   ## FASTA file with sex markers for all methods ##
-    afile <- file( file.path(path.folder, "7.sexy_markers_sequences.fasta"), open='w')
-    for(i in 1:length(res$sexy.summary$SEX_MARKERS)){
-      cat(paste('>', res$sexy.summary$MARKER_TYPE[i], "|", res$sexy.summary$METHOD[i], "|",res$sexy.summary$SEX_MARKERS[i], '\n',res$sexy.summary$SEQUENCE[i],'\n', sep = ''), sep='', file=afile)
+    if (!is.null(
+      c(
+        res$heterogametic.markers,
+        res$heterogametic.silico.markers,
+        res$homogametic.het.markers,
+        res$homogametic.RD.markers,
+        res$homogametic.RD.silico.markers
+      )
+    )) {
+    afile <-
+      file(file.path(path.folder, "7.sexy_markers_sequences.fasta"),
+           open = 'w')
+    for (i in 1:length(res$sexy.summary$SEX_MARKERS)) {
+      cat(
+        paste(
+          '>',
+          res$sexy.summary$MARKER_TYPE[i],
+          "|",
+          res$sexy.summary$METHOD[i],
+          "|",
+          res$sexy.summary$SEX_MARKERS[i],
+          '\n',
+          res$sexy.summary$SEQUENCE[i],
+          '\n',
+          sep = ''
+        ),
+        sep = '',
+        file = afile
+      )
     }
-    close( afile)
-    message(
-      "File written:'7.sexy_markers_sequences.fasta'"
-    )
-
+    close(afile)
+    message("File written:'7.sexy_markers_sequences.fasta'")
+  }
 
   return(res)
 }#End sexy_markers
@@ -1585,9 +1787,7 @@ summarize_sex <- function (data, silicodata, data.source, coverage.thresholds = 
             residuals
         )
     )
-
-  }
-    else {
+  } else {
     data.sum <- NULL
   }
 
@@ -1628,8 +1828,10 @@ summarize_sex <- function (data, silicodata, data.source, coverage.thresholds = 
     } else {
       silico.sum <- silicodata %>%
         dplyr::group_by(STRATA, MARKERS) %>%
-        dplyr::summarise(PRESENCE_ABSENCE = length(INDIVIDUALS[VALUE < coverage.thresholds])
-                         / length(INDIVIDUALS[!is.na(VALUE)])) %>%
+        # dplyr::summarise(PRESENCE_ABSENCE = length(INDIVIDUALS[VALUE < coverage.thresholds])
+        #                  / length(INDIVIDUALS[!is.na(VALUE)])) %>%
+        dplyr::summarise(PRESENCE_ABSENCE = length(INDIVIDUALS[VALUE[!is.na(VALUE)] < coverage.thresholds])
+                         / length(INDIVIDUALS[!is.na(VALUE)])) %>% #na.rm = TRUE
         dplyr::ungroup(.) %>%
         data.table::as.data.table(.) %>%
         data.table::dcast.data.table(

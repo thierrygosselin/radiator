@@ -51,7 +51,9 @@ stingently will results in
 false positve or false negative detections.
 Default: \code{filters = TRUE}.}
 
-\item{interactive.filter}{(optional, logical)
+\item{interactive.filter}{(optional, logical) When \code{interactive.filter = TRUE}
+the function will ask for your input to define thresholds. If \code{interactive.filter = FALSE}
+the function expects additional arguments (see advanced mode).
 Default: \code{interactive.filter = TRUE}.}
 
 \item{parallel.core}{(optional) The number of core used for parallel
@@ -132,14 +134,48 @@ in the Y-chromosome; and vice versa for the W-linked markers.
 \strong{Homogametic sex-markers:}
 We have two different methods to identify markers on X or Z chromosomes:
 \itemize{
-\item \strong{Heterozygosity method:} By looking at the heterozygosity of a marker between sexes, we can
+\item \strong{Heterozygosity method:} By looking at the heterozygosity of a
+marker between sexes, we can
 identify markers that are always homozygous in one sex (e.g. males for an
 XY system), while exhibiting an intermediate range of heterozygosity in the
 other sex (0.1 - 0.5).
-\item \strong{Coverage method:} If the data includes count information, this function will look for
+\item \strong{Coverage method:} If the data includes count information, this
+function will look for
 markers that have double the number of counts for either of the sexes.
 For example if an XY/XX system is present, females are expected to have
 double the number of counts for markers on the X chromosome.
+}
+}
+
+\section{Advance mode}{
+
+
+\emph{dots-dots-dots ...} allows to pass several arguments for fine-tuning the function:
+\enumerate{
+\item \code{mis.threshold.data}: Threshold to filter the SNP data on missingness.
+Only if \code{interactive.filter = FALSE}.
+\item \code{mis.threshold.silicodata}  Threshold to filter the silico data on
+missingness. Only if \code{interactive.filter = FALSE}.
+\item \code{threshold.y.markers}: Threshold to select heterogametic sex-linked
+markers from the SNP data with the \strong{presence/absence method}. Only
+if \code{interactive.filter = FALSE}.
+\item \code{tau}:The quantile used in regression to distinguish homogametic markers
+with the \strong{heterozygosity method}. Default \code{tau = 0.03}.
+\item \code{threshold.x.markers.qr}: Threshold to select homogametic sex-linked
+markers from the SNP data with the \strong{heterozygosity method}. Only
+if \code{interactive.filter = FALSE}.
+\item \code{zoom.data}: Threshold to subset the F/M ratio of mean SNP coverage.
+Used to improve the histogrom resolution to select a better \code{threshold.x.markers.RD}
+threshold. Only if \code{interactive.filter = FALSE}.
+\item \code{threshold.x.markers.RD}: Threshold to select homogametic sex-linked
+markers from the SNP data with the \strong{coverage method}. Only
+if \code{interactive.filter = FALSE}.
+\item \code{zoom.silicodata}: Threshold to subset the F/M ratio of mean silico coverage.
+Used to improve the histogrom resolution to select a better \code{threshold.x.markers.RD.silico}
+threshold. Only if \code{interactive.filter = FALSE}.
+\item \code{threshold.x.markers.RD.silico}: Threshold to select homogametic sex-linked
+markers from the silico data with the \strong{coverage method}. Only
+if \code{interactive.filter = FALSE}.
 }
 }
 
