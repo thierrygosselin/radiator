@@ -545,7 +545,7 @@ sexy_markers <- function(data,
     qreg = FALSE,
     tuckey = TRUE,
     x.title = "Mean of males and females",
-    y.title = "Difference between males and females (<- Y/W ->)",
+    y.title = "Difference between males and females (<- W/Y ->)",
     subtitle = if (is.null(population)) {
       paste0("Sex is ", SexID, " assigned")
     } else {
@@ -638,7 +638,7 @@ sexy_markers <- function(data,
       qreg = FALSE,
       tuckey = TRUE,
       x.title = "Mean of males and females",
-      y.title = "Difference between males and females (<- Y/W ->)",
+      y.title = "Difference between males and females (<- W/Y ->)",
       subtitle = if (is.null(population)) {
         paste0("Sex is ", SexID, " assigned")
       } else {
