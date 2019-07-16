@@ -130,7 +130,7 @@
 #' @section Advance mode:
 #'
 #' \emph{dots-dots-dots ...} allows to pass several arguments for fine-tuning the function:
-#' \enumerate{
+#' \itemize{
 #' \item \code{mis.threshold.data}: Threshold to filter the SNP data on missingness.
 #' Only if \code{interactive.filter = FALSE}.
 #' \item \code{mis.threshold.silicodata}  Threshold to filter the silico data on
@@ -171,7 +171,13 @@
 #' @export
 #' @rdname sexy_markers
 
-#' @return A list with ...
+#' @return: The created object contains:
+#' \enumerate{
+#' \item  \code{sum} A list with (1) the summarised SNP data per sex and
+#' (2) the summarised silico data per sex. This should allow you to re-create the various plots.
+#' \item A vector with the names of the sex-linked marker. One vector for each method.
+#' \item A dataframe with a summary of the sex-linked markers and their sequence (if available)
+#' }
 
 #' @examples
 #' \dontrun{
@@ -201,7 +207,6 @@ sexy_markers <- function(data,
 
   # Test
   # library(radiator)
-  # setwd("C:/Users/fdevloo/OneDrive - University of Tasmania/PhD/4.Sex markers/3.Results")
   # coverage.thresholds = 1 ##NEEDS TO BE SET TO 1 if genotype data
   # boost.analysis = FALSE
   # filters = TRUE
@@ -219,8 +224,6 @@ sexy_markers <- function(data,
   # strata = "../1.Data/G.galeus/SchoolShark_strata.tsv"
 
   # parallel.core = parallel::detectCores() - 1
-  # data = "example_vcf2dadi_ferchaud_2015.vcf"
-  # strata = "strata.stickleback.tsv"
 
 
   if (boost.analysis) message("Under construction: come back next week... ")
