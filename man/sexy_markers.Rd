@@ -65,7 +65,13 @@ for fine-tuning the function. Also used for legacy arguments (see details or
 special section)}
 }
 \value{
-A list with ...
+The created object contains:
+\enumerate{
+\item A list with (1) the summarised SNP data per sex and
+(2) the summarised silico data per sex. This should allow you to re-create the various plots.
+\item A vector with the names of the sex-linked marker. One vector for each method.
+\item A dataframe with a summary of the sex-linked markers and their sequence (if available).
+}
 }
 \description{
 This function identifies sex-linked markers putatively located on
@@ -151,7 +157,7 @@ double the number of counts for markers on the X chromosome.
 
 
 \emph{dots-dots-dots ...} allows to pass several arguments for fine-tuning the function:
-\enumerate{
+\itemize{
 \item \code{mis.threshold.data}: Threshold to filter the SNP data on missingness.
 Only if \code{interactive.filter = FALSE}.
 \item \code{mis.threshold.silicodata}  Threshold to filter the silico data on
