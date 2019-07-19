@@ -946,7 +946,14 @@ sexy_markers <- function(data,
 
     #set new sexID for Het analysis
     if (sex.id.input == 2) {
-      SexID <- "genetically (SNP)"
+      readr::write_tsv(
+        x = y.data,
+        path = file.path(
+          path.folder,
+          "sexy_markers_new_strata_with_genetic_sex_according_to_SNPdata.tsv"
+        )
+      )
+      message("New strata file with genetic sex written.")
       ### recalculate data based on new sexID
       data.genetic <-
         dplyr::rename(data, VISUAL_STRATA = STRATA) %>%
@@ -969,6 +976,14 @@ sexy_markers <- function(data,
       }
 
     } else if (sex.id.input == 3) {
+      readr::write_tsv(
+        x = y.silico.data,
+        path = file.path(
+          path.folder,
+          "sexy_markers_new_strata_with_genetic_sex_according_to_SILICOdata.tsv"
+        )
+      )
+      message("New strata file with genetic sex written.")
       SexID <- "genetically (SILICO)"
       ### recalculate data based on new sexID
       data.genetic <-
