@@ -226,6 +226,11 @@ sexy_markers <- function(data,
   # strata = "../1.Data/G.galeus/SchoolShark_strata.tsv"
 
   # parallel.core = parallel::detectCores() - 1
+  {
+    cat("################################################################################\n")
+    cat("######################### radiator::sexy_markers################################\n")
+    cat("################################################################################\n")
+  }
 
 
   if (boost.analysis) message("Under construction: come back next week... ")
@@ -352,6 +357,10 @@ sexy_markers <- function(data,
     rlang::abort("Input not supported for this function: read function documentation")
   }
 
+  if(Sys.info()[['sysname']]=="Windows"){
+    message("There is currently an issue with the cluster allocation in WINDOWS systems. Consequently, we set the 'parallel.core' to 1")
+    parallel.core = 1
+  }
 
   # Filter monomorphic ---------------------------------------------------------
   data <- radiator::filter_monomorphic(
@@ -474,6 +483,13 @@ sexy_markers <- function(data,
   # 2. heterozygosity per strata and markers: xz
   # 3. read depth per strata and markers markers: xz
 
+  {
+    cat("################################################################################\n")
+    cat("######################## Start finding sex-linked markers ######################\n")
+    cat("################################################################################\n")
+  }
+
+
   # Summarise DArT counts/silico and VCFs---------------------------------------
   if (is.null(tau)) tau <- 0.03
 
@@ -562,11 +578,11 @@ sexy_markers <- function(data,
 
   # Interacive selection of threshold
   if (interactive.filter) {
-    filter.y.markers <- radiator::radiator_question(x = "P/A method of SNPs: \nLook at the figures: Do you want to filter the data (y/n): ", answer.opt = c("y", "n"))
+    filter.y.markers <- radiator::radiator_question(x = "P/A method of SNPs: \nLook at the figures: Do you want to select Y/W-linked markers (y/n): ", answer.opt = c("y", "n"))
 
     if (filter.y.markers == "y") {
       threshold.y.markers <-
-        radiator::radiator_question(x = "Choose the threshold for y sex markers, note that the Y-axis is inverted (-1 to 1): ",
+        radiator::radiator_question(x = "Choose the threshold for Y/W-linked markers, note that the Y-axis is inverted (-1 to 1): ",
                                     minmax = c(-1, 1))
     } else {
       threshold.y.markers <- NULL
@@ -655,11 +671,11 @@ sexy_markers <- function(data,
 
     # Interacive selection of threshold
     if (interactive.filter) {
-      filter.y.markers <- radiator::radiator_question(x = "P/A method of SILICOs:\nLook at the figures: Do you want to filter the data (y/n): ", answer.opt = c("y", "n"))
+      filter.y.markers <- radiator::radiator_question(x = "P/A method of SILICOs:\nLook at the figures: Do you want to select Y/W-linked markers (y/n): ", answer.opt = c("y", "n"))
 
       if (filter.y.markers == "y") {
         threshold.y.silico.markers <-
-          radiator::radiator_question(x = "Choose the threshold for y SILICO sex markers, note that the Y-axis is inverted (-1 to 1): ",
+          radiator::radiator_question(x = "Choose the threshold for Y/W-linked SILICO markers, note that the Y-axis is inverted (-1 to 1): ",
                                       minmax = c(-1, 1))
       } else {
         threshold.y.silico.markers <- NULL
@@ -1137,11 +1153,11 @@ sexy_markers <- function(data,
 
   # Interacive selection of threshold
   if (interactive.filter) {
-    filter.x.markers <- radiator::radiator_question(x = "Heterozygosity method of SNPs:\nLook at the figures: Do you want to filter the data (y/n): ", answer.opt = c("y", "n"))
+    filter.x.markers <- radiator::radiator_question(x = "Heterozygosity method of SNPs:\nLook at the figures: Do you want to select X/Z-linked markers (y/n): ", answer.opt = c("y", "n"))
 
     if (filter.x.markers == "y") {
       threshold.x.markers.qr <-
-        radiator::radiator_question(x = "Choose the threshold for x sex markers(-1 to 1): ",
+        radiator::radiator_question(x = "Choose the threshold for X/Z-linked markers (-1 to 1): ",
                                     minmax = c(-1, 1))
     } else {
       threshold.x.markers.qr <- NULL
@@ -1273,11 +1289,11 @@ sexy_markers <- function(data,
 
     # Interacive selection of threshold
     if (interactive.filter) {
-      filter.x.markers <- radiator::radiator_question(x = "Coverage method of SNPs:\nLook at the figures: Do you want to filter the data (y/n): ", answer.opt = c("y", "n"))
+      filter.x.markers <- radiator::radiator_question(x = "Coverage method of SNPs:\nLook at the figures: Do you want to select X/Z-linked markers (y/n): ", answer.opt = c("y", "n"))
 
       if (filter.x.markers == "y") {
         threshold.x.markers.RD <-
-          radiator::radiator_question(x = "Choose the RATIO threshold for x sex markers: ", minmax = c(-Inf,Inf) )
+          radiator::radiator_question(x = "Choose the RATIO threshold for X/Z-linked markers: ", minmax = c(-Inf,Inf) )
       } else {
         threshold.x.markers.RD <- NULL
       }
@@ -1411,11 +1427,11 @@ sexy_markers <- function(data,
     # Interacive selection of threshold
     if (interactive.filter) {
       filter.x.markers <-
-        radiator::radiator_question(x = "Coverage method of SILICOs:\nLook at the figures: Do you want to filter the data (y/n): ", answer.opt = c("y", "n"))
+        radiator::radiator_question(x = "Coverage method of SILICOs:\nLook at the figures: Do you want to select X/Z-linked markers (y/n): ", answer.opt = c("y", "n"))
 
       if (filter.x.markers == "y") {
         threshold.x.markers.RD.silico <-
-          radiator::radiator_question(x = "Choose the RATIO threshold for x SILICO sex markers: ", minmax = c(-Inf, Inf))
+          radiator::radiator_question(x = "Choose the RATIO threshold for X/Z-linked SILICO markers: ", minmax = c(-Inf, Inf))
       } else {
         threshold.x.markers.RD.silico <- NULL
       }
@@ -1528,6 +1544,7 @@ sexy_markers <- function(data,
             ))
           )
       )
+    # TODO add check for when SEQUENCE data is not available
     res$sexy.summary %<>% dplyr::mutate(
       SEQUENCE =
         c(
@@ -1598,6 +1615,8 @@ sexy_markers <- function(data,
   }
 
   ## FASTA file with sex markers for all methods ##
+  # TODO add check for when SEQUENCE data is not available
+
     if (!is.null(
       c(
         res$heterogametic.markers,
