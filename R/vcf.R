@@ -520,6 +520,10 @@ read_vcf <- function(
   # VCF: bi- or multi-alllelic--------------------------------------------------
   biallelic <- detect_biallelic_markers(data = gds, verbose = verbose)
 
+  # stacks haplotype VCF...
+  if (!biallelic && stacks.2) dp <- FALSE
+
+
   # VCF clean sample id---------------------------------------------------------
   individuals.vcf <- tibble::tibble(
     INDIVIDUALS_VCF = SeqArray::seqGetData(gds, "sample.id")) %>%
@@ -1750,6 +1754,16 @@ tidy_vcf <- function(
           vcf.metadata <- TRUE
         }
       }
+
+      # stacks VCF haplotypes
+      if (!biallelic) {
+        data.source <- radiator::extract_data_source(gds = data)
+        if (stringi::stri_detect_fixed(str = data.source, pattern = "Stacks")) {
+          overwrite.metadata <- "GT"
+        }
+      }
+
+
       #Check
       # vcf.metadata
       # overwrite.metadata

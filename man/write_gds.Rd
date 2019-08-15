@@ -14,7 +14,7 @@ a tidy data frame in wide or long format in the working directory.
 Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.}
 
 \item{data.source}{(optional, character) The name of the software that
-generated the data. e.g. \code{data.source = "Stacks v.2.2"}.
+generated the data. e.g. \code{data.source = "Stacks v.2.4"}.
 Default: \code{data.source = NULL}.}
 
 \item{filename}{(optional) The file name of the Genomic Data Structure (GDS) file.

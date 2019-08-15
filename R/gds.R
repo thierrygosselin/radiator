@@ -860,6 +860,9 @@ extract_coverage <- function(
 
   coverage.info <- list()
   data.source <- extract_data_source(gds)
+
+
+
   n.markers<- summary_gds(gds, verbose = FALSE)$n.markers
 
   # DArT counts and VCFs -------------------------------------------------------
@@ -872,11 +875,18 @@ extract_coverage <- function(
       whitelist = TRUE
     )
     if (length(depth) == 0 || is.null(depth)) {
-      # detect FORMAT fields available
-      have <-  SeqArray::seqSummary(
-        gdsfile = gds,
-        varname = "annotation/format",
-        check = "none", verbose = FALSE)$ID
+
+      if (stringi::stri_detect_fixed(str = data.source, pattern = "Stacks") &&
+          !gdsfmt::read.gdsn(gdsfmt::index.gdsn(
+            node = gds, path = "radiator/biallelic", silent = TRUE))) {
+        have <- integer(0)
+      } else {
+        # detect FORMAT fields available
+        have <-  SeqArray::seqSummary(
+          gdsfile = gds,
+          varname = "annotation/format",
+          check = "none", verbose = FALSE)$ID
+      }
 
       if (length(have) > 0) {
         want <- c("DP", "AD", "CATG")
@@ -1623,6 +1633,12 @@ generate_id_stats <- function (
   parallel.core = parallel::detectCores() - 1,
   verbose = TRUE
 ) {
+
+  ## TEST
+  # missing = TRUE
+  # heterozygosity = TRUE
+  # coverage = TRUE
+  # plot = TRUE
 
   if (is.null(path.folder)) path.folder <- getwd()
   res <- list() # return result in this list
@@ -2470,7 +2486,7 @@ gds2tidy <- function(
 #' Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
 
 #' @param data.source (optional, character) The name of the software that
-#' generated the data. e.g. \code{data.source = "Stacks v.2.2"}.
+#' generated the data. e.g. \code{data.source = "Stacks v.2.4"}.
 #' Default: \code{data.source = NULL}.
 
 #' @param filename (optional) The file name of the Genomic Data Structure (GDS) file.
