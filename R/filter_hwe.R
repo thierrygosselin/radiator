@@ -41,14 +41,21 @@
 #' @inheritParams radiator_common_arguments
 
 
-#' @param midp.threshold (character, optional)
+#' @param midp.threshold (integer, optional)
 #' By default the function generates blacklists/whitelists of markers and
 #' filtered tidy datasets for the 5 mid p-value.
 #' However, to get a final filtered object associated with the output of the
 #' function, user need to choose one
-#' of the 5 mid p-value \code{"*", "**", "***", "****", "*****"}.
-#' With default, a very conservative mid p-value threshold (= 0.0001) is selected.
-#' Default: \code{midp.threshold = "****"}.
+#' of the 5 mid p-value:
+#' \itemize{
+#' \item \code{1} = 0.05 (*)
+#' \item \code{2} = 0.001 (**)
+#' \item \code{3} = 0.0001 (***)
+#' \item \code{4} = 0.0001 (****)
+#' \item \code{5} = 0.00001 (*****)
+#' }.
+#' With default, a very conservative mid p-value threshold is selected.
+#' Default: \code{midp.threshold = 4}.
 
 #' @param filename (optional) The function uses \code{\link[fst]{write.fst}},
 #' to write the tidy data frame in
@@ -83,13 +90,13 @@
 #' Disk space is cheap! Consequently, the function will automatically generate
 #' several blacklists/whitelists of markers and
 #' filtered tidy data (in the directory)
-#' based on the \code{hw.pop.threshold} for 4 groups of mid p-values:
+#' based on the \code{hw.pop.threshold} for 5 groups of mid p-values:
 #' \itemize{
-#' \item MID_P_VALUE <= 0.00001: *****
-#' \item MID_P_VALUE <= 0.0001: ****
-#' \item MID_P_VALUE <= 0.001: ***
-#' \item MID_P_VALUE <= 0.01: **
-#' \item MID_P_VALUE <= 0.05: *
+#' \item 1: MID_P_VALUE <= 0.00001: *****
+#' \item 2: MID_P_VALUE <= 0.0001: ****
+#' \item 3: MID_P_VALUE <= 0.001: ***
+#' \item 4: MID_P_VALUE <= 0.01: **
+#' \item 5: MID_P_VALUE <= 0.05: *
 #' }
 #'
 #' Test the sensitivity of downstream analysis and delete unwanted datasets.
@@ -247,7 +254,7 @@ filter_hwe <- function(
   filter.hwe = TRUE,
   strata = NULL,
   hw.pop.threshold = NULL,
-  midp.threshold = "****",
+  midp.threshold = 4L,
   filename = NULL,
   parallel.core = parallel::detectCores() - 1,
   verbose = TRUE,
@@ -262,7 +269,7 @@ filter_hwe <- function(
     # data <- gds
     # strata = NULL
     # hw.pop.threshold = NULL
-    # midp.threshold = "****"
+    # midp.threshold = 4L
     # filename = NULL
     # parallel.core = parallel::detectCores() - 1
     # verbose = TRUE
@@ -312,7 +319,7 @@ filter_hwe <- function(
 
     # Checking for missing and/or default arguments ------------------------------
     if (missing(data)) rlang::abort("data is missing")
-    if (is.null(midp.threshold)) midp.threshold <- "****"
+    if (is.null(midp.threshold)) midp.threshold <- 4L
 
 
     # Message about steps taken during the process ---------------------------------
