@@ -81,7 +81,7 @@ filtering coverage and genotype likelihood (see details)." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.2</span>
       </span>
     </div>
 
@@ -165,7 +165,7 @@ filtering coverage and genotype likelihood (see details).</p>
     </div>
 
     <pre class="usage"><span class='fu'>filter_hwe</span>(<span class='no'>data</span>, <span class='kw'>interactive.filter</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>filter.hwe</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>strata</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>hw.pop.threshold</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>midp.threshold</span> <span class='kw'>=</span> <span class='st'>"****"</span>,
+  <span class='kw'>strata</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>hw.pop.threshold</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>midp.threshold</span> <span class='kw'>=</span> <span class='fl'>4L</span>,
   <span class='kw'>filename</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>parallel.core</span> <span class='kw'>=</span> <span class='kw pkg'>parallel</span><span class='kw ns'>::</span><span class='fu'><a href='https://www.rdocumentation.org/packages/parallel/topics/detectCores'>detectCores</a></span>() - <span class='fl'>1</span>,
   <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='no'>...</span>)</pre>
     
@@ -212,14 +212,20 @@ Default: <code>hw.pop.threshold = NULL</code>.</p></td>
     </tr>
     <tr>
       <th>midp.threshold</th>
-      <td><p>(character, optional)
+      <td><p>(integer, optional)
 By default the function generates blacklists/whitelists of markers and
 filtered tidy datasets for the 5 mid p-value.
 However, to get a final filtered object associated with the output of the
 function, user need to choose one
-of the 5 mid p-value <code>"*", "**", "***", "****", "*****"</code>.
-With default, a very conservative mid p-value threshold (= 0.0001) is selected.
-Default: <code>midp.threshold = "****"</code>.</p></td>
+of the 5 mid p-value:</p><ul>
+<li><p><code>1</code> = 0.05 (*)</p></li>
+<li><p><code>2</code> = 0.001 (**)</p></li>
+<li><p><code>3</code> = 0.0001 (***)</p></li>
+<li><p><code>4</code> = 0.0001 (****)</p></li>
+<li><p><code>5</code> = 0.00001 (*****)</p></li>
+</ul><p>.
+With default, a very conservative mid p-value threshold is selected.
+Default: <code>midp.threshold = 4</code>.</p></td>
     </tr>
     <tr>
       <th>filename</th>
@@ -312,12 +318,12 @@ markers.</p>
 Disk space is cheap! Consequently, the function will automatically generate
 several blacklists/whitelists of markers and
 filtered tidy data (in the directory)
-based on the <code>hw.pop.threshold</code> for 4 groups of mid p-values:</p><ul>
-<li><p>MID_P_VALUE &lt;= 0.00001: *****</p></li>
-<li><p>MID_P_VALUE &lt;= 0.0001: ****</p></li>
-<li><p>MID_P_VALUE &lt;= 0.001: ***</p></li>
-<li><p>MID_P_VALUE &lt;= 0.01: **</p></li>
-<li><p>MID_P_VALUE &lt;= 0.05: *</p></li>
+based on the <code>hw.pop.threshold</code> for 5 groups of mid p-values:</p><ul>
+<li><p>1: MID_P_VALUE &lt;= 0.00001: *****</p></li>
+<li><p>2: MID_P_VALUE &lt;= 0.0001: ****</p></li>
+<li><p>3: MID_P_VALUE &lt;= 0.001: ***</p></li>
+<li><p>4: MID_P_VALUE &lt;= 0.01: **</p></li>
+<li><p>5: MID_P_VALUE &lt;= 0.05: *</p></li>
 </ul>
     <p>Test the sensitivity of downstream analysis and delete unwanted datasets.</p>
 <p><strong>missing data</strong></p>

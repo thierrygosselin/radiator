@@ -30,7 +30,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.2</span>
       </span>
     </div>
 
@@ -86,7 +86,7 @@
       <h1>Get started with radiator</h1>
                         <h4 class="author">Thierry Gosselin</h4>
             
-            <h4 class="date">2019-05-31</h4>
+            <h4 class="date">2019-08-16</h4>
       
       
       <div class="hidden name"><code>get_started.Rmd</code></div>
@@ -103,15 +103,15 @@
 <h2 class="hasAnchor">
 <a href="#prepare-a-strata-file" class="anchor"></a>1. Prepare a strata file</h2>
 <ul>
-<li>It’s a tab separated file, e.g. <a href="https://www.dropbox.com/s/g0vsek0dmtpxntt/example.strata.tsv?dl=0">example.strata.tsv</a>.</li>
+<li>It’s a tab separated file, e.g. <a href="https://www.dropbox.com/s/g0vsek0dmtpxntt/example.strata.tsv?dl=0">example.strata.tsv</a>.</li>
 <li>A minimum of 2 columns: <code>INDIVIDUALS</code> and <code>STRATA</code> is required.</li>
 <li>The <code>STRATA</code> column identifies the individuals stratification, the hierarchical groupings: populations, sampling sites or any grouping you want.</li>
 <li>It’s like <em>stacks</em> population map file with header…</li>
 <li>DArT users: the strata requires 3 columns and is described in <code>??radiator::readr_dart</code> <a href="https://www.dropbox.com/s/utq2h6o00v55kep/example.dart.strata.tsv?dl=0">example.dart.strata.tsv</a>.</li>
 </ul>
 <p>To make sure it’s going to work properly, try:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1">radiator<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/radiator/topics/summary_strata">summary_strata</a></span>(<span class="st">"my.strata.tsv"</span>)</a>
-<a class="sourceLine" id="cb1-2" title="2"><span class="co"># more details in with `??radiator::summary_strata`</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1">radiator<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/radiator/topics/summary_strata">summary_strata</a></span>(<span class="st">"my.strata.tsv"</span>)</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="co"># more details in with `??radiator::summary_strata`</span></a></code></pre></div>
 </div>
 <div id="filter-your-radseq-data" class="section level2">
 <h2 class="hasAnchor">
@@ -123,11 +123,11 @@
 <li>The function is made of filtering modules that user’s can also access separately or in combination.</li>
 <li>For 95% of users, <code>filter_rad</code> will be enough to start exploring the biology!</li>
 </ul>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1">data &lt;-<span class="st"> </span>radiator<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/radiator/topics/filter_rad">filter_rad</a></span>(</a>
-<a class="sourceLine" id="cb2-2" title="2">    <span class="dt">data =</span> <span class="st">"my.vcf"</span>,</a>
-<a class="sourceLine" id="cb2-3" title="3">    <span class="dt">strata =</span> <span class="st">"my.strata.tsv"</span>, </a>
-<a class="sourceLine" id="cb2-4" title="4">    <span class="dt">output =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"genind"</span>, <span class="st">"stockr"</span>)</a>
-<a class="sourceLine" id="cb2-5" title="5">    )</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" data-line-number="1">data &lt;-<span class="st"> </span>radiator<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/radiator/topics/filter_rad">filter_rad</a></span>(</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">    <span class="dt">data =</span> <span class="st">"my.vcf"</span>,</a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">    <span class="dt">strata =</span> <span class="st">"my.strata.tsv"</span>, </a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">    <span class="dt">output =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">"genind"</span>, <span class="st">"stockr"</span>)</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">    )</a></code></pre></div>
 <p><strong>To cite radiator</strong>, inside R type <code><a href="https://www.rdocumentation.org/packages/utils/topics/citation">citation("radiator")</a></code></p>
 </div>
 </div>

@@ -67,7 +67,7 @@ RADseq (genotypes) and DArT (1-row, 2-rows genotypes)." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.2</span>
       </span>
     </div>
 
@@ -182,7 +182,7 @@ functions: <code><a href='extract_dart_target_id.html'>extract_dart_target_id</a
     <tr>
       <th>coverage.thresholds</th>
       <td><p>(optional, integer) The minimum coverage required
-to account for the genotype.
+to call a marker absent. For silico genotype data this must be &lt; 1.
 Default: <code>coverage.thresholds = 1</code>.</p></td>
     </tr>
     <tr>
@@ -197,7 +197,9 @@ Default: <code>filters = TRUE</code>.</p></td>
     </tr>
     <tr>
       <th>interactive.filter</th>
-      <td><p>(optional, logical)
+      <td><p>(optional, logical) When <code>interactive.filter = TRUE</code>
+the function will ask for your input to define thresholds. If <code>interactive.filter = FALSE</code>
+the function expects additional arguments (see advanced mode).
 Default: <code>interactive.filter = TRUE</code>.</p></td>
     </tr>
     <tr>
@@ -216,7 +218,13 @@ special section)</p></td>
     
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>A list with ...</p>
+    <p>The created object contains:</p><ol>
+<li><p>A list with (1) the summarised SNP data per sex and
+(2) the summarised silico data per sex. This should allow you to re-create the various plots.</p></li>
+<li><p>A vector with the names of the sex-linked marker. One vector for each method.</p></li>
+<li><p>A dataframe with a summary of the sex-linked markers and their sequence (if available).</p></li>
+</ol>
+
     
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
@@ -277,14 +285,46 @@ is always present in males but never in females, they are putatively located
 in the Y-chromosome; and vice versa for the W-linked markers.</p></li>
 </ul><p><strong>Homogametic sex-markers:</strong>
 We have two different methods to identify markers on X or Z chromosomes:</p><ul>
-<li><p><strong>Heterozygosity method:</strong> By looking at the heterozygosity of a marker between sexes, we can
+<li><p><strong>Heterozygosity method:</strong> By looking at the heterozygosity of a
+marker between sexes, we can
 identify markers that are always homozygous in one sex (e.g. males for an
 XY system), while exhibiting an intermediate range of heterozygosity in the
 other sex (0.1 - 0.5).</p></li>
-<li><p><strong>Coverage method:</strong> If the data includes count information, this function will look for
+<li><p><strong>Coverage method:</strong> If the data includes count information, this
+function will look for
 markers that have double the number of counts for either of the sexes.
 For example if an XY/XX system is present, females are expected to have
 double the number of counts for markers on the X chromosome.</p></li>
+</ul>
+    
+    <h2 class="hasAnchor" id="advance-mode"><a class="anchor" href="#advance-mode"></a>Advance mode</h2>
+
+    
+    <p><em>dots-dots-dots ...</em> allows to pass several arguments for fine-tuning the function:</p><ul>
+<li><p><code>mis.threshold.data</code>: Threshold to filter the SNP data on missingness.
+Only if <code>interactive.filter = FALSE</code>.</p></li>
+<li><p><code>mis.threshold.silicodata</code>  Threshold to filter the silico data on
+missingness. Only if <code>interactive.filter = FALSE</code>.</p></li>
+<li><p><code>threshold.y.markers</code>: Threshold to select heterogametic sex-linked
+markers from the SNP data with the <strong>presence/absence method</strong>. Only
+if <code>interactive.filter = FALSE</code>.</p></li>
+<li><p><code>tau</code>:The quantile used in regression to distinguish homogametic markers
+with the <strong>heterozygosity method</strong>. Default <code>tau = 0.03</code>.</p></li>
+<li><p><code>threshold.x.markers.qr</code>: Threshold to select homogametic sex-linked
+markers from the SNP data with the <strong>heterozygosity method</strong>. Only
+if <code>interactive.filter = FALSE</code>.</p></li>
+<li><p><code>zoom.data</code>: Threshold to subset the F/M ratio of mean SNP coverage.
+Used to improve the histogrom resolution to select a better <code>threshold.x.markers.RD</code>
+threshold. Only if <code>interactive.filter = FALSE</code>.</p></li>
+<li><p><code>threshold.x.markers.RD</code>: Threshold to select homogametic sex-linked
+markers from the SNP data with the <strong>coverage method</strong>. Only
+if <code>interactive.filter = FALSE</code>.</p></li>
+<li><p><code>zoom.silicodata</code>: Threshold to subset the F/M ratio of mean silico coverage.
+Used to improve the histogrom resolution to select a better <code>threshold.x.markers.RD.silico</code>
+threshold. Only if <code>interactive.filter = FALSE</code>.</p></li>
+<li><p><code>threshold.x.markers.RD.silico</code>: Threshold to select homogametic sex-linked
+markers from the silico data with the <strong>coverage method</strong>. Only
+if <code>interactive.filter = FALSE</code>.</p></li>
 </ul>
     
     <h2 class="hasAnchor" id="life-cycle"><a class="anchor" href="#life-cycle"></a>Life cycle</h2>
@@ -322,6 +362,8 @@ perform better with new samples.</p>
       <li><a href="#prerequisites">Prerequisites</a></li>
 
       <li><a href="#sex-methods">Sex methods</a></li>
+
+      <li><a href="#advance-mode">Advance mode</a></li>
 
       <li><a href="#life-cycle">Life cycle</a></li>
 

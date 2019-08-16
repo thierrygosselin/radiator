@@ -68,7 +68,7 @@ false positive or the absence of detection of paralogous markers." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.2</span>
       </span>
     </div>
 
@@ -248,7 +248,7 @@ Molecular Ecology Resources, 17, 656-669.</p>
     <pre class="examples"><span class='co'># NOT RUN {</span>
 <span class='co'># require(httr)</span>
 <span class='co'># using the Chinook VCF dataset in dryad, from McKinney et al. 2017 paper:</span>
-<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/readBin'>writeBin</a></span>(<span class='kw'>object</span> <span class='kw'>=</span> <span class='kw pkg'>httr</span><span class='kw ns'>::</span><span class='fu'><a href='https://www.rdocumentation.org/packages/httr/topics/content'>content</a></span>(<span class='kw'>x</span> <span class='kw'>=</span> <span class='kw pkg'>httr</span><span class='kw ns'>::</span><span class='fu'><a href='https://www.rdocumentation.org/packages/httr/topics/GET'>GET</a></span>(
+<span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/readBin'>writeBin</a></span>(<span class='kw'>object</span> <span class='kw'>=</span> <span class='kw pkg'>httr</span><span class='kw ns'>::</span><span class='fu'><a href='https://httr.r-lib.org/reference/content.html'>content</a></span>(<span class='kw'>x</span> <span class='kw'>=</span> <span class='kw pkg'>httr</span><span class='kw ns'>::</span><span class='fu'><a href='https://httr.r-lib.org/reference/GET.html'>GET</a></span>(
 <span class='kw'>url</span> <span class='kw'>=</span> <span class='st'>"https://datadryad.org/bitstream/handle/10255/dryad.123464/
 Chinook_sequenceReads.vcf?sequence=1"</span>),
 <span class='kw'>as</span> <span class='kw'>=</span> <span class='st'>"raw"</span>), <span class='kw'>con</span> <span class='kw'>=</span> <span class='st'>"chinook.vcf"</span>)
