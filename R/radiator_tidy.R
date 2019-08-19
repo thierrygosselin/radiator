@@ -569,8 +569,8 @@ tidy_genomic_data <- function(
 
     colnames(input) <- stringi::stri_replace_all_fixed(
       str = colnames(input),
-      pattern = c("# Catalog ID", "Catalog ID", "# Catalog Locus ID"),
-      replacement = c("LOCUS", "LOCUS", "LOCUS"), vectorize_all = FALSE)
+      pattern = c("# Catalog ID", "Catalog ID", "# Catalog Locus ID", "Catalog.ID"),
+      replacement = c("LOCUS", "LOCUS", "LOCUS", "LOCUS"), vectorize_all = FALSE)
 
     if (rlang::has_name(input, "Seg Dist")) {
       input <- dplyr::select(.data = input, -`Seg Dist`)
@@ -623,7 +623,7 @@ tidy_genomic_data <- function(
 
     # removing errors and potential paralogs (GT with > 2 alleles)
     if (verbose) message("Scanning for artifactual genotypes...")
-    input <- input %>%
+    input %<>%
       dplyr::mutate(POLYMORPHISM = stringi::stri_count_fixed(GT_VCF_NUC, "/"))
 
     blacklist.paralogs <- input %>%
@@ -632,10 +632,8 @@ tidy_genomic_data <- function(
 
     if (verbose) message("    number of genotypes with more than 2 alleles: ", length(blacklist.paralogs$LOCUS))
     if (length(blacklist.paralogs$LOCUS) > 0) {
-      input <- input %>%
-        dplyr::mutate(GT_VCF_NUC = replace(GT_VCF_NUC, which(POLYMORPHISM > 1), NA)) %>%
-        dplyr::select(-POLYMORPHISM)
-
+      input %<>%
+        dplyr::mutate(GT_VCF_NUC = replace(GT_VCF_NUC, which(POLYMORPHISM > 1), NA))
       readr::write_tsv(blacklist.paralogs, "blacklist.genotypes.paralogs.tsv")
     }
     blacklist.paralogs <- NULL
@@ -643,7 +641,7 @@ tidy_genomic_data <- function(
     if (verbose) message("Calculating REF/ALT alleles...")
     # Prep for REF/ALT alleles and new genotype coding
     # part below could be parallelized if necessary, test with larger dataset for bottleneck...
-    input <- input %>%
+    input %<>%
       dplyr::mutate(
         GT_VCF_NUC = dplyr::if_else(
           POLYMORPHISM == 0,
@@ -662,7 +660,14 @@ tidy_genomic_data <- function(
     input <- input.temp$input
     input.temp <- NULL
     biallelic <- FALSE
-    input <- dplyr::rename(input, LOCUS = MARKERS)
+
+    # test
+    # Add a column MARKERS
+    # input <- dplyr::rename(input, LOCUS = MARKERS)
+    input %<>% dplyr::mutate(LOCUS = MARKERS)
+
+
+
   } # End import haplotypes file
 
   # Import genepop--------------------------------------------------------------
