@@ -357,8 +357,8 @@ sexy_markers <- function(data,
     rlang::abort("Input not supported for this function: read function documentation")
   }
 
-  if(Sys.info()[['sysname']]=="Windows"){
-    message("There is currently an issue with the cluster allocation in WINDOWS systems. Consequently, we set the 'parallel.core' to 1")
+  if(Sys.info()[['sysname']]=="Windows" && parallel.core != 1){
+    message("There is currently an issue with the cluster allocation in WINDOWS systems. Consequently, we set the 'parallel.core' to 1. This will only affect the data-filtering time.")
     parallel.core = 1
   }
 
@@ -404,7 +404,6 @@ sexy_markers <- function(data,
     whitelist = TRUE
   )
 
-
   # clean strata----------------------------------------------------------------
   strata %<>%
     dplyr::mutate(
@@ -437,7 +436,8 @@ sexy_markers <- function(data,
   gds.bk <- data
   # gds.bk -> data
 
-  data <- radiator::extract_genotypes_metadata(
+  if(data.type != "vcf.file"){
+    data <- radiator::extract_genotypes_metadata(
     gds = data,
     genotypes.meta.select = c("MARKERS", "INDIVIDUALS", "GT_BIN", "READ_DEPTH"),
     whitelist = TRUE
@@ -445,6 +445,45 @@ sexy_markers <- function(data,
     radiator::join_strata(data = .,
                           strata = strata,
                           verbose = FALSE)
+  } else{
+    sample <- SeqArray::seqGetData(gds.bk, "sample.id")
+    variant <- SeqArray::seqGetData(gds.bk, "variant.id")
+    # STRATA <- radiator::extract_individuals_metadata(gds.bk, ind.field.select = c("INDIVIDUALS","STRATA")) %>%
+    #   dplyr::filter(INDIVIDUALS %in% sample)
+    # STRATA <- STRATA$STRATA
+
+    GT.mat <- SeqArray::seqGetData(gds.bk, "$dosage") # genotype dosage, or the number of copies of reference allele
+    GT.mat <- data.frame(INDIVIDUALS = sample, GT.mat)
+    colnames(GT.mat) <- c("INDIVIDUALS", variant)
+    GT_BIN <- data.table::as.data.table(x = GT.mat) %>%
+      data.table::melt.data.table(
+        data = .,
+        id.vars = "INDIVIDUALS",
+        variable.name = "MARKERS",
+        variable.factor = FALSE,
+        value.name = "GT_BIN"
+      ) %>%
+      tibble::as_tibble(.)
+
+    #TODO Check if DP is present
+    DP.mat <- SeqArray::seqGetData(gds.bk, "annotation/format/DP")$data
+    DP.mat <- data.frame(INDIVIDUALS = sample, DP.mat)
+    colnames(DP.mat) <- c("INDIVIDUALS", variant)
+
+    data <- data.table::as.data.table(x = DP.mat) %>%
+      data.table::melt.data.table(
+        data = .,
+        id.vars = "INDIVIDUALS",
+        variable.name = "MARKERS",
+        variable.factor = FALSE,
+        value.name = "READ_DEPTH"
+      ) %>%
+      tibble::as_tibble(.) %>%
+    dplyr::left_join(GT_BIN, by = c("INDIVIDUALS", "MARKERS"))%>%
+      radiator::join_strata(data = .,
+                            strata = strata,
+                            verbose = FALSE)
+  }
 
 
 
@@ -452,7 +491,8 @@ sexy_markers <- function(data,
 
   if (!is.null(silicodata)) {
     data.type <- radiator::detect_genomic_format(silicodata)
-    silicodata <- radiator::read_dart(
+    if (!is.data.frame(silicodata)){
+      silicodata <- radiator::read_dart(
       data = silicodata,
       strata = strata,
       tidy.dart = FALSE,
@@ -462,6 +502,9 @@ sexy_markers <- function(data,
       verbose = TRUE
     ) %>%
       dplyr::rename(., MARKERS = CLONE_ID)
+    } else {
+      data.type <- "silico.dart"
+    }
 
     if (max(silicodata$VALUE, na.rm = TRUE) > 1) {
       data.source <- c("counts", data.type, data.source)
@@ -471,7 +514,7 @@ sexy_markers <- function(data,
   }
 
   ### add warning about not using count data
-  if (!(any(c("counts", "vcf.file") %in% data.source))) {
+  if (!("READ_DEPTH" %in% colnames(data))) {
     message(
       "Your data does not have Read Depth information; the analysis based on Read Depth will not be performed"
     )
@@ -1052,7 +1095,7 @@ sexy_markers <- function(data,
   if(interactive.filter) {
     print(ggplot2::qplot(data.sum$MISSINGNESS, xlab = "Missingness per SNP marker"))
     mis.threshold.data <-
-      radiator::radiator_question(x = "Have a look at the plot: Choose the upper threshold for missingness per SNP marker (e.g. 0.2).", minmax = c(0, 1))
+      radiator::radiator_question(x = "Have a look at the plot: Choose the upper threshold for missingness per SNP marker (e.g. 0.2):", minmax = c(0, 1))
 
     message(
       "For detecting heterogametic markers, the SILICO data is filtered on a missingness >: ",
@@ -1065,7 +1108,7 @@ sexy_markers <- function(data,
     if (!is.null(silicodata)) {
       print(ggplot2::qplot(silico.sum$MISSINGNESS, xlab = "Missingness per SILICO marker"))
       mis.threshold.silicodata <-
-        radiator::radiator_question(x = "Have a look at the plot: Choose the upper threshold for missingness per SILICO marker (e.g. 0.2).", minmax = c(0, 1))
+        radiator::radiator_question(x = "Have a look at the plot: Choose the upper threshold for missingness per SILICO marker (e.g. 0.2):", minmax = c(0, 1))
       message(
         "For detecting heterogametic markers, the SILICO data is filtered on a missingness >: ",
         mis.threshold.silicodata
