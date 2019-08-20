@@ -1639,6 +1639,7 @@ generate_id_stats <- function (
   # heterozygosity = TRUE
   # coverage = TRUE
   # plot = TRUE
+  # digits = 6
 
   if (is.null(path.folder)) path.folder <- getwd()
   res <- list() # return result in this list
@@ -1685,6 +1686,8 @@ generate_id_stats <- function (
         ), digits)
       )
 
+    id.info$HETEROZYGOSITY[is.na(id.info$HETEROZYGOSITY)] <- 0
+
     # stats
     id.stats.h <- tibble_stats(
       x = id.info$HETEROZYGOSITY,
@@ -1704,6 +1707,10 @@ generate_id_stats <- function (
           COVERAGE_TOTAL = dp$ind.cov.tot,
           COVERAGE_MEAN = dp$ind.cov.mean
         )
+
+      id.info$COVERAGE_MEAN[is.na(id.info$COVERAGE_MEAN)] <- 0
+
+
       # stats
       id.stats.c <- dplyr::bind_rows(
         tibble_stats(
