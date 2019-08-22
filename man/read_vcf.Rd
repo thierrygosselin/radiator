@@ -159,12 +159,12 @@ and duplicated markers are kept (not recommended, but here for testing purposes)
 Default (\code{filter.strands = "blacklist"}).
 \item \code{filter.common.markers}: (logical) Default: \code{filter.common.markers = TRUE}.
 Documented in \code{\link{filter_common_markers}}.
-\item \code{filter.mac}: (integer) Default: code{filter.mac = NULL}.
+\item \code{filter.mac}: (integer) Default: \code{filter.mac = NULL}.
 To blacklist markers below a specific Minor Allele Count (calculated overall/global).
 Documented in \code{\link{filter_mac}}.
 
 \item \code{filter.coverage}: (optional, string)
-Default: code{filter.coverage = NULL}. To blacklist markers based on mean coverage.
+Default: \code{filter.coverage = NULL}. To blacklist markers based on mean coverage.
 Documented in \code{\link{filter_coverage}}.
 
 \item \code{filter.genotyping}: (integer) To blacklist markers with too

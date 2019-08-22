@@ -8,6 +8,6 @@ summarize_sex(data, silicodata, data.source, coverage.thresholds = NULL,
   tau = 0.3)
 }
 \description{
-Function to generate the different figures required.
+Function to summarize the presence-absence, heterozygosity and read depth per sex.
 }
 \keyword{internal}

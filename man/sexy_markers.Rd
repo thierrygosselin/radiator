@@ -6,27 +6,27 @@
 \usage{
 sexy_markers(data, silicodata = NULL, boost.analysis = FALSE,
   strata = NULL, coverage.thresholds = 1, filters = TRUE,
-  interactive.filter = TRUE, parallel.core = parallel::detectCores() -
-  1, ...)
+  interactive.filter = TRUE, folder.name = NULL,
+  parallel.core = parallel::detectCores() - 1, ...)
 }
 \arguments{
 \item{data}{(object or file) DArT file \code{.csv or .tsv}, VCF file \code{.vcf},
-GDS file or object (\code{.gds}).
-See Input data section data for more details.}
+GDS file or object (\code{.gds}).\cr
+See \code{\link[radiator]{read_dart}} or \code{\link[radiator]{read_vcf}} for more details.}
 
-\item{silicodata}{(optional, file) A silico DArT file (.csv or .tsv). This can be
-count or genotyped data. Note that both \code{data} and \code{silicodata} can
-be used at the same time.
+\item{silicodata}{(optional, file) A silico (dominant marker) DArT file \code{.csv or .tsv}.\cr
+This can be count or genotyped data. Note that both \code{data} and
+\code{silicodata} can be used at the same time.\cr
 Default: \code{silicodata = NULL}.}
 
-\item{boost.analysis}{(logical, optional) This method uses machine learning
-approaches to find sex markers and re-assign samples in sex group.
-The approach is currently been tested and will be available for uses soon.#'
+\item{boost.analysis}{(optional, logical) This method uses machine learning
+approaches to find sex markers and re-assign samples in sex group.\cr
+The approach is currently been tested and will be available for uses soon.
 Default: \code{boost.analysis = FALSE}.}
 
 \item{strata}{(file) A tab delimited file with a minimum of
-2 columns \code{INDIVIDUALS, STRATA} for VCF files and 3 columns for DArT files
-\code{TARGET_ID, INDIVIDUALS, STRATA}.
+2 columns (\code{INDIVIDUALS, STRATA}) for VCF files and 3 columns for DArT files
+(\code{TARGET_ID, INDIVIDUALS, STRATA}).
 \itemize{
 \item \code{TARGET_ID:} it's the column header of the DArT file.
 \item \code{STRATA:} is the grouping column, here the sex info.
@@ -37,24 +37,25 @@ Anything else is converted to \code{U}.
 Default: \code{strata = NULL}, the function will look for sex info in the
 tidy data or GDS data (individuals.meta section).
 You can easily build the strata file by starting with the output of these
-functions: \code{\link{extract_dart_target_id}} and \code{\link{extract_individuals_vcf}}}
+functions: \code{\link[radiator]{extract_dart_target_id}} and \code{\link[radiator]{extract_individuals_vcf}}}
 
 \item{coverage.thresholds}{(optional, integer) The minimum coverage required
-to call a marker absent. For silico genotype data this must be < 1.
+to call a marker absent. For silico genotype data this must be < 1.\cr
 Default: \code{coverage.thresholds = 1}.}
 
 \item{filters}{(optional, logical) When \code{filters = TRUE}, the data will
-be filtered for
-monomorphic loci, missingness of individuals and heterozygosity of individuals.
+be filtered for monomorphic loci, missingness of individuals and heterozygosity of individuals.\cr
 CAUTION: we advice to use these filter, since not filtering or filtering too
-stingently will results in
-false positve or false negative detections.
+stringently will results in false positive or false negative detections.\cr
 Default: \code{filters = TRUE}.}
 
 \item{interactive.filter}{(optional, logical) When \code{interactive.filter = TRUE}
 the function will ask for your input to define thresholds. If \code{interactive.filter = FALSE}
-the function expects additional arguments (see advanced mode).
+the function expects additional arguments (see Advance mode).\cr
 Default: \code{interactive.filter = TRUE}.}
+
+\item{folder.name}{(optional,character) Name of the folder to store the results.
+Default: \code{folder.name = "sexy_marker_date/time"}.}
 
 \item{parallel.core}{(optional) The number of core used for parallel
 execution during import.
@@ -69,23 +70,24 @@ The created object contains:
 \enumerate{
 \item A list with (1) the summarised SNP data per sex and
 (2) the summarised silico data per sex. This should allow you to re-create the various plots.
-\item A vector with the names of the sex-linked marker. One vector for each method.
+\item A vector with the names of the sex-linked marker. One vector for each sex method.
 \item A dataframe with a summary of the sex-linked markers and their sequence (if available).
 }
 }
 \description{
 This function identifies sex-linked markers putatively located on
-homogametic or heterogametic chromosomes and re-assign the sex in a dataset
-based on findings. The function work best in: DArT silico (counts) >
+heterogametic or homogametic chromosomes and re-assign the sex in a dataset
+according to Y- or W-linked markers.\cr
+The function work best in: DArT silico (counts) >
 DArT counts or RADseq with allele read depth > DArT silico (genotypes) >
 RADseq (genotypes) and DArT (1-row, 2-rows genotypes).
 }
 \details{
-This function takes DArT and RAD data to find markers that have a specific
- pattern that is linked to sex.
-The function hypothesizes the presence of sex-chromosomes in you
+This function takes DArT and RAD-type data to find markers that have a specific
+pattern that is linked to sex.\cr
+The function hypothesizes the presence of sex-chromosomes in your
 species/population. The tests are designed to identify markers that are
-located on putative heterogametic (Y or W) or homogametic (X or Z) chromosomes.
+located on putative heterogametic (Y or W) or homogametic (X or Z) chromosomes.\cr
 \emph{Note:} Violating Assumptions or Prerequisites (see below) can lead to
 false positive or the absence of detection of sex-linked markers.
 }
@@ -122,7 +124,7 @@ and \href{https://github.com/eriqande/whoa}{whoa}.
 \item \strong{Low heterozygosity miscall rate:} see \code{\link{detect_het_outliers}} and
 \href{https://github.com/eriqande/whoa}{whoa}.
 \item \strong{Absence of pattern of heterozygosity driven by missingness:}
-see \code{\link{detect_mixed_genomes}}.
+see \code{\link[radiator]{detect_mixed_genomes}}.
 \item \strong{Absence of paralogous sequences in the data}.
 }
 }
@@ -158,30 +160,38 @@ double the number of counts for markers on the X chromosome.
 
 \emph{dots-dots-dots ...} allows to pass several arguments for fine-tuning the function:
 \itemize{
+\item \code{tau}: The quantile used in regression to distinguish homogametic markers
+with the \strong{heterozygosity method}. See \code{\link[quantreg]{rq}}.\cr
+Default \code{tau = 0.03}.
 \item \code{mis.threshold.data}: Threshold to filter the SNP data on missingness.
 Only if \code{interactive.filter = FALSE}.
-\item \code{mis.threshold.silicodata}  Threshold to filter the silico data on
-missingness. Only if \code{interactive.filter = FALSE}.
+\item \code{mis.threshold.silicodata}: Threshold to filter the silico data on
+missingness. No default. Only if \code{interactive.filter = FALSE}.
 \item \code{threshold.y.markers}: Threshold to select heterogametic sex-linked
-markers from the SNP data with the \strong{presence/absence method}. Only
-if \code{interactive.filter = FALSE}.
-\item \code{tau}:The quantile used in regression to distinguish homogametic markers
-with the \strong{heterozygosity method}. Default \code{tau = 0.03}.
+markers from the SNP data with the \strong{presence/absence method}.No default.
+Only if \code{interactive.filter = FALSE}.
 \item \code{threshold.x.markers.qr}: Threshold to select homogametic sex-linked
-markers from the SNP data with the \strong{heterozygosity method}. Only
-if \code{interactive.filter = FALSE}.
+markers from the SNP data with the \strong{heterozygosity method}. No default.
+Only if \code{interactive.filter = FALSE}.
 \item \code{zoom.data}: Threshold to subset the F/M ratio of mean SNP coverage.
-Used to improve the histogrom resolution to select a better \code{threshold.x.markers.RD}
-threshold. Only if \code{interactive.filter = FALSE}.
+Used to improve the histogram resolution to select a better \code{threshold.x.markers.RD}
+threshold. No default. Only if \code{interactive.filter = FALSE}.
 \item \code{threshold.x.markers.RD}: Threshold to select homogametic sex-linked
-markers from the SNP data with the \strong{coverage method}. Only
-if \code{interactive.filter = FALSE}.
+markers from the SNP data with the \strong{coverage method}.No default.
+Only if \code{interactive.filter = FALSE}.
 \item \code{zoom.silicodata}: Threshold to subset the F/M ratio of mean silico coverage.
-Used to improve the histogrom resolution to select a better \code{threshold.x.markers.RD.silico}
-threshold. Only if \code{interactive.filter = FALSE}.
+Used to improve the histogram resolution to select a better \code{threshold.x.markers.RD.silico}
+threshold. No default. Only if \code{interactive.filter = FALSE}.
 \item \code{threshold.x.markers.RD.silico}: Threshold to select homogametic sex-linked
-markers from the silico data with the \strong{coverage method}. Only
-if \code{interactive.filter = FALSE}.
+markers from the silico data with the \strong{coverage method}. No default.
+Only if \code{interactive.filter = FALSE}.
+\item \code{sex.id.input}: (integer) \code{sex.id.input = c(1, 2 or 3)}
+to recalculate the sex based on (1) 'visual', (2) 'genetic SNP' or (3) 'genetic SILICO' sexID.
+No default. Only if \code{interactive.filter = FALSE}.
+\item \code{het.qr.input}: (integer) \code{het.qr.input = c(1 or 2)}
+to plot the heterozygosity residual plot for (1) X-linked markers (heterozygous for females),
+or (2) Z-linked markers (heterozygous for males). No default.
+Only if \code{interactive.filter = FALSE}.
 }
 }
 
@@ -195,7 +205,7 @@ perform better with new samples.
 
 \examples{
 \dontrun{
-# The minumum
+# The minimum
 sex.markers <- radiator::sexy_markers(
     data = "shark.dart.data.csv",
     strata = "shark.strata.tsv")
