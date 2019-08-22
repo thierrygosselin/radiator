@@ -3,29 +3,29 @@
 #' @title sexy_markers finds sex-linked markers and re-assigns sex
 #'
 #' @description This function identifies sex-linked markers putatively located on
-#' homogametic or heterogametic chromosomes and re-assign the sex in a dataset
-#' based on findings. The function work best in: DArT silico (counts) >
+#' heterogametic or homogametic chromosomes and re-assign the sex in a dataset
+#' according to Y- or W-linked markers.\cr
+#' The function work best in: DArT silico (counts) >
 #' DArT counts or RADseq with allele read depth > DArT silico (genotypes) >
 #' RADseq (genotypes) and DArT (1-row, 2-rows genotypes).
 
 #' @param data (object or file) DArT file \code{.csv or .tsv}, VCF file \code{.vcf},
-#' GDS file or object (\code{.gds}).
-#' See Input data section data for more details.
+#' GDS file or object (\code{.gds}).\cr
+#' See \code{\link[radiator]{read_dart}} or \code{\link[radiator]{read_vcf}} for more details.
 
-#' @param silicodata (optional, file) A silico DArT file (.csv or .tsv). This can be
-#' count or genotyped data. Note that both \code{data} and \code{silicodata} can
-#' be used at the same time.
+#' @param silicodata (optional, file) A silico (dominant marker) DArT file \code{.csv or .tsv}.\cr
+#' This can be count or genotyped data. Note that both \code{data} and
+#' \code{silicodata} can be used at the same time.\cr
 #' Default: \code{silicodata = NULL}.
 
-#' @param boost.analysis (logical, optional) This method uses machine learning
-#' approaches to find sex markers and re-assign samples in sex group.
-#' The approach is currently been tested and will be available for uses soon.#'
+#' @param boost.analysis (optional, logical) This method uses machine learning
+#' approaches to find sex markers and re-assign samples in sex group.\cr
+#' The approach is currently been tested and will be available for uses soon.
 #' Default: \code{boost.analysis = FALSE}.
 
-
 #' @param strata (file) A tab delimited file with a minimum of
-#' 2 columns \code{INDIVIDUALS, STRATA} for VCF files and 3 columns for DArT files
-#' \code{TARGET_ID, INDIVIDUALS, STRATA}.
+#' 2 columns (\code{INDIVIDUALS, STRATA}) for VCF files and 3 columns for DArT files
+#' (\code{TARGET_ID, INDIVIDUALS, STRATA}).
 #' \itemize{
 #' \item \code{TARGET_ID:} it's the column header of the DArT file.
 #' \item \code{STRATA:} is the grouping column, here the sex info.
@@ -36,35 +36,36 @@
 #' Default: \code{strata = NULL}, the function will look for sex info in the
 #' tidy data or GDS data (individuals.meta section).
 #' You can easily build the strata file by starting with the output of these
-#' functions: \code{\link{extract_dart_target_id}} and \code{\link{extract_individuals_vcf}}
+#' functions: \code{\link[radiator]{extract_dart_target_id}} and \code{\link[radiator]{extract_individuals_vcf}}
 
 #' @param coverage.thresholds (optional, integer) The minimum coverage required
-#' to call a marker absent. For silico genotype data this must be < 1.
+#' to call a marker absent. For silico genotype data this must be < 1.\cr
 #' Default: \code{coverage.thresholds = 1}.
 #'
 #'
 #' @param filters (optional, logical) When \code{filters = TRUE}, the data will
-#' be filtered for
-#' monomorphic loci, missingness of individuals and heterozygosity of individuals.
+#' be filtered for monomorphic loci, missingness of individuals and heterozygosity of individuals.\cr
 #' CAUTION: we advice to use these filter, since not filtering or filtering too
-#' stingently will results in
-#' false positve or false negative detections.
+#' stringently will results in false positive or false negative detections.\cr
 #' Default: \code{filters = TRUE}.
 #'
 #' @param interactive.filter (optional, logical) When \code{interactive.filter = TRUE}
 #' the function will ask for your input to define thresholds. If \code{interactive.filter = FALSE}
-#' the function expects additional arguments (see advanced mode).
+#' the function expects additional arguments (see Advance mode).\cr
 #' Default: \code{interactive.filter = TRUE}.
+#'
+#' @param folder.name (optional,character) Name of the folder to store the results.
+#' Default: \code{folder.name = "sexy_marker_date/time"}.
 #'
 #' @inheritParams radiator_common_arguments
 #'
 #'
 #' @details
-#' This function takes DArT and RAD data to find markers that have a specific
-#'  pattern that is linked to sex.
-#' The function hypothesizes the presence of sex-chromosomes in you
+#' This function takes DArT and RAD-type data to find markers that have a specific
+#' pattern that is linked to sex.\cr
+#' The function hypothesizes the presence of sex-chromosomes in your
 #' species/population. The tests are designed to identify markers that are
-#' located on putative heterogametic (Y or W) or homogametic (X or Z) chromosomes.
+#' located on putative heterogametic (Y or W) or homogametic (X or Z) chromosomes.\cr
 #' \emph{Note:} Violating Assumptions or Prerequisites (see below) can lead to
 #' false positive or the absence of detection of sex-linked markers.
 
@@ -100,7 +101,7 @@
 #' \item \strong{Low heterozygosity miscall rate:} see \code{\link{detect_het_outliers}} and
 #' \href{https://github.com/eriqande/whoa}{whoa}.
 #' \item \strong{Absence of pattern of heterozygosity driven by missingness:}
-#' see \code{\link{detect_mixed_genomes}}.
+#' see \code{\link[radiator]{detect_mixed_genomes}}.
 #' \item \strong{Absence of paralogous sequences in the data}.
 #' }
 
@@ -133,30 +134,38 @@
 #'
 #' \emph{dots-dots-dots ...} allows to pass several arguments for fine-tuning the function:
 #' \itemize{
+#' \item \code{tau}: The quantile used in regression to distinguish homogametic markers
+#' with the \strong{heterozygosity method}. See \code{\link[quantreg]{rq}}.\cr
+#' Default \code{tau = 0.03}.
 #' \item \code{mis.threshold.data}: Threshold to filter the SNP data on missingness.
 #' Only if \code{interactive.filter = FALSE}.
-#' \item \code{mis.threshold.silicodata}  Threshold to filter the silico data on
-#' missingness. Only if \code{interactive.filter = FALSE}.
+#' \item \code{mis.threshold.silicodata}: Threshold to filter the silico data on
+#' missingness. No default. Only if \code{interactive.filter = FALSE}.
 #' \item \code{threshold.y.markers}: Threshold to select heterogametic sex-linked
-#' markers from the SNP data with the \strong{presence/absence method}. Only
-#' if \code{interactive.filter = FALSE}.
-#' \item \code{tau}:The quantile used in regression to distinguish homogametic markers
-#' with the \strong{heterozygosity method}. Default \code{tau = 0.03}.
+#' markers from the SNP data with the \strong{presence/absence method}.No default.
+#' Only if \code{interactive.filter = FALSE}.
 #' \item \code{threshold.x.markers.qr}: Threshold to select homogametic sex-linked
-#' markers from the SNP data with the \strong{heterozygosity method}. Only
-#' if \code{interactive.filter = FALSE}.
+#' markers from the SNP data with the \strong{heterozygosity method}. No default.
+#' Only if \code{interactive.filter = FALSE}.
 #' \item \code{zoom.data}: Threshold to subset the F/M ratio of mean SNP coverage.
-#' Used to improve the histogrom resolution to select a better \code{threshold.x.markers.RD}
-#' threshold. Only if \code{interactive.filter = FALSE}.
+#' Used to improve the histogram resolution to select a better \code{threshold.x.markers.RD}
+#' threshold. No default. Only if \code{interactive.filter = FALSE}.
 #' \item \code{threshold.x.markers.RD}: Threshold to select homogametic sex-linked
-#' markers from the SNP data with the \strong{coverage method}. Only
-#' if \code{interactive.filter = FALSE}.
+#' markers from the SNP data with the \strong{coverage method}.No default.
+#' Only if \code{interactive.filter = FALSE}.
 #' \item \code{zoom.silicodata}: Threshold to subset the F/M ratio of mean silico coverage.
-#' Used to improve the histogrom resolution to select a better \code{threshold.x.markers.RD.silico}
-#' threshold. Only if \code{interactive.filter = FALSE}.
+#' Used to improve the histogram resolution to select a better \code{threshold.x.markers.RD.silico}
+#' threshold. No default. Only if \code{interactive.filter = FALSE}.
 #' \item \code{threshold.x.markers.RD.silico}: Threshold to select homogametic sex-linked
-#' markers from the silico data with the \strong{coverage method}. Only
-#' if \code{interactive.filter = FALSE}.
+#' markers from the silico data with the \strong{coverage method}. No default.
+#' Only if \code{interactive.filter = FALSE}.
+#' \item \code{sex.id.input}: (integer) \code{sex.id.input = c(1, 2 or 3)}
+#' to recalculate the sex based on (1) 'visual', (2) 'genetic SNP' or (3) 'genetic SILICO' sexID.
+#' No default. Only if \code{interactive.filter = FALSE}.
+#' \item \code{het.qr.input}: (integer) \code{het.qr.input = c(1 or 2)}
+#' to plot the heterozygosity residual plot for (1) X-linked markers (heterozygous for females),
+#' or (2) Z-linked markers (heterozygous for males). No default.
+#' Only if \code{interactive.filter = FALSE}.
 #' }
 #'
 #'
@@ -177,14 +186,14 @@
 #' \enumerate{
 #' \item A list with (1) the summarised SNP data per sex and
 #' (2) the summarised silico data per sex. This should allow you to re-create the various plots.
-#' \item A vector with the names of the sex-linked marker. One vector for each method.
+#' \item A vector with the names of the sex-linked marker. One vector for each sex method.
 #' \item A dataframe with a summary of the sex-linked markers and their sequence (if available).
 #' }
 
 #' @examples
 #' \dontrun{
 
-#' # The minumum
+#' # The minimum
 #' sex.markers <- radiator::sexy_markers(
 #'     data = "shark.dart.data.csv",
 #'     strata = "shark.strata.tsv")
@@ -203,6 +212,7 @@ sexy_markers <- function(data,
                          coverage.thresholds = 1,
                          filters = TRUE,
                          interactive.filter = TRUE,
+                         folder.name = NULL,
                          parallel.core = parallel::detectCores() - 1,
                          ...
 ) {
@@ -219,7 +229,8 @@ sexy_markers <- function(data,
   # tau = 0.03
   # threshold.y.markers = NULL
   # threshold.y.silico.markers = NULL
-  # sex.id.input = NULL
+  # sex.id.input = 2
+  # het.qr.input = 1
   # threshold.x.markers.qr = NULL
   # data = "../1.Data/G.galeus/SchoolShark_SNP_counts.csv"
   # silicodata <- "../1.Data/G.galeus/SchoolShark_silico_counts.csv"
@@ -232,6 +243,21 @@ sexy_markers <- function(data,
     cat("################################################################################\n")
   }
 
+
+  # Check for when interactive.filter = FALSE ---------------------------------
+  if (interactive.filter == FALSE){
+    arguments <- c("mis.threshold.data", "mis.threshold.silicodata",
+                   "threshold.y.markers", "threshold.y.silico.markers",
+                   "sex.id.input", "het.qr.input", "threshold.x.markers.qr",
+                   "zoom.data", "threshold.x.markers.RD", "zoom.silicodata",
+                   "threshold.x.markers.RD.silico")
+    for (name in  arguments){
+          if (!exists(name)){
+            message("When 'interactive.filter == FALSE' the following arguments are needed:\n")
+            cat(arguments, sep = "\n")
+            }
+    }
+  }
 
   if (boost.analysis) message("Under construction: come back next week... ")
   # Cleanup---------------------------------------------------------------------
@@ -275,15 +301,19 @@ sexy_markers <- function(data,
                 "threshold.y.markers", "threshold.y.silico.markers",
                 "sex.id.input", "threshold.x.markers.qr", "threshold.x.markers.RD",
                 "threshold.x.markers.RD.silico", "mis.threshold.data",
-                "mis.threshold.silicodata", "zoom.data", "zoom.silicodata"
-),
+                "mis.threshold.silicodata", "zoom.data", "zoom.silicodata",
+                "folder.name", "sex.id.input", "het.qr.input"),
     verbose = FALSE
   )
 
   # Folders---------------------------------------------------------------------
   wd <- path.folder <- radiator::generate_folder(
     f = NULL,
-    rad.folder = "sexy_markers",
+    if(!is.null(folder.name)){
+      rad.folder = folder.name
+    } else{
+      rad.folder = "sexy_markers"
+    },
     internal = FALSE,
     prefix_int = FALSE,
     file.date = file.date,
@@ -301,7 +331,7 @@ sexy_markers <- function(data,
   )
 
 
-  # Detect format --------------------------------------------------------------
+  # Detect format--------------------------------------------------------------data.type <-
   data.type <- radiator::detect_genomic_format(data)
 
   if (!data.type %in% c("SeqVarGDSClass", "gds.file", "dart", "vcf.file")) {
@@ -322,7 +352,7 @@ sexy_markers <- function(data,
       data <- radiator::read_rad(data, verbose = verbose)
       data.type <- "SeqVarGDSClass"
     }
-  }
+    }
 
   # VCF files ------------------------------------------------------------------
   if (data.type == "vcf.file") {
@@ -357,8 +387,9 @@ sexy_markers <- function(data,
     rlang::abort("Input not supported for this function: read function documentation")
   }
 
+
   if(Sys.info()[['sysname']]=="Windows" && parallel.core != 1){
-    message("There is currently an issue with the cluster allocation in WINDOWS systems. Consequently, we set the 'parallel.core' to 1. This will only affect the data-filtering time.")
+    message("There is currently an issue with the cluster allocation in WINDOWS systems.\nConsequently, we set the 'parallel.core' to 1. This will only affect the data-filtering time.")
     parallel.core = 1
   }
 
@@ -452,7 +483,7 @@ sexy_markers <- function(data,
     #   dplyr::filter(INDIVIDUALS %in% sample)
     # STRATA <- STRATA$STRATA
 
-    GT.mat <- SeqArray::seqGetData(gds.bk, "$dosage") # genotype dosage, or the number of copies of reference allele
+    GT.mat <- SeqArray::seqGetData(gds.bk, "$dosage") # genotype dosage, or the number of copies of reference allele (so opposite to DArT?)
     GT.mat <- data.frame(INDIVIDUALS = sample, GT.mat)
     colnames(GT.mat) <- c("INDIVIDUALS", variant)
     GT_BIN <- data.table::as.data.table(x = GT.mat) %>%
@@ -465,7 +496,7 @@ sexy_markers <- function(data,
       ) %>%
       tibble::as_tibble(.)
 
-    #TODO Check if DP is present
+    #TODO Check if DP is present in all vcf formats
     DP.mat <- SeqArray::seqGetData(gds.bk, "annotation/format/DP")$data
     DP.mat <- data.frame(INDIVIDUALS = sample, DP.mat)
     colnames(DP.mat) <- c("INDIVIDUALS", variant)
@@ -490,33 +521,41 @@ sexy_markers <- function(data,
   # SILICO files ----------------------------------------------------------------
 
   if (!is.null(silicodata)) {
-    data.type <- radiator::detect_genomic_format(silicodata)
-    if (!is.data.frame(silicodata)){
+    if (is.character(silicodata)) {
+      data.type <- radiator::detect_genomic_format(silicodata)
       silicodata <- radiator::read_dart(
-      data = silicodata,
-      strata = strata,
-      tidy.dart = FALSE,
-      parallel.core = parallel.core,
-      path.folder = path.folder,
-      internal = TRUE,
-      verbose = TRUE
-    ) %>%
-      dplyr::rename(., MARKERS = CLONE_ID)
-    } else {
-      data.type <- "silico.dart"
-    }
-
+        data = silicodata,
+        strata = strata,
+        tidy.dart = FALSE,
+        parallel.core = parallel.core,
+        path.folder = path.folder,
+        internal = TRUE,
+        verbose = TRUE
+      ) %>%
+        dplyr::rename(., MARKERS = CLONE_ID)
     if (max(silicodata$VALUE, na.rm = TRUE) > 1) {
       data.source <- c("counts", data.type, data.source)
     } else{
       data.source <- c("genotype", data.type, data.source)
     }
+  } else if (is.data.frame(silicodata)) {
+    data.type <- "silico.dart"
+    if (max(silicodata$VALUE, na.rm = TRUE) > 1) {
+      data.source <- c("counts", data.type, data.source)
+    } else{
+      data.source <- c("genotype", data.type, data.source)
+    }
+  } else {
+    message("Your silicodata does not match the required input format:
+            1. Path (as character) to the .csv file.
+            2. Tidy data frame, resulted from 'radiator::read_dart()'.")
   }
+}
 
   ### add warning about not using count data
   if (!("READ_DEPTH" %in% colnames(data))) {
     message(
-      "Your data does not have Read Depth information; the analysis based on Read Depth will not be performed"
+      "Your data does not have Read Depth information; the analysis based on \nRead Depth will not be performed"
     )
   }
 
@@ -527,7 +566,7 @@ sexy_markers <- function(data,
   # 3. read depth per strata and markers markers: xz
 
   {
-    cat("################################################################################\n")
+    cat("\n\n################################################################################\n")
     cat("######################## Start finding sex-linked markers ######################\n")
     cat("################################################################################\n")
   }
@@ -969,35 +1008,38 @@ sexy_markers <- function(data,
         !rlang::is_empty(y.silico.markers)) {
       if (interactive.filter) {
         sex.id.input <-
-          radiator::radiator_question(x = "For further analysis, do you want to continue based on (1) visual, (2) genetic SNP or (3) genetic SILICO sex?\nWe advise (3) for better results",
-                                      answer.opt = c("1", "2", "3"))
+          radiator::radiator_question(
+            x = "For further analysis, do you want to continue based on (1) visual, (2) genetic SNP or (3) genetic SILICO sex?\nWe advise (3) for better results",
+            answer.opt = c("1", "2", "3"))
         sex.id.input <- as.integer(sex.id.input)
       } else{
-        sex.id.input <- as.integer(3)
+        # sex.id.input <- as.integer(3)
+        sex.id.input <- as.integer(sex.id.input)
       }
     } else if (!rlang::is_empty(y.markers)) {
       # Interacive selection which sex info
-      if (is.null(sex.id.input))
-        sex.id.input <- "1"
+      if (is.null(sex.id.input)) sex.id.input <- "1"
       if (interactive.filter) {
         sex.id.input <-
-          radiator::radiator_question(x = "For further analysis, do you want to continue based on (1) visual or (2) genetic SNP sex?\nWe advise (2) for better results",
-                                      answer.opt = c("1", "2"))
+          radiator::radiator_question(
+            x = "For further analysis, do you want to continue based on (1) visual or (2) genetic SNP sex?\nWe advise (2) for better results",
+            answer.opt = c("1", "2"))
         sex.id.input <- as.integer(sex.id.input)
       } else {
-        sex.id.input <- as.integer(2)
+        # sex.id.input <- as.integer(2)
+        sex.id.input <- as.integer(sex.id.input)
       }
     } else if (!rlang::is_empty(y.silico.markers)) {
       # Interacive selection which sex info
-      if (is.null(sex.id.input))
-        sex.id.input <- "1"
+      if (is.null(sex.id.input)) sex.id.input <- "1"
       if (interactive.filter) {
         sex.id.input <-
           radiator::radiator_question(x = "For further analysis, do you want to continue based on (1) visual or (3) genetic SILICO sex?\nWe advise (3) for better results",
                                       answer.opt = c("1", "3"))
         sex.id.input <- as.integer(sex.id.input)
       } else {
-        sex.id.input <- as.integer(3)
+        # sex.id.input <- as.integer(3)
+        sex.id.input <- as.integer(sex.id.input)
       }
     }
     message("Sex and summary statistics will be calculated accoriding to: ",
@@ -1092,8 +1134,8 @@ sexy_markers <- function(data,
 
 
   # Remove markers that are already extracted and have high missingness
+  print(ggplot2::qplot(data.sum$MISSINGNESS, xlab = "Missingness per SNP marker"))
   if(interactive.filter) {
-    print(ggplot2::qplot(data.sum$MISSINGNESS, xlab = "Missingness per SNP marker"))
     mis.threshold.data <-
       radiator::radiator_question(x = "Have a look at the plot: Choose the upper threshold for missingness per SNP marker (e.g. 0.2):", minmax = c(0, 1))
 
@@ -1104,29 +1146,31 @@ sexy_markers <- function(data,
     data.sum <-
       dplyr::filter(data.sum,
                     !(MARKERS %in% y.markers | MISSINGNESS > mis.threshold.data))
-
-    if (!is.null(silicodata)) {
-      print(ggplot2::qplot(silico.sum$MISSINGNESS, xlab = "Missingness per SILICO marker"))
-      mis.threshold.silicodata <-
-        radiator::radiator_question(x = "Have a look at the plot: Choose the upper threshold for missingness per SILICO marker (e.g. 0.2):", minmax = c(0, 1))
-      message(
-        "For detecting heterogametic markers, the SILICO data is filtered on a missingness >: ",
-        mis.threshold.silicodata
-      )
-      silico.sum <-
-        dplyr::filter(silico.sum, !(MARKERS %in% y.silico.markers |
-              MISSINGNESS > mis.threshold.silicodata
-          ))
-    }
   } else {
     message(
       "For detecting heterogametic markers, the SNP data is filtered on a missingness >: ",
       mis.threshold.data)
     data.sum <-
       dplyr::filter(data.sum, !(MARKERS %in% y.markers | MISSINGNESS > mis.threshold.data))
-    if (!is.null(silicodata)) {
+  }
+
+  if (!is.null(silicodata)) {
+    print(ggplot2::qplot(silico.sum$MISSINGNESS, xlab = "Missingness per SILICO marker"))
+    if (interactive.filter) {
+      print(ggplot2::qplot(silico.sum$MISSINGNESS, xlab = "Missingness per SILICO marker"))
+      mis.threshold.silicodata <-
+        radiator::radiator_question(x = "Have a look at the plot: Choose the upper threshold for missingness per SILICO marker (e.g. 0.2):", minmax = c(0, 1))
       message(
-        "For detecting heterogametic markers, the SILICO data is filtered on a missingness >: ",
+        "For detecting homogametic markers, the SILICO data is filtered on a missingness > ",
+        mis.threshold.silicodata
+      )
+      silico.sum <-
+        dplyr::filter(silico.sum, !(MARKERS %in% y.silico.markers |
+              MISSINGNESS > mis.threshold.silicodata
+          ))
+    } else {
+      message(
+        "For detecting homogametic markers, the SILICO data is filtered on a missingness > ",
         mis.threshold.silicodata)
       silico.sum <-
         dplyr::filter(silico.sum, !(MARKERS %in% y.silico.markers | MISSINGNESS > mis.threshold.silicodata))
@@ -1163,7 +1207,18 @@ sexy_markers <- function(data,
   )
   print(scat.fig)
 
-  ### QREG -> Tau value is important
+  if (interactive.filter) {
+    het.qr.input <-
+      radiator::radiator_question(
+        x = "\nHeterozygosity method of SNPs:\nDo you want to plot the residuals for \n(1) X-linked markers: i.e. heterozygous for females\n(2) Z-linked markers: i.e. heterozygous for males",
+        answer.opt = c("1", "2"))
+    sex.id.input <- as.integer(sex.id.input)
+  } else{
+    het.qr.input <- as.integer(het.qr.input)
+  }
+
+  # Quantilte regression
+  if(het.qr.input == 1){
   plot.filename <- "3B.sexy_markers_HET_qr_plot"
   if (!is.null(species) && !is.null(population)) {
     plot.filename <-
@@ -1190,13 +1245,42 @@ sexy_markers <- function(data,
   )
   print(qr.fig)
 
+  } else if (het.qr.input == 2){
+    plot.filename <- "3B.sexy_markers_HET_qr_plot"
+    if (!is.null(species) && !is.null(population)) {
+      plot.filename <-
+        stringi::stri_join(plot.filename, species, population, sep = "_")
+    }
+    plot.filename <-
+      stringi::stri_join(path.folder, "/", plot.filename, "_", file.date, ".pdf")
+
+    qr.fig <- sex_markers_plot(
+      data = data.sum,
+      x = "QR_RESIDUALS",
+      y = "MEAN_HET_F",
+      qreg = TRUE,
+      tuckey = FALSE,
+      x.title = "Quantile residuals for M~F (<- X/Z ->)",
+      y.title = "Proportion of heterozygosity in females",
+      subtitle = if (is.null(population)) {
+        paste0("Sex is ", SexID, " assigned; tau = ", tau)
+      } else {
+        paste0(population, ": Sex is ", SexID, " assigned; tau = ", tau)
+      },
+      title = "Quantile residual plot of each SNP marker between females and males",
+      plot.filename = plot.filename
+    )
+    print(qr.fig)
+  } else {message("het.qr.input must be '1' or '2'")}
+
+
   message(
     "Files written: '3A.sexy_markers_HET_scat_plot.pdf' & '3B.sexy_markers_HET_qr_plot.pdf'"
   )
 
   # Interacive selection of threshold
   if (interactive.filter) {
-    filter.x.markers <- radiator::radiator_question(x = "Heterozygosity method of SNPs:\nLook at the figures: Do you want to select X/Z-linked markers (y/n): ", answer.opt = c("y", "n"))
+    filter.x.markers <- radiator::radiator_question(x = "Look at the figures: Do you want to select X/Z-linked markers (y/n): ", answer.opt = c("y", "n"))
 
     if (filter.x.markers == "y") {
       threshold.x.markers.qr <-
@@ -1443,9 +1527,9 @@ sexy_markers <- function(data,
 
     hist2.fig <- sex_markers_plot(
       if(zoom.silicodata > 1){
-        data = dplyr::filter(data.sum, RATIO > zoom.silicodata)
+        data = dplyr::filter(silico.sum, RATIO > zoom.silicodata)
       } else if(zoom.silicodata < 1){
-        data = dplyr::filter(data.sum, RATIO < zoom.silicodata)
+        data = dplyr::filter(silico.sum, RATIO < zoom.silicodata)
       },
       x = "RATIO",
       qreg = FALSE,
@@ -1641,10 +1725,10 @@ sexy_markers <- function(data,
     print(Upsetplot)
 
     plot.filename <-
-      stringi::stri_join("6.sexy.markers_upsetrplot_", file.date, ".pdf")
+      stringi::stri_join("6.sexy_markers_upsetrplot_", file.date, ".pdf")
     plot.filename <- file.path(path.folder, plot.filename)
 
-    pdf(file = plot.filename, onefile = FALSE)
+    pdf(file = plot.filename, onefile = TRUE, width = 6, height = 6)
     UpSetR::upset(
       plot.data,
       nsets = n.pop,
@@ -1692,7 +1776,7 @@ sexy_markers <- function(data,
     }
     close(afile)
     message("File written:'7.sexy_markers_sequences.fasta'")
-  }
+    }
 
   return(res)
 }#End sexy_markers
@@ -1700,7 +1784,7 @@ sexy_markers <- function(data,
 
 # INTERNAL NESTED FUNCTION------------------------------------------------------
 #' @title sex_markers_plot
-#' @description Function to generate the different figures required.
+#' @description Function to generate the different figures required for 'sexy_markers'.
 #' @keywords internal
 #' @export
 
@@ -1767,7 +1851,7 @@ sex_markers_plot <- function(
 }
 
 #' @title summarize_sex
-#' @description Function to generate the different figures required.
+#' @description Function to summarize the presence-absence, heterozygosity and read depth per sex.
 #' @keywords internal
 #' @export
 
