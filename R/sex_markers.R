@@ -253,8 +253,8 @@ sexy_markers <- function(data,
                    "threshold.x.markers.RD.silico")
     for (name in  arguments){
           if (!exists(name)){
-            message("When 'interactive.filter == FALSE' the following arguments are needed:\n")
-            cat(arguments, sep = "\n")
+            rlang::abort("Incorrect input arguments", cat("When 'interactive.filter == FALSE' the following arguments are needed:",
+                                arguments, sep = "\n"))
             }
     }
   }
