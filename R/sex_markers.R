@@ -1754,15 +1754,17 @@ sexy_markers <- function(data,
       stringi::stri_join("6.sexy_markers_upsetrplot_", file.date, ".pdf")
     plot.filename <- file.path(path.folder, plot.filename)
 
-    {pdf(file = plot.filename, onefile = FALSE)
-    Upsetplot
-    # UpSetR::upset(
-    #   plot.data,
-    #   nsets = n.pop,
-    #   order.by = "freq",
-    #   empty.intersections = NULL
-    # )
-    dev.off()}
+    {
+      pdf(file = plot.filename, onefile = FALSE)
+      print(Upsetplot)
+      # UpSetR::upset(
+      #   plot.data,
+      #   nsets = n.pop,
+      #   order.by = "freq",
+      #   empty.intersections = NULL
+      # )
+      dev.off()
+    }
     message("File written: '6.sexy.markers_upsetrplot.pdf'")
   } else{
     message("Not enough markers found with different methods to analyse the overlap between methods (i.e. upsetR plot)")
