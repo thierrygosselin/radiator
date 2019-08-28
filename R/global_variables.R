@@ -136,7 +136,7 @@ if (getRversion() >= "2.15.1") {
       "sample_type", "CALIBRATE", "DEPTH_ALT", "DEPTH_REF", "HET_PROP",
       "NUMBER_GENOTYPED", "NUMBER_HET", "NUMBER_MISSING", "TOTAL_COUNTS",
       "Z_SCORE",
-      "MARKERS.x", "GT_BIN.x", "TARGET_ID.x", "folder.name", "mis.threshold.data",
+      "MARKERS.x", "GT_BIN.x", "TARGET_ID.x", "TARGET_ID.y", "folder.name", "mis.threshold.data",
       "mis.threshold.silicodata", "threshold.y.markers", "threshold.y.silico.markers",
       "sex.id.input", "het.qr.input", "threshold.x.markers.qr",
       "zoom.data", "threshold.x.markers.RD", "zoom.silicodata",

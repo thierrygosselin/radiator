@@ -309,8 +309,12 @@ sexy_markers <- function(data,
   # Folders---------------------------------------------------------------------
   wd <- path.folder <- radiator::generate_folder(
     f = NULL,
-    if(!is.null(folder.name)){
-      rad.folder = folder.name
+    if (exists("folder.name")) {
+      if (!is.null(folder.name)) {
+        rad.folder = folder.name
+      } else{
+        rad.folder = "sexy_markers"
+      }
     } else{
       rad.folder = "sexy_markers"
     },
@@ -331,7 +335,7 @@ sexy_markers <- function(data,
   )
 
 
-  # Detect format--------------------------------------------------------------data.type <-
+  # Detect format---------------------------------------------------------------
   data.type <- radiator::detect_genomic_format(data)
 
   if (!data.type %in% c("SeqVarGDSClass", "gds.file", "dart", "vcf.file")) {
@@ -405,11 +409,16 @@ sexy_markers <- function(data,
 
   # Filters----------------------------------------------------------------------
   if (filters) {
+    if ("counts" %in% data.source | "vcf.file" %in% data.type){
+       count.data <- TRUE
+    } else {count.data <- FALSE}
     data <- radiator::filter_individuals(
       data = data,
       interactive.filter = interactive.filter,
       filter.individuals.missing = "outliers",
       filter.individuals.heterozygosity = "outliers",
+      filter.individuals.coverage.total = "outliers",
+      dp = count.data,
       internal = FALSE,
       path.folder = path.folder,
       parallel.core = parallel.core,
@@ -467,7 +476,7 @@ sexy_markers <- function(data,
   gds.bk <- data
   # gds.bk -> data
 
-  if(data.type != "vcf.file"){
+  if( !("vcf.file" %in% data.type)){
     data <- radiator::extract_genotypes_metadata(
     gds = data,
     genotypes.meta.select = c("MARKERS", "INDIVIDUALS", "GT_BIN", "READ_DEPTH"),
@@ -560,7 +569,7 @@ sexy_markers <- function(data,
   }
 
 
-  # Sex markers-----------------------------------------------------------------
+  # START Sex markers-----------------------------------------------------------------
   # 1. presence/absence per strata and markers: yw
   # 2. heterozygosity per strata and markers: xz
   # 3. read depth per strata and markers markers: xz
@@ -785,7 +794,8 @@ sexy_markers <- function(data,
   ####* SET GENETIC SEX STRATA ####
   if (exists("y.markers") && !rlang::is_empty(y.markers)) {
     if (tibble::has_name(data, "READ_DEPTH")) {
-      y.data <- dplyr::filter(data, MARKERS %in% y.markers) %>%
+      y.data <-
+        dplyr::filter(data, MARKERS %in% y.markers) %>%
         dplyr::group_by(INDIVIDUALS) %>%
         dplyr::summarise(MEAN_RD = mean(READ_DEPTH)) %>%
         dplyr::ungroup(.) %>%
@@ -1054,24 +1064,29 @@ sexy_markers <- function(data,
       )
       message("New strata file with genetic sex is written.")
       ### recalculate data based on new sexID
-      data.genetic <-
-        dplyr::rename(data, VISUAL_STRATA = STRATA) %>%
+      data <-
+        dplyr::select(data,-c(STRATA)) %>%
+        # dplyr::rename(data, VISUAL_STRATA = STRATA) %>%
         dplyr::left_join(y.data, by = "INDIVIDUALS") %>%
         # dplyr::rename(MARKERS = MARKERS.x, GT_BIN = GT_BIN.x, TARGET_ID = TARGET_ID.x) %>%
         dplyr::rename(TARGET_ID = TARGET_ID.x) %>%
-        dplyr::mutate(GENETIC_STRATA = STRATA)
-      radiator::write_rad(data = data.genetic,
+        dplyr::select(-c(TARGET_ID.y))
+      # dplyr::mutate(GENETIC_STRATA = STRATA)
+      radiator::write_rad(data = data,
                           path = file.path(wd, "sexy_markers_temp.rad"))
 
       if ("silico.dart" %in% data.source) {
-        data.silico.genetic <-
-          dplyr::rename(silicodata, VISUAL_STRATA = STRATA) %>%
+        silicodata <-
+          dplyr::select(silicodata,-c(STRATA)) %>%
+          # dplyr::rename(silicodata, VISUAL_STRATA = STRATA) %>%
           dplyr::left_join(y.data, by = "INDIVIDUALS") %>%
-          dplyr::mutate(GENETIC_STRATA = STRATA)
-        radiator::write_rad(data = data.silico.genetic,
+          dplyr::rename(TARGET_ID = TARGET_ID.x) %>%
+          dplyr::select(-c(TARGET_ID.y))
+          # dplyr::mutate(GENETIC_STRATA = STRATA)
+        radiator::write_rad(data = silicodata,
                             path = file.path(wd, "sexy_markers_silico_temp.rad"))
       } else{
-        data.silico.genetic <- NULL
+        silicodata <- NULL
       }
 
     } else if (sex.id.input == 3) {
@@ -1085,22 +1100,28 @@ sexy_markers <- function(data,
       message("New strata file with genetic sex is written.")
       SexID <- "genetically (SILICO)"
       ### recalculate data based on new sexID
-      data.genetic <-
-        dplyr::rename(data, VISUAL_STRATA = STRATA) %>%
+      data <-
+        dplyr::select(data,-c(STRATA)) %>%
+        # dplyr::rename(data, VISUAL_STRATA = STRATA) %>%
         dplyr::left_join(y.silico.data, by = "INDIVIDUALS") %>%
-        dplyr::mutate(GENETIC_STRATA = STRATA)
-      radiator::write_rad(data = data.genetic,
-                          path = file.path(wd, "sexy_markers_temp"))
+        dplyr::rename(TARGET_ID = TARGET_ID.x) %>%
+        dplyr::select(-c(TARGET_ID.y))
+        # dplyr::mutate(GENETIC_STRATA = STRATA)
+      radiator::write_rad(data = data,
+                          path = file.path(wd, "sexy_markers_temp.rad"))
 
       if ("silico.dart" %in% data.source) {
-        data.silico.genetic <-
-          dplyr::rename(silicodata, VISUAL_STRATA = STRATA) %>%
+        silicodata <-
+          dplyr::select(silicodata,-c(STRATA)) %>%
+          # dplyr::rename(silicodata, VISUAL_STRATA = STRATA) %>%
           dplyr::left_join(y.silico.data, by = "INDIVIDUALS") %>%
-          dplyr::mutate(GENETIC_STRATA = STRATA)
-        radiator::write_rad(data = data.silico.genetic,
+          dplyr::rename(TARGET_ID = TARGET_ID.x) %>%
+          dplyr::select(-c(TARGET_ID.y))
+          # dplyr::mutate(GENETIC_STRATA = STRATA)
+        radiator::write_rad(data = silicodata,
                             path = file.path(wd, "sexy_markers_silico_temp.rad"))
       } else{
-        data.silico.genetic <- NULL
+        silicodata <- NULL
       }
     }
 
@@ -1109,8 +1130,8 @@ sexy_markers <- function(data,
       message("Sex and summary statistics will be calculated according to: ",
               sex.id.input)
       res$sum <- summarize_sex(
-        data = data.genetic,
-        silicodata = data.silico.genetic,
+        data = data,
+        silicodata = silicodata,
         coverage.thresholds = coverage.thresholds,
         data.source = data.source,
         tau = tau
@@ -1120,12 +1141,12 @@ sexy_markers <- function(data,
 
       # Add new summary for number F and M and ratio, because Unknown are now included
       sex.ratio <-
-        dplyr::distinct(data.genetic, INDIVIDUALS, .keep_all = TRUE) %>%
-        dplyr::count(GENETIC_SEX, name = "SEX_RATIO")
+        dplyr::distinct(data, INDIVIDUALS, .keep_all = TRUE) %>%
+        dplyr::count(GENETIC_SEX, name = "N")
       message(
         "\n\nIndividuals with unknown sex ID are now included in the analysis.
         The new sex-ratio (F/M) is: ",
-        round(sex.ratio$SEX_RATIO[1] / sex.ratio$SEX_RATIO[2], 2)
+        round(sex.ratio$N[sex.ratio$GENETIC_SEX=="F"] / sex.ratio$N[sex.ratio$GENETIC_SEX=="M"], 2)
       )
       print(sex.ratio)
     } else {message("Sex ID has not changed. Sex and summary statistics are not recalculated.")}
@@ -1389,10 +1410,11 @@ sexy_markers <- function(data,
       stringi::stri_join(path.folder, "/", plot.filename, "_", file.date, ".pdf")
 
     hist2.fig <- sex_markers_plot(
+      data =
       if(zoom.data > 1){
-        data = dplyr::filter(data.sum, RATIO > zoom.data)
+        dplyr::filter(data.sum, RATIO > zoom.data)
       } else if(zoom.data < 1){
-        data = dplyr::filter(data.sum, RATIO < zoom.data)
+        dplyr::filter(data.sum, RATIO < zoom.data)
       },
       x = "RATIO",
       qreg = FALSE,
@@ -1527,10 +1549,11 @@ sexy_markers <- function(data,
       stringi::stri_join(path.folder, "/", plot.filename, "_", file.date, ".pdf")
 
     hist2.fig <- sex_markers_plot(
+      data =
       if(zoom.silicodata > 1){
-        data = dplyr::filter(silico.sum, RATIO > zoom.silicodata)
+        dplyr::filter(silico.sum, RATIO > zoom.silicodata)
       } else if(zoom.silicodata < 1){
-        data = dplyr::filter(silico.sum, RATIO < zoom.silicodata)
+        dplyr::filter(silico.sum, RATIO < zoom.silicodata)
       },
       x = "RATIO",
       qreg = FALSE,
@@ -1731,17 +1754,18 @@ sexy_markers <- function(data,
       stringi::stri_join("6.sexy_markers_upsetrplot_", file.date, ".pdf")
     plot.filename <- file.path(path.folder, plot.filename)
 
-    pdf(file = plot.filename, onefile = FALSE)
-    UpSetR::upset(
-      plot.data,
-      nsets = n.pop,
-      order.by = "freq",
-      empty.intersections = NULL
-    )
-    dev.off()
+    {pdf(file = plot.filename, onefile = FALSE)
+    Upsetplot
+    # UpSetR::upset(
+    #   plot.data,
+    #   nsets = n.pop,
+    #   order.by = "freq",
+    #   empty.intersections = NULL
+    # )
+    dev.off()}
     message("File written: '6.sexy.markers_upsetrplot.pdf'")
   } else{
-    message("Not enough markers found with different methods to analyse the overlap between methods (i.e. upsetR plot")
+    message("Not enough markers found with different methods to analyse the overlap between methods (i.e. upsetR plot)")
   }
 
   ## FASTA file with sex markers for all methods ##
@@ -1920,7 +1944,7 @@ summarize_sex <- function (data, silicodata, data.source, coverage.thresholds = 
       dplyr::select(data, MARKERS, INDIVIDUALS, STRATA, GT_BIN) %>%
       dplyr::group_by(STRATA, MARKERS) %>%
       dplyr::summarise(
-        PRESENCE_ABSENCE = length(INDIVIDUALS[is.na(GT_BIN)]) / length(INDIVIDUALS),##ISSUE
+        PRESENCE_ABSENCE = length(INDIVIDUALS[is.na(GT_BIN)]) / length(INDIVIDUALS),
         MEAN_HET = length(INDIVIDUALS[GT_BIN == 1]) / length(INDIVIDUALS)
       ) %>%
       dplyr::ungroup(.) %>%
