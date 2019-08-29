@@ -381,6 +381,7 @@ write_genlight <- function(
             )
           ) %>%
           dplyr::ungroup(.)
+        data.bk <- NULL
       } else {
         if (rlang::has_name(data, "READ_DEPTH")) {
           # dart 2 rows counts...

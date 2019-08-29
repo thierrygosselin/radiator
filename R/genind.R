@@ -52,6 +52,13 @@ tidy_genind <- function(
   verbose = FALSE
 ) {
 
+  # TEST
+  # keep.allele.names = TRUE
+  # tidy = TRUE
+  # gds = FALSE
+  # write = FALSE
+  # verbose = TRUE
+
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("data argument required")
   if (is.vector(data)) data <- readRDS(data)
@@ -78,7 +85,8 @@ tidy_genind <- function(
     ) %>%
       dplyr::mutate(
         MARKERS = stringi::stri_extract_first_regex(str = colnames(data@tab), pattern = "^[^.]+"),
-        ALLELES = stringi::stri_extract_last_regex(str = colnames(data@tab), pattern = "(?<=\\.).*")
+        ALLELES = stringi::stri_extract_last_regex(str = colnames(data@tab), pattern = "(?<=\\.).*"),
+        ALLELES = stringi::stri_replace_all_fixed(str = ALLELES, pattern = c("A1__", "A2__"), replacement = c("", ""), vectorize_all = FALSE),
       ) %>%
       dplyr::arrange(MARKERS, COUNT, ALLELES) %>%
       dplyr::mutate(REF = rep(c("ALT", "REF"), n() / 2))
@@ -102,6 +110,7 @@ tidy_genind <- function(
       dplyr::filter(MARKERS %in% alt.alleles) %>%
       dplyr::mutate(
         MARKERS = stringi::stri_extract_first_regex(str = MARKERS, pattern = "^[^.]+"),
+        MARKERS = stringi::stri_replace_all_fixed(str = MARKERS, pattern = c("__A1", "__A2"), replacement = c("", ""), vectorize_all = FALSE),
         VARIANT_ID = as.integer(factor(MARKERS))) %>%
       dplyr::arrange(VARIANT_ID)
 
@@ -136,6 +145,10 @@ tidy_genind <- function(
     }
 
     A2 <- TRUE %in% unique(stringi::stri_detect_fixed(str = sample(colnames(data@tab), 100), pattern = ".A2"))
+    if (isTRUE(TRUE %in% unique(stringi::stri_detect_fixed(str = sample(colnames(data@tab), 100), pattern = ".A2__")))) {
+      A2 <- FALSE
+    }
+
 
     if (biallelic && A2) {
       # changed adegenet::indNames to rownames(data@tab) to lower dependencies
@@ -176,7 +189,10 @@ tidy_genind <- function(
           ) %>%
           tibble::as_tibble(.) %>%
           dplyr::filter(COUNT > 0 | is.na(COUNT)) %>%
-          tidyr::separate(data = ., col = MARKERS_ALLELES, into = c("MARKERS", "ALLELES"), sep = "\\.")
+          tidyr::separate(data = ., col = MARKERS_ALLELES, into = c("MARKERS", "ALLELES"), sep = "\\.") %>%
+          dplyr::mutate(
+            ALLELES = stringi::stri_replace_all_fixed(str = ALLELES, pattern = c("A1__", "A2__"), replacement = c("", ""), vectorize_all = FALSE),
+          )
 
         check.alleles <- unique(stringi::stri_detect_regex(str = unique(data$ALLELES), pattern = "[0-9]"))
         check.alleles <- length(check.alleles) == 1 && check.alleles
@@ -199,7 +215,6 @@ tidy_genind <- function(
         data <- tibble::as_tibble(data@tab) %>%
           tibble::add_column(.data = ., INDIVIDUALS = rownames(data@tab), .before = 1) %>%
           tibble::add_column(.data = ., POP_ID = data@pop) %>%
-          # tidyr::gather(data = ., key = MARKERS_ALLELES, value = COUNT, -c(POP_ID, INDIVIDUALS)) %>%
           data.table::as.data.table(.) %>%
           data.table::melt.data.table(
             data = .,
@@ -211,6 +226,7 @@ tidy_genind <- function(
           dplyr::filter(COUNT > 0 | is.na(COUNT)) %>%
           tidyr::separate(data = ., col = MARKERS_ALLELES, into = c("MARKERS", "ALLELES"), sep = "\\.") %>%
           dplyr::mutate(
+            ALLELES = stringi::stri_replace_all_fixed(str = ALLELES, pattern = c("A1__", "A2__"), replacement = c("", ""), vectorize_all = FALSE),
             ALLELES = as.numeric(factor(ALLELES)),
             ALLELES = stringi::stri_pad_left(str = ALLELES, pad = "0", width = 3)
           )
@@ -285,6 +301,12 @@ tidy_genind <- function(
 
 write_genind <- function(data, write = FALSE, verbose = FALSE) {
 
+
+  # TEST
+  # write = TRUE
+  # verbose = TRUE
+
+
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("Input file missing")
 
@@ -324,68 +346,96 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
   if (length(pop.num) == 1 && pop.num) pop.levels <- as.character(sort(as.numeric(pop.levels)))
 
   # When GT_BIN available
-  if (tibble::has_name(data, "GT_BIN")) {
-    if (tibble::has_name(data, "REF")) {
-      data <- suppressWarnings(
-        dplyr::select(.data = data, MARKERS, POP_ID, INDIVIDUALS, REF, ALT, GT_BIN) %>%
-          dplyr::mutate(A1 = abs(GT_BIN - 2)) %>%
-          dplyr::rename(A2 = GT_BIN) %>%
-          data.table::as.data.table(.) %>%
-          data.table::melt.data.table(
-            data = .,
-            id.vars = c("INDIVIDUALS", "POP_ID", "MARKERS", "REF", "ALT"),
-            variable.name = "ALLELES",
-            measure.vars = c("A1", "A2"),
-            value.name = "n"
-          ) %>%
-          tibble::as_tibble(.) %>%
+  if (rlang::has_name(data, "GT_BIN")) {
+    if (rlang::has_name(data, "REF")) {
+      data <- dplyr::bind_rows(
+        dplyr::select(data, MARKERS, POP_ID, INDIVIDUALS, REF, n = GT_BIN) %>%
           dplyr::mutate(
-            ALLELES = dplyr::case_when(
-              ALLELES == "A1" ~ REF,
-              ALLELES == "A2" ~ ALT
-            ),
+            REF = stringi::stri_join("A1", REF, sep = "__"),
+            MARKERS_ALLELES = stringi::stri_join(MARKERS, REF, sep = "."),
+            MARKERS = NULL,
             REF = NULL,
-            ALT = NULL,
-            MARKERS_ALLELES = stringi::stri_join(MARKERS, ALLELES, sep = ".")) %>%
-          dplyr::select(-MARKERS, -ALLELES) %>%
-          data.table::as.data.table(.) %>%
-          data.table::dcast.data.table(
-            data = .,
-            formula = POP_ID + INDIVIDUALS ~ MARKERS_ALLELES,
-            value.var = "n",
-            fun.aggregate = length
-          ) %>%
-          tibble::as_tibble(.) %>%
-          dplyr::mutate(POP_ID = factor(as.character(POP_ID), levels = pop.levels)) %>%# xvalDapc doesn't accept pop as ordered factor
-          dplyr::arrange(POP_ID, INDIVIDUALS))
+            n = as.integer(abs(n - 2))
+          ),
+        dplyr::select(data, MARKERS, POP_ID, INDIVIDUALS, ALT, n = GT_BIN) %>%
+          dplyr::mutate(
+            ALT = stringi::stri_join("A2", ALT, sep = "__"),
+            MARKERS_ALLELES = stringi::stri_join(MARKERS, ALT, sep = "."),
+            MARKERS = NULL,
+            ALT = NULL
+          )
+      ) %>%
+        data.table::as.data.table(.) %>%
+        data.table::dcast.data.table(
+          data = .,
+          formula = POP_ID + INDIVIDUALS ~ MARKERS_ALLELES,
+          value.var = "n"
+        ) %>%
+        tibble::as_tibble(.) %>%
+        dplyr::mutate(POP_ID = factor(as.character(POP_ID), levels = pop.levels)) %>%# xvalDapc doesn't accept pop as ordered factor
+        dplyr::arrange(POP_ID, INDIVIDUALS)
+
+      # Note to myself: the problem below is that alleles are not unique and it
+      # generates an identifier using the marker + the allele that is not unique...
+      # data <-
+      # # suppressWarnings(
+      # test <- dplyr::select(.data = data, MARKERS, POP_ID, INDIVIDUALS, REF, ALT, GT_BIN) %>%
+      #   dplyr::mutate(A1 = as.integer(abs(GT_BIN - 2))) %>%
+      #   dplyr::rename(A2 = GT_BIN) %>%
+      #   data.table::as.data.table(.) %>%
+      #   data.table::melt.data.table(
+      #     data = .,
+      #     id.vars = c("INDIVIDUALS", "POP_ID", "MARKERS", "REF", "ALT"),
+      #     variable.name = "ALLELES",
+      #     measure.vars = c("A1", "A2"),
+      #     value.name = "n"
+      #   ) %>%
+      #   tibble::as_tibble(.) %>%
+      #   dplyr::mutate(
+      #     ALLELES = dplyr::case_when(
+      #       ALLELES == "A1" ~ REF,
+      #       ALLELES == "A2" ~ ALT
+      #     ),
+      #     REF = NULL,
+      #     ALT = NULL,
+      #     MARKERS_ALLELES = stringi::stri_join(MARKERS, ALLELES, sep = ".")
+      #   ) %>%
+      #   dplyr::select(-MARKERS, -ALLELES) %>%
+      #   data.table::as.data.table(.) %>%
+      #   data.table::dcast.data.table(
+      #     data = .,
+      #     formula = POP_ID + INDIVIDUALS ~ MARKERS_ALLELES,
+      #     value.var = "n"#, fun.aggregate = length
+      #   ) %>%
+      #   tibble::as_tibble(.) %>%
+      #   dplyr::mutate(POP_ID = factor(as.character(POP_ID), levels = pop.levels)) %>%# xvalDapc doesn't accept pop as ordered factor
+      #   dplyr::arrange(POP_ID, INDIVIDUALS)
+      # # )
     } else {
-      data <- suppressWarnings(
-        dplyr::select(.data = data, MARKERS, POP_ID, INDIVIDUALS, GT_BIN) %>%
-          dplyr::mutate(A1 = abs(GT_BIN - 2)) %>%
-          dplyr::rename(A2 = GT_BIN) %>%
-          data.table::as.data.table(.) %>%
-          data.table::melt.data.table(
-            data = .,
-            id.vars = c("INDIVIDUALS", "POP_ID", "MARKERS"),
-            variable.name = "ALLELES",
-            value.name = "n"
-          ) %>%
-          tibble::as_tibble(.) %>%
-          # tidyr::gather(data = ., key = ALLELES, value = n, -c(INDIVIDUALS, POP_ID, MARKERS)) %>%
-          dplyr::mutate(MARKERS_ALLELES = stringi::stri_join(MARKERS, ALLELES, sep = ".")) %>%
-          dplyr::select(-MARKERS, -ALLELES) %>%
-          data.table::as.data.table(.) %>%
-          data.table::dcast.data.table(
-            data = .,
-            formula = POP_ID + INDIVIDUALS ~ MARKERS_ALLELES,
-            value.var = "n"
-          ) %>%
-          tibble::as_tibble(.) %>%
-          # dplyr::group_by(POP_ID, INDIVIDUALS) %>%
-          # tidyr::spread(data =., key = MARKERS_ALLELES, value = n) %>%
-          # dplyr::ungroup(.) %>%
-          dplyr::mutate(POP_ID = factor(as.character(POP_ID), levels = pop.levels)) %>%# xvalDapc doesn't accept pop as ordered factor
-          dplyr::arrange(POP_ID, INDIVIDUALS))
+      data <- dplyr::bind_rows(
+        dplyr::select(data, MARKERS, POP_ID, INDIVIDUALS, n = GT_BIN) %>%
+          dplyr::mutate(
+            MARKERS_ALLELES = stringi::stri_join(MARKERS, "A1", sep = "."),
+            MARKERS = NULL,
+            REF = NULL,
+            n = as.integer(abs(n - 2))
+          ),
+        dplyr::select(data, MARKERS, POP_ID, INDIVIDUALS, n = GT_BIN) %>%
+          dplyr::mutate(
+            MARKERS_ALLELES = stringi::stri_join(MARKERS, "A2", sep = "."),
+            MARKERS = NULL,
+            ALT = NULL
+          )
+      ) %>%
+        data.table::as.data.table(.) %>%
+        data.table::dcast.data.table(
+          data = .,
+          formula = POP_ID + INDIVIDUALS ~ MARKERS_ALLELES,
+          value.var = "n"
+        ) %>%
+        tibble::as_tibble(.) %>%
+        dplyr::mutate(POP_ID = factor(as.character(POP_ID), levels = pop.levels)) %>%# xvalDapc doesn't accept pop as ordered factor
+        dplyr::arrange(POP_ID, INDIVIDUALS)
     }
   } else {
     missing.geno <- dplyr::ungroup(data) %>%
@@ -402,12 +452,6 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
           A2 = stringi::stri_sub(str = GT, from = 4, to = 6)
         ) %>%
         dplyr::select(-GT) %>%
-        # tidyr::gather(
-        #   data = .,
-        #   key = ALLELES,
-        #   value = GT,
-        #   -c(MARKERS, INDIVIDUALS, POP_ID)
-        # ) %>%
         data.table::as.data.table(.) %>%
         data.table::melt.data.table(
           data = .,
@@ -425,9 +469,6 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
         dplyr::select(-MARKERS, -GT) %>%
         dplyr::mutate(POP_ID = factor(as.character(POP_ID), levels = pop.levels)) %>%# xvalDapc doesn't accept pop as ordered factor
         dplyr::arrange(MARKERS_ALLELES, INDIVIDUALS) %>%
-        # dplyr::group_by(POP_ID, INDIVIDUALS) %>%
-        # tidyr::spread(data =., key = MARKERS_ALLELES, value = n) %>%
-        # dplyr::ungroup(.) %>%
         data.table::as.data.table(.) %>%
         data.table::dcast.data.table(
           data = .,

@@ -33,8 +33,9 @@
 <meta property="og:title" content="sexy_markers finds sex-linked markers and re-assigns sex — sexy_markers" />
 
 <meta property="og:description" content="This function identifies sex-linked markers putatively located on
-homogametic or heterogametic chromosomes and re-assign the sex in a dataset
-based on findings. The function work best in: DArT silico (counts) &amp;gt;
+heterogametic or homogametic chromosomes and re-assign the sex in a dataset
+according to Y- or W-linked markers.
+The function work best in: DArT silico (counts) &amp;gt;
 DArT counts or RADseq with allele read depth &amp;gt; DArT silico (genotypes) &amp;gt;
 RADseq (genotypes) and DArT (1-row, 2-rows genotypes)." />
 <meta name="twitter:card" content="summary" />
@@ -129,8 +130,9 @@ RADseq (genotypes) and DArT (1-row, 2-rows genotypes)." />
     <div class="ref-description">
     
     <p>This function identifies sex-linked markers putatively located on
-homogametic or heterogametic chromosomes and re-assign the sex in a dataset
-based on findings. The function work best in: DArT silico (counts) &gt;
+heterogametic or homogametic chromosomes and re-assign the sex in a dataset
+according to Y- or W-linked markers.<br />
+The function work best in: DArT silico (counts) &gt;
 DArT counts or RADseq with allele read depth &gt; DArT silico (genotypes) &gt;
 RADseq (genotypes) and DArT (1-row, 2-rows genotypes).</p>
     
@@ -138,8 +140,8 @@ RADseq (genotypes) and DArT (1-row, 2-rows genotypes).</p>
 
     <pre class="usage"><span class='fu'>sexy_markers</span>(<span class='no'>data</span>, <span class='kw'>silicodata</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>boost.analysis</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
   <span class='kw'>strata</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>coverage.thresholds</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>filters</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>interactive.filter</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>parallel.core</span> <span class='kw'>=</span> <span class='kw pkg'>parallel</span><span class='kw ns'>::</span><span class='fu'><a href='https://www.rdocumentation.org/packages/parallel/topics/detectCores'>detectCores</a></span>() -
-  <span class='fl'>1</span>, <span class='no'>...</span>)</pre>
+  <span class='kw'>interactive.filter</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>folder.name</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>parallel.core</span> <span class='kw'>=</span> <span class='kw pkg'>parallel</span><span class='kw ns'>::</span><span class='fu'><a href='https://www.rdocumentation.org/packages/parallel/topics/detectCores'>detectCores</a></span>() - <span class='fl'>1</span>, <span class='no'>...</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -147,28 +149,28 @@ RADseq (genotypes) and DArT (1-row, 2-rows genotypes).</p>
     <tr>
       <th>data</th>
       <td><p>(object or file) DArT file <code>.csv or .tsv</code>, VCF file <code>.vcf</code>,
-GDS file or object (<code>.gds</code>).
-See Input data section data for more details.</p></td>
+GDS file or object (<code>.gds</code>).<br />
+See <code><a href='read_dart.html'>read_dart</a></code> or <code><a href='read_vcf.html'>read_vcf</a></code> for more details.</p></td>
     </tr>
     <tr>
       <th>silicodata</th>
-      <td><p>(optional, file) A silico DArT file (.csv or .tsv). This can be
-count or genotyped data. Note that both <code>data</code> and <code>silicodata</code> can
-be used at the same time.
+      <td><p>(optional, file) A silico (dominant marker) DArT file <code>.csv or .tsv</code>.<br />
+This can be count or genotyped data. Note that both <code>data</code> and
+<code>silicodata</code> can be used at the same time.<br />
 Default: <code>silicodata = NULL</code>.</p></td>
     </tr>
     <tr>
       <th>boost.analysis</th>
-      <td><p>(logical, optional) This method uses machine learning
-approaches to find sex markers and re-assign samples in sex group.
-The approach is currently been tested and will be available for uses soon.#'
+      <td><p>(optional, logical) This method uses machine learning
+approaches to find sex markers and re-assign samples in sex group.<br />
+The approach is currently been tested and will be available for uses soon.
 Default: <code>boost.analysis = FALSE</code>.</p></td>
     </tr>
     <tr>
       <th>strata</th>
       <td><p>(file) A tab delimited file with a minimum of
-2 columns <code>INDIVIDUALS, STRATA</code> for VCF files and 3 columns for DArT files
-<code>TARGET_ID, INDIVIDUALS, STRATA</code>.</p><ul>
+2 columns (<code>INDIVIDUALS, STRATA</code>) for VCF files and 3 columns for DArT files
+(<code>TARGET_ID, INDIVIDUALS, STRATA</code>).</p><ul>
 <li><p><code>TARGET_ID:</code> it's the column header of the DArT file.</p></li>
 <li><p><code>STRATA:</code> is the grouping column, here the sex info.
 3 values: <code>M</code> for male, <code>F</code> for female and <code>U</code> for unknown.
@@ -182,25 +184,28 @@ functions: <code><a href='extract_dart_target_id.html'>extract_dart_target_id</a
     <tr>
       <th>coverage.thresholds</th>
       <td><p>(optional, integer) The minimum coverage required
-to call a marker absent. For silico genotype data this must be &lt; 1.
+to call a marker absent. For silico genotype data this must be &lt; 1.<br />
 Default: <code>coverage.thresholds = 1</code>.</p></td>
     </tr>
     <tr>
       <th>filters</th>
       <td><p>(optional, logical) When <code>filters = TRUE</code>, the data will
-be filtered for
-monomorphic loci, missingness of individuals and heterozygosity of individuals.
+be filtered for monomorphic loci, missingness of individuals and heterozygosity of individuals.<br />
 CAUTION: we advice to use these filter, since not filtering or filtering too
-stingently will results in
-false positve or false negative detections.
+stringently will results in false positive or false negative detections.<br />
 Default: <code>filters = TRUE</code>.</p></td>
     </tr>
     <tr>
       <th>interactive.filter</th>
       <td><p>(optional, logical) When <code>interactive.filter = TRUE</code>
 the function will ask for your input to define thresholds. If <code>interactive.filter = FALSE</code>
-the function expects additional arguments (see advanced mode).
+the function expects additional arguments (see Advance mode).<br />
 Default: <code>interactive.filter = TRUE</code>.</p></td>
+    </tr>
+    <tr>
+      <th>folder.name</th>
+      <td><p>(optional,character) Name of the folder to store the results.
+Default: <code>folder.name = "sexy_marker_date/time"</code>.</p></td>
     </tr>
     <tr>
       <th>parallel.core</th>
@@ -221,18 +226,18 @@ special section)</p></td>
     <p>The created object contains:</p><ol>
 <li><p>A list with (1) the summarised SNP data per sex and
 (2) the summarised silico data per sex. This should allow you to re-create the various plots.</p></li>
-<li><p>A vector with the names of the sex-linked marker. One vector for each method.</p></li>
+<li><p>A vector with the names of the sex-linked marker. One vector for each sex method.</p></li>
 <li><p>A dataframe with a summary of the sex-linked markers and their sequence (if available).</p></li>
 </ol>
 
     
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
-    <p>This function takes DArT and RAD data to find markers that have a specific
- pattern that is linked to sex.
-The function hypothesizes the presence of sex-chromosomes in you
+    <p>This function takes DArT and RAD-type data to find markers that have a specific
+pattern that is linked to sex.<br />
+The function hypothesizes the presence of sex-chromosomes in your
 species/population. The tests are designed to identify markers that are
-located on putative heterogametic (Y or W) or homogametic (X or Z) chromosomes.
+located on putative heterogametic (Y or W) or homogametic (X or Z) chromosomes.<br />
 <em>Note:</em> Violating Assumptions or Prerequisites (see below) can lead to
 false positive or the absence of detection of sex-linked markers.</p>
     
@@ -301,30 +306,38 @@ double the number of counts for markers on the X chromosome.</p></li>
 
     
     <p><em>dots-dots-dots ...</em> allows to pass several arguments for fine-tuning the function:</p><ul>
+<li><p><code>tau</code>: The quantile used in regression to distinguish homogametic markers
+with the <strong>heterozygosity method</strong>. See <code><a href='https://www.rdocumentation.org/packages/quantreg/topics/rq'>rq</a></code>.<br />
+Default <code>tau = 0.03</code>.</p></li>
 <li><p><code>mis.threshold.data</code>: Threshold to filter the SNP data on missingness.
 Only if <code>interactive.filter = FALSE</code>.</p></li>
-<li><p><code>mis.threshold.silicodata</code>  Threshold to filter the silico data on
-missingness. Only if <code>interactive.filter = FALSE</code>.</p></li>
+<li><p><code>mis.threshold.silicodata</code>: Threshold to filter the silico data on
+missingness. No default. Only if <code>interactive.filter = FALSE</code>.</p></li>
 <li><p><code>threshold.y.markers</code>: Threshold to select heterogametic sex-linked
-markers from the SNP data with the <strong>presence/absence method</strong>. Only
-if <code>interactive.filter = FALSE</code>.</p></li>
-<li><p><code>tau</code>:The quantile used in regression to distinguish homogametic markers
-with the <strong>heterozygosity method</strong>. Default <code>tau = 0.03</code>.</p></li>
+markers from the SNP data with the <strong>presence/absence method</strong>.No default.
+Only if <code>interactive.filter = FALSE</code>.</p></li>
 <li><p><code>threshold.x.markers.qr</code>: Threshold to select homogametic sex-linked
-markers from the SNP data with the <strong>heterozygosity method</strong>. Only
-if <code>interactive.filter = FALSE</code>.</p></li>
+markers from the SNP data with the <strong>heterozygosity method</strong>. No default.
+Only if <code>interactive.filter = FALSE</code>.</p></li>
 <li><p><code>zoom.data</code>: Threshold to subset the F/M ratio of mean SNP coverage.
-Used to improve the histogrom resolution to select a better <code>threshold.x.markers.RD</code>
-threshold. Only if <code>interactive.filter = FALSE</code>.</p></li>
+Used to improve the histogram resolution to select a better <code>threshold.x.markers.RD</code>
+threshold. No default. Only if <code>interactive.filter = FALSE</code>.</p></li>
 <li><p><code>threshold.x.markers.RD</code>: Threshold to select homogametic sex-linked
-markers from the SNP data with the <strong>coverage method</strong>. Only
-if <code>interactive.filter = FALSE</code>.</p></li>
+markers from the SNP data with the <strong>coverage method</strong>.No default.
+Only if <code>interactive.filter = FALSE</code>.</p></li>
 <li><p><code>zoom.silicodata</code>: Threshold to subset the F/M ratio of mean silico coverage.
-Used to improve the histogrom resolution to select a better <code>threshold.x.markers.RD.silico</code>
-threshold. Only if <code>interactive.filter = FALSE</code>.</p></li>
+Used to improve the histogram resolution to select a better <code>threshold.x.markers.RD.silico</code>
+threshold. No default. Only if <code>interactive.filter = FALSE</code>.</p></li>
 <li><p><code>threshold.x.markers.RD.silico</code>: Threshold to select homogametic sex-linked
-markers from the silico data with the <strong>coverage method</strong>. Only
-if <code>interactive.filter = FALSE</code>.</p></li>
+markers from the silico data with the <strong>coverage method</strong>. No default.
+Only if <code>interactive.filter = FALSE</code>.</p></li>
+<li><p><code>sex.id.input</code>: (integer) <code>sex.id.input = c(1, 2 or 3)</code>
+to recalculate the sex based on (1) 'visual', (2) 'genetic SNP' or (3) 'genetic SILICO' sexID.
+No default. Only if <code>interactive.filter = FALSE</code>.</p></li>
+<li><p><code>het.qr.input</code>: (integer) <code>het.qr.input = c(1 or 2)</code>
+to plot the heterozygosity residual plot for (1) X-linked markers (heterozygous for females),
+or (2) Z-linked markers (heterozygous for males). No default.
+Only if <code>interactive.filter = FALSE</code>.</p></li>
 </ul>
     
     <h2 class="hasAnchor" id="life-cycle"><a class="anchor" href="#life-cycle"></a>Life cycle</h2>
@@ -341,7 +354,7 @@ perform better with new samples.</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><span class='co'># NOT RUN {</span>
-<span class='co'># The minumum</span>
+<span class='co'># The minimum</span>
 <span class='no'>sex.markers</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>radiator</span><span class='kw ns'>::</span><span class='fu'><a href='https://www.rdocumentation.org/packages/radiator/topics/sexy_markers'>sexy_markers</a></span>(
     <span class='kw'>data</span> <span class='kw'>=</span> <span class='st'>"shark.dart.data.csv"</span>,
     <span class='kw'>strata</span> <span class='kw'>=</span> <span class='st'>"shark.strata.tsv"</span>)
