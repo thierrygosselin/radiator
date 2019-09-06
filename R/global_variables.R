@@ -140,7 +140,8 @@ if (getRversion() >= "2.15.1") {
       "mis.threshold.silicodata", "threshold.y.markers", "threshold.y.silico.markers",
       "sex.id.input", "het.qr.input", "threshold.x.markers.qr",
       "zoom.data", "threshold.x.markers.RD", "zoom.silicodata",
-      "threshold.x.markers.RD.silico"
+      "threshold.x.markers.RD.silico", "VISUAL_SEX", "GENETIC_SEX.x",
+      "GENETIC_SEX.y"
     )
   )
 }

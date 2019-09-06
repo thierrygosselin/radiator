@@ -674,7 +674,7 @@ sexy_markers <- function(data,
     if (filter.y.markers == "y") {
       threshold.y.markers <-
         radiator::radiator_question(x = "Choose the threshold for Y/W-linked markers, note that the Y-axis is inverted (-1 to 1): ",
-                                    minmax = c(-1, 1))
+                                    minmax = c(-1.5, 1.5))
     } else {
       threshold.y.markers <- NULL
     }
@@ -684,7 +684,7 @@ sexy_markers <- function(data,
   if (!is.null(threshold.y.markers)) {
     if (threshold.y.markers < 0) {
       y.markers <- dplyr::filter(data.sum, DIFF < threshold.y.markers)$MARKERS
-    } else {
+    } else if (threshold.y.markers < 0) {
       y.markers <- dplyr::filter(data.sum, DIFF > threshold.y.markers)$MARKERS
     }
     res$heterogametic.markers <- y.markers
@@ -767,7 +767,7 @@ sexy_markers <- function(data,
       if (filter.y.markers == "y") {
         threshold.y.silico.markers <-
           radiator::radiator_question(x = "Choose the threshold for Y/W-linked SILICO markers, note that the Y-axis is inverted (-1 to 1): ",
-                                      minmax = c(-1, 1))
+                                      minmax = c(-1.5, 1.5))
       } else {
         threshold.y.silico.markers <- NULL
         y.silico.markers <- NULL
@@ -778,7 +778,7 @@ sexy_markers <- function(data,
     if (!is.null(threshold.y.silico.markers)) {
       if (threshold.y.silico.markers < 0) {
         y.silico.markers <- dplyr::filter(silico.sum, DIFF < threshold.y.silico.markers)$MARKERS
-      } else {
+      } else if (threshold.y.silico.markers > 0){
         y.silico.markers <- dplyr::filter(silico.sum, DIFF > threshold.y.silico.markers)$MARKERS
       }
       res$heterogametic.silico.markers <- y.silico.markers
@@ -791,73 +791,126 @@ sexy_markers <- function(data,
     res$heterogametic.silico.markers <- NULL
   }
 
-  ####* SET GENETIC SEX STRATA ####
-  if (exists("y.markers") && !rlang::is_empty(y.markers)) {
-    if (tibble::has_name(data, "READ_DEPTH")) {
-      y.data <-
-        dplyr::filter(data, MARKERS %in% y.markers) %>%
-        dplyr::group_by(INDIVIDUALS) %>%
-        dplyr::summarise(MEAN_RD = mean(READ_DEPTH)) %>%
-        dplyr::ungroup(.) %>%
-        dplyr::left_join(strata, by = "INDIVIDUALS") %>%
-        dplyr::mutate(VISUAL_SEX = STRATA) %>%
-        dplyr::mutate(
-          GENETIC_SEX =
-            dplyr::case_when(
-              is.na(MEAN_RD) | MEAN_RD < coverage.thresholds ~ "F",
-              !(is.na(MEAN_RD) |
-                  MEAN_RD < coverage.thresholds) ~ "M",
-              VISUAL_SEX == "F" &
-                (is.na(MEAN_RD) |
-                   MEAN_RD < coverage.thresholds) ~ "U"
-            )
-        ) %>%
-        dplyr::mutate(STRATA = GENETIC_SEX)
-    } else if (tibble::has_name(data, "GT_BIN")) {
-      y.data <- dplyr::filter(data, MARKERS %in% y.markers) %>%
-        dplyr::group_by(INDIVIDUALS) %>%
-        dplyr::summarise(MEAN_GT = mean(GT_BIN)) %>%
-        dplyr::ungroup(.) %>%
-        dplyr::left_join(strata, by = "INDIVIDUALS") %>%
-        dplyr::mutate(VISUAL_SEX = STRATA) %>%
-        dplyr::mutate(GENETIC_SEX =
-                        dplyr::case_when(
-                          is.na(MEAN_GT) ~ "F",
-                          !(is.na(MEAN_GT)) ~ "M",
-                          VISUAL_SEX == "F" & is.na(MEAN_GT) ~ "U"
-                        )) %>%
-        dplyr::mutate(STRATA = GENETIC_SEX)
-    }
 
+
+  ####* SET GENETIC SEX STRATA ####
+  if (exists("y.markers") &&
+      !rlang::is_empty(y.markers)) {
+    ####** Y markers ####
+    if (threshold.y.markers < 0) {
+      if (tibble::has_name(data, "READ_DEPTH")) {
+        y.data <-
+          dplyr::filter(data, MARKERS %in% y.markers) %>%
+          dplyr::group_by(INDIVIDUALS) %>%
+          dplyr::summarise(MEAN_RD = mean(READ_DEPTH, na.rm = TRUE)) %>%
+          dplyr::ungroup(.) %>%
+          dplyr::left_join(strata, by = "INDIVIDUALS") %>%
+          dplyr::mutate(VISUAL_SEX = STRATA) %>%
+          dplyr::mutate(GENETIC_SEX =
+                          dplyr::case_when(
+                            is.na(MEAN_RD) |
+                              MEAN_RD <= coverage.thresholds ~ "F",
+                            !(is.na(MEAN_RD) |
+                                MEAN_RD <= coverage.thresholds) ~ "M"
+                          )) %>%
+          dplyr::mutate(STRATA = GENETIC_SEX)
+      }
+      else if (tibble::has_name(data, "GT_BIN")) {
+        if (length(y.markers) > 1) {
+          y.data <- dplyr::filter(data, MARKERS %in% y.markers) %>%
+            dplyr::group_by(INDIVIDUALS) %>%
+            dplyr::summarise(MEAN_GT = mean(GT_BIN),
+                             NA_COUNT = sum(is.na(GT_BIN))) %>%
+            dplyr::ungroup(.) %>%
+            dplyr::left_join(strata, by = "INDIVIDUALS") %>%
+            dplyr::mutate(VISUAL_SEX = STRATA) %>%
+            dplyr::mutate(GENETIC_SEX =
+                            dplyr::case_when(
+                              # is.na(MEAN_GT) &
+                                NA_COUNT >= length(y.markers)/2 ~ "F", #majority rule
+                              !(is.na(MEAN_GT) &
+                                  NA_COUNT >= length(y.markers)/2) ~ "M",
+                              VISUAL_SEX == "M" & (is.na(MEAN_GT) &
+                                NA_COUNT >= length(y.markers)/2) ~ "U"
+                            )) %>%
+            dplyr::mutate(STRATA = GENETIC_SEX)
+        } else {
+          y.data <- dplyr::filter(data, MARKERS %in% y.markers) %>%
+            dplyr::mutate(MEAN_GT = GT_BIN) %>%
+            dplyr::left_join(strata, by = "INDIVIDUALS") %>%
+            dplyr::mutate(VISUAL_SEX = STRATA) %>%
+            dplyr::mutate(GENETIC_SEX =
+                            dplyr::case_when(
+                              is.na(MEAN_GT) ~ "F",
+                              !(is.na(MEAN_GT)) ~ "M",
+                              VISUAL_SEX == "M" &
+                                is.na(MEAN_GT) ~ "U"
+                            )) %>%
+            dplyr::mutate(STRATA = GENETIC_SEX)
+        }
+      } else {
+        message("READ_DEPTH and GT_BIN not availabe in the data.")
+      }
+      ####** W markers ####
+    } else if (threshold.y.markers > 0) {
+      if (tibble::has_name(data, "READ_DEPTH")) {
+        y.data <-
+          dplyr::filter(data, MARKERS %in% y.markers) %>%
+          dplyr::group_by(INDIVIDUALS) %>%
+          dplyr::summarise(MEAN_RD = mean(READ_DEPTH, na.rm = TRUE)) %>%
+          dplyr::ungroup(.) %>%
+          dplyr::left_join(strata, by = "INDIVIDUALS") %>%
+          dplyr::mutate(VISUAL_SEX = STRATA) %>%
+          dplyr::mutate(GENETIC_SEX =
+                          dplyr::case_when(
+                            is.na(MEAN_RD) |
+                              MEAN_RD <= coverage.thresholds ~ "M",
+                            !(is.na(MEAN_RD) |
+                              MEAN_RD < coverage.thresholds) ~ "F"
+                          )) %>%
+          dplyr::mutate(STRATA = GENETIC_SEX)
+
+      } else if (tibble::has_name(data, "GT_BIN")) {
+        if (length(y.markers) > 1) {
+          y.data <- dplyr::filter(data, MARKERS %in% y.markers) %>%
+            dplyr::group_by(INDIVIDUALS) %>%
+            dplyr::summarise(MEAN_GT = mean(GT_BIN),
+                             NA_COUNT = sum(is.na(GT_BIN))) %>%
+            dplyr::ungroup(.) %>%
+            dplyr::left_join(strata, by = "INDIVIDUALS") %>%
+            dplyr::mutate(VISUAL_SEX = STRATA) %>%
+            dplyr::mutate(GENETIC_SEX =
+                            dplyr::case_when(
+                              # is.na(MEAN_GT) &
+                                NA_COUNT >= length(y.markers)/2  ~ "M", #majority rule
+                              !(is.na(MEAN_GT)) ~ "F",
+                              VISUAL_SEX == "F" & (is.na(MEAN_GT) &
+                                NA_COUNT >= length(y.markers)/2) ~ "U"
+                            )) %>%
+            dplyr::mutate(STRATA = GENETIC_SEX)
+        } else {
+          y.data <- dplyr::filter(data, MARKERS %in% y.markers) %>%
+            dplyr::mutate(MEAN_GT = GT_BIN) %>%
+            dplyr::left_join(strata, by = "INDIVIDUALS") %>%
+            dplyr::mutate(VISUAL_SEX = STRATA) %>%
+            dplyr::mutate(GENETIC_SEX =
+                            dplyr::case_when(
+                              is.na(MEAN_GT) ~ "M",
+                              !(is.na(MEAN_GT)) ~ "F",
+                              VISUAL_SEX == "F" &
+                                is.na(MEAN_GT) ~ "U"
+                            )) %>%
+            dplyr::mutate(STRATA = GENETIC_SEX)
+        }
+      } else {
+        message("READ_DEPTH and GT_BIN not availabe in the data.")
+      }
+    }
     # print visual and gentic sex table
     SumTable <-
-      tibble::tibble(
-        Visual_Sex = c("M", "M", "F", "F", "F", "U", "U"),
-        Genetic_Sex_SNP = c("M", "F", "F", "M", "U", "M", "F"),
-        Individuals = c(
-          length(which(
-            y.data$VISUAL_SEX == "M" & y.data$GENETIC_SEX == "M"
-          )),
-          length(which(
-            y.data$VISUAL_SEX == "M" & y.data$GENETIC_SEX == "F"
-          )),
-          length(which(
-            y.data$VISUAL_SEX == "F" & y.data$GENETIC_SEX == "F"
-          )),
-          length(which(
-            y.data$VISUAL_SEX == "F" & y.data$GENETIC_SEX == "M"
-          )),
-          length(which(
-            y.data$VISUAL_SEX == "F" & y.data$GENETIC_SEX == "U"
-          )),
-          length(which(
-            y.data$VISUAL_SEX == "U" & y.data$GENETIC_SEX == "M"
-          )),
-          length(which(
-            y.data$VISUAL_SEX == "U" & y.data$GENETIC_SEX == "F"
-          ))
-        )
-      )
+      y.data %>%
+      dplyr::count(VISUAL_SEX, GENETIC_SEX) %>%
+      dplyr::rename(Visual_Sex = VISUAL_SEX, Genetic_Sex_SNP = GENETIC_SEX)
     print(SumTable)
     readr::write_tsv(
       x = SumTable,
@@ -868,100 +921,129 @@ sexy_markers <- function(data,
     )
   }
 
-  if (exists("y.silico.markers") && !rlang::is_empty(y.silico.markers)) {
-    if (max(silicodata$VALUE, na.rm = TRUE) > 1) {
-      y.silico.data <-
-      dplyr::filter(silicodata, MARKERS %in% y.silico.markers) %>%
-      dplyr::group_by(INDIVIDUALS) %>%
-      dplyr::summarise(MEAN_RD = mean(VALUE)) %>%
-      dplyr::ungroup(.) %>%
-      dplyr::left_join(strata, by = "INDIVIDUALS") %>%
-      dplyr::mutate(VISUAL_SEX = STRATA) %>%
-      dplyr::mutate(GENETIC_SEX =
-                      dplyr::if_else(condition =
-                                       is.na(MEAN_RD) |
-                                       MEAN_RD < coverage.thresholds, "F", "M")) %>%
-      dplyr::mutate(STRATA = GENETIC_SEX)
-    } else if (length(y.silico.markers) > 1) {
-      y.silico.data <-
-        dplyr::filter(silicodata, MARKERS %in% y.silico.markers) %>%
-        dplyr::group_by(INDIVIDUALS) %>%
-        dplyr::summarise(MEAN_RD = mean(VALUE, na.rm = TRUE)) %>%
-        dplyr::ungroup(.) %>%
-        dplyr::left_join(strata, by = "INDIVIDUALS") %>%
-        dplyr::mutate(VISUAL_SEX = STRATA) %>%
-        dplyr::mutate(GENETIC_SEX =
-                        dplyr::case_when(
-                          MEAN_RD < coverage.thresholds/length(y.silico.markers) ~ "F",
-                          !(is.na(MEAN_RD)) ~ "M",
-                          VISUAL_SEX == "F" & is.na(MEAN_RD) ~ "U"
-                        )) %>%
-        dplyr::mutate(GENETIC_SEX =
-                        dplyr::case_when(
-                          MEAN_RD < coverage.thresholds/length(y.silico.markers) ~ "F",
-                          is.na(MEAN_RD) ~ "U",
-                          MEAN_RD >= coverage.thresholds/length(y.silico.markers) & !is.na(MEAN_RD)~ "M"
-                        )) %>%
-        dplyr::mutate(STRATA = GENETIC_SEX)
-    } else {
-      y.silico.data <-
-        dplyr::filter(silicodata, MARKERS %in% y.silico.markers) %>%
-        # dplyr::group_by(INDIVIDUALS) %>%
-        # dplyr::summarise(MEAN_RD = mean(VALUE, na.rm = TRUE)) %>%
-        # dplyr::ungroup(.) %>%
-        dplyr::mutate(MEAN_RD = VALUE) %>%
-        dplyr::left_join(strata, by = "INDIVIDUALS") %>%
-        dplyr::mutate(VISUAL_SEX = STRATA) %>%
-        dplyr::mutate(GENETIC_SEX =
-                        dplyr::case_when(
-                          MEAN_RD < coverage.thresholds ~ "F",
-                          is.na(MEAN_RD) ~ "U",
-                          MEAN_RD >= coverage.thresholds & !is.na(MEAN_RD)~ "M"
-                        )) %>%
-        dplyr::mutate(STRATA = GENETIC_SEX)
+  if (exists("y.silico.markers") &&
+      !rlang::is_empty(y.silico.markers)) {
+    #### ** Y SILICO markers ####
+    if (threshold.y.silico.markers < 0) {
+      if (max(silicodata$VALUE, na.rm = TRUE) > 1) {
+          y.silico.data <-
+            dplyr::filter(silicodata, MARKERS %in% y.silico.markers) %>%
+            dplyr::group_by(INDIVIDUALS) %>%
+            dplyr::summarise(MEAN_RD = mean(VALUE, na.rm = TRUE)) %>%
+            dplyr::ungroup(.) %>%
+            dplyr::left_join(strata, by = "INDIVIDUALS") %>%
+            dplyr::mutate(VISUAL_SEX = STRATA) %>%
+            dplyr::mutate(
+              GENETIC_SEX =
+                dplyr::case_when(
+                  MEAN_RD <= coverage.thresholds ~ "F",
+                  is.na(MEAN_RD) ~ "U",
+                  MEAN_RD > coverage.thresholds &
+                    !is.na(MEAN_RD) ~ "M"
+                )
+            ) %>%
+            dplyr::mutate(STRATA = GENETIC_SEX)
+      } else { #GT
+        if (length(y.silico.markers) > 1) {
+          y.silico.data <-
+            dplyr::filter(silicodata, MARKERS %in% y.silico.markers) %>%
+            dplyr::group_by(INDIVIDUALS) %>%
+            dplyr::summarise(MEAN_GT = mean(VALUE, na.rm = TRUE)) %>%
+            dplyr::ungroup(.) %>%
+            dplyr::left_join(strata, by = "INDIVIDUALS") %>%
+            dplyr::mutate(VISUAL_SEX = STRATA) %>%
+            dplyr::mutate(
+              GENETIC_SEX =
+                dplyr::case_when(
+                  MEAN_GT < coverage.thresholds / length(y.silico.markers) ~ "F",
+                  is.na(MEAN_RD) ~ "U",
+                  MEAN_GT >= coverage.thresholds / length(y.silico.markers) &
+                    !is.na(MEAN_RD) ~ "M"
+                )
+            ) %>%
+            dplyr::mutate(STRATA = GENETIC_SEX)
+        } else {
+          y.silico.data <-
+            dplyr::filter(silicodata, MARKERS %in% y.silico.markers) %>%
+            dplyr::mutate(MEAN_GT = VALUE) %>%
+            dplyr::left_join(strata, by = "INDIVIDUALS") %>%
+            dplyr::mutate(VISUAL_SEX = STRATA) %>%
+            dplyr::mutate(
+              GENETIC_SEX =
+                dplyr::case_when(
+                  MEAN_GT < coverage.thresholds ~ "F",
+                  is.na(MEAN_RD) ~ "U",
+                  MEAN_GT >= coverage.thresholds &
+                    !is.na(MEAN_GT) ~ "M"
+                )
+            ) %>%
+            dplyr::mutate(STRATA = GENETIC_SEX)
+        }
+      }
     }
-
-
+    ####** W SILICO markers ####
+    else if (threshold.y.silico.markers > 0) {
+      if (max(silicodata$VALUE, na.rm = TRUE) > 1) {
+        y.silico.data <-
+          dplyr::filter(silicodata, MARKERS %in% y.silico.markers) %>%
+          dplyr::group_by(INDIVIDUALS) %>%
+          dplyr::summarise(MEAN_RD = mean(VALUE, na.rm = TRUE)) %>%
+          dplyr::ungroup(.) %>%
+          dplyr::left_join(strata, by = "INDIVIDUALS") %>%
+          dplyr::mutate(VISUAL_SEX = STRATA) %>%
+          dplyr::mutate(
+            GENETIC_SEX =
+              dplyr::case_when(
+                MEAN_RD <= coverage.thresholds ~ "M",
+                is.na(MEAN_RD) ~ "U",
+                MEAN_RD > coverage.thresholds &
+                  !is.na(MEAN_RD) ~ "F"
+              )
+          ) %>%
+          dplyr::mutate(STRATA = GENETIC_SEX)
+      } else { #GT
+        if (length(y.silico.markers) > 1) {
+          y.silico.data <-
+            dplyr::filter(silicodata, MARKERS %in% y.silico.markers) %>%
+            dplyr::group_by(INDIVIDUALS) %>%
+            dplyr::summarise(MEAN_GT = mean(VALUE, na.rm = TRUE)) %>%
+            dplyr::ungroup(.) %>%
+            dplyr::left_join(strata, by = "INDIVIDUALS") %>%
+            dplyr::mutate(VISUAL_SEX = STRATA) %>%
+            dplyr::mutate(
+              GENETIC_SEX =
+                dplyr::case_when(
+                  MEAN_GT < coverage.thresholds / length(y.silico.markers) ~ "M",
+                  is.na(MEAN_RD) ~ "U",
+                  MEAN_GT >= coverage.thresholds / length(y.silico.markers) &
+                    !is.na(MEAN_RD) ~ "F"
+                )
+            ) %>%
+            dplyr::mutate(STRATA = GENETIC_SEX)
+        } else {
+          y.silico.data <-
+            dplyr::filter(silicodata, MARKERS %in% y.silico.markers) %>%
+            dplyr::mutate(MEAN_GT = VALUE) %>%
+            dplyr::left_join(strata, by = "INDIVIDUALS") %>%
+            dplyr::mutate(VISUAL_SEX = STRATA) %>%
+            dplyr::mutate(
+              GENETIC_SEX =
+                dplyr::case_when(
+                  MEAN_GT < coverage.thresholds ~ "M",
+                  is.na(MEAN_RD) ~ "U",
+                  MEAN_GT >= coverage.thresholds &
+                    !is.na(MEAN_GT) ~ "F"
+                )
+            ) %>%
+            dplyr::mutate(STRATA = GENETIC_SEX)
+        }
+      }
+    }
     # print visual and gentic sex table
     SumTable <-
-      tibble::tibble(
-        Visual_Sex = c("M", "M", "F", "F", "U", "U"),
-        Genetic_Sex_SILICO = c("M", "F", "F", "M", "M", "F"),
-        Individuals = c(
-          length(
-            which(
-              y.silico.data$VISUAL_SEX == "M" & y.silico.data$GENETIC_SEX == "M"
-            )
-          ),
-          length(
-            which(
-              y.silico.data$VISUAL_SEX == "M" & y.silico.data$GENETIC_SEX == "F"
-            )
-          ),
-          length(
-            which(
-              y.silico.data$VISUAL_SEX == "F" & y.silico.data$GENETIC_SEX == "F"
-            )
-          ),
-          length(
-            which(
-              y.silico.data$VISUAL_SEX == "F" & y.silico.data$GENETIC_SEX == "M"
-            )
-          ),
-          # length(which(y.silico.data$VISUAL_SEX == "F" & y.silico.data$GENETIC_SEX == "U"
-          # )),
-          length(
-            which(
-              y.silico.data$VISUAL_SEX == "U" & y.silico.data$GENETIC_SEX == "M"
-            )
-          ),
-          length(
-            which(
-              y.silico.data$VISUAL_SEX == "U" & y.silico.data$GENETIC_SEX == "F"
-            )
-          )
-        )
-      )
+      y.data %>%
+      dplyr::count(VISUAL_SEX, GENETIC_SEX) %>%
+      dplyr::rename(Visual_Sex = VISUAL_SEX, Genetic_Sex_SILICO = GENETIC_SEX)
     print(SumTable)
     readr::write_tsv(
       x = SumTable,
@@ -975,31 +1057,9 @@ sexy_markers <- function(data,
   if (exists("y.markers") && !rlang::is_empty(y.markers) &&
       exists("y.silico.markers") && !rlang::is_empty(y.silico.markers)) {
     # print genetic SNP and gentic SILICO sex table
-    SumTable <-
-      tibble::tibble(
-        Genetic_Sex_SNP = c("M", "M", "F", "F", "U", "U"),
-        Genetic_Sex_SILICO = c("M", "F", "F", "M", "M", "F"),
-        Individuals = c(
-          length(
-            which(y.data$GENETIC_SEX == "M" & y.silico.data$GENETIC_SEX == "M")
-          ),
-          length(
-            which(y.data$GENETIC_SEX == "M" & y.silico.data$GENETIC_SEX == "F")
-          ),
-          length(
-            which(y.data$GENETIC_SEX == "F" & y.silico.data$GENETIC_SEX == "F")
-          ),
-          length(
-            which(y.data$GENETIC_SEX == "F" & y.silico.data$GENETIC_SEX == "M")
-          ),
-          length(
-            which(y.data$GENETIC_SEX == "U" & y.silico.data$GENETIC_SEX == "M")
-          ),
-          length(
-            which(y.data$GENETIC_SEX == "U" & y.silico.data$GENETIC_SEX == "F")
-          )
-        )
-      )
+    SumTable <- dplyr::left_join(y.data, y.silico.data, by = "INDIVIDUALS") %>%
+      dplyr::count(GENETIC_SEX.x, GENETIC_SEX.y) %>%
+      dplyr::rename(Genetic_Sex_SNP = GENETIC_SEX.x, Genetic_Sex_SILICO = GENETIC_SEX.y)
     print(SumTable)
     readr::write_tsv(
       x = SumTable,
@@ -1059,7 +1119,7 @@ sexy_markers <- function(data,
         x = y.data,
         path = file.path(
           path.folder,
-          "sexy_markers_strata-new_with_genetic_sex_according_to_SNPdata.tsv"
+          "sexy_markers_strata_new_with_genetic_sex_according_to_SNPdata.tsv"
         )
       )
       message("New strata file with genetic sex is written.")
@@ -1073,7 +1133,7 @@ sexy_markers <- function(data,
         dplyr::select(-c(TARGET_ID.y))
       # dplyr::mutate(GENETIC_STRATA = STRATA)
       radiator::write_rad(data = data,
-                          path = file.path(wd, "sexy_markers_temp.rad"))
+         path = file.path(wd, "sexy_markers_genetic_SNP_sex_ID.rad"))
 
       if ("silico.dart" %in% data.source) {
         silicodata <-
@@ -1084,7 +1144,7 @@ sexy_markers <- function(data,
           dplyr::select(-c(TARGET_ID.y))
           # dplyr::mutate(GENETIC_STRATA = STRATA)
         radiator::write_rad(data = silicodata,
-                            path = file.path(wd, "sexy_markers_silico_temp.rad"))
+           path = file.path(wd, "sexy_markers_silicodata_genetic_SNP_sex_ID.rad"))
       } else{
         silicodata <- NULL
       }
@@ -1094,7 +1154,7 @@ sexy_markers <- function(data,
         x = y.silico.data,
         path = file.path(
           path.folder,
-          "sexy_markers_strata-new_with_genetic_sex_according_to_SILICOdata.tsv"
+          "sexy_markers_strata_new_with_genetic_sex_according_to_SILICOdata.tsv"
         )
       )
       message("New strata file with genetic sex is written.")
@@ -1108,7 +1168,7 @@ sexy_markers <- function(data,
         dplyr::select(-c(TARGET_ID.y))
         # dplyr::mutate(GENETIC_STRATA = STRATA)
       radiator::write_rad(data = data,
-                          path = file.path(wd, "sexy_markers_temp.rad"))
+         path = file.path(wd, "sexy_markers_data_genetic_SILCIO_sex_ID.rad"))
 
       if ("silico.dart" %in% data.source) {
         silicodata <-
@@ -1119,7 +1179,7 @@ sexy_markers <- function(data,
           dplyr::select(-c(TARGET_ID.y))
           # dplyr::mutate(GENETIC_STRATA = STRATA)
         radiator::write_rad(data = silicodata,
-                            path = file.path(wd, "sexy_markers_silico_temp.rad"))
+          path = file.path(wd, "sexy_markers_silicodata_genetic_SILICO_sex_ID.rad"))
       } else{
         silicodata <- NULL
       }
@@ -1196,6 +1256,7 @@ sexy_markers <- function(data,
         dplyr::filter(silico.sum, !(MARKERS %in% y.silico.markers | MISSINGNESS > mis.threshold.silicodata))
     }
   }
+
 
 
   #### HET ####
