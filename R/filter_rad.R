@@ -441,16 +441,19 @@ filter_rad <- function(
 
   # Required package -----------------------------------------------------------
   if (!"SeqVarTools" %in% utils::installed.packages()[,"Package"] ||
+      !"SNPRelate" %in% utils::installed.packages()[,"Package"] ||
       !"HardyWeinberg" %in% utils::installed.packages()[,"Package"] ||
       !"ggtern" %in% utils::installed.packages()[,"Package"] ||
       !"UpSetR" %in% utils::installed.packages()[,"Package"]
   ) {
     rlang::abort('For this function to work properly,
-make sure you have these packages: SeqVarTools, HardyWeinberg, ggtern and UpSetR
+make sure you have these packages: SeqVarTools, SNPRelate HardyWeinberg, ggtern
+and UpSetR
 install.packages("BiocManager")
 install.packages("HardyWeinberg")
 install.packages("ggtern")
 BiocManager::install("SeqVarTools")
+BiocManager::install ("SNPRelate")
 install.packages("UpSetR")
 ')
   }

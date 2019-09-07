@@ -1522,7 +1522,13 @@ ld_missing <- function(
     ggplot2::ggsave(
       filename = file.path(path.folder, "snp.number.per.chromosome.pdf"),
       plot = d.plot,
-      width = 30, height = 10, dpi = 300, units = "cm", useDingbats = FALSE)
+      width = 30,
+      height = 10,
+      dpi = 300,
+      units = "cm",
+      limitsize = FALSE,
+      useDingbats = FALSE
+      )
 
     # Whitelists and blacklists
     ld_wl_bl <- function(x, wl, path.folder, verbose) {

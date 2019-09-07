@@ -342,7 +342,14 @@ filter_mac <- function(
     # save
     ggplot2::ggsave(
       filename = file.path(path.folder, "distribution.mac.global.pdf"),
-      plot = histo.mac.global, width = 10, height = 10, dpi = 300, units = "cm", useDingbats = FALSE)
+      plot = histo.mac.global,
+      width = 10,
+      height = 10,
+      dpi = 300,
+      units = "cm",
+      limitsize = FALSE,
+      useDingbats = FALSE
+      )
 
     if (verbose) message("MAC range: [", mac.stats$MIN, " - ", mac.stats$MAX, "]")
     if (verbose) message("MAF range: [", format(round(mac.stats$MIN/n.diplo.samples, 4), scientific = FALSE), " - ", format(round(mac.stats$MAX/n.diplo.samples, 4), scientific = FALSE), "]")
@@ -388,7 +395,13 @@ filter_mac <- function(
     # save
     ggplot2::ggsave(
       filename = file.path(path.folder, "mac.markers.plot.pdf"),
-      plot = mac.markers.plot, width = 20, height = 15, dpi = 300, units = "cm", useDingbats = FALSE)
+      plot = mac.markers.plot,
+      width = 20,
+      height = 15,
+      dpi = 300,
+      units = "cm",
+      limitsize = FALSE,
+      useDingbats = FALSE)
 
     # Step 2. Thresholds selection ---------------------------------------------
     if (interactive.filter) {

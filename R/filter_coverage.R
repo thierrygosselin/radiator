@@ -335,7 +335,11 @@ filter_coverage <- function(
         plot = markers.plot.low,
         width = 20,
         height = 15,
-        dpi = 300, units = "cm", useDingbats = FALSE)
+        dpi = 300,
+        units = "cm",
+        useDingbats = FALSE,
+        limitsize = FALSE
+        )
     }
 
     helper.table.high <- tibble::tibble(COVERAGE_HIGH = ch.range) %>%
@@ -373,7 +377,9 @@ filter_coverage <- function(
         filename = file.path(path.folder, "coverage.high.helper.plot.pdf"),
         plot = markers.plot.high,
         width = 20, height = 15,
-        dpi = 300, units = "cm", useDingbats = FALSE)
+        dpi = 300, units = "cm",
+        limitsize = FALSE,
+        useDingbats = FALSE)
     }
     if (verbose) message("Files written: helper tables and plots")
 
