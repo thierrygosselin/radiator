@@ -837,7 +837,7 @@ sexy_markers <- function(data,
         } else {
           y.data <- dplyr::filter(data, MARKERS %in% y.markers) %>%
             dplyr::mutate(MEAN_GT = GT_BIN) %>%
-            dplyr::left_join(strata, by = "INDIVIDUALS") %>%
+            # dplyr::left_join(strata, by = "INDIVIDUALS") %>%
             dplyr::mutate(VISUAL_SEX = STRATA) %>%
             dplyr::mutate(GENETIC_SEX =
                             dplyr::case_when(
@@ -891,7 +891,7 @@ sexy_markers <- function(data,
         } else {
           y.data <- dplyr::filter(data, MARKERS %in% y.markers) %>%
             dplyr::mutate(MEAN_GT = GT_BIN) %>%
-            dplyr::left_join(strata, by = "INDIVIDUALS") %>%
+            # dplyr::left_join(strata, by = "INDIVIDUALS") %>%
             dplyr::mutate(VISUAL_SEX = STRATA) %>%
             dplyr::mutate(GENETIC_SEX =
                             dplyr::case_when(
@@ -966,7 +966,7 @@ sexy_markers <- function(data,
           y.silico.data <-
             dplyr::filter(silicodata, MARKERS %in% y.silico.markers) %>%
             dplyr::mutate(MEAN_GT = VALUE) %>%
-            dplyr::left_join(strata, by = "INDIVIDUALS") %>%
+            # dplyr::left_join(strata, by = "INDIVIDUALS") %>%
             dplyr::mutate(VISUAL_SEX = STRATA) %>%
             dplyr::mutate(
               GENETIC_SEX =
@@ -1024,7 +1024,7 @@ sexy_markers <- function(data,
           y.silico.data <-
             dplyr::filter(silicodata, MARKERS %in% y.silico.markers) %>%
             dplyr::mutate(MEAN_GT = VALUE) %>%
-            dplyr::left_join(strata, by = "INDIVIDUALS") %>%
+            # dplyr::left_join(strata, by = "INDIVIDUALS") %>%
             dplyr::mutate(VISUAL_SEX = STRATA) %>%
             dplyr::mutate(
               GENETIC_SEX =
