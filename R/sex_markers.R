@@ -956,9 +956,9 @@ sexy_markers <- function(data,
               GENETIC_SEX =
                 dplyr::case_when(
                   MEAN_GT < coverage.thresholds / length(y.silico.markers) ~ "F",
-                  is.na(MEAN_RD) ~ "U",
+                  is.na(MEAN_GT) ~ "U",
                   MEAN_GT >= coverage.thresholds / length(y.silico.markers) &
-                    !is.na(MEAN_RD) ~ "M"
+                    !is.na(MEAN_GT) ~ "M"
                 )
             ) %>%
             dplyr::mutate(STRATA = GENETIC_SEX)
@@ -972,7 +972,7 @@ sexy_markers <- function(data,
               GENETIC_SEX =
                 dplyr::case_when(
                   MEAN_GT < coverage.thresholds ~ "F",
-                  is.na(MEAN_RD) ~ "U",
+                  is.na(MEAN_GT) ~ "U",
                   MEAN_GT >= coverage.thresholds &
                     !is.na(MEAN_GT) ~ "M"
                 )
@@ -1014,9 +1014,9 @@ sexy_markers <- function(data,
               GENETIC_SEX =
                 dplyr::case_when(
                   MEAN_GT < coverage.thresholds / length(y.silico.markers) ~ "M",
-                  is.na(MEAN_RD) ~ "U",
+                  is.na(MEAN_GT) ~ "U",
                   MEAN_GT >= coverage.thresholds / length(y.silico.markers) &
-                    !is.na(MEAN_RD) ~ "F"
+                    !is.na(MEAN_GT) ~ "F"
                 )
             ) %>%
             dplyr::mutate(STRATA = GENETIC_SEX)
@@ -1030,7 +1030,7 @@ sexy_markers <- function(data,
               GENETIC_SEX =
                 dplyr::case_when(
                   MEAN_GT < coverage.thresholds ~ "M",
-                  is.na(MEAN_RD) ~ "U",
+                  is.na(MEAN_GT) ~ "U",
                   MEAN_GT >= coverage.thresholds &
                     !is.na(MEAN_GT) ~ "F"
                 )
