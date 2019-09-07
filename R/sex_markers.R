@@ -1041,7 +1041,7 @@ sexy_markers <- function(data,
     }
     # print visual and gentic sex table
     SumTable <-
-      y.data %>%
+      y.silico.data %>%
       dplyr::count(VISUAL_SEX, GENETIC_SEX) %>%
       dplyr::rename(Visual_Sex = VISUAL_SEX, Genetic_Sex_SILICO = GENETIC_SEX)
     print(SumTable)
