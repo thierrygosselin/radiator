@@ -474,7 +474,7 @@ genomic_converter <- function(
 
   # GT requirement -------------------------------------------------------------
   if (TRUE %in% (c("genepop", "hierfstat", "structure", "hzar", "gsi_sim",
-                   "genepopedit") %in% output)) {
+                   "genepopedit", "arlequin", "bayescan") %in% output)) {
     input <- calibrate_alleles(
       data = input,
       biallelic = biallelic,
