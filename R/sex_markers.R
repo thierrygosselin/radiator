@@ -684,7 +684,7 @@ sexy_markers <- function(data,
   if (!is.null(threshold.y.markers)) {
     if (threshold.y.markers < 0) {
       y.markers <- dplyr::filter(data.sum, DIFF < threshold.y.markers)$MARKERS
-    } else if (threshold.y.markers < 0) {
+    } else if (threshold.y.markers > 0) {
       y.markers <- dplyr::filter(data.sum, DIFF > threshold.y.markers)$MARKERS
     }
     res$heterogametic.markers <- y.markers
