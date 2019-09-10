@@ -468,6 +468,8 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
           cov.low <- filter.individuals.coverage.total[1]
           cov.high <- filter.individuals.coverage.total[2]
           if (verbose) message("\nRemoving individuals based on total coverage statistics: ", cov.low, " / ", cov.high)
+          higher.eq <- FALSE
+          lower.eq <- FALSE
         } else {
           if (is.character(filter.individuals.coverage.total)) {
             if (id.stats$stats$OUTLIERS_LOW[3] == id.stats$stats$MIN[3]) {

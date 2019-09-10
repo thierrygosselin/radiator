@@ -360,6 +360,10 @@ sexy_markers <- function(data,
 
   # * VCF files ------------------------------------------------------------------
   if (data.type == "vcf.file") {
+    if(Sys.info()[['sysname']]=="Windows" && parallel.core != 1){
+      message("There is currently an issue with the cluster allocation in WINDOWS systems.\nConsequently, we set the 'parallel.core' to 1.")
+      parallel.core <-  1
+    }
     data <- radiator::read_vcf(
       data = data,
       strata = strata,
@@ -394,7 +398,7 @@ sexy_markers <- function(data,
 
   if(Sys.info()[['sysname']]=="Windows" && parallel.core != 1){
     message("There is currently an issue with the cluster allocation in WINDOWS systems.\nConsequently, we set the 'parallel.core' to 1. This will only affect the data-filtering time.")
-    parallel.core = 1
+    parallel.core <- 1
   }
 
   # Filter monomorphic ---------------------------------------------------------
@@ -517,10 +521,11 @@ sexy_markers <- function(data,
         value.name = "READ_DEPTH"
       ) %>%
       tibble::as_tibble(.) %>%
-    dplyr::left_join(GT_BIN, by = c("INDIVIDUALS", "MARKERS"))%>%
+      dplyr::left_join(GT_BIN, by = c("INDIVIDUALS", "MARKERS"))%>%
       radiator::join_strata(data = .,
                             strata = strata,
-                            verbose = FALSE)
+                            verbose = FALSE) %>%
+      dplyr::mutate(TARGET_ID = INDIVIDUALS)
 
       data.source <- c("counts", data.type, data.source)
   }
@@ -782,12 +787,14 @@ sexy_markers <- function(data,
         y.silico.markers <- dplyr::filter(silico.sum, DIFF > threshold.y.silico.markers)$MARKERS
       }
       res$heterogametic.silico.markers <- y.silico.markers
-    }
+    } else{
+      y.silico.markers <- NULL
+      res$heterogametic.silico.markers <- NULL
+  }
+  # if (length(y.silico.markers) == 0){
+  #   res$heterogametic.silico.markers <- NULL
   } else{
     y.silico.markers <- NULL
-    res$heterogametic.silico.markers <- NULL
-  }
-  if (length(y.silico.markers) == 0){
     res$heterogametic.silico.markers <- NULL
   }
 
@@ -813,7 +820,8 @@ sexy_markers <- function(data,
                             !(is.na(MEAN_RD) |
                                 MEAN_RD <= coverage.thresholds) ~ "M"
                           )) %>%
-          dplyr::mutate(STRATA = GENETIC_SEX)
+          dplyr::mutate(STRATA = GENETIC_SEX) %>%
+          dplyr::select(-TARGET_ID)
       }
       else if (tibble::has_name(data, "GT_BIN")) {
         if (length(y.markers) > 1) {
@@ -828,13 +836,18 @@ sexy_markers <- function(data,
                             dplyr::case_when(
                               # is.na(MEAN_GT) &
                                 NA_COUNT >= length(y.markers)/2 ~ "F", #majority rule
-                              !(is.na(MEAN_GT) &
-                                  NA_COUNT >= length(y.markers)/2) ~ "M",
-                              VISUAL_SEX == "M" & (is.na(MEAN_GT) &
-                                NA_COUNT >= length(y.markers)/2) ~ "U"
+                              !(
+                                # is.na(MEAN_GT) &
+                                  NA_COUNT >= length(y.markers)/2) ~ "M"
+                              # VISUAL_SEX == "M" & (
+                              #   # is.na(MEAN_GT) &
+                              #   NA_COUNT >= length(y.markers)/2) ~ "U"
                             )) %>%
-            dplyr::mutate(STRATA = GENETIC_SEX)
+            dplyr::mutate(STRATA = GENETIC_SEX) %>%
+            dplyr::select(-TARGET_ID)
         } else {
+          message("You have only 1 Y-linked marker: 'M' for which this marker is absent are reassigned as 'U'.
+This marker could be absent due to an error.")
           y.data <- dplyr::filter(data, MARKERS %in% y.markers) %>%
             dplyr::mutate(MEAN_GT = GT_BIN) %>%
             # dplyr::left_join(strata, by = "INDIVIDUALS") %>%
@@ -846,7 +859,8 @@ sexy_markers <- function(data,
                               VISUAL_SEX == "M" &
                                 is.na(MEAN_GT) ~ "U"
                             )) %>%
-            dplyr::mutate(STRATA = GENETIC_SEX)
+            dplyr::mutate(STRATA = GENETIC_SEX) %>%
+            dplyr::select(INDIVIDUALS, MEAN_GT, STRATA, VISUAL_SEX, GENETIC_SEX)
         }
       } else {
         message("READ_DEPTH and GT_BIN not availabe in the data.")
@@ -868,7 +882,8 @@ sexy_markers <- function(data,
                             !(is.na(MEAN_RD) |
                               MEAN_RD < coverage.thresholds) ~ "F"
                           )) %>%
-          dplyr::mutate(STRATA = GENETIC_SEX)
+          dplyr::mutate(STRATA = GENETIC_SEX) %>%
+          dplyr::select(-TARGET_ID)
 
       } else if (tibble::has_name(data, "GT_BIN")) {
         if (length(y.markers) > 1) {
@@ -883,12 +898,18 @@ sexy_markers <- function(data,
                             dplyr::case_when(
                               # is.na(MEAN_GT) &
                                 NA_COUNT >= length(y.markers)/2  ~ "M", #majority rule
-                              !(is.na(MEAN_GT)) ~ "F",
-                              VISUAL_SEX == "F" & (is.na(MEAN_GT) &
-                                NA_COUNT >= length(y.markers)/2) ~ "U"
+                                !(
+                                  # is.na(MEAN_GT) &
+                                  NA_COUNT >= length(y.markers)/2) ~ "F"
+                              # VISUAL_SEX == "F" & (
+                              #   # is.na(MEAN_GT) &
+                              #   NA_COUNT >= length(y.markers)/2) ~ "U"
                             )) %>%
-            dplyr::mutate(STRATA = GENETIC_SEX)
+            dplyr::mutate(STRATA = GENETIC_SEX) %>%
+            dplyr::select(-TARGET_ID)
         } else {
+          message("You have only 1 W-linked marker: 'F' for which this marker is absent are reassigned as 'U'.
+This marker could be absent due to an error.")
           y.data <- dplyr::filter(data, MARKERS %in% y.markers) %>%
             dplyr::mutate(MEAN_GT = GT_BIN) %>%
             # dplyr::left_join(strata, by = "INDIVIDUALS") %>%
@@ -900,10 +921,11 @@ sexy_markers <- function(data,
                               VISUAL_SEX == "F" &
                                 is.na(MEAN_GT) ~ "U"
                             )) %>%
-            dplyr::mutate(STRATA = GENETIC_SEX)
+            dplyr::mutate(STRATA = GENETIC_SEX) %>%
+            dplyr::select(INDIVIDUALS, MEAN_GT, STRATA, VISUAL_SEX, GENETIC_SEX)
         }
       } else {
-        message("READ_DEPTH and GT_BIN not availabe in the data.")
+        rlang::abort("READ_DEPTH and GT_BIN not availabe in the data.")
       }
     }
     # print visual and gentic sex table
@@ -942,8 +964,10 @@ sexy_markers <- function(data,
                     !is.na(MEAN_RD) ~ "M"
                 )
             ) %>%
-            dplyr::mutate(STRATA = GENETIC_SEX)
+            dplyr::mutate(STRATA = GENETIC_SEX) %>%
+            dplyr::select(-TARGET_ID)
       } else { #GT
+        message("If all Y-linked markers are assigned NA (i.e. uncertain genotype), this individuals' sex is assigned 'U'.")
         if (length(y.silico.markers) > 1) {
           y.silico.data <-
             dplyr::filter(silicodata, MARKERS %in% y.silico.markers) %>%
@@ -961,7 +985,8 @@ sexy_markers <- function(data,
                     !is.na(MEAN_GT) ~ "M"
                 )
             ) %>%
-            dplyr::mutate(STRATA = GENETIC_SEX)
+            dplyr::mutate(STRATA = GENETIC_SEX) %>%
+            dplyr::select(-TARGET_ID)
         } else {
           y.silico.data <-
             dplyr::filter(silicodata, MARKERS %in% y.silico.markers) %>%
@@ -977,7 +1002,8 @@ sexy_markers <- function(data,
                     !is.na(MEAN_GT) ~ "M"
                 )
             ) %>%
-            dplyr::mutate(STRATA = GENETIC_SEX)
+            dplyr::mutate(STRATA = GENETIC_SEX) %>%
+            dplyr::select(INDIVIDUALS, MEAN_GT, STRATA, VISUAL_SEX, GENETIC_SEX)
         }
       }
     }
@@ -1000,8 +1026,10 @@ sexy_markers <- function(data,
                   !is.na(MEAN_RD) ~ "F"
               )
           ) %>%
-          dplyr::mutate(STRATA = GENETIC_SEX)
+          dplyr::mutate(STRATA = GENETIC_SEX) %>%
+          dplyr::select(-TARGET_ID)
       } else { #GT
+        message("If all W-linked markers are assigned NA (i.e. uncertain genotype), this individuals' sex is assigned 'U'.")
         if (length(y.silico.markers) > 1) {
           y.silico.data <-
             dplyr::filter(silicodata, MARKERS %in% y.silico.markers) %>%
@@ -1019,7 +1047,8 @@ sexy_markers <- function(data,
                     !is.na(MEAN_GT) ~ "F"
                 )
             ) %>%
-            dplyr::mutate(STRATA = GENETIC_SEX)
+            dplyr::mutate(STRATA = GENETIC_SEX) %>%
+            dplyr::select(-TARGET_ID)
         } else {
           y.silico.data <-
             dplyr::filter(silicodata, MARKERS %in% y.silico.markers) %>%
@@ -1035,7 +1064,8 @@ sexy_markers <- function(data,
                     !is.na(MEAN_GT) ~ "F"
                 )
             ) %>%
-            dplyr::mutate(STRATA = GENETIC_SEX)
+            dplyr::mutate(STRATA = GENETIC_SEX) %>%
+            dplyr::select(INDIVIDUALS, MEAN_GT, STRATA, VISUAL_SEX, GENETIC_SEX)
         }
       }
     }
@@ -1125,12 +1155,12 @@ sexy_markers <- function(data,
       message("New strata file with genetic sex is written.")
       ### recalculate data based on new sexID
       data <-
-        dplyr::select(data,-c(STRATA)) %>%
+        dplyr::select(data,-STRATA) %>%
         # dplyr::rename(data, VISUAL_STRATA = STRATA) %>%
-        dplyr::left_join(y.data, by = "INDIVIDUALS") %>%
+        dplyr::left_join(y.data, by = "INDIVIDUALS")
         # dplyr::rename(MARKERS = MARKERS.x, GT_BIN = GT_BIN.x, TARGET_ID = TARGET_ID.x) %>%
-        dplyr::rename(TARGET_ID = TARGET_ID.x) %>%
-        dplyr::select(-c(TARGET_ID.y))
+        # dplyr::rename(TARGET_ID = TARGET_ID.x) %>%
+        # dplyr::select(-c(TARGET_ID.y))
       # dplyr::mutate(GENETIC_STRATA = STRATA)
       radiator::write_rad(data = data,
          path = file.path(wd, "sexy_markers_genetic_SNP_sex_ID.rad"))
@@ -1139,9 +1169,9 @@ sexy_markers <- function(data,
         silicodata <-
           dplyr::select(silicodata,-c(STRATA)) %>%
           # dplyr::rename(silicodata, VISUAL_STRATA = STRATA) %>%
-          dplyr::left_join(y.data, by = "INDIVIDUALS") %>%
-          dplyr::rename(TARGET_ID = TARGET_ID.x) %>%
-          dplyr::select(-c(TARGET_ID.y))
+          dplyr::left_join(y.data, by = "INDIVIDUALS")
+          # dplyr::rename(TARGET_ID = TARGET_ID.x) %>%
+          # dplyr::select(-c(TARGET_ID.y))
           # dplyr::mutate(GENETIC_STRATA = STRATA)
         radiator::write_rad(data = silicodata,
            path = file.path(wd, "sexy_markers_silicodata_genetic_SNP_sex_ID.rad"))
@@ -1262,6 +1292,7 @@ sexy_markers <- function(data,
   #### HET ####
 
   ### SCATTER
+  message("Start finding X- or Z-linked markers. CAUTION: this step is largely affected by structure in your data (e.g. families, populations or species).")
   plot.filename <- "3A.sexy_markers_HET_scat_plot"
   if (!is.null(species) && !is.null(population)) {
     plot.filename <-
@@ -1293,7 +1324,7 @@ sexy_markers <- function(data,
       radiator::radiator_question(
         x = "\nHeterozygosity method of SNPs:\nDo you want to plot the residuals for \n(1) X-linked markers: i.e. heterozygous for females\n(2) Z-linked markers: i.e. heterozygous for males",
         answer.opt = c("1", "2"))
-    sex.id.input <- as.integer(sex.id.input)
+    het.qr.input <- as.integer(het.qr.input)
   } else{
     het.qr.input <- as.integer(het.qr.input)
   }
@@ -2148,4 +2179,5 @@ write_fasta <- function (sexmarkdf, filename) {
     }
   }
   close(afile)
-}#write_fasta
+} #write_fasta
+
