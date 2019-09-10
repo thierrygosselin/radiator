@@ -328,7 +328,9 @@ filter_genotyping <- function(
       height = 15,
       dpi = 300,
       units = "cm",
-      useDingbats = FALSE)
+      limitsize = FALSE,
+      useDingbats = FALSE
+      )
     helper.table <- markers.plot <- NULL
     if (verbose) message("Files written: helper tables and plots")
 
