@@ -1,12 +1,12 @@
 # tidy_plink -------------------------------------------------------------------
 #' @name tidy_plink
 #' @title Tidy plink \code{.tped} and {.tfam} files in a tidy data frame
-#' @description Transform a PLINK file in \code{.tped} format into a tidy dataset.
+#' @description Transform a bi-allelic PLINK file in \code{.tped} format into a tidy dataset.
 #' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 #' and \href{https://github.com/thierrygosselin/assigner}{assigner}
 #' and might be of interest for users.
 
-#' @param data The plink file ending with \code{.tped}, the corresponding
+#' @param data The plink bi-allelic file ending with \code{.tped}, the corresponding
 #' \code{.tfam} must be in the same directory.
 
 #' @inheritParams read_strata

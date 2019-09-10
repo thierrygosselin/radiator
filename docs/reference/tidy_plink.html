@@ -32,13 +32,7 @@
 
 <meta property="og:title" content="Tidy plink <code>.tped</code> and .tfam files in a tidy data frame — tidy_plink" />
 
-<meta property="og:description" content="Transform genomic data set produced by massive parallel
-sequencing pipeline (e.g.GBS/RADseq,
-SNP chip, DArT, etc) into a tidy format.
-The use of blacklist and whitelist along
-several filtering options are available to prune the dataset.
-Several arguments are available to make your data population-wise and easily
-rename the pop id.
+<meta property="og:description" content="Transform a bi-allelic PLINK file in .tped format into a tidy dataset.
 Used internally in radiator
 and assigner
 and might be of interest for users." />
@@ -133,13 +127,7 @@ and might be of interest for users." />
 
     <div class="ref-description">
     
-    <p>Transform genomic data set produced by massive parallel
-sequencing pipeline (e.g.GBS/RADseq,
-SNP chip, DArT, etc) into a tidy format.
-The use of blacklist and whitelist along
-several filtering options are available to prune the dataset.
-Several arguments are available to make your data population-wise and easily
-rename the pop id.
+    <p>Transform a bi-allelic PLINK file in <code>.tped</code> format into a tidy dataset.
 Used internally in <a href='https://github.com/thierrygosselin/radiator'>radiator</a>
 and <a href='https://github.com/thierrygosselin/assigner'>assigner</a>
 and might be of interest for users.</p>
@@ -153,7 +141,7 @@ and might be of interest for users.</p>
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>data</th>
-      <td><p>The plink file ending with <code>.tped</code>, the corresponding
+      <td><p>The plink bi-allelic file ending with <code>.tped</code>, the corresponding
 <code>.tfam</code> must be in the same directory.</p></td>
     </tr>
     <tr>

@@ -7,7 +7,7 @@
 tidy_plink(data, strata = NULL, verbose = FALSE, ...)
 }
 \arguments{
-\item{data}{The plink file ending with \code{.tped}, the corresponding
+\item{data}{The plink bi-allelic file ending with \code{.tped}, the corresponding
 \code{.tfam} must be in the same directory.}
 
 \item{strata}{(path or object) The strata file or object.
@@ -24,7 +24,7 @@ for fine-tuning the function. Also used for legacy arguments (see details or
 special section)}
 }
 \description{
-Transform a PLINK file in \code{.tped} format into a tidy dataset.
+Transform a bi-allelic PLINK file in \code{.tped} format into a tidy dataset.
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and \href{https://github.com/thierrygosselin/assigner}{assigner}
 and might be of interest for users.
