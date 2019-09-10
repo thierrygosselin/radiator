@@ -24,13 +24,7 @@ for fine-tuning the function. Also used for legacy arguments (see details or
 special section)}
 }
 \description{
-Transform genomic data set produced by massive parallel
-sequencing pipeline (e.g.GBS/RADseq,
-SNP chip, DArT, etc) into a tidy format.
-The use of blacklist and whitelist along
-several filtering options are available to prune the dataset.
-Several arguments are available to make your data population-wise and easily
-rename the pop id.
+Transform a PLINK file in \code{.tped} format into a tidy dataset.
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and \href{https://github.com/thierrygosselin/assigner}{assigner}
 and might be of interest for users.

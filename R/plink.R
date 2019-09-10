@@ -1,13 +1,7 @@
 # tidy_plink -------------------------------------------------------------------
 #' @name tidy_plink
 #' @title Tidy plink \code{.tped} and {.tfam} files in a tidy data frame
-#' @description Transform genomic data set produced by massive parallel
-#' sequencing pipeline (e.g.GBS/RADseq,
-#' SNP chip, DArT, etc) into a tidy format.
-#' The use of blacklist and whitelist along
-#' several filtering options are available to prune the dataset.
-#' Several arguments are available to make your data population-wise and easily
-#' rename the pop id.
+#' @description Transform a PLINK file in \code{.tped} format into a tidy dataset.
 #' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 #' and \href{https://github.com/thierrygosselin/assigner}{assigner}
 #' and might be of interest for users.
@@ -17,14 +11,6 @@
 
 #' @inheritParams read_strata
 #' @inheritParams radiator_common_arguments
-
-# @param max.marker (integer, optional) For large PLINK files,
-# useful to subsample marker number. e.g. if the data set
-# contains 200 000 markers and \code{max.marker = 10000}, 10000 markers are
-# subsampled randomly from the 200000 markers. If you need specific markers,
-# use \code{whitelist.markers} argument.
-# Default: \code{max.marker = NULL}.
-
 
 #' @references
 #' PLINK: a tool set for whole-genome association and population-based linkage
@@ -40,114 +26,25 @@ tidy_plink <- function(data, strata = NULL, verbose = FALSE, ...) {
   # NOTE TO MYSELF: OLD CODE THAT COULD BE COMPLETELY RE_WRITTEN IF NECESSARY...
   # BUT WHO USE PLINK file as input file these days...?
 
+  # Test
+  # verbose = FALSE
+  # strata = NULL
+  # blacklist.id=NULL
+  # pop.select=NULL
+  # pop.levels=NULL
+  # pop.labels=NULL
 
 
-  # dotslist -------------------------------------------------------------------
-  dotslist <- rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE)
-  want <- c(
-    "whitelist.markers", "blacklist.id",
-    "blacklist.genotype",
-    "pop.select", "pop.levels", "pop.labels",
-    "filter.snp.read.position",
-    "filter.mac", "maf.thresholds",
-    "filter.coverage.outliers",
-    "filter.markers.missing",
-    "filter.short.ld", "filter.long.ld", "long.ld.missing", "ld.method", "snp.ld",
-    "filter.individuals.missing",
-    "filter_common_markers", "common.markers",
-    "filter_monomorphic",
-    "filter.strands",
-    "path.folder",
-    "ref.calibration", "gt.vcf.nuc", "gt.vcf", "gt", "gt.bin",
-    "filename", "keep.gds",
-    "vcf.metadata", "vcf.stats"
-  )
-  unknowned_param <- setdiff(names(dotslist), want)
+  # Function call and dotslist -------------------------------------------------
+  rad.dots <- radiator_dots(
+    func.name = as.list(sys.call())[[1]],
+    fd = rlang::fn_fmls_names(),
+    args.list = as.list(environment()),
+    dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
+    keepers = c("blacklist.id", "pop.select", "pop.levels", "pop.labels"),
+    verbose = FALSE
+    )
 
-  if (length(unknowned_param) > 0) {
-    rlang::abort("Unknowned \"...\" parameters ",
-         stringi::stri_join(unknowned_param, collapse = " "))
-  }
-
-  radiator.dots <- dotslist[names(dotslist) %in% want]
-
-
-  # argument <- radiator.dots[["argument"]]
-
-  whitelist.markers <- radiator.dots[["whitelist.markers"]]
-  blacklist.id <- radiator.dots[["blacklist.id"]]
-  blacklist.genotype <- radiator.dots[["blacklist.genotype"]]
-
-  pop.levels <- radiator.dots[["pop.levels"]]
-  pop.labels <- radiator.dots[["pop.labels"]]
-  pop.select <- radiator.dots[["pop.select"]]
-
-  filter.snp.read.position <- radiator.dots[["filter.snp.read.position"]]
-
-  filter.mac <- radiator.dots[["filter.mac"]]
-  maf.thresholds <- radiator.dots[["maf.thresholds"]]
-  if (!is.null(maf.thresholds)) message("Deprecated argument, see details")
-
-  filter.coverage.outliers <- radiator.dots[["filter.coverage.outliers"]]
-  filter.markers.missing <- radiator.dots[["filter.markers.missing"]]
-
-  filter.short.ld <- radiator.dots[["filter.short.ld"]]
-  filter.long.ld <- radiator.dots[["filter.long.ld"]]
-  long.ld.missing <- radiator.dots[["long.ld.missing"]]
-  if (is.null(long.ld.missing)) long.ld.missing <- FALSE
-  ld.method <- radiator.dots[["ld.method"]]
-  if (is.null(ld.method)) ld.method <- "r2"
-  snp.ld <- radiator.dots[["filter.short.ld"]]
-  if (!is.null(snp.ld)) message("Deprecated argument, see details")
-
-
-
-
-  filter.individuals.missing <- radiator.dots[["ld.method"]]
-
-  filter_common_markers <- radiator.dots[["filter_common_markers"]]
-  if (is.null(filter_common_markers)) filter_common_markers <- TRUE
-  common.markers <- radiator.dots[["filter_common_markers"]]
-  if (!is.null(common.markers)) message("Deprecated argument, see details")
-
-  filter_monomorphic <- radiator.dots[["filter_monomorphic"]]
-  filter.strands <- radiator.dots[["filter.strands"]]
-
-  path.folder <- radiator.dots[["path.folder"]]
-  if (is.null(path.folder)) {
-    path.folder <- getwd()
-  } else {
-    if (!dir.exists(path.folder)) dir.create(path.folder)
-  }
-
-  ref.calibration <- radiator.dots[["ref.calibration"]]
-  if (is.null(ref.calibration)) ref.calibration <- FALSE
-
-  gt.vcf.nuc <- radiator.dots[["gt.vcf.nuc"]]
-  if (is.null(gt.vcf.nuc)) gt.vcf.nuc <- TRUE
-
-  gt.vcf <- radiator.dots[["gt.vcf"]]
-  if (is.null(gt.vcf)) gt.vcf <- TRUE
-
-  gt <- radiator.dots[["gt"]]
-  if (is.null(gt)) gt <- TRUE
-
-  gt.bin <- radiator.dots[["gt.bin"]]
-  if (is.null(gt.bin)) gt.bin <- TRUE
-
-  filename <- radiator.dots[["filename"]]
-
-  keep.gds <- radiator.dots[["keep.gds"]]
-  if (is.null(keep.gds)) keep.gds <- TRUE
-
-  vcf.stats <- radiator.dots[["vcf.stats"]]
-  if (is.null(vcf.stats)) vcf.stats <- TRUE
-
-  vcf.metadata <- radiator.dots[["vcf.metadata"]]
-  if (is.null(vcf.metadata)) vcf.metadata <- TRUE
-
-
-  # Import whitelist of markers-------------------------------------------------
 
   # Strata ---------------------------------------------------------------------
   strata.df <- read_strata(
@@ -174,11 +71,21 @@ tidy_plink <- function(data, strata = NULL, verbose = FALSE, ...) {
     col.names = c("POP_ID", "INDIVIDUALS"),
     showProgress = TRUE,
     data.table = FALSE) %>%
-    tibble::as_tibble(.) %>%
+    tibble::as_tibble(.)
+
+  # Check if pop is the same as individuals
+  if (identical(tfam$POP_ID, tfam$INDIVIDUALS)) {
+    tfam %<>%
+      dplyr::mutate(POP_ID = 1L)
+  }
+
+  tfam %<>%
     dplyr::mutate_at(.tbl = ., .vars = "INDIVIDUALS",
                      .funs = clean_ind_names) %>%
     dplyr::mutate_at(.tbl = ., .vars = "POP_ID",
                      .funs = clean_pop_names)
+
+
 
   # if no strata tfam = strata.df
   if (is.null(strata)) {
@@ -188,7 +95,7 @@ tidy_plink <- function(data, strata = NULL, verbose = FALSE, ...) {
       pop.labels = pop.labels,
       pop.select = pop.select,
       blacklist.id = blacklist.id,
-      verbose = FALSE)
+      verbose = FALSE) %$% strata
   }
 
   tped.header.prep <- tfam %>%
@@ -222,29 +129,6 @@ tidy_plink <- function(data, strata = NULL, verbose = FALSE, ...) {
     tibble::as_tibble(.) %>%
     dplyr::mutate(LOCUS = as.character(LOCUS))
 
-  # Filter with whitelist of markers
-  if (!is.null(whitelist.markers)) {
-    if (verbose) message("Filtering with whitelist of markers")
-    input  %<>% suppressWarnings(
-      dplyr::semi_join(
-        whitelist.markers,
-        by = intersect(colnames(whitelist.markers), colnames(input)))
-    )
-  }
-
-  # To reduce the size of the dataset we subsample the markers with max.marker
-  # if (!is.null(max.marker)) {
-  #   if (verbose) message("Using the max.marker to reduce the size of the dataset")
-  #   input <- dplyr::sample_n(tbl = input, size = max(as.numeric(max.marker)), replace = FALSE)
-  #
-  #   max.marker.subsample.select <- input %>%
-  #     dplyr::distinct(LOCUS, .keep_all = TRUE) %>%
-  #     dplyr::arrange(LOCUS)
-  #
-  #   readr::write_tsv(# save results
-  #     x = max.marker.subsample.select,
-  #     path = "max.marker.subsample.select.tsv")
-  # }
 
   # Make tidy
   if (verbose) message("Tidying the PLINK file ...")

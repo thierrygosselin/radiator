@@ -56,7 +56,7 @@ detect_genomic_format <- function(data){
       # message("File type: VCF")
     }
 
-    if (file.ending == ".tped") {
+    if (file.ending == "tped") {
       data.type <- "plink.file"
       # message("File type: PLINK")
       if (!file.exists(stringi::stri_replace_all_fixed(str = data, pattern = ".tped", replacement = ".tfam", vectorize_all = FALSE))) {
