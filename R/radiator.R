@@ -392,11 +392,24 @@ radiator_results_message <- function(
 radiator_folder <- function(f, path.folder = NULL, prefix_int = TRUE) {
   if (is.null(path.folder)) path.folder <- getwd()
   if (prefix_int) {
-    f <- stringi::stri_join(stringi::stri_pad_left(
-      str = length(list.dirs(path = path.folder, full.names = FALSE)[-1]) + 1L,
-      width = 2,
-      pad = 0
-    ), "_", f)
+    n.dir <- list.dirs(path = path.folder, full.names = FALSE)[-1]
+    n.dir <- length(n.dir) - sum(stringi::stri_count_fixed(
+      str = n.dir, pattern = "/")
+    ) + 1L
+
+    f <- stringi::stri_join(
+      stringi::stri_pad_left(str = n.dir, width = 2, pad = 0),
+      "_",
+      f
+    )
+    n.dir <- NULL
+
+    # old version for bk
+    # f <- stringi::stri_join(stringi::stri_pad_left(
+    #   str = length(list.dirs(path = path.folder, full.names = FALSE)[-1]) + 1L,
+    #   width = 2,
+    #   pad = 0
+    # ), "_", f)
   }
   folder.prefix <- file.path(path.folder, f)
   return(folder.prefix)

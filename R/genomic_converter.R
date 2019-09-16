@@ -387,18 +387,11 @@ genomic_converter <- function(
   # Filename -------------------------------------------------------------------
   if (is.null(filename)) {
     filename <- stringi::stri_join("radiator_data_", file.date)
-
-    # if (!is.null(imputation.method)) {
-    #   filename.imp <- stringi::stri_join("radiator_data_imputed_", file.date)
-    # }
   } else {
     filename.problem <- file.exists(filename)
     if (filename.problem) {
       filename <- stringi::stri_join(filename, "_", file.date)
     }
-    # if (!is.null(imputation.method)) {
-    #   filename.imp <- stringi::stri_join(filename, "_imputed")
-    # }
   }
 
   # Folders---------------------------------------------------------------------
@@ -545,15 +538,6 @@ genomic_converter <- function(
       pop.levels = pop.levels,
       filename = filename
     )
-
-    # if (!is.null(imputation.method)) {
-    #   if (verbose) message("Generating genepop file WITH imputations")
-    #   radiator::write_genepop(
-    #     data = input.imp,
-    #     pop.levels = pop.levels,
-    #     filename = filename.imp
-    #   )
-    # }
   } # end genepop output
 
   # GENEPOPEDIT --------------------------------------------------------------------
@@ -589,14 +573,6 @@ genomic_converter <- function(
       data = input,
       filename = filename
     )
-
-    # if (!is.null(imputation.method)) {
-    #   if (verbose) message("Generating hierfstat file WITH imputations")
-    #   res$hierfstat.imputed <- radiator::write_hierfstat(
-    #     data = input.imp,
-    #     filename = filename.imp
-    #   )
-    # }
   } # end hierfstat output
 
   # strataG --------------------------------------------------------------------
@@ -618,16 +594,6 @@ genomic_converter <- function(
       markers.line = TRUE,
       filename = filename
     )
-
-    # if (!is.null(imputation.method)) {
-    #   if (verbose) message("Generating structure file WITH imputations")
-    #   radiator::write_structure(
-    #     data = input.imp,
-    #     pop.levels = pop.levels,
-    #     markers.line = TRUE,
-    #     filename = filename.imp
-    #   )
-    # }
   } # end structure output
 
   # faststructure --------------------------------------------------------------------
@@ -756,16 +722,7 @@ genomic_converter <- function(
     res$bayescan <- radiator::write_bayescan(
       data = input,
       pop.select = pop.select,
-      snp.ld = snp.ld,
       filename = filename)
-    # if (!is.null(imputation.method)) {
-    #   if (verbose) message("Generating BayeScan object WITH imputations")
-    #   res$bayescan.imputed <- radiator::write_bayescan(
-    #     data = input.imp,
-    #     pop.select = pop.select,
-    #     snp.ld = snp.ld,
-    #     filename = filename.imp)
-    # }
   }
 
   # pcadapt -------------------------------------------------------------------
@@ -776,15 +733,6 @@ genomic_converter <- function(
       filename = filename,
       parallel.core = parallel.core
     )
-
-    # if (!is.null(imputation.method)) {
-    #   if (verbose) message("Generating pcadapt file and object WITH imputations")
-    #   res$pcadapt.imputed <- radiator::write_pcadapt(
-    #     data = input.imp,
-    #     filename = filename.imp,
-    #     parallel.core = parallel.core
-    #   )
-    # }
   }
 
 

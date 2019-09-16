@@ -1096,7 +1096,7 @@ write_bayescan <- function(
   # pop.select -----------------------------------------------------------------
   if (!is.null(pop.select)) {
     message("pop.select: ")
-    data <- dplyr::filter(data, POP_ID %in% pop.select)
+    data %<>% dplyr::filter(POP_ID %in% pop.select)
     if (is.factor(data$POP_ID)) data$POP_ID <- droplevels(data$POP_ID)
   }
 
@@ -1130,7 +1130,7 @@ write_bayescan <- function(
 
   # Biallelic and GT_BIN -------------------------------------------------------
   if (biallelic) {
-    data <- dplyr::select(data, MARKERS, INDIVIDUALS, POP_ID, GT)
+    data %<>% dplyr::select(MARKERS, INDIVIDUALS, POP_ID, GT)
     data <- radiator::calibrate_alleles(
       data = data,
       biallelic = TRUE,
@@ -1155,7 +1155,7 @@ write_bayescan <- function(
   markers.dictionary <- dplyr::distinct(data, MARKERS, BAYESCAN_MARKERS) %>%
     dplyr::arrange(BAYESCAN_MARKERS)
 
-  data <- dplyr::select(data, -POP_ID, -MARKERS)
+  data %<>% dplyr::select(-POP_ID, -MARKERS)
 
   # writing file to directory  ------------------------------------------------
   # Filename: date and time to have unique filenaming
