@@ -74,7 +74,7 @@ tidy_gtypes <- function(data) {
 #' @title Write a \href{https://github.com/EricArcher/}{strataG} object from
 #' radiator GDS and tidy data file or object.
 
-#' @description Write a\href{https://github.com/EricArcher/}{strataG} object from a tidy data frame.
+#' @description Write a \href{https://github.com/EricArcher/}{strataG} object from a tidy data frame.
 #' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 #' and might be of interest for users.
 

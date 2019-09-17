@@ -133,6 +133,9 @@ Parentage Assignment from Multilocus Marker Data. Genetics, 191, 183–194.
 \seealso{
 \code{COLONY} is available on Jinliang Wang web site
 \url{http://www.zsl.org/science/software/colony}
+
+
+\href{https://thierrygosselin.github.io/radiator/articles/rad_genomics_computer_setup.html#colony}{colony installation instructions}
 }
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}

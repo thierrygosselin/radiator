@@ -28,7 +28,7 @@ Default: \code{write = FALSE}.}
 An object of the class \href{https://github.com/EricArcher/}{strataG} is returned.
 }
 \description{
-Write a\href{https://github.com/EricArcher/}{strataG} object from a tidy data frame.
+Write a \href{https://github.com/EricArcher/}{strataG} object from a tidy data frame.
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and might be of interest for users.
 }

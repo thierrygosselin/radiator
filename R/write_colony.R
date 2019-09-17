@@ -78,6 +78,9 @@
 
 #' @seealso \code{COLONY} is available on Jinliang Wang web site
 #' \url{http://www.zsl.org/science/software/colony}
+#'
+#'
+#' \href{https://thierrygosselin.github.io/radiator/articles/rad_genomics_computer_setup.html#colony}{colony installation instructions}
 
 #' @examples
 #' \dontrun{
