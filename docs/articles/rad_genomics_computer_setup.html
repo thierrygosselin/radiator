@@ -123,6 +123,7 @@
 <a href="#apples-command-line-tools" class="anchor"></a>Apple’s Command Line Tools</h2>
 <p>Make sure it’s installed…if not, follow instructions:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="ex">xcode-select</span> --install</a></code></pre></div>
+<p>In the finder using keyboard shorcut <code>cmd+shift+g</code> go to: <code>/Library/Developer/CommandLineTools/Packages/</code> and double click on <code>macOS_SDK_headers_for_macOS_10.14.pkg</code> to install.</p>
 </div>
 <div id="compiler" class="section level2">
 <h2 class="hasAnchor">
@@ -582,6 +583,32 @@
 <div class="sourceCode" id="cb48"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb48-1" data-line-number="1"><span class="fu">sudo</span> rm -R fsc26_mac64*</a></code></pre></div>
 </div>
 </div>
+<div id="colony" class="section level2">
+<h2 class="hasAnchor">
+<a href="#colony" class="anchor"></a><code>COLONY</code>
+</h2>
+<p>To install <a href="https://www.zsl.org/science/software/colony">COLONY 30/07/2018, V2.0.6.5</a>:</p>
+<div id="macos-2" class="section level3">
+<h3 class="hasAnchor">
+<a href="#macos-2" class="anchor"></a>MacOS</h3>
+<p>The old openmpi version (openmpi-1.6.5) is required, saddly.</p>
+<div class="sourceCode" id="cb49"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb49-1" data-line-number="1"><span class="bu">cd</span> Downloads</a>
+<a class="sourceLine" id="cb49-2" data-line-number="2"><span class="ex">curl</span> -O https://download.open-mpi.org/release/open-mpi/v1.6/openmpi-1.6.5.tar.gz</a>
+<a class="sourceLine" id="cb49-3" data-line-number="3"><span class="fu">tar</span> -zxvf openmpi-1.6.5.tar.gz</a>
+<a class="sourceLine" id="cb49-4" data-line-number="4"><span class="bu">cd</span> openmpi-1.6.5</a>
+<a class="sourceLine" id="cb49-5" data-line-number="5"><span class="bu">export</span> <span class="va">TMPDIR=</span>/tmp</a>
+<a class="sourceLine" id="cb49-6" data-line-number="6"><span class="ex">./configure</span> F77=gfortran --prefix=/usr/local -openmp</a>
+<a class="sourceLine" id="cb49-7" data-line-number="7"><span class="fu">make</span> -j 12</a>
+<a class="sourceLine" id="cb49-8" data-line-number="8"><span class="fu">sudo</span> make install</a></code></pre></div>
+<p>To download COLONY, follow instructions on Jinliang Wang <a href="https://www.zsl.org/science/software/colony">ZSL website</a>. The file you need to uncompress is named: <code>colony2.mac_.20180730.zip</code>.</p>
+</div>
+<div id="linux-2" class="section level3">
+<h3 class="hasAnchor">
+<a href="#linux-2" class="anchor"></a>Linux</h3>
+<p>To download COLONY, follow instructions on Jinliang Wang <a href="https://www.zsl.org/science/software/colony">ZSL website</a>. The file you need to uncompress is named: <code>colony2.linux_.20180730.zip</code>.</p>
+<p>Several options are available depending on the compiler you have installed.</p>
+</div>
+</div>
 </div>
   </div>
 
@@ -623,6 +650,7 @@
       <li><a href="#missranger"><code>missRanger</code></a></li>
       <li><a href="#pcamethods"><code>pcaMethods</code></a></li>
       <li><a href="#fastsimcoal2"><code>fastsimcoal2</code></a></li>
+      <li><a href="#colony"><code>COLONY</code></a></li>
       </ul>
 </li>
       </ul>
