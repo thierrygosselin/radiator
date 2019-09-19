@@ -1679,6 +1679,8 @@ tidy_vcf <- function(
       if (n.markers >= 30000) gt <- FALSE
     }
 
+    if (gt || gt.vcf.nuc || gt.vcf) ref.calibration <- TRUE
+
     # check
     # gt.bin
     # gt.vcf
