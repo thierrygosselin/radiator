@@ -1192,9 +1192,9 @@ This marker could be absent due to an error.")
       data <-
         dplyr::select(data,-c(STRATA)) %>%
         # dplyr::rename(data, VISUAL_STRATA = STRATA) %>%
-        dplyr::left_join(y.silico.data, by = "INDIVIDUALS") %>%
+        dplyr::left_join(y.silico.data, by = "INDIVIDUALS")
         # dplyr::rename(TARGET_ID = TARGET_ID.x) %>%
-        dplyr::select(-c(TARGET_ID.y))
+        # dplyr::select(-c(TARGET_ID.y))
         # dplyr::mutate(GENETIC_STRATA = STRATA)
       radiator::write_rad(data = data,
          path = file.path(wd, "sexy_markers_data_genetic_SILCIO_sex_ID.rad"))
@@ -1203,9 +1203,9 @@ This marker could be absent due to an error.")
         silicodata <-
           dplyr::select(silicodata,-c(STRATA)) %>%
           # dplyr::rename(silicodata, VISUAL_STRATA = STRATA) %>%
-          dplyr::left_join(y.silico.data, by = "INDIVIDUALS") %>%
+          dplyr::left_join(y.silico.data, by = "INDIVIDUALS")
           # dplyr::rename(TARGET_ID = TARGET_ID.x) %>%
-          dplyr::select(-c(TARGET_ID.y))
+          # dplyr::select(-c(TARGET_ID.y))
           # dplyr::mutate(GENETIC_STRATA = STRATA)
         radiator::write_rad(data = silicodata,
           path = file.path(wd, "sexy_markers_silicodata_genetic_SILICO_sex_ID.rad"))
