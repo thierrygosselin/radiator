@@ -698,7 +698,7 @@ sexy_markers <- function(data,
     res$heterogametic.markers <- NULL
   }
 
-  if (length(y.markers) == 0){
+  if (length(y.markers) == 0) {
     res$heterogametic.markers <- NULL
   }
 
@@ -846,8 +846,7 @@ sexy_markers <- function(data,
             dplyr::mutate(STRATA = GENETIC_SEX) %>%
             dplyr::select(-TARGET_ID)
         } else {
-          message("You have only 1 Y-linked marker: 'M' for which this marker is absent are reassigned as 'U'.
-This marker could be absent due to an error.")
+          message("You have only 1 Y-linked marker: 'M' for which this marker is absent are reassigned as 'U' since this marker could be absent due to an error.")
           y.data <- dplyr::filter(data, MARKERS %in% y.markers) %>%
             dplyr::mutate(MEAN_GT = GT_BIN) %>%
             # dplyr::left_join(strata, by = "INDIVIDUALS") %>%
@@ -1194,7 +1193,7 @@ This marker could be absent due to an error.")
         dplyr::select(data,-c(STRATA)) %>%
         # dplyr::rename(data, VISUAL_STRATA = STRATA) %>%
         dplyr::left_join(y.silico.data, by = "INDIVIDUALS") %>%
-        dplyr::rename(TARGET_ID = TARGET_ID.x) %>%
+        # dplyr::rename(TARGET_ID = TARGET_ID.x) %>%
         dplyr::select(-c(TARGET_ID.y))
         # dplyr::mutate(GENETIC_STRATA = STRATA)
       radiator::write_rad(data = data,
@@ -1205,7 +1204,7 @@ This marker could be absent due to an error.")
           dplyr::select(silicodata,-c(STRATA)) %>%
           # dplyr::rename(silicodata, VISUAL_STRATA = STRATA) %>%
           dplyr::left_join(y.silico.data, by = "INDIVIDUALS") %>%
-          dplyr::rename(TARGET_ID = TARGET_ID.x) %>%
+          # dplyr::rename(TARGET_ID = TARGET_ID.x) %>%
           dplyr::select(-c(TARGET_ID.y))
           # dplyr::mutate(GENETIC_STRATA = STRATA)
         radiator::write_rad(data = silicodata,
