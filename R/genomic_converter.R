@@ -16,14 +16,14 @@
 #'   \item \strong{Imputations:} deprecated module no longer available
 #'   in \emph{genomic_converter} (see \emph{Life cycle} section below).
 #'   \item \strong{Parallel:} Some parts of the function are designed to be conduncted on multiple CPUs
-#'   \item \strong{Output:} 28 output file formats are supported (see \code{output} argument below)
+#'   \item \strong{Output:} 29 output file formats are supported (see \code{output} argument below)
 #' }
 
-#' @param output 28 genomic data formats can be exported: tidy (by default),
+#' @param output 29 genomic data formats can be exported: tidy (by default),
 #' genepop, genind, genlight, vcf (for file format version, see details below),
 #' plink, structure, faststructure, arlequin, hierfstat, gtypes (strataG), bayescan, betadiv,
 #' pcadapt, hzar, fineradstructure, related, seqarray, snprelate, maverick,
-#' genepopedit and rubias.
+#' genepopedit, rubias and hapmap.
 #' Use a character string,
 #' e.g. \code{output = c("genind", "genepop", "structure")}, to have preferred
 #' output formats generated. With default, only the tidy format is generated.
@@ -55,6 +55,7 @@
 #' @inheritParams write_stockr
 #' @inheritParams write_genepopedit
 #' @inheritParams write_rubias
+#' @inheritParams write_hapmap
 
 
 #' @section Input genomic datasets:
@@ -564,6 +565,12 @@ genomic_converter <- function(
                            filename = filename,
                            parallel.core = parallel.core)
   } # end rubias output
+
+  # HapMap --------------------------------------------------------------------
+  if ("hapmap" %in% output) {
+    if (verbose) message("Generating hapmap output")
+    radiator::write_hapmap(data = input, filename = filename)
+  } # end hapmap output
 
 
   # hierfstat --------------------------------------------------------------------

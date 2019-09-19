@@ -25,11 +25,11 @@ Documented on \code{\link{read_dart}}. Also use the strata read function to
 blacklist individuals.
 Default: \code{strata = NULL}.}
 
-\item{output}{28 genomic data formats can be exported: tidy (by default),
+\item{output}{29 genomic data formats can be exported: tidy (by default),
 genepop, genind, genlight, vcf (for file format version, see details below),
 plink, structure, faststructure, arlequin, hierfstat, gtypes (strataG), bayescan, betadiv,
 pcadapt, hzar, fineradstructure, related, seqarray, snprelate, maverick,
-genepopedit and rubias.
+genepopedit, rubias and hapmap.
 Use a character string,
 e.g. \code{output = c("genind", "genepop", "structure")}, to have preferred
 output formats generated. With default, only the tidy format is generated.
@@ -68,7 +68,7 @@ reality of GBS/RADseq data while maintaining a reproducible workflow.
   \item \strong{Imputations:} deprecated module no longer available
   in \emph{genomic_converter} (see \emph{Life cycle} section below).
   \item \strong{Parallel:} Some parts of the function are designed to be conduncted on multiple CPUs
-  \item \strong{Output:} 28 output file formats are supported (see \code{output} argument below)
+  \item \strong{Output:} 29 output file formats are supported (see \code{output} argument below)
 }
 }
 \section{Input genomic datasets}{
