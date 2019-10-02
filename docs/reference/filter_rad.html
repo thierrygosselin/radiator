@@ -8,21 +8,25 @@
 
 <title>ONE FUNCTION TO RULE THEM ALL — filter_rad • radiator</title>
 
+
 <!-- jquery -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous" />
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
 
-<!-- sticky kit -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/sticky-kit/1.1.3/sticky-kit.min.js" integrity="sha256-c4Rlo1ZozqTPE2RLuvbusY3+SU1pQaJC0TjuhygMipw=" crossorigin="anonymous"></script>
+<!-- headroom.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -30,13 +34,14 @@
 
 
 
-<meta property="og:title" content="ONE FUNCTION TO RULE THEM ALL — filter_rad" />
 
+<meta property="og:title" content="ONE FUNCTION TO RULE THEM ALL — filter_rad" />
 <meta property="og:description" content="Designed for RADseq data, it's radiator integrated pipeline that links
 several filter_ functions of radiator.
 Rapidly get an idea of what you can and cannot do with your dataset.
 Novices, start with this one!" />
 <meta name="twitter:card" content="summary" />
+
 
 
 
@@ -48,6 +53,7 @@ Novices, start with this one!" />
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
+
 
 
   </head>
@@ -100,7 +106,6 @@ Novices, start with this one!" />
   <a href="../news/index.html">News</a>
 </li>
       </ul>
-      
       <ul class="nav navbar-nav navbar-right">
         <li>
   <a href="https://github.com/thierrygosselin/radiator">
@@ -115,6 +120,7 @@ Novices, start with this one!" />
 </div><!--/.navbar -->
 
       
+
       </header>
 
 <div class="row">
@@ -126,18 +132,16 @@ Novices, start with this one!" />
     </div>
 
     <div class="ref-description">
-    
     <p>Designed for RADseq data, it's radiator integrated pipeline that links
 several <code>filter_</code> functions of <span class="pkg">radiator</span>.
 Rapidly get an idea of what you can and cannot do with your dataset.
 Novices, start with this one!</p>
-    
     </div>
 
     <pre class="usage"><span class='fu'>filter_rad</span>(<span class='no'>data</span>, <span class='kw'>strata</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>interactive.filter</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
   <span class='kw'>output</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>filename</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>parallel.core</span> <span class='kw'>=</span> <span class='kw pkg'>parallel</span><span class='kw ns'>::</span><span class='fu'><a href='https://www.rdocumentation.org/packages/parallel/topics/detectCores'>detectCores</a></span>() - <span class='fl'>1</span>, <span class='no'>...</span>)</pre>
-    
+  <span class='kw'>parallel.core</span> <span class='kw'>=</span> <span class='kw pkg'>parallel</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span>() - <span class='fl'>1</span>, <span class='no'>...</span>)</pre>
+
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
@@ -203,18 +207,18 @@ Default: <code>parallel.core = parallel::detectCores() - 1</code>.</p></td>
       <td><p>(optional) To pass further argument for fine-tuning the function.</p></td>
     </tr>
     </table>
-    
+
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
     <p>The function returns an object (list). The content of the object
-can be listed with <code><a href='https://www.rdocumentation.org/packages/base/topics/names'>names(object)</a></code> and use <code>$</code> to isolate specific
+can be listed with <code><a href='https://rdrr.io/r/base/names.html'>names(object)</a></code> and use <code>$</code> to isolate specific
 object (see examples). Some output format will write the output file in the
 working directory. The tidy genomic data frame is generated automatically.</p>
-    
     <h2 class="hasAnchor" id="filtering-steps-and-folders-generated"><a class="anchor" href="#filtering-steps-and-folders-generated"></a>Filtering steps and folders generated</h2>
 
     
-    <ol>
+
+<ol>
 <li><p><strong>radiator</strong>:</p><ul>
 <li><p>the GDS file ending with <code>.gds.rad</code>. To open in R use <code><a href='read_rad.html'>read_rad</a></code>.</p></li>
 <li><p><code>filters_parameters.tsv</code>: file containing all the parameters and
@@ -411,11 +415,13 @@ Described in <code><a href='filter_hwe.html'>filter_hwe</a></code>.</p><ul>
 genind and stockr files generated by the output argument.</p></li>
 </ul></li>
 </ol>
-    
+
     <h2 class="hasAnchor" id="advance-mode"><a class="anchor" href="#advance-mode"></a>Advance mode</h2>
 
     
-    <p>Ideally, use the function in interactive mode and forget about this section.
+
+
+<p>Ideally, use the function in interactive mode and forget about this section.
 For advance user who want to run in batch mode with pre-defined arguments.
 Below are the arguments available. Read the function documentation associated
 with the arguments. Most of them reside in separate module that can be explored
@@ -449,39 +455,35 @@ separately.
 <li><p><strong>ind.heterozygosity.threshold</strong>: described in <code><a href='detect_mixed_genomes.html'>detect_mixed_genomes</a></code>.</p></li>
 <li><p><strong>ind.heterozygosity.threshold</strong>: described in <code><a href='detect_mixed_genomes.html'>detect_mixed_genomes</a></code>.</p></li>
 </ol>
-    
+
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><span class='co'># NOT RUN {</span>
+    <pre class="examples"><div class='input'><span class='kw'>if</span> (<span class='fl'>FALSE</span>) {
 <span class='co'># Some of the packages used in this function are not installed by default.</span>
 <span class='co'># Installed the required packages:</span>
 <span class='fu'><a href='radiator_pkg_install.html'>radiator_pkg_install</a></span>()
 
 <span class='co'># Very simple:</span>
-<span class='no'>shark</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>radiator</span><span class='kw ns'>::</span><span class='fu'><a href='https://www.rdocumentation.org/packages/radiator/topics/filter_rad'>filter_rad</a></span>(
+<span class='no'>shark</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>radiator</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/pkg/radiator/man/filter_rad.html'>filter_rad</a></span>(
     <span class='kw'>data</span> <span class='kw'>=</span> <span class='st'>"data.shark.vcf"</span>,
     <span class='kw'>strata</span> <span class='kw'>=</span> <span class='st'>"strata.shark.tsv"</span>)
 
 
 <span class='co'># With filename and output</span>
-<span class='no'>shark</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>radiator</span><span class='kw ns'>::</span><span class='fu'><a href='https://www.rdocumentation.org/packages/radiator/topics/filter_rad'>filter_rad</a></span>(
+<span class='no'>shark</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>radiator</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/pkg/radiator/man/filter_rad.html'>filter_rad</a></span>(
     <span class='kw'>data</span> <span class='kw'>=</span> <span class='st'>"data.shark.vcf"</span>,
     <span class='kw'>strata</span> <span class='kw'>=</span> <span class='st'>"strata.shark.tsv"</span>,
     <span class='kw'>output</span> <span class='kw'>=</span> <span class='st'>"genind"</span>,
     <span class='kw'>filename</span> <span class='kw'>=</span> <span class='st'>"shark"</span>)
-<span class='co'># }</span></pre>
+}</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>
     <ul class="nav nav-pills nav-stacked">
       <li><a href="#arguments">Arguments</a></li>
-      
       <li><a href="#value">Value</a></li>
-
       <li><a href="#filtering-steps-and-folders-generated">Filtering steps and folders generated</a></li>
-
       <li><a href="#advance-mode">Advance mode</a></li>
-      
       <li><a href="#examples">Examples</a></li>
     </ul>
 
@@ -491,19 +493,23 @@ Peter Grewe <a href='mailto:peter.grewe@csiro.au'>peter.grewe@csiro.au</a></p>
   </div>
 </div>
 
+
       <footer>
       <div class="copyright">
   <p>Developed by Thierry Gosselin, Floriaan Devloo-Delva.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.3.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.</p>
 </div>
+
       </footer>
    </div>
 
   
 
+
   </body>
 </html>
+
 

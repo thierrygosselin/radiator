@@ -168,8 +168,9 @@ Default: \code{filter.coverage = NULL}. To blacklist markers based on mean cover
 Documented in \code{\link{filter_coverage}}.
 
 \item \code{filter.genotyping}: (integer) To blacklist markers with too
-many missing data. e.g. \code{filter.genotyping = 10}, will only keep
+many missing data. e.g. \code{filter.genotyping = 0.1}, will only keep
 markers with missing rate <= to 10 percent.
+Documented in \code{\link{filter_genotyping}}.
 \item \code{filter.snp.position.read}: 3 options available, \code{"outliers", "q75", "iqr"}.
 This argument will blacklist markers based on it's position on the read.
 \code{filter.snp.position.read = "outliers"}, will remove markers based

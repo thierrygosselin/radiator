@@ -7,8 +7,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RADseq genomics in R • radiator</title>
 <!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script><!-- Bootstrap --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous">
-<!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script><!-- sticky kit --><script src="https://cdnjs.cloudflare.com/ajax/libs/sticky-kit/1.1.3/sticky-kit.min.js" integrity="sha256-c4Rlo1ZozqTPE2RLuvbusY3+SU1pQaJC0TjuhygMipw=" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous">
+<!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
 <script src="../pkgdown.js"></script><meta property="og:title" content="RADseq genomics in R">
 <meta property="og:description" content="">
 <meta name="twitter:card" content="summary">
@@ -80,6 +81,7 @@
 <!--/.navbar -->
 
       
+
       </header><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
@@ -209,10 +211,10 @@
 <h1 class="hasAnchor">
 <a href="#installing-libraries" class="anchor"></a>Installing Libraries</h1>
 <p>Below is how I setup most of my computers after a clean macOS install. I start with <strong>devtools</strong> and <strong>tidyverse</strong> than <strong>grur</strong> my packge with the higher number of dependencies, this way it’s installing automatically 90% of the packages I need (including <strong>radiator</strong>).</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="cf">if</span> (<span class="op">!</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">require</a></span>(<span class="st">"devtools"</span>)) <span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/install.packages">install.packages</a></span>(<span class="st">"devtools"</span>) <span class="co"># to install</span></a>
-<a class="sourceLine" id="cb10-2" data-line-number="2"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/install.packages">install.packages</a></span>(<span class="st">"tidyverse"</span>)</a>
-<a class="sourceLine" id="cb10-3" data-line-number="3">devtools<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/devtools/topics/reexports">install_github</a></span>(<span class="st">"thierrygosselin/grur"</span>)</a>
-<a class="sourceLine" id="cb10-4" data-line-number="4">devtools<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/devtools/topics/reexports">install_github</a></span>(<span class="st">"thierrygosselin/assigner"</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="cf">if</span> (<span class="op">!</span><span class="kw"><a href="https://rdrr.io/r/base/library.html">require</a></span>(<span class="st">"devtools"</span>)) <span class="kw"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span>(<span class="st">"devtools"</span>) <span class="co"># to install</span></a>
+<a class="sourceLine" id="cb10-2" data-line-number="2"><span class="kw"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span>(<span class="st">"tidyverse"</span>)</a>
+<a class="sourceLine" id="cb10-3" data-line-number="3">devtools<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/devtools/man/remote-reexports.html">install_github</a></span>(<span class="st">"thierrygosselin/grur"</span>)</a>
+<a class="sourceLine" id="cb10-4" data-line-number="4">devtools<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/devtools/man/remote-reexports.html">install_github</a></span>(<span class="st">"thierrygosselin/assigner"</span>)</a></code></pre></div>
 </div>
 <div id="Installation_problems" class="section level1">
 <h1 class="hasAnchor">
@@ -277,7 +279,7 @@
 <h2 class="hasAnchor">
 <a href="#error-saying-error-vector-memory-exhausted-limit-reached" class="anchor"></a>Error saying: Error: vector memory exhausted (limit reached)</h2>
 <p>Check that you have a file called <code>~/.Renviron</code>:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/files">file.exists</a></span>(<span class="st">"~/.Renviron"</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="kw"><a href="https://rdrr.io/r/base/files.html">file.exists</a></span>(<span class="st">"~/.Renviron"</span>)</a></code></pre></div>
 <p>If you dont have the file:</p>
 <div class="sourceCode" id="cb17"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="co">#In Terminal</span></a>
 <a class="sourceLine" id="cb17-2" data-line-number="2"><span class="bu">cd</span> ~</a>
@@ -447,12 +449,12 @@
 <h3 class="hasAnchor">
 <a href="#test-r-package" class="anchor"></a>Test R-package</h3>
 <p>You should see a time difference between both runs</p>
-<div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb33-1" data-line-number="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">require</a></span>(xgboost)</a>
-<a class="sourceLine" id="cb33-2" data-line-number="2">x &lt;-<span class="st">  </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/matrix">matrix</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/Normal">rnorm</a></span>(<span class="dv">100</span><span class="op">*</span><span class="dv">10000</span>), <span class="dv">10000</span>, <span class="dv">100</span>)</a>
-<a class="sourceLine" id="cb33-3" data-line-number="3">y &lt;-<span class="st">  </span>x <span class="op">%*%</span><span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/Normal">rnorm</a></span>(<span class="dv">100</span>) <span class="op">+</span><span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/Normal">rnorm</a></span>(<span class="dv">1000</span>)</a>
+<div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb33-1" data-line-number="1"><span class="kw"><a href="https://rdrr.io/r/base/library.html">require</a></span>(xgboost)</a>
+<a class="sourceLine" id="cb33-2" data-line-number="2">x &lt;-<span class="st">  </span><span class="kw"><a href="https://rdrr.io/r/base/matrix.html">matrix</a></span>(<span class="kw"><a href="https://rdrr.io/r/stats/Normal.html">rnorm</a></span>(<span class="dv">100</span><span class="op">*</span><span class="dv">10000</span>), <span class="dv">10000</span>, <span class="dv">100</span>)</a>
+<a class="sourceLine" id="cb33-3" data-line-number="3">y &lt;-<span class="st">  </span>x <span class="op">%*%</span><span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/stats/Normal.html">rnorm</a></span>(<span class="dv">100</span>) <span class="op">+</span><span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/stats/Normal.html">rnorm</a></span>(<span class="dv">1000</span>)</a>
 <a class="sourceLine" id="cb33-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb33-5" data-line-number="5"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/system.time">system.time</a></span>({bst =<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/xgboost/topics/xgb.train">xgboost</a></span>(<span class="dt">data =</span> x, <span class="dt">label =</span> y, <span class="dt">nthread =</span> <span class="dv">1</span>, <span class="dt">nround =</span> <span class="dv">100</span>, <span class="dt">verbose =</span> <span class="ot">FALSE</span>)})</a>
-<a class="sourceLine" id="cb33-6" data-line-number="6"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/system.time">system.time</a></span>({bst =<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/xgboost/topics/xgb.train">xgboost</a></span>(<span class="dt">data =</span> x, <span class="dt">label =</span> y, <span class="dt">nthread =</span> <span class="dv">4</span>, <span class="dt">nround =</span> <span class="dv">100</span>, <span class="dt">verbose =</span> <span class="ot">FALSE</span>)})</a></code></pre></div>
+<a class="sourceLine" id="cb33-5" data-line-number="5"><span class="kw"><a href="https://rdrr.io/r/base/system.time.html">system.time</a></span>({bst =<span class="st"> </span><span class="kw"><a href="https://rdrr.io/pkg/xgboost/man/xgb.train.html">xgboost</a></span>(<span class="dt">data =</span> x, <span class="dt">label =</span> y, <span class="dt">nthread =</span> <span class="dv">1</span>, <span class="dt">nround =</span> <span class="dv">100</span>, <span class="dt">verbose =</span> <span class="ot">FALSE</span>)})</a>
+<a class="sourceLine" id="cb33-6" data-line-number="6"><span class="kw"><a href="https://rdrr.io/r/base/system.time.html">system.time</a></span>({bst =<span class="st"> </span><span class="kw"><a href="https://rdrr.io/pkg/xgboost/man/xgb.train.html">xgboost</a></span>(<span class="dt">data =</span> x, <span class="dt">label =</span> y, <span class="dt">nthread =</span> <span class="dv">4</span>, <span class="dt">nround =</span> <span class="dv">100</span>, <span class="dt">verbose =</span> <span class="ot">FALSE</span>)})</a></code></pre></div>
 </div>
 </div>
 <div id="lightgbm" class="section level2">
@@ -526,28 +528,28 @@
 <a href="#ranger" class="anchor"></a><code>ranger</code>
 </h2>
 <p><a href="https://github.com/imbs-hl/ranger">ranger</a> is easy to install.</p>
-<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb40-1" data-line-number="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/install.packages">install.packages</a></span>(<span class="st">"ranger"</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb40-1" data-line-number="1"><span class="kw"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span>(<span class="st">"ranger"</span>)</a></code></pre></div>
 </div>
 <div id="missranger" class="section level2">
 <h2 class="hasAnchor">
 <a href="#missranger" class="anchor"></a><code>missRanger</code>
 </h2>
 <p><a href="https://github.com/mayer79/missRanger">missRanger</a> is also very easy to install.</p>
-<div class="sourceCode" id="cb41"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb41-1" data-line-number="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/install.packages">install.packages</a></span>(<span class="st">"missRanger"</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb41"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb41-1" data-line-number="1"><span class="kw"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span>(<span class="st">"missRanger"</span>)</a></code></pre></div>
 </div>
 <div id="pcamethods" class="section level2">
 <h2 class="hasAnchor">
 <a href="#pcamethods" class="anchor"></a><code>pcaMethods</code>
 </h2>
 <p>To install <a href="https://github.com/hredestig/pcaMethods">pcaMethods</a>, from bioconductor:</p>
-<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb42-1" data-line-number="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/source">source</a></span>(<span class="st">"https://bioconductor.org/biocLite.R"</span>)</a>
+<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb42-1" data-line-number="1"><span class="kw"><a href="https://rdrr.io/r/base/source.html">source</a></span>(<span class="st">"https://bioconductor.org/biocLite.R"</span>)</a>
 <a class="sourceLine" id="cb42-2" data-line-number="2"><span class="kw">biocLite</span>(<span class="st">"pcaMethods"</span>)</a></code></pre></div>
 </div>
 <div id="fastsimcoal2" class="section level2">
 <h2 class="hasAnchor">
 <a href="#fastsimcoal2" class="anchor"></a><code>fastsimcoal2</code>
 </h2>
-<p>To install <a href="http://cmpg.unibe.ch/software/fastsimcoal2/">fastsimcoal2 v.2.6.0.3</a>, to use in <code><a href="https://www.rdocumentation.org/packages/grur/topics/simulate_rad">grur::simulate_rad</a></code>:</p>
+<p>To install <a href="http://cmpg.unibe.ch/software/fastsimcoal2/">fastsimcoal2 v.2.6.0.3</a>, to use in <code><a href="https://rdrr.io/pkg/grur/man/simulate_rad.html">grur::simulate_rad</a></code>:</p>
 <div id="linux-1" class="section level3">
 <h3 class="hasAnchor">
 <a href="#linux-1" class="anchor"></a>LINUX</h3>
@@ -613,6 +615,7 @@
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
+
         <div id="tocnav">
       <h2 class="hasAnchor">
 <a href="#tocnav" class="anchor"></a>Contents</h2>
@@ -660,17 +663,20 @@
 </div>
 
 
+
       <footer><div class="copyright">
   <p>Developed by Thierry Gosselin, Floriaan Devloo-Delva.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.3.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.</p>
 </div>
+
       </footer>
 </div>
 
   
+
 
   </body>
 </html>

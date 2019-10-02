@@ -8,21 +8,25 @@
 
 <title>Run BayeScan — run_bayescan • radiator</title>
 
+
 <!-- jquery -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous" />
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
 
-<!-- sticky kit -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/sticky-kit/1.1.3/sticky-kit.min.js" integrity="sha256-c4Rlo1ZozqTPE2RLuvbusY3+SU1pQaJC0TjuhygMipw=" crossorigin="anonymous"></script>
+<!-- headroom.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -30,8 +34,8 @@
 
 
 
-<meta property="og:title" content="Run BayeScan — run_bayescan" />
 
+<meta property="og:title" content="Run BayeScan — run_bayescan" />
 <meta property="og:description" content="Function highlights:
 
 integrated and seamless pipeline:  generate BayeScan
@@ -41,13 +45,14 @@ SNP linkage:  detect automatically the presence of multiple SNPs on the same loc
 measure/verify accuracy of genome scan within locus.
 summary tables and visualization:  the function generate summary tables and plots of genome scan.
 whitelists and blacklists of markers under different selection identity are automatically generated !
-" />
 
-<meta property="og:description" content="This function requires a working
+
+This function requires a working
 BayeScan program installed
 on the computer (install instructions).
 For UNIX machines, please install the 64bits version." />
 <meta name="twitter:card" content="summary" />
+
 
 
 
@@ -59,6 +64,7 @@ For UNIX machines, please install the 64bits version." />
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
+
 
 
   </head>
@@ -111,7 +117,6 @@ For UNIX machines, please install the 64bits version." />
   <a href="../news/index.html">News</a>
 </li>
       </ul>
-      
       <ul class="nav navbar-nav navbar-right">
         <li>
   <a href="https://github.com/thierrygosselin/radiator">
@@ -126,6 +131,7 @@ For UNIX machines, please install the 64bits version." />
 </div><!--/.navbar -->
 
       
+
       </header>
 
 <div class="row">
@@ -137,7 +143,6 @@ For UNIX machines, please install the 64bits version." />
     </div>
 
     <div class="ref-description">
-    
     <p><strong>Function highlights:</strong></p>
 <ol>
 <li><p><strong>integrated and seamless pipeline: </strong> generate <a href='http://cmpg.unibe.ch/software/BayeScan/'>BayeScan</a>
@@ -149,18 +154,17 @@ measure/verify accuracy of genome scan within locus.</p></li>
 <li><p><strong>whitelists and blacklists</strong> of markers under different selection identity are automatically generated !</p></li>
 </ol>
 
-    <p>This function requires a working
+<p>This function requires a working
 <a href='http://cmpg.unibe.ch/software/BayeScan/'>BayeScan</a> program installed
 on the computer (<a href='http://cmpg.unibe.ch/software/BayeScan/download.html'>install instructions</a>).
 For UNIX machines, please install the 64bits version.</p>
-    
     </div>
 
     <pre class="usage"><span class='fu'>run_bayescan</span>(<span class='no'>data</span>, <span class='kw'>n</span> <span class='kw'>=</span> <span class='fl'>5000</span>, <span class='kw'>thin</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>nbp</span> <span class='kw'>=</span> <span class='fl'>20</span>, <span class='kw'>pilot</span> <span class='kw'>=</span> <span class='fl'>5000</span>,
   <span class='kw'>burn</span> <span class='kw'>=</span> <span class='fl'>50000</span>, <span class='no'>pr_odds</span>, <span class='kw'>subsample</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>iteration.subsample</span> <span class='kw'>=</span> <span class='fl'>1</span>,
-  <span class='kw'>parallel.core</span> <span class='kw'>=</span> <span class='kw pkg'>parallel</span><span class='kw ns'>::</span><span class='fu'><a href='https://www.rdocumentation.org/packages/parallel/topics/detectCores'>detectCores</a></span>() - <span class='fl'>1</span>,
+  <span class='kw'>parallel.core</span> <span class='kw'>=</span> <span class='kw pkg'>parallel</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span>() - <span class='fl'>1</span>,
   <span class='kw'>bayescan.path</span> <span class='kw'>=</span> <span class='st'>"/usr/local/bin/bayescan"</span>)</pre>
-    
+
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
@@ -230,7 +234,7 @@ Default: <code>parallel.core = parallel::detectCores() - 1</code></p></td>
 Default: <code>bayescan.path = "/usr/local/bin/bayescan"</code>. See details.</p></td>
     </tr>
     </table>
-    
+
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
     <p>For specific <a href='http://cmpg.unibe.ch/software/BayeScan/'>BayeScan</a>
@@ -276,7 +280,6 @@ The markers that remains are the ones to use in population structure analysis.</
 </ol>
 
 <p>Other files are present in the folder and subsampling folder.</p>
-    
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
     <p><strong>subsampling:</strong>
@@ -298,7 +301,6 @@ and change it's name to <code>bayescan</code>. Too complicated ? and you've just
 downloaded the last BayeScan version, I would try this :
 <code>bayescan.path = "/Users/thierry/Downloads/BayeScan2.1/binaries/BayeScan2.1_macos64bits"</code></p>
 <p>Make sure to give permission: <code>sudo chmod 777 /usr/local/bin/bayescan</code></p>
-    
     <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
 
     <p>Foll, M and OE Gaggiotti (2008) A genome scan method to identify
@@ -312,63 +314,27 @@ AFLP amplification intensity. Molecular Ecology 19: 4638-4647</p>
 genome scans detect
 local adaptation in high-altitude populations of a small rodent (Microtus arvalis).
 Molecular Ecology 20: 1450-1462</p>
-    
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
     <div class='dont-index'><p><a href='http://cmpg.unibe.ch/software/BayeScan/'>BayeScan</a></p></div>
-    
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"># NOT RUN {
-#library(radiator)
-# get a tidy data frame and a bayescan file with radiator::genomic_converter:
-# to run with a vcf haplotype file
-data <- radiator::genomic_converter(
-data = "batch_1.haplotypes.vcf",
-strata = "../../02_project_info/strata.stacks.TL.tsv",
-whitelist.markers = "whitelist.filtered.markers.tsv",
-blacklist.id = "blacklist.id.tsv",
-output = "bayescan",
-filename = "bayescan.haplotypes")
-# to run BayeScan:
-scan.pops <- radiator::run_bayescan(data = "bayescan.haplotypes.txt",
-pr_odds = 1000)
-
-# This will use the default values for argument: n, thin, nbp, pilot and burn.
-The number of CPUs will be the number available - 1 (the default).
-
-# to test the impact of unbalance sampling run BayeScan with subsampling,
-# for this, you need to feed the function the tidy data frame generated above
-# with radiator::genomic_converter:
-scan.pops.sub <- radiator::run_bayescan(data = data$tidy.data,
-pr_odds = 1000, subsample = "min", iteration.subsample = 10)
-
-# This will run BayeScan 10 times, and for each iteration, the number of individuals
-# sampled in each pop will be equal to the minimal number found in the pops
-# (e.g. pop1 N = 36, pop2 N = 50 and pop3 N = 15, the subsampling will use 15
-# individuals in each pop, taken randomly.
-# You can also choose a specific subsample value with the argument.
-# }
-</pre>
+    <pre class="examples"></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>
     <ul class="nav nav-pills nav-stacked">
       <li><a href="#arguments">Arguments</a></li>
-      
       <li><a href="#value">Value</a></li>
-
       <li><a href="#details">Details</a></li>
-
       <li><a href="#references">References</a></li>
-
       <li><a href="#see-also">See also</a></li>
-      
       <li><a href="#examples">Examples</a></li>
     </ul>
 
   </div>
 </div>
+
 
       <footer>
       <div class="copyright">
@@ -376,13 +342,16 @@ pr_odds = 1000, subsample = "min", iteration.subsample = 10)
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.3.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.</p>
 </div>
+
       </footer>
    </div>
 
   
 
+
   </body>
 </html>
+
 

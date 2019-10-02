@@ -47,7 +47,7 @@ Suggests:
     stringdist,
     stringi,
     tibble,
-    tidyr,
+    tidyr (>= 1.0.0),
     utils
 License: GPL-3
 LazyLoad: yes

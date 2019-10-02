@@ -2328,14 +2328,18 @@ missing_per_pop <- function(
   n.markers <- nrow(markers.meta)
 
   res <- strata %>%
-    dplyr::group_by(STRATA) %>%
-    tidyr::nest(data = ., .key = id.select) %>%
-    dplyr::mutate(MISSING_POP = purrr::map(
-      .x = .$id.select,
-      .f = missing_pop,
-      gds = gds,
-      markers.meta = markers.meta,
-      parallel.core = parallel.core)) %>%
+    # dplyr::group_by(STRATA) %>%
+    # tidyr::nest(data = ., .key = id.select) %>%
+    tidyr::nest(.data = ., id.select = "INDIVIDUALS") %>%
+    dplyr::mutate(
+      MISSING_POP = purrr::map(
+        .x = .$id.select,
+        .f = missing_pop,
+        gds = gds,
+        markers.meta = markers.meta,
+        parallel.core = parallel.core),
+      id.select = NULL
+      ) %>%
     tidyr::unnest(data = ., MISSING_POP) %>%
     dplyr::mutate(BLACKLISTED_MARKERS = n.markers - WHITELISTED_MARKERS)
 
