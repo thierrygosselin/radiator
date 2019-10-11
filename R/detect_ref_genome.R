@@ -107,7 +107,12 @@ detect_ref_genome <- function(chromosome = NULL, data = NULL, verbose = TRUE) {
 
         if (chrom.unique && chrom.unique.radiator) ref.genome <- FALSE
         if (chrom.unique.radiator) ref.genome <- FALSE
-        if (!chrom.unique && chrom.alpha || chrom.sep) {
+        # if (!chrom.unique && chrom.alpha || chrom.sep) {
+        #   ref.genome <- TRUE
+        # } else {
+        #   ref.genome <- FALSE
+        # }
+        if (!chrom.unique && chrom.alpha && chrom.sep) {
           ref.genome <- TRUE
         } else {
           ref.genome <- FALSE
@@ -117,19 +122,21 @@ detect_ref_genome <- function(chromosome = NULL, data = NULL, verbose = TRUE) {
 
 
         # stacks related
-        data.source <- radiator::extract_data_source(gds = data)
-        if (stringi::stri_detect_fixed(str = data.source, pattern = "Stacks")) {
-          locus.type <- SeqArray::seqGetData(data, "annotation/id")
-          locus.missing <- unique(stringi::stri_detect_fixed(
-            str = locus.type,
-            pattern = "."))
-          locus.strands <- TRUE %in% (unique(stringi::stri_detect_fixed(
-            str = locus.type,
-            pattern = "+")))
+        if (!is.null(data)) {
+          data.source <- radiator::extract_data_source(gds = data)
+          if (TRUE %in% stringi::stri_detect_fixed(str = data.source, pattern = "Stacks")) {
+            locus.type <- SeqArray::seqGetData(data, "annotation/id")
+            locus.missing <- unique(stringi::stri_detect_fixed(
+              str = locus.type,
+              pattern = "."))
+            locus.strands <- TRUE %in% (unique(stringi::stri_detect_fixed(
+              str = locus.type,
+              pattern = "+")))
 
-          if (locus.missing) ref.genome <- FALSE
-          if (locus.strands) ref.genome <- TRUE
-          if (!locus.missing && locus.strands) ref.genome <- TRUE
+            if (locus.missing) ref.genome <- FALSE
+            if (locus.strands) ref.genome <- TRUE
+            if (!locus.missing && locus.strands) ref.genome <- TRUE
+          }
         }
       }
     }
