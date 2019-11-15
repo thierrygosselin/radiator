@@ -783,7 +783,7 @@ filter_hwe <- function(
           if (interactive.filter) {
             message("\nChoosing the final filtered dataset")
             midp.threshold <- radiator_question(
-              x = "   select the mid p-value threshold (5 options):\n1: 0.05 *\n2. 0.01 **\n3. 0.001 ***\n4. 0.0001 ****\n5. 0.00001 *****", minmax = c(1, 2, 3, 4, 5))
+              x = "   select the mid p-value threshold (5 options):\n1: 0.05 *\n2: 0.01 **\n3: 0.001 ***\n4: 0.0001 ****\n5: 0.00001 *****", minmax = c(1, 2, 3, 4, 5))
           }
           midp.threshold <- dplyr::case_when(
             midp.threshold == 5 ~ 0.00001,
