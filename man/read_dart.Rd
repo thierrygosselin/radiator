@@ -4,8 +4,15 @@
 \alias{read_dart}
 \title{Read and tidy \href{http://www.diversityarrays.com}{DArT} output files.}
 \usage{
-read_dart(data, strata, filename = NULL, tidy.dart = FALSE,
-  verbose = FALSE, parallel.core = parallel::detectCores() - 1, ...)
+read_dart(
+  data,
+  strata,
+  filename = NULL,
+  tidy.dart = FALSE,
+  verbose = FALSE,
+  parallel.core = parallel::detectCores() - 1,
+  ...
+)
 }
 \arguments{
 \item{data}{One of the DArT output files. 6 formats used by DArT are recognized

@@ -89,7 +89,7 @@ a decision on thresholds.
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.3</span>
       </span>
     </div>
 
@@ -172,12 +172,21 @@ a decision on thresholds.</p></li>
 
     </div>
 
-    <pre class="usage"><span class='fu'>filter_het</span>(<span class='kw'>interactive.filter</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='no'>data</span>, <span class='kw'>strata</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>ind.heterozygosity.threshold</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>het.approach</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"SNP"</span>,
-  <span class='st'>"overall"</span>), <span class='kw'>het.threshold</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>het.dif.threshold</span> <span class='kw'>=</span> <span class='fl'>1</span>,
-  <span class='kw'>outlier.pop.threshold</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>helper.tables</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>coverage.info</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>filename</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>parallel.core</span> <span class='kw'>=</span> <span class='kw pkg'>parallel</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span>() - <span class='fl'>1</span>, <span class='no'>...</span>)</pre>
+    <pre class="usage"><span class='fu'>filter_het</span>(
+  <span class='kw'>interactive.filter</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='no'>data</span>,
+  <span class='kw'>strata</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>ind.heterozygosity.threshold</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>het.approach</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"SNP"</span>, <span class='st'>"overall"</span>),
+  <span class='kw'>het.threshold</span> <span class='kw'>=</span> <span class='fl'>1</span>,
+  <span class='kw'>het.dif.threshold</span> <span class='kw'>=</span> <span class='fl'>1</span>,
+  <span class='kw'>outlier.pop.threshold</span> <span class='kw'>=</span> <span class='fl'>1</span>,
+  <span class='kw'>helper.tables</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>coverage.info</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>filename</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>parallel.core</span> <span class='kw'>=</span> <span class='kw pkg'>parallel</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span>() - <span class='fl'>1</span>,
+  <span class='no'>...</span>
+)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">

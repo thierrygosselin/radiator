@@ -106,25 +106,20 @@ filter_genotyping <- function(
 
 
     if (interactive.filter) verbose <- TRUE
-    if (verbose) {
-      cat("################################################################################\n")
-      cat("######################### radiator::filter_genotyping ##########################\n")
-      cat("################################################################################\n")
-    }
-    # Cleanup---------------------------------------------------------------------
+
+    # Cleanup-------------------------------------------------------------------
+    radiator_function_header(f.name = "filter_genotyping", verbose = verbose)
     file.date <- format(Sys.time(), "%Y%m%d@%H%M")
     if (verbose) message("Execution date@time: ", file.date)
     old.dir <- getwd()
     opt.change <- getOption("width")
     options(width = 70)
-    timing <- proc.time()# for timing
-    # res <- list()
+    timing <- radiator_tic()
     #back to the original directory and options
     on.exit(setwd(old.dir), add = TRUE)
     on.exit(options(width = opt.change), add = TRUE)
-    on.exit(timing <- proc.time() - timing, add = TRUE)
-    on.exit(if (verbose) message("\nComputation time, overall: ", round(timing[[3]]), " sec"), add = TRUE)
-    on.exit(if (verbose) cat("######################## completed filter_genotyping ###########################\n"), add = TRUE)
+    on.exit(radiator_toc(timing), add = TRUE)
+    on.exit(radiator_function_header(f.name = "filter_genotyping", start = FALSE, verbose = verbose), add = TRUE)
 
     # Function call and dotslist -------------------------------------------------
     rad.dots <- radiator_dots(
@@ -173,11 +168,7 @@ filter_genotyping <- function(
 
     # Import data ---------------------------------------------------------------
     if (verbose) message("Importing data ...")
-    if (!"SeqVarTools" %in% utils::installed.packages()[,"Package"]) {
-      rlang::abort('Please install SeqVarTools for this option:\n
-           install.packages("BiocManager")
-           BiocManager::install("SeqVarTools")')
-    }
+    radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
 
     if (data.type == "gds.file") {
       data <- radiator::read_rad(data, verbose = verbose)

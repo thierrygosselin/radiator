@@ -54,12 +54,16 @@ tidy_genlight <- function(
   write = FALSE,
   verbose = FALSE
 ) {
+  # Test
+  # data = "radiator_genlight_20191211@1836.RData"
+  # tidy = TRUE
+  # gds = TRUE
+  # write = FALSE
+  # verbose = TRUE
 
-  if (!"adegenet" %in% utils::installed.packages()[,"Package"]) {
-    rlang::abort('Please install adegenet for this option:\n
-         install.packages("adegenet")
-         ')
-  }
+
+  # Package requirement --------------------------------------------------------
+  radiator_packages_dep(package = "adegenet")
 
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("data argument required")
@@ -279,27 +283,17 @@ write_genlight <- function(
   # parallel.core = parallel::detectCores() - 1
 
   # Checking for missing and/or default arguments ------------------------------
-  if (!requireNamespace("adegenet", quietly = TRUE)) {
-    rlang::abort("adegenet needed for this function to work
-                 Install with install.packages('adegenet')")
-  }
-
+  radiator_packages_dep(package = "adegenet")
   if (missing(data)) rlang::abort("Input file missing")
-
   if (verbose) message("Generating genlight...")
-  # File type detection----------------------------------------------------------
+
+  # File type detection---------------------------------------------------------
   data.type <- radiator::detect_genomic_format(data)
 
   # Import data ---------------------------------------------------------------
   if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
     # Check that SeqVarTools is installed (it requires automatically: SeqArray and gdsfmt)
-    if (!"SeqVarTools" %in% utils::installed.packages()[,"Package"]) {
-      rlang::abort('Please install SeqVarTools for this option:\n
-                   install.packages("BiocManager")
-                   BiocManager::install("SeqVarTools")
-                   ')
-    }
-
+    radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
 
     if (data.type == "gds.file") {
       data <- radiator::read_rad(data, verbose = verbose)

@@ -4,8 +4,13 @@
 \alias{write_gds}
 \title{Write a GDS object from a tidy data frame}
 \usage{
-write_gds(data, data.source = NULL, filename = NULL, open = TRUE,
-  verbose = TRUE)
+write_gds(
+  data,
+  data.source = NULL,
+  filename = NULL,
+  open = TRUE,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{data}{A tidy data frame object in the global environment or

@@ -4,9 +4,15 @@
 \alias{detect_het_outliers}
 \title{Detect heterozygotes outliers and estimate miscall rate}
 \usage{
-detect_het_outliers(data, nreps = 2000, burn.in = NULL,
-  strata = NULL, filename = NULL,
-  parallel.core = parallel::detectCores() - 1, ...)
+detect_het_outliers(
+  data,
+  nreps = 2000,
+  burn.in = NULL,
+  strata = NULL,
+  filename = NULL,
+  parallel.core = parallel::detectCores() - 1,
+  ...
+)
 }
 \arguments{
 \item{data}{12 options for input: VCFs (SNPs or Haplotypes,

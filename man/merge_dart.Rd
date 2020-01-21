@@ -4,8 +4,16 @@
 \alias{merge_dart}
 \title{Merge DArT files}
 \usage{
-merge_dart(dart1, strata1, dart2, strata2, keep.rad = FALSE,
-  filename = NULL, parallel.core = parallel::detectCores() - 1, ...)
+merge_dart(
+  dart1,
+  strata1,
+  dart2,
+  strata2,
+  keep.rad = FALSE,
+  filename = NULL,
+  parallel.core = parallel::detectCores() - 1,
+  ...
+)
 }
 \arguments{
 \item{dart1}{Full path of the first DArT file.}

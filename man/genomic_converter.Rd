@@ -4,9 +4,15 @@
 \alias{genomic_converter}
 \title{Conversion tool among several genomic formats}
 \usage{
-genomic_converter(data, strata = NULL, output = NULL,
-  filename = NULL, parallel.core = parallel::detectCores() - 1,
-  verbose = TRUE, ...)
+genomic_converter(
+  data,
+  strata = NULL,
+  output = NULL,
+  filename = NULL,
+  parallel.core = parallel::detectCores() - 1,
+  verbose = TRUE,
+  ...
+)
 }
 \arguments{
 \item{data}{12 options for input: VCFs (SNPs or Haplotypes,

@@ -4,12 +4,21 @@
 \alias{filter_het}
 \title{Heterozygosity filter}
 \usage{
-filter_het(interactive.filter = TRUE, data, strata = NULL,
-  ind.heterozygosity.threshold = NULL, het.approach = c("SNP",
-  "overall"), het.threshold = 1, het.dif.threshold = 1,
-  outlier.pop.threshold = 1, helper.tables = FALSE,
-  coverage.info = FALSE, filename = NULL,
-  parallel.core = parallel::detectCores() - 1, ...)
+filter_het(
+  interactive.filter = TRUE,
+  data,
+  strata = NULL,
+  ind.heterozygosity.threshold = NULL,
+  het.approach = c("SNP", "overall"),
+  het.threshold = 1,
+  het.dif.threshold = 1,
+  outlier.pop.threshold = 1,
+  helper.tables = FALSE,
+  coverage.info = FALSE,
+  filename = NULL,
+  parallel.core = parallel::detectCores() - 1,
+  ...
+)
 }
 \arguments{
 \item{interactive.filter}{(optional, logical) Do you want the filtering session to

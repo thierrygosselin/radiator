@@ -108,11 +108,8 @@ filter_individuals <- function(
       !is.null(filter.individuals.coverage.total)
   ) {
     if (interactive.filter) verbose <- TRUE
-    if (verbose) {
-      cat("################################################################################\n")
-      cat("######################### radiator::filter_individuals #########################\n")
-      cat("################################################################################\n")
-    }
+    radiator_function_header(f.name = "filter_individuals", verbose = verbose)
+
     if (Sys.info()[['sysname']] == "Windows") parallel.core <- 1
 
     # Cleanup---------------------------------------------------------------------
@@ -121,13 +118,12 @@ filter_individuals <- function(
     old.dir <- getwd()
     opt.change <- getOption("width")
     options(width = 70)
-    timing <- proc.time()# for timing
+    timing <- radiator_tic()
     #back to the original directory and options
     on.exit(setwd(old.dir), add = TRUE)
     on.exit(options(width = opt.change), add = TRUE)
-    on.exit(timing <- proc.time() - timing, add = TRUE)
-    on.exit(if (verbose) message("\nComputation time, overall: ", round(timing[[3]]), " sec"), add = TRUE)
-    on.exit(if (verbose) cat("########################### completed filter_individuals #######################\n"), add = TRUE)
+    on.exit(radiator_toc(timing), add = TRUE)
+    on.exit(radiator_function_header(f.name = "filter_individuals", start = FALSE, verbose = verbose), add = TRUE)
 
     # Function call and dotslist -------------------------------------------------
     rad.dots <- radiator_dots(
@@ -171,10 +167,10 @@ filter_individuals <- function(
       message("Step 4. Total Coverage (if available)\n\n")
     }
 
-    # Detect format --------------------------------------------------------------
+    # Detect format ------------------------------------------------------------
     data.type <- radiator::detect_genomic_format(data)
 
-    # Import data ---------------------------------------------------------------
+    # Import data --------------------------------------------------------------
     if (!data.type %in% c("SeqVarGDSClass", "gds.file")) {
       rlang::abort("Input not supported for this function: read function documentation")
     }
@@ -182,14 +178,9 @@ filter_individuals <- function(
       data <- radiator::read_rad(data, verbose = verbose)
       data.type <- "SeqVarGDSClass"
     }
-    if (!"SeqVarTools" %in% utils::installed.packages()[,"Package"]) {
-      rlang::abort('Please install SeqVarTools for this option:\n
-         install.packages("BiocManager")
-         BiocManager::install("SeqVarTools")')
-    }
+    radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
 
-
-    # Filter parameter file: generate and initiate -------------------------------
+    # Filter parameter file: generate and initiate -----------------------------
     filters.parameters <- radiator_parameters(
       generate = TRUE,
       initiate = TRUE,
@@ -201,7 +192,7 @@ filter_individuals <- function(
       internal = internal,
       verbose = verbose)
 
-    # stats  ---------------------------------------------------------------------
+    # stats  -------------------------------------------------------------------
     filter.monomorphic <- FALSE
 
     # Step 1. Visuals ----------------------------------------------------------

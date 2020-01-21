@@ -278,34 +278,23 @@ filter_hwe <- function(
     # internal <- FALSE
 
     # required package
-    if (!requireNamespace("HardyWeinberg", quietly = TRUE)) {
-      rlang::abort("HardyWeinberg package needed for this function to work
-         Install with install.packages('HardyWeinberg')")
-    }
+    radiator_packages_dep(package = "HardyWeinberg")
+    radiator_packages_dep(package = "ggtern")
+    radiator_function_header(f.name = "filter_hwe", verbose = verbose)
 
-    if (!requireNamespace("ggtern", quietly = TRUE)) {
-      rlang::abort("ggtern package needed for this function to draw ternary plots
-         Install with install.packages('ggtern')")
-    }
-    if (verbose) {
-      cat("################################################################################\n")
-      cat("############################# radiator::filter_hwe #############################\n")
-      cat("################################################################################\n")
-    }
     # Cleanup---------------------------------------------------------------------
     file.date <- format(Sys.time(), "%Y%m%d@%H%M")
     if (verbose) message("Execution date@time: ", file.date)
     old.dir <- getwd()
     opt.change <- getOption("width")
     options(width = 70)
-    timing <- proc.time()# for timing
+    timing <- radiator_tic()
     res <- list()
     #back to the original directory and options
     on.exit(setwd(old.dir), add = TRUE)
     on.exit(options(width = opt.change), add = TRUE)
-    on.exit(timing <- proc.time() - timing, add = TRUE)
-    on.exit(if (verbose) message("\nComputation time, overall: ", round(timing[[3]]), " sec"), add = TRUE)
-    on.exit(if (verbose) cat("############################# completed filter_hwe #############################\n"), add = TRUE)
+    on.exit(radiator_toc(timing), add = TRUE)
+    on.exit(radiator_function_header(f.name = "filter_hwe", start = FALSE, verbose = verbose), add = TRUE)
 
     # Function call and dotslist -------------------------------------------------
     rad.dots <- radiator_dots(

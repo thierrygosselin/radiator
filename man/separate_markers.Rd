@@ -4,10 +4,17 @@
 \alias{separate_markers}
 \title{Separate markers column into chrom, locus and pos}
 \usage{
-separate_markers(data, sep = "__", markers.meta.lists.only = FALSE,
-  markers.meta.all.only = FALSE, generate.markers.metadata = TRUE,
-  generate.ref.alt = FALSE, biallelic = NULL,
-  parallel.core = parallel::detectCores() - 1, verbose = TRUE)
+separate_markers(
+  data,
+  sep = "__",
+  markers.meta.lists.only = FALSE,
+  markers.meta.all.only = FALSE,
+  generate.markers.metadata = TRUE,
+  generate.ref.alt = FALSE,
+  biallelic = NULL,
+  parallel.core = parallel::detectCores() - 1,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{data}{An object with a column named \code{MARKERS}.

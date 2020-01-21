@@ -4,8 +4,12 @@
 \alias{detect_paralogs}
 \title{Detect paralogs}
 \usage{
-detect_paralogs(data, parallel.core = parallel::detectCores() - 1,
-  verbose = TRUE, ...)
+detect_paralogs(
+  data,
+  parallel.core = parallel::detectCores() - 1,
+  verbose = TRUE,
+  ...
+)
 }
 \arguments{
 \item{data}{(2 options) A Genomic Data Structure (GDS) file or object

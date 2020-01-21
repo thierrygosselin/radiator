@@ -4,9 +4,14 @@
 \alias{radiator_common_arguments}
 \title{radiator common arguments}
 \usage{
-radiator_common_arguments(gds, data,
-  parallel.core = parallel::detectCores() - 1, verbose = TRUE,
-  random.seed = NULL, ...)
+radiator_common_arguments(
+  gds,
+  data,
+  parallel.core = parallel::detectCores() - 1,
+  verbose = TRUE,
+  random.seed = NULL,
+  ...
+)
 }
 \arguments{
 \item{gds}{(2 options) A Genomic Data Structure (GDS) file or object

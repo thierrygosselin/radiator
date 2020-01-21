@@ -4,12 +4,22 @@
 \alias{radiator_parameters}
 \title{radiator_parameters}
 \usage{
-radiator_parameters(generate = FALSE, initiate = FALSE,
-  update = TRUE, parameter.obj = NULL, data = NULL,
-  filter.name = "", param.name = "", values = paste(NULL, NULL, sep =
-  " / "), units = "individuals / strata / chrom / locus / markers",
-  comments = "", path.folder = NULL, file.date = NULL,
-  internal = FALSE, verbose = TRUE)
+radiator_parameters(
+  generate = FALSE,
+  initiate = FALSE,
+  update = TRUE,
+  parameter.obj = NULL,
+  data = NULL,
+  filter.name = "",
+  param.name = "",
+  values = paste(NULL, NULL, sep = " / "),
+  units = "individuals / strata / chrom / locus / markers",
+  comments = "",
+  path.folder = NULL,
+  file.date = NULL,
+  internal = FALSE,
+  verbose = TRUE
+)
 }
 \description{
 Generate or update a filters parameters file and object.

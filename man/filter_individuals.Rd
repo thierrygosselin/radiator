@@ -5,11 +5,16 @@
 \title{Filter individuals based on genotyping/missingness rate,
 heterozygosity and total coverage}
 \usage{
-filter_individuals(data, interactive.filter = TRUE,
+filter_individuals(
+  data,
+  interactive.filter = TRUE,
   filter.individuals.missing = NULL,
   filter.individuals.heterozygosity = NULL,
   filter.individuals.coverage.total = NULL,
-  parallel.core = parallel::detectCores() - 1, verbose = TRUE, ...)
+  parallel.core = parallel::detectCores() - 1,
+  verbose = TRUE,
+  ...
+)
 }
 \arguments{
 \item{data}{(2 options) A Genomic Data Structure (GDS)

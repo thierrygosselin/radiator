@@ -4,9 +4,14 @@
 \alias{extract_individuals_metadata}
 \title{extract_individuals_metadata}
 \usage{
-extract_individuals_metadata(gds, ind.field.select = NULL,
-  radiator.node = TRUE, whitelist = FALSE, blacklist = FALSE,
-  verbose = FALSE)
+extract_individuals_metadata(
+  gds,
+  ind.field.select = NULL,
+  radiator.node = TRUE,
+  whitelist = FALSE,
+  blacklist = FALSE,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{gds}{The gds object.}

@@ -4,10 +4,21 @@
 \alias{radiator_gds}
 \title{radiator gds constructor}
 \usage{
-radiator_gds(genotypes = NULL, biallelic = TRUE, data.source = NULL,
-  geno.coding = c("alt.dos", "ref.dos"), strata = NULL,
-  markers.meta = NULL, genotypes.meta = NULL, dp = NULL, ad = NULL,
-  gl = NULL, filename = NULL, open = FALSE, verbose = TRUE)
+radiator_gds(
+  genotypes = NULL,
+  biallelic = TRUE,
+  data.source = NULL,
+  geno.coding = c("alt.dos", "ref.dos"),
+  strata = NULL,
+  markers.meta = NULL,
+  genotypes.meta = NULL,
+  dp = NULL,
+  ad = NULL,
+  gl = NULL,
+  filename = NULL,
+  open = FALSE,
+  verbose = TRUE
+)
 }
 \description{
 helper function to construct a radiator gds

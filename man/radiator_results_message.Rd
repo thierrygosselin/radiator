@@ -4,8 +4,12 @@
 \alias{radiator_results_message}
 \title{radiator_results_message}
 \usage{
-radiator_results_message(rad.message = NULL, filters.parameters,
-  internal = FALSE, verbose = TRUE)
+radiator_results_message(
+  rad.message = NULL,
+  filters.parameters,
+  internal = FALSE,
+  verbose = TRUE
+)
 }
 \description{
 Message printed at the end of most radiator functions

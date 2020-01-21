@@ -4,8 +4,13 @@
 \alias{plot_upset}
 \title{plot_upset}
 \usage{
-plot_upset(x, data.type, plot.filename = NULL,
-  parallel.core = parallel::detectCores() - 2, verbose = FALSE)
+plot_upset(
+  x,
+  data.type,
+  plot.filename = NULL,
+  parallel.core = parallel::detectCores() - 2,
+  verbose = FALSE
+)
 }
 \description{
 Generate UpSetR plot

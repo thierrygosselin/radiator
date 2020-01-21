@@ -69,7 +69,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.3</span>
       </span>
     </div>
 
@@ -132,8 +132,14 @@
     <p>estimate the heterozygotes miscall rate from a simple model</p>
     </div>
 
-    <pre class="usage"><span class='fu'>estimate_m</span>(<span class='no'>data</span>, <span class='kw'>nreps</span> <span class='kw'>=</span> <span class='fl'>200</span>, <span class='kw'>m_init</span> <span class='kw'>=</span> <span class='kw pkg'>stats</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/r/stats/Uniform.html'>runif</a></span>(<span class='fl'>1</span>), <span class='kw'>a0</span> <span class='kw'>=</span> <span class='fl'>0.5</span>,
-  <span class='kw'>a1</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='kw'>sm</span> <span class='kw'>=</span> <span class='fl'>0.005</span>)</pre>
+    <pre class="usage"><span class='fu'>estimate_m</span>(
+  <span class='no'>data</span>,
+  <span class='kw'>nreps</span> <span class='kw'>=</span> <span class='fl'>200</span>,
+  <span class='kw'>m_init</span> <span class='kw'>=</span> <span class='kw pkg'>stats</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/r/stats/Uniform.html'>runif</a></span>(<span class='fl'>1</span>),
+  <span class='kw'>a0</span> <span class='kw'>=</span> <span class='fl'>0.5</span>,
+  <span class='kw'>a1</span> <span class='kw'>=</span> <span class='fl'>0.5</span>,
+  <span class='kw'>sm</span> <span class='kw'>=</span> <span class='fl'>0.005</span>
+)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">

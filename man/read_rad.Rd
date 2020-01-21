@@ -4,9 +4,17 @@
 \alias{read_rad}
 \title{Read radiator file ending \code{.gds, .rad, .gds.rad}.}
 \usage{
-read_rad(data, columns = NULL, from = 1, to = NULL,
-  as.data.table = FALSE, old.format = FALSE, allow.dup = FALSE,
-  check = TRUE, verbose = FALSE)
+read_rad(
+  data,
+  columns = NULL,
+  from = 1,
+  to = NULL,
+  as.data.table = FALSE,
+  old.format = FALSE,
+  allow.dup = FALSE,
+  check = TRUE,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{data}{A file in the working directory ending with .rad or .gds,

@@ -4,8 +4,14 @@
 \alias{tidy_vcf}
 \title{Tidy a vcf file (bi and multi-allelic).}
 \usage{
-tidy_vcf(data, strata = NULL, filename = NULL,
-  parallel.core = parallel::detectCores() - 1, verbose = FALSE, ...)
+tidy_vcf(
+  data,
+  strata = NULL,
+  filename = NULL,
+  parallel.core = parallel::detectCores() - 1,
+  verbose = FALSE,
+  ...
+)
 }
 \arguments{
 \item{data}{(VCF file, character string) The VCF SNPs are biallelic or haplotypes.

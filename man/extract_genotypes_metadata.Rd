@@ -4,10 +4,17 @@
 \alias{extract_genotypes_metadata}
 \title{extract_genotypes_metadata}
 \usage{
-extract_genotypes_metadata(gds, genotypes.meta.select = NULL,
-  genotypes = FALSE, radiator.node = TRUE, index.only = FALSE,
-  sync.markers.individuals = TRUE, whitelist = FALSE,
-  blacklist = FALSE, verbose = FALSE)
+extract_genotypes_metadata(
+  gds,
+  genotypes.meta.select = NULL,
+  genotypes = FALSE,
+  radiator.node = TRUE,
+  index.only = FALSE,
+  sync.markers.individuals = TRUE,
+  whitelist = FALSE,
+  blacklist = FALSE,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{gds}{The gds object.}

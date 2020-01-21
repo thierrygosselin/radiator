@@ -4,8 +4,11 @@
 \alias{detect_biallelic_problems}
 \title{Detect biallelic problems}
 \usage{
-detect_biallelic_problems(data, verbose = TRUE,
-  parallel.core = parallel::detectCores() - 1)
+detect_biallelic_problems(
+  data,
+  verbose = TRUE,
+  parallel.core = parallel::detectCores() - 1
+)
 }
 \arguments{
 \item{data}{A tidy data frame object in the global environment or

@@ -4,10 +4,17 @@
 \alias{ld_missing}
 \title{Prune dataset based on LD and missingness.}
 \usage{
-ld_missing(wl, data, ld.threshold = seq(0.1, 0.9, by = 0.1),
-  denovo = NULL, ld.method = "r2", ld.figures = TRUE,
-  path.folder = NULL, parallel.core = parallel::detectCores() - 1,
-  verbose = TRUE)
+ld_missing(
+  wl,
+  data,
+  ld.threshold = seq(0.1, 0.9, by = 0.1),
+  denovo = NULL,
+  ld.method = "r2",
+  ld.figures = TRUE,
+  path.folder = NULL,
+  parallel.core = parallel::detectCores() - 1,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{wl}{The split dataset by chromosome.}

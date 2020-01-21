@@ -4,9 +4,14 @@
 \alias{ld_boxplot}
 \title{ld_boxplot}
 \usage{
-ld_boxplot(gds, subsample.markers.stats = 0.2, ld.method = "r2",
-  path.folder = NULL, parallel.core = parallel::detectCores() - 2,
-  verbose = TRUE)
+ld_boxplot(
+  gds,
+  subsample.markers.stats = 0.2,
+  ld.method = "r2",
+  path.folder = NULL,
+  parallel.core = parallel::detectCores() - 2,
+  verbose = TRUE
+)
 }
 \description{
 Generate a boxplot of LD using subsampled markers.

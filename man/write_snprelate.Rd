@@ -4,8 +4,7 @@
 \alias{write_snprelate}
 \title{Write a SNPRelate object from a tidy data frame}
 \usage{
-write_snprelate(data, biallelic = TRUE, filename = NULL,
-  verbose = TRUE)
+write_snprelate(data, biallelic = TRUE, filename = NULL, verbose = TRUE)
 }
 \arguments{
 \item{data}{A tidy data frame object in the global environment or

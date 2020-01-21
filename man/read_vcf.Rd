@@ -4,8 +4,15 @@
 \alias{read_vcf}
 \title{Read VCF files for radiator and also write a SeqArray GDS file.}
 \usage{
-read_vcf(data, strata = NULL, filename = NULL, vcf.stats = TRUE,
-  parallel.core = parallel::detectCores() - 1, verbose = TRUE, ...)
+read_vcf(
+  data,
+  strata = NULL,
+  filename = NULL,
+  vcf.stats = TRUE,
+  parallel.core = parallel::detectCores() - 1,
+  verbose = TRUE,
+  ...
+)
 }
 \arguments{
 \item{data}{(path, character) The VCF markers are biallelic SNPs or haplotypes.

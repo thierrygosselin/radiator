@@ -4,8 +4,14 @@
 \alias{estimate_m}
 \title{heterozygotes miscall rate}
 \usage{
-estimate_m(data, nreps = 200, m_init = stats::runif(1), a0 = 0.5,
-  a1 = 0.5, sm = 0.005)
+estimate_m(
+  data,
+  nreps = 200,
+  m_init = stats::runif(1),
+  a0 = 0.5,
+  a1 = 0.5,
+  sm = 0.005
+)
 }
 \arguments{
 \item{data}{A tidy data frame (biallelic only).}

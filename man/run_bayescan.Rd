@@ -4,10 +4,19 @@
 \alias{run_bayescan}
 \title{Run BayeScan}
 \usage{
-run_bayescan(data, n = 5000, thin = 10, nbp = 20, pilot = 5000,
-  burn = 50000, pr_odds, subsample = NULL, iteration.subsample = 1,
+run_bayescan(
+  data,
+  n = 5000,
+  thin = 10,
+  nbp = 20,
+  pilot = 5000,
+  burn = 50000,
+  pr_odds,
+  subsample = NULL,
+  iteration.subsample = 1,
   parallel.core = parallel::detectCores() - 1,
-  bayescan.path = "/usr/local/bin/bayescan")
+  bayescan.path = "/usr/local/bin/bayescan"
+)
 }
 \arguments{
 \item{data}{(character, path) Read carefully because there's 2 ways.

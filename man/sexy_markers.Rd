@@ -4,10 +4,18 @@
 \alias{sexy_markers}
 \title{sexy_markers finds sex-linked markers and re-assigns sex}
 \usage{
-sexy_markers(data, silicodata = NULL, boost.analysis = FALSE,
-  strata = NULL, coverage.thresholds = 1, filters = TRUE,
-  interactive.filter = TRUE, folder.name = NULL,
-  parallel.core = parallel::detectCores() - 1, ...)
+sexy_markers(
+  data,
+  silicodata = NULL,
+  boost.analysis = FALSE,
+  strata = NULL,
+  coverage.thresholds = 1,
+  filters = TRUE,
+  interactive.filter = TRUE,
+  folder.name = NULL,
+  parallel.core = parallel::detectCores() - 1,
+  ...
+)
 }
 \arguments{
 \item{data}{(object or file) DArT file \code{.csv or .tsv}, VCF file \code{.vcf},

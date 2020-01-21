@@ -20,6 +20,22 @@
 #' @export
 
 filter_fis <- function(data, approach = "haplotype", fis.min.threshold, fis.max.threshold, fis.diff.threshold, pop.threshold, percent, filename) {
+  # Cleanup-------------------------------------------------------------------
+  verbose <- TRUE
+  radiator_function_header(f.name = "filter_fis", verbose = verbose)
+  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
+  if (verbose) message("Execution date@time: ", file.date)
+  old.dir <- getwd()
+  opt.change <- getOption("width")
+  options(width = 70)
+  timing <- radiator_tic()
+  #back to the original directory and options
+  on.exit(setwd(old.dir), add = TRUE)
+  on.exit(options(width = opt.change), add = TRUE)
+  on.exit(radiator_toc(timing), add = TRUE)
+  on.exit(radiator_function_header(f.name = "filter_fis", start = FALSE, verbose = verbose), add = TRUE)
+
+
 
   if (is.vector(data)) {
     data <- readr::read_tsv(data, col_names = T)

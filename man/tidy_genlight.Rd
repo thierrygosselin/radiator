@@ -4,8 +4,7 @@
 \alias{tidy_genlight}
 \title{Tidy a genlight object to a tidy dataframe and/or GDS object/file}
 \usage{
-tidy_genlight(data, tidy = TRUE, gds = TRUE, write = FALSE,
-  verbose = FALSE)
+tidy_genlight(data, tidy = TRUE, gds = TRUE, write = FALSE, verbose = FALSE)
 }
 \arguments{
 \item{data}{(path or object) A genlight object in the global environment or

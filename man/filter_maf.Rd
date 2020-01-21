@@ -4,9 +4,16 @@
 \alias{filter_maf}
 \title{MAF/MAC filter}
 \usage{
-filter_maf(interactive.filter = TRUE, data, strata = NULL,
-  maf.thresholds = NULL, filename = NULL,
-  parallel.core = parallel::detectCores() - 1, verbose = TRUE, ...)
+filter_maf(
+  interactive.filter = TRUE,
+  data,
+  strata = NULL,
+  maf.thresholds = NULL,
+  filename = NULL,
+  parallel.core = parallel::detectCores() - 1,
+  verbose = TRUE,
+  ...
+)
 }
 \arguments{
 \item{interactive.filter}{(optional, logical) Do you want the filtering session to

@@ -4,9 +4,17 @@
 \alias{read_strata}
 \title{read strata}
 \usage{
-read_strata(strata, pop.id = FALSE, pop.levels = NULL,
-  pop.labels = NULL, pop.select = NULL, blacklist.id = NULL,
-  keep.two = TRUE, path.folder = NULL, verbose = FALSE)
+read_strata(
+  strata,
+  pop.id = FALSE,
+  pop.levels = NULL,
+  pop.labels = NULL,
+  pop.select = NULL,
+  blacklist.id = NULL,
+  keep.two = TRUE,
+  path.folder = NULL,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{strata}{(path or object) The strata file or object.

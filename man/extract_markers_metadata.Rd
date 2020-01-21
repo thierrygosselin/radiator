@@ -4,9 +4,14 @@
 \alias{extract_markers_metadata}
 \title{extract_markers_metadata}
 \usage{
-extract_markers_metadata(gds, markers.meta.select = NULL,
-  radiator.node = TRUE, whitelist = FALSE, blacklist = FALSE,
-  verbose = FALSE)
+extract_markers_metadata(
+  gds,
+  markers.meta.select = NULL,
+  radiator.node = TRUE,
+  whitelist = FALSE,
+  blacklist = FALSE,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{gds}{The gds object.}

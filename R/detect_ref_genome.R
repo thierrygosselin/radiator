@@ -44,11 +44,8 @@ detect_ref_genome <- function(chromosome = NULL, data = NULL, verbose = TRUE) {
       if (!data.type %in% c("SeqVarGDSClass", "gds.file")) {
         rlang::abort("Input not supported for this function: read function documentation")
       }
-      if (!"SeqVarTools" %in% utils::installed.packages()[,"Package"]) {
-        rlang::abort('Please install SeqVarTools for this option:\n
-           install.packages("BiocManager")
-           BiocManager::install("SeqVarTools")')
-      }
+      radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
+
       if (data.type == "gds.file") {
         data <- radiator::read_rad(data, verbose = verbose)
         data.type <- "SeqVarGDSClass"

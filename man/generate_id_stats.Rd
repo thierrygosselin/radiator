@@ -4,10 +4,19 @@
 \alias{generate_id_stats}
 \title{generate_id_stats}
 \usage{
-generate_id_stats(gds, missing = TRUE, heterozygosity = TRUE,
-  coverage = TRUE, subsample = NULL, path.folder = NULL,
-  plot = TRUE, digits = 6, file.date = NULL,
-  parallel.core = parallel::detectCores() - 1, verbose = TRUE)
+generate_id_stats(
+  gds,
+  missing = TRUE,
+  heterozygosity = TRUE,
+  coverage = TRUE,
+  subsample = NULL,
+  path.folder = NULL,
+  plot = TRUE,
+  digits = 6,
+  file.date = NULL,
+  parallel.core = parallel::detectCores() - 1,
+  verbose = TRUE
+)
 }
 \description{
 Generate id/sample statistics

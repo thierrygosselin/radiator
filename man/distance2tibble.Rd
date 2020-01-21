@@ -4,9 +4,15 @@
 \alias{distance2tibble}
 \title{distance2tibble}
 \usage{
-distance2tibble(x, remove.diag = TRUE, na.diag = FALSE,
-  remove.lower = TRUE, relative = TRUE, pop.levels = NULL,
-  distance.class.double = TRUE)
+distance2tibble(
+  x,
+  remove.diag = TRUE,
+  na.diag = FALSE,
+  remove.lower = TRUE,
+  relative = TRUE,
+  pop.levels = NULL,
+  distance.class.double = TRUE
+)
 }
 \description{
 melt the distance matrix into a tibble

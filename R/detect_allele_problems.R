@@ -115,14 +115,25 @@ detect_allele_problems <- function(
 ) {
 
   # test
-  data <- "/Users/thierry/Dropbox/r_packages/package_testing/carol/p1.mac4.r0.8/filtered_carol/corals_20181120@1828_filtered.rad"
-  allele.threshold = 3
-  verbose = FALSE
+  # data <- "/Users/thierry/Dropbox/r_packages/package_testing/carol/p1.mac4.r0.8/filtered_carol/corals_20181120@1828_filtered.rad"
+  # allele.threshold = 3
+  # verbose = FALSE
 
-  cat("#######################################################################\n")
-  cat("################## radiator::detect_allele_problems ###################\n")
-  cat("#######################################################################\n")
-  timing <- proc.time()
+
+  # Cleanup-------------------------------------------------------------------
+  radiator_function_header(f.name = "detect_allele_problems", verbose = verbose)
+  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
+  if (verbose) message("Execution date@time: ", file.date)
+  old.dir <- getwd()
+  opt.change <- getOption("width")
+  options(width = 70)
+  timing <- radiator_tic()
+  #back to the original directory and options
+  on.exit(setwd(old.dir), add = TRUE)
+  on.exit(options(width = opt.change), add = TRUE)
+  on.exit(radiator_toc(timing), add = TRUE)
+  on.exit(radiator_function_header(f.name = "detect_allele_problems", start = FALSE, verbose = verbose), add = TRUE)
+
 
   # Checking for missing and/or default arguments-------------------------------
   if (missing(data)) rlang::abort("Input file missing")
@@ -302,8 +313,5 @@ detect_allele_problems <- function(
     blacklist.markers = blacklist.markers
   )
   message(paste0("Number of markers with allele copies below threshold: ", nrow(blacklist.markers)))
-  timing <- proc.time() - timing
-  message(stringi::stri_join("Computation time: ", round(timing[[3]]), " sec"))
-  cat("############################## completed ##############################\n")
   return(res)
 }

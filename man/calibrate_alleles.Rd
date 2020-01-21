@@ -4,8 +4,13 @@
 \alias{calibrate_alleles}
 \title{Calibrate REF and ALT alleles based on count}
 \usage{
-calibrate_alleles(data, biallelic = NULL,
-  parallel.core = parallel::detectCores() - 1, verbose = FALSE, ...)
+calibrate_alleles(
+  data,
+  biallelic = NULL,
+  parallel.core = parallel::detectCores() - 1,
+  verbose = FALSE,
+  ...
+)
 }
 \arguments{
 \item{data}{A genomic data set in the global environment tidy formats.

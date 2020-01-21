@@ -69,7 +69,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.3</span>
       </span>
     </div>
 
@@ -132,28 +132,29 @@
     <p>Extract and assign the dots-dots-dots</p>
     </div>
 
-    <pre class="usage"><span class='fu'>radiator_dots</span>(<span class='kw'>func.name</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>as.list</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/sys.parent.html'>sys.call</a></span>())<span class='kw'>[[</span><span class='fl'>1</span>]], <span class='kw'>fd</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>args.list</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>dotslist</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>keepers</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"subsample.markers.stats"</span>, <span class='st'>"force.stats"</span>, <span class='st'>"id.stats"</span>,
-  <span class='st'>"subsample"</span>, <span class='st'>"filter.reproducibility"</span>, <span class='st'>"filter.individuals.missing"</span>,
-  <span class='st'>"filter.individuals.heterozygosity"</span>, <span class='st'>"filter.individuals.coverage.total"</span>,
-  <span class='st'>"filter.common.markers"</span>, <span class='st'>"filter.monomorphic"</span>, <span class='st'>"filter.mac"</span>,
-  <span class='st'>"filter.coverage"</span>, <span class='st'>"dp"</span>, <span class='st'>"filter.genotyping"</span>, <span class='st'>"filter.snp.position.read"</span>,
-  <span class='st'>"filter.snp.number"</span>, <span class='st'>"filter.short.ld"</span>, <span class='st'>"filter.long.ld"</span>,
-  <span class='st'>"long.ld.missing"</span>, <span class='st'>"ld.method"</span>, <span class='st'>"ld.figures"</span>, <span class='st'>"detect.mixed.genomes"</span>,
-  <span class='st'>"ind.heterozygosity.threshold"</span>, <span class='st'>"detect.duplicate.genomes"</span>,
-  <span class='st'>"filter.hwe"</span>, <span class='st'>"filter.strands"</span>, <span class='st'>"random.seed"</span>, <span class='st'>"path.folder"</span>, <span class='st'>"filename"</span>,
-  <span class='st'>"parameters"</span>, <span class='st'>"blacklist.genotypes"</span>, <span class='st'>"erase.genotypes"</span>, <span class='st'>"gt"</span>, <span class='st'>"gt.bin"</span>,
-  <span class='st'>"gt.vcf"</span>, <span class='st'>"gt.vcf.nuc"</span>, <span class='st'>"pop.levels"</span>, <span class='st'>"pop.labels"</span>, <span class='st'>"pop.select"</span>,
-  <span class='st'>"blacklist.id"</span>, <span class='st'>"markers.info"</span>, <span class='st'>"keep.allele.names"</span>, <span class='st'>"keep.gds"</span>,
-  <span class='st'>"ref.calibration"</span>, <span class='st'>"vcf.metadata"</span>, <span class='st'>"vcf.stats"</span>, <span class='st'>"wide"</span>,
-  <span class='st'>"whitelist.markers"</span>, <span class='st'>"write.tidy"</span>, <span class='st'>"missing.memory"</span>, <span class='st'>"dart.sequence"</span>,
-  <span class='st'>"internal"</span>, <span class='st'>"heatmap.fst"</span>, <span class='st'>"tidy.check"</span>, <span class='st'>"tidy.vcf"</span>, <span class='st'>"tidy.dart"</span>),
-  <span class='kw'>deprecated</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"maf.thresholds"</span>, <span class='st'>"common.markers"</span>, <span class='st'>"max.marker"</span>,
-  <span class='st'>"monomorphic.out"</span>, <span class='st'>"snp.ld"</span>, <span class='st'>"filter.call.rate"</span>,
-  <span class='st'>"filter.markers.coverage"</span>, <span class='st'>"filter.markers.missing"</span>, <span class='st'>"number.snp.reads"</span>,
-  <span class='st'>"mixed.genomes.analysis"</span>, <span class='st'>"duplicate.genomes.analysis"</span>),
-  <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)</pre>
+    <pre class="usage"><span class='fu'>radiator_dots</span>(
+  <span class='kw'>func.name</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>as.list</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/sys.parent.html'>sys.call</a></span>())<span class='kw'>[[</span><span class='fl'>1</span>]],
+  <span class='kw'>fd</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>args.list</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>dotslist</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>keepers</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"subsample.markers.stats"</span>, <span class='st'>"force.stats"</span>, <span class='st'>"id.stats"</span>, <span class='st'>"subsample"</span>,
+    <span class='st'>"filter.reproducibility"</span>, <span class='st'>"filter.individuals.missing"</span>,
+    <span class='st'>"filter.individuals.heterozygosity"</span>, <span class='st'>"filter.individuals.coverage.total"</span>,
+    <span class='st'>"filter.common.markers"</span>, <span class='st'>"filter.monomorphic"</span>, <span class='st'>"filter.mac"</span>, <span class='st'>"filter.coverage"</span>, <span class='st'>"dp"</span>,
+    <span class='st'>"filter.genotyping"</span>, <span class='st'>"filter.snp.position.read"</span>, <span class='st'>"filter.snp.number"</span>,
+    <span class='st'>"filter.short.ld"</span>, <span class='st'>"filter.long.ld"</span>, <span class='st'>"long.ld.missing"</span>, <span class='st'>"ld.method"</span>, <span class='st'>"ld.figures"</span>,
+    <span class='st'>"detect.mixed.genomes"</span>, <span class='st'>"ind.heterozygosity.threshold"</span>, <span class='st'>"detect.duplicate.genomes"</span>,
+      <span class='st'>"filter.hwe"</span>, <span class='st'>"filter.strands"</span>, <span class='st'>"random.seed"</span>, <span class='st'>"path.folder"</span>, <span class='st'>"filename"</span>,
+    <span class='st'>"parameters"</span>, <span class='st'>"blacklist.genotypes"</span>, <span class='st'>"erase.genotypes"</span>, <span class='st'>"gt"</span>, <span class='st'>"gt.bin"</span>, <span class='st'>"gt.vcf"</span>,
+    <span class='st'>"gt.vcf.nuc"</span>, <span class='st'>"pop.levels"</span>, <span class='st'>"pop.labels"</span>, <span class='st'>"pop.select"</span>, <span class='st'>"blacklist.id"</span>,
+    <span class='st'>"markers.info"</span>, <span class='st'>"keep.allele.names"</span>, <span class='st'>"keep.gds"</span>, <span class='st'>"ref.calibration"</span>, <span class='st'>"vcf.metadata"</span>,
+    <span class='st'>"vcf.stats"</span>, <span class='st'>"wide"</span>, <span class='st'>"whitelist.markers"</span>, <span class='st'>"write.tidy"</span>, <span class='st'>"missing.memory"</span>,
+    <span class='st'>"dart.sequence"</span>, <span class='st'>"internal"</span>, <span class='st'>"heatmap.fst"</span>, <span class='st'>"tidy.check"</span>, <span class='st'>"tidy.vcf"</span>, <span class='st'>"tidy.dart"</span>),
+  <span class='kw'>deprecated</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"maf.thresholds"</span>, <span class='st'>"common.markers"</span>, <span class='st'>"max.marker"</span>, <span class='st'>"monomorphic.out"</span>,
+    <span class='st'>"snp.ld"</span>, <span class='st'>"filter.call.rate"</span>, <span class='st'>"filter.markers.coverage"</span>, <span class='st'>"filter.markers.missing"</span>,
+    <span class='st'>"number.snp.reads"</span>, <span class='st'>"mixed.genomes.analysis"</span>, <span class='st'>"duplicate.genomes.analysis"</span>),
+  <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>
+)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">

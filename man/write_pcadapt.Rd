@@ -5,8 +5,13 @@
 \title{Write a \href{https://github.com/bcm-uga/pcadapt}{pcadapt}
 file from a tidy data frame}
 \usage{
-write_pcadapt(data, pop.select = NULL, filename = NULL,
-  parallel.core = parallel::detectCores() - 1, ...)
+write_pcadapt(
+  data,
+  pop.select = NULL,
+  filename = NULL,
+  parallel.core = parallel::detectCores() - 1,
+  ...
+)
 }
 \arguments{
 \item{data}{A tidy data frame object in the global environment or

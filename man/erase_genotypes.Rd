@@ -4,8 +4,14 @@
 \alias{erase_genotypes}
 \title{Erase genotypes}
 \usage{
-erase_genotypes(tidy.vcf.file, haplotypes.file, read.depth.threshold,
-  allele.depth.threshold, allele.imbalance.threshold, filename)
+erase_genotypes(
+  tidy.vcf.file,
+  haplotypes.file,
+  read.depth.threshold,
+  allele.depth.threshold,
+  allele.imbalance.threshold,
+  filename
+)
 }
 \arguments{
 \item{tidy.vcf.file}{A data frame object or file (using ".tsv") of a tidy vcf.}

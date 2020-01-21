@@ -4,8 +4,13 @@
 \alias{summarize_sex}
 \title{summarize_sex}
 \usage{
-summarize_sex(data, silicodata, data.source, coverage.thresholds = NULL,
-  tau = 0.3)
+summarize_sex(
+  data,
+  silicodata,
+  data.source,
+  coverage.thresholds = NULL,
+  tau = 0.3
+)
 }
 \description{
 Function to summarize the presence-absence, heterozygosity and read depth per sex.

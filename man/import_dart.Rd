@@ -4,8 +4,14 @@
 \alias{import_dart}
 \title{import_dart}
 \usage{
-import_dart(data, strata, pop.levels = NULL, path.folder = NULL,
-  parallel.core = parallel::detectCores() - 1, verbose = TRUE)
+import_dart(
+  data,
+  strata,
+  pop.levels = NULL,
+  path.folder = NULL,
+  parallel.core = parallel::detectCores() - 1,
+  verbose = TRUE
+)
 }
 \description{
 Read DArT file

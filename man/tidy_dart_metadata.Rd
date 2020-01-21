@@ -4,8 +4,12 @@
 \alias{tidy_dart_metadata}
 \title{Import and tidy \href{http://www.diversityarrays.com}{DArT} metadata.}
 \usage{
-tidy_dart_metadata(data, filename = NULL, verbose = FALSE,
-  parallel.core = parallel::detectCores() - 1)
+tidy_dart_metadata(
+  data,
+  filename = NULL,
+  verbose = FALSE,
+  parallel.core = parallel::detectCores() - 1
+)
 }
 \arguments{
 \item{data}{DArT output file. Note that most popular formats used by DArT are

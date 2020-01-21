@@ -4,8 +4,16 @@
 \alias{filter_fis}
 \title{Fis filter}
 \usage{
-filter_fis(data, approach = "haplotype", fis.min.threshold,
-  fis.max.threshold, fis.diff.threshold, pop.threshold, percent, filename)
+filter_fis(
+  data,
+  approach = "haplotype",
+  fis.min.threshold,
+  fis.max.threshold,
+  fis.diff.threshold,
+  pop.threshold,
+  percent,
+  filename
+)
 }
 \arguments{
 \item{data}{12 options for input: VCFs (SNPs or Haplotypes,

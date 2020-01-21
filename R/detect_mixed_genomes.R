@@ -184,25 +184,20 @@ detect_mixed_genomes <- function(
 
   if (interactive.filter || detect.mixed.genomes) {
     if (interactive.filter) verbose <- TRUE
-    if (verbose) {
-      cat("################################################################################\n")
-      cat("######################## radiator::detect_mixed_genomes ########################\n")
-      cat("################################################################################\n")
-    }
 
     # Cleanup-------------------------------------------------------------------
+    radiator_function_header(f.name = "detect_mixed_genomes", verbose = verbose)
     file.date <- format(Sys.time(), "%Y%m%d@%H%M")
     if (verbose) message("Execution date@time: ", file.date)
     old.dir <- getwd()
     opt.change <- getOption("width")
     options(width = 70)
-    timing <- proc.time()# for timing
+    timing <- radiator_tic()
     #back to the original directory and options
     on.exit(setwd(old.dir), add = TRUE)
     on.exit(options(width = opt.change), add = TRUE)
-    on.exit(timing <- proc.time() - timing, add = TRUE)
-    on.exit(if (verbose) message("\nComputation time, overall: ", round(timing[[3]]), " sec"), add = TRUE)
-    on.exit(if (verbose) cat("######################## completed detect_mixed_genomes ########################\n"), add = TRUE)
+    on.exit(radiator_toc(timing), add = TRUE)
+    on.exit(radiator_function_header(f.name = "detect_mixed_genomes", start = FALSE, verbose = verbose), add = TRUE)
 
     # Function call and dotslist -------------------------------------------------
     rad.dots <- radiator_dots(
@@ -341,11 +336,8 @@ detect_mixed_genomes <- function(
         data <- radiator::read_rad(data, verbose = verbose)
         data.type <- "SeqVarGDSClass"
       }
-      if (!"SeqVarTools" %in% utils::installed.packages()[,"Package"]) {
-        rlang::abort('Please install SeqVarTools for this option:\n
-                     install.packages("BiocManager")
-                     BiocManager::install("SeqVarTools")')
-      }
+      radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
+
 
       # Filter parameter file: generate and initiate -------------------------------
       filters.parameters <- radiator_parameters(

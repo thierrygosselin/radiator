@@ -4,8 +4,15 @@
 \alias{tidy2wide}
 \title{tidy2wide}
 \usage{
-tidy2wide(x = NULL, gds = NULL, individuals = NULL, markers = NULL,
-  tidy = TRUE, wide = TRUE, wide.markers = TRUE)
+tidy2wide(
+  x = NULL,
+  gds = NULL,
+  individuals = NULL,
+  markers = NULL,
+  tidy = TRUE,
+  wide = TRUE,
+  wide.markers = TRUE
+)
 }
 \description{
 tidy2wide

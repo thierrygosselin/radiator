@@ -4,8 +4,14 @@
 \alias{blacklist_hw}
 \title{blacklist_hw}
 \usage{
-blacklist_hw(x, unfiltered.data, data.temp, hw.pop.threshold,
-  path.folder = NULL, pop.id.levels)
+blacklist_hw(
+  x,
+  unfiltered.data,
+  data.temp,
+  hw.pop.threshold,
+  path.folder = NULL,
+  pop.id.levels
+)
 }
 \description{
 blacklist hw

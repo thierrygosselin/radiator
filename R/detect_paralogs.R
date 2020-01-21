@@ -116,33 +116,22 @@ detect_paralogs <- function(
   # parameters = NULL
   # parallel.core = parallel::detectCores() - 1
 
-  if (verbose) {
-    cat("################################################################################\n")
-    cat("########################## radiator::detect_paralogs ###########################\n")
-    cat("################################################################################\n")
-  }
-
   # Cleanup-------------------------------------------------------------------
+  radiator_function_header(f.name = "detect_paralogs", verbose = verbose)
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
   if (verbose) message("Execution date@time: ", file.date)
   old.dir <- getwd()
   opt.change <- getOption("width")
   options(width = 70)
-  timing <- proc.time()# for timing
+  timing <- radiator_tic()
   #back to the original directory and options
   on.exit(setwd(old.dir), add = TRUE)
   on.exit(options(width = opt.change), add = TRUE)
-  on.exit(timing <- proc.time() - timing, add = TRUE)
-  on.exit(if (verbose) message("\nComputation time, overall: ", round(timing[[3]]), " sec"), add = TRUE)
-  on.exit(if (verbose) cat("########################### completed detect_paralogs ##########################\n"), add = TRUE)
-
+  on.exit(radiator_toc(timing), add = TRUE)
+  on.exit(radiator_function_header(f.name = "detect_paralogs", start = FALSE, verbose = verbose), add = TRUE)
 
   # required package -----------------------------------------------------------
-  if (!"SeqVarTools" %in% utils::installed.packages()[,"Package"]) {
-    rlang::abort('Please install SeqVarTools for this option:\n
-                     install.packages("BiocManager")
-                     BiocManager::install("SeqVarTools")')
-  }
+  radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
 
   # Function call and dotslist -------------------------------------------------
   rad.dots <- radiator_dots(

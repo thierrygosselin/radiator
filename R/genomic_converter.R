@@ -311,53 +311,29 @@ genomic_converter <- function(
 
 
   # Check for specific format vs package required-----------------------------
-  if ("gtypes" %in% output) {
-    if (!"strataG" %in% utils::installed.packages()[,"Package"]) {
-      rlang::abort("Please install strataG for this output option:\n
-           devtools::install_github('ericarcher/strataG', build_vignettes = TRUE)")
-    }
+  if ("gtypes" %in% output) radiator_packages_dep(package = "strataG")
+  if ("genlight" %in% output) radiator_packages_dep(package = "adegenet")
+  if ("seqarray" %in% output) {
+    radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
+  }
+  if ("snprelate" %in% output) {
+    radiator_packages_dep(package = "SNPRelate", cran = FALSE, bioc = TRUE)
   }
 
-  if ("genlight" %in% output && !requireNamespace("adegenet", quietly = TRUE)) {
-    rlang::abort("adegenet needed for this function to work
-         Install with install.packages('adegenet')")
-  }
-
-  if ("seqarray" %in% output && !"SeqVarTools" %in% utils::installed.packages()[,"Package"]) {
-    rlang::abort('Please install SeqVarTools for this option:\n
-         install.packages("BiocManager")
-         BiocManager::install("SeqVarTools")
-         ')
-  }
-
-  if ("snprelate" %in% output && !requireNamespace("SNPRelate", quietly = TRUE)) {
-    rlang::abort('To install SNPRelate:\n
-         install.packages("BiocManager")
-         BiocManager::install("SNPRelate")
-         ')
-  }
-
-
-  if (verbose) {
-    cat("################################################################################\n")
-    cat("########################## radiator::genomic_converter #########################\n")
-    cat("################################################################################\n")
-  }
-
-  # Cleanup---------------------------------------------------------------------
+  # Cleanup-------------------------------------------------------------------
+  radiator_function_header(f.name = "genomic_converter", verbose = verbose)
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
   if (verbose) message("Execution date@time: ", file.date)
   old.dir <- getwd()
   opt.change <- getOption("width")
   options(width = 70)
-  timing <- proc.time()# for timing
-  res <- list()
+  timing <- radiator_tic()
   #back to the original directory and options
   on.exit(setwd(old.dir), add = TRUE)
   on.exit(options(width = opt.change), add = TRUE)
-  on.exit(timing <- proc.time() - timing, add = TRUE)
-  on.exit(if (verbose) message("\nComputation time, overall: ", round(timing[[3]]), " sec"), add = TRUE)
-  on.exit(if (verbose) cat("######################### genomic_converter completed ##########################\n"), add = TRUE)
+  on.exit(radiator_toc(timing), add = TRUE)
+  on.exit(radiator_function_header(f.name = "genomic_converter", start = FALSE, verbose = verbose), add = TRUE)
+  res <- list()
 
   # Function call and dotslist -------------------------------------------------
   rad.dots <- radiator_dots(

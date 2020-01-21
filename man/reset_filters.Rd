@@ -4,17 +4,27 @@
 \alias{reset_filters}
 \title{Reset filters (individuals and markers) in radiator GDS object.}
 \usage{
-reset_filters(gds, list.filters = TRUE, reset.all = FALSE,
+reset_filters(
+  gds,
+  list.filters = TRUE,
+  reset.all = FALSE,
   filter.individuals.missing = FALSE,
   filter.individuals.heterozygosity = FALSE,
   filter.individuals.coverage.total = FALSE,
-  detect.mixed.genomes = FALSE, detect.duplicate.genomes = FALSE,
-  filter.reproducibility = FALSE, filter.monomorphic = FALSE,
-  filter.common.markers = FALSE, filter.mac = FALSE,
-  filter.mean.coverage = FALSE, filter.genotyping = FALSE,
-  filter.snp.position.read = FALSE, filter.snp.number = FALSE,
-  filter.short.ld = FALSE, filter.long.ld = FALSE,
-  filter.hwe = FALSE)
+  detect.mixed.genomes = FALSE,
+  detect.duplicate.genomes = FALSE,
+  filter.reproducibility = FALSE,
+  filter.monomorphic = FALSE,
+  filter.common.markers = FALSE,
+  filter.mac = FALSE,
+  filter.mean.coverage = FALSE,
+  filter.genotyping = FALSE,
+  filter.snp.position.read = FALSE,
+  filter.snp.number = FALSE,
+  filter.short.ld = FALSE,
+  filter.long.ld = FALSE,
+  filter.hwe = FALSE
+)
 }
 \arguments{
 \item{gds}{(2 options) A Genomic Data Structure (GDS) file or object

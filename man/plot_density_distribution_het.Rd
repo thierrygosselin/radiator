@@ -5,8 +5,14 @@
 \title{Figure density distribution of the observed heterozygosity
 summary statistics.}
 \usage{
-plot_density_distribution_het(data, pop.levels, het.group, aes.colour,
-  adjust.bin, x.title)
+plot_density_distribution_het(
+  data,
+  pop.levels,
+  het.group,
+  aes.colour,
+  adjust.bin,
+  x.title
+)
 }
 \arguments{
 \item{data}{sumstats or tidy vcf files.}

@@ -69,7 +69,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.3</span>
       </span>
     </div>
 
@@ -132,10 +132,17 @@
     <p>Separate genotype field</p>
     </div>
 
-    <pre class="usage"><span class='fu'>separate_gt</span>(<span class='no'>x</span>, <span class='kw'>sep</span> <span class='kw'>=</span> <span class='st'>"/"</span>, <span class='kw'>gt</span> <span class='kw'>=</span> <span class='st'>"GT_VCF_NUC"</span>, <span class='kw'>gather</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>haplotypes</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>exclude</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"LOCUS"</span>, <span class='st'>"INDIVIDUALS"</span>, <span class='st'>"POP_ID"</span>),
-  <span class='kw'>alleles.naming</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"ALLELE1"</span>, <span class='st'>"ALLELE2"</span>), <span class='kw'>cpu.rounds</span> <span class='kw'>=</span> <span class='fl'>10</span>,
-  <span class='kw'>parallel.core</span> <span class='kw'>=</span> <span class='kw pkg'>parallel</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span>() - <span class='fl'>1</span>)</pre>
+    <pre class="usage"><span class='fu'>separate_gt</span>(
+  <span class='no'>x</span>,
+  <span class='kw'>sep</span> <span class='kw'>=</span> <span class='st'>"/"</span>,
+  <span class='kw'>gt</span> <span class='kw'>=</span> <span class='st'>"GT_VCF_NUC"</span>,
+  <span class='kw'>gather</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>haplotypes</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>exclude</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"LOCUS"</span>, <span class='st'>"INDIVIDUALS"</span>, <span class='st'>"POP_ID"</span>),
+  <span class='kw'>alleles.naming</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"ALLELE1"</span>, <span class='st'>"ALLELE2"</span>),
+  <span class='kw'>cpu.rounds</span> <span class='kw'>=</span> <span class='fl'>10</span>,
+  <span class='kw'>parallel.core</span> <span class='kw'>=</span> <span class='kw pkg'>parallel</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span>() - <span class='fl'>1</span>
+)</pre>
 
 
 

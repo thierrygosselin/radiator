@@ -4,8 +4,7 @@
 \alias{read_blacklist_genotypes}
 \title{read blacklist of genotypes}
 \usage{
-read_blacklist_genotypes(blacklist.genotypes = NULL, verbose = FALSE,
-  ...)
+read_blacklist_genotypes(blacklist.genotypes = NULL, verbose = FALSE, ...)
 }
 \arguments{
 \item{blacklist.genotypes}{(path or object)

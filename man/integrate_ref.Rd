@@ -4,8 +4,12 @@
 \alias{integrate_ref}
 \title{integrate_ref}
 \usage{
-integrate_ref(x, conversion.df = NULL, biallelic = TRUE,
-  parallel.core = parallel::detectCores() - 1)
+integrate_ref(
+  x,
+  conversion.df = NULL,
+  biallelic = TRUE,
+  parallel.core = parallel::detectCores() - 1
+)
 }
 \description{
 Integrate ref allele in original dataset

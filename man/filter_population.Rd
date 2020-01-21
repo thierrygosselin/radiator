@@ -4,9 +4,16 @@
 \alias{filter_population}
 \title{Population filter}
 \usage{
-filter_population(interactive.filter = TRUE, data, pop.threshold = 100,
-  percent = TRUE, filename = NULL, strata = NULL,
-  parallel.core = parallel::detectCores() - 1, ...)
+filter_population(
+  interactive.filter = TRUE,
+  data,
+  pop.threshold = 100,
+  percent = TRUE,
+  filename = NULL,
+  strata = NULL,
+  parallel.core = parallel::detectCores() - 1,
+  ...
+)
 }
 \arguments{
 \item{interactive.filter}{(optional, logical) Do you want the filtering session to

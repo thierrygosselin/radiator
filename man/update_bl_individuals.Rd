@@ -4,8 +4,13 @@
 \alias{update_bl_individuals}
 \title{update_bl_individuals}
 \usage{
-update_bl_individuals(gds, generate = FALSE, update = NULL,
-  extract = FALSE, bl.i.gds = NULL)
+update_bl_individuals(
+  gds,
+  generate = FALSE,
+  update = NULL,
+  extract = FALSE,
+  bl.i.gds = NULL
+)
 }
 \description{
 Generate and update blacklist of individuals on radiator GDS node

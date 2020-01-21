@@ -4,8 +4,12 @@
 \alias{generate_squeleton_folders}
 \title{generate_squeleton_folders}
 \usage{
-generate_squeleton_folders(fp = 0L, path.folder = NULL,
-  interactive.filter = TRUE, ...)
+generate_squeleton_folders(
+  fp = 0L,
+  path.folder = NULL,
+  interactive.filter = TRUE,
+  ...
+)
 }
 \description{
 Generate squeleton folders

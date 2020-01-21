@@ -4,28 +4,29 @@
 \alias{radiator_dots}
 \title{radiator_dots}
 \usage{
-radiator_dots(func.name = as.list(sys.call())[[1]], fd = NULL,
-  args.list = NULL, dotslist = NULL,
-  keepers = c("subsample.markers.stats", "force.stats", "id.stats",
-  "subsample", "filter.reproducibility", "filter.individuals.missing",
-  "filter.individuals.heterozygosity", "filter.individuals.coverage.total",
-  "filter.common.markers", "filter.monomorphic", "filter.mac",
-  "filter.coverage", "dp", "filter.genotyping", "filter.snp.position.read",
-  "filter.snp.number", "filter.short.ld", "filter.long.ld",
-  "long.ld.missing", "ld.method", "ld.figures", "detect.mixed.genomes",
-  "ind.heterozygosity.threshold", "detect.duplicate.genomes",     
-  "filter.hwe", "filter.strands", "random.seed", "path.folder", "filename",
-  "parameters", "blacklist.genotypes", "erase.genotypes", "gt", "gt.bin",
-  "gt.vcf", "gt.vcf.nuc", "pop.levels", "pop.labels", "pop.select",
-  "blacklist.id", "markers.info", "keep.allele.names", "keep.gds",
-  "ref.calibration", "vcf.metadata", "vcf.stats", "wide",
-  "whitelist.markers", "write.tidy", "missing.memory", "dart.sequence",
-  "internal", "heatmap.fst", "tidy.check", "tidy.vcf", "tidy.dart"),
-  deprecated = c("maf.thresholds", "common.markers", "max.marker",
-  "monomorphic.out", "snp.ld", "filter.call.rate",
-  "filter.markers.coverage", "filter.markers.missing", "number.snp.reads",
-  "mixed.genomes.analysis", "duplicate.genomes.analysis"),
-  verbose = TRUE)
+radiator_dots(
+  func.name = as.list(sys.call())[[1]],
+  fd = NULL,
+  args.list = NULL,
+  dotslist = NULL,
+  keepers = c("subsample.markers.stats", "force.stats", "id.stats", "subsample",
+    "filter.reproducibility", "filter.individuals.missing",
+    "filter.individuals.heterozygosity", "filter.individuals.coverage.total",
+    "filter.common.markers", "filter.monomorphic", "filter.mac", "filter.coverage", "dp",
+    "filter.genotyping", "filter.snp.position.read", "filter.snp.number",
+    "filter.short.ld", "filter.long.ld", "long.ld.missing", "ld.method", "ld.figures",
+    "detect.mixed.genomes", "ind.heterozygosity.threshold", "detect.duplicate.genomes",   
+      "filter.hwe", "filter.strands", "random.seed", "path.folder", "filename",
+    "parameters", "blacklist.genotypes", "erase.genotypes", "gt", "gt.bin", "gt.vcf",
+    "gt.vcf.nuc", "pop.levels", "pop.labels", "pop.select", "blacklist.id",
+    "markers.info", "keep.allele.names", "keep.gds", "ref.calibration", "vcf.metadata",
+    "vcf.stats", "wide", "whitelist.markers", "write.tidy", "missing.memory",
+    "dart.sequence", "internal", "heatmap.fst", "tidy.check", "tidy.vcf", "tidy.dart"),
+  deprecated = c("maf.thresholds", "common.markers", "max.marker", "monomorphic.out",
+    "snp.ld", "filter.call.rate", "filter.markers.coverage", "filter.markers.missing",
+    "number.snp.reads", "mixed.genomes.analysis", "duplicate.genomes.analysis"),
+  verbose = TRUE
+)
 }
 \arguments{
 \item{func.name}{Default: \code{as.list(sys.call())[[1]]}.}

@@ -1,3 +1,7 @@
+# This file is for everything related to DArT
+# There is one for VCF and one for GDS
+
+
 # extract_dart_target_id---------------------------------------------------------
 #' @name extract_dart_target_id
 
@@ -280,25 +284,19 @@ read_dart <- function(
   # gt.vcf.nuc = NULL
   # pop.levels = NULL
 
-  if (verbose) {
-    cat("################################################################################\n")
-    cat("############################## radiator::read_dart #############################\n")
-    cat("################################################################################\n")
-  }
-
-  # Cleanup-------------------------------------------------------------------
+    # Cleanup-------------------------------------------------------------------
+  radiator_function_header(f.name = "read_dart", verbose = verbose)
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
   if (verbose) message("Execution date@time: ", file.date)
   old.dir <- getwd()
   opt.change <- getOption("width")
   options(width = 70)
-  timing <- proc.time()# for timing
+  timing <- radiator_tic()
   #back to the original directory and options
   on.exit(setwd(old.dir), add = TRUE)
   on.exit(options(width = opt.change), add = TRUE)
-  on.exit(timing <- proc.time() - timing, add = TRUE)
-  on.exit(message("\nDArT conversion timing: ", round(timing[[3]]), " sec"), add = TRUE)
-  on.exit(if (verbose) cat("############################## completed read_dart #############################\n"), add = TRUE)
+  on.exit(radiator_toc(timing), add = TRUE)
+  on.exit(radiator_function_header(f.name = "read_dart", start = FALSE, verbose = verbose), add = TRUE)
 
   # Function call and dotslist -------------------------------------------------
   rad.dots <- radiator_dots(
@@ -315,9 +313,7 @@ read_dart <- function(
   )
   if (is.null(tidy.check)) tidy.check <- FALSE
   if (tidy.check) tidy.dart <- TRUE
-  if (!tidy.dart) {
-    gt <- gt.vcf <- gt.vcf.nuc <- FALSE
-  }
+  if (!tidy.dart) gt <- gt.vcf <- gt.vcf.nuc <- FALSE
 
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("data is missing")
@@ -467,7 +463,10 @@ read_dart <- function(
       dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
       dplyr::arrange(VARIANT_ID) %>%
       dplyr::mutate(FILTERS = "whitelist") %>%
-      dplyr::select(FILTERS, VARIANT_ID, MARKERS, CHROM, LOCUS, POS, COL, REF, ALT, dplyr::everything(.))
+      dplyr::select(
+        FILTERS, VARIANT_ID, MARKERS, CHROM, LOCUS, POS, COL, REF, ALT,
+        dplyr::everything(.)
+        )
   )
 
   write_rad(
@@ -641,7 +640,7 @@ read_dart <- function(
 
 }#End read_dart
 
-# INTERNAL FUNCTIONS------------------------------------------------------------
+# import_dart-------------------------------------------------------------------
 #' @title import_dart
 #' @description Read DArT file
 #' @rdname import_dart
@@ -743,7 +742,8 @@ import_dart <- function(
       stringsAsFactors = FALSE,
       skip = "CallRate",
       # drop = blacklist.id,
-      # cannot use this because of upper/lower case and all the shity way people name their samples...
+      # cannot use this because of upper/lower case and all the shity way
+      # people name their samples...
       select = NULL,
       showProgress = TRUE,
       nThread = parallel.core,
@@ -753,12 +753,13 @@ import_dart <- function(
 
   # We want snakecase not camelcase
   # Change the TARGET_ID by INDIVIDUALS...
-  data %<>% clean_dart_colnames(
-    data = .,
-    blacklist.id = blacklist.id,
-    dart.col.num = dart.check$star.number,
-    strata = strata.df)
-
+  data %<>%
+    clean_dart_colnames(
+      data = .,
+      blacklist.id = blacklist.id,
+      dart.col.num = dart.check$star.number,
+      strata = strata.df
+    )
 
   # keep consensus sequence if found
   # or rename TRIMMED_SEQUENCE
@@ -982,7 +983,9 @@ detect_dart_format <- function(x = NULL, target.id = NULL, verbose = TRUE) {
 #' @export
 
 switch_allele_count <- function(x, dart.group = FALSE, ref = TRUE) {
-  # dart.group (=1rows) vs presence/absence coding
+  # dart.group == TRUE (=1rows) vs presence/absence coding
+  # dart.group == FALSE 2rows: presence/absence
+
   if (dart.group) {
     # 1 = HOM ALT
     # 2 = HET
@@ -1010,39 +1013,6 @@ switch_allele_count <- function(x, dart.group = FALSE, ref = TRUE) {
   return(x)
 }# End switch_allele_count
 
-# gt2array----------------------------------------------------------------------
-#' @title gt2array
-#' @description Alternate allele dosage gt (GT_BIN) to
-#' presence/absence array for the genotypes in GDS
-#' @rdname gt2array
-#' @keywords internal
-#' @export
-gt2array <- function(gt.bin, n.ind, n.snp) {
-  genotypes <- cbind(
-    dplyr::case_when(
-      gt.bin == 0L ~ 0L,
-      gt.bin == 1L ~ 0L,
-      gt.bin == 2L ~ 1L
-    ),
-    dplyr::if_else(gt.bin == 2L, 1L, gt.bin)
-  )
-  genotypes[is.na(genotypes)] <- 0x0F #NA...
-
-  # generate the array: gta
-  # genotypes <- cbind(replace(ard, ard > 0L, 0L), replace(aad, aad > 0L, 1L))
-
-  # dimensions
-  dim(genotypes) <- c(n.snp, n.ind, 2)
-
-  # permute the array: alleles, samples, markers
-  genotypes <- aperm(a = genotypes, c(3,2,1))
-
-  # dimension names
-  dimnames(genotypes) <- list(allele=NULL, sample=NULL, variant=NULL)
-  # stopifnot(!anyNA(genotypes))# we don't want NA here... it's 0 or 1
-  return(genotypes)
-}# End gt2array
-
 
 # dart2gds----------------------------------------------------------------
 #' @title dart2gds
@@ -1063,6 +1033,12 @@ dart2gds <- function(
   parallel.core = parallel::detectCores() - 1,
   verbose = TRUE
 ) {
+
+  # Note to myself:
+  # It looks intimidating but you've given a lot of thought about it
+  # It's one of the fastest way you've found...
+
+
   # data.bk <- data
   if (dart.format == "1row") data.source <- c("dart", "1row")
   if (dart.format == "2rows") data.source <- c("dart", "2rows")
@@ -1199,12 +1175,15 @@ dart2gds <- function(
         tibble::as_tibble(.)
     )
   ref <- alt <- NULL
+
+  # Faster to check that the bind_cols worked by checking the variant id
   if (!identical(genotypes.meta$VARIANT_ID, genotypes.meta$VARIANT_ID1)) {
     rlang::abort("Contact author, DArT tiding problem")
   } else {
     genotypes.meta %<>% dplyr::select(-VARIANT_ID1)
   }
 
+  # Faster to check that the bind_cols worked by checking markers
   if (!identical(genotypes.meta$MARKERS, genotypes.meta$MARKERS1)) {
     rlang::abort("Contact author, DArT tiding problem")
   } else {
@@ -1607,14 +1586,13 @@ tidy_dart_metadata <- function(
   old.dir <- getwd()
   opt.change <- getOption("width")
   options(width = 70)
-  timing <- proc.time()# for timing
+  timing <- radiator_tic()
   # res <- list()
   #back to the original directory and options
   on.exit(setwd(old.dir), add = TRUE)
   on.exit(options(width = opt.change), add = TRUE)
-  on.exit(timing <- proc.time() - timing, add = TRUE)
-  on.exit(if (verbose) message("\nTiming: ", round(timing[[3]]), " sec"), add = TRUE)
-  on.exit(if (verbose) cat("############################## completed ##############################\n"), add = TRUE)
+  on.exit(radiator_toc(timing), add = TRUE)
+  on.exit(radiator_function_header(f.name = "", start = FALSE, verbose = verbose), add = TRUE)
 
 
   # Checking for missing and/or default arguments ------------------------------
@@ -1634,12 +1612,12 @@ tidy_dart_metadata <- function(
 
   # Import metadata-------------------------------------------------------------
   if (data.type == "dart") {
+    dart.delim <- "," # for csv files
+
     if (stringi::stri_detect_fixed(
       str = stringi::stri_sub(str = data, from = -4, to = -1),
-      pattern = ".csv")) {
-      csv <- TRUE
-    } else {
-      csv <- FALSE
+      pattern = ".tsv")) {
+      dart.delim <- "\t" # for tsv files
     }
 
     dart.check <- check_dart(data)
@@ -1649,22 +1627,15 @@ tidy_dart_metadata <- function(
       skip.number <- dart.check$skip.number
     }
 
+    dart.col.type <- readr::read_delim(
+      file = data,
+      delim = dart.delim,
+      skip = skip.number,
+      n_max = 1,
+      na = "-",
+      col_names = FALSE,
+      col_types = readr::cols(.default = readr::col_character()))
 
-    if (csv) {
-      dart.col.type <- readr::read_csv(
-        file = data,
-        skip = skip.number, n_max = 1,
-        na = "-",
-        col_names = FALSE,
-        col_types = readr::cols(.default = readr::col_character()))
-    } else {
-      dart.col.type <- readr::read_tsv(
-        file = data,
-        skip = skip.number, n_max = 1,
-        na = "-",
-        col_names = FALSE,
-        col_types = readr::cols(.default = readr::col_character()))
-    }
 
     want <- tibble::tibble(
       INFO = c("ALLELEID", "SNP", "SNPPOSITION", "CALLRATE",
@@ -1680,26 +1651,17 @@ tidy_dart_metadata <- function(
       dplyr::select(COL_TYPE) %>%
       purrr::flatten_chr(.) %>% stringi::stri_join(collapse = "")
 
-    if (csv) {
-      input <- suppressMessages(suppressWarnings(
-        readr::read_csv(
+    input <- suppressMessages(
+      suppressWarnings(
+        readr::read_delim(
           file = data,
+          delim = dart.delim,
           skip = skip.number,
           na = "-",
           col_names = TRUE,
           col_types = dart.col.type)
-      ))
-    } else {
-      input <- suppressMessages(suppressWarnings(
-        readr::read_tsv(
-          file = data,
-          skip = skip.number,
-          na = "-",
-          col_names = TRUE,
-          col_types = dart.col.type)
-      ))
-    }
-
+      )
+    )
     colnames(input) <- stringi::stri_trans_toupper(colnames(input))
     colnames(input) <- stringi::stri_replace_all_fixed(
       str = colnames(input),

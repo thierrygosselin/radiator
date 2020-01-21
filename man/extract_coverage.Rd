@@ -4,9 +4,15 @@
 \alias{extract_coverage}
 \title{extract_coverage}
 \usage{
-extract_coverage(gds, markers = TRUE, ind = TRUE, update.gds = FALSE,
-  depth.tibble = FALSE, parallel.core = parallel::detectCores() - 2,
-  verbose = FALSE)
+extract_coverage(
+  gds,
+  markers = TRUE,
+  ind = TRUE,
+  update.gds = FALSE,
+  depth.tibble = FALSE,
+  parallel.core = parallel::detectCores() - 2,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{gds}{The gds object.}

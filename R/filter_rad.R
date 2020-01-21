@@ -418,45 +418,30 @@ filter_rad <- function(
   ...
 ) {
 
-  if (verbose) {
-    cat("################################################################################\n")
-    cat("############################# radiator::filter_rad #############################\n")
-    cat("################################################################################\n")
-  }
   # Cleanup---------------------------------------------------------------------
+  radiator_function_header(f.name = "filter_rad", verbose = verbose)
   message("The function arguments names have changed: please read documentation\n")
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
   if (verbose) message("Execution date@time: ", file.date)
   old.dir <- getwd()
   opt.change <- getOption("width")
   options(width = 70)
-  timing <- proc.time()# for timing
+  timing <- radiator_tic()
   res <- list()
   #back to the original directory and options
   on.exit(setwd(old.dir), add = TRUE)
   on.exit(options(width = opt.change), add = TRUE)
-  on.exit(timing <- proc.time() - timing, add = TRUE)
-  on.exit(if (verbose) message("\nComputation time, overall: ", round(timing[[3]]), " sec"), add = TRUE)
-  on.exit(if (verbose) cat("############################# completed filter_rad #############################\n"), add = TRUE)
+  on.exit(radiator_toc(timing), add = TRUE)
+  on.exit(radiator_function_header(f.name = "filter_rad", start = FALSE, verbose = verbose), add = TRUE)
 
   # Required package -----------------------------------------------------------
-  if (!"SeqVarTools" %in% utils::installed.packages()[,"Package"] ||
-      !"SNPRelate" %in% utils::installed.packages()[,"Package"] ||
-      !"HardyWeinberg" %in% utils::installed.packages()[,"Package"] ||
-      !"ggtern" %in% utils::installed.packages()[,"Package"] ||
-      !"UpSetR" %in% utils::installed.packages()[,"Package"]
-  ) {
-    rlang::abort('For this function to work properly,
-make sure you have these packages: SeqVarTools, SNPRelate HardyWeinberg, ggtern
-and UpSetR
-install.packages("BiocManager")
-install.packages("HardyWeinberg")
-install.packages("ggtern")
-BiocManager::install("SeqVarTools")
-BiocManager::install ("SNPRelate")
-install.packages("UpSetR")
-')
-  }
+  radiator_packages_dep(package = "BiocManager")
+  radiator_packages_dep(package = "HardyWeinberg")
+  radiator_packages_dep(package = "ggtern")
+  radiator_packages_dep(package = "UpSetR")
+  radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
+  radiator_packages_dep(package = "SNPRelate", cran = FALSE, bioc = TRUE)
+
 
   # Function call and dotslist -------------------------------------------------
   rad.dots <- radiator_dots(
@@ -550,6 +535,7 @@ install.packages("UpSetR")
     if (data.type %in% c("tbl_df", "fst.file", "SeqVarGDSClass", "gds.file")) {
       gds <- read_rad(data)
       data.type <- radiator::detect_genomic_format(gds)
+      data <- NULL
     } else if (data.type %in% c("vcf.file")) {
       gds <- read_vcf(
         data = data,
@@ -594,19 +580,7 @@ install.packages("UpSetR")
     data.type <- radiator::detect_genomic_format(gds)
   }
 
-  if (data.type == "tbl_df") {
-    want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF",
-                      "ALT")
-    markers.meta <- suppressWarnings(
-      gds %>%
-      dplyr::select(dplyr::one_of(want)) %>%
-      dplyr::distinct(.)
-      )
-    notwanted <- c("VARIANT_ID", "CHROM", "LOCUS", "POS", "COL", "REF","ALT")
-    gds <- suppressWarnings(gds %>% dplyr::select(-dplyr::one_of(notwanted)))
-    gds <- radiator_gds(genotypes = gds, markers.meta = markers.meta, open = TRUE)
-  }
-
+  if (data.type == "tbl_df") gds <- tidy2gds(x = gds) #End tbl_df
   source <- extract_data_source(gds) # to know if dart data or not...
 
   # Filter reproducibility -----------------------------------------------------
@@ -699,7 +673,7 @@ install.packages("UpSetR")
     internal = FALSE)
 
 
-  # Filter coverage-------------------------------------------------------------
+    # Filter coverage-------------------------------------------------------------
   gds <- filter_coverage(
     data = gds,
     interactive.filter = interactive.filter,
@@ -899,7 +873,7 @@ install.packages("UpSetR")
     file.date = file.date,
     parallel.core = parallel.core,
     verbose = verbose
-    ) %$% info
+  ) %$% info
 
   # Markers stats
   if (verbose) message("calculating markers stats...")

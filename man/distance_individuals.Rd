@@ -4,8 +4,12 @@
 \alias{distance_individuals}
 \title{Distance individuals}
 \usage{
-distance_individuals(x, strata = NULL, distance.method = "manhattan",
-  parallel.core = parallel::detectCores() - 1)
+distance_individuals(
+  x,
+  strata = NULL,
+  distance.method = "manhattan",
+  parallel.core = parallel::detectCores() - 1
+)
 }
 \description{
 distance method

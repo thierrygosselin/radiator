@@ -4,11 +4,14 @@
 \alias{generate_filename}
 \title{Filename radiator}
 \usage{
-generate_filename(name.shortcut = NULL, path.folder = NULL,
-  date = TRUE, extension = c("tsv", "gds.rad", "rad", "gds", "gen",
-  "dat", "genind", "genlight", "gtypes", "vcf", "colony", "bayescan",
-  "gsisim", "hierfstat", "hzar", "ldna", "pcadapt", "related", "stockr",
-  "structure", "arlequin"))
+generate_filename(
+  name.shortcut = NULL,
+  path.folder = NULL,
+  date = TRUE,
+  extension = c("tsv", "gds.rad", "rad", "gds", "gen", "dat", "genind", "genlight",
+    "gtypes", "vcf", "colony", "bayescan", "gsisim", "hierfstat", "hzar", "ldna",
+    "pcadapt", "related", "stockr", "structure", "arlequin")
+)
 }
 \description{
 Generate a filename object

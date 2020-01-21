@@ -111,20 +111,30 @@ detect_het_outliers <- function (
   # filename = NULL
   # parallel.core = parallel::detectCores() - 1
 
+  # Cleanup-------------------------------------------------------------------
+  verbose <- TRUE
+  radiator_function_header(f.name = "detect_het_outliers", verbose = verbose)
+  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
+  if (verbose) message("Execution date@time: ", file.date)
+  old.dir <- getwd()
   opt.change <- getOption("width")
   options(width = 70)
-  timing <- proc.time()
-  cat("###############################################################################\n")
-  cat("######################### radiator::detect_het_outliers #######################\n")
-  cat("###############################################################################\n")
+  timing <- radiator_tic()
+  #back to the original directory and options
+  on.exit(setwd(old.dir), add = TRUE)
+  on.exit(options(width = opt.change), add = TRUE)
+  on.exit(radiator_toc(timing), add = TRUE)
+  on.exit(radiator_function_header(f.name = "detect_het_outliers", start = FALSE, verbose = verbose), add = TRUE)
   res <- list() # to store results
+
+
 
   # manage missing arguments
   if (missing(data)) stop("missing data argument")
 
   # folder ---------------------------------------------------------------------
   # Get date and time to have unique filenaming
-  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
+
   folder.extension <- stringi::stri_join("detect_het_outliers_", file.date, sep = "")
   path.folder <- file.path(getwd(), folder.extension)
   dir.create(path.folder)
@@ -245,9 +255,6 @@ tibble::tibble(
 
 message("\n    Overall genotyping error rate = ", round(res$overall.genotyping.error.rate, digits = 4))
 message("    Overall heterozygotes miscall rate = ", round(res$m.post.means, digits = 4))
-message("\nComputation time: ", round((proc.time() - timing)[[3]]), " sec")
-cat("################################## completed ##################################\n")
-options(width = opt.change)
 return(res)
 }#End detect_het_outliers
 

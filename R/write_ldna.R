@@ -66,11 +66,7 @@ write_ldna <- function(data,
   # parallel.core = parallel::detectCores() - 1
 
   # Check that snprelate is installed
-  if (!requireNamespace("SNPRelate", quietly = TRUE)) {
-    rlang::abort('To install SNPRelate:\n
-         source("https://bioconductor.org/biocLite.R")
-         biocLite("SNPRelate")')
-  }
+  radiator_packages_dep(package = "SNPRelate", cran = FALSE, bioc = TRUE)
 
   # dotslist -------------------------------------------------------------------
   radiator.dots <- list(...)

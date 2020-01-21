@@ -302,21 +302,16 @@ read_vcf <- function(
   opt.change <- getOption("width")
   options(future.globals.maxSize= Inf)
   options(width = 70)
-  timing <- proc.time()# for timing
+  timing <- radiator_tic()
   res <- list()
   #back to the original directory and options
   on.exit(setwd(old.dir), add = TRUE)
   on.exit(options(width = opt.change), add = TRUE)
-  on.exit(timing <- proc.time() - timing, add = TRUE)
-  on.exit(if (verbose) message("\nComputation time, overall: ", round(timing[[3]]), " sec"), add = TRUE)
-  on.exit(if (verbose) cat("############################## completed read_vcf ##############################\n"), add = TRUE)
-
+  on.exit(radiator_toc(timing), add = TRUE)
+  on.exit(radiator_function_header(f.name = "read_vcf", start = FALSE, verbose = verbose), add = TRUE)
   # Required package -----------------------------------------------------------
-  if (!"SeqVarTools" %in% utils::installed.packages()[,"Package"]) {
-    rlang::abort('Please install SeqVarTools for this option:\n
-                 install.packages("BiocManager")
-                 BiocManager::install("SeqVarTools")')
-  }
+  radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
+
 
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("vcf file missing")
@@ -1464,22 +1459,16 @@ tidy_vcf <- function(
   old.dir <- getwd()
   opt.change <- getOption("width")
   options(width = 70)
-  timing <- proc.time()# for timing
+  timing <- radiator_tic()
   res <- list()
   #back to the original directory and options
   on.exit(setwd(old.dir), add = TRUE)
   on.exit(options(width = opt.change), add = TRUE)
-  on.exit(timing <- proc.time() - timing, add = TRUE)
-  on.exit(if (verbose) message("\nComputation time, overall: ", round(timing[[3]]), " sec"), add = TRUE)
-  on.exit(if (verbose) cat("############################## completed tidy_vcf ##############################\n"), add = TRUE)
-
+  on.exit(radiator_toc(timing), add = TRUE)
+  on.exit(radiator_function_header(f.name = "tidy_vcf", start = FALSE, verbose = verbose), add = TRUE)
 
   # Required package -----------------------------------------------------------
-  if (!"SeqVarTools" %in% utils::installed.packages()[,"Package"]) {
-    rlang::abort('Please install SeqVarTools for this option:\n
-                 install.packages("BiocManager")
-                 BiocManager::install("SeqVarTools")')
-  }
+  radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
 
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("vcf file missing")

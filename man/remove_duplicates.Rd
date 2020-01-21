@@ -4,9 +4,13 @@
 \alias{remove_duplicates}
 \title{Read tidy genomic data file ending .rad}
 \usage{
-remove_duplicates(data = "individuals.pairwise.dist.tsv",
-  stats = "genotyped.statistics.tsv", dup.threshold = 0.25,
-  diff.pop.remove = TRUE, path.folder = NULL)
+remove_duplicates(
+  data = "individuals.pairwise.dist.tsv",
+  stats = "genotyped.statistics.tsv",
+  dup.threshold = 0.25,
+  diff.pop.remove = TRUE,
+  path.folder = NULL
+)
 }
 \arguments{
 \item{data}{(path) The individual's pairwise data.

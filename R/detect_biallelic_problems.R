@@ -33,18 +33,26 @@
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 detect_biallelic_problems <- function(data, verbose = TRUE, parallel.core = parallel::detectCores() - 1) {
-  if (verbose) cat("#######################################################################\n")
-  if (verbose) cat("################# radiator::detect_biallelic_problems #################\n")
-  if (verbose) cat("#######################################################################\n")
-  timing <- proc.time()
+
+  # Cleanup-------------------------------------------------------------------
+  radiator_function_header(f.name = "detect_biallelic_problems", verbose = verbose)
+  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
+  if (verbose) message("Execution date@time: ", file.date)
+  old.dir <- getwd()
   opt.change <- getOption("width")
   options(width = 70)
+  timing <- radiator_tic()
+  #back to the original directory and options
+  on.exit(setwd(old.dir), add = TRUE)
+  on.exit(options(width = opt.change), add = TRUE)
+  on.exit(radiator_toc(timing), add = TRUE)
+  on.exit(radiator_function_header(f.name = "detect_biallelic_problems", start = FALSE, verbose = verbose), add = TRUE)
+  res <- list()
+
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("Input file missing")
-  res <- list()
   # Get data and time and generate a filename
   # in case problematic markers are found and printed
-  date.time <- format(Sys.time(), "%Y%m%d@%H%M")
   # filename <- stringi::stri_join("radiator_biallelic_problem_", format(Sys.time(), "%Y%m%d@%H%M"), ".tsv")
 
   # Import data ---------------------------------------------------------------
@@ -81,7 +89,7 @@ detect_biallelic_problems <- function(data, verbose = TRUE, parallel.core = para
     res$multiallelic.data <- NULL
   } else {
     # write the blacklist
-    blacklist.filename <- stringi::stri_join("blacklist.markers.not.biallelic_", date.time, ".tsv")
+    blacklist.filename <- stringi::stri_join("blacklist.markers.not.biallelic_", file.date, ".tsv")
     readr::write_tsv(x = blacklist.markers, path = blacklist.filename)
 
     res$blacklist.markers <- blacklist.markers
@@ -122,7 +130,7 @@ detect_biallelic_problems <- function(data, verbose = TRUE, parallel.core = para
       dplyr::ungroup(.) %>%
       nrow
 
-    blacklist.info.filename <- stringi::stri_join("blacklist.markers.not.biallelic.info_", date.time, ".tsv")
+    blacklist.info.filename <- stringi::stri_join("blacklist.markers.not.biallelic.info_", file.date, ".tsv")
     blacklist.info <- blacklist.info %>%
       dplyr::group_by_at(dplyr::vars(markers.metadata)) %>%
       dplyr::mutate(REF = dplyr::if_else(REF == max(REF), "REF", "ALT")) %>%
@@ -166,9 +174,5 @@ detect_biallelic_problems <- function(data, verbose = TRUE, parallel.core = para
     #     dplyr::arrange(MARKERS, dplyr::desc(NUMBER_SAMPLES))
     # }
   }
-  timing <- proc.time() - timing
-  if (verbose) message("\nComputation time: ", round(timing[[3]]), " sec")
-  if (verbose) cat("############################## completed ##############################\n")
-  options(width = opt.change)
   return(res)
 }#End detect_biallelic_problems

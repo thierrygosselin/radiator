@@ -4,9 +4,16 @@
 \alias{filter_rad}
 \title{ONE FUNCTION TO RULE THEM ALL}
 \usage{
-filter_rad(data, strata = NULL, interactive.filter = TRUE,
-  output = NULL, filename = NULL, verbose = TRUE,
-  parallel.core = parallel::detectCores() - 1, ...)
+filter_rad(
+  data,
+  strata = NULL,
+  interactive.filter = TRUE,
+  output = NULL,
+  filename = NULL,
+  verbose = TRUE,
+  parallel.core = parallel::detectCores() - 1,
+  ...
+)
 }
 \arguments{
 \item{data}{12 options for input: VCFs (SNPs or Haplotypes,

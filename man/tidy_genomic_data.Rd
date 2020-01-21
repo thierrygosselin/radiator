@@ -4,8 +4,14 @@
 \alias{tidy_genomic_data}
 \title{Transform common genomic dataset format in a tidy data frame}
 \usage{
-tidy_genomic_data(data, strata = NULL, filename = NULL,
-  parallel.core = parallel::detectCores() - 1, verbose = TRUE, ...)
+tidy_genomic_data(
+  data,
+  strata = NULL,
+  filename = NULL,
+  parallel.core = parallel::detectCores() - 1,
+  verbose = TRUE,
+  ...
+)
 }
 \arguments{
 \item{data}{12 options for input: VCFs (SNPs or Haplotypes,

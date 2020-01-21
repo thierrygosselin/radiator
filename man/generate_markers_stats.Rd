@@ -4,12 +4,25 @@
 \alias{generate_markers_stats}
 \title{generate_markers_stats}
 \usage{
-generate_markers_stats(gds, coverage = TRUE, allele.coverage = TRUE,
-  missing = TRUE, mac = TRUE, heterozygosity = TRUE,
-  snp.position.read = TRUE, snp.per.locus = TRUE, path.folder = NULL,
-  filename = NULL, fig.filename = NULL, plot = TRUE,
-  force.stats = TRUE, subsample = NULL, file.date = NULL,
-  parallel.core = parallel::detectCores() - 1, verbose = TRUE)
+generate_markers_stats(
+  gds,
+  coverage = TRUE,
+  allele.coverage = TRUE,
+  missing = TRUE,
+  mac = TRUE,
+  heterozygosity = TRUE,
+  snp.position.read = TRUE,
+  snp.per.locus = TRUE,
+  path.folder = NULL,
+  filename = NULL,
+  fig.filename = NULL,
+  plot = TRUE,
+  force.stats = TRUE,
+  subsample = NULL,
+  file.date = NULL,
+  parallel.core = parallel::detectCores() - 1,
+  verbose = TRUE
+)
 }
 \description{
 Generate markers statistics

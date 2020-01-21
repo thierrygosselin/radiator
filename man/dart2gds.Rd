@@ -4,9 +4,18 @@
 \alias{dart2gds}
 \title{dart2gds}
 \usage{
-dart2gds(data, strata = NULL, markers.meta, filename, dart.format,
-  gt.vcf = FALSE, gt.vcf.nuc = FALSE, gt = FALSE,
-  parallel.core = parallel::detectCores() - 1, verbose = TRUE)
+dart2gds(
+  data,
+  strata = NULL,
+  markers.meta,
+  filename,
+  dart.format,
+  gt.vcf = FALSE,
+  gt.vcf.nuc = FALSE,
+  gt = FALSE,
+  parallel.core = parallel::detectCores() - 1,
+  verbose = TRUE
+)
 }
 \description{
 Transform dart to GDS format

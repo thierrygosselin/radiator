@@ -4,10 +4,22 @@
 \alias{bayescan_one}
 \title{bayescan one iteration}
 \usage{
-bayescan_one(x = NULL, data, n = 5000, thin = 10, nbp = 20,
-  pilot = 5000, burn = 50000, pr_odds, subsample = NULL,
-  iteration.subsample = 1, parallel.core = parallel::detectCores() - 1,
-  path.folder, file.date, bayescan.path = "/usr/local/bin/bayescan")
+bayescan_one(
+  x = NULL,
+  data,
+  n = 5000,
+  thin = 10,
+  nbp = 20,
+  pilot = 5000,
+  burn = 50000,
+  pr_odds,
+  subsample = NULL,
+  iteration.subsample = 1,
+  parallel.core = parallel::detectCores() - 1,
+  path.folder,
+  file.date,
+  bayescan.path = "/usr/local/bin/bayescan"
+)
 }
 \description{
 bayescan_one

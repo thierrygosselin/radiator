@@ -574,8 +574,16 @@ join_strata <- function(data, strata = NULL, pop.id = FALSE, verbose = TRUE) {
 
 generate_strata <- function(data, pop.id = FALSE) {
   data %<>% dplyr::ungroup(.)
-  if (rlang::has_name(data, "POP_ID")) data %<>% dplyr::distinct(POP_ID, INDIVIDUALS)
-  if (rlang::has_name(data, "STRATA")) data %<>% dplyr::distinct(STRATA, INDIVIDUALS)
+  if (rlang::has_name(data, "POP_ID")) {
+    data %<>%
+      dplyr::distinct(POP_ID, INDIVIDUALS) %>%
+      dplyr::arrange(POP_ID, INDIVIDUALS)
+  }
+  if (rlang::has_name(data, "STRATA")) {
+    data %<>%
+      dplyr::distinct(STRATA, INDIVIDUALS) %>%
+      dplyr::arrange(STRATA, INDIVIDUALS)
+  }
 
   if (isTRUE(pop.id) && rlang::has_name(data, "STRATA")) {
     data %<>% dplyr::rename(POP_ID = STRATA)

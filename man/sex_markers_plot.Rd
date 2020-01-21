@@ -4,10 +4,23 @@
 \alias{sex_markers_plot}
 \title{sex_markers_plot}
 \usage{
-sex_markers_plot(data, x, y, x.title = "x title", y.title = "y title",
-  subtitle = "subtitle", title = "Big title", width = 15,
-  height = 15, scat = FALSE, tuckey = FALSE, qreg = FALSE,
-  hist = FALSE, RD = FALSE, plot.filename = NULL)
+sex_markers_plot(
+  data,
+  x,
+  y,
+  x.title = "x title",
+  y.title = "y title",
+  subtitle = "subtitle",
+  title = "Big title",
+  width = 15,
+  height = 15,
+  scat = FALSE,
+  tuckey = FALSE,
+  qreg = FALSE,
+  hist = FALSE,
+  RD = FALSE,
+  plot.filename = NULL
+)
 }
 \description{
 Function to generate the different figures required for 'sexy_markers'.

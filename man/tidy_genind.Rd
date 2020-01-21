@@ -4,8 +4,14 @@
 \alias{tidy_genind}
 \title{Tidy a genind object to a tidy dataframe}
 \usage{
-tidy_genind(data, keep.allele.names = FALSE, tidy = TRUE, gds = TRUE,
-  write = FALSE, verbose = FALSE)
+tidy_genind(
+  data,
+  keep.allele.names = FALSE,
+  tidy = TRUE,
+  gds = TRUE,
+  write = FALSE,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{data}{(path or object) A genind object in the global environment or

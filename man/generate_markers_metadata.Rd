@@ -4,9 +4,14 @@
 \alias{generate_markers_metadata}
 \title{Generate markers metadata}
 \usage{
-generate_markers_metadata(data, generate.markers.metadata = TRUE,
-  generate.ref.alt = FALSE, biallelic = NULL,
-  parallel.core = parallel::detectCores() - 1, verbose = TRUE)
+generate_markers_metadata(
+  data,
+  generate.markers.metadata = TRUE,
+  generate.ref.alt = FALSE,
+  biallelic = NULL,
+  parallel.core = parallel::detectCores() - 1,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{data}{An object with a column named \code{MARKERS}.

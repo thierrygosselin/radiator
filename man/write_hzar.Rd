@@ -4,8 +4,12 @@
 \alias{write_hzar}
 \title{Write a HZAR file from a tidy data frame.}
 \usage{
-write_hzar(data, distances = NULL, filename = NULL,
-  parallel.core = parallel::detectCores() - 1)
+write_hzar(
+  data,
+  distances = NULL,
+  filename = NULL,
+  parallel.core = parallel::detectCores() - 1
+)
 }
 \arguments{
 \item{data}{A tidy data frame object in the global environment or

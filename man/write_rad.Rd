@@ -4,9 +4,17 @@
 \alias{write_rad}
 \title{Write tidy genomic data file or close GDS file}
 \usage{
-write_rad(data, path = NULL, filename = NULL, tsv = FALSE,
-  internal = FALSE, append = FALSE, col.names = TRUE,
-  write.message = "standard", verbose = FALSE)
+write_rad(
+  data,
+  path = NULL,
+  filename = NULL,
+  tsv = FALSE,
+  internal = FALSE,
+  append = FALSE,
+  col.names = TRUE,
+  write.message = "standard",
+  verbose = FALSE
+)
 }
 \arguments{
 \item{data}{An object in the global environment: tidy data frame or GDS connection file}

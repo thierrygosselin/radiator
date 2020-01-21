@@ -4,8 +4,7 @@
 \alias{folder_prefix}
 \title{folder_prefix}
 \usage{
-folder_prefix(prefix_int = NULL, prefix.name = NULL,
-  path.folder = NULL)
+folder_prefix(prefix_int = NULL, prefix.name = NULL, path.folder = NULL)
 }
 \description{
 Generate a seq and folder prefix

@@ -4,8 +4,12 @@
 \alias{parse_gds_metadata}
 \title{parse_gds_metadata}
 \usage{
-parse_gds_metadata(x, gds = NULL, verbose = TRUE,
-  parallel.core = parallel::detectCores() - 1)
+parse_gds_metadata(
+  x,
+  gds = NULL,
+  verbose = TRUE,
+  parallel.core = parallel::detectCores() - 1
+)
 }
 \description{
 function to parse the format field and tidy the results of VCF

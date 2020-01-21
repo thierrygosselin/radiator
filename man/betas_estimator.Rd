@@ -4,8 +4,7 @@
 \alias{betas_estimator}
 \title{Estimate \eqn{\beta}s per population}
 \usage{
-betas_estimator(data, strata = NULL, filename = NULL,
-  verbose = FALSE)
+betas_estimator(data, strata = NULL, filename = NULL, verbose = FALSE)
 }
 \arguments{
 \item{data}{12 options for input: VCFs (SNPs or Haplotypes,

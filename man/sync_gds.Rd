@@ -4,8 +4,15 @@
 \alias{sync_gds}
 \title{sync_gds}
 \usage{
-sync_gds(gds, samples = NULL, variant.id = NULL, reset.gds = FALSE,
-  reset.filters.m = FALSE, reset.filters.i = FALSE, verbose = FALSE)
+sync_gds(
+  gds,
+  samples = NULL,
+  variant.id = NULL,
+  reset.gds = FALSE,
+  reset.filters.m = FALSE,
+  reset.filters.i = FALSE,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{gds}{The gds object.}

@@ -4,10 +4,18 @@
 \alias{filter_individual}
 \title{Individual filter}
 \usage{
-filter_individual(interactive.filter = TRUE, data, strata = NULL,
-  ind.approach = "pop", ind.threshold = 0.5, prob.pop.threshold = 0,
-  percent = FALSE, filename = NULL,
-  parallel.core = parallel::detectCores() - 1, ...)
+filter_individual(
+  interactive.filter = TRUE,
+  data,
+  strata = NULL,
+  ind.approach = "pop",
+  ind.threshold = 0.5,
+  prob.pop.threshold = 0,
+  percent = FALSE,
+  filename = NULL,
+  parallel.core = parallel::detectCores() - 1,
+  ...
+)
 }
 \arguments{
 \item{interactive.filter}{(optional, logical) Do you want the filtering session to

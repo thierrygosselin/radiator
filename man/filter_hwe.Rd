@@ -4,10 +4,18 @@
 \alias{filter_hwe}
 \title{Filter markers based on Hardy-Weinberg Equilibrium}
 \usage{
-filter_hwe(data, interactive.filter = TRUE, filter.hwe = TRUE,
-  strata = NULL, hw.pop.threshold = NULL, midp.threshold = 4L,
-  filename = NULL, parallel.core = parallel::detectCores() - 1,
-  verbose = TRUE, ...)
+filter_hwe(
+  data,
+  interactive.filter = TRUE,
+  filter.hwe = TRUE,
+  strata = NULL,
+  hw.pop.threshold = NULL,
+  midp.threshold = 4L,
+  filename = NULL,
+  parallel.core = parallel::detectCores() - 1,
+  verbose = TRUE,
+  ...
+)
 }
 \arguments{
 \item{data}{A tidy data frame object in the global environment or

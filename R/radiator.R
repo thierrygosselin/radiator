@@ -602,7 +602,6 @@ generate_filename <- function(
 #' @title generate_folder
 #' @description Generate a folder based on ...
 #' @name generate_folder
-#' @rdname generate_folder
 #' @param rad.folder Name of the rad folder
 #' @param internal (optional, logical) Is the function internal or not
 #' @param append.date Include the date and time with the folder.
@@ -659,7 +658,6 @@ generate_folder <- function(
 #' @rdname folder_short
 # @keywords internal
 #' @export
-#' @rdname folder_short
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 folder_short <- function(f) {
 
@@ -751,3 +749,81 @@ radiator_snakecase <- function(x) {
     stringi::stri_trans_toupper(str = .)
   return(x)
 }#End radiator_snakecase
+
+
+# radiator_packages_dep---------------------------------------------------------
+#' @title radiator_packages_dep
+#' @description Verify required packages
+#' @rdname radiator_packages_dep
+#' @keywords internal
+#' @export
+radiator_packages_dep <- function(package, cran = TRUE, bioc = FALSE) {
+  if (cran) {
+    installer <- "install.packages"
+  }
+  if (bioc) {
+    installer <- "BiocManager::install"
+  }
+
+  how.to <- stringi::stri_join(installer, "('", package, "')")
+
+  if (!requireNamespace(package, quietly = TRUE)) {
+    # Alternative way:
+    # if (!"SeqVarTools" %in% utils::installed.packages()[,"Package"]) {
+    rlang::abort(
+      paste0(paste0("Package required: ", package),
+             paste0("\n       Install with: ", how.to))
+    )
+  }
+
+}#End radiator_packages_dep
+
+# radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
+# requireNamespace
+# installed.packages
+
+# radiator_function_header -----------------------------------------------------
+#' @title radiator_function_header
+#' @description Generate function header
+#' @rdname radiator_function_header
+#' @keywords internal
+#' @export
+radiator_function_header <- function(f.name = NULL, start = TRUE, verbose = TRUE) {
+  if (is.null(f.name)) invisible(NULL)
+  if (start) {
+    if (verbose) {
+      cat("################################################################################\n")
+      cat(paste0(stringi::stri_pad_both(str = paste0(" radiator::", f.name, " "), width = 80L, pad = "#"), "\n"))
+      cat("################################################################################\n")
+    }
+  } else {
+    if (verbose) {
+      cat(paste0(stringi::stri_pad_both(str = paste0(" completed ", f.name, " "), width = 80L, pad = "#"), "\n"))
+    }
+  }
+}# End radiator_function_header
+
+# radiator_clock ---------------------------------------------------------------
+#' @title radiator_tic
+#' @description radiator tictoc function
+#' @rdname radiator_tic
+#' @keywords internal
+#' @export
+radiator_tic <- function(timing = proc.time()) {
+    invisible(timing)
+}# End radiator_tic
+
+#' @title radiator_toc
+#' @description radiator tictoc function
+#' @rdname radiator_toc
+#' @keywords internal
+#' @export
+radiator_toc <- function(
+  timing,
+  end.message = "Computation time, overall:",
+  verbose = TRUE
+) {
+  if (verbose) message("\n", end.message, " ", round((proc.time() - timing)[[3]]), " sec")
+}# End radiator_toc
+
+

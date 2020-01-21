@@ -1,3 +1,9 @@
+# radiator 1.1.3 2020-01-21
+
+* `detect_microsatellites`: new radiator function that detect microsatellites using 
+GMATA.
+
+
 # radiator 1.1.0 2019-05-31
 
 * 2 new output formats: `genepopedit` and `rubias`

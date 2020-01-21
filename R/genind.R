@@ -110,7 +110,12 @@ tidy_genind <- function(
       dplyr::filter(MARKERS %in% alt.alleles) %>%
       dplyr::mutate(
         MARKERS = stringi::stri_extract_first_regex(str = MARKERS, pattern = "^[^.]+"),
-        MARKERS = stringi::stri_replace_all_fixed(str = MARKERS, pattern = c("__A1", "__A2"), replacement = c("", ""), vectorize_all = FALSE),
+        MARKERS = stringi::stri_replace_all_fixed(
+          str = MARKERS,
+          pattern = c("__A1", "__A2"),
+          replacement = c("", ""),
+          vectorize_all = FALSE
+          ),
         VARIANT_ID = as.integer(factor(MARKERS))) %>%
       dplyr::arrange(VARIANT_ID)
 

@@ -4,8 +4,7 @@
 \alias{ld_pruning}
 \title{Prune dataset based on LD.}
 \usage{
-ld_pruning(ld.tibble = NULL, stats = NULL, ld.threshold = 0.8,
-  verbose = TRUE)
+ld_pruning(ld.tibble = NULL, stats = NULL, ld.threshold = 0.8, verbose = TRUE)
 }
 \arguments{
 \item{ld.tibble}{(path) The markers LD pairwise data.

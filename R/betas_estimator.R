@@ -36,12 +36,21 @@ betas_estimator <- function(
   filename = NULL,
   verbose = FALSE
 ) {
-  if (verbose) {
-    cat("#######################################################################\n")
-    cat("############################ radiator::betas ############################\n")
-    cat("#######################################################################\n")
-    timing <- proc.time()
-  }
+
+  # Cleanup-------------------------------------------------------------------
+  radiator_function_header(f.name = "betas", verbose = verbose)
+  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
+  if (verbose) message("Execution date@time: ", file.date)
+  old.dir <- getwd()
+  opt.change <- getOption("width")
+  options(width = 70)
+  timing <- radiator_tic()
+  #back to the original directory and options
+  on.exit(setwd(old.dir), add = TRUE)
+  on.exit(options(width = opt.change), add = TRUE)
+  on.exit(radiator_toc(timing), add = TRUE)
+  on.exit(radiator_function_header(f.name = "betas", start = FALSE, verbose = verbose), add = TRUE)
+
   # manage missing arguments -----------------------------------------------------
   if (missing(data)) rlang::abort("Input file missing")
 
@@ -196,9 +205,6 @@ betas_estimator <- function(
   if (verbose) {
     message("\nBETA per pop (averaged over locus):")
     message(stringi::stri_join(res$betaiovl$POP_ID, " = ", round(res$betaiovl$BETAI, 4), "\n"))
-    timing <- proc.time() - timing
-    message(stringi::stri_join("Computation time: ", round(timing[[3]]), " sec"))
-    cat("############################## completed ##############################\n")
   }
   return(res)
 }

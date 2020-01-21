@@ -4,8 +4,13 @@
 \alias{update_bl_markers}
 \title{update_bl_markers}
 \usage{
-update_bl_markers(gds, generate = FALSE, update = NULL,
-  extract = FALSE, bl.gds = NULL)
+update_bl_markers(
+  gds,
+  generate = FALSE,
+  update = NULL,
+  extract = FALSE,
+  bl.gds = NULL
+)
 }
 \description{
 Generate and update blacklist of markers on radiator GDS node

@@ -24,12 +24,19 @@
 
 
 private_haplotypes <- function(data, strata = NULL, verbose = TRUE) {
-  if (verbose) cat("#######################################################################\n")
-  if (verbose) cat("##################### radiator::private_haplotypes ####################\n")
-  if (verbose) cat("#######################################################################\n")
-  timing <- proc.time()
+  # Cleanup-------------------------------------------------------------------
+  radiator_function_header(f.name = "private_haplotypes", verbose = verbose)
+  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
+  if (verbose) message("Execution date@time: ", file.date)
+  old.dir <- getwd()
   opt.change <- getOption("width")
   options(width = 70)
+  timing <- radiator_tic()
+  #back to the original directory and options
+  on.exit(setwd(old.dir), add = TRUE)
+  on.exit(options(width = opt.change), add = TRUE)
+  on.exit(radiator_toc(timing), add = TRUE)
+  on.exit(radiator_function_header(f.name = "private_haplotypes", start = FALSE, verbose = verbose), add = TRUE)
   res <- list()
 
   if (missing(data)) rlang::abort("Input file missing")
@@ -98,8 +105,5 @@ private_haplotypes <- function(data, strata = NULL, verbose = TRUE) {
   message("Number of private haplotypes = ", nrow(res$private.haplotypes))
   message("Strata with the highest number of private haplotypes = ", res$private.haplotypes.summary$STRATA[res$private.haplotypes.summary$n == max(res$private.haplotypes.summary$n)])
   message("Number of private haplotype(s) per strata:\n", stringi::stri_join(res$private.haplotypes.summary$PRIVATE_HAPLOTYPES, collapse = "\n"))
-  if (verbose) message("\nComputation time: ", round((proc.time() - timing)[[3]]), " sec")
-  if (verbose) cat("############################## completed ##############################\n")
-  options(width = opt.change)
   return(res)
 }#End private_haplotypes

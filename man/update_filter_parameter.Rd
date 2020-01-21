@@ -4,8 +4,14 @@
 \alias{update_filter_parameter}
 \title{update filter parameter file}
 \usage{
-update_filter_parameter(filter, unfiltered, filtered, parameter, threshold,
-  param.path)
+update_filter_parameter(
+  filter,
+  unfiltered,
+  filtered,
+  parameter,
+  threshold,
+  param.path
+)
 }
 \description{
 update filter parameter file

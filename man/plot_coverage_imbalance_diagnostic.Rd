@@ -4,8 +4,13 @@
 \alias{plot_coverage_imbalance_diagnostic}
 \title{Visual diagnostic of coverage imbalance}
 \usage{
-plot_coverage_imbalance_diagnostic(tidy.vcf.file, pop.levels,
-  read.depth.threshold, aes.colour, adjust.bin)
+plot_coverage_imbalance_diagnostic(
+  tidy.vcf.file,
+  pop.levels,
+  read.depth.threshold,
+  aes.colour,
+  adjust.bin
+)
 }
 \arguments{
 \item{tidy.vcf.file}{The tidy VCF file created with tidy_genomic_data.}
