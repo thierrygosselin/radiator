@@ -202,6 +202,7 @@ detect_duplicate_genomes <- function(
   # random.seed = NULL
   # path.folder = NULL
   # parameters = NULL
+  # obj.keeper <- c(ls(envir = globalenv()), "data")
 
   if (interactive.filter || detect.duplicate.genomes) {
     if (interactive.filter) {
@@ -222,6 +223,7 @@ detect_duplicate_genomes <- function(
     on.exit(options(width = opt.change), add = TRUE)
     on.exit(radiator_toc(timing), add = TRUE)
     on.exit(radiator_function_header(f.name = "detect_duplicate_genomes", start = FALSE, verbose = verbose), add = TRUE)
+    # on.exit(rm(list = setdiff(ls(envir = sys.frame(-1L)), obj.keeper), envir = sys.frame(-1L)))
     res <- list() # New list to prepare for results
 
     # Function call and dotslist -------------------------------------------------

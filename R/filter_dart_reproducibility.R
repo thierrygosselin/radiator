@@ -74,6 +74,9 @@ filter_dart_reproducibility <- function(
   # verbose = TRUE
   # internal <- FALSE
 
+
+  # obj.keeper <- c(ls(envir = globalenv()), "data")
+
   if (interactive.filter || !is.null(filter.reproducibility)) {
     if (interactive.filter) verbose <- TRUE
     # Cleanup-------------------------------------------------------------------
@@ -88,10 +91,12 @@ filter_dart_reproducibility <- function(
     on.exit(setwd(old.dir), add = TRUE)
     on.exit(options(width = opt.change), add = TRUE)
     on.exit(radiator_toc(timing), add = TRUE)
-    on.exit(radiator_function_header(f.name = "filter_dart_reproducibility", start = FALSE, verbose = verbose), add = TRUE)
+    on.exit(radiator_function_header(f.name = "filter_dart_reproducibility",
+                                     start = FALSE, verbose = verbose), add = TRUE)
+    # on.exit(rm(list = setdiff(ls(envir = sys.frame(-1L)), obj.keeper), envir = sys.frame(-1L)))
     res <- list()
 
-    # Function call and dotslist -------------------------------------------------
+    # Function call and dotslist -----------------------------------------------
     rad.dots <- radiator_dots(
       func.name = as.list(sys.call())[[1]],
       fd = rlang::fn_fmls_names(),
@@ -225,7 +230,7 @@ filter_dart_reproducibility <- function(
       ggplot2::theme(
         axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
         axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
-        axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica")#, angle = 90, hjust = 1, vjust = 0.5)
+        axis.text.x = ggplot2::element_text(size = 8, family = "Helvetica", angle = 90, hjust = 1, vjust = 0.5)
       ) +
       ggplot2::facet_grid(LIST ~. , scales = "free", space = "free")
     print(markers.plot)

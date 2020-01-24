@@ -91,6 +91,8 @@ filter_coverage <- function(
   verbose = TRUE,
   ...
 ) {
+  # obj.keeper <- c(ls(envir = globalenv()), "data")
+
   if (!is.null(filter.coverage) || interactive.filter) {
 
     # interactive.filter = TRUE
@@ -119,6 +121,7 @@ filter_coverage <- function(
     on.exit(options(width = opt.change), add = TRUE)
     on.exit(radiator_toc(timing), add = TRUE)
     on.exit(radiator_function_header(f.name = "filter_coverage", start = FALSE, verbose = verbose), add = TRUE)
+    # on.exit(rm(list = setdiff(ls(envir = sys.frame(-1L)), obj.keeper), envir = sys.frame(-1L)))
 
     # Function call and dotslist -----------------------------------------------
     rad.dots <- radiator_dots(
@@ -314,13 +317,12 @@ filter_coverage <- function(
         ggplot2::geom_point(size = 2, shape = 21, fill = "white") +
         ggplot2::scale_x_continuous(name = "Minimum mean coverage allowed", breaks = cl.range) +
         ggplot2::scale_y_continuous(name = "Number of markers")+
+        ggplot2::theme_bw()+
         ggplot2::theme(
           axis.title.x = ggplot2::element_text(size = 10, face = "bold"),
           axis.title.y = ggplot2::element_text(size = 10, face = "bold"),
-          # axis.text.x = ggplot2::element_text(size = 8) #angle = 90, hjust = 1, vjust = 0.5),
           axis.text.x = ggplot2::element_text(size = 8, angle = 90, hjust = 1, vjust = 0.5)
         ) +
-        ggplot2::theme_bw()+
         ggplot2::facet_grid(LIST ~ ., scales = "free", space = "free")
 
       print(markers.plot.low)
@@ -357,13 +359,12 @@ filter_coverage <- function(
         ggplot2::geom_vline(ggplot2::aes(xintercept = as.numeric(out.high)), color = "yellow") +
         ggplot2::scale_x_continuous(name = "Maximum mean coverage allowed", breaks = ch.range) +
         ggplot2::scale_y_continuous(name = "Number of markers")+
+        ggplot2::theme_bw()+
         ggplot2::theme(
           axis.title.x = ggplot2::element_text(size = 10, face = "bold"),
           axis.title.y = ggplot2::element_text(size = 10, face = "bold"),
           axis.text.x = ggplot2::element_text(size = 10, angle = 90, hjust = 1, vjust = 0.5)
-          # strip.text.x = ggplot2::element_text(size = 10, face = "bold")
         ) +
-        ggplot2::theme_bw()+
         ggplot2::facet_grid(LIST ~ ., scales = "free", space = "free")
 
       print(markers.plot.high)

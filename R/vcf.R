@@ -312,7 +312,6 @@ read_vcf <- function(
   # Required package -----------------------------------------------------------
   radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
 
-
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("vcf file missing")
 

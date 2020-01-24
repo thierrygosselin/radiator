@@ -48,10 +48,11 @@ detect_microsatellites <- function(data, gmata.dir = NULL, ...) {
   # gmata.dir = NULL
   # data = "whitelist.markers.tsv"
 
+  # obj.keeper <- c(ls(envir = globalenv()), "blacklist")
   verbose <- TRUE
-  radiator_function_header(f.name = "detect_microsatellites", verbose = TRUE)
 
   # Cleanup---------------------------------------------------------------------
+  radiator_function_header(f.name = "detect_microsatellites", verbose = TRUE)
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
   if (verbose) message("Execution date@time: ", file.date)
   old.dir <- getwd()
@@ -63,6 +64,7 @@ detect_microsatellites <- function(data, gmata.dir = NULL, ...) {
   on.exit(options(width = opt.change), add = TRUE)
   on.exit(radiator_toc(timing), add = TRUE)
   on.exit(radiator_function_header(f.name = "detect_microsatellites", start = FALSE, verbose = verbose), add = TRUE)
+  # on.exit(rm(list = setdiff(ls(envir = sys.frame(-1L)), obj.keeper), envir = sys.frame(-1L)))
 
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("data argument value is missing")

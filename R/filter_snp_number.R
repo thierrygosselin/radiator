@@ -90,6 +90,7 @@ filter_snp_number <- function(
   # filter.snp.number <- NULL
   # parallel.core <- parallel::detectCores() - 1
   # verbose = TRUE
+  # obj.keeper <- c(ls(envir = globalenv()), "data")
 
   if (!is.null(filter.snp.number) || interactive.filter) {
     if (interactive.filter) verbose <- TRUE
@@ -108,6 +109,8 @@ filter_snp_number <- function(
     on.exit(options(width = opt.change), add = TRUE)
     on.exit(radiator_toc(timing), add = TRUE)
     on.exit(radiator_function_header(f.name = "filter_snp_number", start = FALSE, verbose = verbose), add = TRUE)
+    # on.exit(rm(list = setdiff(ls(envir = sys.frame(-1L)), obj.keeper), envir = sys.frame(-1L)))
+
     # Function call and dotslist -------------------------------------------------
     rad.dots <- radiator_dots(
       func.name = as.list(sys.call())[[1]],

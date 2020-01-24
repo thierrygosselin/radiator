@@ -222,6 +222,7 @@ filter_het <- function(
 ) {
 
   # Cleanup-------------------------------------------------------------------
+  # obj.keeper <- c(ls(envir = globalenv()), "data")
   verbose <- TRUE
   radiator_function_header(f.name = "filter_het", verbose = verbose)
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
@@ -235,6 +236,7 @@ filter_het <- function(
   on.exit(options(width = opt.change), add = TRUE)
   on.exit(radiator_toc(timing), add = TRUE)
   on.exit(radiator_function_header(f.name = "filter_het", start = FALSE, verbose = verbose), add = TRUE)
+  # on.exit(rm(list = setdiff(ls(envir = sys.frame(-1L)), obj.keeper), envir = sys.frame(-1L)))
 
   # manage missing arguments -----------------------------------------------------
   if (missing(data)) rlang::abort("Input file missing")

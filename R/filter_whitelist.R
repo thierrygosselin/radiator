@@ -109,6 +109,7 @@ filter_whitelist <- function(
   whitelist.markers = NULL,
   verbose = TRUE,
   ...) {
+  # obj.keeper <- c(ls(envir = globalenv()), "data")
   if (is.null(whitelist.markers)) return(data)
   radiator_function_header(f.name = "filter_whitelist", verbose = verbose)
 
@@ -124,6 +125,7 @@ filter_whitelist <- function(
   on.exit(options(width = opt.change), add = TRUE)
   on.exit(radiator_toc(timing), add = TRUE)
   on.exit(radiator_function_header(f.name = "filter_whitelist", start = FALSE, verbose = verbose), add = TRUE)
+  # on.exit(rm(list = setdiff(ls(envir = sys.frame(-1L)), obj.keeper), envir = sys.frame(-1L)))
 
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("Input file missing")

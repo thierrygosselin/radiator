@@ -21,6 +21,7 @@
 
 filter_fis <- function(data, approach = "haplotype", fis.min.threshold, fis.max.threshold, fis.diff.threshold, pop.threshold, percent, filename) {
   # Cleanup-------------------------------------------------------------------
+  # obj.keeper <- c(ls(envir = globalenv()), "fis.filter")
   verbose <- TRUE
   radiator_function_header(f.name = "filter_fis", verbose = verbose)
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
@@ -34,6 +35,7 @@ filter_fis <- function(data, approach = "haplotype", fis.min.threshold, fis.max.
   on.exit(options(width = opt.change), add = TRUE)
   on.exit(radiator_toc(timing), add = TRUE)
   on.exit(radiator_function_header(f.name = "filter_fis", start = FALSE, verbose = verbose), add = TRUE)
+  # on.exit(rm(list = setdiff(ls(envir = sys.frame(-1L)), obj.keeper), envir = sys.frame(-1L)))
 
 
 

@@ -85,6 +85,7 @@ filter_snp_position_read <- function(
   # filter.snp.position.read <- "outliers"
   # parallel.core <- parallel::detectCores() - 1
   # verbose = TRUE
+  # obj.keeper <- c(ls(envir = globalenv()), "data")
 
   if (!is.null(filter.snp.position.read) || interactive.filter) {
     if (interactive.filter) verbose <- TRUE
@@ -101,6 +102,7 @@ filter_snp_position_read <- function(
     on.exit(options(width = opt.change), add = TRUE)
     on.exit(radiator_toc(timing), add = TRUE)
     on.exit(radiator_function_header(f.name = "filter_snp_position_read", start = FALSE, verbose = verbose), add = TRUE)
+    # on.exit(rm(list = setdiff(ls(envir = sys.frame(-1L)), obj.keeper), envir = sys.frame(-1L)))
 
     # Function call and dotslist -------------------------------------------------
     rad.dots <- radiator_dots(
@@ -247,7 +249,7 @@ filter_snp_position_read <- function(
         strip.text.x = ggplot2::element_text(size = 12, face = "bold")
         # axis.text.x = ggplot2::element_text(size = 12, angle = 90, hjust = 1, vjust = 0.5)
       )
-    print(d.plot)
+    # print(d.plot)
 
     # save
     d.plot.filename <- stringi::stri_join("snp.position.read.distribution_", file.date, ".pdf")
@@ -295,7 +297,9 @@ filter_snp_position_read <- function(
         axis.text.x = ggplot2::element_text(size = 8)#, angle = 90, hjust = 1, vjust = 0.5)
       ) +
       ggplot2::facet_grid(LIST ~. , scales = "free", space = "free")
-    print(markers.plot)
+    # print(markers.plot) # not that useful...
+
+    print(d.plot) # more useful to leave at the end
 
     # save
     ggplot2::ggsave(

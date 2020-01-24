@@ -182,6 +182,8 @@ detect_mixed_genomes <- function(
   # parameters = filters.parameters
   # parallel.core = parallel::detectCores() - 1
 
+  # obj.keeper <- c(ls(envir = globalenv()), "data")
+
   if (interactive.filter || detect.mixed.genomes) {
     if (interactive.filter) verbose <- TRUE
 
@@ -198,6 +200,7 @@ detect_mixed_genomes <- function(
     on.exit(options(width = opt.change), add = TRUE)
     on.exit(radiator_toc(timing), add = TRUE)
     on.exit(radiator_function_header(f.name = "detect_mixed_genomes", start = FALSE, verbose = verbose), add = TRUE)
+    # on.exit(rm(list = setdiff(ls(envir = sys.frame(-1L)), obj.keeper), envir = sys.frame(-1L)))
 
     # Function call and dotslist -------------------------------------------------
     rad.dots <- radiator_dots(

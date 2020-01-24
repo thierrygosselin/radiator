@@ -76,6 +76,8 @@ filter_common_markers <- function(
   # path.folder = wf
 
 
+  # obj.keeper <- c(ls(envir = globalenv()), "data")
+
   if (!filter.common.markers) {
     return(data)
   } else {
@@ -93,6 +95,7 @@ filter_common_markers <- function(
     on.exit(options(width = opt.change), add = TRUE)
     on.exit(radiator_toc(timing), add = TRUE)
     on.exit(radiator_function_header(f.name = "filter_common_markers", start = FALSE, verbose = verbose), add = TRUE)
+    # on.exit(rm(list = setdiff(ls(envir = sys.frame(-1L)), obj.keeper), envir = sys.frame(-1L)))
     # message("\nKeeping only common markers between strata")
 
     # Checking for missing and/or default arguments ------------------------------

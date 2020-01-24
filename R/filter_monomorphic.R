@@ -54,6 +54,8 @@ filter_monomorphic <- function(
   # path.folder = NULL
   # parameters = NULL
   # internal = FALSE
+  # obj.keeper <- c(ls(envir = globalenv()), "data")
+
   if (filter.monomorphic) {
     radiator_function_header(f.name = "filter_monomorphic", verbose = verbose)
 
@@ -70,6 +72,7 @@ filter_monomorphic <- function(
     on.exit(options(width = opt.change), add = TRUE)
     on.exit(radiator_toc(timing), add = TRUE)
     on.exit(radiator_function_header(f.name = "filter_monomorphic", start = FALSE, verbose = verbose), add = TRUE)
+    # on.exit(rm(list = setdiff(ls(envir = sys.frame(-1L)), obj.keeper), envir = sys.frame(-1L)))
 
 
     # if (verbose) message("\nScanning for monomorphic markers...")

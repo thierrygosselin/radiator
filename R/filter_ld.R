@@ -176,6 +176,9 @@ filter_ld <- function(
   # path.folder <- "testing_LD"
   # parameters <- NULL
   # internal <- FALSE
+
+  # obj.keeper <- c(ls(envir = globalenv()), "data")
+
   if (!interactive.filter && is.null(filter.short.ld) && is.null(filter.long.ld)) {
     return(data)
   }
@@ -194,6 +197,7 @@ filter_ld <- function(
   on.exit(options(width = opt.change), add = TRUE)
   on.exit(radiator_toc(timing), add = TRUE)
   on.exit(radiator_function_header(f.name = "filter_ld", start = FALSE, verbose = verbose), add = TRUE)
+  # on.exit(rm(list = setdiff(ls(envir = sys.frame(-1L)), obj.keeper), envir = sys.frame(-1L)))
 
   # Function call and dotslist -------------------------------------------------
   rad.dots <- radiator_dots(

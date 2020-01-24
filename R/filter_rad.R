@@ -419,6 +419,7 @@ filter_rad <- function(
 ) {
 
   # Cleanup---------------------------------------------------------------------
+  obj.keeper <- c(ls(envir = globalenv()), "res")
   radiator_function_header(f.name = "filter_rad", verbose = verbose)
   message("The function arguments names have changed: please read documentation\n")
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
@@ -433,6 +434,7 @@ filter_rad <- function(
   on.exit(options(width = opt.change), add = TRUE)
   on.exit(radiator_toc(timing), add = TRUE)
   on.exit(radiator_function_header(f.name = "filter_rad", start = FALSE, verbose = verbose), add = TRUE)
+  on.exit(rm(list = setdiff(ls(envir = sys.frame(-1L)), obj.keeper), envir = sys.frame(-1L)))
 
   # Required package -----------------------------------------------------------
   radiator_packages_dep(package = "BiocManager")

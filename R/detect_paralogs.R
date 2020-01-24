@@ -117,6 +117,7 @@ detect_paralogs <- function(
   # parallel.core = parallel::detectCores() - 1
 
   # Cleanup-------------------------------------------------------------------
+  obj.keeper <- c(ls(envir = globalenv()), "data")
   radiator_function_header(f.name = "detect_paralogs", verbose = verbose)
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
   if (verbose) message("Execution date@time: ", file.date)
@@ -129,6 +130,7 @@ detect_paralogs <- function(
   on.exit(options(width = opt.change), add = TRUE)
   on.exit(radiator_toc(timing), add = TRUE)
   on.exit(radiator_function_header(f.name = "detect_paralogs", start = FALSE, verbose = verbose), add = TRUE)
+  on.exit(rm(list = setdiff(ls(envir = sys.frame(-1L)), obj.keeper), envir = sys.frame(-1L)))
 
   # required package -----------------------------------------------------------
   radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)

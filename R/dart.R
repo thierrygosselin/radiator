@@ -284,7 +284,8 @@ read_dart <- function(
   # gt.vcf.nuc = NULL
   # pop.levels = NULL
 
-    # Cleanup-------------------------------------------------------------------
+  # Cleanup-------------------------------------------------------------------
+  # obj.keeper <- c(ls(envir = globalenv()), "data")
   radiator_function_header(f.name = "read_dart", verbose = verbose)
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
   if (verbose) message("Execution date@time: ", file.date)
@@ -296,6 +297,7 @@ read_dart <- function(
   on.exit(setwd(old.dir), add = TRUE)
   on.exit(options(width = opt.change), add = TRUE)
   on.exit(radiator_toc(timing), add = TRUE)
+  # on.exit(rm(list = setdiff(ls(envir = sys.frame(-1L)), obj.keeper), envir = sys.frame(-1L)))
   on.exit(radiator_function_header(f.name = "read_dart", start = FALSE, verbose = verbose), add = TRUE)
 
   # Function call and dotslist -------------------------------------------------
@@ -466,7 +468,7 @@ read_dart <- function(
       dplyr::select(
         FILTERS, VARIANT_ID, MARKERS, CHROM, LOCUS, POS, COL, REF, ALT,
         dplyr::everything(.)
-        )
+      )
   )
 
   write_rad(
@@ -637,7 +639,6 @@ read_dart <- function(
   message("Number of SNPs: ", n.snp)
   summary_strata(strata)
   return(data)
-
 }#End read_dart
 
 # import_dart-------------------------------------------------------------------
@@ -1581,6 +1582,7 @@ tidy_dart_metadata <- function(
   parallel.core = parallel::detectCores() - 1
 ) {
   # Cleanup-------------------------------------------------------------------
+  # obj.keeper <- c(ls(envir = globalenv()), "input")
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
   if (verbose) message("Execution date@time: ", file.date)
   old.dir <- getwd()
@@ -1593,6 +1595,7 @@ tidy_dart_metadata <- function(
   on.exit(options(width = opt.change), add = TRUE)
   on.exit(radiator_toc(timing), add = TRUE)
   on.exit(radiator_function_header(f.name = "", start = FALSE, verbose = verbose), add = TRUE)
+  # on.exit(rm(list = setdiff(ls(envir = sys.frame(-1L)), obj.keeper), envir = sys.frame(-1L)))
 
 
   # Checking for missing and/or default arguments ------------------------------

@@ -1771,6 +1771,7 @@ generate_id_stats <- function (
   if (coverage) {
     # info
     dp <- extract_coverage(gds, markers = FALSE)
+
     if (!is.null(dp) && "ind.cov.tot" %in% names(dp)) {
       id.info %<>%
         dplyr::mutate(

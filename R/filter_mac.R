@@ -168,6 +168,9 @@ filter_mac <- function(
   # path.folder = NULL
   # parameters <- NULL
   # internal <- FALSE
+
+  # obj.keeper <- c(ls(envir = globalenv()), "data")
+
   if (!is.null(filter.mac) || interactive.filter) {
     if (interactive.filter) verbose <- TRUE
     radiator_function_header(f.name = "filter_mac", verbose = verbose)
@@ -186,6 +189,8 @@ filter_mac <- function(
     on.exit(options(width = opt.change), add = TRUE)
     on.exit(radiator_toc(timing), add = TRUE)
     on.exit(radiator_function_header(f.name = "filter_mac", start = FALSE, verbose = verbose), add = TRUE)
+    # on.exit(rm(list = setdiff(ls(envir = sys.frame(-1L)), obj.keeper), envir = sys.frame(-1L)))
+
     # Function call and dotslist -------------------------------------------------
     rad.dots <- radiator_dots(
       func.name = as.list(sys.call())[[1]],
