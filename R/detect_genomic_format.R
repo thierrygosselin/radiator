@@ -51,7 +51,13 @@ detect_genomic_format <- function(data){
     # data.type <- readChar(con = data, nchars = 16L, useBytes = TRUE)
     file.ending <- stringi::stri_sub(str = data, from = -4, to = -1)
 
-    if (identical(data.type, "##fileformat=VCF") || file.ending == ".vcf") {
+    # problem with gz file ...
+    if (stringi::stri_detect_fixed(str = file.ending, pattern = "gz")) {
+      file.ending <- stringi::stri_sub(str = data, from = -7, to = -4)
+    }
+
+    # if (identical(data.type, "##fileformat=VCF") || file.ending == ".vcf") {
+      if (stringi::stri_detect_fixed(str = data.type, pattern = "##fileformat=VCF") || file.ending == ".vcf") {
       data.type <- "vcf.file"
       # message("File type: VCF")
     }

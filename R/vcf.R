@@ -2763,6 +2763,15 @@ extract_individuals_vcf <- function(data) {
     ))
   skip.number <- which(stringi::stri_detect_fixed(str = temp.file$HEADER,
                                                   pattern = "#CHROM")) - 1
+  # for some VCF file that put all the markers (usually contigs info) in the header...
+  if (length(skip.number) == 0L) {
+    temp.file <-
+      suppressWarnings(suppressMessages(
+        readr::read_table(file = data, col_names = "HEADER")
+      ))
+    skip.number <- which(stringi::stri_detect_fixed(str = temp.file$HEADER,
+                                                    pattern = "#CHROM")) - 1
+  }
   temp.file <- NULL
   remove <- c("#CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT")
   id <- tibble::tibble(INDIVIDUALS = colnames(readr::read_tsv(
@@ -2806,7 +2815,7 @@ extract_info_vcf <- function(vcf) {
 check_header_source_vcf <- function(vcf) {
 
   check.header <- SeqArray::seqVCF_Header(vcf)
-  problematic.id <- c("AD", "AO", "QA", "GL", "CATG")
+  problematic.id <- c("AD", "AO", "QA", "GL", "CATG", "RO", "QR", "MIN_DP")
   problematic.id <-
     purrr::keep(
       .x = problematic.id,
@@ -2827,6 +2836,14 @@ check_header_source_vcf <- function(vcf) {
   } else {
     is.stacks <- stringi::stri_detect_fixed(str = check.source, pattern = "Stacks")
   }
+
+  dirty.freebayes <- FALSE
+  if (stringi::stri_detect_fixed(str = check.source, pattern = "freeBayes") &&
+      stringi::stri_detect_fixed(str = check.source, pattern = "dirty")) {
+    message("\n\nIMPORTANT: VCF from freeBayes Dirty version: only GT and DP fields will be kept...\n\n")
+    check.header$format <- dplyr::filter(check.header$format, ID %in% c("GT", "DP"))
+  }
+
   if (is.stacks) {
     stacks.2 <- keep.stacks.gl <- stringi::stri_detect_fixed(
       str = check.source,
@@ -2851,8 +2868,6 @@ check_header_source_vcf <- function(vcf) {
     )
   )
 }#End check_header_source_vcf
-
-
 
 ## Split vcf--------------------------------------------------------------------
 
