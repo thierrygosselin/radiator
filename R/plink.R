@@ -80,20 +80,17 @@
 #' analyses.
 #' American Journal of Human Genetics. 2007: 81: 559–575. doi:10.1086/519795
 
-#' @seealso
-#' \href{https://www.cog-genomics.org/plink/1.9/}{PLINK}
-
 
 #' @examples
 #' \dontrun{
-#' #require(SeqVarTools)
-#' # with built-in defaults:
 #' data <- radiator::read_plink(data = "my_plink_file.bed")
-#'
-#' # when conversion is required from TPED to BED
-#' # in Terminal:
-#' plink --tfile my_plink_file --make-bed --allow-no-sex --allow-extra-chr --chr-set 95
+#' # when conversion is required from TPED to BED, in Terminal:
+#' # plink --tfile my_plink_file --make-bed --allow-no-sex --allow-extra-chr --chr-set 95
 #' }
+
+#' @seealso
+#' \href{https://www.cog-genomics.org/plink/1.9/}{PLINK}
+
 
 read_plink <- function(
   data,
@@ -462,21 +459,19 @@ read_plink <- function(
 #' analyses.
 #' American Journal of Human Genetics. 2007: 81: 559–575. doi:10.1086/519795
 
+#' @examples
+#' \dontrun{
+#' data <- radiator::tidy_plink(data = "my_plink_file.bed", verbose = TRUE)
+#'
+#'
+#' # when conversion is required from TPED to BED, in Terminal:
+#' # plink --tfile my_plink_file --make-bed --allow-no-sex --allow-extra-chr --chr-set 95
+#' }
+
 #' @seealso
 #' \href{https://www.cog-genomics.org/plink/1.9/}{PLINK}
 #'
 #' \code{\link[radiator]{read_plink}}
-
-#' @examples
-#' \dontrun{
-#' #require(SeqVarTools)
-#' # with built-in defaults:
-#' data <- radiator::tidy_plink(data = "my_plink_file.bed", verbose = TRUE)
-#'
-#' # when conversion is required from TPED to BED
-#' # in Terminal:
-#' plink --tfile my_plink_file --make-bed --allow-no-sex --allow-extra-chr --chr-set 95
-#' }
 
 #' @return
 #' A tidy tibble of the PLINK file.

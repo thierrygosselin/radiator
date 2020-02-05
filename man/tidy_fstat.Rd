@@ -45,23 +45,24 @@ several other filtering options.
 }
 \examples{
 \dontrun{
-We will use the fstat dataset provided with adegenet package
-if (!require("hierfstat")) install.packages("hierfstat")
+# We will use the fstat dataset provided with adegenet package
+require("hierfstat")
 
-The simplest form of the function:
+# The simplest form of the function:
 fstat.file <- radiator::tidy_fstat(
-data = system.file(
-"extdata/diploid.dat",
-package = "hierfstat"
-)
-)
+    data = system.file(
+    "extdata/diploid.dat",
+    package = "hierfstat"
+    )
+ )
 
 # To output a data frame in wide format, with markers in separate columns:
 nancycats.wide <- radiator::tidy_fstat(
-data = system.file(
-"extdata/diploid.dat",
-package = "hierfstat"
-), tidy = FALSE
+    data = system.file(
+        "extdata/diploid.dat",
+        package = "hierfstat"
+    ),
+tidy = FALSE
 )
 }
 }

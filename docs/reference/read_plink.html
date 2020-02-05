@@ -218,7 +218,11 @@ American Journal of Human Genetics. 2007: 81: 559–575. doi:10.1086/519795</p>
     <div class='dont-index'><p><a href='https://www.cog-genomics.org/plink/1.9/'>PLINK</a></p></div>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"></pre>
+    <pre class="examples"><div class='input'><span class='kw'>if</span> (<span class='fl'>FALSE</span>) {
+<span class='no'>data</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>radiator</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/pkg/radiator/man/read_plink.html'>read_plink</a></span>(<span class='kw'>data</span> <span class='kw'>=</span> <span class='st'>"my_plink_file.bed"</span>)
+<span class='co'># when conversion is required from TPED to BED, in Terminal:</span>
+<span class='co'># plink --tfile my_plink_file --make-bed --allow-no-sex --allow-extra-chr --chr-set 95</span>
+}</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>

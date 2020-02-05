@@ -106,21 +106,25 @@
 #' @rdname tidy_genepop
 #' @examples
 #' \dontrun{
-#' We will use the genepop dataset provided with adegenet package
-#' if (!require("adegenet")) install.packages("adegenet")
+#' # We will use the genepop dataset provided with adegenet package
+#' require("adegenet")
 #'
-#' The simplest form of the function:
+#' # The simplest form of the function:
 #' nancycats.tidy <- radiator::tidy_genepop(
-#' data = system.file(
-#' "files/nancycats.gen",
-#' package = "adegenet"))
+#'     data = system.file(
+#'         "files/nancycats.gen",
+#'         package = "adegenet"
+#'         )
+#'     )
 #'
 #' # To output a data frame in wide format, with markers in separate columns:
 #' nancycats.wide <- radiator::tidy_genepop(
-#' data = system.file(
-#' "files/nancycats.gen",
-#' package="adegenet"
-#' ), tidy = FALSE)
+#'     data = system.file(
+#'     "files/nancycats.gen",
+#'     package="adegenet"
+#' ),
+#'     tidy = FALSE
+#' )
 #' }
 
 

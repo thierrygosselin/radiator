@@ -328,7 +328,43 @@ Molecular Ecology 20: 1450-1462</p>
     <div class='dont-index'><p><a href='http://cmpg.unibe.ch/software/BayeScan/'>BayeScan</a></p></div>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"></pre>
+    <pre class="examples"><div class='input'><span class='kw'>if</span> (<span class='fl'>FALSE</span>) {
+<span class='co'># library(radiator)</span>
+<span class='co'># get a tidy data frame and a bayescan file with radiator::genomic_converter:</span>
+<span class='co'># to run with a vcf haplotype file</span>
+<span class='no'>data</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>radiator</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/pkg/radiator/man/genomic_converter.html'>genomic_converter</a></span>(
+    <span class='kw'>data</span> <span class='kw'>=</span> <span class='st'>"batch_1.haplotypes.vcf"</span>,
+    <span class='kw'>strata</span> <span class='kw'>=</span> <span class='st'>"../../02_project_info/strata.stacks.TL.tsv"</span>,
+    <span class='kw'>whitelist.markers</span> <span class='kw'>=</span> <span class='st'>"whitelist.filtered.markers.tsv"</span>,
+    <span class='kw'>blacklist.id</span> <span class='kw'>=</span> <span class='st'>"blacklist.id.tsv"</span>,
+    <span class='kw'>output</span> <span class='kw'>=</span> <span class='st'>"bayescan"</span>,
+    <span class='kw'>filename</span> <span class='kw'>=</span> <span class='st'>"bayescan.haplotypes"</span>
+    )
+<span class='co'># to run BayeScan:</span>
+<span class='no'>scan.pops</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>radiator</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/pkg/radiator/man/run_bayescan.html'>run_bayescan</a></span>(
+    <span class='kw'>data</span> <span class='kw'>=</span> <span class='st'>"bayescan.haplotypes.txt"</span>,
+    <span class='kw'>pr_odds</span> <span class='kw'>=</span> <span class='fl'>1000</span>
+    )
+
+<span class='co'># This will use the default values for argument: n, thin, nbp, pilot and burn.</span>
+<span class='co'># The number of CPUs will be the number available - 1 (the default).</span>
+
+<span class='co'># To test the impact of unbalance sampling run BayeScan with subsampling,</span>
+<span class='co'># for this, you need to feed the function the tidy data frame generated above</span>
+<span class='co'># with radiator::genomic_converter:</span>
+<span class='no'>scan.pops.sub</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>radiator</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/pkg/radiator/man/run_bayescan.html'>run_bayescan</a></span>(
+    <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>data</span>$<span class='no'>tidy.data</span>,
+    <span class='kw'>pr_odds</span> <span class='kw'>=</span> <span class='fl'>1000</span>,
+    <span class='kw'>subsample</span> <span class='kw'>=</span> <span class='st'>"min"</span>,
+    <span class='kw'>iteration.subsample</span> <span class='kw'>=</span> <span class='fl'>10</span>
+    )
+
+<span class='co'># This will run BayeScan 10 times, and for each iteration, the number of individuals</span>
+<span class='co'># sampled in each pop will be equal to the minimal number found in the pops</span>
+<span class='co'># (e.g. pop1 N = 36, pop2 N = 50 and pop3 N = 15, the subsampling will use 15</span>
+<span class='co'># individuals in each pop, taken randomly.</span>
+<span class='co'># You can also choose a specific subsample value with the argument.</span>
+}</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>

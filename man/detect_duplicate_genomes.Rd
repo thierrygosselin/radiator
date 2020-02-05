@@ -149,12 +149,12 @@ an extremely low number genotypes...}
 dup <- radiator::detect_duplicate_genomes(data = "wombat_tidy.rad")
 
 # This will use by default:
-distance.method = "manhattan"
-genome = FALSE
-#parallel.core = all my CPUs - 1
+# distance.method = "manhattan"
+# genome = FALSE
+# parallel.core = all my CPUs - 1
 
-#If you need a tidy tibble: use one of radiator \code{tidy_} function or
-\code{radiator::tidy_genomic_data}
+# If you need a tidy tibble: use one of radiator \code{tidy_} function or
+# \code{radiator::tidy_genomic_data}
 
 
 # To view the manhattan plot:
@@ -172,11 +172,15 @@ dup.data <- dup$distance
 # To run the distance (with euclidean distance instead of the default manhattan,
 # and also carry the second analysis (with the genome method):
 dup <- radiator::tidy_genomic_data(
-data = wombat_tidy_object,
-strata = "wombat.strata.tsv",
-vcf.metadata = FALSE
+    data = wombat_tidy_object,
+    strata = "wombat.strata.tsv",
+    vcf.metadata = FALSE
 ) \%>\%
-radiator::detect_duplicate_genomes(data = ., distance.method = "euclidean", genome = TRUE)
+radiator::detect_duplicate_genomes(
+    data = .,
+    distance.method = "euclidean",
+    genome = TRUE
+    )
 
 # to view the data of the genome data
 dup.data <- dup$pairwise.genome.similarity

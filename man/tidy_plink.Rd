@@ -58,13 +58,11 @@ Default: \code{ref.calibration = FALSE}.
 
 \examples{
 \dontrun{
-#require(SeqVarTools)
-# with built-in defaults:
 data <- radiator::tidy_plink(data = "my_plink_file.bed", verbose = TRUE)
 
-# when conversion is required from TPED to BED
-# in Terminal:
-plink --tfile my_plink_file --make-bed --allow-no-sex --allow-extra-chr --chr-set 95
+
+# when conversion is required from TPED to BED, in Terminal:
+# plink --tfile my_plink_file --make-bed --allow-no-sex --allow-extra-chr --chr-set 95
 }
 }
 \references{

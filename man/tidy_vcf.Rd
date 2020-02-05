@@ -2,7 +2,7 @@
 % Please edit documentation in R/vcf.R
 \name{tidy_vcf}
 \alias{tidy_vcf}
-\title{Tidy a vcf file (bi and multi-allelic).}
+\title{Tidy vcf file}
 \usage{
 tidy_vcf(
   data,
@@ -48,10 +48,13 @@ The output in your global environment is a tidy data frame, the GDS file
 generated is in the working directory under the name given during function execution.
 }
 \description{
+The function allows to tidy a VCF file.
+
 Used internally in
 \href{https://github.com/thierrygosselin/radiator}{radiator}
 and might be of interest for users.
-Highly recommended to use \code{\link[radiator]{filter_rad}} to reduce
+
+It is highly recommended to use \code{\link[radiator]{filter_rad}} to reduce
 the number of markers. Advance options below are also available to
 to manipulate and prune the dataset with blacklists and whitelists along
 several other filtering options.

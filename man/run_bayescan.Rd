@@ -156,29 +156,35 @@ Make sure to give permission: \code{sudo chmod 777 /usr/local/bin/bayescan}
 }
 \examples{
 \dontrun{
-
-#library(radiator)
+# library(radiator)
 # get a tidy data frame and a bayescan file with radiator::genomic_converter:
 # to run with a vcf haplotype file
 data <- radiator::genomic_converter(
-data = "batch_1.haplotypes.vcf",
-strata = "../../02_project_info/strata.stacks.TL.tsv",
-whitelist.markers = "whitelist.filtered.markers.tsv",
-blacklist.id = "blacklist.id.tsv",
-output = "bayescan",
-filename = "bayescan.haplotypes")
+    data = "batch_1.haplotypes.vcf",
+    strata = "../../02_project_info/strata.stacks.TL.tsv",
+    whitelist.markers = "whitelist.filtered.markers.tsv",
+    blacklist.id = "blacklist.id.tsv",
+    output = "bayescan",
+    filename = "bayescan.haplotypes"
+    )
 # to run BayeScan:
-scan.pops <- radiator::run_bayescan(data = "bayescan.haplotypes.txt",
-pr_odds = 1000)
+scan.pops <- radiator::run_bayescan(
+    data = "bayescan.haplotypes.txt",
+    pr_odds = 1000
+    )
 
 # This will use the default values for argument: n, thin, nbp, pilot and burn.
-The number of CPUs will be the number available - 1 (the default).
+# The number of CPUs will be the number available - 1 (the default).
 
-# to test the impact of unbalance sampling run BayeScan with subsampling,
+# To test the impact of unbalance sampling run BayeScan with subsampling,
 # for this, you need to feed the function the tidy data frame generated above
 # with radiator::genomic_converter:
-scan.pops.sub <- radiator::run_bayescan(data = data$tidy.data,
-pr_odds = 1000, subsample = "min", iteration.subsample = 10)
+scan.pops.sub <- radiator::run_bayescan(
+    data = data$tidy.data,
+    pr_odds = 1000,
+    subsample = "min",
+    iteration.subsample = 10
+    )
 
 # This will run BayeScan 10 times, and for each iteration, the number of individuals
 # sampled in each pop will be equal to the minimal number found in the pops

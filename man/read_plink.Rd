@@ -63,13 +63,9 @@ come back to it a month later and it's now a matter of sec to open a connection!
 }
 \examples{
 \dontrun{
-#require(SeqVarTools)
-# with built-in defaults:
 data <- radiator::read_plink(data = "my_plink_file.bed")
-
-# when conversion is required from TPED to BED
-# in Terminal:
-plink --tfile my_plink_file --make-bed --allow-no-sex --allow-extra-chr --chr-set 95
+# when conversion is required from TPED to BED, in Terminal:
+# plink --tfile my_plink_file --make-bed --allow-no-sex --allow-extra-chr --chr-set 95
 }
 }
 \references{

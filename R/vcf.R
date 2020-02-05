@@ -1,7 +1,7 @@
 # Read VCF with SeqArray--------------------------------------------------------
 # write a SeqArray object from a tidy data frame
 #' @name read_vcf
-#' @title Read VCF files for radiator and also write a SeqArray GDS file.
+#' @title Read VCF files and write a GDS file
 #' @description The function reads VCF files for radiator and
 #' generate a connection SeqArray \href{https://github.com/zhengxwen/SeqArray}{SeqArray}
 #' GDS object/file of class \code{SeqVarGDSClass} (Zheng et al. 2017)
@@ -1208,12 +1208,14 @@ read_vcf <- function(
 # tidy_vcf ---------------------------------------------------------------------
 #' @name tidy_vcf
 
-#' @title Tidy a vcf file (bi and multi-allelic).
-
-#' @description Used internally in
+#' @title Tidy vcf file
+#' @description The function allows to tidy a VCF file.
+#'
+#' Used internally in
 #' \href{https://github.com/thierrygosselin/radiator}{radiator}
 #' and might be of interest for users.
-#' Highly recommended to use \code{\link[radiator]{filter_rad}} to reduce
+#'
+#' It is highly recommended to use \code{\link[radiator]{filter_rad}} to reduce
 #' the number of markers. Advance options below are also available to
 #' to manipulate and prune the dataset with blacklists and whitelists along
 #' several other filtering options.

@@ -84,8 +84,8 @@ spotted.cod <- radiator::read_dart(
     strata = "strata.dart.spotted.cod.tsv"
 )
 turtle.filtered <- radiator::filter_dart_reproducibility(
-data = spotted.cod
-filter.reproducibility = 0.97
+    data = spotted.cod,
+    filter.reproducibility = 0.97
 )
 }
 }

@@ -269,7 +269,27 @@ doi:10.1111/j.1471-8286.2007.01931.x</p>
     <div class='dont-index'><p><a href='http://genepop.curtin.edu.au'>genepop</a></p></div>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"></pre>
+    <pre class="examples"><div class='input'><span class='kw'>if</span> (<span class='fl'>FALSE</span>) {
+<span class='co'># We will use the genepop dataset provided with adegenet package</span>
+<span class='fu'><a href='https://rdrr.io/r/base/library.html'>require</a></span>(<span class='st'>"adegenet"</span>)
+
+<span class='co'># The simplest form of the function:</span>
+<span class='no'>nancycats.tidy</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>radiator</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/pkg/radiator/man/tidy_genepop.html'>tidy_genepop</a></span>(
+    <span class='kw'>data</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/system.file.html'>system.file</a></span>(
+        <span class='st'>"files/nancycats.gen"</span>,
+        <span class='kw'>package</span> <span class='kw'>=</span> <span class='st'>"adegenet"</span>
+        )
+    )
+
+<span class='co'># To output a data frame in wide format, with markers in separate columns:</span>
+<span class='no'>nancycats.wide</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>radiator</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/pkg/radiator/man/tidy_genepop.html'>tidy_genepop</a></span>(
+    <span class='kw'>data</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/system.file.html'>system.file</a></span>(
+    <span class='st'>"files/nancycats.gen"</span>,
+    <span class='kw'>package</span><span class='kw'>=</span><span class='st'>"adegenet"</span>
+),
+    <span class='kw'>tidy</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>
+)
+}</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>

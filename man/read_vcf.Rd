@@ -2,7 +2,7 @@
 % Please edit documentation in R/vcf.R
 \name{read_vcf}
 \alias{read_vcf}
-\title{Read VCF files for radiator and also write a SeqArray GDS file.}
+\title{Read VCF files and write a GDS file}
 \usage{
 read_vcf(
   data,
