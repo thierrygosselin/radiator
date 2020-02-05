@@ -250,9 +250,9 @@ tidy2wide <- function(
 #' and \href{https://github.com/thierrygosselin/assigner}{assigner}
 #' and might be of interest for users.
 
-#' @param data 13 options for input: VCFs (SNPs or Haplotypes,
+#' @param data 14 options for input: VCFs (SNPs or Haplotypes,
 #' to make the vcf population ready),
-#' plink, stacks haplotype file, genind (library(adegenet)),
+#' plink (tped, bed), stacks haplotype file, genind (library(adegenet)),
 #' genlight (library(adegenet)), gtypes (library(strataG)), genepop, DArT,
 #' and a data frame in long/tidy or wide format. To verify that radiator detect
 #' your file format use \code{\link{detect_genomic_format}} (see example below).
@@ -296,7 +296,7 @@ tidy2wide <- function(
 #' \enumerate{
 #' \item VCF files must end with \code{.vcf}: documented in \code{\link{tidy_vcf}}
 #'
-#' \item PLINK files must end with \code{.tped}: documented in \code{\link{tidy_plink}}
+#' \item PLINK files must end with \code{.tped} or \code{.bed}: documented in \code{\link{tidy_plink}}
 #'
 #' \item genind object from
 #' \href{https://github.com/thibautjombart/adegenet}{adegenet}:
@@ -505,15 +505,13 @@ tidy_genomic_data <- function(
   } # End import VCF
 
   # Import PLINK ---------------------------------------------------------------
-  if (data.type == "plink.file") { # PLINK
-    if (verbose) message("Importing the PLINK files...")
+  if (data.type %in% c("plink.tped.file", "plink.bed.file")) { # PLINK
+    if (verbose) message("Importing the PLINK file...")
 
     input <- tidy_plink(
       data = data,
-      strata = strata.df,
-      verbose = verbose,
-      whitelist.markers = whitelist.markers,
-      blacklist.id = blacklist.id
+      parallel.core = parallel.core,
+      verbose = verbose
     )
 
     biallelic <- input$biallelic

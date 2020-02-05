@@ -20,9 +20,9 @@ filter_population(
 be interactive. With default: \code{interactive.filter == TRUE}, the user is
 asked to see figures of distribution before making decisions for filtering.}
 
-\item{data}{13 options for input: VCFs (SNPs or Haplotypes,
+\item{data}{14 options for input: VCFs (SNPs or Haplotypes,
 to make the vcf population ready),
-plink, stacks haplotype file, genind (library(adegenet)),
+plink (tped, bed), stacks haplotype file, genind (library(adegenet)),
 genlight (library(adegenet)), gtypes (library(strataG)), genepop, DArT,
 and a data frame in long/tidy or wide format. To verify that radiator detect
 your file format use \code{\link{detect_genomic_format}} (see example below).

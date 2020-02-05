@@ -397,7 +397,7 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
       if (n.bl > 0) {
         filter.monomorphic <- TRUE
 
-        if (verbose) message("    number of individuals blacklisted based on heterozygosity: ", n.bl)
+        # if (verbose) message("    number of individuals blacklisted based on heterozygosity: ", n.bl)
         bl.filename <- stringi::stri_join("blacklist.individuals.heterozygosity_", file.date, ".tsv")
         readr::write_tsv(x = bl, path = file.path(path.folder, bl.filename))
         # bl.i <- update_bl_individuals(gds = data, update = bl)
@@ -519,7 +519,9 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
 
         if (n.bl > 0) {
           filter.monomorphic <- TRUE
-          if (verbose) message("    number of individuals blacklisted based on total coverage: ", n.bl)
+          # if (verbose) message("    number of individuals blacklisted based on total coverage: ", n.bl)
+          # if (verbose) message("    note that some duplicates might exist between blacklisted samples but accounted for in filtering")
+
           bl.filename <- stringi::stri_join("blacklist.individuals.coverate.total_", file.date, ".tsv")
           readr::write_tsv(x = bl, path = file.path(path.folder, bl.filename))
           # bl.i <- update_bl_individuals(gds = data, update = bl)

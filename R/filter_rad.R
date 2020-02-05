@@ -419,7 +419,7 @@ filter_rad <- function(
 ) {
 
   # Cleanup---------------------------------------------------------------------
-  obj.keeper <- c(ls(envir = globalenv()), "res")
+  obj.keeper <- c(ls(envir = globalenv()), "res", "verbose")
   radiator_function_header(f.name = "filter_rad", verbose = verbose)
   message("The function arguments names have changed: please read documentation\n")
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
@@ -433,8 +433,8 @@ filter_rad <- function(
   on.exit(setwd(old.dir), add = TRUE)
   on.exit(options(width = opt.change), add = TRUE)
   on.exit(radiator_toc(timing), add = TRUE)
-  on.exit(radiator_function_header(f.name = "filter_rad", start = FALSE, verbose = verbose), add = TRUE)
   on.exit(rm(list = setdiff(ls(envir = sys.frame(-1L)), obj.keeper), envir = sys.frame(-1L)))
+  on.exit(radiator_function_header(f.name = "filter_rad", start = FALSE, verbose = verbose), add = TRUE)
 
   # Required package -----------------------------------------------------------
   radiator_packages_dep(package = "BiocManager")
@@ -532,13 +532,15 @@ filter_rad <- function(
 
   # Import file ----------------------------------------------------------------
   if (data.type %in% c(
-    "tbl_df", "fst.file", "SeqVarGDSClass", "gds.file", "vcf.file", "dart")) {
+    "tbl_df", "fst.file", "SeqVarGDSClass", "gds.file", "vcf.file", "dart", "plink.bed.file")) {
 
     if (data.type %in% c("tbl_df", "fst.file", "SeqVarGDSClass", "gds.file")) {
       gds <- read_rad(data)
       data.type <- radiator::detect_genomic_format(gds)
       data <- NULL
-    } else if (data.type %in% c("vcf.file")) {
+    }
+
+    if (data.type %in% c("vcf.file")) {
       gds <- read_vcf(
         data = data,
         strata = strata,
@@ -552,7 +554,9 @@ filter_rad <- function(
         parallel.core = parallel.core,
         verbose = FALSE)
       data.type <- "SeqVarGDSClass"
-    } else {
+    }
+
+    if (data.type %in% c("dart")) {
       gds <- read_dart(
         data = data,
         strata = strata,
@@ -561,6 +565,18 @@ filter_rad <- function(
         parallel.core = parallel.core,
         path.folder = radiator.folder,
         pop.levels = pop.levels,
+        internal = TRUE
+      )
+      data.type <- "SeqVarGDSClass"
+    }
+
+    if (data.type %in% c("plink.bed.file")) {
+      gds <- read_plink(
+        data = data,
+        filename = filename,
+        parallel.core = parallel.core,
+        verbose = FALSE,
+        path.folder = radiator.folder,
         internal = TRUE
       )
       data.type <- "SeqVarGDSClass"

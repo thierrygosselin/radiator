@@ -767,7 +767,7 @@ radiator_packages_dep <- function(package, cran = TRUE, bioc = FALSE) {
 
   how.to <- stringi::stri_join(installer, "('", package, "')")
 
-  if (!requireNamespace(package, quietly = TRUE)) {
+  if (suppressPackageStartupMessages(!requireNamespace(package, quietly = TRUE))) {
     # Alternative way:
     # if (!"SeqVarTools" %in% utils::installed.packages()[,"Package"]) {
     rlang::abort(

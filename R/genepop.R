@@ -295,53 +295,30 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
   if (length(gt.coding) != 1) {
     rlang::abort("Mixed genotype codings are not supported:
   use 1, 2 or 3 characters/numbers for alleles")
-  }
-
-  if (gt.coding == 6) {
+  } else {
+    if (gt.coding != 6) {
+      if (gt.coding == 4) {
+        gt.sep <- 2
+      }
+      if (gt.coding == 2) {
+        gt.sep <- 1
+      }
+      data <- tidyr::gather(
+        data = data, key = MARKERS, value = GT, -c(POP_ID, INDIVIDUALS)) %>%
+        tidyr::separate(
+          data = ., col = GT, into = c("A1", "A2"),
+          sep = gt.sep, remove = TRUE, extra = "drop"
+        ) %>%
+        dplyr::mutate(
+          A1 = stringi::stri_pad_left(str = A1, pad = "0", width = 3),
+          A2 = stringi::stri_pad_left(str = A2, pad = "0", width = 3)
+        ) %>%
+        tidyr::unite(data = ., col = GT, A1, A2, sep = "") %>%
+        dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
+    }
     if (tidy) {
       data <- tidyr::gather(
         data = data, key = MARKERS, value = GT, -c(POP_ID, INDIVIDUALS))
-    }
-  }
-
-  if (gt.coding == 4) {
-    data <- tidyr::gather(
-      data = data, key = MARKERS, value = GT, -c(POP_ID, INDIVIDUALS)) %>%
-      tidyr::separate(
-        data = ., col = GT, into = c("A1", "A2"),
-        sep = 2, remove = TRUE, extra = "drop"
-      ) %>%
-      dplyr::mutate(
-        A1 = stringi::stri_pad_left(str = A1, pad = "0", width = 3),
-        A2 = stringi::stri_pad_left(str = A2, pad = "0", width = 3)
-      ) %>%
-      tidyr::unite(data = ., col = GT, A1, A2, sep = "") %>%
-      dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
-
-    if (!tidy) {
-      data <- data %>%
-        dplyr::group_by(POP_ID, INDIVIDUALS) %>%
-        tidyr::spread(data = ., key = MARKERS, value = GT)
-    }
-  }
-
-  if (gt.coding == 2) {
-    data <- tidyr::gather(data = data, key = MARKERS, value = GT, -c(POP_ID, INDIVIDUALS)) %>%
-      tidyr::separate(
-        data = ., col = GT, into = c("A1", "A2"),
-        sep = 1, remove = TRUE, extra = "drop"
-      ) %>%
-      dplyr::mutate(
-        A1 = stringi::stri_pad_left(str = A1, pad = "0", width = 3),
-        A2 = stringi::stri_pad_left(str = A2, pad = "0", width = 3)
-      ) %>%
-      tidyr::unite(data = ., col = GT, A1, A2, sep = "") %>%
-      dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
-
-    if (!tidy) {
-      data <- data %>%
-        dplyr::group_by(POP_ID, INDIVIDUALS) %>%
-        tidyr::spread(data = ., key = MARKERS, value = GT)
     }
   }
 

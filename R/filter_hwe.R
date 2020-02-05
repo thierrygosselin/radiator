@@ -340,18 +340,6 @@ filter_hwe <- function(
       verbose = verbose
     )
 
-    # Filter parameter file: initiate ------------------------------------------
-    filters.parameters <- radiator_parameters(
-      generate = TRUE,
-      initiate = TRUE,
-      update = FALSE,
-      parameter.obj = parameters,
-      data = data,
-      path.folder = path.folder,
-      file.date = file.date,
-      internal = internal,
-      verbose = verbose)
-
     # File type detection----------------------------------------------------------
     data.type <- radiator::detect_genomic_format(data)
 
@@ -389,10 +377,20 @@ filter_hwe <- function(
       )
     }
 
+    # Filter parameter file: initiate ------------------------------------------
+    filters.parameters <- radiator_parameters(
+      generate = TRUE,
+      initiate = TRUE,
+      update = FALSE,
+      parameter.obj = parameters,
+      data = data,
+      path.folder = path.folder,
+      file.date = file.date,
+      internal = internal,
+      verbose = verbose)
+
     # create a strata.df
-    strata <- data %>%
-      dplyr::select(INDIVIDUALS, POP_ID) %>%
-      dplyr::distinct(INDIVIDUALS, .keep_all = TRUE)
+    strata <- radiator::generate_strata(data = data, pop.id = TRUE)
 
     if (is.factor(strata$POP_ID)) {
       pop.id.levels <- levels(strata$POP_ID)
@@ -686,7 +684,8 @@ filter_hwe <- function(
       # plot.tern <- "temporarily out of order"
 
       # Manhattan plot -------------------------------------------------------------
-      data.sum.man <- dplyr::mutate(data.sum, X = "x") %>% dplyr::filter(MID_P_VALUE < 0.05)
+      data.sum.man <- dplyr::mutate(data.sum, X = "x") %>%
+        dplyr::filter(MID_P_VALUE < 0.05)
       # rounder <- function(x, accuracy, f = round) {
       #   f(x / accuracy) * accuracy
       # }
@@ -757,7 +756,6 @@ filter_hwe <- function(
             minmax = c(0, 100000000))
         }
 
-        # hw.pop.threshold <- 8
         # Generating blacklists, whitelists and filtered tidy data -------------------
         if (verbose) message("\nGenerating blacklists, whitelists and filtered tidy data...")
         blacklist_hw(
@@ -774,7 +772,9 @@ filter_hwe <- function(
           if (interactive.filter) {
             message("\nChoosing the final filtered dataset")
             midp.threshold <- radiator_question(
-              x = "   select the mid p-value threshold (5 options):\n1: 0.05 *\n2: 0.01 **\n3: 0.001 ***\n4: 0.0001 ****\n5: 0.00001 *****", minmax = c(1, 2, 3, 4, 5))
+              x = "   select the mid p-value threshold (5 options):\n1: 0.05 *\n2: 0.01 **\n3: 0.001 ***\n4: 0.0001 ****\n5: 0.00001 *****",
+              minmax = c(1, 5)
+              )
           }
           midp.threshold <- dplyr::case_when(
             midp.threshold == 5 ~ 0.00001,

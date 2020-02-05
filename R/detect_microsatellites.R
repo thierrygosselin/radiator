@@ -200,7 +200,7 @@ detect_microsatellites <- function(data, gmata.dir = NULL, ...) {
     readr::write_tsv(x = ., path = ssr.file)
 
   n.micro <- nrow(micro)
-  message("Number of microsatellite(s) detectected: ", n.micro)
+  message("Number of microsatellite(s) detected: ", n.micro)
   if (n.micro > 0L) {
     blacklist <- micro %>%
       dplyr::distinct(MARKERS) %>%

@@ -1,3 +1,8 @@
+# radiator 1.1.4 2020-02-04
+
+* `read_plink` and `tidy_plink`: new rules to get the best out of PLINK **tped**
+and **bed** files.
+
 # radiator 1.1.3 2020-01-21
 
 * `detect_microsatellites`: new radiator function that detect microsatellites using 

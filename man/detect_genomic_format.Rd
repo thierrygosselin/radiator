@@ -7,9 +7,9 @@
 detect_genomic_format(data)
 }
 \arguments{
-\item{data}{12 options for input: VCFs (SNPs or Haplotypes,
+\item{data}{14 options for input: VCFs (SNPs or Haplotypes,
 to make the vcf population ready),
-plink, stacks haplotype file, genind (library(adegenet)),
+plink (tped and bed), stacks haplotype file, genind (library(adegenet)),
 genlight (library(adegenet)), gtypes (library(strataG)), genepop, DArT,
 and a data frame in long/tidy or wide format. To verify that radiator detect
 your file format use \code{\link{detect_genomic_format}} (see example below).
@@ -23,7 +23,8 @@ One of these file format:
 \item genlight: for a genlight object
 \item gtypes: for a gtypes object
 \item vcf.file: for a vcf file
-\item plink.file: for a plink file
+\item plink.tped.file: for a plink tped file
+\item plink.bed.file: for a plink bed file
 \item genepop.file: for a genepop file
 \item haplo.file: for a stacks haplotypes file
 \item fstat.file: for a fstat file

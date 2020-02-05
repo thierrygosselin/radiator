@@ -69,7 +69,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.4</span>
       </span>
     </div>
 
@@ -139,9 +139,9 @@
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>data</th>
-      <td><p>12 options for input: VCFs (SNPs or Haplotypes,
+      <td><p>14 options for input: VCFs (SNPs or Haplotypes,
 to make the vcf population ready),
-plink, stacks haplotype file, genind (library(adegenet)),
+plink (tped and bed), stacks haplotype file, genind (library(adegenet)),
 genlight (library(adegenet)), gtypes (library(strataG)), genepop, DArT,
 and a data frame in long/tidy or wide format. To verify that radiator detect
 your file format use <code>detect_genomic_format</code> (see example below).
@@ -157,7 +157,8 @@ Documented in <strong>Input genomic datasets</strong> of <code><a href='tidy_gen
 <li><p>genlight: for a genlight object</p></li>
 <li><p>gtypes: for a gtypes object</p></li>
 <li><p>vcf.file: for a vcf file</p></li>
-<li><p>plink.file: for a plink file</p></li>
+<li><p>plink.tped.file: for a plink tped file</p></li>
+<li><p>plink.bed.file: for a plink bed file</p></li>
 <li><p>genepop.file: for a genepop file</p></li>
 <li><p>haplo.file: for a stacks haplotypes file</p></li>
 <li><p>fstat.file: for a fstat file</p></li>

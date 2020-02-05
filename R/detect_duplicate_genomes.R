@@ -555,7 +555,7 @@ detect_duplicate_genomes <- function(
       ggplot2::ggsave(
         filename = file.path(path.folder, "violin.plot.distance.pdf"),
         plot = res$violin.plot.distance,
-        width = 20, height = 15, dpi = 300, units = "cm", useDingbats = FALSE)
+        width = 20, height = 15, dpi = 150, units = "cm", useDingbats = FALSE)
 
       # Manhattan plot
       res$manhattan.plot.distance <- ggplot2::ggplot(
@@ -582,7 +582,7 @@ detect_duplicate_genomes <- function(
       ggplot2::ggsave(
         filename = file.path(path.folder, "manhattan.plot.distance.pdf"),
         plot = res$manhattan.plot.distance,
-        width = 20, height = 15, dpi = 300, units = "cm", useDingbats = FALSE)
+        width = 20, height = 15, dpi = 150, units = "cm", useDingbats = FALSE)
     } # end distance method
 
     # Compute genome similarity -------------------------------------------------
@@ -777,7 +777,7 @@ detect_duplicate_genomes <- function(
       ggplot2::ggsave(
         filename = file.path(path.folder, "violin.plot.genome.pdf"),
         plot = res$violin.plot.genome,
-        width = 20, height = 15, dpi = 300, units = "cm", useDingbats = FALSE)
+        width = 20, height = 15, dpi = 150, units = "cm", useDingbats = FALSE)
 
       # Manhattan plot
       res$manhattan.plot.genome <- res$manhattan.plot.genome +
@@ -802,7 +802,7 @@ detect_duplicate_genomes <- function(
       ggplot2::ggsave(
         filename = file.path(path.folder, "manhattan.plot.genome.pdf"),
         plot = res$manhattan.plot.genome,
-        width = 20, height = 15, dpi = 300, units = "cm", useDingbats = FALSE)
+        width = 20, height = 15, dpi = 150, units = "cm", useDingbats = FALSE)
     } # end genome method
 
     # Removing duplicates ------------------------------------------------------

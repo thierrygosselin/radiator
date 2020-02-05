@@ -69,7 +69,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.4</span>
       </span>
     </div>
 
@@ -148,13 +148,19 @@
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>data</th>
-      <td><p>12 options for input: VCFs (SNPs or Haplotypes,
+      <td><p>14 options for input: VCFs (SNPs or Haplotypes,
 to make the vcf population ready),
-plink, stacks haplotype file, genind (library(adegenet)),
+plink (tped, bed), stacks haplotype file, genind (library(adegenet)),
 genlight (library(adegenet)), gtypes (library(strataG)), genepop, DArT,
 and a data frame in long/tidy or wide format. To verify that radiator detect
 your file format use <code><a href='detect_genomic_format.html'>detect_genomic_format</a></code> (see example below).
-Documented in <strong>Input genomic datasets</strong> of <code><a href='tidy_genomic_data.html'>tidy_genomic_data</a></code>.</p></td>
+Documented in <strong>Input genomic datasets</strong> of <code><a href='tidy_genomic_data.html'>tidy_genomic_data</a></code>.</p>
+<p><strong>DArT and VCF data</strong>: <span class="pkg">radiator</span> was not meant to generate alleles
+and genotypes if you are using a VCF file with no genotype
+(only genotype likelihood: GL or PL).
+Neither is <span class="pkg">radiator</span> able to magically generate a genind object
+from a SilicoDArT dataset. Please look at the first few lines of your dataset
+to understand it's limit before asking raditor to convert or filter your dataset.</p></td>
     </tr>
     <tr>
       <th>approach</th>

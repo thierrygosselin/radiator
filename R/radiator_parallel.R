@@ -152,6 +152,32 @@ split_vec_row <- function(x, cpu.rounds, parallel.core = parallel::detectCores()
   return(split.vec)
 }#End split_vec_row
 
+#' @title split_tibble_rows
+#' @description Split rows of tibble for parallel processing
+#' @rdname split_tibble_rows
+#' @keywords internal
+#' @export
+split_tibble_rows <- function(
+  x,
+  lines.cpu = 1000, #lines per CPU rounds
+  parallel.core = parallel::detectCores() - 1,
+  group.split = TRUE # does dplyr: group_by and group_split
+) {
+  n.row <- nrow(x)
+  n.cores <- parallel::detectCores()
+  if (parallel.core > n.cores) parallel.core <- n.cores
+  if (n.row < parallel.core) parallel.core <- n.row
+  if (lines.cpu > n.row) lines.cpu <- n.row
+  lines.rounds <- parallel.core * lines.cpu
+  x$SPLIT_VEC <- sort(rep_len(x = 1:floor(n.row / lines.rounds), length.out = n.row))
+  if (group.split) {
+    x %<>%
+      dplyr::group_by(SPLIT_VEC) %>%
+      dplyr::group_split(.tbl = ., keep = FALSE)
+  }
+  return(x)
+}#End split_tibble_rows
+
 
 # parallel_core_opt ------------------------------------------------------------
 #' @title parallel_core_opt

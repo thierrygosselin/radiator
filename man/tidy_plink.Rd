@@ -2,18 +2,27 @@
 % Please edit documentation in R/plink.R
 \name{tidy_plink}
 \alias{tidy_plink}
-\title{Tidy plink \code{.tped} and {.tfam} files in a tidy data frame}
+\title{Tidy PLINK tped and bed files}
 \usage{
-tidy_plink(data, strata = NULL, verbose = FALSE, ...)
+tidy_plink(
+  data,
+  parallel.core = parallel::detectCores() - 1,
+  verbose = FALSE,
+  ...
+)
 }
 \arguments{
-\item{data}{The plink bi-allelic file ending with \code{.tped}, the corresponding
-\code{.tfam} must be in the same directory.}
+\item{data}{The PLINK file.
+\itemize{
+\item {bi-allelic data only}. For haplotypes use VCF.
+\item \code{tped} file format: the corresponding \code{tfam} file must be in the directory.
+\item \code{bed} file format: IS THE PREFERRED format, the corresponding
+\code{fam} and \code{bim} files must be in the directory.
+}}
 
-\item{strata}{(path or object) The strata file or object.
-Additional documentation is available in \code{\link{read_strata}}.
-Use that function to whitelist/blacklist populations/individuals.
-Option to set \code{pop.levels/pop.labels} is also available.}
+\item{parallel.core}{(optional) The number of core used for parallel
+execution during import.
+Default: \code{parallel.core = parallel::detectCores() - 1}.}
 
 \item{verbose}{(optional, logical) When \code{verbose = TRUE}
 the function is a little more chatty during execution.
@@ -23,16 +32,55 @@ Default: \code{verbose = TRUE}.}
 for fine-tuning the function. Also used for legacy arguments (see details or
 special section)}
 }
+\value{
+A tidy tibble of the PLINK file.
+}
 \description{
-Transform a bi-allelic PLINK file in \code{.tped} format into a tidy dataset.
+Transform bi-allelic PLINK files in \code{.tped} or {.bed} formats
+into a tidy dataset.
+
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and \href{https://github.com/thierrygosselin/assigner}{assigner}
 and might be of interest for users.
 }
+\section{Advance mode}{
+
+
+\emph{dots-dots-dots ...} allows to pass several arguments for fine-tuning the function:
+\enumerate{
+\item \code{ref.calibration}: logical. For \code{tped} files, if
+\code{ref.calibration = FALSE} the function runs faster
+but REF/ALT alleles may not be calibrated. The default assumes the users or
+sotware producing the PLINK file calibrated the alleles.
+Default: \code{ref.calibration = FALSE}.
+}
+}
+
+\examples{
+\dontrun{
+#require(SeqVarTools)
+# with built-in defaults:
+data <- radiator::tidy_plink(data = "my_plink_file.bed", verbose = TRUE)
+
+# when conversion is required from TPED to BED
+# in Terminal:
+plink --tfile my_plink_file --make-bed --allow-no-sex --allow-extra-chr --chr-set 95
+}
+}
 \references{
+Zheng X, Gogarten S, Lawrence M, Stilp A, Conomos M, Weir BS,
+Laurie C, Levine D (2017). SeqArray -- A storage-efficient high-performance
+data format for WGS variant calls.
+Bioinformatics.
+
 PLINK: a tool set for whole-genome association and population-based linkage
 analyses.
 American Journal of Human Genetics. 2007: 81: 559–575. doi:10.1086/519795
+}
+\seealso{
+\href{https://www.cog-genomics.org/plink/1.9/}{PLINK}
+
+\code{\link[radiator]{read_plink}}
 }
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}

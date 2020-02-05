@@ -65,7 +65,7 @@
 #'
 #' \item VCF files must end with \code{.vcf}: documented in \code{\link{tidy_vcf}}
 #'
-#' \item PLINK files must end with \code{.tped}: documented in \code{\link{tidy_plink}}
+#' \item PLINK files must end with \code{.tped} or \code{.bed}: documented in \code{\link{tidy_plink}}
 #'
 #' \item genind object from
 #' \href{https://github.com/thibautjombart/adegenet}{adegenet}:

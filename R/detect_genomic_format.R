@@ -3,9 +3,9 @@
 #' @name detect_genomic_format
 #' @title Used internally in radiator to detect the file format
 #' @description Detect file format of genomic data set.
-#' @param data 12 options for input: VCFs (SNPs or Haplotypes,
+#' @param data 14 options for input: VCFs (SNPs or Haplotypes,
 #' to make the vcf population ready),
-#' plink, stacks haplotype file, genind (library(adegenet)),
+#' plink (tped and bed), stacks haplotype file, genind (library(adegenet)),
 #' genlight (library(adegenet)), gtypes (library(strataG)), genepop, DArT,
 #' and a data frame in long/tidy or wide format. To verify that radiator detect
 #' your file format use \code{\link{detect_genomic_format}} (see example below).
@@ -18,7 +18,8 @@
 #' \item genlight: for a genlight object
 #' \item gtypes: for a gtypes object
 #' \item vcf.file: for a vcf file
-#' \item plink.file: for a plink file
+#' \item plink.tped.file: for a plink tped file
+#' \item plink.bed.file: for a plink bed file
 #' \item genepop.file: for a genepop file
 #' \item haplo.file: for a stacks haplotypes file
 #' \item fstat.file: for a fstat file
@@ -63,10 +64,22 @@ detect_genomic_format <- function(data){
     }
 
     if (file.ending == "tped") {
-      data.type <- "plink.file"
-      # message("File type: PLINK")
+      data.type <- "plink.tped.file"
+      # message("File type: PLINK tped")
       if (!file.exists(stringi::stri_replace_all_fixed(str = data, pattern = ".tped", replacement = ".tfam", vectorize_all = FALSE))) {
         rlang::abort("Missing tfam file with the same prefix as your tped")
+      }
+      return(data.type)
+    }
+
+
+    if (file.ending == ".bed") {
+      data.type <- "plink.bed.file"
+      # BED file requires bim and fam files...
+      bim.file <- file.exists(stringi::stri_replace_all_fixed(str = data, pattern = ".bed", replacement = ".bim", vectorize_all = FALSE))
+      fam.file <- file.exists(stringi::stri_replace_all_fixed(str = data, pattern = ".bed", replacement = ".fam", vectorize_all = FALSE))
+      if (FALSE %in% c(bim.file, fam.file)) {
+        rlang::abort("Missing fam or bim file(s) with the same prefix as your PLINK bed file")
       }
       return(data.type)
     }

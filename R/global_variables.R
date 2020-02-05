@@ -142,7 +142,8 @@ if (getRversion() >= "2.15.1") {
       "zoom.data", "threshold.x.markers.RD", "zoom.silicodata",
       "threshold.x.markers.RD.silico", "VISUAL_SEX", "GENETIC_SEX.x",
       "GENETIC_SEX.y", "MEAN_GT", "QCcode", "alleles", "assayLSID", "center",
-      "panelLSID", "pop.info", "protLSID", "strand", "MICROSATELLITES"
+      "panelLSID", "pop.info", "protLSID", "strand", "MICROSATELLITES",
+      "INDIVIDUALS_PLINK"
     )
   )
 }

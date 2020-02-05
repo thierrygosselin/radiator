@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Tidy plink <code>.tped</code> and .tfam files in a tidy data frame — tidy_plink • radiator</title>
+<title>Tidy PLINK tped and bed files — tidy_plink • radiator</title>
 
 
 <!-- jquery -->
@@ -35,8 +35,9 @@
 
 
 
-<meta property="og:title" content="Tidy plink <code>.tped</code> and .tfam files in a tidy data frame — tidy_plink" />
-<meta property="og:description" content="Transform a bi-allelic PLINK file in .tped format into a tidy dataset.
+<meta property="og:title" content="Tidy PLINK tped and bed files — tidy_plink" />
+<meta property="og:description" content="Transform bi-allelic PLINK files in .tped or .bed formats
+into a tidy dataset.
 Used internally in radiator
 and assigner
 and might be of interest for users." />
@@ -72,7 +73,7 @@ and might be of interest for users." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.4</span>
       </span>
     </div>
 
@@ -126,34 +127,43 @@ and might be of interest for users." />
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Tidy plink <code>.tped</code> and .tfam files in a tidy data frame</h1>
+    <h1>Tidy PLINK tped and bed files</h1>
     
     <div class="hidden name"><code>tidy_plink.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Transform a bi-allelic PLINK file in <code>.tped</code> format into a tidy dataset.
-Used internally in <a href='https://github.com/thierrygosselin/radiator'>radiator</a>
+    <p>Transform bi-allelic PLINK files in <code>.tped</code> or .bed formats
+into a tidy dataset.</p>
+<p>Used internally in <a href='https://github.com/thierrygosselin/radiator'>radiator</a>
 and <a href='https://github.com/thierrygosselin/assigner'>assigner</a>
 and might be of interest for users.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>tidy_plink</span>(<span class='no'>data</span>, <span class='kw'>strata</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='no'>...</span>)</pre>
+    <pre class="usage"><span class='fu'>tidy_plink</span>(
+  <span class='no'>data</span>,
+  <span class='kw'>parallel.core</span> <span class='kw'>=</span> <span class='kw pkg'>parallel</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span>() - <span class='fl'>1</span>,
+  <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='no'>...</span>
+)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>data</th>
-      <td><p>The plink bi-allelic file ending with <code>.tped</code>, the corresponding
-<code>.tfam</code> must be in the same directory.</p></td>
+      <td><p>The PLINK file.</p><ul>
+<li><p>bi-allelic data only. For haplotypes use VCF.</p></li>
+<li><p><code>tped</code> file format: the corresponding <code>tfam</code> file must be in the directory.</p></li>
+<li><p><code>bed</code> file format: IS THE PREFERRED format, the corresponding
+<code>fam</code> and <code>bim</code> files must be in the directory.</p></li>
+</ul></td>
     </tr>
     <tr>
-      <th>strata</th>
-      <td><p>(path or object) The strata file or object.
-Additional documentation is available in <code><a href='read_strata.html'>read_strata</a></code>.
-Use that function to whitelist/blacklist populations/individuals.
-Option to set <code>pop.levels/pop.labels</code> is also available.</p></td>
+      <th>parallel.core</th>
+      <td><p>(optional) The number of core used for parallel
+execution during import.
+Default: <code>parallel.core = parallel::detectCores() - 1</code>.</p></td>
     </tr>
     <tr>
       <th>verbose</th>
@@ -169,18 +179,48 @@ special section)</p></td>
     </tr>
     </table>
 
+    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
+
+    <p>A tidy tibble of the PLINK file.</p>
+    <h2 class="hasAnchor" id="advance-mode"><a class="anchor" href="#advance-mode"></a>Advance mode</h2>
+
+    
+
+
+<p><em>dots-dots-dots ...</em> allows to pass several arguments for fine-tuning the function:</p><ol>
+<li><p><code>ref.calibration</code>: logical. For <code>tped</code> files, if
+<code>ref.calibration = FALSE</code> the function runs faster
+but REF/ALT alleles may not be calibrated. The default assumes the users or
+sotware producing the PLINK file calibrated the alleles.
+Default: <code>ref.calibration = FALSE</code>.</p></li>
+</ol>
+
     <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
 
-    <p>PLINK: a tool set for whole-genome association and population-based linkage
+    <p>Zheng X, Gogarten S, Lawrence M, Stilp A, Conomos M, Weir BS,
+Laurie C, Levine D (2017). SeqArray -- A storage-efficient high-performance
+data format for WGS variant calls.
+Bioinformatics.</p>
+<p>PLINK: a tool set for whole-genome association and population-based linkage
 analyses.
 American Journal of Human Genetics. 2007: 81: 559–575. doi:10.1086/519795</p>
+    <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
+    <div class='dont-index'><p><a href='https://www.cog-genomics.org/plink/1.9/'>PLINK</a></p>
+<p><code><a href='read_plink.html'>read_plink</a></code></p></div>
+
+    <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
+    <pre class="examples"></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>
     <ul class="nav nav-pills nav-stacked">
       <li><a href="#arguments">Arguments</a></li>
+      <li><a href="#value">Value</a></li>
+      <li><a href="#advance-mode">Advance mode</a></li>
       <li><a href="#references">References</a></li>
+      <li><a href="#see-also">See also</a></li>
+      <li><a href="#examples">Examples</a></li>
     </ul>
 
     <h2>Author</h2>
