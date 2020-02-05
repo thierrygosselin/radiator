@@ -445,7 +445,7 @@ detect_mixed_genomes <- function(
       facet_names <- ggplot2::as_labeller(c(`MISSING_PROP_OVERALL` = "Missing (overall)"))
       het.ind.overall <- dplyr::filter(het.ind.overall, MISSING_GROUP != "MISSING_PROP_POP")
     }
-
+    # manhattan ----------------------------------------------------------------
     het.manhattan <- ggplot2::ggplot(
       data = het.ind.overall,
       ggplot2::aes(x = POP_ID, y = HET_PROP, size = as.numeric(MISSING_PROP), colour = POP_ID)) +

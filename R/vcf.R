@@ -2830,11 +2830,13 @@ check_header_source_vcf <- function(vcf) {
 
   # DArT vcf problem
   probl.dart <- check.header$format[check.header$format$ID == "GT", "Type"] == "Integer"
+  if (length(probl.dart) == 0) probl.dart <- FALSE
   if (probl.dart) check.header$format[check.header$format$ID == "GT", "Type"] <- "String"
 
   check.source <- check.header$header$value[check.header$header$id == "source"]
   if (length(check.source) == 0) {
     is.stacks <- FALSE
+    check.source <- "unknown"
   } else {
     is.stacks <- stringi::stri_detect_fixed(str = check.source, pattern = "Stacks")
   }
