@@ -18,15 +18,17 @@
 #' from github in the working directory.
 #' Default: \code{gmata.path = NULL}.
 
-#' @return 5 files are returned in the folder: detect_microsatellites:
+#' @return 6 files are returned in the folder: detect_microsatellites:
 #' \enumerate{
 #' \item ".fa.fms": the fasta file of sequences
 #' \item ".fa.fms.sat1": the summary of sequences analysed (not important)
 #' \item ".fa.ssr": The microsatellites found per markers (see GMATA doc)
 #' \item ".fa.ssr.sat2": Extensive summary (see GMATA doc).
 #' \item "blacklist.microsatellites.tsv": The list of markers with microsatellites.
+#' \item "whitelist.microsatellites.tsv": The whitelist of markers with NO microsatellites.
 #' }
-#' The returned object is the blacklist of markers with microsatellites.
+#' In the global environment, the object is a list with the blacklist and
+#' the whitelist.
 
 
 #' @inheritParams radiator_common_arguments
@@ -34,7 +36,7 @@
 #' @examples
 #' \dontrun{
 #' # The simplest way to run the function:
-#' mic <- radiator::detect_microsatellites(data = "mywhitelist.tsv")
+#' mic <- radiator::detect_microsatellites(data = "my_whitelist.tsv")
 #' }
 #' @export
 #' @rdname detect_microsatellites
@@ -124,7 +126,7 @@ detect_microsatellites <- function(data, gmata.dir = NULL, ...) {
     utils::download.file(
       url = "https://github.com/XuewenWangUGA/GMATA/archive/master.zip",
       destfile = gmata
-      )
+    )
     utils::unzip(zipfile = gmata, exdir = gmata.temp.dir)
     gmata.dir <- file.path(gmata.temp.dir, "GMATA-master")
     gmat.pl.path <- file.path(gmata.dir, "gmat.pl")
@@ -150,8 +152,9 @@ detect_microsatellites <- function(data, gmata.dir = NULL, ...) {
   filename <- file.path(
     path.folder,
     stringi::stri_join("radiator_detect_microsatellites_", file.date, ".fa")
-    )
+  )
 
+  whitelist <- data
   data %>%
     dplyr::select(dplyr::one_of(want)) %>%
     dplyr::mutate(
@@ -172,10 +175,24 @@ detect_microsatellites <- function(data, gmata.dir = NULL, ...) {
 
 
   # Run GMATA ------------------------------------------------------------------
-  setwd(gmata.dir)
-  gmata.command <- paste("perl", "gmat.pl", "-i", filename)
-  system(command = gmata.command)
 
+  # first make sure their is no space in the path ... (e.g. using iCloud folders)
+  setwd(gmata.dir)
+  gmata.command <- paste(
+    "perl",
+    "gmat.pl",
+    "-i",
+    shQuote(
+      stringi::stri_replace_all_fixed(
+        str = filename,
+        pattern = " ",
+        replacement = "\\ ",
+        vectorize_all = FALSE
+      )
+    )
+  )
+  # run
+  system(command = gmata.command, intern = FALSE)
   setwd(path.folder)
   # removing duplicate file
   file.remove(filename)
@@ -188,14 +205,14 @@ detect_microsatellites <- function(data, gmata.dir = NULL, ...) {
     col_names = c("MARKERS", "SEQUENCE_LENGTH", "START", "END", "REPETITIONS", "MOTIF"),
     skip = 1,
     col_types = "ciiiic"
-    ) %>%
+  ) %>%
     dplyr::mutate(
       MARKERS = stringi::stri_replace_all_fixed(
         str = MARKERS,
         pattern = ">",
         replacement = "",
         vectorize_all = FALSE
-        )
+      )
     ) %>%
     readr::write_tsv(x = ., path = ssr.file)
 
@@ -214,6 +231,9 @@ detect_microsatellites <- function(data, gmata.dir = NULL, ...) {
   max.rep <- round(max(micro$REPETITIONS, na.rm = TRUE), 0)
   message("Mean number of repetitions [min-max]: ", mean.rep, " [", min.rep, " - ", max.rep, "]")
 
-  return(blacklist)
+  whitelist %<>%
+    dplyr::filter(!MARKERS %in% blacklist$MARKERS) %>%
+    readr::write_tsv(x = ., path = "whitelist.microsatellites.tsv")
+  return(list(blacklist = blacklist, whitelist = whitelist))
 }#End detect_microsatellites
 

@@ -762,21 +762,35 @@ import_dart <- function(
       strata = strata.df
     )
 
-  # keep consensus sequence if found
+  # keep consensus sequence if found -------------------------------------------
   # or rename TRIMMED_SEQUENCE
+
+  # turns out I think it's better to keep ALLELE_SEQUENCE...
+  # Changed 2020-02-06
+  if (rlang::has_name(data, "ALLELE_SEQUENCE")) {
+    data %<>% dplyr::rename(SEQUENCE = ALLELE_SEQUENCE)
+  } else if (rlang::has_name(data, "TRIMMED_SEQUENCE")) {
+    data %<>% dplyr::rename(SEQUENCE = TRIMMED_SEQUENCE)
+  } else {
+    if (rlang::has_name(data, "CLUSTER_CONSENSUS_SEQUENCE")) {
+      data %<>% dplyr::rename(SEQUENCE = CLUSTER_CONSENSUS_SEQUENCE)
+    }
+  }
+
 
   # how many columns with sequence in it
   # test <- dplyr::select(.data = data, dplyr::ends_with("_SEQUENCE"))
 
-  if (rlang::has_name(data, "CLUSTER_CONSENSUS_SEQUENCE")) {
-    data %<>% dplyr::rename(SEQUENCE = CLUSTER_CONSENSUS_SEQUENCE)
-  } else if (rlang::has_name(data, "TRIMMED_SEQUENCE")) {
-    data %<>% dplyr::rename(SEQUENCE = TRIMMED_SEQUENCE)
-  } else {
-    if (rlang::has_name(data, "ALLELE_SEQUENCE")) {
-      data %<>% dplyr::rename(SEQUENCE = ALLELE_SEQUENCE)
-    }
-  }
+  # Pre 2020-02-06
+  # if (rlang::has_name(data, "CLUSTER_CONSENSUS_SEQUENCE")) {
+  #   data %<>% dplyr::rename(SEQUENCE = CLUSTER_CONSENSUS_SEQUENCE)
+  # } else if (rlang::has_name(data, "TRIMMED_SEQUENCE")) {
+  #   data %<>% dplyr::rename(SEQUENCE = TRIMMED_SEQUENCE)
+  # } else {
+  #   if (rlang::has_name(data, "ALLELE_SEQUENCE")) {
+  #     data %<>% dplyr::rename(SEQUENCE = ALLELE_SEQUENCE)
+  #   }
+  # }
 
   if (!silico.dart) {
     colnames(data) %<>%

@@ -809,13 +809,15 @@ filter_hwe <- function(
       # GDS ----------------------------------------------------------------------
       if (!is.null(gds.bk)) {
         # convert back or filter the gds....
-         markers.meta <- extract_markers_metadata(gds = gds.bk) %>%
-          dplyr::mutate(
-            FILTERS = dplyr::if_else(!MARKERS %in% unique(data$MARKERS), "filter.hwe", FILTERS
-            )
+
+         markers.meta <- extract_markers_metadata(gds = gds.bk)
+         bl <- dplyr::filter(markers.meta, !MARKERS %in% unique(data$MARKERS))
+         markers.meta %<>%
+           dplyr::mutate(
+             FILTERS = dplyr::if_else(MARKERS %in% bl$MARKERS, "filter.hwe", FILTERS)
           )
         data <- gds.bk
-        gds.bk <- NULL
+        gds.bk <- bl <- NULL
 
 
         update_radiator_gds(
