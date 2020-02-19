@@ -143,7 +143,7 @@ if (getRversion() >= "2.15.1") {
       "threshold.x.markers.RD.silico", "VISUAL_SEX", "GENETIC_SEX.x",
       "GENETIC_SEX.y", "MEAN_GT", "QCcode", "alleles", "assayLSID", "center",
       "panelLSID", "pop.info", "protLSID", "strand", "MICROSATELLITES",
-      "INDIVIDUALS_PLINK"
+      "INDIVIDUALS_PLINK", "ind.heterozygosity.threshold"
     )
   )
 }

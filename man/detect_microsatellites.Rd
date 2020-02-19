@@ -24,15 +24,17 @@ for fine-tuning the function. Also used for legacy arguments (see details or
 special section)}
 }
 \value{
-5 files are returned in the folder: detect_microsatellites:
+6 files are returned in the folder: detect_microsatellites:
 \enumerate{
 \item ".fa.fms": the fasta file of sequences
 \item ".fa.fms.sat1": the summary of sequences analysed (not important)
 \item ".fa.ssr": The microsatellites found per markers (see GMATA doc)
 \item ".fa.ssr.sat2": Extensive summary (see GMATA doc).
 \item "blacklist.microsatellites.tsv": The list of markers with microsatellites.
+\item "whitelist.microsatellites.tsv": The whitelist of markers with NO microsatellites.
 }
-The returned object is the blacklist of markers with microsatellites.
+In the global environment, the object is a list with the blacklist and
+the whitelist.
 }
 \description{
 Detect Simple Sequence Reapeats (SSR)
@@ -43,7 +45,7 @@ software \href{https://github.com/XuewenWangUGA/GMATA}{GMATA: Genome-wide Micros
 \examples{
 \dontrun{
 # The simplest way to run the function:
-mic <- radiator::detect_microsatellites(data = "mywhitelist.tsv")
+mic <- radiator::detect_microsatellites(data = "my_whitelist.tsv")
 }
 }
 \author{

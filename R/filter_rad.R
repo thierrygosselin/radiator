@@ -437,13 +437,14 @@ filter_rad <- function(
   on.exit(radiator_function_header(f.name = "filter_rad", start = FALSE, verbose = verbose), add = TRUE)
 
   # Required package -----------------------------------------------------------
-  radiator_packages_dep(package = "BiocManager")
-  radiator_packages_dep(package = "HardyWeinberg")
-  radiator_packages_dep(package = "ggtern")
-  radiator_packages_dep(package = "UpSetR")
-  radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
-  radiator_packages_dep(package = "SNPRelate", cran = FALSE, bioc = TRUE)
-
+  if (interactive.filter) {
+    radiator_packages_dep(package = "BiocManager")
+    radiator_packages_dep(package = "HardyWeinberg")
+    radiator_packages_dep(package = "ggtern")
+    radiator_packages_dep(package = "UpSetR")
+    radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
+    radiator_packages_dep(package = "SNPRelate", cran = FALSE, bioc = TRUE)
+  }
 
   # Function call and dotslist -------------------------------------------------
   rad.dots <- radiator_dots(
@@ -472,6 +473,26 @@ filter_rad <- function(
   )
   filter.common.markers.bk <- filter.common.markers
   filter.monomorphic.bk <- filter.monomorphic
+  filter.individuals.missing.bk <- filter.individuals.missing
+  filter.individuals.heterozygosity.bk <- filter.individuals.heterozygosity
+  filter.individuals.coverage.total.bk <- filter.individuals.coverage.total
+  filter.mac.bk <- filter.mac
+  filter.coverage.bk <- filter.coverage
+  filter.genotyping.bk <- filter.genotyping
+  filter.snp.position.read.bk <- filter.snp.position.read
+  filter.snp.number.bk <- filter.snp.number
+  filter.short.ld.bk <- filter.short.ld
+  filter.long.ld.bk <- filter.long.ld
+  long.ld.missing.bk <- long.ld.missing
+  ld.method.bk <- ld.method
+  detect.mixed.genomes.bk <- detect.mixed.genomes
+  ind.heterozygosity.threshold.bk <- ind.heterozygosity.threshold
+  detect.duplicate.genomes.bk <- detect.duplicate.genomes
+  dup.threshold.bk <- dup.threshold
+  filter.hwe.bk <- filter.hwe
+  hw.pop.threshold.bk <- hw.pop.threshold
+  midp.threshold.bk <- midp.threshold
+
 
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("data is missing")
@@ -667,9 +688,9 @@ filter_rad <- function(
   gds <- filter_individuals(
     data = gds,
     interactive.filter = interactive.filter,
-    filter.individuals.missing = filter.individuals.missing,
-    filter.individuals.heterozygosity = filter.individuals.heterozygosity,
-    filter.individuals.coverage.total = filter.individuals.coverage.total,
+    filter.individuals.missing = filter.individuals.missing.bk,
+    filter.individuals.heterozygosity = filter.individuals.heterozygosity.bk,
+    filter.individuals.coverage.total = filter.individuals.coverage.total.bk,
     parallel.core = parallel.core,
     verbose = verbose,
     path.folder = wf,
@@ -682,7 +703,7 @@ filter_rad <- function(
   gds <- filter_mac(
     data = gds,
     interactive.filter = interactive.filter,
-    filter.mac = filter.mac,
+    filter.mac = filter.mac.bk,
     filename = NULL,
     parallel.core = parallel.core,
     verbose = verbose,
@@ -695,7 +716,7 @@ filter_rad <- function(
   gds <- filter_coverage(
     data = gds,
     interactive.filter = interactive.filter,
-    filter.coverage = filter.coverage,
+    filter.coverage = filter.coverage.bk,
     filename = NULL,
     parallel.core = parallel.core,
     verbose = verbose,
@@ -707,7 +728,7 @@ filter_rad <- function(
   gds <- filter_genotyping(
     data = gds,
     interactive.filter = interactive.filter,
-    filter.genotyping = filter.genotyping,
+    filter.genotyping = filter.genotyping.bk,
     filename = NULL,
     parallel.core = parallel.core,
     verbose = verbose,
@@ -719,7 +740,7 @@ filter_rad <- function(
   gds <- filter_snp_position_read(
     data = gds,
     interactive.filter = interactive.filter,
-    filter.snp.position.read = filter.snp.position.read,
+    filter.snp.position.read = filter.snp.position.read.bk,
     filename = NULL,
     parallel.core = parallel.core,
     verbose = verbose,
@@ -732,7 +753,7 @@ filter_rad <- function(
   gds <- filter_snp_number(
     data = gds,
     interactive.filter = interactive.filter,
-    filter.snp.number = filter.snp.number,
+    filter.snp.number = filter.snp.number.bk,
     filename = NULL,
     parallel.core = parallel.core,
     verbose = verbose,
@@ -744,13 +765,13 @@ filter_rad <- function(
   gds <- filter_ld(
     data = gds,
     interactive.filter = interactive.filter,
-    filter.short.ld = filter.short.ld,
-    filter.long.ld = filter.long.ld,
+    filter.short.ld = filter.short.ld.bk,
+    filter.long.ld = filter.long.ld.bk,
     parallel.core = parallel.core,
     filename = NULL,
     verbose = verbose,
-    long.ld.missing = long.ld.missing,
-    ld.method = ld.method,
+    long.ld.missing = long.ld.missing.bk,
+    ld.method = ld.method.bk,
     parameters = filters.parameters,
     path.folder = wf,
     internal = FALSE)
@@ -760,7 +781,7 @@ filter_rad <- function(
   gds <- detect_mixed_genomes(
     data = gds,
     interactive.filter = interactive.filter,
-    detect.mixed.genomes = detect.mixed.genomes,
+    detect.mixed.genomes = detect.mixed.genomes.bk,
     ind.heterozygosity.threshold = NULL,
     parameters = filters.parameters,
     verbose = verbose,
@@ -772,7 +793,7 @@ filter_rad <- function(
   gds <- detect_duplicate_genomes(
     data = gds,
     interactive.filter = interactive.filter,
-    detect.duplicate.genomes = detect.duplicate.genomes,
+    detect.duplicate.genomes = detect.duplicate.genomes.bk,
     dup.threshold = dup.threshold,
     parallel.core = parallel.core,
     verbose = verbose,
@@ -785,10 +806,10 @@ filter_rad <- function(
   gds <- filter_hwe(
     data = gds,
     interactive.filter = interactive.filter,
-    filter.hwe = filter.hwe,
+    filter.hwe = filter.hwe.bk,
     strata = NULL,
-    hw.pop.threshold = hw.pop.threshold,
-    midp.threshold = midp.threshold,
+    hw.pop.threshold = hw.pop.threshold.bk,
+    midp.threshold = midp.threshold.bk,
     parallel.core = parallel.core,
     parameters = filters.parameters,
     path.folder = wf,

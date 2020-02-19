@@ -595,7 +595,7 @@ filter_hwe <- function(
         limitsize = FALSE,
         plot = plot.hwd.thresholds,
         filename = file.path(path.folder, "hwd.plot.blacklist.markers.pdf"),
-        width = n.pop * 5, height = 10,
+        width = max(20, n.pop * 5), height = 10,
         dpi = 300, units = "cm", useDingbats = FALSE)
       hwd.helper.table.long <- NULL
       if (verbose) message("Plot written: hwd.plot.blacklist.markers.pdf")
@@ -676,7 +676,7 @@ filter_hwe <- function(
         plot = plot.tern,
         # filename = file.path(path.folder, "hwe.ternary.plots.read.depth.pdf"),
         filename = file.path(path.folder, "hwe.ternary.plots.missing.data.pdf"),
-        width = n.pop * 5, height = n.pop * 4,
+        width = max(25, n.pop * 5), height = max(15, n.pop * 4),
         dpi = 300, units = "cm", useDingbats = FALSE)
       hw.parabola <- NULL
       if (verbose) message("Plot written: hwe.ternary.plots.missing.data.pdf")
@@ -705,29 +705,30 @@ filter_hwe <- function(
         ggplot2::scale_color_manual(name = "Exact test mid p-value", values = group_colors) +
         ggplot2::scale_size_continuous(name = "Missing genotypes proportion") +
         ggplot2::labs(
+          x = "Strata",
           y = "Markers mid p-value",
           title = "Manhanttan plot of markers in Hardy-Weinberg disequilibrium"
         ) +
+        ggplot2::theme_bw() +
         ggplot2::theme(
           panel.grid.major.x = ggplot2::element_blank(),
           plot.title = ggplot2::element_text(size = 12, face = "bold", hjust = 0.5),
           plot.subtitle = ggplot2::element_text(size = 10, hjust = 0.5),
           axis.line.x = ggplot2::element_blank(),
-          axis.title.x = ggplot2::element_blank(),
+          # axis.title.x =  ggplot2::element_blank(),
           axis.text.x = ggplot2::element_blank(),
           axis.ticks.x = ggplot2::element_blank(),
           axis.title.y = ggplot2::element_text(size = 10, face = "bold"),
           axis.text.y = ggplot2::element_text(size = 8)
         ) +
-        ggplot2::theme_bw() +
         ggplot2::facet_grid(GROUPINGS ~ POP_ID, scales = "free")
 
       # if (interactive.filter) print(hw.manhattan)
       ggplot2::ggsave(
         filename = file.path(path.folder, "hwe.manhattan.plot.pdf"),
         plot = hw.manhattan,
-        width = 5 * n.pop, height = 30,
-        dpi = 600, units = "cm", useDingbats = FALSE, limitsize = FALSE)
+        width = max(20, n.pop * 5), height = 30,
+        dpi = 300, units = "cm", useDingbats = FALSE, limitsize = FALSE)
       if (verbose) message("Plot written: hwe.manhattan.plot.pdf")
 
       # continue with filters or not ------

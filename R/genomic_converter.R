@@ -331,7 +331,7 @@ genomic_converter <- function(
   #back to the original directory and options
   on.exit(setwd(old.dir), add = TRUE)
   on.exit(options(width = opt.change), add = TRUE)
-  on.exit(radiator_toc(timing), add = TRUE)
+  on.exit(radiator_toc(timing, verbose = verbose), add = TRUE)
   on.exit(radiator_function_header(f.name = "genomic_converter", start = FALSE, verbose = verbose), add = TRUE)
   res <- list()
 
