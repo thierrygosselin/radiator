@@ -621,6 +621,12 @@ filter_hwe <- function(
                                              "orangered", "red", "darkred")
       if (num.groups == 6) group_colors <- c("green", "yellow", "orange",
                                              "orangered", "red", "darkred")
+      if (num.groups == 5) group_colors <- c("green", "yellow", "orange",
+                                             "orangered", "red")
+      if (num.groups == 4) group_colors <- c("green", "yellow", "orange",
+                                             "orangered")
+      if (num.groups == 3) group_colors <- c("green", "yellow", "orange")
+      if (num.groups == 2) group_colors <- c("green", "yellow")
 
       # HW Parabola
       parabola <- tibble::tibble(p = seq(0, 1, by = 0.005)) %>%
@@ -697,6 +703,8 @@ filter_hwe <- function(
       num.groups <- dplyr::n_distinct(data.sum.man$GROUPINGS)
       if (num.groups == 5) group_colors <- c("yellow", "orange", "orangered", "red", "darkred")
       if (num.groups == 4) group_colors <- c("yellow", "orange", "orangered", "red")
+      if (num.groups == 3) group_colors <- c("yellow", "orange", "orangered")
+      if (num.groups == 2) group_colors <- c("yellow", "orange")
 
       hw.manhattan <- ggplot2::ggplot(
         data = data.sum.man,
