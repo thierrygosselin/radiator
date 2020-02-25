@@ -101,7 +101,7 @@ write_dadi <- function(
 
   # create a strata.df
   strata.df <- radiator::generate_strata(data = data, pop.id = TRUE)
-  pop.labels <- pop.levels <- levels(input$POP_ID)
+  pop.labels <- pop.levels <- levels(data$POP_ID)
 
   # Compute count and Minor Allele Frequency -----------------------------------
 
