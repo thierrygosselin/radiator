@@ -3,9 +3,9 @@ citHeader("To cite radiator in publications use:")
 citEntry(
 entry="Manual",
 title = "radiator: RADseq Data Exploration, Manipulation and Visualization using R",
-year = "2019",
-author = personList(as.person("Thierry Gosselin")),
+year = "2020",
+author = personList(as.person("Thierry Gosselin"), as.person("Manuel Lamothe"), as.person("Peter Grewe")),
 url = "https://thierrygosselin.github.io/radiator/",
-doi = "10.5281/zenodo.1475182",
-textVersion = paste("Thierry Gosselin (2019). radiator: RADseq Data Exploration, Manipulation and Visualization using R. R package version 1.0.0 https://thierrygosselin.github.io/radiator/. doi : 10.5281/zenodo.1475182")
+doi = "10.5281/zenodo.3687060",
+textVersion = paste("Thierry Gosselin, Manuel Lamothe and Peter Grewe (2020). radiator: RADseq Data Exploration, Manipulation and Visualization using R. R package version 1.1.4 https://thierrygosselin.github.io/radiator/. doi : 10.5281/zenodo.3687060")
 )
