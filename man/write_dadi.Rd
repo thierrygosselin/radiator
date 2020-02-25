@@ -10,7 +10,8 @@ write_dadi(
   fasta.outgroup = NULL,
   sumstats.ingroup = NULL,
   sumstats.outgroup = NULL,
-  dadi.input.filename = NULL
+  dadi.input.filename = NULL,
+  ref.calibration = FALSE
 )
 }
 \arguments{
@@ -41,6 +42,11 @@ written to the working directory. e.g. \code{dadi.file.tsv}.
 Default use date and time to make the file. If used, the file extension
 need to finish with \code{.tsv or .txt}.
 Default: \code{dadi.input.filename = NULL}.}
+
+\item{ref.calibration}{(optional, logical) To re-calibrate REF an ALT alleles.
+Will be done automatically to the dataset if the required genomic format is
+not found. Please use if you have removed individuals.
+Default: \code{ref.calibration = FALSE}.}
 }
 \value{
 The function returns tibble and the dadi input file in the working

@@ -38,6 +38,10 @@
 #' need to finish with \code{.tsv or .txt}.
 #' Default: \code{dadi.input.filename = NULL}.
 
+#' @param ref.calibration (optional, logical) To re-calibrate REF an ALT alleles.
+#' Will be done automatically to the dataset if the required genomic format is
+#' not found. Please use if you have removed individuals.
+#' Default: \code{ref.calibration = FALSE}.
 
 #' @export
 #' @rdname write_dadi
@@ -76,7 +80,8 @@ write_dadi <- function(
   fasta.outgroup = NULL,
   sumstats.ingroup = NULL,
   sumstats.outgroup = NULL,
-  dadi.input.filename = NULL
+  dadi.input.filename = NULL,
+  ref.calibration = FALSE
 ){
   message("Preparing \u2202a\u2202i input SNP data format")
 
