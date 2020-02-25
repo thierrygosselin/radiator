@@ -21,9 +21,9 @@
 
 #' @param output 29 genomic data formats can be exported: tidy (by default),
 #' genepop, genind, genlight, vcf (for file format version, see details below),
-#' plink, structure, faststructure, arlequin, hierfstat, gtypes (strataG), bayescan, betadiv,
-#' pcadapt, hzar, fineradstructure, related, seqarray, snprelate, maverick,
-#' genepopedit, rubias and hapmap.
+#' plink, structure, faststructure, arlequin, hierfstat, gtypes (strataG),
+#' bayescan, betadiv, pcadapt, hzar, fineradstructure, related, seqarray,
+#' snprelate, maverick, genepopedit, rubias, hapmap and dadi.
 #' Use a character string,
 #' e.g. \code{output = c("genind", "genepop", "structure")}, to have preferred
 #' output formats generated. With default, only the tidy format is generated.
@@ -790,18 +790,21 @@ genomic_converter <- function(
   } # end MavericK output
 
   # dadi -----------------------------------------------------------------------
-  if ("dadi" %in% output) message("Under construction, use radiator::vcf2dadi")
+  if ("dadi" %in% output) {
+    radiator::write_dadi(
+      data = input
+    )
+    message("\n\nNote: To use an outgroup, use radiator::write_dadi separately\n")
+  }
+
+
 
   # Writing tidy on disk -------------------------------------------------------
   # tidy.name <- stringi::stri_join(filename, ".rad")
   # message("\nWriting tidy data set:\n", tidy.name)
   # write_rad(data = input, path = tidy.name)
 
-  # if (!is.null(imputation.method)) {
-  #   tidy.name.imp <- stringi::stri_join(filename.imp, ".rad")
-  #   message("\nWriting tidy data set:\n", tidy.name)
-  #   write_rad(data = input.imp, path = tidy.name.imp)
-  # }
+
   # outout results -------------------------------------------------------------
   if (verbose) {
     n.markers <- length(unique(input$MARKERS))

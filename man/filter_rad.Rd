@@ -46,9 +46,9 @@ Default: \code{interactive.filter = TRUE}.}
 
 \item{output}{29 genomic data formats can be exported: tidy (by default),
 genepop, genind, genlight, vcf (for file format version, see details below),
-plink, structure, faststructure, arlequin, hierfstat, gtypes (strataG), bayescan, betadiv,
-pcadapt, hzar, fineradstructure, related, seqarray, snprelate, maverick,
-genepopedit, rubias and hapmap.
+plink, structure, faststructure, arlequin, hierfstat, gtypes (strataG),
+bayescan, betadiv, pcadapt, hzar, fineradstructure, related, seqarray,
+snprelate, maverick, genepopedit, rubias, hapmap and dadi.
 Use a character string,
 e.g. \code{output = c("genind", "genepop", "structure")}, to have preferred
 output formats generated. With default, only the tidy format is generated.

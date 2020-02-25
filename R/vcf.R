@@ -759,7 +759,8 @@ read_vcf <- function(
   # Filters --------------------------------------------------------------------
   # Filter duplicated SNPs on different strands---------------------------------
   if (detect.strand) {
-    blacklist.strands <- dplyr::distinct(markers.meta, VARIANT_ID, MARKERS, CHROM, LOCUS, POS) %>%
+    blacklist.strands <- markers.meta %>%
+      dplyr::distinct(VARIANT_ID, MARKERS, CHROM, LOCUS, POS) %>%
       dplyr::group_by(CHROM, POS) %>%
       dplyr::mutate(n = n()) %>%
       dplyr::ungroup(.) %>%
@@ -2530,14 +2531,7 @@ write_vcf <- function(
 
     # REF/ALT Alleles and VCF genotype format ------------------------------------
     if (!tibble::has_name(data, "GT_VCF")) {
-      ref.change <- radiator::calibrate_alleles(data = data)$input
-      data <- dplyr::left_join(data, ref.change, by = c("MARKERS", "INDIVIDUALS"))
-    }
-
-    # remove duplicate REF/ALT column
-    if (tibble::has_name(data, "REF.x")) {
-      data <- dplyr::select(.data = data, -c(REF.x, ALT.x)) %>%
-        dplyr::rename(REF = REF.y, ALT = ALT.y)
+      data <- radiator::calibrate_alleles(data = data)$input
     }
 
     # Include CHROM, LOCUS, POS --------------------------------------------------
