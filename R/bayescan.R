@@ -1098,6 +1098,11 @@ write_bayescan <- function(
     data <- dplyr::rename(.data = data, MARKERS = LOCUS)
   }
 
+  # make sure we use POP_ID and not STRATA here...
+  if (rlang::has_name(data, "STRATA")) {
+    data %<>% dplyr::rename(POP_ID = STRATA)
+  }
+
   # pop.select -----------------------------------------------------------------
   if (!is.null(pop.select)) {
     message("pop.select: ")
@@ -1135,12 +1140,11 @@ write_bayescan <- function(
 
   # Biallelic and GT_BIN -------------------------------------------------------
   if (biallelic) {
-    data %<>% dplyr::select(MARKERS, INDIVIDUALS, POP_ID, GT)
     data <- radiator::calibrate_alleles(
       data = data,
       biallelic = TRUE,
-      parallel.core = parallel.core, verbose = TRUE)$input
-    data <- dplyr::select(data, MARKERS, INDIVIDUALS, POP_ID, GT_BIN)
+      parallel.core = parallel.core, verbose = TRUE)$input %>%
+      dplyr::select(MARKERS, INDIVIDUALS, POP_ID, GT_BIN)
   }
 
   # prep data wide format ------------------------------------------------------

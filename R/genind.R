@@ -328,6 +328,7 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
     data <- gds2tidy(gds = data, parallel.core = parallel::detectCores() - 1)
     data.type <- "tbl_df"
   } else {
+    if (rlang::has_name(data, "STRATA")) data %<>% dplyr::rename(POP_ID = STRATA)
     want <- c("MARKERS", "POP_ID", "INDIVIDUALS", "REF", "ALT", "GT", "GT_BIN")
     data <- suppressWarnings(radiator::tidy_wide(data = data, import.metadata = TRUE) %>%
                                dplyr::select(dplyr::one_of(want)) %>%

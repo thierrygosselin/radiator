@@ -23,7 +23,8 @@ reset_filters(
   filter.snp.number = FALSE,
   filter.short.ld = FALSE,
   filter.long.ld = FALSE,
-  filter.hwe = FALSE
+  filter.hwe = FALSE,
+  filter.whitelist = FALSE
 )
 }
 \arguments{
@@ -87,6 +88,9 @@ Default: \code{filter.long.ld = FALSE}.}
 
 \item{filter.hwe}{(logical, optional)
 Default: \code{filter.hwe = FALSE}.}
+
+\item{filter.whitelist}{(logical, optional)
+Default: \code{filter.whitelist = FALSE}.}
 }
 \description{
 List current active filters in radiator GDS object.
@@ -108,3 +112,4 @@ reset_filters(gds, filter.genotyping = TRUE)
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}
 }
+\keyword{internal}

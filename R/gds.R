@@ -1352,7 +1352,9 @@ list_filters <- function(gds) {
 #' Default: \code{filter.long.ld = FALSE}.
 #' @param filter.hwe (logical, optional)
 #' Default: \code{filter.hwe = FALSE}.
-# @keywords internal
+#' @param filter.whitelist (logical, optional)
+#' Default: \code{filter.whitelist = FALSE}.
+#' @keywords internal
 #' @export
 #'
 #'
@@ -1387,7 +1389,8 @@ reset_filters <- function(
   filter.snp.number = FALSE,
   filter.short.ld = FALSE,
   filter.long.ld = FALSE,
-  filter.hwe = FALSE
+  filter.hwe = FALSE,
+  filter.whitelist = FALSE
 ) {
   radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
   data.type <- radiator::detect_genomic_format(gds)
@@ -1490,6 +1493,10 @@ reset_filters <- function(
 
   if (filter.hwe) {
     reset.m$filter.hwe <- "filter.hwe"
+  }
+
+  if (filter.whitelist) {
+    reset.m$filter.whitelist <- "filter.whitelist"
   }
 
   if (length(reset.m) > 0) {

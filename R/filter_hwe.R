@@ -820,7 +820,9 @@ filter_hwe <- function(
         # convert back or filter the gds....
 
          markers.meta <- extract_markers_metadata(gds = gds.bk)
-         bl <- dplyr::filter(markers.meta, !MARKERS %in% unique(data$MARKERS))
+         bl <- markers.meta %>%
+           dplyr::filter(FILTERS == "whitelist") %>%
+           dplyr::filter(!MARKERS %in% unique(data$MARKERS))
          markers.meta %<>%
            dplyr::mutate(
              FILTERS = dplyr::if_else(MARKERS %in% bl$MARKERS, "filter.hwe", FILTERS)

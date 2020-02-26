@@ -173,10 +173,10 @@ filter_ld <- function(
   # long.ld.missing = TRUE
   # ld.method = "r2"
   # verbose = TRUE
-  # path.folder <- "testing_LD"
+  # path.folder <- NULL
   # parameters <- NULL
   # internal <- FALSE
-
+  # subsample.markers.stats <- NULL
   # obj.keeper <- c(ls(envir = globalenv()), "data")
 
   if (!interactive.filter && is.null(filter.short.ld) && is.null(filter.long.ld)) {
@@ -778,6 +778,7 @@ filter_ld <- function(
 
       if (interactive.filter) message("\nStep 5. Filtering markers based on long distance LD")
       wl.bl.ld <- magrittr::extract2(wl.bl.ld, as.name(filter.long.ld))
+      # test <- magrittr::extract2(wl.bl.ld, as.name(filter.long.ld))
       wl <- wl.bl.ld %$% wl
       bl <- wl.bl.ld %$% bl
 
@@ -787,9 +788,12 @@ filter_ld <- function(
       } else {
         markers.meta <- extract_markers_metadata(gds = data) %>%
           dplyr::mutate(
-            FILTERS = dplyr::if_else(VARIANT_ID %in% bl, "filter.long.ld", FILTERS
+            FILTERS = dplyr::if_else(VARIANT_ID %in% bl$VARIANT_ID, "filter.long.ld", FILTERS
             )
           )
+
+        # test <- markers.meta %>%
+        #   dplyr::filter(VARIANT_ID %in% bl$VARIANT_ID)
 
         # updating the GDS object
         update_radiator_gds(
@@ -865,9 +869,6 @@ filter_ld <- function(
 
       wl.n <- length(wl.variant.id)
       message("Number of markers whitelised: ", wl.n)
-      # if (verbose) message("Number of markers whitelised: ", wl.n)
-      # summary_gds(data, check.sync = TRUE, verbose = TRUE)
-      # sync_gds(gds)
 
       wl %<>% dplyr::filter(VARIANT_ID %in% wl.variant.id)
       bl %<>% dplyr::setdiff(wl) %>% dplyr::mutate(FILTERS = "filter.long.ld")
@@ -920,7 +921,7 @@ filter_ld <- function(
       filter.name = "Filter long ld",
       param.name = paste0("filter.long.ld / long.ld.missing"),
       values = stringi::stri_join(filter.long.ld, long.ld.missing,
-                                  collapse = " / ", ignore_null = FALSE),
+                                  sep = " / ", ignore_null = FALSE),
       path.folder = path.folder,
       file.date = file.date,
       internal = internal,
