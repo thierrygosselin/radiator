@@ -147,7 +147,16 @@
 #' # turtle.maf.rad
 #' }
 
+
+
+#' @references Linck, E., Battey, C. (2019).
+#' Minor allele frequency thresholds strongly affect population structure
+#' inference with genomic data sets.
+#' Molecular Ecology Resources 19(3), 639-647.
+#' https://dx.doi.org/10.1111/1755-0998.12995
+
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
+
 
 filter_mac <- function(
   data,
