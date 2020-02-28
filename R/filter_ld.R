@@ -233,7 +233,7 @@ filter_ld <- function(
     verbose = verbose
   )
 
-  # interactive.filter steps -------------------------------------------------
+  # interactive.filter steps ---------------------------------------------------
   if (interactive.filter) {
     message("\nInteractive mode: on\n")
     message("Step 1. Short distance LD threshold selection")
@@ -1524,7 +1524,7 @@ ld_missing <- function(
       units = "cm",
       limitsize = FALSE,
       useDingbats = FALSE
-      )
+    )
 
     # Whitelists and blacklists
     ld_wl_bl <- function(x, wl, path.folder, verbose) {

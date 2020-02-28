@@ -712,7 +712,7 @@ filter_rad <- function(
     internal = FALSE)
 
 
-    # Filter coverage-------------------------------------------------------------
+  # Filter coverage-------------------------------------------------------------
   gds <- filter_coverage(
     data = gds,
     interactive.filter = interactive.filter,
@@ -762,20 +762,29 @@ filter_rad <- function(
     internal = FALSE)
 
   # Filter Linkage disequilibrium --------------------------------------------
-  gds <- filter_ld(
-    data = gds,
-    interactive.filter = interactive.filter,
-    filter.short.ld = filter.short.ld.bk,
-    filter.long.ld = filter.long.ld.bk,
-    parallel.core = parallel.core,
-    filename = NULL,
-    verbose = verbose,
-    long.ld.missing = long.ld.missing.bk,
-    ld.method = ld.method.bk,
-    parameters = filters.parameters,
-    path.folder = wf,
-    internal = FALSE)
+  continue.with.ld <- "y"
 
+  if (interactive.filter) {
+    continue.with.ld <- radiator_question(
+      x = "\n\nDo you want to filter the dataset using short distance ld  ? (y/n):",
+      answer.opt = c("y", "n"))
+  }
+
+  if (continue.with.ld == "y") {
+    gds <- filter_ld(
+      data = gds,
+      iinteractive.filter = interactive.filter,
+      filter.short.ld = filter.short.ld.bk,
+      filter.long.ld = filter.long.ld.bk,
+      parallel.core = parallel.core,
+      filename = NULL,
+      iiiiverbose = verbose,
+      long.ld.missing = long.ld.missing.bk,
+      ld.method = ld.method.bk,
+      parameters = filters.parameters,
+      path.folder = wf,
+      internal = FALSE)
+  }
 
   # Detect mixed genomes -------------------------------------------------------
   gds <- detect_mixed_genomes(
