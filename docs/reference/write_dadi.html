@@ -150,7 +150,8 @@ of missingness, and one with imputed genotypes
   <span class='kw'>fasta.outgroup</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>sumstats.ingroup</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>sumstats.outgroup</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>dadi.input.filename</span> <span class='kw'>=</span> <span class='kw'>NULL</span>
+  <span class='kw'>dadi.input.filename</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>ref.calibration</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>
 )</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -195,6 +196,13 @@ written to the working directory. e.g. <code>dadi.file.tsv</code>.
 Default use date and time to make the file. If used, the file extension
 need to finish with <code>.tsv or .txt</code>.
 Default: <code>dadi.input.filename = NULL</code>.</p></td>
+    </tr>
+    <tr>
+      <th>ref.calibration</th>
+      <td><p>(optional, logical) To re-calibrate REF an ALT alleles.
+Will be done automatically to the dataset if the required genomic format is
+not found. Please use if you have removed individuals.
+Default: <code>ref.calibration = FALSE</code>.</p></td>
     </tr>
     </table>
 
