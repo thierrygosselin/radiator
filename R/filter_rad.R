@@ -465,10 +465,11 @@ filter_rad <- function(
       "filter.strands", "random.seed", "path.folder", "filename",
       "blacklist.genotype", "erase.genotypes",
       "gt", "gt.bin", "gt.vcf", "gt.vcf.nuc",
-      "pop.levels", "pop.labels", "pop.select", "blacklist.id",
+      "pop.levels",
       "whitelist.markers",
       "write.tidy",
       "missing.memory", "internal"),
+    deprecated = c("pop.select, pop.labels", "blacklist.id"),
     verbose = FALSE
   )
   filter.common.markers.bk <- filter.common.markers
