@@ -4,7 +4,7 @@
 \alias{write_fineradstructure}
 \title{Write a fineRADstructure file from a tidy data frame}
 \usage{
-write_fineradstructure(data, filename = NULL)
+write_fineradstructure(data, strata = NULL, filename = NULL)
 }
 \arguments{
 \item{data}{A tidy data frame object in the global environment or
@@ -21,14 +21,35 @@ A fineRADstructure file is written in the working directory.
 An object is also returned in the global environment.
 }
 \description{
-Write a fineRADstructure file from a tidy data frame.
+Write a \href{https://github.com/millanek/fineRADstructure}{fineRADstructure}
+file from a tidy data frame.
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and might be of interest for users.
 }
+\details{
+fineRADstructure requires special formating for populations,
+it needs to be ONLY LETTERS, not numbers. This information is then merged
+with the sample id (converted to integers). radiator will generate a
+dictionary file.
+}
+\section{Life cycle}{
+
+
+It become increasingly difficult for me to follow all the different naming
+schemes researcher uses, if they're is any strategy... Consequently, I have
+abandoned the idea of formating with letters the populations
+to generate the fineRADstrucure file. If you get an error see the
+the details section.
+}
+
 \references{
-Malinsky M, Trucchi E, Lawson D, Falush D (2018)
+Malinsky, M., Trucchi, E., Lawson, D., Falush, D. (2018).
 RADpainter and fineRADstructure: population inference from RADseq data.
-bioRxiv, 057711.
+Mol. Biol. Evol.  35(5), 1284-1290.
+https://dx.doi.org/10.1093/molbev/msy023
+}
+\seealso{
+\href{https://github.com/millanek/fineRADstructure}{fineRADstructure}
 }
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}

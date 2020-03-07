@@ -58,7 +58,7 @@ detect_genomic_format <- function(data){
     }
 
     # if (identical(data.type, "##fileformat=VCF") || file.ending == ".vcf") {
-      if (stringi::stri_detect_fixed(str = data.type, pattern = "##fileformat=VCF") || file.ending == ".vcf") {
+    if (stringi::stri_detect_fixed(str = data.type, pattern = "##fileformat=VCF") || file.ending == ".vcf") {
       data.type <- "vcf.file"
       # message("File type: VCF")
     }
@@ -113,6 +113,15 @@ detect_genomic_format <- function(data){
     dart.temp <- check_dart(data)
     if (dart.temp$data.type %in% c("dart", "silico.dart")) {
       data.type <- dart.temp$data.type
+    }
+
+    if (file.ending == ".rds") {
+      temp <- readRDS(file = "rat8rec_reassign.rds")
+      data.type <- class(temp)[1]
+      temp <- NULL
+      if (!data.type %in% c("genind", "genlight", "gtypes")) {
+        rlang::abort("Input file not recognised")
+      }
     }
   } # end file type detection
   return(data.type)

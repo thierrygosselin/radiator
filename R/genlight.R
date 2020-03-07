@@ -7,7 +7,8 @@
 
 #' @param data (path or object) A genlight object in the global environment or
 #' path to a genlight file that will be open with \code{readRDS}.
-#' @inheritParams tidy_genomic_data
+
+#' @inheritParams radiator_common_arguments
 
 #' @param tidy (logical) Generate a tidy dataset.
 #' Default: \code{tidy = TRUE}.
@@ -52,7 +53,8 @@ tidy_genlight <- function(
   tidy = TRUE,
   gds = TRUE,
   write = FALSE,
-  verbose = FALSE
+  verbose = FALSE,
+  parallel.core = parallel::detectCores() - 1
 ) {
   # Test
   # data = "radiator_genlight_20191211@1836.RData"
@@ -60,6 +62,7 @@ tidy_genlight <- function(
   # gds = TRUE
   # write = FALSE
   # verbose = TRUE
+  # parallel.core = 12L
 
 
   # Package requirement --------------------------------------------------------
@@ -85,6 +88,7 @@ tidy_genlight <- function(
   }
 
   n.markers <- dim(data)[2]
+  n.ind <- nrow(strata)
 
   # Chromosome ?
   if (is.null(data@chromosome)) {
@@ -134,6 +138,18 @@ tidy_genlight <- function(
     tidyr::unite(data = ., col = MARKERS, CHROM, LOCUS, POS, sep = "__", remove = FALSE) %>%
     dplyr::select(MARKERS, CHROM, LOCUS, POS)
 
+  # Nuc info
+  nuc.data <- data@loc.all
+  if (!is.null(nuc.data)) {
+    markers %<>%
+      dplyr::mutate(
+        REF = stringi::stri_sub(str = nuc.data, from = 1, to = 1),
+        ALT = stringi::stri_sub(str = nuc.data, from = 3, to = 3)
+      )
+  }
+
+  if (gds) tidy <- TRUE
+
   if (tidy) {
     if (write) {
       filename.temp <- generate_filename(extension = "rad")
@@ -141,7 +157,7 @@ tidy_genlight <- function(
       filename.genlight <- filename.temp$filename
     }
 
-    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "POP_ID", "INDIVIDUALS",
+    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT","POP_ID", "INDIVIDUALS",
               "GT_VCF", "GT_BIN", "GT")
 
     if (verbose) message("Generating tidy data...")
@@ -160,45 +176,46 @@ tidy_genlight <- function(
         dplyr::full_join(markers, by = "MARKERS") %>%
         dplyr::full_join(strata, by =  "INDIVIDUALS") %>%
         dplyr::mutate(
-          GT_VCF = GT_BIN,
-          GT_VCF = stringi::stri_replace_all_regex(
-            str = GT_BIN,
-            pattern = stringi::stri_join("^", c("0", "2", "1"), "$", sep = ""),
-            replacement = c("0/0", "1/1", "0/1"),
-            vectorize_all = FALSE
-          ),
-          GT_VCF = replace(GT_VCF, which(is.na(GT_VCF)), "./."),
-          GT = stringi::stri_replace_all_fixed(
-            str = GT_VCF,
-            pattern = c("0/0", "1/1", "0/1", "./."),
-            replacement = c("001001", "002002", "001002", "000000"),
-            vectorize_all = FALSE
-          ),
-          INDIVIDUALS = radiator::clean_ind_names(INDIVIDUALS),
+       INDIVIDUALS = radiator::clean_ind_names(INDIVIDUALS),
           POP_ID = radiator::clean_pop_names(POP_ID)
         ) %>%
         dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS) %>%
-        dplyr::select(dplyr::one_of(want)))
-
+        dplyr::select(dplyr::one_of(want))
+      ) %>%
+      radiator::calibrate_alleles(
+        data = .,
+        biallelic = TRUE,
+        parallel.core = parallel.core,
+        verbose = verbose
+      ) %$%
+      input
     if (write) {
       radiator::write_rad(data = tidy.data, path = filename.genlight)
       if (verbose) message("File written: ", filename.short)
     }
   }#End tidy genlight
+
   if (gds) {
+    # generate the GDS --------------------------------------------------------------
     # markers %<>% dplyr::mutate(VARIANT_ID = as.integer(factor(MARKERS)))
     gds.filename <- radiator_gds(
       data.source = "genlight",
-      genotypes = tibble::as_tibble(data.frame(data) %>% t) %>%
-        tibble::add_column(.data = ., MARKERS = markers$MARKERS, .before = 1) %>%
-        dplyr::arrange(MARKERS),
+      genotypes = gt2array(
+        gt.bin = tidy.data$GT_BIN,
+        n.ind = n.ind,
+        n.snp = n.markers
+      ),
+      # genotypes = tibble::as_tibble(data.frame(data) %>% t) %>%
+      #   tibble::add_column(.data = ., MARKERS = markers$MARKERS, .before = 1) %>%
+      #   dplyr::arrange(MARKERS) %>%
+      #   tibble::column_to_rownames(.data = ., var = "MARKERS"),
       strata = dplyr::rename(strata, STRATA = POP_ID),
       biallelic = TRUE,
       markers.meta = markers,
       filename = NULL,
       verbose = verbose
     )
-    if (verbose) message("Written: GDS filename: ", gds.filename)
+    # if (verbose) message("Written: GDS filename: ", gds.filename)
   }# End gds genlight
 
   if (tidy) {
@@ -360,7 +377,7 @@ write_genlight <- function(
       # That bits of code below generate what's nenessary for dartR
       if (verbose) message("Calculating read depth for each SNP\n")
       if ("dart" %in% data.source) {
-      # if (any(unique(c("1row", "2rows") %in% data.source))) {
+        # if (any(unique(c("1row", "2rows") %in% data.source))) {
         markers.meta %<>%
           dplyr::mutate(
             N_IND = SeqArray::seqApply(

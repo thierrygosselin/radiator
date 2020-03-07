@@ -4,7 +4,14 @@
 \alias{tidy_genlight}
 \title{Tidy a genlight object to a tidy dataframe and/or GDS object/file}
 \usage{
-tidy_genlight(data, tidy = TRUE, gds = TRUE, write = FALSE, verbose = FALSE)
+tidy_genlight(
+  data,
+  tidy = TRUE,
+  gds = TRUE,
+  write = FALSE,
+  verbose = FALSE,
+  parallel.core = parallel::detectCores() - 1
+)
 }
 \arguments{
 \item{data}{(path or object) A genlight object in the global environment or
@@ -23,6 +30,10 @@ Default: \code{write = FALSE}.}
 \item{verbose}{(optional, logical) When \code{verbose = TRUE}
 the function is a little more chatty during execution.
 Default: \code{verbose = TRUE}.}
+
+\item{parallel.core}{(optional) The number of core used for parallel
+execution during import.
+Default: \code{parallel.core = parallel::detectCores() - 1}.}
 }
 \description{
 Tidy genlight object to a tidy dataframe and/or GDS object/file.

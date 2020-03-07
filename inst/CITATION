@@ -7,5 +7,5 @@ year = "2020",
 author = personList(as.person("Thierry Gosselin"), as.person("Manuel Lamothe"), as.person("Floriaan Devloo-Delva"), as.person("Peter Grewe")),
 url = "https://thierrygosselin.github.io/radiator/",
 doi = "10.5281/zenodo.3687060",
-textVersion = paste("Gosselin, T., Lamothe, M., Devloo-Delva, F., Grewe, P. (2020). radiator: RADseq Data Exploration, Manipulation and Visualization using R. R package version 1.1.4 https://thierrygosselin.github.io/radiator/. doi : 10.5281/zenodo.3687060")
+textVersion = paste("Gosselin, T., Lamothe, M., Devloo-Delva, F., Grewe, P. (2020). radiator: RADseq Data Exploration, Manipulation and Visualization using R. R package version 1.1.5 https://thierrygosselin.github.io/radiator/. doi : 10.5281/zenodo.3687060")
 )

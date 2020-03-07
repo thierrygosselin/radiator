@@ -405,10 +405,14 @@ genomic_converter <- function(
   data.type <- detect_genomic_format(data = data)
 
   # Import----------------------------------------------------------------------
+  # back.up strata
+  strata.bk <- strata
+
+
   if (verbose) message("\nImporting data\n")
   input <- tidy_genomic_data(
     data = data,
-    strata = strata,
+    strata = strata.bk,
     filename = filename,
     parallel.core = parallel.core,
     whitelist.markers = whitelist.markers,
@@ -426,7 +430,7 @@ genomic_converter <- function(
 
   if(verbose) message("\nPreparing data for output\n")
 
-  if (!is.null(strata) || rlang::has_name(input, "POP_ID")) {
+  if (!is.null(strata.bk) || rlang::has_name(input, "POP_ID")) {
     if (is.factor(input$POP_ID)) {
       pop.levels <- levels(input$POP_ID)
     } else {
@@ -507,6 +511,9 @@ genomic_converter <- function(
   # OUTPUT ---------------------------------------------------------------------
 
   setwd(path.folder)
+  if (!is.null(strata.bk) && is.vector(strata.bk)) {
+    strata.bk <- file.path(old.dir, strata.bk)
+  }
   # GENEPOP --------------------------------------------------------------------
   if ("genepop" %in% output) {
     if (verbose) message("Generating genepop file")
@@ -529,7 +536,7 @@ genomic_converter <- function(
     if (verbose) message("Generating gsi_sim output")
     res$gsi_sim <- radiator::write_gsi_sim(data = input,
                             pop.levels = pop.levels,
-                            strata = strata,
+                            strata = strata.bk,
                             filename = filename)
   } # end gsi_sim output
 
@@ -537,7 +544,7 @@ genomic_converter <- function(
   if ("rubias" %in% output) {
     if (verbose) message("Generating rubias output")
     res$rubias <- radiator::write_rubias(data = input,
-                           strata = strata,
+                           strata = strata.bk,
                            filename = filename,
                            parallel.core = parallel.core)
   } # end rubias output
@@ -729,28 +736,16 @@ genomic_converter <- function(
       parallel.core = parallel.core
     )
 
-    # if (!is.null(imputation.method)) {
-    #   if (verbose) message("Generating HZAR file WITH imputations")
-    #   res$hzar.imputed <- radiator::write_hzar(
-    #     data = input.imp,
-    #     distance = NULL,
-    #     filename = filename.imp,
-    #     parallel.core = parallel.core
-    #   )
-    # }
   }
 
   # fineradstructure -----------------------------------------------------------
   if ("fineradstructure" %in% output) {
     if (verbose) message("Generating fineradstructure file")
+    message("\n\nNote: This function recently changed")
+    message("check radiator news and function documentation:")
+    message("?radiator::write_fineradstructure\n\n")
     res$fineradstructure <- radiator::write_fineradstructure(
-      data = input, filename = filename)
-
-    # if (!is.null(imputation.method)) {
-    #   if (verbose) message("Generating fineradstructure file WITH imputations")
-    #   res$fineradstructure.imputed <- radiator::write_fineradstructure(
-    #     data = input.imp, filename = filename.imp)
-    # }
+      data = input, strata = strata.bk, filename = filename)
   }
 
   # related --------------------------------------------------------------------
@@ -814,7 +809,7 @@ genomic_converter <- function(
       n.chromosome <- "no chromosome info"
     }
     n.individuals <- length(unique(input$INDIVIDUALS))
-    if (!is.null(strata)) n.pop <- length(unique(input$POP_ID))
+    if (!is.null(strata.bk)) n.pop <- length(unique(input$POP_ID))
 
     cat("################################### RESULTS ####################################\n")
     message("Data format of input: ", data.type)
@@ -825,7 +820,7 @@ genomic_converter <- function(
     }
     message("Number of markers: ", n.markers)
     message("Number of chromosome/contig/scaffold: ", n.chromosome)
-    if (!is.null(strata))  message("Number of strata: ", n.pop)
+    if (!is.null(strata.bk))  message("Number of strata: ", n.pop)
     message("Number of individuals: ", n.individuals)
   }
   res$tidy.data <- input

@@ -1,3 +1,11 @@
+# radiator 1.1.5 2020-03-07
+
+* `fineRADstructure` rules have changed, I'm no longer doing gymnastic to make the
+population work with `genomic_converter` or `write_fineradstructure`, it's not up
+to the user to make sure the pop id starts with a letter. 
+Some codes might now be broken because of this.
+
+
 # radiator 1.1.4 2020-02-04
 
 * `read_plink` and `tidy_plink`: new rules to get the best out of PLINK **tped**
