@@ -36,7 +36,8 @@
 
 
 <meta property="og:title" content="Write a fineRADstructure file from a tidy data frame — write_fineradstructure" />
-<meta property="og:description" content="Write a fineRADstructure file from a tidy data frame.
+<meta property="og:description" content="Write a fineRADstructure
+file from a tidy data frame.
 Used internally in radiator
 and might be of interest for users." />
 <meta name="twitter:card" content="summary" />
@@ -71,7 +72,7 @@ and might be of interest for users." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.4</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.5</span>
       </span>
     </div>
 
@@ -131,12 +132,13 @@ and might be of interest for users." />
     </div>
 
     <div class="ref-description">
-    <p>Write a fineRADstructure file from a tidy data frame.
+    <p>Write a <a href='https://github.com/millanek/fineRADstructure'>fineRADstructure</a>
+file from a tidy data frame.
 Used internally in <a href='https://github.com/thierrygosselin/radiator'>radiator</a>
 and might be of interest for users.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>write_fineradstructure</span>(<span class='no'>data</span>, <span class='kw'>filename</span> <span class='kw'>=</span> <span class='kw'>NULL</span>)</pre>
+    <pre class="usage"><span class='fu'>write_fineradstructure</span>(<span class='no'>data</span>, <span class='kw'>strata</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>filename</span> <span class='kw'>=</span> <span class='kw'>NULL</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -147,6 +149,13 @@ and might be of interest for users.</p>
 a tidy data frame in wide or long format in the working directory.
 <em>How to get a tidy data frame ?</em>
 Look into <span class="pkg">radiator</span> <code><a href='tidy_genomic_data.html'>tidy_genomic_data</a></code>.</p></td>
+    </tr>
+    <tr>
+      <th>strata</th>
+      <td><p>(path or object) The strata file or object.
+Additional documentation is available in <code><a href='read_strata.html'>read_strata</a></code>.
+Use that function to whitelist/blacklist populations/individuals.
+Option to set <code>pop.levels/pop.labels</code> is also available.</p></td>
     </tr>
     <tr>
       <th>filename</th>
@@ -160,11 +169,31 @@ the date and time is appended to <code>radiator_fineradstructure_</code>.</p></t
 
     <p>A fineRADstructure file is written in the working directory.
 An object is also returned in the global environment.</p>
+    <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
+
+    <p>fineRADstructure requires special formating for populations,
+it needs to be ONLY LETTERS, not numbers. This information is then merged
+with the sample id (converted to integers). radiator will generate a
+dictionary file.</p>
+    <h2 class="hasAnchor" id="life-cycle"><a class="anchor" href="#life-cycle"></a>Life cycle</h2>
+
+    
+
+
+<p>It become increasingly difficult for me to follow all the different naming
+schemes researcher uses, if they're is any strategy... Consequently, I have
+abandoned the idea of formating with letters the populations
+to generate the fineRADstrucure file. If you get an error see the
+the details section.</p>
     <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
 
-    <p>Malinsky M, Trucchi E, Lawson D, Falush D (2018)
+    <p>Malinsky, M., Trucchi, E., Lawson, D., Falush, D. (2018).
 RADpainter and fineRADstructure: population inference from RADseq data.
-bioRxiv, 057711.</p>
+Mol. Biol. Evol.  35(5), 1284-1290.
+https://dx.doi.org/10.1093/molbev/msy023</p>
+    <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
+
+    <div class='dont-index'><p><a href='https://github.com/millanek/fineRADstructure'>fineRADstructure</a></p></div>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
@@ -172,7 +201,10 @@ bioRxiv, 057711.</p>
     <ul class="nav nav-pills nav-stacked">
       <li><a href="#arguments">Arguments</a></li>
       <li><a href="#value">Value</a></li>
+      <li><a href="#details">Details</a></li>
+      <li><a href="#life-cycle">Life cycle</a></li>
       <li><a href="#references">References</a></li>
+      <li><a href="#see-also">See also</a></li>
     </ul>
 
     <h2>Author</h2>

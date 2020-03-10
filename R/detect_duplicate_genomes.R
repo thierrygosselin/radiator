@@ -542,7 +542,7 @@ detect_duplicate_genomes <- function(
       ) +
         ggplot2::geom_violin(trim = TRUE) +
         ggplot2::geom_boxplot(width = 0.1, fill = "black", outlier.colour = "black") +
-        ggplot2::stat_summary(fun.y = "mean", geom = "point", shape = 21, size = 2.5, fill = "white") +
+        ggplot2::stat_summary(fun = "mean", geom = "point", shape = 21, size = 2.5, fill = "white") +
         ggplot2::labs(y = "Distance (relative)\n <- distant      close->") +
         ggplot2::labs(x = "Pairwise comparisons") +
         ggplot2::scale_y_reverse() +
@@ -765,7 +765,7 @@ detect_duplicate_genomes <- function(
       res$violin.plot.genome <- res$violin.plot.genome +
         ggplot2::geom_violin(trim = TRUE) +
         ggplot2::geom_boxplot(width = 0.1, fill = "black", outlier.colour = "black") +
-        ggplot2::stat_summary(fun.y = "mean", geom = "point", shape = 21, size = 2.5, fill = "white") +
+        ggplot2::stat_summary(fun = "mean", geom = "point", shape = 21, size = 2.5, fill = "white") +
         ggplot2::labs(y = "Genome similarity (proportion)") +
         ggplot2::labs(x = "Pairwise comparison") +
         ggplot2::theme(

@@ -9,8 +9,10 @@ merge_dart(
   strata1,
   dart2,
   strata2,
-  keep.rad = FALSE,
+  filter.monomorphic = TRUE,
+  filter.common.markers = TRUE,
   filename = NULL,
+  remove.non.immortalized.dart.markers = TRUE,
   parallel.core = parallel::detectCores() - 1,
   ...
 )
@@ -24,9 +26,11 @@ merge_dart(
 
 \item{strata2}{Full path of the second strata file for dart2.}
 
-\item{keep.rad}{Unless the default is changed, the function removes the
-temporary tidy dart files generated for each DArT datasets during import.
-Default: \code{keep.rad = FALSE}.}
+\item{filter.monomorphic}{(optional, logical)
+Default: \code{filter.monomorphic = TRUE}.}
+
+\item{filter.common.markers}{(optional, logical)
+Default: \code{filter.common.markers = TRUE}.}
 
 \item{filename}{Name of the merged DArT file.
 By default, the function gives the merged data the filename:\code{merge_dart}
@@ -34,6 +38,11 @@ with date and time appended. The function will also append the date and time
 to the filename provided.
 The data is written in the working directory.
 Default: \code{filename = NULL}.}
+
+\item{remove.non.immortalized.dart.markers}{(logical). By default the function
+will remove markers starting \code{1000}, those are called \code{non-immortalized}
+markers by DArT.
+Default: \code{remove.non.immortalized.dart.markers = TRUE}.}
 
 \item{parallel.core}{(optional) The number of core used for parallel
 execution during import.
@@ -73,10 +82,9 @@ this as to be done manually by the user.
 \examples{
 \dontrun{
 # The simplest way to run the function:
-sum <- radiator::merge_dart(
+merged.data <- radiator::merge_dart(
 dart1 = "bluefin_larvae.tsv", strata1 = "strata1_bft_larvae.tsv",
-dart1 = "bluefin_adults.csv", strata2 = "strata2_bft_adults.tsv",
-filename = "bluefin_combined")
+dart2 = "bluefin_adults.csv", strata2 = "strata2_bft_adults.tsv")
 }
 }
 \author{

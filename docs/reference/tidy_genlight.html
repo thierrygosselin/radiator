@@ -71,7 +71,7 @@ and might be of interest for users." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.4</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.5</span>
       </span>
     </div>
 
@@ -136,7 +136,14 @@ Used internally in <a href='https://github.com/thierrygosselin/radiator'>radiato
 and might be of interest for users.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>tidy_genlight</span>(<span class='no'>data</span>, <span class='kw'>tidy</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>gds</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>write</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</pre>
+    <pre class="usage"><span class='fu'>tidy_genlight</span>(
+  <span class='no'>data</span>,
+  <span class='kw'>tidy</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>gds</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>write</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>parallel.core</span> <span class='kw'>=</span> <span class='kw pkg'>parallel</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span>() - <span class='fl'>1</span>
+)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -167,6 +174,12 @@ Default: <code>write = FALSE</code>.</p></td>
       <td><p>(optional, logical) When <code>verbose = TRUE</code>
 the function is a little more chatty during execution.
 Default: <code>verbose = TRUE</code>.</p></td>
+    </tr>
+    <tr>
+      <th>parallel.core</th>
+      <td><p>(optional) The number of core used for parallel
+execution during import.
+Default: <code>parallel.core = parallel::detectCores() - 1</code>.</p></td>
     </tr>
     </table>
 

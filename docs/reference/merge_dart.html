@@ -69,7 +69,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.4</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.5</span>
       </span>
     </div>
 
@@ -137,8 +137,10 @@
   <span class='no'>strata1</span>,
   <span class='no'>dart2</span>,
   <span class='no'>strata2</span>,
-  <span class='kw'>keep.rad</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>filter.monomorphic</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>filter.common.markers</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
   <span class='kw'>filename</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>remove.non.immortalized.dart.markers</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
   <span class='kw'>parallel.core</span> <span class='kw'>=</span> <span class='kw pkg'>parallel</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span>() - <span class='fl'>1</span>,
   <span class='no'>...</span>
 )</pre>
@@ -163,10 +165,14 @@
       <td><p>Full path of the second strata file for dart2.</p></td>
     </tr>
     <tr>
-      <th>keep.rad</th>
-      <td><p>Unless the default is changed, the function removes the
-temporary tidy dart files generated for each DArT datasets during import.
-Default: <code>keep.rad = FALSE</code>.</p></td>
+      <th>filter.monomorphic</th>
+      <td><p>(optional, logical)
+Default: <code>filter.monomorphic = TRUE</code>.</p></td>
+    </tr>
+    <tr>
+      <th>filter.common.markers</th>
+      <td><p>(optional, logical)
+Default: <code>filter.common.markers = TRUE</code>.</p></td>
     </tr>
     <tr>
       <th>filename</th>
@@ -176,6 +182,13 @@ with date and time appended. The function will also append the date and time
 to the filename provided.
 The data is written in the working directory.
 Default: <code>filename = NULL</code>.</p></td>
+    </tr>
+    <tr>
+      <th>remove.non.immortalized.dart.markers</th>
+      <td><p>(logical). By default the function
+will remove markers starting <code>1000</code>, those are called <code>non-immortalized</code>
+markers by DArT.
+Default: <code>remove.non.immortalized.dart.markers = TRUE</code>.</p></td>
     </tr>
     <tr>
       <th>parallel.core</th>
@@ -217,10 +230,9 @@ this as to be done manually by the user.</p>
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='kw'>if</span> (<span class='fl'>FALSE</span>) {
 <span class='co'># The simplest way to run the function:</span>
-<span class='no'>sum</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>radiator</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/pkg/radiator/man/merge_dart.html'>merge_dart</a></span>(
+<span class='no'>merged.data</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>radiator</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/pkg/radiator/man/merge_dart.html'>merge_dart</a></span>(
 <span class='kw'>dart1</span> <span class='kw'>=</span> <span class='st'>"bluefin_larvae.tsv"</span>, <span class='kw'>strata1</span> <span class='kw'>=</span> <span class='st'>"strata1_bft_larvae.tsv"</span>,
-<span class='kw'>dart1</span> <span class='kw'>=</span> <span class='st'>"bluefin_adults.csv"</span>, <span class='kw'>strata2</span> <span class='kw'>=</span> <span class='st'>"strata2_bft_adults.tsv"</span>,
-<span class='kw'>filename</span> <span class='kw'>=</span> <span class='st'>"bluefin_combined"</span>)
+<span class='kw'>dart2</span> <span class='kw'>=</span> <span class='st'>"bluefin_adults.csv"</span>, <span class='kw'>strata2</span> <span class='kw'>=</span> <span class='st'>"strata2_bft_adults.tsv"</span>)
 }</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">

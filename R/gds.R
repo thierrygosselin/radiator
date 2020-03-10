@@ -1265,11 +1265,7 @@ sync_gds <- function(
 #' @title List current active filters (individuals and markers) in radiator GDS object.
 #' @description List current active filters (individuals and markers) in radiator GDS object.
 #' @inheritParams radiator_common_arguments
-#' @param list.filters filters (logical, optional) List current active filters for individuals and markers.
-#' Default: \code{list.filters = TRUE}.
 #' @export
-#'
-#'
 #' @examples
 #' \dontrun{
 #' # List active filters for individuals and markers

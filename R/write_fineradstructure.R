@@ -14,6 +14,7 @@
 #' Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
 
 #' @inheritParams radiator_common_arguments
+#' @inheritParams read_strata
 
 #' @param filename (optional) The file name prefix for the fineRADstructure file
 #' written to the working directory. With default: \code{filename = NULL},

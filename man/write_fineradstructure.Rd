@@ -12,6 +12,11 @@ a tidy data frame in wide or long format in the working directory.
 \emph{How to get a tidy data frame ?}
 Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.}
 
+\item{strata}{(path or object) The strata file or object.
+Additional documentation is available in \code{\link{read_strata}}.
+Use that function to whitelist/blacklist populations/individuals.
+Option to set \code{pop.levels/pop.labels} is also available.}
+
 \item{filename}{(optional) The file name prefix for the fineRADstructure file
 written to the working directory. With default: \code{filename = NULL},
 the date and time is appended to \code{radiator_fineradstructure_}.}

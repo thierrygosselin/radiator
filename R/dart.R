@@ -1303,244 +1303,7 @@ dart2gds <- function(
   return(data)
 }# End dart2gds
 
-## Merge dart-------------------------------------------------------------------
 
-#' @title Merge DArT files
-#' @description This function allows to merge 2 DArT files (filtered of not).
-
-#' @param dart1 Full path of the first DArT file.
-#' @param strata1 Full path of the first strata file for dart1.
-#' @param dart2 Full path of the second DArT file.
-#' @param strata2 Full path of the second strata file for dart2.
-#' @param keep.rad Unless the default is changed, the function removes the
-#' temporary tidy dart files generated for each DArT datasets during import.
-#' Default: \code{keep.rad = FALSE}.
-#' @param filename Name of the merged DArT file.
-#' By default, the function gives the merged data the filename:\code{merge_dart}
-#' with date and time appended. The function will also append the date and time
-#' to the filename provided.
-#' The data is written in the working directory.
-#' Default: \code{filename = NULL}.
-#' @inheritParams tidy_genomic_data
-#' @inheritParams read_dart
-#' @inheritParams radiator_common_arguments
-#' @details
-#' The function average across markers the columns: CALL_RATE, REP_AVG,
-#' AVG_COUNT_REF and AVG_COUNT_SNP, when found in the data.
-#' For DArT, theses columns represent:
-#' \itemize{
-#' \item CALL_RATE: is the proportion of samples for which the genotype was called.
-#' \item REP_AVG: is the proportion of technical replicate assay pairs for which
-#' the marker score is consistent.
-#' \item AVG_COUND_REF and AVG_COUND_SNP: the mean coverage for the reference and
-#' alternate alleles, respectively.
-#' }
-#'
-#' The function removes markers with starting with 1000 that are not immortalized by DArT
-#'
-#'
-#' When the argument \strong{common.markers} is kept to TRUE, the function
-#' produces an
-#' \href{https://github.com/hms-dbmi/UpSetR}{UpSet plot} to visualize the number
-#' of markers common or not between populations. The plot is not saved automatically,
-#' this as to be done manually by the user.
-
-#' @return The function returns a list in the global environment and 2 data frames
-#' in the working directory. The dataframes are the tidy dataset and a strata file
-#' of the 2 merged DArT files.
-
-#' @examples
-#' \dontrun{
-#' # The simplest way to run the function:
-#' sum <- radiator::merge_dart(
-#' dart1 = "bluefin_larvae.tsv", strata1 = "strata1_bft_larvae.tsv",
-#' dart1 = "bluefin_adults.csv", strata2 = "strata2_bft_adults.tsv",
-#' filename = "bluefin_combined")
-#' }
-#' @rdname merge_dart
-#' @export
-#' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
-
-merge_dart <- function(
-  dart1, strata1,
-  dart2, strata2,
-  #pop.select = NULL,
-  # filter.monomorphic = TRUE,
-  # filter.common.markers = TRUE,
-  keep.rad = FALSE,
-  filename = NULL,
-  parallel.core = parallel::detectCores() - 1,
-  ...
-) {
-  cat("#######################################################################\n")
-  cat("########################## radiator::merge_dart #######################\n")
-  cat("#######################################################################\n")
-  timing <- proc.time()
-  opt.change <- getOption("width")
-  options(width = 70)
-  # manage missing arguments -----------------------------------------------------
-  if (missing(dart1)) rlang::abort("dart1 file missing")
-  if (missing(dart2)) rlang::abort("dart2 file missing")
-  if (missing(strata1)) rlang::abort("strata1 file missing")
-  if (missing(strata2)) rlang::abort("strata2 file missing")
-
-  # Filename -------------------------------------------------------------------
-  # Get date and time to have unique filenaming
-  if (is.null(filename)) {
-    filename <- stringi::stri_join("merged_dart_", format(Sys.time(), "%Y%m%d@%H%M"), ".rad")
-    strata.filename <- stringi::stri_join("merged_dart_strata_", format(Sys.time(), "%Y%m%d@%H%M"), ".tsv")
-  } else {
-    filename <- stringi::stri_join(filename, "_",format(Sys.time(), "%Y%m%d@%H%M"), ".rad")
-    strata.filename <- stringi::stri_join(filename, "_strata_",format(Sys.time(), "%Y%m%d@%H%M"), ".tsv")
-  }
-
-  # File type detection---------------------------------------------------------
-  data.type <- radiator::detect_genomic_format(dart1)
-
-  # import data ----------------------------------------------------------------
-  if (!is.null(pop.select)) {
-    pop.select <- clean_pop_names(pop.select)
-    message(stringi::stri_join(length(pop.select), "population(s) selected", sep = " "))
-  }
-
-  # Columns we want
-  want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS", "POP_ID", "GT_VCF_NUC",
-            "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")
-
-  # the DArT data
-  if (data.type == "dart") {
-    message("Importing and tidying dart1...")
-    input <- suppressWarnings(radiator::read_dart(
-      data = dart1, strata = strata1,
-      filename = "temp.tidy.dart1", verbose = FALSE) %>%
-        dplyr::select(dplyr::one_of(want)))
-    message("Importing and tidying dart2...")
-    dart2 <- suppressWarnings(radiator::read_dart(
-      data = dart2, strata = strata2,
-      filename = "temp.tidy.dart2", verbose = FALSE) %>%
-        dplyr::select(dplyr::one_of(want)))
-    if (!keep.rad) {
-      message("Removing temporary tidy DArT files...")
-      file.remove("temp.tidy.dart1.rad")
-      file.remove("temp.tidy.dart2.rad")
-    }
-  }
-
-  # Import the filtered DArT data
-  if (data.type == "fst.file") {
-    message("Importing the filtered dart1...")
-    input <- suppressWarnings(radiator::read_rad(dart1) %>% dplyr::select(dplyr::one_of(want)))
-    message("Importing the filtered dart2...")
-    dart2 <- suppressWarnings(radiator::read_rad(dart2) %>% dplyr::select(dplyr::one_of(want)))
-  }
-
-  # Keeping selected pop -------------------------------------------------------
-  if (!is.null(pop.select)) {
-    input <- suppressWarnings(dplyr::filter(input, POP_ID %in% pop.select))
-    dart2 <- suppressWarnings(dplyr::filter(dart2, POP_ID %in% pop.select))
-  }
-
-  # cleaning up non-immortalized markers ---------------------------------------
-  message("Removing markers starting with 1000 (non-immortalized DArT markers)")
-  markers.before <- length(unique(input$MARKERS)) + length(unique(dart2$MARKERS))
-
-  input <- suppressWarnings(dplyr::filter(input, !stringi::stri_detect_regex(str = LOCUS, pattern = "^1000")))
-  dart2 <- suppressWarnings(dplyr::filter(dart2, !stringi::stri_detect_regex(str = LOCUS, pattern = "^1000")))
-  markers.after <- length(unique(input$MARKERS)) + length(unique(dart2$MARKERS))
-  message("    Markers removed: ", markers.before - markers.after)
-
-  # merging DArT tidy data -----------------------------------------------------
-  # check alt alleles
-  # test1 <- dplyr::filter(input, (stringi::stri_count_fixed(str = ALT, pattern = ",") + 1) > 1)
-  # test2 <- dplyr::filter(dart2, (stringi::stri_count_fixed(str = ALT, pattern = ",") + 1) > 1)
-
-  # we keep common column
-  dart.col <- dplyr::intersect(colnames(input), colnames(dart2))
-
-  input <- suppressWarnings(
-    dplyr::select(input, dplyr::one_of(dart.col)) %>%
-      dplyr::bind_rows(dplyr::select(dart2, dplyr::one_of(dart.col)))
-  )
-  dart2 <- NULL
-
-  # Pop select cleanup ---------------------------------------------------------
-  if (!is.null(pop.select)) {
-    if (is.factor(input$POP_ID)) input$POP_ID <- droplevels(input$POP_ID)
-  }
-
-  # Remove weird markers
-  input <- radiator::detect_biallelic_problems(data = input, verbose = FALSE, parallel.core = parallel.core)$biallelic.data
-
-  # Averaging across markers the call rate and other DArT markers metadata statistics
-  # Note to myself: Might be easier/faster to use mutate_if
-  if (rlang::has_name(input, "CALL_RATE")) {
-    message("Averaging across markers the call rate")
-    input <- input %>%
-      dplyr::group_by(MARKERS) %>%
-      dplyr::mutate(CALL_RATE = mean(CALL_RATE)) %>%
-      dplyr::ungroup(.)
-  }
-
-  if (rlang::has_name(input, "REP_AVG")) {
-    message("Averaging across markers the REP_AVG")
-    input <- input %>%
-      dplyr::group_by(MARKERS) %>%
-      dplyr::mutate(REP_AVG = mean(REP_AVG)) %>%
-      dplyr::ungroup(.)
-  }
-
-  message("Adjusting REF/ALT alleles...")
-  input <- radiator::calibrate_alleles(
-    data = input, biallelic = NULL,
-    parallel.core = parallel.core,
-    verbose = TRUE)$input
-
-  if (rlang::has_name(input, "POLYMORPHIC")) {
-    input <- dplyr::select(input, -POLYMORPHIC)
-  }
-
-  if (rlang::has_name(input, "AVG_COUNT_REF")) {
-    message("Averaging across markers the coverage for the REF allele")
-    input <- input %>%
-      dplyr::group_by(MARKERS) %>%
-      dplyr::mutate(AVG_COUNT_REF = mean(AVG_COUNT_REF)) %>%
-      dplyr::ungroup(.)
-  }
-
-  if (rlang::has_name(input, "AVG_COUNT_ALT")) {
-    message("Averaging across markers the coverage for the ALT allele")
-    input <- input %>%
-      dplyr::group_by(MARKERS) %>%
-      dplyr::mutate(AVG_COUNT_REF = mean(AVG_COUNT_REF)) %>%
-      dplyr::ungroup(.)
-  }
-
-  if (filter.monomorphic) {
-    test <- radiator::filter_monomorphic(data = input, verbose = TRUE)
-  }
-
-  if (filter.common.markers) {
-    input <- radiator::filter_common_markers(data = input, fig = TRUE, verbose = TRUE) %$% input
-    message("\n    **** Manually save the figure ****")
-  }
-
-  # Write tidy in the working directory
-  radiator::write_rad(data = input, path = filename)
-
-  strata <- dplyr::select(input, INDIVIDUALS, STRATA = POP_ID) %>%
-    dplyr::distinct(INDIVIDUALS, STRATA) %>%
-    readr::write_tsv(x = ., path = strata.filename)
-
-  # results --------------------------------------------------------------------
-  message("\nMerged DArT file and strata file in the working directory:")
-  message("    ", filename)
-  message("    ", strata.filename)
-  timing <- proc.time() - timing
-  message("\nComputation time: ", round(timing[[3]]), " sec")
-  cat("############################## completed ##############################\n")
-  options(width = opt.change)
-  return(res = list(merged.dart = input, strata = strata))
-}#End merge_dart
 
 # tidy_dart_metadata--------------------------------------------------------------
 #' @name tidy_dart_metadata
@@ -1801,3 +1564,291 @@ clean_dart_colnames <- function(data, blacklist.id = NULL, dart.col.num = NULL, 
   #   )
   return(data)
 }#End clean_dart_colnames
+
+
+
+
+## Merge dart-------------------------------------------------------------------
+
+#' @title Merge DArT files
+#' @description This function allows to merge 2 DArT files (filtered of not).
+
+#' @param dart1 Full path of the first DArT file.
+#' @param strata1 Full path of the first strata file for dart1.
+#' @param dart2 Full path of the second DArT file.
+#' @param strata2 Full path of the second strata file for dart2.
+
+# deprecated
+# @param keep.rad Unless the default is changed, the function removes the
+# temporary tidy dart files generated for each DArT datasets during import.
+# Default: \code{keep.rad = FALSE}.
+
+#' @param filename Name of the merged DArT file.
+#' By default, the function gives the merged data the filename:\code{merge_dart}
+#' with date and time appended. The function will also append the date and time
+#' to the filename provided.
+#' The data is written in the working directory.
+#' Default: \code{filename = NULL}.
+
+#' @inheritParams tidy_genomic_data
+#' @inheritParams read_dart
+#' @inheritParams radiator_common_arguments
+#' @inheritParams filter_common_markers
+#' @inheritParams filter_monomorphic
+
+#' @param remove.non.immortalized.dart.markers (logical). By default the function
+#' will remove markers starting \code{1000}, those are called \code{non-immortalized}
+#' markers by DArT.
+#' Default: \code{remove.non.immortalized.dart.markers = TRUE}.
+
+#' @details
+#' The function average across markers the columns: CALL_RATE, REP_AVG,
+#' AVG_COUNT_REF and AVG_COUNT_SNP, when found in the data.
+#' For DArT, theses columns represent:
+#' \itemize{
+#' \item CALL_RATE: is the proportion of samples for which the genotype was called.
+#' \item REP_AVG: is the proportion of technical replicate assay pairs for which
+#' the marker score is consistent.
+#' \item AVG_COUND_REF and AVG_COUND_SNP: the mean coverage for the reference and
+#' alternate alleles, respectively.
+#' }
+#'
+#' The function removes markers with starting with 1000 that are not immortalized by DArT
+#'
+#'
+#' When the argument \strong{common.markers} is kept to TRUE, the function
+#' produces an
+#' \href{https://github.com/hms-dbmi/UpSetR}{UpSet plot} to visualize the number
+#' of markers common or not between populations. The plot is not saved automatically,
+#' this as to be done manually by the user.
+
+#' @return The function returns a list in the global environment and 2 data frames
+#' in the working directory. The dataframes are the tidy dataset and a strata file
+#' of the 2 merged DArT files.
+
+#' @examples
+#' \dontrun{
+#' # The simplest way to run the function:
+#' merged.data <- radiator::merge_dart(
+#' dart1 = "bluefin_larvae.tsv", strata1 = "strata1_bft_larvae.tsv",
+#' dart2 = "bluefin_adults.csv", strata2 = "strata2_bft_adults.tsv")
+#' }
+#' @rdname merge_dart
+#' @export
+#' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
+
+merge_dart <- function(
+  dart1, strata1,
+  dart2, strata2,
+  filter.monomorphic = TRUE,
+  filter.common.markers = TRUE,
+  # keep.rad = FALSE,
+  filename = NULL,
+  remove.non.immortalized.dart.markers = TRUE,
+  parallel.core = parallel::detectCores() - 1,
+  ...
+) {
+
+  # test
+  # keep.rad = TRUE
+  # filename = NULL
+  # filter.monomorphic = TRUE
+  # filter.common.markers = TRUE
+  # parallel.core = 12L
+  # remove.non.immortalized.dart.markers = TRUE
+
+  # Cleanup---------------------------------------------------------------------
+  obj.keeper <- c(ls(envir = globalenv()), "res")
+  radiator_function_header(f.name = "merge_dart", verbose = TRUE)
+  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
+  message("Execution date@time: ", file.date)
+  old.dir <- getwd()
+  opt.change <- getOption("width")
+  options(future.globals.maxSize= Inf)
+  options(width = 70)
+  timing <- radiator_tic()
+  #back to the original directory and options
+  on.exit(setwd(old.dir), add = TRUE)
+  on.exit(options(width = opt.change), add = TRUE)
+  on.exit(radiator_toc(timing), add = TRUE)
+  on.exit(rm(list = setdiff(ls(envir = sys.frame(-1L)), obj.keeper), envir = sys.frame(-1L)))
+  on.exit(radiator_function_header(f.name = "merge_dart", start = FALSE, verbose = TRUE), add = TRUE)
+
+  # manage missing arguments -----------------------------------------------------
+  if (missing(dart1)) rlang::abort("dart1 file missing")
+  if (missing(dart2)) rlang::abort("dart2 file missing")
+  if (missing(strata1)) rlang::abort("strata1 file missing")
+  if (missing(strata2)) rlang::abort("strata2 file missing")
+
+  # Filename -------------------------------------------------------------------
+  # Get date and time to have unique filenaming
+  if (is.null(filename)) {
+    filename <- stringi::stri_join("merged_dart_", file.date, ".rad")
+    strata.filename <- stringi::stri_join("merged_dart_strata_", file.date, ".tsv")
+  } else {
+    filename <- stringi::stri_join(filename, "_", file.date, ".rad")
+    strata.filename <- stringi::stri_join(filename, "_strata_", file.date, ".tsv")
+  }
+
+  # File type detection---------------------------------------------------------
+  data.type <- radiator::detect_genomic_format(dart2)
+  if (data.type != "dart") rlang::abort("DArT file not recognize by radiator")
+  data.type <- radiator::detect_genomic_format(dart1)
+  if (data.type != "dart") rlang::abort("DArT file not recognize by radiator")
+
+  # import data ----------------------------------------------------------------
+  # generate the folder to store the merged data
+  path.folder <- generate_folder(
+    f = NULL,
+    rad.folder = "merge_dart",
+    prefix_int = FALSE,
+    internal = FALSE,
+    file.date = file.date,
+    verbose = TRUE)
+
+  # the DArT data
+  message("Importing and tidying dart1...")
+  input <- suppressWarnings(
+    radiator::read_dart(
+      data = dart1,
+      strata = strata1,
+      filename = "dart1",
+      tidy.dart = TRUE,
+      parallel.core = parallel.core,
+      path.folder = path.folder,
+      verbose = FALSE
+    )
+  )
+
+
+message("Importing and tidying dart2...")
+dart2 <- suppressWarnings(
+  radiator::read_dart(
+    data = dart2,
+    strata = strata2,
+    filename = "dart2",
+    tidy.dart = TRUE,
+    parallel.core = parallel.core,
+    path.folder = path.folder,
+    verbose = FALSE
+  )
+)
+
+# cleaning up non-immortalized markers ---------------------------------------
+markers.before <- length(unique(input$MARKERS)) + length(unique(dart2$MARKERS))
+if (remove.non.immortalized.dart.markers) {
+  message("Removing non-immortalized DArT markers...")
+  input <- suppressWarnings(dplyr::filter(input, !stringi::stri_detect_regex(str = LOCUS, pattern = "^1000")))
+  dart2 <- suppressWarnings(dplyr::filter(dart2, !stringi::stri_detect_regex(str = LOCUS, pattern = "^1000")))
+  markers.after <- length(unique(input$MARKERS)) + length(unique(dart2$MARKERS))
+  message("    Number of blacklisted markers: ", markers.before - markers.after)
+}
+# merging DArT tidy data -----------------------------------------------------
+# we keep common column
+dart.col <- dplyr::intersect(colnames(input), colnames(dart2))
+
+input <- suppressWarnings(
+  dplyr::select(input, dplyr::one_of(dart.col)) %>%
+    dplyr::bind_rows(dplyr::select(dart2, dplyr::one_of(dart.col)))
+)
+dart2 <- NULL
+
+
+
+# Remove weird markers ---------------------------------------------------------
+setwd(path.folder)
+biallelic.data <- NULL # global variables...
+input <- radiator::detect_biallelic_problems(
+  data = input,
+  verbose = TRUE,
+  parallel.core = parallel.core
+) %$%
+  biallelic.data
+setwd(old.dir)
+
+if (rlang::has_name(input, "POLYMORPHIC")) {
+  input %<>% dplyr::select(-POLYMORPHIC)
+}
+
+# Averaging across markers the call rate and other DArT markers metadata statistics
+# Note to myself: Might be easier/faster to use mutate_if
+if (rlang::has_name(input, "CALL_RATE")) {
+  message("Averaging across markers the call rate")
+  input %<>%
+    dplyr::group_by(MARKERS) %>%
+    dplyr::mutate(CALL_RATE = mean(CALL_RATE)) %>%
+    dplyr::ungroup(.)
+}
+
+if (rlang::has_name(input, "REP_AVG")) {
+  message("Averaging across markers the REP_AVG")
+  input %<>%
+    dplyr::group_by(MARKERS) %>%
+    dplyr::mutate(REP_AVG = mean(REP_AVG)) %>%
+    dplyr::ungroup(.)
+}
+
+# message("Adjusting REF/ALT alleles...")
+# Thats done in the section above: Remove weird markers
+
+# input <- radiator::calibrate_alleles(
+#   data = input,
+#   biallelic = NULL,
+#   parallel.core = parallel.core,
+#   verbose = TRUE
+# ) %$%
+#   input
+
+if (rlang::has_name(input, "AVG_COUNT_REF")) {
+  message("Averaging across markers the coverage for the REF allele")
+  input %<>%
+    dplyr::group_by(MARKERS) %>%
+    dplyr::mutate(AVG_COUNT_REF = mean(AVG_COUNT_REF)) %>%
+    dplyr::ungroup(.)
+}
+
+if (rlang::has_name(input, "AVG_COUNT_ALT")) {
+  message("Averaging across markers the coverage for the ALT allele")
+  input %<>%
+    dplyr::group_by(MARKERS) %>%
+    dplyr::mutate(AVG_COUNT_REF = mean(AVG_COUNT_REF)) %>%
+    dplyr::ungroup(.)
+}
+
+# monomorphic markers (the TRUE/FALSE is included inside the function)
+input <- radiator::filter_monomorphic(
+  data = input,
+  filter.monomorphic = filter.monomorphic,
+  path.folder = path.folder,
+  verbose = TRUE)
+
+# common markers (the TRUE/FALSE is included inside the function)
+input <- filter_common_markers(
+  data = input,
+  filter.common.markers = filter.common.markers,
+  path.folder = path.folder,
+  verbose = TRUE
+)
+
+
+# Write tidy in the working directory
+radiator::write_rad(data = input, path = file.path(path.folder, filename))
+
+strata <- radiator::generate_strata(data = input, pop.id = FALSE)
+readr::write_tsv(x = strata, path = file.path(path.folder, strata.filename))
+
+# results --------------------------------------------------------------------
+message("\nMerged DArT file and strata file generated:")
+message("    ", filename)
+message("    ", strata.filename)
+
+message("\nNumber of chrom / locus / SNP:")
+message(length(unique(input$CHROM)), " / ", length(unique(input$LOCUS)), " / ",
+        length(unique(input$MARKERS)), "\n")
+radiator::summary_strata(strata = strata)
+return(res = list(merged.dart = input, strata = strata))
+}#End merge_dart
+
+
+
+

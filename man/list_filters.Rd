@@ -13,9 +13,6 @@ list_filters(gds)
 Look into \code{\link{tidy_genomic_data}},
 \code{\link{read_vcf}},
 \code{\link{tidy_vcf}} or \code{\link{write_gds}}.}
-
-\item{list.filters}{filters (logical, optional) List current active filters for individuals and markers.
-Default: \code{list.filters = TRUE}.}
 }
 \description{
 List current active filters (individuals and markers) in radiator GDS object.

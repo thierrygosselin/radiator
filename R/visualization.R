@@ -433,7 +433,7 @@ plot_boxplot_coverage <- function(data) {
   ggplot2::ggplot(data, ggplot2::aes(x = factor(POP_ID), y = VALUE, na.rm = TRUE)) +
     ggplot2::geom_violin(trim = FALSE) +
     ggplot2::geom_boxplot(width = 0.1, fill = "black", outlier.colour = NA) +
-    ggplot2::stat_summary(fun.y = "mean", geom = "point", shape = 21, size = 2.5, fill = "white") +
+    ggplot2::stat_summary(fun = "mean", geom = "point", shape = 21, size = 2.5, fill = "white") +
     ggplot2::labs(x = "Sampling sites") +
     ggplot2::labs(y = "Read depth coverage") +
     ggplot2::facet_wrap(facets = ~COVERAGE_GROUP, scales = "free") +
@@ -816,7 +816,7 @@ plot_boxplot_diversity <- function(data, aes.x.y, y.title) {
   ggplot2::ggplot(data, aes.x.y) +
     ggplot2::geom_violin(trim = F) +
     ggplot2::geom_boxplot(width = 0.1, fill = "black", outlier.colour = NA) +
-    ggplot2::stat_summary(fun.y = "mean", geom = "point", shape = 21, size = 2.5, fill = "white") +
+    ggplot2::stat_summary(fun = "mean", geom = "point", shape = 21, size = 2.5, fill = "white") +
     ggplot2::labs(x = "Sampling sites") +
     ggplot2::labs(y = y.title) +
     ggplot2::theme(

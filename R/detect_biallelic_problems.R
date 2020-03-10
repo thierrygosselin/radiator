@@ -32,7 +32,11 @@
 #' @rdname detect_biallelic_problems
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
-detect_biallelic_problems <- function(data, verbose = TRUE, parallel.core = parallel::detectCores() - 1) {
+detect_biallelic_problems <- function(
+  data,
+  verbose = TRUE,
+  parallel.core = parallel::detectCores() - 1
+  ) {
 
   # Cleanup-------------------------------------------------------------------
   radiator_function_header(f.name = "detect_biallelic_problems", verbose = verbose)
@@ -59,7 +63,22 @@ detect_biallelic_problems <- function(data, verbose = TRUE, parallel.core = para
   if (is.vector(data)) {
     data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
   }
-  if (!tibble::has_name(data, "GT_VCF_NUC")) rlang::abort("Tidy dataset requires nuclotides in genotypes: GT_VCF_NUC")
+  if (!tibble::has_name(data, "GT_VCF_NUC")) {
+    message("Tidy dataset requires genotypes with nuclotides: GT_VCF_NUC")
+    data <- radiator::calibrate_alleles(
+      data = data,
+      biallelic = TRUE,
+      parallel.core = parallel.core,
+      verbose = TRUE
+    ) %$%
+      input
+  }
+
+  if (!tibble::has_name(data, "GT_VCF_NUC")) {
+    message("Wrong genotype format")
+    message("Tidy dataset requires genotypes with nuclotides: GT_VCF_NUC")
+    rlang::abort("One way to get it is to use radiator::calibrate_alleles")
+  }
 
   # Check data ----------------------------------------------------------
   message("Generating statistics...")
