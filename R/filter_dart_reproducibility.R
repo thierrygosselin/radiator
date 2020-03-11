@@ -341,7 +341,8 @@ The minimum reproducibility tolerated:", minmax = c(0, 1))
         path.folder = path.folder,
         file.date = file.date,
         internal = internal,
-        verbose = verbose)
+        verbose = verbose
+      )
 
       # Return -----------------------------------------------------------------------
       radiator_results_message(

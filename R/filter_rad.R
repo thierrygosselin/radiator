@@ -440,7 +440,7 @@ filter_rad <- function(
   if (interactive.filter) {
     radiator_packages_dep(package = "BiocManager")
     radiator_packages_dep(package = "HardyWeinberg")
-    radiator_packages_dep(package = "ggtern")
+    # radiator_packages_dep(package = "ggtern")
     radiator_packages_dep(package = "UpSetR")
     radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
     radiator_packages_dep(package = "SNPRelate", cran = FALSE, bioc = TRUE)

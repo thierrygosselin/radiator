@@ -306,13 +306,13 @@ boxplot_stats <- function(
   }
 
   fig.boxplot <- fig.boxplot +
+    ggplot2::theme_bw() +
     ggplot2::theme(
       plot.title = ggplot2::element_text(size = 12, face = "bold", hjust = 0.5),
       legend.position = "none",
       axis.title.y = element.text,
       axis.text.y = element.text
-    ) +
-    ggplot2::theme_bw()
+    )
 
   if (is.null(x.axis.title)) {
     fig.boxplot <- fig.boxplot +
@@ -326,7 +326,6 @@ boxplot_stats <- function(
       ggplot2::xlab(x.axis.title) +
       ggplot2::theme(
         axis.title.x = element.text,
-        # axis.text.x = ggplot2::element_blank(),
         axis.ticks.x = ggplot2::element_blank()
       )
   }
@@ -344,11 +343,6 @@ boxplot_stats <- function(
     height <- 5 + (4 * n.group)
   }
 
-  # else {
-  # width <-  10 + (5 * n.group) + 1
-  # height <-  10
-  # }
-
   if (facet.rows) {
     fig.boxplot <- fig.boxplot + ggplot2::facet_grid(FACET_ROWS ~ ., scales = "free")
     n.facet <- n.group * 2
@@ -358,7 +352,7 @@ boxplot_stats <- function(
 
   if (!facet.rows && !facet.columns) {
     width <-  13 + (5 * n.group) + 1
-    height <-  5
+    height <-  8
   }
 
   print(fig.boxplot)

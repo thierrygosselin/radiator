@@ -280,7 +280,7 @@ filter_hwe <- function(
 
     # required package
     radiator_packages_dep(package = "HardyWeinberg")
-    radiator_packages_dep(package = "ggtern")
+    # radiator_packages_dep(package = "ggtern")
     radiator_function_header(f.name = "filter_hwe", verbose = verbose)
 
     # Cleanup---------------------------------------------------------------------
