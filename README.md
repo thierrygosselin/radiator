@@ -9,7 +9,7 @@ state and is being actively
 developed.](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3687060.svg)](https://doi.org/10.5281/zenodo.3687060)
 [![packageversion](https://img.shields.io/badge/Package%20version-1.1.5-orange.svg)](commits/master)
-[![Last-changedate](https://img.shields.io/badge/last%20change-2020--03--11-brightgreen.svg)](/commits/master)
+[![Last-changedate](https://img.shields.io/badge/last%20change-2020--03--13-brightgreen.svg)](/commits/master)
 <!-- badges: end -->
 
 # radiator: an R package for RADseq Data Exploration, Manipulation and Visualization

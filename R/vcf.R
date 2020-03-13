@@ -582,7 +582,7 @@ read_vcf <- function(
       individuals %<>% dplyr::rename(INDIVIDUALS = NEW_ID, OLD_ID = INDIVIDUALS)
     }
   } else {
-    individuals %<>% dplyr::mutate(STRATA = 1L, FILTERS = "whitelist")
+    individuals %<>% dplyr::mutate(STRATA = "1pop", FILTERS = "whitelist")
   }
 
   strata <- generate_strata(data = dplyr::filter(individuals, FILTERS == "whitelist"), pop.id = FALSE)
