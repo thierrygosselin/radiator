@@ -16,7 +16,7 @@ filter_rad(
 )
 }
 \arguments{
-\item{data}{14 options for input (**diploid data only**s): VCFs (SNPs or Haplotypes,
+\item{data}{14 options for input (\strong{diploid data only}): VCFs (SNPs or Haplotypes,
 to make the vcf population ready),
 plink (tped, bed), stacks haplotype file, genind (library(adegenet)),
 genlight (library(adegenet)), gtypes (library(strataG)), genepop, DArT,

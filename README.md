@@ -63,6 +63,6 @@ functions/arguments are documented in life cycle section of functions.
     and in [changelog, versions, new features and bug
     history](https://thierrygosselin.github.io/radiator/news/index.html)
   - Question(s) or problem(s) with radiator, open an
-    [issues](https://github.com/thierrygosselin/radiator/issues/new/choose)
+    [issue](https://github.com/thierrygosselin/radiator/issues/new/choose)
   - [Contributions are
     welcomed](https://github.com/thierrygosselin/radiator/issues/new/choose)

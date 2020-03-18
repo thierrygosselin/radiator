@@ -66,5 +66,5 @@ life cycle section of functions.
 
 * The latest changes are documented ([here](https://thierrygosselin.github.io/radiator/articles/life_cycle.html)) and
 in [changelog, versions, new features and bug history](https://thierrygosselin.github.io/radiator/news/index.html)
-* Question(s) or problem(s) with radiator, open an [issues](https://github.com/thierrygosselin/radiator/issues/new/choose)
+* Question(s) or problem(s) with radiator, open an [issue](https://github.com/thierrygosselin/radiator/issues/new/choose)
 * [Contributions are welcomed](https://github.com/thierrygosselin/radiator/issues/new/choose)
