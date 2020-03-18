@@ -8,7 +8,8 @@
 #' reality of GBS/RADseq data while maintaining a reproducible workflow.
 #'
 #' \itemize{
-#'   \item \strong{Input file:} 13 file formats are supported (see \code{data} argument below)
+#'   \item \strong{Input file:} 14 diploid file formats are supported
+#'   (see \code{data} argument below).
 #'   \item \strong{Filters:} see \emph{Advance mode} section below for ways to
 #'   use blacklist and whitelist related arguments.
 #'   For best results with unfiltered datasets, use \code{\link{filter_rad}}

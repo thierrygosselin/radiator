@@ -250,7 +250,7 @@ tidy2wide <- function(
 #' and \href{https://github.com/thierrygosselin/assigner}{assigner}
 #' and might be of interest for users.
 
-#' @param data 14 options for input: VCFs (SNPs or Haplotypes,
+#' @param data 14 options for input (**diploid data only**s): VCFs (SNPs or Haplotypes,
 #' to make the vcf population ready),
 #' plink (tped, bed), stacks haplotype file, genind (library(adegenet)),
 #' genlight (library(adegenet)), gtypes (library(strataG)), genepop, DArT,

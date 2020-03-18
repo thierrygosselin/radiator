@@ -15,7 +15,7 @@ genomic_converter(
 )
 }
 \arguments{
-\item{data}{14 options for input: VCFs (SNPs or Haplotypes,
+\item{data}{14 options for input (**diploid data only**s): VCFs (SNPs or Haplotypes,
 to make the vcf population ready),
 plink (tped, bed), stacks haplotype file, genind (library(adegenet)),
 genlight (library(adegenet)), gtypes (library(strataG)), genepop, DArT,
@@ -73,7 +73,8 @@ The arguments in the \code{genomic_converter} function were tailored for the
 reality of GBS/RADseq data while maintaining a reproducible workflow.
 
 \itemize{
-  \item \strong{Input file:} 13 file formats are supported (see \code{data} argument below)
+  \item \strong{Input file:} 14 diploid file formats are supported
+  (see \code{data} argument below).
   \item \strong{Filters:} see \emph{Advance mode} section below for ways to
   use blacklist and whitelist related arguments.
   For best results with unfiltered datasets, use \code{\link{filter_rad}}

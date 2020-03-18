@@ -52,7 +52,7 @@ Suggests:
 License: GPL-3
 LazyLoad: yes
 VignetteBuilder: knitr
-RoxygenNote: 7.0.2
+RoxygenNote: 7.1.0
 ByteCompile: TRUE
 URL: https://thierrygosselin.github.io/radiator/
 BugReports: https://github.com/thierrygosselin/radiator/issues

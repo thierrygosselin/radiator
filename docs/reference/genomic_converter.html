@@ -39,7 +39,8 @@
 <meta property="og:description" content="The arguments in the genomic_converter function were tailored for the
 reality of GBS/RADseq data while maintaining a reproducible workflow.
 
-Input file: 13 file formats are supported (see data argument below)
+Input file: 14 diploid file formats are supported
+  (see data argument below).
 Filters: see Advance mode section below for ways to
   use blacklist and whitelist related arguments.
   For best results with unfiltered datasets, use filter_rad
@@ -145,7 +146,8 @@ Output: 29 output file formats are supported (see output argument below)
     <p>The arguments in the <code>genomic_converter</code> function were tailored for the
 reality of GBS/RADseq data while maintaining a reproducible workflow.</p>
 <ul>
-<li><p><strong>Input file:</strong> 13 file formats are supported (see <code>data</code> argument below)</p></li>
+<li><p><strong>Input file:</strong> 14 diploid file formats are supported
+  (see <code>data</code> argument below).</p></li>
 <li><p><strong>Filters:</strong> see <em>Advance mode</em> section below for ways to
   use blacklist and whitelist related arguments.
   For best results with unfiltered datasets, use <code><a href='filter_rad.html'>filter_rad</a></code>
@@ -173,7 +175,7 @@ reality of GBS/RADseq data while maintaining a reproducible workflow.</p>
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>data</th>
-      <td><p>14 options for input: VCFs (SNPs or Haplotypes,
+      <td><p>14 options for input (**diploid data only**s): VCFs (SNPs or Haplotypes,
 to make the vcf population ready),
 plink (tped, bed), stacks haplotype file, genind (library(adegenet)),
 genlight (library(adegenet)), gtypes (library(strataG)), genepop, DArT,
