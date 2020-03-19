@@ -275,7 +275,7 @@ special section)</p></td>
 blacklisting the markers.</p></li>
 <li><p>$plot.hwd.thresholds: useful figure that highlight the number of markers
 blacklisted based on the number of populations in HWD and mid p-value thresholds.</p></li>
-<li><p>$plot.tern: ternary plot of markers.</p></li>
+<li><p>$plot.tern: ternary plot of markers (currently unavailable until ggtern is updated).</p></li>
 <li><p>$hw.manhattan: manhattan plot of markers in Hardy-Weinberg disequilibrium.</p></li>
 <li><p>$hwe.pop.sum: a summary tibble with populations, number of markers in total,
 number of markers monomorphic for the populations,
@@ -304,7 +304,6 @@ blacklisted based on the number of populations in HWD and mid p-value thresholds
 <li><p>hwd.plot.blacklist.markers.pdf: useful figure that highlight the number of markers
 blacklisted based on the number of populations in HWD and mid p-value thresholds.</p></li>
 <li><p>hwe.manhattan.plot.pdf: manhattan plot of markers in Hardy-Weinberg disequilibrium.</p></li>
-<li><p>hwe.ternary.plots.missing.data.pdf: ternary plot of markers.</p></li>
 <li><p>tidy.filtered.hwe.xxx.mid.p.value.xxx.hw.pop.threshold.rad: several
 tidy dataset filtered with different mid p value and populations in HWD thresholds</p></li>
 <li><p>whitelist.markers.hwe.xxx.mid.p.value.xxx.hw.pop.threshold.tsv: several
@@ -411,7 +410,6 @@ sequence data. Human Genetics, 136, 727-741.</p>
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='kw'>if</span> (<span class='fl'>FALSE</span>) {
 <span class='fu'><a href='https://rdrr.io/r/base/library.html'>require</a></span>(<span class='no'>HardyWeinberg</span>)
-<span class='fu'><a href='https://rdrr.io/r/base/library.html'>require</a></span>(<span class='no'>ggtern</span>)
 <span class='fu'><a href='https://rdrr.io/r/base/library.html'>library</a></span>(<span class='no'>radiator</span>)
 <span class='co'># for the interactive version (recommended)</span>
 <span class='no'>turtle.pop</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>radiator</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/pkg/radiator/man/filter_hwe.html'>filter_hwe</a></span>(

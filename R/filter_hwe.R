@@ -172,7 +172,7 @@
 #' blacklisting the markers.
 #' \item $plot.hwd.thresholds: useful figure that highlight the number of markers
 #' blacklisted based on the number of populations in HWD and mid p-value thresholds.
-#' \item $plot.tern: ternary plot of markers.
+#' \item $plot.tern: ternary plot of markers (currently unavailable until ggtern is updated).
 #' \item $hw.manhattan: manhattan plot of markers in Hardy-Weinberg disequilibrium.
 #' \item $hwe.pop.sum: a summary tibble with populations, number of markers in total,
 #' number of markers monomorphic for the populations,
@@ -203,7 +203,7 @@
 #' \item hwd.plot.blacklist.markers.pdf: useful figure that highlight the number of markers
 #' blacklisted based on the number of populations in HWD and mid p-value thresholds.
 #' \item hwe.manhattan.plot.pdf: manhattan plot of markers in Hardy-Weinberg disequilibrium.
-#' \item hwe.ternary.plots.missing.data.pdf: ternary plot of markers.
+# \item hwe.ternary.plots.missing.data.pdf: ternary plot of markers.
 #' \item tidy.filtered.hwe.xxx.mid.p.value.xxx.hw.pop.threshold.rad: several
 #' tidy dataset filtered with different mid p value and populations in HWD thresholds
 #' \item whitelist.markers.hwe.xxx.mid.p.value.xxx.hw.pop.threshold.tsv: several
@@ -218,7 +218,6 @@
 #' @examples
 #' \dontrun{
 #' require(HardyWeinberg)
-#' require(ggtern)
 #' library(radiator)
 #' # for the interactive version (recommended)
 #' turtle.pop <- radiator::filter_hwe(
@@ -616,76 +615,76 @@ filter_hwe <- function(
 
       # ternary plot -----------------------------------------------------------------
       # library(ggtern)
-      num.groups <- dplyr::n_distinct(data.sum$GROUPINGS)
-      if (num.groups == 7) group_colors <- c("grey", "green", "yellow", "orange",
-                                             "orangered", "red", "darkred")
-      if (num.groups == 6) group_colors <- c("green", "yellow", "orange",
-                                             "orangered", "red", "darkred")
-      if (num.groups == 5) group_colors <- c("green", "yellow", "orange",
-                                             "orangered", "red")
-      if (num.groups == 4) group_colors <- c("green", "yellow", "orange",
-                                             "orangered")
-      if (num.groups == 3) group_colors <- c("green", "yellow", "orange")
-      if (num.groups == 2) group_colors <- c("green", "yellow")
+      # num.groups <- dplyr::n_distinct(data.sum$GROUPINGS)
+      # if (num.groups == 7) group_colors <- c("grey", "green", "yellow", "orange",
+      #                                        "orangered", "red", "darkred")
+      # if (num.groups == 6) group_colors <- c("green", "yellow", "orange",
+      #                                        "orangered", "red", "darkred")
+      # if (num.groups == 5) group_colors <- c("green", "yellow", "orange",
+      #                                        "orangered", "red")
+      # if (num.groups == 4) group_colors <- c("green", "yellow", "orange",
+      #                                        "orangered")
+      # if (num.groups == 3) group_colors <- c("green", "yellow", "orange")
+      # if (num.groups == 2) group_colors <- c("green", "yellow")
+      #
+      # # HW Parabola
+      # parabola <- tibble::tibble(p = seq(0, 1, by = 0.005)) %>%
+      #   dplyr::mutate(AA = p^2, AB = 2 * p * (1 - p), BB = (1 - p)^2, p = NULL)
+      # sample.size <- data.sum %>% dplyr::group_by(POP_ID) %>%
+      #   dplyr::summarise(NN = 2* max(N, na.rm = TRUE))
+      #
+      # hw_parabola <- function(x, sample.size, parabola) {
+      #   pop <- unique(x)
+      #   pop.size <- sample.size$NN[sample.size$POP_ID == pop]
+      #   parabola <- parabola %>%
+      #     dplyr::mutate(
+      #       POP_ID = pop,
+      #       NN = pop.size,
+      #       AA = AA * NN,
+      #       AB = AB * NN,
+      #       BB = BB * NN,
+      #       NN = NULL,
+      #       GROUPINGS = "hwe",
+      #       MISSING_PROP = 0)
+      #   return(parabola)
+      # }
 
-      # HW Parabola
-      parabola <- tibble::tibble(p = seq(0, 1, by = 0.005)) %>%
-        dplyr::mutate(AA = p^2, AB = 2 * p * (1 - p), BB = (1 - p)^2, p = NULL)
-      sample.size <- data.sum %>% dplyr::group_by(POP_ID) %>%
-        dplyr::summarise(NN = 2* max(N, na.rm = TRUE))
+      # hw.parabola <- purrr::map_df(.x = pop.levels, .f = hw_parabola,
+      #                              sample.size = sample.size, parabola = parabola) %>%
+      #   dplyr::mutate(POP_ID = factor(POP_ID, pop.levels))
+      # parabola <- sample.size <- NULL
 
-      hw_parabola <- function(x, sample.size, parabola) {
-        pop <- unique(x)
-        pop.size <- sample.size$NN[sample.size$POP_ID == pop]
-        parabola <- parabola %>%
-          dplyr::mutate(
-            POP_ID = pop,
-            NN = pop.size,
-            AA = AA * NN,
-            AB = AB * NN,
-            BB = BB * NN,
-            NN = NULL,
-            GROUPINGS = "hwe",
-            MISSING_PROP = 0)
-        return(parabola)
-      }
-
-      hw.parabola <- purrr::map_df(.x = pop.levels, .f = hw_parabola,
-                                   sample.size = sample.size, parabola = parabola) %>%
-        dplyr::mutate(POP_ID = factor(POP_ID, pop.levels))
-      parabola <- sample.size <- NULL
-
-      plot.tern <- ggtern::ggtern(
-        data = data.sum,
-        ggtern::aes(AA, AB, BB, color = GROUPINGS, size = MISSING_PROP)) +
-        ggplot2::scale_color_manual(name = "Exact test mid p-value", values = group_colors) +
-        ggplot2::scale_size_continuous(name = "Missing genotypes proportion") +
-        ggplot2::geom_point(alpha = 0.4) +
-        ggplot2::geom_line(data = hw.parabola, ggplot2::aes(x = AA, y = AB),
-                           linetype = 2, size = 0.6, colour = "black") +
-        ggplot2::labs(
-          x = "AA", y = "AB", z = "BB",
-          title = "Hardy-Weinberg Equilibrium ternary plots",
-          subtitle = "genotypes frequencies shown for AA: REF/REF, AB: REF/ALT and BB: ALT/ALT"
-        ) +
-        ggplot2::theme(
-          plot.title = ggplot2::element_text(size = 12, face = "bold", hjust = 0.5),
-          plot.subtitle = ggplot2::element_text(size = 10, hjust = 0.5)
-        ) +
-        ggtern::theme_rgbw() +
-        ggtern::theme_nogrid_minor() +
-        ggtern::theme_nogrid_major() +
-        ggplot2::facet_wrap(~ POP_ID)
+      # plot.tern <- ggtern::ggtern(
+      #   data = data.sum,
+      #   ggtern::aes(AA, AB, BB, color = GROUPINGS, size = MISSING_PROP)) +
+      #   ggplot2::scale_color_manual(name = "Exact test mid p-value", values = group_colors) +
+      #   ggplot2::scale_size_continuous(name = "Missing genotypes proportion") +
+      #   ggplot2::geom_point(alpha = 0.4) +
+      #   ggplot2::geom_line(data = hw.parabola, ggplot2::aes(x = AA, y = AB),
+      #                      linetype = 2, size = 0.6, colour = "black") +
+      #   ggplot2::labs(
+      #     x = "AA", y = "AB", z = "BB",
+      #     title = "Hardy-Weinberg Equilibrium ternary plots",
+      #     subtitle = "genotypes frequencies shown for AA: REF/REF, AB: REF/ALT and BB: ALT/ALT"
+      #   ) +
+      #   ggplot2::theme(
+      #     plot.title = ggplot2::element_text(size = 12, face = "bold", hjust = 0.5),
+      #     plot.subtitle = ggplot2::element_text(size = 10, hjust = 0.5)
+      #   ) +
+      #   ggtern::theme_rgbw() +
+      #   ggtern::theme_nogrid_minor() +
+      #   ggtern::theme_nogrid_major() +
+      #   ggplot2::facet_wrap(~ POP_ID)
       # plot.tern
-      ggtern::ggsave(
-        limitsize = FALSE,
-        plot = plot.tern,
-        # filename = file.path(path.folder, "hwe.ternary.plots.read.depth.pdf"),
-        filename = file.path(path.folder, "hwe.ternary.plots.missing.data.pdf"),
-        width = max(25, n.pop * 5), height = max(15, n.pop * 4),
-        dpi = 300, units = "cm", useDingbats = FALSE)
-      hw.parabola <- NULL
-      if (verbose) message("Plot written: hwe.ternary.plots.missing.data.pdf")
+      # ggtern::ggsave(
+      #   limitsize = FALSE,
+      #   plot = plot.tern,
+      #   # filename = file.path(path.folder, "hwe.ternary.plots.read.depth.pdf"),
+      #   filename = file.path(path.folder, "hwe.ternary.plots.missing.data.pdf"),
+      #   width = max(25, n.pop * 5), height = max(15, n.pop * 4),
+      #   dpi = 300, units = "cm", useDingbats = FALSE)
+      # hw.parabola <- NULL
+      # if (verbose) message("Plot written: hwe.ternary.plots.missing.data.pdf")
 
       # plot.tern <- "temporarily out of order"
 

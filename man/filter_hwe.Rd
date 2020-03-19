@@ -88,7 +88,7 @@ A list in the global environment objects:
 blacklisting the markers.
 \item $plot.hwd.thresholds: useful figure that highlight the number of markers
 blacklisted based on the number of populations in HWD and mid p-value thresholds.
-\item $plot.tern: ternary plot of markers.
+\item $plot.tern: ternary plot of markers (currently unavailable until ggtern is updated).
 \item $hw.manhattan: manhattan plot of markers in Hardy-Weinberg disequilibrium.
 \item $hwe.pop.sum: a summary tibble with populations, number of markers in total,
 number of markers monomorphic for the populations,
@@ -118,7 +118,6 @@ blacklisted based on the number of populations in HWD and mid p-value thresholds
 \item hwd.plot.blacklist.markers.pdf: useful figure that highlight the number of markers
 blacklisted based on the number of populations in HWD and mid p-value thresholds.
 \item hwe.manhattan.plot.pdf: manhattan plot of markers in Hardy-Weinberg disequilibrium.
-\item hwe.ternary.plots.missing.data.pdf: ternary plot of markers.
 \item tidy.filtered.hwe.xxx.mid.p.value.xxx.hw.pop.threshold.rad: several
 tidy dataset filtered with different mid p value and populations in HWD thresholds
 \item whitelist.markers.hwe.xxx.mid.p.value.xxx.hw.pop.threshold.tsv: several
@@ -245,7 +244,6 @@ analysis with the datasets generated with the different thresholds.
 \examples{
 \dontrun{
 require(HardyWeinberg)
-require(ggtern)
 library(radiator)
 # for the interactive version (recommended)
 turtle.pop <- radiator::filter_hwe(
