@@ -895,29 +895,29 @@ filter_rad <- function(
   # Statistics after filtering -------------------------------------------------
   if (verbose) message("\nGenerating statistics after filtering")
   # SUBSAMPLE markers
-  n.markers <- length(markers.meta$VARIANT_ID)
-  if (n.markers < 200000) subsample.markers.stats <- 1
-  if (subsample.markers.stats < 1) {
-    markers.subsampled <- dplyr::sample_frac(
-      tbl = markers.meta,
-      size = subsample.markers.stats)
-    variant.select <- markers.subsampled$VARIANT_ID
-    subsample.filename <- stringi::stri_join("markers.subsampled_", file.date, ".tsv")
-    dplyr::select(markers.subsampled, MARKERS) %>%
-      dplyr::mutate(RANDOM_SEED = random.seed) %>%
-      readr::write_tsv(
-        x = .,
-        path = file.path(path.folder, subsample.filename))
-    markers.subsampled <- NULL
-  } else {
-    variant.select <- NULL
-  }
+  # n.markers <- length(markers.meta$VARIANT_ID)
+  # if (n.markers < 200000) subsample.markers.stats <- 1
+  # if (subsample.markers.stats < 1) {
+  #   markers.subsampled <- dplyr::sample_frac(
+  #     tbl = markers.meta,
+  #     size = subsample.markers.stats)
+  #   variant.select <- markers.subsampled$VARIANT_ID
+  #   subsample.filename <- stringi::stri_join("markers.subsampled_", file.date, ".tsv")
+  #   dplyr::select(markers.subsampled, MARKERS) %>%
+  #     dplyr::mutate(RANDOM_SEED = random.seed) %>%
+  #     readr::write_tsv(
+  #       x = .,
+  #       path = file.path(path.folder, subsample.filename))
+  #   markers.subsampled <- NULL
+  # } else {
+  #   variant.select <- NULL
+  # }
 
   # Individuals stats
   if (verbose) message("calculating individual stats...")
   id.stats <- generate_id_stats(
     gds = gds,
-    subsample = variant.select,
+    # subsample = variant.select,
     path.folder = path.folder,
     file.date = file.date,
     parallel.core = parallel.core,
@@ -932,8 +932,9 @@ filter_rad <- function(
     filename = NULL,
     file.date = file.date,
     parallel.core = parallel.core,
-    verbose = verbose,
-    subsample = variant.select
+    verbose = verbose
+    # ,
+    # subsample = variant.select
   ) %$% info
 
   # missing memory
