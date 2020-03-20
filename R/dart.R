@@ -88,6 +88,9 @@ extract_dart_target_id <- function(data, write = TRUE) {
       dplyr::filter(!radiator_snakecase(x = TARGET_ID) %in% discard) %>%
       dplyr::filter(!stringi::stri_detect_regex(
         str = stringi::stri_trans_toupper(TARGET_ID),
+        pattern = discard.genome, negate = FALSE)) %>%
+      dplyr::filter(!stringi::stri_detect_regex(
+        str = radiator_snakecase(TARGET_ID),
         pattern = discard.genome, negate = FALSE))
   }
 

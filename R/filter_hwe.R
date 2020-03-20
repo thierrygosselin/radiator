@@ -353,6 +353,7 @@ filter_hwe <- function(
       }
       data.type <- "tbl_df"
     } else {
+      data.bk <- data
       gds.bk <- NULL
     }
 
@@ -411,7 +412,12 @@ filter_hwe <- function(
       if (length(pop.removed) == length(pop.id.levels)) {
         message("\n\nAll strata were removed. Stopping analysis. Returning original data.\n\n")
         run.analysis <- FALSE
-        return(data)
+
+        if (!is.null(gds.bk)) {
+          return(gds.bk)
+        } else {
+          return(data.bk)
+        }
       } else {
         run.analysis <- TRUE
         message("    Note: removed strata are included back in datasets at the end\n\n")
