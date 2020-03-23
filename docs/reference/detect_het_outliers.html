@@ -194,12 +194,12 @@ Option to set <code>pop.levels/pop.labels</code> is also available.</p></td>
     </tr>
     <tr>
       <th>filename</th>
-      <td><p>(optional) The function uses <code><a href='http://www.fstpackage.org/reference/write_fst.html'>write.fst</a></code>,
-to write the tidy data frame in
-the working directory. The file extension appended to
-the <code>filename</code> provided is <code>.rad</code>.
-With default: <code>filename = NULL</code>, the tidy data frame is
-in the global environment only (i.e. not written in the working directory...).</p></td>
+      <td><p>(optional, character) If <code>!is.null(blacklist.id) ||
+!is.null(pop.select)</code>, the modified strata is written by default in the
+working directory with date and time appended to <code>strata_radiator_filtered</code>,
+to make the file unique. If you plan on writing more than 1 strata file per minute,
+use this argument to supply the unique filename.
+Default: <code>filename = NULL</code>.</p></td>
     </tr>
     <tr>
       <th>parallel.core</th>

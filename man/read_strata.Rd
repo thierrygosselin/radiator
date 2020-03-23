@@ -13,6 +13,7 @@ read_strata(
   blacklist.id = NULL,
   keep.two = TRUE,
   path.folder = NULL,
+  filename = NULL,
   verbose = FALSE
 )
 }
@@ -66,8 +67,15 @@ Default: \code{keep.two = TRUE}.}
 
 \item{path.folder}{(optional, path)
 If \code{!is.null(blacklist.id) || !is.null(pop.select)}, the modified strata
-is written by default in the working directory unless specified otherwise.
+is written by default in the working directory.
 Default: \code{path.folder = getwd()}.}
+
+\item{filename}{(optional, character) If \code{!is.null(blacklist.id) ||
+!is.null(pop.select)}, the modified strata is written by default in the
+working directory with date and time appended to \code{strata_radiator_filtered},
+to make the file unique. If you plan on writing more than 1 strata file per minute,
+use this argument to supply the unique filename.
+Default: \code{filename = NULL}.}
 
 \item{verbose}{(optional, logical) When \code{verbose = TRUE}
 the function is a little more chatty during execution.

@@ -53,8 +53,16 @@
 
 #' @param path.folder (optional, path)
 #' If \code{!is.null(blacklist.id) || !is.null(pop.select)}, the modified strata
-#' is written by default in the working directory unless specified otherwise.
+#' is written by default in the working directory.
 #' Default: \code{path.folder = getwd()}.
+
+#' @param filename (optional, character) If \code{!is.null(blacklist.id) ||
+#' !is.null(pop.select)}, the modified strata is written by default in the
+#' working directory with date and time appended to \code{strata_radiator_filtered},
+#' to make the file unique. If you plan on writing more than 1 strata file per minute,
+#' use this argument to supply the unique filename.
+#' Default: \code{filename = NULL}.
+
 
 #' @details The strata file used in radiator is a tab delimited file with
 #' a minimum of 2 columns headers (3 for DArT data users):
@@ -134,6 +142,7 @@ read_strata <- function(
   blacklist.id = NULL,
   keep.two = TRUE,
   path.folder = NULL,
+  filename = NULL,
   verbose = FALSE
 ) {
   if (missing(strata)) rlang::abort("\nMissing strata argument...\n")
@@ -222,15 +231,14 @@ read_strata <- function(
 
 
     if (!is.null(blacklist.id) || !is.null(pop.select)) {
-      # if (is.null(path.folder)) path.folder <- getwd()
-      strata.fn <- generate_filename(
-        name.shortcut = "strata_radiator_filtered",
-        path.folder = path.folder,
-        date = TRUE,
-        extension = "tsv")
-      write_rad(data = strata, filename = strata.fn$filename, tsv = TRUE, verbose = TRUE)
-      # strata.fn <- stringi::stri_join("strata_radiator_filtered_", file.date, ".tsv")
-      # readr::write_tsv(x = strata, path = file.path(path.folder, strata.fn))
+      if (is.null(filename)) {
+        filename <- generate_filename(
+          name.shortcut = "strata_radiator_filtered",
+          path.folder = path.folder,
+          date = TRUE,
+          extension = "tsv")$filename
+      }
+      write_rad(data = strata, filename = filename, tsv = TRUE, verbose = TRUE)
     }
 
     res = list(

@@ -149,6 +149,7 @@ and might be of interest for users.</p>
   <span class='kw'>blacklist.id</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>keep.two</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
   <span class='kw'>path.folder</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>filename</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>
 )</pre>
 
@@ -220,8 +221,17 @@ Default: <code>keep.two = TRUE</code>.</p></td>
       <th>path.folder</th>
       <td><p>(optional, path)
 If <code>!is.null(blacklist.id) || !is.null(pop.select)</code>, the modified strata
-is written by default in the working directory unless specified otherwise.
+is written by default in the working directory.
 Default: <code>path.folder = getwd()</code>.</p></td>
+    </tr>
+    <tr>
+      <th>filename</th>
+      <td><p>(optional, character) If <code>!is.null(blacklist.id) ||
+!is.null(pop.select)</code>, the modified strata is written by default in the
+working directory with date and time appended to <code>strata_radiator_filtered</code>,
+to make the file unique. If you plan on writing more than 1 strata file per minute,
+use this argument to supply the unique filename.
+Default: <code>filename = NULL</code>.</p></td>
     </tr>
     <tr>
       <th>verbose</th>

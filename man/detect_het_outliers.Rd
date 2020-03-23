@@ -47,12 +47,12 @@ Additional documentation is available in \code{\link{read_strata}}.
 Use that function to whitelist/blacklist populations/individuals.
 Option to set \code{pop.levels/pop.labels} is also available.}
 
-\item{filename}{(optional) The function uses \code{\link[fst]{write.fst}},
-to write the tidy data frame in
-the working directory. The file extension appended to
-the \code{filename} provided is \code{.rad}.
-With default: \code{filename = NULL}, the tidy data frame is
-in the global environment only (i.e. not written in the working directory...).}
+\item{filename}{(optional, character) If \code{!is.null(blacklist.id) ||
+!is.null(pop.select)}, the modified strata is written by default in the
+working directory with date and time appended to \code{strata_radiator_filtered},
+to make the file unique. If you plan on writing more than 1 strata file per minute,
+use this argument to supply the unique filename.
+Default: \code{filename = NULL}.}
 
 \item{parallel.core}{(optional) The number of core used for parallel
 execution during import.
