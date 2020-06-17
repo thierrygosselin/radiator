@@ -834,7 +834,15 @@ extract_genotypes_metadata <- function(
   blacklist = FALSE,
   verbose = FALSE
 ) {
-  # gds = input
+  ## TEST
+  # genotypes = FALSE
+  # radiator.node = TRUE
+  # index.only = FALSE
+  # sync.markers.individuals = TRUE
+  # whitelist = FALSE
+  # blacklist = FALSE
+  # verbose = FALSE
+
   keep.one <- FALSE
   if (!radiator.node) return(NULL)
   if (whitelist) blacklist <- FALSE
@@ -842,6 +850,7 @@ extract_genotypes_metadata <- function(
 
   geno.index <- gdsfmt::ls.gdsn(gdsfmt::index.gdsn(
     node = gds, path = "radiator/genotypes.meta", silent = TRUE))
+  if (length(geno.index) == 0L) return(geno.index)
 
   if (!index.only) {
     if (!is.null(genotypes.meta.select)) {

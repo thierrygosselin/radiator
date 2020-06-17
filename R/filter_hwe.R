@@ -423,7 +423,7 @@ filter_hwe <- function(
         message("    Note: removed strata are included back in datasets at the end\n\n")
         data.temp <- dplyr::filter(data, POP_ID %in% pop.removed)
         data <- dplyr::filter(data, !POP_ID %in% pop.removed)
-        data$POP_ID <- droplevels(data$POP_ID)
+        if (is.factor(data$POP_ID)) data$POP_ID <- droplevels(data$POP_ID)
         strata <- dplyr::filter(strata, !POP_ID %in% pop.removed)
       }
 

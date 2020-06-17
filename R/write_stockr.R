@@ -46,6 +46,11 @@ write_stockr <- function(data, filename = NULL, verbose = TRUE) {
     }
   }
 
+  if (!rlang::has_name(data, "POP_ID") && rlang::has_name(data, "STRATA")) {
+    data %<>% dplyr::rename(POP_ID = STRATA)
+  }
+
+
   data <- dplyr::select(data, MARKERS, POP_ID, INDIVIDUALS, GT_BIN) %>%
     dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
   strata <- dplyr::distinct(data, INDIVIDUALS, POP_ID)

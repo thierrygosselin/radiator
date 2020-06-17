@@ -536,18 +536,18 @@ genomic_converter <- function(
   if ("gsi_sim" %in% output) {
     if (verbose) message("Generating gsi_sim output")
     res$gsi_sim <- radiator::write_gsi_sim(data = input,
-                            pop.levels = pop.levels,
-                            strata = strata.bk,
-                            filename = filename)
+                                           pop.levels = pop.levels,
+                                           strata = strata.bk,
+                                           filename = filename)
   } # end gsi_sim output
 
   # RUBIAS --------------------------------------------------------------------
   if ("rubias" %in% output) {
     if (verbose) message("Generating rubias output")
     res$rubias <- radiator::write_rubias(data = input,
-                           strata = strata.bk,
-                           filename = filename,
-                           parallel.core = parallel.core)
+                                         strata = strata.bk,
+                                         filename = filename,
+                                         parallel.core = parallel.core)
   } # end rubias output
 
   # HapMap --------------------------------------------------------------------
@@ -573,7 +573,11 @@ genomic_converter <- function(
                  Install with install.packages('strataG')")
     }
     if (verbose) message("Generating strataG gtypes object")
-    res$gtypes <- radiator::write_gtypes(data = input, write = TRUE)
+    res$gtypes <- radiator::write_gtypes(
+      data = input,
+      write = TRUE,
+      filename = filename
+    )
   } # end strataG output
 
   # structure --------------------------------------------------------------------

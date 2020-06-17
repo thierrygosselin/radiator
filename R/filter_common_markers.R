@@ -403,7 +403,7 @@ not_common_markers <- function(
     return(bl)
   }#End not_common
 
-  bl <- dplyr::group_split(strata, STRATA, keep = FALSE) %>%
+  bl <- dplyr::group_split(strata, STRATA, .keep = FALSE) %>%
     purrr::flatten(.) %>%
     purrr::map(.x = .,
                .f = not_common,

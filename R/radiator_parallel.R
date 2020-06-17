@@ -173,7 +173,7 @@ split_tibble_rows <- function(
   if (group.split) {
     x %<>%
       dplyr::group_by(SPLIT_VEC) %>%
-      dplyr::group_split(.tbl = ., keep = FALSE)
+      dplyr::group_split(.tbl = ., .keep = FALSE)
   }
   return(x)
 }#End split_tibble_rows

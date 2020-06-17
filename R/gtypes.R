@@ -81,9 +81,12 @@ tidy_gtypes <- function(data) {
 #' @inheritParams radiator_common_arguments
 
 #' @param write (logical, optional) To write in the working directory the gtypes
-#' object. The file is written with \code{radiator_gtypes_DATE@TIME.RData} and
-#' can be open with load or readRDS.
+#' object. The file is written with \code{radiator_gtypes_DATE@TIME.RData} if no
+#' filename is provided and can be open with load or readRDS.
 #' Default: \code{write = FALSE}.
+#'
+#' @param filename (character, optional) Filename prefix.
+#' Default: \code{filename = NULL}.
 
 #' @return An object of the class \href{https://github.com/EricArcher/}{strataG} is returned.
 
@@ -112,7 +115,7 @@ tidy_gtypes <- function(data) {
 
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
-write_gtypes <- function(data, write = FALSE) {
+write_gtypes <- function(data, write = FALSE, filename = NULL) {
   # Check that strataG is installed --------------------------------------------
   radiator_packages_dep(package = "strataG", cran = FALSE, bioc = TRUE)
 
@@ -260,10 +263,10 @@ write_gtypes <- function(data, write = FALSE) {
   }
 
   if (write) {
-    filename.temp <- generate_filename(extension = "gtypes")
+    filename.temp <- generate_filename(name.shortcut = filename, extension = "gtypes")
     filename.short <- filename.temp$filename.short
-    filename.genlight <- filename.temp$filename
-    saveRDS(object = res, file = filename.genlight)
+    filename.gtypes <- filename.temp$filename
+    saveRDS(object = res, file = filename.gtypes)
     message("File written: ", filename.short)
   }
 

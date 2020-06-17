@@ -36,7 +36,9 @@
 #' @param nbp (integer) Number of pilot runs. Default: \code{nbp = 20}.
 #' @param pilot (integer) Length of pilot runs. Default: \code{pilot = 5000}.
 #' @param burn (integer) Burn-in length. Default: \code{burn = 50000}.
-#' @param pr_odds (integer) Prior odds for the neutral model.
+#' @param pr_odds (integer) Prior odds for the neutral model. A \code{pr_odds = 10},
+#' indicates that the neutral model is 10 times more likely than the
+#' model with selection. Larger \code{pr_odds} the more conservative is the results.
 
 #' @param subsample (Integer or character)
 #' With \code{subsample = 36}, 36 individuals in each populations are chosen
@@ -202,6 +204,18 @@ run_bayescan <- function(
   parallel.core = parallel::detectCores() - 1,
   bayescan.path = "/usr/local/bin/bayescan"
 ) {
+
+  # test
+  # n = 5000
+  # thin = 10
+  # nbp = 20
+  # pilot = 5000
+  # burn = 50000
+  # subsample = NULL
+  # iteration.subsample = 1
+  # parallel.core = parallel::detectCores() - 1
+  # bayescan.path = "/usr/local/bin/bayescan"
+
   cat("#######################################################################\n")
   cat("###################### radiator::run_bayescan #########################\n")
   cat("#######################################################################\n")

@@ -176,12 +176,12 @@ tidy_genlight <- function(
         dplyr::full_join(markers, by = "MARKERS") %>%
         dplyr::full_join(strata, by =  "INDIVIDUALS") %>%
         dplyr::mutate(
-       INDIVIDUALS = radiator::clean_ind_names(INDIVIDUALS),
+          INDIVIDUALS = radiator::clean_ind_names(INDIVIDUALS),
           POP_ID = radiator::clean_pop_names(POP_ID)
         ) %>%
         dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS) %>%
         dplyr::select(dplyr::one_of(want))
-      ) %>%
+    ) %>%
       radiator::calibrate_alleles(
         data = .,
         biallelic = TRUE,

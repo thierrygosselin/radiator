@@ -43,7 +43,9 @@ arguments described below \code{subsample} and \code{iteration.subsample}.
 
 \item{burn}{(integer) Burn-in length. Default: \code{burn = 50000}.}
 
-\item{pr_odds}{(integer) Prior odds for the neutral model.}
+\item{pr_odds}{(integer) Prior odds for the neutral model. A \code{pr_odds = 10},
+indicates that the neutral model is 10 times more likely than the
+model with selection. Larger \code{pr_odds} the more conservative is the results.}
 
 \item{subsample}{(Integer or character)
 With \code{subsample = 36}, 36 individuals in each populations are chosen
