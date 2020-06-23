@@ -1,3 +1,8 @@
+# radiator 1.1.6 2020-06-23
+
+* updated radiator so that it work with latest release of SeqArray (v.1.28.1), that
+introduced breaking changes.
+
 # radiator 1.1.5 2020-03-07
 
 * `fineRADstructure` rules have changed, I'm no longer doing gymnastic to make the
