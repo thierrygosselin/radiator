@@ -941,7 +941,8 @@ extract_coverage <- function(
   # ind = TRUE
   # update.gds = FALSE
   # parallel.core = parallel::detectCores() - 2
-  # verbose = FALSE
+  # verbose = TRUE
+  # depth.tibble = FALSE
 
 
   coverage.info <- list()

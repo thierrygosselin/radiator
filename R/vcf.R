@@ -2007,8 +2007,9 @@ parse_gds_metadata <- function(
     res$AD <- SeqArray::seqGetData(
       gdsfile = gds,
       var.name = "annotation/format/AD"
-    )$data %>%
+    ) $data %>%
       tibble::as_tibble(.)
+
     column.vec <- seq_along(res$AD)
     res$AD <- tibble::tibble(
       ALLELE_REF_DEPTH = res$AD[, column.vec %% 2 == 1] %>%
@@ -2052,7 +2053,13 @@ parse_gds_metadata <- function(
     if (verbose) message("DP column: cleaning and renaming to READ_DEPTH")
     res$DP <- tibble::tibble(READ_DEPTH = SeqArray::seqGetData(
       gdsfile = gds,
-      var.name = "annotation/format/DP")$data %>% as.vector(.))
+      var.name = "annotation/format/DP") %>% as.vector(.))
+
+    # as of version 1.28.0 the $data is no longer necessary...
+    # res$DP <- tibble::tibble(READ_DEPTH = SeqArray::seqGetData(
+    #   gdsfile = gds,
+    #   var.name = "annotation/format/DP")$data %>% as.vector(.))
+
     # test <- res$DP
     # depth <- SeqArray::seqGetData(gds, "annotation/format/DP")
     #
@@ -2067,10 +2074,18 @@ parse_gds_metadata <- function(
   } # End DP
 
   # Cleaning HQ: Haplotype quality as phred score
+
+
   if (format.name == "HQ") {
     res$HQ <- tibble::tibble(HQ = SeqArray::seqGetData(
       gdsfile = gds,
-      var.name = "annotation/format/HQ")$data %>% as.vector(.))
+      var.name = "annotation/format/HQ") %>% as.vector(.))
+
+    # as of SeqArray version 1.28.0 breaking change
+    # res$HQ <- tibble::tibble(HQ = SeqArray::seqGetData(
+    #   gdsfile = gds,
+    #   var.name = "annotation/format/HQ")$data %>% as.vector(.))
+
     # test <- res$HQ
 
     # check HQ and new stacks version with no HQ
@@ -2088,7 +2103,11 @@ parse_gds_metadata <- function(
     if (verbose) message("GQ column: Genotype Quality")
     res$GQ <- tibble::tibble(GQ = SeqArray::seqGetData(
       gdsfile = gds,
-      var.name = "annotation/format/GQ")$data %>% as.vector(.))
+      var.name = "annotation/format/GQ") %>% as.vector(.))
+    # as of SeqArray version 1.28.0 breaking change
+    # res$GQ <- tibble::tibble(GQ = SeqArray::seqGetData(
+    #   gdsfile = gds,
+    #   var.name = "annotation/format/GQ")$data %>% as.vector(.))
     # test <- res$GQ
   } # End GQ
 
@@ -2101,6 +2120,7 @@ parse_gds_metadata <- function(
       res$GL <- SeqArray::seqGetData(gdsfile = gds,
                                      var.name = "annotation/format/GL")$data %>%
         tibble::as_tibble(.)
+
       column.vec <- seq_along(res$GL)
       res$GL <- tibble::tibble(GL_HOM_REF = res$GL[, column.vec %% 3 == 1] %>%
                                  as.matrix(.) %>%
@@ -2121,7 +2141,13 @@ parse_gds_metadata <- function(
     if (verbose) message("GOF column: Goodness of fit value")
     res$GOF <- tibble::tibble(GOF = SeqArray::seqGetData(
       gdsfile = gds,
-      var.name = "annotation/format/GOF")$data %>% as.vector(.))
+      var.name = "annotation/format/GOF") %>% as.vector(.))
+    # as of SeqArray version 1.28.0 breaking change
+    # res$GOF <- tibble::tibble(GOF = SeqArray::seqGetData(
+    #   gdsfile = gds,
+    #   var.name = "annotation/format/GOF")$data %>% as.vector(.))
+
+
     # test <- res$GOF
   } # End GOF
 
@@ -2130,7 +2156,11 @@ parse_gds_metadata <- function(
     if (verbose) message("NR column: splitting column into the number of variant")
     res$NR <- tibble::tibble(NR = SeqArray::seqGetData(
       gdsfile = gds,
-      var.name = "annotation/format/NR")$data %>% as.vector(.))
+      var.name = "annotation/format/NR") %>% as.vector(.))
+    # as of SeqArray version 1.28.0 breaking change
+    # res$NR <- tibble::tibble(NR = SeqArray::seqGetData(
+    #   gdsfile = gds,
+    #   var.name = "annotation/format/NR")$data %>% as.vector(.))
     # test <- res$NR
   }#End cleaning NR column
 
@@ -2139,7 +2169,11 @@ parse_gds_metadata <- function(
     if (verbose) message("NV column: splitting column into the number of variant")
     res$NR <- tibble::tibble(NV = SeqArray::seqGetData(
       gdsfile = gds,
-      var.name = "annotation/format/NV")$data %>% as.vector(.))
+      var.name = "annotation/format/NV") %>% as.vector(.))
+    # as of SeqArray version 1.28.0 breaking change
+    # res$NR <- tibble::tibble(NV = SeqArray::seqGetData(
+    #   gdsfile = gds,
+    #   var.name = "annotation/format/NV")$data %>% as.vector(.))
     # test <- res$NV
   }#End cleaning NV column
 
@@ -2150,6 +2184,7 @@ parse_gds_metadata <- function(
     res$CATG <- tibble::as_tibble(
       SeqArray::seqGetData(gdsfile = gds,var.name = "annotation/format/CATG")$data
     )
+
     column.vec <- seq_along( res$CATG)
 
     res$CATG <- tibble::tibble(
