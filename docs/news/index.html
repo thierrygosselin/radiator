@@ -10,23 +10,27 @@
 
 
 <!-- jquery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha256-bZLfwXAP04zRMK2BjiO8iu9pf4FbLqX6zitd+tIvLhE=" crossorigin="anonymous" />
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script>
+
+<!-- bootstrap-toc -->
+<link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 
 <!-- headroom.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -53,7 +57,7 @@
 
   </head>
 
-  <body>
+  <body data-spy="scroll" data-target="#toc">
     <div class="container template-news">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -121,37 +125,37 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-      <h1>Changelog <small></small></h1>
-      
+      <h1 data-toc-skip>Changelog <small></small></h1>
+      <small>Source: <a href='https://github.com/thierrygosselin/radiator/blob/master/NEWS.md'><code>NEWS.md</code></a></small>
     </div>
 
-    <div id="radiator-1-1-5-2020-03-07" class="section level1">
-<h1 class="page-header">
-<a href="#radiator-1-1-5-2020-03-07" class="anchor"></a>radiator 1.1.5 2020-03-07</h1>
+    <div id="radiator-115-2020-03-07" class="section level1">
+<h1 class="page-header" data-toc-text="1.1.5">
+<a href="#radiator-115-2020-03-07" class="anchor"></a>radiator 1.1.5 2020-03-07</h1>
 <ul>
 <li>
 <code>fineRADstructure</code> rules have changed, I’m no longer doing gymnastic to make the population work with <code>genomic_converter</code> or <code>write_fineradstructure</code>, it’s not up to the user to make sure the pop id starts with a letter. Some codes might now be broken because of this.</li>
 </ul>
 </div>
-    <div id="radiator-1-1-4-2020-02-04" class="section level1">
-<h1 class="page-header">
-<a href="#radiator-1-1-4-2020-02-04" class="anchor"></a>radiator 1.1.4 2020-02-04</h1>
+    <div id="radiator-114-2020-02-04" class="section level1">
+<h1 class="page-header" data-toc-text="1.1.4">
+<a href="#radiator-114-2020-02-04" class="anchor"></a>radiator 1.1.4 2020-02-04</h1>
 <ul>
 <li>
 <code>read_plink</code> and <code>tidy_plink</code>: new rules to get the best out of PLINK <strong>tped</strong> and <strong>bed</strong> files.</li>
 </ul>
 </div>
-    <div id="radiator-1-1-3-2020-01-21" class="section level1">
-<h1 class="page-header">
-<a href="#radiator-1-1-3-2020-01-21" class="anchor"></a>radiator 1.1.3 2020-01-21</h1>
+    <div id="radiator-113-2020-01-21" class="section level1">
+<h1 class="page-header" data-toc-text="1.1.3">
+<a href="#radiator-113-2020-01-21" class="anchor"></a>radiator 1.1.3 2020-01-21</h1>
 <ul>
 <li>
 <code>detect_microsatellites</code>: new radiator function that detect microsatellites using GMATA.</li>
 </ul>
 </div>
-    <div id="radiator-1-1-0-2019-05-31" class="section level1">
-<h1 class="page-header">
-<a href="#radiator-1-1-0-2019-05-31" class="anchor"></a>radiator 1.1.0 2019-05-31</h1>
+    <div id="radiator-110-2019-05-31" class="section level1">
+<h1 class="page-header" data-toc-text="1.1.0">
+<a href="#radiator-110-2019-05-31" class="anchor"></a>radiator 1.1.0 2019-05-31</h1>
 <ul>
 <li>2 new output formats: <code>genepopedit</code> and <code>rubias</code>
 </li>
@@ -160,9 +164,9 @@
 <code>sexy_markers</code>: couple of bug fixed. More testing with the different genomic format.</li>
 </ul>
 </div>
-    <div id="radiator-1-0-0-2019-05-01" class="section level1">
-<h1 class="page-header">
-<a href="#radiator-1-0-0-2019-05-01" class="anchor"></a>radiator 1.0.0 2019-05-01</h1>
+    <div id="radiator-100-2019-05-01" class="section level1">
+<h1 class="page-header" data-toc-text="1.0.0">
+<a href="#radiator-100-2019-05-01" class="anchor"></a>radiator 1.0.0 2019-05-01</h1>
 <ul>
 <li>There is still documentation and vignette to fix, but this is the release that will be submitted to CRAN</li>
 <li>Major <code>SeqArray</code> and <code>GDS</code> integration</li>
@@ -176,33 +180,33 @@
 <li>better function doc</li>
 </ul>
 </div>
-    <div id="radiator-0-0-21-2018-11-14" class="section level1">
-<h1 class="page-header">
-<a href="#radiator-0-0-21-2018-11-14" class="anchor"></a>radiator 0.0.21 2018-11-14</h1>
+    <div id="radiator-0021-2018-11-14" class="section level1">
+<h1 class="page-header" data-toc-text="0.0.21">
+<a href="#radiator-0021-2018-11-14" class="anchor"></a>radiator 0.0.21 2018-11-14</h1>
 <ul>
 <li>
 <code>snp.ld</code>: using missing data now works by chromosome/scaffold.</li>
 </ul>
 </div>
-    <div id="radiator-0-0-20-2018-11-12" class="section level1">
-<h1 class="page-header">
-<a href="#radiator-0-0-20-2018-11-12" class="anchor"></a>radiator 0.0.20 2018-11-12</h1>
+    <div id="radiator-0020-2018-11-12" class="section level1">
+<h1 class="page-header" data-toc-text="0.0.20">
+<a href="#radiator-0020-2018-11-12" class="anchor"></a>radiator 0.0.20 2018-11-12</h1>
 <ul>
 <li>
 <code>tidy_vcf</code>, <code>tidy_genomic_data</code> and <code>genomic_converter</code>: works better with ipyrad vcf’s</li>
 </ul>
 </div>
-    <div id="radiator-0-0-19-2018-11-07" class="section level1">
-<h1 class="page-header">
-<a href="#radiator-0-0-19-2018-11-07" class="anchor"></a>radiator 0.0.19 2018-11-07</h1>
+    <div id="radiator-0019-2018-11-07" class="section level1">
+<h1 class="page-header" data-toc-text="0.0.19">
+<a href="#radiator-0019-2018-11-07" class="anchor"></a>radiator 0.0.19 2018-11-07</h1>
 <ul>
 <li>
 <code>tidy_vcf</code>, <code>tidy_genomic_data</code> and <code>genomic_converter</code>: works better with freebayes and stacks vcf</li>
 </ul>
 </div>
-    <div id="radiator-0-0-18-2018-10-23" class="section level1">
-<h1 class="page-header">
-<a href="#radiator-0-0-18-2018-10-23" class="anchor"></a>radiator 0.0.18 2018-10-23</h1>
+    <div id="radiator-0018-2018-10-23" class="section level1">
+<h1 class="page-header" data-toc-text="0.0.18">
+<a href="#radiator-0018-2018-10-23" class="anchor"></a>radiator 0.0.18 2018-10-23</h1>
 <ul>
 <li>
 <code>tidy_vcf</code>, <code>tidy_genomic_data</code> and <code>genomic_converter</code>: work without strata/pop grouping</li>
@@ -212,9 +216,9 @@
 <code>write_vcf</code>: will now output ID as LOCUS_COL or LOCUS_(POS-1) if COL info is not provided.</li>
 </ul>
 </div>
-    <div id="radiator-0-0-17-2018-10-04" class="section level1">
-<h1 class="page-header">
-<a href="#radiator-0-0-17-2018-10-04" class="anchor"></a>radiator 0.0.17 2018-10-04</h1>
+    <div id="radiator-0017-2018-10-04" class="section level1">
+<h1 class="page-header" data-toc-text="0.0.17">
+<a href="#radiator-0017-2018-10-04" class="anchor"></a>radiator 0.0.17 2018-10-04</h1>
 <ul>
 <li>
 <code>tidy_vcf</code>, <code>tidy_genomic_data</code> and <code>genomic_converter</code>: way faster with huge VCF</li>
@@ -224,9 +228,9 @@
 <code>write_ldna</code>: new function that generates a LDna input file from a tidy data frame.</li>
 </ul>
 </div>
-    <div id="radiator-0-0-16-2018-09-04" class="section level1">
-<h1 class="page-header">
-<a href="#radiator-0-0-16-2018-09-04" class="anchor"></a>radiator 0.0.16 2018-09-04</h1>
+    <div id="radiator-0016-2018-09-04" class="section level1">
+<h1 class="page-header" data-toc-text="0.0.16">
+<a href="#radiator-0016-2018-09-04" class="anchor"></a>radiator 0.0.16 2018-09-04</h1>
 <ul>
 <li>
 <code>tidy_vcf</code>, <code>tidy_genomic_data</code> and <code>genomic_converter</code>: way faster with huge VCF</li>
@@ -234,9 +238,9 @@
 <code>write_fineradstructure</code>: fix bug when data was from DArT</li>
 </ul>
 </div>
-    <div id="radiator-0-0-15-2018-08-17" class="section level1">
-<h1 class="page-header">
-<a href="#radiator-0-0-15-2018-08-17" class="anchor"></a>radiator 0.0.15 2018-08-17</h1>
+    <div id="radiator-0015-2018-08-17" class="section level1">
+<h1 class="page-header" data-toc-text="0.0.15">
+<a href="#radiator-0015-2018-08-17" class="anchor"></a>radiator 0.0.15 2018-08-17</h1>
 <ul>
 <li>
 <code>genomic_converter</code>, <code>tidy_genomic_data</code>: bug fix when individuals are integers</li>
@@ -244,9 +248,9 @@
 <code>fis_summary</code>: arguments updated</li>
 </ul>
 </div>
-    <div id="radiator-0-0-14-2018-08-04" class="section level1">
-<h1 class="page-header">
-<a href="#radiator-0-0-14-2018-08-04" class="anchor"></a>radiator 0.0.14 2018-08-04</h1>
+    <div id="radiator-0014-2018-08-04" class="section level1">
+<h1 class="page-header" data-toc-text="0.0.14">
+<a href="#radiator-0014-2018-08-04" class="anchor"></a>radiator 0.0.14 2018-08-04</h1>
 <ul>
 <li>
 <code>filter_dart</code> and <code>filter_rad</code>: can now opt out of HWE filtering.</li>
@@ -254,26 +258,26 @@
 <code>filter_hwe</code>: user can opt to see figures but skip filtering</li>
 </ul>
 </div>
-    <div id="radiator-0-0-13-2018-07-09" class="section level1">
-<h1 class="page-header">
-<a href="#radiator-0-0-13-2018-07-09" class="anchor"></a>radiator 0.0.13 2018-07-09</h1>
+    <div id="radiator-0013-2018-07-09" class="section level1">
+<h1 class="page-header" data-toc-text="0.0.13">
+<a href="#radiator-0013-2018-07-09" class="anchor"></a>radiator 0.0.13 2018-07-09</h1>
 <ul>
 <li>working to make radiator work correctly with ggplot2 v.3.0.0</li>
 <li>radiator ready for R 3.5.1 “Feather Spray” released on 2018/07/05</li>
 </ul>
 </div>
-    <div id="radiator-0-0-12-2018-06-21" class="section level1">
-<h1 class="page-header">
-<a href="#radiator-0-0-12-2018-06-21" class="anchor"></a>radiator 0.0.12 2018-06-21</h1>
+    <div id="radiator-0012-2018-06-21" class="section level1">
+<h1 class="page-header" data-toc-text="0.0.12">
+<a href="#radiator-0012-2018-06-21" class="anchor"></a>radiator 0.0.12 2018-06-21</h1>
 <ul>
 <li>transferred <code>write_gsi_sim</code> from assigner to radiator</li>
 <li>2 <code>write</code> functions: <code>write_snprelate</code> and <code>write_seqarray</code>
 </li>
 </ul>
 </div>
-    <div id="radiator-0-0-11-2018-04-26" class="section level1">
-<h1 class="page-header">
-<a href="#radiator-0-0-11-2018-04-26" class="anchor"></a>radiator 0.0.11 2018-04-26</h1>
+    <div id="radiator-0011-2018-04-26" class="section level1">
+<h1 class="page-header" data-toc-text="0.0.11">
+<a href="#radiator-0011-2018-04-26" class="anchor"></a>radiator 0.0.11 2018-04-26</h1>
 <ul>
 <li>when individuals in strata file/object and data don’t match, an error is generated</li>
 <li>to reduce <code>radiator</code> dependencies, several packages were moved in the <strong>Suggests</strong> field.</li>
@@ -293,30 +297,30 @@
 </li>
 </ul>
 </div>
-    <div id="radiator-0-0-10-2018-03-06" class="section level1">
-<h1 class="page-header">
-<a href="#radiator-0-0-10-2018-03-06" class="anchor"></a>radiator 0.0.10 2018-03-06</h1>
+    <div id="radiator-0010-2018-03-06" class="section level1">
+<h1 class="page-header" data-toc-text="0.0.10">
+<a href="#radiator-0010-2018-03-06" class="anchor"></a>radiator 0.0.10 2018-03-06</h1>
 <ul>
 <li>New output file: stockr This output file format enables to run the data in the stockR package from Scott Fisher at CSIRO in Hobart.</li>
 </ul>
 </div>
-    <div id="radiator-0-0-9-2018-03-01" class="section level1">
-<h1 class="page-header">
-<a href="#radiator-0-0-9-2018-03-01" class="anchor"></a>radiator 0.0.9 2018-03-01</h1>
+    <div id="radiator-009-2018-03-01" class="section level1">
+<h1 class="page-header" data-toc-text="0.0.9">
+<a href="#radiator-009-2018-03-01" class="anchor"></a>radiator 0.0.9 2018-03-01</h1>
 <ul>
 <li>New output file: related This output file format enables to run the data in the related R package, which is essantially the R version of <em>COANCESTRY</em> fortran program developed by Jinliang Wang.</li>
 </ul>
 </div>
-    <div id="radiator-0-0-8-2018-02-08" class="section level1">
-<h1 class="page-header">
-<a href="#radiator-0-0-8-2018-02-08" class="anchor"></a>radiator 0.0.8 2018-02-08</h1>
+    <div id="radiator-008-2018-02-08" class="section level1">
+<h1 class="page-header" data-toc-text="0.0.8">
+<a href="#radiator-008-2018-02-08" class="anchor"></a>radiator 0.0.8 2018-02-08</h1>
 <ul>
 <li>New output file: fineRADstructure</li>
 </ul>
 </div>
-    <div id="radiator-0-0-7-2018-02-06" class="section level1">
-<h1 class="page-header">
-<a href="#radiator-0-0-7-2018-02-06" class="anchor"></a>radiator 0.0.7 2018-02-06</h1>
+    <div id="radiator-007-2018-02-06" class="section level1">
+<h1 class="page-header" data-toc-text="0.0.7">
+<a href="#radiator-007-2018-02-06" class="anchor"></a>radiator 0.0.7 2018-02-06</h1>
 <ul>
 <li>Better VCF parsing</li>
 <li>
@@ -324,9 +328,9 @@
 <li>starting to re-introduce <code>data.table</code> to increase speed during melting or casting data frames</li>
 </ul>
 </div>
-    <div id="radiator-0-0-6-2017-10-02" class="section level1">
-<h1 class="page-header">
-<a href="#radiator-0-0-6-2017-10-02" class="anchor"></a>radiator 0.0.6 2017-10-02</h1>
+    <div id="radiator-006-2017-10-02" class="section level1">
+<h1 class="page-header" data-toc-text="0.0.6">
+<a href="#radiator-006-2017-10-02" class="anchor"></a>radiator 0.0.6 2017-10-02</h1>
 <ul>
 <li>
 <code>tidy_genomic_data</code> and <code>genomic_converter</code>: bug fix and improvements.</li>
@@ -336,9 +340,9 @@
 <code>radiator::snp.ld</code>: the module inside <code>tidy_genomic_data</code> and <code>genomic_converter</code> to minimize short linkage disequilibrium as a new option <code>snp.ld = "middle"</code>. For locus with &gt; 2 SNPs/read the option allows to select at random one SNP between the first and the last SNP on the read. If the locus as &lt;= 2 SNPs on the read, the first one is selected. Note that for that last option, the numbers are reported. Thanks to Ido Bar for the idea.</li>
 </ul>
 </div>
-    <div id="radiator-0-0-5-2017-09-20" class="section level1">
-<h1 class="page-header">
-<a href="#radiator-0-0-5-2017-09-20" class="anchor"></a>radiator 0.0.5 2017-09-20</h1>
+    <div id="radiator-005-2017-09-20" class="section level1">
+<h1 class="page-header" data-toc-text="0.0.5">
+<a href="#radiator-005-2017-09-20" class="anchor"></a>radiator 0.0.5 2017-09-20</h1>
 <ul>
 <li>
 <code>tidy_dart</code> and <code>filter_dart</code>:
@@ -354,72 +358,44 @@
 <li>several typos where fix. Thanks to <a href='https://github.com/IdoBar'>@IdoBar</a> for this.</li>
 </ul>
 </div>
-    <div id="radiator-0-0-4-2017-09-07" class="section level1">
-<h1 class="page-header">
-<a href="#radiator-0-0-4-2017-09-07" class="anchor"></a>radiator 0.0.4 2017-09-07</h1>
+    <div id="radiator-004-2017-09-07" class="section level1">
+<h1 class="page-header" data-toc-text="0.0.4">
+<a href="#radiator-004-2017-09-07" class="anchor"></a>radiator 0.0.4 2017-09-07</h1>
 <ul>
 <li>new function: <code>run_bayescan</code> to run <em>BayeScan</em> … with <em>radiator</em>
 </li>
 <li>new separate <code>write</code> functions also included in <code>genomic_converter</code>: <code>write_bayescan</code>, <code>write_pcadapt</code> and <code>write_hzar</code>.</li>
 </ul>
 </div>
-    <div id="radiator-0-0-3-2017-07-18" class="section level1">
-<h1 class="page-header">
-<a href="#radiator-0-0-3-2017-07-18" class="anchor"></a>radiator 0.0.3 2017-07-18</h1>
+    <div id="radiator-003-2017-07-18" class="section level1">
+<h1 class="page-header" data-toc-text="0.0.3">
+<a href="#radiator-003-2017-07-18" class="anchor"></a>radiator 0.0.3 2017-07-18</h1>
 <ul>
 <li>small mod</li>
 <li>writting in specific folder</li>
 <li>writting specific plot</li>
 </ul>
 </div>
-    <div id="radiator-0-0-2-2017-07-15" class="section level1">
-<h1 class="page-header">
-<a href="#radiator-0-0-2-2017-07-15" class="anchor"></a>radiator 0.0.2 2017-07-15</h1>
+    <div id="radiator-002-2017-07-15" class="section level1">
+<h1 class="page-header" data-toc-text="0.0.2">
+<a href="#radiator-002-2017-07-15" class="anchor"></a>radiator 0.0.2 2017-07-15</h1>
 <ul>
 <li>Work on different functions to prep for official package launch</li>
 </ul>
 </div>
-    <div id="radiator-0-0-1-2017-06-18" class="section level1">
-<h1 class="page-header">
-<a href="#radiator-0-0-1-2017-06-18" class="anchor"></a>radiator 0.0.1 2017-06-18</h1>
+    <div id="radiator-001-2017-06-18" class="section level1">
+<h1 class="page-header" data-toc-text="0.0.1">
+<a href="#radiator-001-2017-06-18" class="anchor"></a>radiator 0.0.1 2017-06-18</h1>
 <ul>
 <li>First commit</li>
 </ul>
 </div>
   </div>
 
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <div id="tocnav">
-      <h2>Contents</h2>
-      <ul class="nav nav-pills nav-stacked">
-        <li><a href="#radiator-1-1-5-2020-03-07">1.1.5</a></li>
-        <li><a href="#radiator-1-1-4-2020-02-04">1.1.4</a></li>
-        <li><a href="#radiator-1-1-3-2020-01-21">1.1.3</a></li>
-        <li><a href="#radiator-1-1-0-2019-05-31">1.1.0</a></li>
-        <li><a href="#radiator-1-0-0-2019-05-01">1.0.0</a></li>
-        <li><a href="#radiator-0-0-21-2018-11-14">0.0.21</a></li>
-        <li><a href="#radiator-0-0-20-2018-11-12">0.0.20</a></li>
-        <li><a href="#radiator-0-0-19-2018-11-07">0.0.19</a></li>
-        <li><a href="#radiator-0-0-18-2018-10-23">0.0.18</a></li>
-        <li><a href="#radiator-0-0-17-2018-10-04">0.0.17</a></li>
-        <li><a href="#radiator-0-0-16-2018-09-04">0.0.16</a></li>
-        <li><a href="#radiator-0-0-15-2018-08-17">0.0.15</a></li>
-        <li><a href="#radiator-0-0-14-2018-08-04">0.0.14</a></li>
-        <li><a href="#radiator-0-0-13-2018-07-09">0.0.13</a></li>
-        <li><a href="#radiator-0-0-12-2018-06-21">0.0.12</a></li>
-        <li><a href="#radiator-0-0-11-2018-04-26">0.0.11</a></li>
-        <li><a href="#radiator-0-0-10-2018-03-06">0.0.10</a></li>
-        <li><a href="#radiator-0-0-9-2018-03-01">0.0.9</a></li>
-        <li><a href="#radiator-0-0-8-2018-02-08">0.0.8</a></li>
-        <li><a href="#radiator-0-0-7-2018-02-06">0.0.7</a></li>
-        <li><a href="#radiator-0-0-6-2017-10-02">0.0.6</a></li>
-        <li><a href="#radiator-0-0-5-2017-09-20">0.0.5</a></li>
-        <li><a href="#radiator-0-0-4-2017-09-07">0.0.4</a></li>
-        <li><a href="#radiator-0-0-3-2017-07-18">0.0.3</a></li>
-        <li><a href="#radiator-0-0-2-2017-07-15">0.0.2</a></li>
-        <li><a href="#radiator-0-0-1-2017-06-18">0.0.1</a></li>
-      </ul>
-    </div>
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+    <nav id="toc" data-toggle="toc" class="sticky-top">
+      <h2 data-toc-skip>Contents</h2>
+    </nav>
   </div>
 
 </div>
@@ -431,7 +407,7 @@
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>
