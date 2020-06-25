@@ -4,7 +4,7 @@
 \alias{assign_defaults}
 \title{assign_defaults}
 \usage{
-assign_defaults(n, verbose = TRUE, pos = 1)
+assign_defaults(n, env.arg, verbose = TRUE)
 }
 \description{
 Assign the default values for...

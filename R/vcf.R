@@ -335,7 +335,6 @@ read_vcf <- function(
     verbose = FALSE
   )
 
-
   if (!is.null(filter.snp.position.read) ||
       !is.null(filter.mac) ||
       !is.null(filter.coverage) ||
@@ -2055,7 +2054,7 @@ parse_gds_metadata <- function(
       gdsfile = gds,
       var.name = "annotation/format/DP") %>% as.vector(.))
 
-    # as of version 1.28.0 the $data is no longer necessary...
+    # as of SeqArray version 1.28.1 the $data is no longer necessary...
     # res$DP <- tibble::tibble(READ_DEPTH = SeqArray::seqGetData(
     #   gdsfile = gds,
     #   var.name = "annotation/format/DP")$data %>% as.vector(.))
@@ -2074,17 +2073,10 @@ parse_gds_metadata <- function(
   } # End DP
 
   # Cleaning HQ: Haplotype quality as phred score
-
-
   if (format.name == "HQ") {
     res$HQ <- tibble::tibble(HQ = SeqArray::seqGetData(
       gdsfile = gds,
-      var.name = "annotation/format/HQ") %>% as.vector(.))
-
-    # as of SeqArray version 1.28.0 breaking change
-    # res$HQ <- tibble::tibble(HQ = SeqArray::seqGetData(
-    #   gdsfile = gds,
-    #   var.name = "annotation/format/HQ")$data %>% as.vector(.))
+      var.name = "annotation/format/HQ")$data %>% as.vector(.))
 
     # test <- res$HQ
 

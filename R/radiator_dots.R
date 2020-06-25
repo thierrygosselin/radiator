@@ -95,6 +95,7 @@ radiator_dots <- function(
 ) {
   opt.change <- getOption("width")
   options(width = 70)
+  env.arg <- parent.frame()
   res <- tibble::tibble(
     ARGUMENTS = character(0),
     VALUES = character(0),
@@ -154,7 +155,9 @@ radiator_dots <- function(
       .x = names(dots.keepers),
       .y = dots.keepers,
       .f = extract_dots,
-      verbose = verbose)
+      env.arg = env.arg,
+      verbose = verbose
+      )
     res %<>% dplyr::bind_rows(res.df)
   }
 
@@ -164,7 +167,9 @@ radiator_dots <- function(
     res.df <- purrr::map_df(
       .x = dots.defaults,
       .f = assign_defaults,
-      verbose = verbose)
+      env.arg = env.arg,
+      verbose = verbose
+      )
     res %<>% dplyr::bind_rows(res.df)
   }
 
@@ -216,8 +221,12 @@ radiator_dots <- function(
 #' @keywords internal
 #' @export
 message_func_call <- function(n, v, verbose = TRUE) {
-  # if (length(rlang::quo_name(v)) > 1) {} v <- rlang::quo_name(v)
-  if (verbose) message("    ", stringi::stri_join(n, " = ", paste(rlang::quo_name(v), collapse = "," )))
+  if (verbose) {
+    message(
+      "    ",
+      stringi::stri_join(n, " = ", paste(rlang::quo_name(v), collapse = "," ))
+    )
+  }
 }# End message_func_call
 
 
@@ -227,11 +236,9 @@ message_func_call <- function(n, v, verbose = TRUE) {
 #' @keywords internal
 #' @export
 
-extract_dots <- function(n, v, verbose = TRUE, pos = 1) {
-  assign(x = n, value = v, envir = as.environment(pos))
-  if (n == "path.folder" && !is.null(v)) {
-    v <- folder_short(v)
-  }
+extract_dots <- function(n, v, env.arg, verbose = TRUE) {
+  assign(x = n, value = v, pos = env.arg, envir = env.arg)
+  if (n == "path.folder" && !is.null(v)) v <- folder_short(v)
   if (n == "subsample") v <- length(n)
   if (n == "pop.levels") v <- length(n)
   if (n == "pop.labels") v <- length(n)
@@ -251,7 +258,7 @@ extract_dots <- function(n, v, verbose = TRUE, pos = 1) {
 #' @name assign_defaults
 #' @keywords internal
 #' @export
-assign_defaults <- function(n, verbose = TRUE, pos = 1) {
+assign_defaults <- function(n, env.arg, verbose = TRUE) {
   v <- NULL # by defaults all NULL
 
   # Specifics...
@@ -276,7 +283,7 @@ assign_defaults <- function(n, verbose = TRUE, pos = 1) {
   if (n == "iteration.subsample") v <- 1L
 
   # assignment
-  assign(rlang::quo_name(n), v, envir = as.environment(pos))
+  assign(rlang::quo_name(n), v, pos = env.arg, envir = env.arg)
   if (verbose) message("    ", n, " = ", rlang::quo_name(v))
   v <- check_args_class(x = v)
   res <- tibble::tibble(

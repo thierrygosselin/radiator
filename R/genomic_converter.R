@@ -297,7 +297,7 @@ genomic_converter <- function(
   # filename = NULL
   # parallel.core = parallel::detectCores() - 1
   # verbose = TRUE
-  ## dots dots dots
+  # # dots dots dots
   # path.folder <- NULL
   # keep.allele.names <- FALSE
   # vcf.metadata = TRUE
@@ -322,6 +322,7 @@ genomic_converter <- function(
   }
 
   # Cleanup-------------------------------------------------------------------
+  # obj.keeper <- c(ls(envir = globalenv()), "res", "verbose")
   radiator_function_header(f.name = "genomic_converter", verbose = verbose)
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
   if (verbose) message("Execution date@time: ", file.date)
@@ -333,6 +334,7 @@ genomic_converter <- function(
   on.exit(setwd(old.dir), add = TRUE)
   on.exit(options(width = opt.change), add = TRUE)
   on.exit(radiator_toc(timing, verbose = verbose), add = TRUE)
+  # on.exit(rm(list = setdiff(ls(envir = sys.frame(-1L)), obj.keeper), envir = sys.frame(-1L)))
   on.exit(radiator_function_header(f.name = "genomic_converter", start = FALSE, verbose = verbose), add = TRUE)
   res <- list()
 

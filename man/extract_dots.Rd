@@ -4,7 +4,7 @@
 \alias{extract_dots}
 \title{extract_dots}
 \usage{
-extract_dots(n, v, verbose = TRUE, pos = 1)
+extract_dots(n, v, env.arg, verbose = TRUE)
 }
 \description{
 Extract and Assign ...
