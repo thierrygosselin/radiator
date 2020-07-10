@@ -1174,44 +1174,46 @@ dart2gds <- function(
       by = "VARIANT_ID")
   }
 
-  genotypes.meta <- data.table::as.data.table(alt) %>%
-    data.table::melt.data.table(
-      data = .,
-      id.vars = want,
-      variable.name = "INDIVIDUALS",
-      value.name = "ALLELE_ALT_DEPTH",
-      variable.factor = FALSE) %>%
-    tibble::as_tibble(.) %>%
-    dplyr::bind_cols(
-      data.table::as.data.table(ref) %>%
-        data.table::melt.data.table(
-          data = .,
-          id.vars = c("VARIANT_ID", "MARKERS"),
-          variable.name = "INDIVIDUALS",
-          value.name = "ALLELE_REF_DEPTH",
-          variable.factor = FALSE) %>%
-        tibble::as_tibble(.)
-    )
+  genotypes.meta <- suppressMessages(
+    data.table::as.data.table(alt) %>%
+      data.table::melt.data.table(
+        data = .,
+        id.vars = want,
+        variable.name = "INDIVIDUALS",
+        value.name = "ALLELE_ALT_DEPTH",
+        variable.factor = FALSE) %>%
+      tibble::as_tibble(.) %>%
+      dplyr::bind_cols(
+        data.table::as.data.table(ref) %>%
+          data.table::melt.data.table(
+            data = .,
+            id.vars = c("VARIANT_ID", "MARKERS"),
+            variable.name = "INDIVIDUALS",
+            value.name = "ALLELE_REF_DEPTH",
+            variable.factor = FALSE) %>%
+          tibble::as_tibble(.)
+      )
+  )
   ref <- alt <- NULL
 
   # Faster to check that the bind_cols worked by checking the variant id
-  if (!identical(genotypes.meta$VARIANT_ID, genotypes.meta$VARIANT_ID1)) {
+  if (!identical(genotypes.meta$VARIANT_ID...1, genotypes.meta$VARIANT_ID...5)) {
     rlang::abort("Contact author, DArT tiding problem")
   } else {
-    genotypes.meta %<>% dplyr::select(-VARIANT_ID1)
+    genotypes.meta %<>% dplyr::select(-VARIANT_ID...5) %>% dplyr::rename(VARIANT_ID = VARIANT_ID...1)
   }
 
   # Faster to check that the bind_cols worked by checking markers
-  if (!identical(genotypes.meta$MARKERS, genotypes.meta$MARKERS1)) {
+  if (!identical(genotypes.meta$MARKERS...2, genotypes.meta$MARKERS...6)) {
     rlang::abort("Contact author, DArT tiding problem")
   } else {
-    genotypes.meta %<>% dplyr::select(-MARKERS1)
+    genotypes.meta %<>% dplyr::select(-MARKERS...6) %>% dplyr::rename(MARKERS = MARKERS...2)
   }
 
-  if (!identical(genotypes.meta$INDIVIDUALS, genotypes.meta$INDIVIDUALS1)) {
+  if (!identical(genotypes.meta$INDIVIDUALS...3, genotypes.meta$INDIVIDUALS...7)) {
     rlang::abort("Contact author, DArT tiding problem")
   } else {
-    genotypes.meta %<>% dplyr::select(-INDIVIDUALS1)
+    genotypes.meta %<>% dplyr::select(-INDIVIDUALS...7) %>% dplyr::rename(INDIVIDUALS = INDIVIDUALS...3)
   }
 
 

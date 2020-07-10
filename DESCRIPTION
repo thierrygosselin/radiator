@@ -16,7 +16,7 @@ Depends:
 biocViews:
 Imports:
     data.table,
-    dplyr,
+    dplyr (>= 1.0.0),
     fst (>= 0.8.4),
     HardyWeinberg,
     magrittr,
