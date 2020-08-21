@@ -159,9 +159,6 @@ detect_biallelic_markers <- function(data, verbose = FALSE, parallel.core = para
             dplyr::filter(MARKERS %in% sampled.markers) %>%
             dplyr::distinct(MARKERS, GT) %>%
             separate_gt(x = ., gt = "GT", sep = 3, exclude = "MARKERS", parallel.core = parallel.core) %>%
-            # dplyr::mutate(A1 = stringi::stri_sub(GT, 1, 3), A2 = stringi::stri_sub(GT, 4,6)) %>%
-            # dplyr::select(-GT) %>%
-            # tidyr::gather(data = ., key = ALLELES_GROUP, value = ALLELES, -MARKERS) %>%
             dplyr::distinct(MARKERS, HAPLOTYPES) %>%
             dplyr::count(x = ., MARKERS) #%>% dplyr::select(n)
         }
@@ -170,8 +167,6 @@ detect_biallelic_markers <- function(data, verbose = FALSE, parallel.core = para
           data <- dplyr::filter(data, GT_VCF != "./.") %>%
             dplyr::filter(MARKERS %in% sampled.markers) %>%
             dplyr::distinct(MARKERS, GT_VCF) %>%
-            # tidyr::separate(data = ., col = GT_VCF, into = c("A1", "A2"), sep = "/") %>%
-            # tidyr::gather(data = ., key = ALLELES_GROUP, value = ALLELES, -MARKERS) %>%
             separate_gt(x = ., gt = "GT_VCF", exclude = "MARKERS", parallel.core = parallel.core) %>%
             dplyr::distinct(MARKERS, HAPLOTYPES) %>% # Here read alleles, not haplotypes
             dplyr::count(x = ., MARKERS) #%>% dplyr::select(n)
@@ -181,8 +176,6 @@ detect_biallelic_markers <- function(data, verbose = FALSE, parallel.core = para
           data <- dplyr::filter(data, GT_VCF_NUC != "./.") %>%
             dplyr::filter(MARKERS %in% sampled.markers) %>%
             dplyr::distinct(MARKERS, GT_VCF_NUC) %>%
-            # tidyr::separate(data = ., col = GT_VCF_NUC, into = c("A1", "A2"), sep = "/") %>%
-            # tidyr::gather(data = ., key = ALLELES_GROUP, value = ALLELES, -MARKERS) %>%
             separate_gt(x = ., exclude = "MARKERS", parallel.core = parallel.core) %>%
             dplyr::distinct(MARKERS, HAPLOTYPES) %>%
             dplyr::count(x = ., MARKERS)

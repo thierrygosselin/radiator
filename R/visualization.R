@@ -103,10 +103,15 @@ markers_genotyped_helper <- function(x, y, overall.only = FALSE) {
       `90` = length(PERCENT[PERCENT <= 90]),
       `100` = length(PERCENT[PERCENT <= 100])
     ) %>%
-    tidyr::gather(data = ., key = GENOTYPED_THRESHOLD, value = NUMBER_MARKERS) %>%
+    tidyr::pivot_longer(
+      data = .,
+      cols = dplyr::everything(),
+      names_to = "GENOTYPED_THRESHOLD",
+      values_to = "NUMBER_MARKERS"
+    ) %>%
     dplyr::mutate(POP_ID = rep("OVERALL", n()))
 
-  if (!overall.only){
+  if (!overall.only) {
     threshold.helper.pop <- x %>%
       dplyr::group_by(POP_ID) %>%
       dplyr::summarise(
@@ -122,7 +127,12 @@ markers_genotyped_helper <- function(x, y, overall.only = FALSE) {
         `90` = length(PERCENT[PERCENT <= 90]),
         `100` = length(PERCENT[PERCENT <= 100])
       ) %>%
-      tidyr::gather(data = ., key = GENOTYPED_THRESHOLD, value = NUMBER_MARKERS, -POP_ID)
+      tidyr::pivot_longer(
+        data = .,
+        cols = -POP_ID,
+        names_to = "GENOTYPED_THRESHOLD",
+        values_to = "NUMBER_MARKERS"
+      )
 
     mean.pop <- threshold.helper.pop %>%
       dplyr::group_by(GENOTYPED_THRESHOLD) %>%
@@ -633,7 +643,12 @@ plot_density_distribution_het <- function(data, pop.levels, het.group, aes.colou
       HET_DIFF = HET_MAX - HET_MIN
     ) %>%
     dplyr::group_by(LOCUS, POP_ID) %>%
-    tidyr::gather(data = ., key = HET_GROUP, value = VALUE)
+    tidyr::pivot_longer(
+      data = .,
+      cols = dplyr::everything(),
+      names_to = "HET_GROUP",
+      values_to = "VALUE"
+    )
 
   if (missing(pop.levels) == "TRUE") {
     data.summary <- data.summary

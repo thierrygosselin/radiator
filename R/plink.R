@@ -101,7 +101,6 @@ read_plink <- function(
 ) {
 
   # #Test
-  # data = "my_plink.bed"
   # filename <- NULL
   # parallel.core <- parallel::detectCores() - 1
   # verbose <- TRUE
@@ -112,7 +111,7 @@ read_plink <- function(
   if (verbose) message("Execution date@time: ", file.date)
   old.dir <- getwd()
   opt.change <- getOption("width")
-  options(future.globals.maxSize= Inf)
+  options(future.globals.maxSize = Inf)
   options(width = 70)
   timing <- radiator_tic()
   res <- list()
@@ -164,15 +163,20 @@ read_plink <- function(
         NUMBER = seq(1, n()),
         ALLELE1 = rep("A1", n()), ALLELE2 = rep("A2", n())
       ) %>%
-      tidyr::gather(ALLELES_GROUP, ALLELES, -c(INDIVIDUALS, NUMBER)) %>%
+      tidyr::pivot_longer(
+        data = .,
+        cols = -c("INDIVIDUALS", "NUMBER"),
+        names_to = "ALLELES_GROUP",
+        values_to = "ALLELES"
+      ) %>%
       dplyr::arrange(NUMBER) %>%
       dplyr::select(-ALLELES_GROUP) %>%
       tidyr::unite(INDIVIDUALS_ALLELES, c(INDIVIDUALS, ALLELES), sep = "_", remove = FALSE) %>%
       dplyr::arrange(NUMBER) %>%
       dplyr::mutate(NUMBER = seq(from = (1 + 4), to = n() + 4)) %>%
       dplyr::select(-ALLELES)
-    tped.header.names <- c("LOCUS", tped.header.prep$INDIVIDUALS_ALLELES)
-    tped.header.integer <- c(2, tped.header.prep$NUMBER)
+    tped.header.names <- c("CHROM", "LOCUS", "POS", tped.header.prep$INDIVIDUALS_ALLELES)
+    tped.header.integer <- c(1, 2, 4, tped.header.prep$NUMBER)
     tped.header.prep <- NULL
 
     # import PLINK
@@ -187,7 +191,12 @@ read_plink <- function(
       showProgress = TRUE,
       data.table = FALSE) %>%
       tibble::as_tibble(.) %>%
-      dplyr::mutate(LOCUS = as.character(LOCUS))
+      dplyr::mutate(
+        CHROM = as.character(CHROM),
+        LOCUS = as.character(LOCUS),
+        POS = as.character(POS)
+        ) %>%
+      tidyr::unite(data = ., col = "MARKERS", c("CHROM", "LOCUS", "POS"), remove = FALSE, sep = "__")
 
     # Unused objects
     tped.header.integer <- tped.header.names <- NULL
@@ -489,9 +498,10 @@ tidy_plink <- function(
   ...
 ) {
   # Test
-  # verbose = FALSE
+  # verbose = TRUE
   # strata = NULL
   # ref.calibration = TRUE
+  # parallel.core = parallel::detectCores() - 1
 
   # Cleanup---------------------------------------------------------------------
   radiator_function_header(f.name = "tidy_plink", verbose = verbose)
@@ -499,7 +509,7 @@ tidy_plink <- function(
   if (verbose) message("Execution date@time: ", file.date)
   old.dir <- getwd()
   opt.change <- getOption("width")
-  options(future.globals.maxSize= Inf)
+  options(future.globals.maxSize = Inf)
   options(width = 70)
   timing <- radiator_tic()
   #back to the original directory and options
@@ -512,6 +522,7 @@ tidy_plink <- function(
   if (missing(data)) rlang::abort("PLINK file missing")
 
   # Function call and dotslist -------------------------------------------------
+  path.folder <- filename <- ref.calibration <- NULL
   rad.dots <- radiator_dots(
     func.name = as.list(sys.call())[[1]],
     fd = rlang::fn_fmls_names(),
@@ -540,17 +551,24 @@ tidy_plink <- function(
     if (verbose) message("Tidying the PLINK tped file ...")
     # Filling GT and new separating INDIVIDUALS from ALLELES
     # combining alleles
-    # input <- tidyr::gather(data = input, key = INDIVIDUALS_ALLELES, value = GT, -LOCUS)
     strata <- data$strata
-    data  <- data.table::as.data.table(data$data) %>%
-      data.table::melt.data.table(
-        data = .,
-        id.vars = "LOCUS",
-        variable.name = "INDIVIDUALS_ALLELES",
-        value.name = "GT",
-        variable.factor = FALSE
-      ) %>%
-      tibble::as_tibble(.)
+    data  <- tidyr::pivot_longer(
+      data = data$data,
+      cols = -c("MARKERS", "CHROM", "LOCUS", "POS"),
+      names_to = "INDIVIDUALS_ALLELES",
+      values_to = "GT"
+    )
+
+
+      # data.table::as.data.table(data$data) %>%
+      # data.table::melt.data.table(
+      #   data = .,
+      #   id.vars = "LOCUS",
+      #   variable.name = "INDIVIDUALS_ALLELES",
+      #   value.name = "GT",
+      #   variable.factor = FALSE
+      # ) %>%
+      # tibble::as_tibble(.)
 
 
     # detect GT coding
@@ -582,11 +600,11 @@ tidy_plink <- function(
         col = INDIVIDUALS_ALLELES,
         into = c("INDIVIDUALS", "ALLELES"),
         sep = "_") %>%
-      dplyr::group_by(LOCUS, INDIVIDUALS) %>%
-      tidyr::spread(data = ., key = ALLELES, value = GT) %>%
+      dplyr::group_by(MARKERS, CHROM, LOCUS, POS, INDIVIDUALS) %>%
+      tidyr::pivot_wider(data = ., names_from = "ALLELES", values_from = "GT") %>%
       dplyr::ungroup(.) %>%
       tidyr::unite(data = ., col = GT, A1, A2, sep = "") %>%
-      dplyr::select(LOCUS, INDIVIDUALS, GT)
+      dplyr::select(MARKERS, CHROM, LOCUS, POS, INDIVIDUALS, GT)
 
     # population levels and strata
     if (verbose) message("Integrating the tfam/strata file...")
@@ -615,8 +633,8 @@ tidy_plink <- function(
 
     # detect if biallelic give vcf style genotypes
     # biallelic <- radiator::detect_biallelic_markers(input)
-    filename <- internal <- parameters <- path.folder <- ref.calibration <- NULL
-    rm(filename, internal, parameters, path.folder, ref.calibration)
+    # filename <- internal <- parameters <- path.folder <- ref.calibration <- NULL
+    # rm(filename, internal, parameters, path.folder, ref.calibration)
 
     if (ref.calibration) {
       data %<>%
@@ -626,7 +644,7 @@ tidy_plink <- function(
         )
       return(res = list(input = data$input, biallelic = data$biallelic))
     } else {
-      return(res = list(input = data, biallelic = "biallelic"))
+      return(res = list(input = data, biallelic = radiator::detect_biallelic_markers(data)))
     }
   } #End tidy tped
 
@@ -681,8 +699,8 @@ tidy_plink <- function(
     # checks
     # dplyr::n_distinct(tidy.data$INDIVIDUALS)
     # dplyr::n_distinct(tidy.data$MARKERS)
-    filename <- internal <- parameters <- path.folder <- ref.calibration <- NULL
-    rm(filename, internal, parameters, path.folder, ref.calibration)
+    # filename <- internal <- parameters <- path.folder <- ref.calibration <- NULL
+    # rm(filename, internal, parameters, path.folder, ref.calibration)
     return(res = list(input = tidy.data, biallelic = "biallelic"))
   }#End tidy bed
 
@@ -740,7 +758,12 @@ write_plink <- function(data, filename = NULL) {
       A2 = stringi::stri_sub(str = GT, from = 4, to = 6)
     ) %>%
     dplyr::select(-GT) %>%
-    tidyr::gather(ALLELES, GENOTYPE, -c(COL1, MARKERS, COL3, COL4, INDIVIDUALS)) %>%
+    tidyr::pivot_longer(
+      data = .,
+      cols = -c("COL1", "MARKERS", "COL3", "COL4", "INDIVIDUALS"),
+      names_to = "ALLELES",
+      values_to = "GENOTYPE"
+    ) %>%
     dplyr::mutate(
       GENOTYPE = as.character(as.numeric(GENOTYPE)),
       GENOTYPE = stringi::stri_pad_left(GENOTYPE, width = 2, pad = "0")
@@ -748,7 +771,7 @@ write_plink <- function(data, filename = NULL) {
     dplyr::arrange(INDIVIDUALS, ALLELES) %>%
     tidyr::unite(INDIVIDUALS_ALLELES, INDIVIDUALS, ALLELES, sep = "_") %>%
     dplyr::group_by(COL1, MARKERS, COL3, COL4) %>%
-    tidyr::spread(data = ., key = INDIVIDUALS_ALLELES, value = GENOTYPE) %>%
+    tidyr::pivot_wider(data = ., names_from = "INDIVIDUALS_ALLELES", values_from = "GENOTYPE") %>%
     dplyr::arrange(MARKERS)
 
   tfam <- dplyr::distinct(.data = data, POP_ID, INDIVIDUALS) %>%

@@ -256,7 +256,12 @@ ibdg_fh <- function(
       dplyr::select(-GT)
 
     freq <- input.alleles %>%
-      tidyr::gather(data = ., key = ALLELE_GROUP, value = ALLELES, -c(MARKERS, INDIVIDUALS, POP_ID)) %>%
+      tidyr::pivot_longer(
+        data = .,
+        cols = -c("MARKERS", "INDIVIDUALS", "POP_ID"),
+        names_to = "ALLELE_GROUP",
+        values_to = "ALLELES"
+      ) %>%
       dplyr::group_by(MARKERS, ALLELES, POP_ID) %>%
       dplyr::tally(.) %>%
       dplyr::ungroup(.) %>%

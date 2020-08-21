@@ -2602,7 +2602,7 @@ write_vcf <- function(
           dplyr::mutate(GT_VCF_POP_ID = stringi::stri_join(GT_VCF, POP_ID, sep = ":")) %>%
           dplyr::select(-c(GT_VCF, POP_ID)) %>%
           dplyr::group_by(MARKERS, CHROM, LOCUS, POS, INFO, REF, ALT) %>%
-          tidyr::spread(data = ., key = INDIVIDUALS, value = GT_VCF_POP_ID) %>%
+          tidyr::pivot_wider(data = ., names_from = "INDIVIDUALS", values_from = "GT_VCF_POP_ID") %>%
           dplyr::ungroup(.) %>%
           dplyr::mutate(
             QUAL = rep(".", n()),
@@ -2616,7 +2616,7 @@ write_vcf <- function(
         dplyr::left_join(data, info.field, by = "MARKERS") %>%
           dplyr::select(MARKERS, CHROM, LOCUS, POS, REF, ALT, INDIVIDUALS, GT_VCF, INFO) %>%
           dplyr::group_by(MARKERS, CHROM, LOCUS, POS, INFO, REF, ALT) %>%
-          tidyr::spread(data = ., key = INDIVIDUALS, value = GT_VCF) %>%
+          tidyr::pivot_wider(data = ., names_from = "INDIVIDUALS", values_from = "GT_VCF") %>%
           dplyr::ungroup(.) %>%
           dplyr::mutate(
             QUAL = rep(".", n()),
@@ -3329,7 +3329,7 @@ vcf_strata <- function(data, strata, filename = NULL) {
       remove = TRUE
     ) %>%
     dplyr::group_by(`#CHROM`, POS, ID,  REF, ALT, QUAL, FILTER, INFO, FORMAT) %>%
-    tidyr::spread(data = ., key = INDIVIDUALS, value = FORMAT_ID) %>%
+    tidyr::pivot_wider(data = ., names_from = "INDIVIDUALS", values_from = "FORMAT_ID") %>%
     dplyr::ungroup(.) %>%
     dplyr::mutate(
       FORMAT = stringi::stri_join(

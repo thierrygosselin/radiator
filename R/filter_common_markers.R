@@ -72,11 +72,6 @@ filter_common_markers <- function(
   # path.folder <- NULL
   # parameters <- NULL
   # internal <- FALSE
-  # parameters = filters.parameters
-  # path.folder = wf
-
-
-  # obj.keeper <- c(ls(envir = globalenv()), "data")
 
   if (!filter.common.markers) {
     return(data)
@@ -95,8 +90,6 @@ filter_common_markers <- function(
     on.exit(options(width = opt.change), add = TRUE)
     on.exit(radiator_toc(timing, verbose = verbose), add = TRUE)
     on.exit(radiator_function_header(f.name = "filter_common_markers", start = FALSE, verbose = verbose), add = TRUE)
-    # on.exit(rm(list = setdiff(ls(envir = sys.frame(-1L)), obj.keeper), envir = sys.frame(-1L)))
-    # message("\nKeeping only common markers between strata")
 
     # Checking for missing and/or default arguments ------------------------------
     if (missing(data)) rlang::abort("Input file missing")
@@ -189,7 +182,7 @@ filter_common_markers <- function(
       # plot_upset--------------------------------------------------------------
       if (fig) {
         plot.filename <- stringi::stri_join(
-          "common.markers.upsetrplot_", file.date, ".pdf")
+          "common.markers.upsetrplot_", file.date)
         plot.filename <- file.path(path.folder, plot.filename)
         plot_upset(x = data,
                    data.type = data.type,
@@ -268,7 +261,7 @@ filter_common_markers <- function(
       }
       if (fig) {
         plot.filename <- stringi::stri_join(
-          "common.markers.upsetrplot_", file.date, ".pdf")
+          "common.markers.upsetrplot_", file.date)
         plot.filename <- file.path(path.folder, plot.filename)
         plot_upset(x = data,
                    data.type = data.type,
@@ -454,35 +447,21 @@ plot_upset <- function(
     )
     n.pop = length(unique(strata$STRATA))
 
-    # PLAN B while SeqArray bug is fixed
-    # plot.data <- extract_genotypes_metadata(
-    #   gds = x,
-    #   genotypes.meta.select = c("INDIVIDUALS", "MARKERS", "GT_BIN")
-    # ) %>%
-    #   dplyr::filter(!is.na(GT_BIN)) %>%
-    #   join_strata(data = ., strata = strata, verbose = FALSE) %>%
-    #   dplyr::distinct(MARKERS, STRATA) %>%
-    #   dplyr::mutate(
-    #     n = rep(1, n()),
-    #     STRATA = stringi::stri_join("POP_", STRATA)
-    #   ) %>%
-    #   tidyr::spread(data = ., key = STRATA, value = n, fill = 0) %>%
-    #   data.frame(.)
-
     sample.bk <- strata$INDIVIDUALS
     missing_markers_pop <- function(
       strata.split,
       x,
       parallel.core = parallel::detectCores() - 2
     ) {
-      # max.core <-length(unique(strata.split$INDIVIDUALS))
+      # strata.split <- dplyr::group_split(.tbl = strata, STRATA)[[4]]
       parallel.core.opt <- parallel_core_opt(parallel.core)
 
       SeqArray::seqSetFilter(
         object = x,
         sample.id = strata.split$INDIVIDUALS,
         action = "set",
-        verbose = FALSE)
+        verbose = FALSE
+      )
 
       res <- tibble::tibble(
         STRATA = SeqArray::seqMissing(
@@ -508,6 +487,7 @@ plot_upset <- function(
       ) %>%
       data.frame(.)#UpSetR requires data.frame
 
+    readr::write_tsv(x = plot.data, path = stringi::stri_join(plot.filename, ".tsv"))
     SeqArray::seqSetFilter(
       object = x,
       sample.id = sample.bk,
@@ -526,15 +506,26 @@ plot_upset <- function(
         n = rep(1, n()),
         POP_ID = stringi::stri_join("POP_", POP_ID)
       ) %>%
-      tidyr::spread(data = ., key = POP_ID, value = n, fill = 0) %>%
+      tidyr::pivot_wider(data = ., names_from = "POP_ID", values_from = "n", values_fill = 0) %>%
       data.frame(.)#UpSetR requires data.frame
   }
 
-  pdf(file = plot.filename, onefile = FALSE)
-  UpSetR::upset(
-    plot.data,
+  # generate the plot
+  # print(dev.list())
+
+  # pdf(
+  #   file = stringi::stri_join(plot.filename, ".pdf"),
+  #   onefile = FALSE
+  # )
+  grDevices::png(filename = stringi::stri_join(plot.filename, ".png"))
+  print(
+    UpSetR::upset(
+    data = plot.data,
     nsets = n.pop,
     order.by = "freq",
     empty.intersections = NULL)
+  )
   dev.off()
+  # print(dev.list())
+
 }#End plot_upset

@@ -201,7 +201,12 @@ res$summary.alt.allele <-  dplyr::ungroup(res$outlier.summary$het.summary) %>%
     ONE_HET_ONLY = length(MARKERS[HOM_ALT == 0 & HET == 1]),
     ONE_HOM_ALT_ONE_HET_ONLY = length(MARKERS[HOM_ALT == 1 & HET == 1])
   ) %>%
-  tidyr::gather(data = ., key = MARKERS, value = NUMBERS) %>%
+  tidyr::pivot_longer(
+    data = .,
+    cols = dplyr::everything(),
+    names_to = "MARKERS",
+    values_to = "NUMBERS"
+  ) %>%
   dplyr::mutate(PROPORTION = NUMBERS / (NUMBERS[MARKERS == "TOTAL"]))
 
 # Estimate heterozygotes miscall rate -------------------------------------------
@@ -397,11 +402,21 @@ plot_het_outliers <- function(data, path.folder = NULL) {
   freq.summary <- dplyr::bind_cols(
     res$het.summary %>%
       dplyr::select(MARKERS, POP_ID, HOM_REF = FREQ_HOM_REF_O, HET = FREQ_HET_O, HOM_ALT = FREQ_HOM_ALT_O) %>%
-      tidyr::gather(data = ., key = GENOTYPES, value = OBSERVED, -c(MARKERS, POP_ID)) %>%
+      tidyr::pivot_longer(
+        data = .,
+        cols = -c("POP_ID", "MARKERS"),
+        names_to = "GENOTYPES",
+        values_to = "OBSERVED"
+      ) %>%
       dplyr::arrange(MARKERS, POP_ID),
     res$het.summary %>%
       dplyr::select(MARKERS, POP_ID, HOM_REF = FREQ_HOM_REF_E, HET = FREQ_HET_E, HOM_ALT = FREQ_HOM_ALT_E) %>%
-      tidyr::gather(data = ., key = GENOTYPES, value = EXPECTED, -c(MARKERS, POP_ID)) %>%
+      tidyr::pivot_longer(
+        data = .,
+        cols = -c("POP_ID", "MARKERS"),
+        names_to = "GENOTYPES",
+        values_to = "EXPECTED"
+      ) %>%
       dplyr::arrange(MARKERS, POP_ID) %>%
       dplyr::select(EXPECTED)
   ) %>%
@@ -507,7 +522,7 @@ estimate_m <- function(
 ) {
   D <- dplyr::select(data, INDIVIDUALS, MARKERS, GT_BIN) %>%
     dplyr::group_by(INDIVIDUALS) %>%
-    tidyr::spread(data = ., key = MARKERS, value = GT_BIN) %>%
+    tidyr::pivot_wider(data = ., names_from = "MARKERS", values_from = "GT_BIN") %>%
     dplyr::ungroup(.) %>%
     dplyr::select(-INDIVIDUALS) %>%
     as.matrix(.)

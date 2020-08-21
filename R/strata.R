@@ -620,7 +620,12 @@ strata_haplo <- function(strata = NULL, data = NULL, blacklist.id = NULL) {
       na = "-",
       col_names = FALSE,
       col_types = readr::cols(.default = readr::col_character())) %>%
-      tidyr::gather(data = .,key = DELETE, value = INDIVIDUALS) %>%
+      tidyr::pivot_longer(
+        data = .,
+        cols = dplyr::everything(),
+        names_to = "DELETE",
+        values_to = "INDIVIDUALS"
+      ) %>%
       dplyr::mutate(INDIVIDUALS = clean_ind_names(INDIVIDUALS)) %>%
       dplyr::select(-DELETE) %>%
       dplyr::filter(!INDIVIDUALS %in% c("Catalog ID", "Cnt")) %>%

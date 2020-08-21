@@ -155,7 +155,7 @@ detect_biallelic_problems <- function(
       dplyr::mutate(REF = dplyr::if_else(REF == max(REF), "REF", "ALT")) %>%
       dplyr::ungroup(.) %>%
       dplyr::group_by_at(dplyr::vars(c(markers.metadata, "ALLELES", "REF"))) %>%
-      tidyr::spread(data = ., key = POP_ID, value = N) %>%
+      tidyr::pivot_wider(data = ., names_from = "POP_ID", values_from = "N") %>%
       readr::write_tsv(x = ., path = blacklist.info.filename, na = "-")
     res$blacklist.info <- blacklist.info
     dodgy.markers <- dplyr::n_distinct(blacklist.info$MARKERS)

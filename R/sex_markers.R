@@ -1801,12 +1801,7 @@ This marker could be absent due to an error.")
       dplyr::distinct(res$sexy.summary, SEX_MARKERS, METHOD) %>%
       dplyr::mutate(n = rep(1, n()),
                     METHOD = stringi::stri_join("METHOD_", METHOD)) %>%
-      tidyr::spread(
-        data = .,
-        key = METHOD,
-        value = n,
-        fill = 0
-      ) %>%
+      tidyr::pivot_wider(data = ., names_from = "METHOD", values_from = "n", values_fill = 0) %>%
       data.frame(.)
 
     message("The 'upset' plot shows any overlapping sex-linked markers between methods")

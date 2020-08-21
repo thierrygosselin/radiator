@@ -1,3 +1,11 @@
+# radiator 1.1.7 2020-08-21
+
+* PLINK files: fix a couple of bugs reading the tped
+* removed `tidyr::gather` and `tidyr::spread` dependencies (they are deprecated)
+* DArT data in 1-row format was not working properly with latest `data.table` melt function. 
+Changed to `tidyr::pivot_long`.
+
+
 # radiator 1.1.6 2020-06-23
 
 * updated radiator so that it work with latest release of SeqArray (v.1.28.1), that

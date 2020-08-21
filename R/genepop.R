@@ -159,14 +159,16 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
       col_names = "data",
       col_types = "c")
   } else {
+    V1 <- NULL
     data %<>%
-      dplyr::rename(data = V1) %>%
+      dplyr::rename(.data = ., data = V1) %>%
       dplyr::slice(-1) %>% # removes genepop header
       tibble::as_tibble()
   }
 
   # Replace white space with only 1 space
-  data$data %<>% stringi::stri_replace_all_regex(
+  data$data %<>%
+    stringi::stri_replace_all_regex(
     str = .,
     pattern = "\\s+",
     replacement = " ",
@@ -264,21 +266,22 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
   # create a data frame --------------------------------------------------------
   # separate the dataset by space
   data <- tibble::as_tibble(
-    purrr::invoke(#similar to do.call
-      rbind, stringi::stri_split_fixed(str = data$GT, pattern = " ")
-    )
-  )
-
-  # add column names
-  colnames(data) <- markers
+    do.call(rbind, stringi::stri_split_fixed(str = data$GT, pattern = " ")),
+    .name_repair = "minimal"
+    ) %>%
+    magrittr::set_colnames(x = ., markers)
+  markers <- NULL
 
   # Population info ------------------------------------------------------------
   # Strata
   if (!is.null(strata)) {
-    strata.df <- radiator::read_strata(strata = strata, pop.id = TRUE, verbose = FALSE)
     #join strata and data
     individuals %<>%
-      dplyr::left_join(strata.df, by = "INDIVIDUALS")
+      dplyr::left_join(
+        radiator::read_strata(strata = strata, pop.id = TRUE, verbose = FALSE) %$%
+          strata,
+        by = "INDIVIDUALS"
+        )
 
   } else {
     # add pop based on internal genepop: integer and reorder the columns
@@ -288,9 +291,10 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
 
   # combine the individuals back to the dataset
   data <- dplyr::bind_cols(individuals, data)
+  individuals <- NULL
 
   # Scan for genotype coding and tidy ------------------------------------------
-  gt.coding <- dplyr::select(data, -INDIVIDUALS, -POP_ID) %>%
+  gt.coding <- dplyr::select(.data = data, -INDIVIDUALS, -POP_ID) %>%
     purrr::flatten_chr(.) %>%
     unique(.) %>%
     nchar(.) %>%
@@ -307,8 +311,12 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
       if (gt.coding == 2) {
         gt.sep <- 1
       }
-      data <- tidyr::gather(
-        data = data, key = MARKERS, value = GT, -c(POP_ID, INDIVIDUALS)) %>%
+      data <- tidyr::pivot_longer(
+        data = data,
+        cols = -c("POP_ID", "INDIVIDUALS"),
+        names_to = "MARKERS",
+        values_to = "GT"
+        ) %>%
         tidyr::separate(
           data = ., col = GT, into = c("A1", "A2"),
           sep = gt.sep, remove = TRUE, extra = "drop"
@@ -319,10 +327,18 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
         ) %>%
         tidyr::unite(data = ., col = GT, A1, A2, sep = "") %>%
         dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
-    }
-    if (tidy) {
-      data <- tidyr::gather(
-        data = data, key = MARKERS, value = GT, -c(POP_ID, INDIVIDUALS))
+
+      if (!tidy) {
+        data <- tidyr::pivot_wider(data = data, names_from = "MARKERS", values_from = "GT")
+      }
+    } else {
+      if (tidy) {
+        data <- tidyr::pivot_longer(
+          data = data,
+          cols = -c("POP_ID", "INDIVIDUALS"),
+          names_to = "MARKERS",
+          values_to = "GT")
+      }
     }
   }
 

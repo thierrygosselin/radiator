@@ -25,7 +25,7 @@ Look into \code{\link{tidy_genomic_data}},
 
 \item{strata}{(optional, tibble file or object) This tibble of individual's
 metadata must contain
-four colums: \code{SAMPLE_TYPE, REPUNIT, COLLECTION, INDIVIDUALS}. Those columns
+four columns: \code{SAMPLE_TYPE, REPUNIT, COLLECTION, INDIVIDUALS}. Those columns
 are described in \strong{rubias}.
 Default:\code{strata = NULL}. With default, \code{SAMPLE_TYPE} is filled
 with \code{reference}. \code{REPUNIT} and \code{COLLECTION} will be filled by

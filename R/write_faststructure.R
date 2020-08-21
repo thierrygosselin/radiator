@@ -129,7 +129,12 @@ write_faststructure <- function(
             ),
             GT_BIN = NULL
           ) %>%
-          tidyr::gather(data = ., key = ALLELES, value = GT, -c(POP_ID, INDIVIDUALS, MARKERS))
+        tidyr::pivot_longer(
+          data = .,
+          cols = -c("POP_ID", "INDIVIDUALS", "MARKERS"),
+          names_to = "ALLELES",
+          values_to = "GT"
+        )
       )
     } else {
       want <- c("INDIVIDUALS", "POP_ID", "MARKERS", "GT")
@@ -137,7 +142,12 @@ write_faststructure <- function(
         data %<>%
           dplyr::select(dplyr::one_of(want)) %>%
           tidyr::separate(col = GT, into = c("A1", "A2"), sep = 3, extra = "drop", remove = TRUE) %>%
-          tidyr::gather(data = ., key = ALLELES, value = GT, -c(POP_ID, INDIVIDUALS, MARKERS)) %>%
+          tidyr::pivot_longer(
+            data = .,
+            cols = -c("POP_ID", "INDIVIDUALS", "MARKERS"),
+            names_to = "ALLELES",
+            values_to = "GT"
+          ) %>%
           dplyr::mutate(
             GT = stringi::stri_replace_all_fixed(str = GT, pattern = "000", replacement = "-9", vectorize_all = FALSE),
             GT = as.integer(GT)
@@ -148,7 +158,7 @@ write_faststructure <- function(
     # common to both GT and GT_BIN
     data  %<>%
       dplyr::select(INDIVIDUALS, POP_ID, MARKERS, ALLELES, GT) %>%
-      tidyr::spread(data = ., key = MARKERS, value = GT) %>%
+      tidyr::pivot_wider(data = ., names_from = "MARKERS", values_from = "GT") %>%
       dplyr::mutate(POP_ID = as.integer(POP_ID)) %>%
       dplyr::select(-ALLELES)
 

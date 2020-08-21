@@ -403,7 +403,12 @@ information")
   het.ind.overall <- dplyr::mutate(.data = het.ind, POP_ID = as.character(POP_ID)) %>%
     dplyr::bind_rows(dplyr::mutate(.data = het.ind, POP_ID = rep("OVERALL", n()))) %>%
     dplyr::mutate(POP_ID = factor(POP_ID, levels = c(levels(het.ind$POP_ID), "OVERALL"))) %>%
-    tidyr::gather(data = ., key = MISSING_GROUP, value = MISSING_PROP, -c(POP_ID, INDIVIDUALS, GENOTYPED, HET_NUMBER, HET_PROP)) %>%
+    tidyr::pivot_longer(
+      data = .,
+      cols = -c("POP_ID", "INDIVIDUALS", "GENOTYPED", "HET_NUMBER", "HET_PROP"),
+      names_to = "MISSING_GROUP",
+      values_to = "MISSING_PROP"
+    ) %>%
     dplyr::mutate(MISSING_GROUP = factor(MISSING_GROUP, levels = c("MISSING_PROP_POP", "MISSING_PROP_OVERALL")))
 
   # Get stats...
@@ -662,11 +667,11 @@ use the overall approach.\n")
     het.summary.tidy <- suppressWarnings(
       dplyr::bind_rows(het.summary.pop, het.summary.overall) %>%
         dplyr::full_join(het.missing.overall, by = c("LOCUS", "POP_ID")) %>%
-        tidyr::gather(
+        tidyr::pivot_longer(
           data = .,
-          key = HET_GROUP,
-          value = VALUE,
-          -c(LOCUS, POP_ID, MISSING_PROP)
+          cols = -c("LOCUS", "POP_ID", "MISSING_PROP"),
+          names_to = "HET_GROUP",
+          values_to = "VALUE"
         ) %>%
         dplyr::rename(MARKERS = LOCUS) %>%
         dplyr::mutate(
@@ -715,11 +720,11 @@ use the overall approach.\n")
 
     het.summary.tidy <- suppressWarnings(
       dplyr::bind_rows(het.summary.pop, het.summary.overall) %>%
-        tidyr::gather(
+        tidyr::pivot_longer(
           data = .,
-          key = HET_GROUP,
-          value = VALUE,
-          -c(MARKERS, POP_ID, MISSING_PROP)
+          cols = -c("MARKERS", "POP_ID", "MISSING_PROP"),
+          names_to = "HET_GROUP",
+          values_to = "VALUE"
         )
     )
   }
@@ -812,11 +817,11 @@ use the overall approach.\n")
           MAX_0.8 = dplyr::if_else(HET_MAX <= 0.8, "whitelist", "blacklist"),
           MAX_0.9 = dplyr::if_else(HET_MAX <= 0.9, "whitelist", "blacklist")
         ) %>%
-        tidyr::gather(
+        tidyr::pivot_longer(
           data = .,
-          key = MAX_THRESHOLD,
-          value = MAX_OUTLIERS,
-          MAX_0.4:MAX_0.9
+          cols = MAX_0.4:MAX_0.9,
+          names_to = "MAX_THRESHOLD",
+          values_to = "MAX_OUTLIERS"
         ) %>%
         dplyr::mutate(
           DIF_0.1 = dplyr::if_else(HET_DIF <= 0.1, "whitelist", "blacklist"),
@@ -829,11 +834,11 @@ use the overall approach.\n")
           DIF_0.8 = dplyr::if_else(HET_DIF <= 0.8, "whitelist", "blacklist"),
           DIF_0.9 = dplyr::if_else(HET_DIF <= 0.9, "whitelist", "blacklist")
         ) %>%
-        tidyr::gather(
+        tidyr::pivot_longer(
           data = .,
-          key = DIF_THRESHOLD,
-          value = DIF_OUTLIERS,
-          DIF_0.1:DIF_0.9
+          cols = DIF_0.1:DIF_0.9,
+          names_to = "DIF_THRESHOLD",
+          values_to = "DIF_OUTLIERS"
         ) %>%
         tidyr::unite(
           data = .,
@@ -880,7 +885,7 @@ use the overall approach.\n")
         ) %>%
         dplyr::select(-c(n, WHITELIST, BLACKLIST)) %>%
         dplyr::group_by(MAX_THRESHOLD, MAX_OUTLIERS) %>%
-        tidyr::spread(data = ., key = MAX_THRESHOLD, value = MARKERS, fill = 0)
+        tidyr::pivot_wider(data = ., names_from = "MAX_THRESHOLD", values_from = "MARKERS", values_fill = 0)
 
       dif.threshold <- dplyr::distinct(
         het.helper, LOCUS, DIF_THRESHOLD, DIF_OUTLIERS
@@ -902,7 +907,7 @@ use the overall approach.\n")
         ) %>%
         dplyr::select(-c(n, WHITELIST, BLACKLIST)) %>%
         dplyr::group_by(DIF_THRESHOLD, DIF_OUTLIERS) %>%
-        tidyr::spread(data = ., key = DIF_THRESHOLD, value = MARKERS, fill = 0)
+        tidyr::pivot_wider(data = ., names_from = "DIF_THRESHOLD", values_from = "MARKERS", values_fill = 0)
 
 
       max.dif.threshold.combined <- dplyr::distinct(
@@ -925,7 +930,8 @@ use the overall approach.\n")
         ) %>%
         dplyr::select(-c(n, WHITELIST, BLACKLIST)) %>%
         dplyr::group_by(MAX_DIF_THRESHOLD, MAX_DIF_OUTLIERS) %>%
-        tidyr::spread(data = ., key = MAX_DIF_THRESHOLD, value = MARKERS, fill = 0)
+        tidyr::pivot_wider(data = ., names_from = "MAX_DIF_THRESHOLD", values_from = "MARKERS", values_fill = 0)
+
 
       # overall
       het.helper.overall <- dplyr::select(het.summary.overall, LOCUS, HET_MAX, HET_DIF) %>%
@@ -937,11 +943,11 @@ use the overall approach.\n")
           MAX_0.8 = dplyr::if_else(HET_MAX <= 0.8, "whitelist", "blacklist"),
           MAX_0.9 = dplyr::if_else(HET_MAX <= 0.9, "whitelist", "blacklist")
         ) %>%
-        tidyr::gather(
+        tidyr::pivot_longer(
           data = .,
-          key = MAX_THRESHOLD,
-          value = MAX_OUTLIERS,
-          MAX_0.4:MAX_0.9
+          cols = MAX_0.4:MAX_0.9,
+          names_to = "MAX_THRESHOLD",
+          values_to = "MAX_OUTLIERS"
         ) %>%
         dplyr::mutate(
           DIF_0.1 = dplyr::if_else(HET_DIF <= 0.1, "whitelist", "blacklist"),
@@ -954,11 +960,11 @@ use the overall approach.\n")
           DIF_0.8 = dplyr::if_else(HET_DIF <= 0.8, "whitelist", "blacklist"),
           DIF_0.9 = dplyr::if_else(HET_DIF <= 0.9, "whitelist", "blacklist")
         ) %>%
-        tidyr::gather(
+        tidyr::pivot_longer(
           data = .,
-          key = DIF_THRESHOLD,
-          value = DIF_OUTLIERS,
-          DIF_0.1:DIF_0.9
+          cols = DIF_0.1:DIF_0.9,
+          names_to = "DIF_THRESHOLD",
+          values_to = "DIF_OUTLIERS"
         ) %>%
         tidyr::unite(
           data = .,
@@ -1005,7 +1011,7 @@ use the overall approach.\n")
         ) %>%
         dplyr::select(-c(n, WHITELIST, BLACKLIST)) %>%
         dplyr::group_by(MAX_THRESHOLD, MAX_OUTLIERS) %>%
-        tidyr::spread(data = ., key = MAX_THRESHOLD, value = MARKERS, fill = 0) %>%
+        tidyr::pivot_wider(data = ., names_from = "MAX_THRESHOLD", values_from = "MARKERS", values_fill = 0) %>%
         dplyr::filter(MAX_OUTLIERS  == 0) %>%
         dplyr::ungroup(.) %>%
         dplyr::select(-MAX_OUTLIERS)
@@ -1030,7 +1036,7 @@ use the overall approach.\n")
         ) %>%
         dplyr::select(-c(n, WHITELIST, BLACKLIST)) %>%
         dplyr::group_by(DIF_THRESHOLD, DIF_OUTLIERS) %>%
-        tidyr::spread(data = ., key = DIF_THRESHOLD, value = MARKERS, fill = 0) %>%
+        tidyr::pivot_wider(data = ., names_from = "DIF_THRESHOLD", values_from = "MARKERS", values_fill = 0) %>%
         dplyr::filter(DIF_OUTLIERS  == 0) %>%
         dplyr::ungroup(.) %>%
         dplyr::select(-DIF_OUTLIERS)
@@ -1056,7 +1062,7 @@ use the overall approach.\n")
         ) %>%
         dplyr::select(-c(n, WHITELIST, BLACKLIST)) %>%
         dplyr::group_by(MAX_DIF_THRESHOLD, MAX_DIF_OUTLIERS) %>%
-        tidyr::spread(data = ., key = MAX_DIF_THRESHOLD, value = MARKERS, fill = 0) %>%
+        tidyr::pivot_wider(data = ., names_from = "MAX_DIF_THRESHOLD", values_from = "MARKERS", values_fill = 0) %>%
         dplyr::filter(MAX_DIF_OUTLIERS  == 0) %>%
         dplyr::ungroup(.) %>%
         dplyr::select(-MAX_DIF_OUTLIERS)
@@ -1110,7 +1116,12 @@ use the overall approach.\n")
           `0.8` = dplyr::if_else(HET_MEAN <= 0.8, "whitelist", "blacklist"),
           `0.9` = dplyr::if_else(HET_MEAN <= 0.9, "whitelist", "blacklist")
         ) %>%
-        tidyr::gather(data = ., key = THRESHOLD, value = OUTLIERS, `0.4`:`0.9`) %>%
+        tidyr::pivot_longer(
+          data = .,
+          cols = `0.4`:`0.9`,
+          names_to = "THRESHOLD",
+          values_to = "OUTLIERS"
+        ) %>%
         dplyr::group_by(MARKERS, THRESHOLD, THRESHOLD) %>%
         dplyr::summarise(OUTLIERS = length(OUTLIERS[OUTLIERS == "whitelist"])) %>%
         dplyr::ungroup(.) %>%
@@ -1127,7 +1138,8 @@ use the overall approach.\n")
         ) %>%
         dplyr::select(-c(n, WHITELIST, BLACKLIST)) %>%
         dplyr::group_by(THRESHOLD, OUTLIERS) %>%
-        tidyr::spread(data = ., key = THRESHOLD, value = MARKERS, fill = 0)
+        tidyr::pivot_wider(data = ., names_from = "MAX_THRESHOLD", values_from = "MARKERS", values_fill = 0)
+
 
       # by overall
       helper.table.het.overall <- dplyr::select(het.summary.overall, MARKERS, HET_MEAN) %>%
@@ -1139,7 +1151,12 @@ use the overall approach.\n")
           `0.8` = dplyr::if_else(HET_MEAN <= 0.8, "whitelist", "blacklist"),
           `0.9` = dplyr::if_else(HET_MEAN <= 0.9, "whitelist", "blacklist")
         ) %>%
-        tidyr::gather(data = ., key = THRESHOLD, value = OUTLIERS, `0.4`:`0.9`) %>%
+        tidyr::pivot_longer(
+          data = .,
+          cols = `0.4`:`0.9`,
+          names_to = "THRESHOLD",
+          values_to = "OUTLIERS"
+        ) %>%
         dplyr::group_by(MARKERS, THRESHOLD, THRESHOLD) %>%
         dplyr::summarise(OUTLIERS = length(OUTLIERS[OUTLIERS == "whitelist"])) %>%
         dplyr::ungroup(.) %>%
@@ -1156,7 +1173,7 @@ use the overall approach.\n")
         ) %>%
         dplyr::select(-c(n, WHITELIST, BLACKLIST)) %>%
         dplyr::group_by(THRESHOLD, OUTLIERS) %>%
-        tidyr::spread(data = ., key = THRESHOLD, value = MARKERS, fill = 0) %>%
+        tidyr::pivot_wider(data = ., names_from = "THRESHOLD", values_from = "MARKERS", values_fill = 0) %>%
         dplyr::filter(OUTLIERS  == 0) %>%
         dplyr::ungroup(.) %>%
         dplyr::select(-OUTLIERS)
@@ -1229,11 +1246,11 @@ use the overall approach.\n")
       dplyr::rename(SNP_NUM = n) %>%
       dplyr::left_join(het.summary.overall, by = "LOCUS") %>%
       dplyr::select(-POP_ID) %>%
-      tidyr::gather(
+      tidyr::pivot_longer(
         data = .,
-        key = HET_GROUP,
-        value = VALUE,
-        -c(LOCUS, SNP_NUM)
+        cols = -c("LOCUS", "SNP_NUM"),
+        names_to = "HET_GROUP",
+        values_to = "VALUE"
       ) %>%
       dplyr::mutate(
         HET_GROUP = factor(
@@ -1274,11 +1291,11 @@ use the overall approach.\n")
       dplyr::summarise(COVERAGE = mean(READ_DEPTH, na.rm = TRUE)) %>%
       dplyr::left_join(het.summary.overall, by = "LOCUS") %>%
       dplyr::select(-POP_ID) %>%
-      tidyr::gather(
+      tidyr::pivot_longer(
         data = .,
-        key = HET_GROUP,
-        value = VALUE,
-        -c(LOCUS, COVERAGE)
+        cols = -c("LOCUS", "COVERAGE"),
+        names_to = "HET_GROUP",
+        values_to = "VALUE"
       ) %>%
       dplyr::mutate(
         HET_GROUP = factor(

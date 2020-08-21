@@ -282,9 +282,12 @@ filter_snp_position_read <- function(
 
     # figures
     markers.plot <- ggplot2::ggplot(
-      data = tidyr::gather(
+      data = tidyr::pivot_longer(
         data = helper.table,
-        key = LIST, value = MARKERS, -STATS),
+        cols = -STATS,
+        names_to = "LIST",
+        values_to = "MARKERS"
+      ),
       ggplot2::aes(x = STATS, y = MARKERS)) +
       # ggplot2::geom_line() +
       ggplot2::geom_point(size = 2, shape = 21, fill = "white") +

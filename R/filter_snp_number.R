@@ -306,9 +306,13 @@ filter_snp_number <- function(
 
     # figures
     markers.plot <- ggplot2::ggplot(
-      data = helper.table  %<>% tidyr::gather(
-        data = .,
-        key = LIST, value = MARKERS, -SNP_PER_LOCUS),
+      data = helper.table  %<>%
+        tidyr::pivot_longer(
+          data = .,
+          cols = -SNP_PER_LOCUS,
+          names_to = "LIST",
+          values_to = "MARKERS"
+        ),
       ggplot2::aes(x = SNP_PER_LOCUS, y = MARKERS)) +
       ggplot2::geom_line() +
       ggplot2::geom_point(size = 2, shape = 21, fill = "white") +

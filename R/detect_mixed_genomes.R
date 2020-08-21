@@ -330,7 +330,12 @@ detect_mixed_genomes <- function(
       het.ind.overall <- dplyr::mutate(.data = het.ind, POP_ID = as.character(POP_ID)) %>%
         dplyr::bind_rows(dplyr::mutate(.data = het.ind, POP_ID = rep("OVERALL", n()))) %>%
         dplyr::mutate(POP_ID = factor(POP_ID, levels = c(pop.levels, "OVERALL"))) %>%
-        tidyr::gather(data = ., key = MISSING_GROUP, value = MISSING_PROP, -c(POP_ID, INDIVIDUALS, GENOTYPED, HET_NUMBER, HET_PROP)) %>%
+        tidyr::pivot_longer(
+          data = .,
+          cols = -c("POP_ID", "INDIVIDUALS", "GENOTYPED", "HET_NUMBER", "HET_PROP"),
+          names_to = "MISSING_GROUP",
+          values_to = "MISSING_PROP"
+        ) %>%
         dplyr::mutate(MISSING_GROUP = factor(MISSING_GROUP, levels = c("MISSING_PROP_POP", "MISSING_PROP_OVERALL"))) %>%
         dplyr::arrange(POP_ID, MISSING_GROUP)
 
@@ -384,7 +389,12 @@ detect_mixed_genomes <- function(
       het.ind.overall <- dplyr::mutate(.data = het.ind, POP_ID = as.character(POP_ID)) %>%
         dplyr::bind_rows(dplyr::mutate(.data = het.ind, POP_ID = rep("OVERALL", n()))) %>%
         dplyr::mutate(POP_ID = factor(POP_ID, levels = c(pop.levels, "OVERALL"), ordered = TRUE)) %>%
-        tidyr::gather(data = ., key = MISSING_GROUP, value = MISSING_PROP, -c(POP_ID, INDIVIDUALS, HET_PROP)) %>%
+        tidyr::pivot_longer(
+          data = .,
+          cols = -c("POP_ID", "INDIVIDUALS", "HET_PROP"),
+          names_to = "MISSING_GROUP",
+          values_to = "MISSING_PROP"
+        ) %>%
         dplyr::mutate(
           MISSING_GROUP = factor(MISSING_GROUP,
                                  levels = c("MISSING_PROP_POP", "MISSING_PROP_OVERALL")),

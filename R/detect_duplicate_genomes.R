@@ -382,7 +382,6 @@ detect_duplicate_genomes <- function(
             data = ., id.vars = c("MARKERS", "INDIVIDUALS"), variable.name = "ALLELES", value.name = "n",
             variable.factor = FALSE) %>%
           tibble::as_tibble(.) %>%
-          # tidyr::gather(data = ., key = ALLELES, value = n, -c(MARKERS, INDIVIDUALS)) %>%
           dplyr::mutate(MARKERS_ALLELES = stringi::stri_join(MARKERS, ALLELES, sep = ".")) %>%
           dplyr::select(-ALLELES) %>%
           dplyr::arrange(MARKERS_ALLELES, INDIVIDUALS)
@@ -996,7 +995,7 @@ distance_individuals <- function(
           value.var = "n"
         ) %>%
         tibble::as_tibble(.) %>%
-        tibble::remove_rownames(.) %>%
+        tibble::remove_rownames(.data = .) %>%
         tibble::column_to_rownames(.data = ., var = "INDIVIDUALS"))
 
     x <- suppressWarnings(
@@ -1221,8 +1220,12 @@ allele_count <- function(x) {
       A2 = stringi::stri_sub(str = GT, from = 4, to = 6)
     ) %>%
     dplyr::select(-GT) %>%
-    tidyr::gather(
-      data = ., key = ALLELES, value = GT, -c(MARKERS, INDIVIDUALS)) %>%
+    tidyr::pivot_longer(
+      data = .,
+      cols = -c("INDIVIDUALS", "MARKERS"),
+      names_to = "ALLELES",
+      values_to = "GT"
+    ) %>%
     dplyr::arrange(MARKERS, INDIVIDUALS, GT) %>%
     dplyr::count(x = ., INDIVIDUALS, MARKERS, GT) %>%
     dplyr::ungroup(.) %>%

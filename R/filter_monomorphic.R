@@ -242,7 +242,12 @@ filter_monomorphic <- function(
             A2 = stringi::stri_sub(GT, 4,6)
           ) %>%
           dplyr::select(-GT) %>%
-          tidyr::gather(data = ., key = ALLELES_GROUP, value = ALLELES, -MARKERS) %>%
+          tidyr::pivot_longer(
+            data = .,
+            cols = -MARKERS,
+            names_to = "ALLELES_GROUP",
+            values_to = "ALLELES"
+          ) %>%
           dplyr::distinct(MARKERS, ALLELES) %>%
           dplyr::count(x = ., MARKERS) %>%
           dplyr::filter(n == 1) %>%

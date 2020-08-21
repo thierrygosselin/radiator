@@ -52,6 +52,12 @@ snprelate, maverick, genepopedit, rubias, hapmap and dadi.
 Use a character string,
 e.g. \code{output = c("genind", "genepop", "structure")}, to have preferred
 output formats generated. With default, only the tidy format is generated.
+
+Make sure to read the particularities of each format, some might
+requires extra columns in the strata file. You can find the info in the
+corresponding \emph{write_} functions of radiator
+(\href{https://thierrygosselin.github.io/radiator/reference/index.html}{reference}).
+
 Default: \code{output = NULL}.}
 
 \item{filename}{(optional) The filename prefix for the objet in the global environment

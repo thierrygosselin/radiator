@@ -177,8 +177,12 @@ pi <- function(
   # Pi: by pop------------------------------------------------------------------
   message("    Pi calculations: populations...")
   data %<>% dplyr::select(POP_ID, INDIVIDUALS, MARKERS, ALLELE1, ALLELE2) %>%
-    tidyr::gather(ALLELE_GROUP, ALLELES, -c(POP_ID, INDIVIDUALS, MARKERS))
-
+    tidyr::pivot_longer(
+      data = .,
+      cols = -c("POP_ID", "INDIVIDUALS", "MARKERS"),
+      names_to = "ALLELE_GROUP",
+      values_to = "ALLELES"
+    )
   res$pi.populations <- data %>%
     split(x = ., f = .$POP_ID) %>%
     purrr::map_df(

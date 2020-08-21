@@ -161,7 +161,6 @@ tidy_genind <- function(
         tibble::add_column(.data = ., INDIVIDUALS = rownames(data@tab), .before = 1) %>%
         tibble::add_column(.data = ., POP_ID = data@pop) %>%
         dplyr::select(POP_ID, INDIVIDUALS, dplyr::ends_with(match = ".A2")) %>%
-        # tidyr::gather(data = ., key = MARKERS, value = GT_BIN, -c(POP_ID, INDIVIDUALS)) %>%
         data.table::as.data.table(.) %>%
         data.table::melt.data.table(
           data = .,
@@ -184,7 +183,6 @@ tidy_genind <- function(
         data <- tibble::as_tibble(data@tab) %>%
           tibble::add_column(.data = ., INDIVIDUALS = rownames(data@tab), .before = 1) %>%
           tibble::add_column(.data = ., POP_ID = data@pop) %>%
-          # tidyr::gather(data = ., key = MARKERS_ALLELES, value = COUNT, -c(POP_ID, INDIVIDUALS)) %>%
           data.table::as.data.table(.) %>%
           data.table::melt.data.table(
             data = .,

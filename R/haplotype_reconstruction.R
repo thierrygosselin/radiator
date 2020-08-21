@@ -20,11 +20,13 @@ haplotype_reconstruction <- function(
     data <- tidyr::separate(
       data = data,
       col = HAPLOTYPES,
-      into = as.character(seq(1, n.snp, 1)), sep = 1:(n.snp-1), remove = FALSE) %>%
-      tidyr::gather(
-        data = ., key = "SNP",
-        value = "NUC",
-        -c(MARKERS, HAPLOTYPES, SNP_N)) %>%
+      into = as.character(seq(1, n.snp, 1)), sep = 1:(n.snp - 1), remove = FALSE) %>%
+      tidyr::pivot_longer(
+        data = .,
+        cols = -c("MARKERS", "HAPLOTYPES", "SNP_N"),
+        names_to = "SNP",
+        values_to = "NUC"
+      ) %>%
       dplyr::mutate(SNP = as.integer(SNP)) %>%
       dplyr::group_by(SNP) %>%
       dplyr::mutate(
@@ -35,7 +37,8 @@ haplotype_reconstruction <- function(
       dplyr::select(-POLYMORPHIC) %>%
       dplyr::arrange(SNP, HAPLOTYPES) %>%
       dplyr::group_by(MARKERS, HAPLOTYPES, SNP_N) %>%
-      tidyr::spread(SNP, NUC, convert = TRUE) %>%
+      # tidyr spread(SNP, NUC, convert = TRUE) %>%
+      tidyr::pivot_wider(data = ., names_from = "SNP", values_from = "NUC") %>%
       tidyr::unite(
         data = ., col = HAPLOTYPES_NEW,
         -c(MARKERS, HAPLOTYPES, SNP_N),

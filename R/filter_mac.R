@@ -379,9 +379,12 @@ filter_mac <- function(
     if (verbose) message("File written: maf.helper.table.tsv")
 
     mac.markers.plot <- ggplot2::ggplot(
-      data = tidyr::gather(
+      data = tidyr::pivot_longer(
         data = maf.helper.table[1:25, -2],
-        key = LIST, value = MARKERS, -MAC),
+        cols = -MAC,
+        names_to = "LIST",
+        values_to = "MARKERS"
+      ),
       ggplot2::aes(x = MAC, y = MARKERS)) +
       ggplot2::geom_line() +
       ggplot2::geom_point(size = 2, shape = 21, fill = "white") +
@@ -544,7 +547,12 @@ compute_maf <- function(x, biallelic) {
           A2 = stringi::stri_sub(GT, 4,6)
         ) %>%
         dplyr::select(MARKERS, POP_ID, INDIVIDUALS, A1, A2) %>%
-        tidyr::gather(data = ., key = ALLELES, value = GT, -c(MARKERS, INDIVIDUALS, POP_ID))
+        tidyr::pivot_longer(
+          data = .,
+          cols = -c("POP_ID", "INDIVIDUALS", "MARKERS"),
+          names_to = "ALLELES",
+          values_to = "GT"
+        )
 
       maf.local <- x %>%
         dplyr::group_by(MARKERS, POP_ID, GT) %>%
@@ -581,9 +589,12 @@ compute_maf <- function(x, biallelic) {
           sep = "/",
           extra = "drop", remove = TRUE
         ) %>%
-        tidyr::gather(
-          data = ., key = ALLELE_GROUP, value = HAPLOTYPES,
-          -dplyr::one_of(c("MARKERS", "INDIVIDUALS", "POP_ID"))) %>%
+        tidyr::pivot_longer(
+          data = .,
+          cols = -dplyr::one_of(c("MARKERS", "INDIVIDUALS", "POP_ID")),
+          names_to = "ALLELE_GROUP",
+          values_to = "HAPLOTYPES"
+        ) %>%
         dplyr::select(-ALLELE_GROUP) %>%
         dplyr::group_by(MARKERS, HAPLOTYPES, POP_ID) %>%
         dplyr::tally(.) %>%
@@ -780,7 +791,12 @@ mac_one <- function(x) {
         A2 = stringi::stri_sub(GT, 4,6)
       ) %>%
       dplyr::select(-GT) %>%
-      tidyr::gather(data = ., key = ALLELES, value = GT, -c(MARKERS, INDIVIDUALS)) %>%
+      tidyr::pivot_longer(
+        data = .,
+        cols = -c("MARKERS", "INDIVIDUALS"),
+        names_to = "ALLELES",
+        values_to = "GT"
+      ) %>%
       dplyr::group_by(MARKERS, GT) %>%
       dplyr::tally(.) %>%
       dplyr::group_by(MARKERS) %>%

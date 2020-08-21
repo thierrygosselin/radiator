@@ -391,16 +391,24 @@ read_dart <- function(
     suppressWarnings(
       data %<>%
         dplyr::select(dplyr::one_of(want)) %>%
-        data.table::as.data.table(x = .) %>%
-        data.table::melt.data.table(
+        tidyr::pivot_longer(
           data = .,
-          id.vars = c("CLONE_ID", "SEQUENCE"),
-          variable.name = "INDIVIDUALS",
-          variable.factor = FALSE,
-          value.name = "VALUE"
-        ) %>%
-        tibble::as_tibble(.)
+          cols = -c("CLONE_ID", "SEQUENCE"),
+          names_to = "INDIVIDUALS",
+          values_to = "VALUE"
+        )
     )
+
+    # data.table::as.data.table(x = .) %>%
+    # data.table::melt.data.table(
+    #   data = .,
+    #   id.vars = c("CLONE_ID", "SEQUENCE"),
+    #   variable.name = "INDIVIDUALS",
+    #   variable.factor = FALSE,
+    #   value.name = "VALUE"
+    # ) %>%
+    # tibble::as_tibble(.)
+
     n.clone <- length(unique(data$CLONE_ID))
     data <- radiator::join_strata(data = data, strata = strata)
 
@@ -1134,7 +1142,7 @@ dart2gds <- function(
 
     alt %<>% dplyr::bind_rows(ref.s) %>%
       dplyr::arrange(VARIANT_ID)
-    ref %<>% dplyr::bind_rows(alt.s)%>%
+    ref %<>% dplyr::bind_rows(alt.s) %>%
       dplyr::arrange(VARIANT_ID)
     alt.s <- ref.s <- NULL
 
@@ -1175,25 +1183,41 @@ dart2gds <- function(
   }
 
   genotypes.meta <- suppressMessages(
-    data.table::as.data.table(alt) %>%
-      data.table::melt.data.table(
-        data = .,
-        id.vars = want,
-        variable.name = "INDIVIDUALS",
-        value.name = "ALLELE_ALT_DEPTH",
-        variable.factor = FALSE) %>%
-      tibble::as_tibble(.) %>%
+    tidyr::pivot_longer(
+      data = alt,
+      cols = -want,
+      names_to = "INDIVIDUALS",
+      values_to = "ALLELE_ALT_DEPTH"
+    ) %>%
       dplyr::bind_cols(
-        data.table::as.data.table(ref) %>%
-          data.table::melt.data.table(
-            data = .,
-            id.vars = c("VARIANT_ID", "MARKERS"),
-            variable.name = "INDIVIDUALS",
-            value.name = "ALLELE_REF_DEPTH",
-            variable.factor = FALSE) %>%
-          tibble::as_tibble(.)
+        tidyr::pivot_longer(
+          data = ref,
+          cols = -c("VARIANT_ID", "MARKERS"),
+          names_to = "INDIVIDUALS",
+          values_to = "ALLELE_REF_DEPTH"
+        )
       )
   )
+
+  #   data.table::as.data.table(alt) %>%
+  #     data.table::melt.data.table(
+  #       data = .,
+  #       id.vars = want,
+  #       variable.name = "INDIVIDUALS",
+  #       value.name = "ALLELE_ALT_DEPTH",
+  #       variable.factor = FALSE) %>%
+  #     tibble::as_tibble(.) %>%
+  #     dplyr::bind_cols(
+  #       data.table::as.data.table(ref) %>%
+  #         data.table::melt.data.table(
+  #           data = .,
+  #           id.vars = c("VARIANT_ID", "MARKERS"),
+  #           variable.name = "INDIVIDUALS",
+  #           value.name = "ALLELE_REF_DEPTH",
+  #           variable.factor = FALSE) %>%
+  #         tibble::as_tibble(.)
+  #     )
+  # )
   ref <- alt <- NULL
 
   # Faster to check that the bind_cols worked by checking the variant id
@@ -1428,7 +1452,12 @@ tidy_dart_metadata <- function(
       COL_TYPE = c("c", "c", "i", "d", "d", "d", "d"))
 
     dart.col.type <- dart.col.type %>%
-      tidyr::gather(data = .,key = DELETE, value = INFO) %>%
+      tidyr::pivot_longer(
+        data = .,
+        cols = dplyr::everything(),
+        names_to = "DELETE",
+        values_to = "INFO"
+      ) %>%
       dplyr::select(-DELETE) %>%
       dplyr::mutate(INFO = stringi::stri_trans_toupper(INFO)) %>%
       dplyr::left_join(want, by = "INFO") %>%

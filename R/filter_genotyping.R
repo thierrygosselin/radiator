@@ -271,11 +271,11 @@ filter_genotyping <- function(
 
       if (verbose) message("File written: markers.pop.missing.helper.table.tsv")
       helper.table  %<>%
-        tidyr::gather(
+        tidyr::pivot_longer(
           data = .,
-          key = LIST,
-          value = MARKERS,
-          -c(MISSING_PROP, STRATA)
+          cols = -c("MISSING_PROP", "STRATA"),
+          names_to = "LIST",
+          values_to = "MARKERS"
         ) %>%
         dplyr::mutate(STRATA = factor(STRATA, levels = strata.levels, ordered = TRUE)) %>%
         dplyr::arrange(STRATA)
@@ -284,9 +284,12 @@ filter_genotyping <- function(
       strata.levels <- NULL
     } else {
       helper.table  %<>%
-        tidyr::gather(
+        tidyr::pivot_longer(
           data = .,
-          key = LIST, value = MARKERS, -MISSING_PROP)
+          cols = -MISSING_PROP,
+          names_to = "LIST",
+          values_to = "MARKERS"
+        )
       n.pop <- 1L
       strata <- FALSE
     }

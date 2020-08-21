@@ -92,9 +92,19 @@ tidy_wide <- function(data, import.metadata = FALSE) {
   # Determine long (tidy) or wide dataset
   if (!"MARKERS" %in% colnames(data) && !"LOCUS" %in% colnames(data)) {
     if (rlang::has_name(data, "POP_ID")) {
-      data <- tidyr::gather(data = data, key = MARKERS, value = GT, -c(POP_ID, INDIVIDUALS))
+      data <- tidyr::pivot_longer(
+        data = data,
+        cols = -c("POP_ID", "INDIVIDUALS"),
+        names_to = "MARKERS",
+        values_to = "GT"
+      )
     } else {
-      data <- tidyr::gather(data = data, key = MARKERS, value = GT, -INDIVIDUALS)
+      data <- tidyr::pivot_longer(
+        data = data,
+        cols = -INDIVIDUALS,
+        names_to = "MARKERS",
+        values_to = "GT"
+      )
     }
   }
 
@@ -516,6 +526,9 @@ tidy_genomic_data <- function(
 
     biallelic <- input$biallelic
     input <- input$input
+
+
+
   } # End import PLINK
 
   # Import stacks haplotypes----------------------------------------------------
@@ -544,7 +557,12 @@ tidy_genomic_data <- function(
       na = "-",
       col_names = FALSE,
       col_types = readr::cols(.default = readr::col_character())) %>%
-      tidyr::gather(data = .,key = DELETE, value = INFO) %>%
+      tidyr::pivot_longer(
+        data = .,
+        cols = dplyr::everything(),
+        names_to = "DELETE",
+        values_to = "DELETE"
+      ) %>%
       dplyr::mutate(INFO = clean_ind_names(INFO)) %>%
       dplyr::select(-DELETE) %>%
       dplyr::mutate(INFO = clean_ind_names(INFO)) %>%
@@ -575,11 +593,12 @@ tidy_genomic_data <- function(
 
     message("\nNumber of loci in catalog: ", n.catalog.locus)
     message("Number of individuals: ", n.individuals)
-    input <- tidyr::gather(
+    input <- tidyr::pivot_longer(
       data = input,
-      key = "INDIVIDUALS",
-      value = "GT_VCF_NUC", # previously using "GT_HAPLO"
-      -LOCUS)
+      cols = -LOCUS,
+      names_to = "INDIVIDUALS",
+      values_to = "GT_VCF_NUC"# previously using "GT_HAPLO"
+    )
 
     input$INDIVIDUALS <- radiator::clean_ind_names(input$INDIVIDUALS)
 

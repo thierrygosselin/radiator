@@ -71,7 +71,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.6</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.7</span>
       </span>
     </div>
 
@@ -129,6 +129,15 @@
       <small>Source: <a href='https://github.com/thierrygosselin/radiator/blob/master/NEWS.md'><code>NEWS.md</code></a></small>
     </div>
 
+    <div id="radiator-117-2020-08-21" class="section level1">
+<h1 class="page-header" data-toc-text="1.1.7">
+<a href="#radiator-117-2020-08-21" class="anchor"></a>radiator 1.1.7 2020-08-21</h1>
+<ul>
+<li>PLINK files: fix a couple of bugs reading the tped</li>
+<li>removed <code><a href="https://tidyr.tidyverse.org/reference/gather.html">tidyr::gather</a></code> and <code><a href="https://tidyr.tidyverse.org/reference/spread.html">tidyr::spread</a></code> dependencies (they are deprecated)</li>
+<li>DArT data in 1-row format was not working properly with latest <code>data.table</code> melt function. Changed to <code>tidyr::pivot_long</code>.</li>
+</ul>
+</div>
     <div id="radiator-116-2020-06-23" class="section level1">
 <h1 class="page-header" data-toc-text="1.1.6">
 <a href="#radiator-116-2020-06-23" class="anchor"></a>radiator 1.1.6 2020-06-23</h1>

@@ -10,7 +10,7 @@
 
 #' @param strata (optional, tibble file or object) This tibble of individual's
 #' metadata must contain
-#' four colums: \code{SAMPLE_TYPE, REPUNIT, COLLECTION, INDIVIDUALS}. Those columns
+#' four columns: \code{SAMPLE_TYPE, REPUNIT, COLLECTION, INDIVIDUALS}. Those columns
 #' are described in \strong{rubias}.
 #' Default:\code{strata = NULL}. With default, \code{SAMPLE_TYPE} is filled
 #' with \code{reference}. \code{REPUNIT} and \code{COLLECTION} will be filled by
@@ -49,9 +49,9 @@ write_rubias <- function(
 ) {
 
   ## TEST
-  strata = NULL
-  filename = NULL
-  parallel.core = parallel::detectCores() - 1
+  # strata = NULL
+  # filename = NULL
+  # parallel.core = parallel::detectCores() - 1
 
   # Checking for missing and/or default arguments
   if (missing(data)) rlang::abort("Input file necessary to write the rubias file is missing")

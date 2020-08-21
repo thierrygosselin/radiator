@@ -40,7 +40,7 @@ filter_fis <- function(data, approach = "haplotype", fis.min.threshold, fis.max.
 
 
   if (is.vector(data)) {
-    data <- readr::read_tsv(data, col_names = T)
+    data <- readr::read_tsv(data, col_names = TRUE)
   }
   pop.number <- dplyr::n_distinct(data$POP_ID)
 

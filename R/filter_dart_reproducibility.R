@@ -217,9 +217,13 @@ filter_dart_reproducibility <- function(
 
     # figures
     markers.plot <- ggplot2::ggplot(
-      data = helper.table  %<>% tidyr::gather(
-        data = .,
-        key = LIST, value = MARKERS, -REPRODUCIBILITY),
+      data = helper.table  %<>%
+        tidyr::pivot_longer(
+          data = .,
+          cols = -REPRODUCIBILITY,
+          names_to = "LIST",
+          values_to = "MARKERS"
+        ),
       ggplot2::aes(x = REPRODUCIBILITY, y = MARKERS)) +
       ggplot2::geom_line() +
       ggplot2::geom_point(size = 2, shape = 21, fill = "white") +

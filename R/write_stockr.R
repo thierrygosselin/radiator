@@ -65,7 +65,7 @@ write_stockr <- function(data, filename = NULL, verbose = TRUE) {
       ) %>%
       tibble::as_tibble(.) %>%
       dplyr::select(MARKERS, strata$INDIVIDUALS) %>%
-      tibble::remove_rownames(.) %>%
+      tibble::remove_rownames(.data = .) %>%
       tibble::column_to_rownames(.data = ., var = "MARKERS")) %>%
     as.matrix(.)
 

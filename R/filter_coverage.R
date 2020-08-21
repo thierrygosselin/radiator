@@ -309,9 +309,12 @@ filter_coverage <- function(
 
     if (nrow(helper.table.low) > 1) {
       markers.plot.low <- ggplot2::ggplot(
-        data = tidyr::gather(
+        data = tidyr::pivot_longer(
           data = helper.table.low,
-          key = LIST, value = MARKERS, -COVERAGE_LOW),
+          cols = -COVERAGE_LOW,
+          names_to = "LIST",
+          values_to = "MARKERS"
+        ),
         ggplot2::aes(x = COVERAGE_LOW, y = MARKERS)) +
         ggplot2::geom_line() +
         ggplot2::geom_point(size = 2, shape = 21, fill = "white") +
@@ -336,7 +339,7 @@ filter_coverage <- function(
         units = "cm",
         useDingbats = FALSE,
         limitsize = FALSE
-        )
+      )
     }
 
     helper.table.high <- tibble::tibble(COVERAGE_HIGH = ch.range) %>%
@@ -350,9 +353,12 @@ filter_coverage <- function(
 
     if (nrow(helper.table.high) > 1) {
       markers.plot.high <- ggplot2::ggplot(
-        data = tidyr::gather(
+        data = tidyr::pivot_longer(
           data = helper.table.high,
-          key = LIST, value = MARKERS, -COVERAGE_HIGH),
+          cols = -COVERAGE_HIGH,
+          names_to = "LIST",
+          values_to = "MARKERS"
+        ),
         ggplot2::aes(x = COVERAGE_HIGH, y = MARKERS)) +
         ggplot2::geom_line() +
         ggplot2::geom_point(size = 2, shape = 21, fill = "white") +
@@ -398,7 +404,7 @@ filter_coverage <- function(
       dplyr::filter(
         COVERAGE_MEAN < filter.coverage[1] |
           COVERAGE_MEAN > filter.coverage[2]
-        ) %$% VARIANT_ID
+      ) %$% VARIANT_ID
     markers.meta <- extract_markers_metadata(gds = data, whitelist = FALSE) %>%
       dplyr::mutate(
         FILTERS = dplyr::if_else(

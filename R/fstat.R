@@ -109,14 +109,11 @@ tidy_fstat <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
   data <- dplyr::slice(.data = data, -(1:(as.numeric(fstat.first.line$nl) + 1)))
 
   # separate the dataset by tab
-  data <- tibble::as_data_frame(
-    purrr::invoke(#similar to do.call
-      rbind, stringi::stri_split_fixed(str = data$data, pattern = "\t")
-    )
-  )
-
-  # new colnames
-  colnames(data) <- c("POP_ID", markers)
+  data <- tibble::as_tibble(
+    do.call(rbind, stringi::stri_split_fixed(str = data$data, pattern = "\t")),
+    .name_repair = "minimal"
+  ) %>%
+    magrittr::set_colnames(x = ., c("POP_ID", markers))
 
   # Create a string of id
   id <- dplyr::data_frame(INDIVIDUALS = paste0("IND-", seq_along(1:length(data$POP_ID))))
@@ -191,7 +188,7 @@ tidy_fstat <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
   if (!tidy) {
     data <- data %>%
       dplyr::group_by(POP_ID, INDIVIDUALS) %>%
-      tidyr::spread(data = ., key = MARKERS, value = GENOTYPE) %>%
+      tidyr::pivot_wider(data = ., names_from = "MARKERS", values_from = "GENOTYPE") %>%
       dplyr::arrange(POP_ID, INDIVIDUALS)
   }
 
@@ -291,7 +288,7 @@ write_hierfstat <- function(data, filename = NULL) {
     tidyr::unite(data = data, GT, A1, A2, sep = "") %>%
       dplyr::mutate(GT = as.numeric(GT)) %>%
       dplyr::group_by(POP_ID, INDIVIDUALS) %>%
-      tidyr::spread(data = ., MARKERS, GT) %>%
+      tidyr::pivot_wider(data = ., names_from = "MARKERS", values_from = "GT") %>%
       dplyr::ungroup(.) %>%
       dplyr::arrange(POP_ID, INDIVIDUALS) %>%
       dplyr::mutate(POP_ID = as.integer(POP_ID), INDIVIDUALS = NULL)

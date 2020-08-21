@@ -551,7 +551,7 @@ filter_hwe <- function(
 
       hwd.helper.table <- hwd.helper.table.long %>%
         dplyr::group_by(N_POP_HWD) %>%
-        tidyr::spread(data = ., key = SIGNIFICANCE, value = n) %>%
+        tidyr::pivot_wider(data = ., names_from = "SIGNIFICANCE", values_from = "n") %>%
         dplyr::filter(N_POP_HWD != 0) %>%
         dplyr::ungroup(.) %>%
         readr::write_tsv(x = ., path = file.path(path.folder, "hwd.helper.table.tsv"))

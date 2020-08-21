@@ -92,7 +92,8 @@ allele_frequencies <- function(data, verbose = TRUE) {
   maf <- maf.data
   maf.data <- NULL
   maf.local.wide <- dplyr::select(.data = maf, MARKERS, POP_ID, MAF_LOCAL) %>%
-    tidyr::spread(data = ., key = MARKERS, value = MAF_LOCAL)
+    tidyr::pivot_wider(data = ., names_from = "MARKERS", values_from = "MAF_LOCAL")
+
 
   maf.global <- dplyr::distinct(.data = maf, MARKERS, MAF_GLOBAL)
 
@@ -104,16 +105,21 @@ allele_frequencies <- function(data, verbose = TRUE) {
 
     freq.wide <- dplyr::ungroup(freq) %>%
       dplyr::select(MARKERS, POP_ID, REF = FREQ_REF, ALT = MAF_LOCAL) %>%
-      tidyr::gather(data = ., key = ALLELES, value = FREQ, -c(MARKERS, POP_ID)) %>%
+      tidyr::pivot_longer(
+        data = .,
+        cols = -c("POP_ID", "MARKERS"),
+        names_to = "ALLELES",
+        values_to = "FREQ"
+      ) %>%
       dplyr::mutate(MARKERS_ALLELES = stringi::stri_join(MARKERS, ALLELES, sep = ".")) %>%
       dplyr::select(-MARKERS, -ALLELES) %>%
       dplyr::arrange(MARKERS_ALLELES, POP_ID) %>%
       dplyr::group_by(POP_ID) %>%
-      tidyr::spread(data = ., key = MARKERS_ALLELES, value = FREQ)
+      tidyr::pivot_wider(data = ., names_from = "MARKERS_ALLELES", values_from = "FREQ")
 
     freq.mat <- suppressWarnings(
       freq.wide %>%
-        tibble::remove_rownames(df = .) %>%
+        tibble::remove_rownames(.data = .) %>%
         tibble::column_to_rownames(.data = ., var = "POP_ID") %>%
         as.matrix(.)
     )
@@ -132,7 +138,12 @@ allele_frequencies <- function(data, verbose = TRUE) {
         A2 = stringi::stri_sub(GT, 4,6)
       ) %>%
       dplyr::select(MARKERS, POP_ID, INDIVIDUALS, A1, A2) %>%
-      tidyr::gather(key = ALLELES_GROUP, ALLELES, -c(INDIVIDUALS, POP_ID, MARKERS)) %>%
+      tidyr::pivot_longer(
+        data = .,
+        cols = -c("POP_ID", "INDIVIDUALS", "MARKERS"),
+        names_to = "ALLELES_GROUP",
+        values_to = "ALLELES"
+      ) %>%
       dplyr::group_by(MARKERS, ALLELES, POP_ID) %>%
       dplyr::tally(.) %>%
       dplyr::ungroup(.) %>%
@@ -153,7 +164,7 @@ allele_frequencies <- function(data, verbose = TRUE) {
       dplyr::select(-MARKERS, -ALLELES) %>%
       dplyr::arrange(MARKERS_ALLELES, POP_ID) %>%
       dplyr::group_by(POP_ID) %>%
-      tidyr::spread(data = ., key = MARKERS_ALLELES, value = FREQ)
+      tidyr::pivot_wider(data = ., names_from = "MARKERS_ALLELES", values_from = "FREQ")
 
     freq.mat <- suppressWarnings(
       freq.wide %>%

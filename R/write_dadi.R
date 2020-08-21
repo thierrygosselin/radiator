@@ -172,7 +172,6 @@ write_dadi <- function(
         ) %>%
         dplyr::ungroup(.) %>%
         dplyr::select(POP_ID, Allele1 = REF, A1, Allele2 = ALT, A2, MARKERS) %>%
-        # tidyr::gather(ALLELE_GROUP, COUNT, -c(POP_ID, MARKERS, Allele1, Allele2)) %>%
         data.table::as.data.table(.) %>%
         data.table::melt.data.table(
           data = .,
@@ -183,8 +182,6 @@ write_dadi <- function(
         ) %>%
         tibble::as_tibble(.) %>%
         tidyr::unite(POP, POP_ID, ALLELE_GROUP, sep = "_") %>%
-        # dplyr::group_by(MARKERS, Allele1, Allele2) %>%
-        # tidyr::spread(data = ., key = POP, value = COUNT) %>%
         data.table::as.data.table(.) %>%
         data.table::dcast.data.table(
           data = .,
@@ -476,7 +473,6 @@ write_dadi <- function(
         ) %>%
         dplyr::ungroup(.) %>%
         dplyr::select(POP_ID, Allele1 = REF, A1, Allele2 = ALT, A2, MARKERS) %>%
-        # tidyr::gather(ALLELE_GROUP, COUNT, -c(POP_ID, MARKERS, Allele1, Allele2)) %>%
         data.table::as.data.table(.) %>%
         data.table::melt.data.table(
           data = .,
@@ -488,7 +484,6 @@ write_dadi <- function(
         tibble::as_tibble(.) %>%
         tidyr::unite(POP, POP_ID, ALLELE_GROUP, sep = "_") %>%
         dplyr::group_by(MARKERS, Allele1, Allele2) %>%
-        # tidyr::spread(data = ., key = POP, value = COUNT) %>%
         data.table::as.data.table(.) %>%
         data.table::dcast.data.table(
           data = .,

@@ -470,7 +470,12 @@ filter_maf <- function(
           RANGE = stringi::stri_join(round(min(MAF_GLOBAL, na.rm = TRUE), 4), " - ", round(max(MAF_GLOBAL, na.rm = TRUE), 4))
         )
 
-      global.data <- tidyr::gather(data = global.data, key = "GROUP", value = "GLOBAL", -c(MARKERS, OVERALL)) %>%
+      global.data <- tidyr::pivot_longer(
+        data = global.data,
+        cols = -c("MARKERS", "OVERALL"),
+        names_to = "GROUP",
+        values_to = "GLOBAL"
+      ) %>%
         dplyr::mutate(GROUP = stringi::stri_replace_all_fixed(str = GROUP, pattern = c("ALT_GLOBAL", "MAF_GLOBAL"), replacement = c("ALT count", "ALT frequency (MAF)"), vectorize_all = FALSE))
 
       histo.maf.global <- ggplot2::ggplot(global.data, ggplot2::aes(x = GLOBAL)) +
@@ -514,7 +519,12 @@ filter_maf <- function(
 
       histo.maf.local <- histo.maf.local %>%
         dplyr::select(MARKERS, POP_ID, `ALT count` = ALT_LOCAL, `ALT frequency` = MAF_LOCAL) %>%
-        tidyr::gather(data = ., key = "GROUP", value = "LOCAL", -c(MARKERS, POP_ID)) %>%
+        tidyr::pivot_longer(
+          data = .,
+          cols = -c("POP_ID", "MARKERS"),
+          names_to = "GROUP",
+          values_to = "LOCAL"
+        ) %>%
         ggplot2::ggplot(
         data = ., ggplot2::aes(x = LOCAL, na.rm = FALSE)) +
         ggplot2::geom_histogram(bins = 30) +

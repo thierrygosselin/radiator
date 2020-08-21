@@ -533,7 +533,12 @@ filter_ld <- function(
                 A2 = stringi::stri_sub(GT, 4,6)
               ) %>%
               dplyr::select(MARKERS, INDIVIDUALS, A1, A2) %>%
-              tidyr::gather(data = ., key = ALLELES, value = GT, -c(MARKERS, INDIVIDUALS)) %>%
+              tidyr::pivot_longer(
+                data = .,
+                cols = -c("MARKERS", "INDIVIDUALS"),
+                names_to = "ALLELES",
+                values_to = "GT"
+              ) %>%
               dplyr::group_by(MARKERS, GT) %>%
               dplyr::tally(.) %>%
               dplyr::group_by(MARKERS) %>%

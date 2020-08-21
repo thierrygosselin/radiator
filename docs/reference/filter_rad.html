@@ -75,7 +75,7 @@ Novices, start with this one!" />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.6</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.7</span>
       </span>
     </div>
 
@@ -197,8 +197,12 @@ bayescan, betadiv, pcadapt, hzar, fineradstructure, related, seqarray,
 snprelate, maverick, genepopedit, rubias, hapmap and dadi.
 Use a character string,
 e.g. <code>output = c("genind", "genepop", "structure")</code>, to have preferred
-output formats generated. With default, only the tidy format is generated.
-Default: <code>output = NULL</code>.</p></td>
+output formats generated. With default, only the tidy format is generated.</p>
+<p>Make sure to read the particularities of each format, some might
+requires extra columns in the strata file. You can find the info in the
+corresponding <em>write_</em> functions of radiator
+(<a href='https://thierrygosselin.github.io/radiator/reference/index.html'>reference</a>).</p>
+<p>Default: <code>output = NULL</code>.</p></td>
     </tr>
     <tr>
       <th>filename</th>
