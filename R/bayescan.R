@@ -418,7 +418,12 @@ run_bayescan <- function(
       `accurate + diversifying` = accurate.markers.summary$n[accurate.markers.summary$SELECTION == "diversifying"]#,
       # ACCURATE_MARKERS_TEST = accurate.markers.summary$n[accurate.markers.summary$SELECTION == "test"]
     ) %>%
-      tidyr::gather(key = "ACCURACY_MARKERS", value = "N") %>%
+      tidyr::pivot_longer(
+        data = .,
+        cols = tidyselect::everything(),
+        names_to = "ACCURACY_MARKERS",
+        values_to = "N"
+      ) %>%
       dplyr::mutate(PROP = N / total.unique.markers)
 
     readr::write_tsv(
@@ -742,11 +747,18 @@ bayescan_one <- function(
   # command --------------------------------------------------------------------
   command.arguments <- paste(new.data, output.folder, all.trace, parallel.core, n, thin, nbp, pilot, burn, pr.odds)
 
-  system2(
-    command = bayescan.path,
-    args = command.arguments,
-    stderr = log.file, stdout = log.file
-  )
+  os <- Sys.info()[['sysname']]
+
+  if (os == "Windows") {
+    system(command = paste0(bayescan.path, command.arguments))
+  } else {
+    system2(
+      command = bayescan.path,
+      args = command.arguments,
+      stderr = log.file, stdout = log.file
+    )
+  }
+
 
   # Importing BayeScan file  ---------------------------------------------------
   message("Importing BayeScan results")
@@ -1240,7 +1252,12 @@ write_bayescan <- function(
       dplyr::select(GT_VCF, BAYESCAN_MARKERS, BAYESCAN_POP) %>%
       dplyr::filter(GT_VCF != "./.") %>%
       tidyr::separate(data = ., col = GT_VCF, into = c("A1", "A2"), sep = "/") %>%
-      tidyr::gather(data = ., key = ALLELES_GROUP, value = ALLELES, -c(BAYESCAN_MARKERS, BAYESCAN_POP)) %>%
+      tidyr::pivot_longer(
+        data = .,
+        cols = -c("BAYESCAN_MARKERS", "BAYESCAN_POP"),
+        names_to = "ALLELES_GROUP",
+        values_to = "ALLELES"
+      ) %>%
       dplyr::select(-ALLELES_GROUP)
 
     allele.count <- data.prep %>%
