@@ -46,8 +46,13 @@ To try out the dev version of **radiator**, copy/paste the code below:
 if (!require("devtools")) install.packages("devtools")
 devtools::install_github("thierrygosselin/radiator")
 library(radiator)
+
+# Run:
+devtools::package_info(pkgs = "SeqArray")
+# Verify that package gdsfmt was installed and that you have package SeqArray version >= 1.28.1.
 ```
- 
+
+
 Web site with additional info: [https://thierrygosselin.github.io/radiator/](https://thierrygosselin.github.io/radiator/)
 
 * [Computer setup and troubleshooting](https://thierrygosselin.github.io/radiator/articles/rad_genomics_computer_setup.html)

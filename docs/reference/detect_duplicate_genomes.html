@@ -257,15 +257,15 @@ special section)</p></td>
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
     <p>A list with potentially 8 objects:</p><ul>
-<li><p><code>$distance </code>: results of the distance method</p></li>
-<li><p><code>$distance.stats</code>: Summary statistics of the distance method</p></li>
-<li><p><code>$pairwise.genome.similarity</code>: results of the genome method</p></li>
-<li><p><code>$genome.stats</code>: Summary statistics of the genome method</p></li>
-<li><p><code>$violin.plot.distance</code>: violin plot showing the distribution of pairwise distances</p></li>
-<li><p><code>$manhattan.plot.distance</code>: same info different visual with manhattan plot</p></li>
-<li><p><code>$violin.plot.genome</code>: violin plot showing the distribution of pairwise genome similarities</p></li>
-<li><p><code>$manhattan.plot.genome</code>: same info different visual with manhattan plot</p></li>
-<li><p><code>$blacklist.id.similar</code>: blacklisted duplicates</p></li>
+<li><p><code>$distance </code>: results of the distance method.</p></li>
+<li><p><code>$distance.stats</code>: Summary statistics of the distance method.</p></li>
+<li><p><code>$pairwise.genome.similarity</code>: results of the genome method.</p></li>
+<li><p><code>$genome.stats</code>: Summary statistics of the genome method.</p></li>
+<li><p><code>$violin.plot.distance</code>: violin plot showing the distribution of pairwise distances.</p></li>
+<li><p><code>$manhattan.plot.distance</code>: same info different visual with manhattan plot.</p></li>
+<li><p><code>$violin.plot.genome</code>: violin plot showing the distribution of pairwise genome similarities.</p></li>
+<li><p><code>$manhattan.plot.genome</code>: same info different visual with manhattan plot.</p></li>
+<li><p><code>$blacklist.id.similar</code>: blacklisted duplicates.</p></li>
 </ul>
 
 <p>Saved in the working directory:
@@ -285,7 +285,11 @@ and similarly, be suspicious of a <em>close outlier</em> from a different pop
 pairwise comparisons.</p>
 <p>If there is no outlier, don't bother running the function again with
 (<code>genome = TRUE</code>).</p>
-
+<p><strong>Relative distance</strong></p>
+<p>Is the normalized distance for your dataset (not calculated by strata). For
+each individual, it's the distance divided by the maximum distance observed.
+The range is limited between 0 and 1. Closer to 0 = the more similar and
+closer to 1, the more distant.</p>
 <p><strong><code>genome = TRUE</code></strong></p>
 <p>The function will run slower, but...
 If you see outliers with the first run, take the time to run the function
@@ -293,7 +297,7 @@ with <code>genome = TRUE</code>. Because this option is much better at detecting
 duplicated individuals and it also shows the impact of <strong>missingness</strong>
 or the number of <strong>shared markers</strong> between comparisons.</p>
 <p><em>Your outlier duo could well be the result of one of the individual having
-an extremely low number genotypes...</em></p>
+an extremely low number of genotypes...</em></p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='kw'>if</span> (<span class='fl'>FALSE</span>) {

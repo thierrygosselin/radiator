@@ -75,15 +75,15 @@
 
 #' @return A list with potentially 8 objects:
 #' \itemize{
-#' \item \code{$distance }: results of the distance method
-#' \item \code{$distance.stats}: Summary statistics of the distance method
-#' \item \code{$pairwise.genome.similarity}: results of the genome method
-#' \item \code{$genome.stats}: Summary statistics of the genome method
-#' \item \code{$violin.plot.distance}: violin plot showing the distribution of pairwise distances
-#' \item \code{$manhattan.plot.distance}: same info different visual with manhattan plot
-#' \item \code{$violin.plot.genome}: violin plot showing the distribution of pairwise genome similarities
-#' \item \code{$manhattan.plot.genome}: same info different visual with manhattan plot
-#' \item \code{$blacklist.id.similar}: blacklisted duplicates
+#' \item \code{$distance }: results of the distance method.
+#' \item \code{$distance.stats}: Summary statistics of the distance method.
+#' \item \code{$pairwise.genome.similarity}: results of the genome method.
+#' \item \code{$genome.stats}: Summary statistics of the genome method.
+#' \item \code{$violin.plot.distance}: violin plot showing the distribution of pairwise distances.
+#' \item \code{$manhattan.plot.distance}: same info different visual with manhattan plot.
+#' \item \code{$violin.plot.genome}: violin plot showing the distribution of pairwise genome similarities.
+#' \item \code{$manhattan.plot.genome}: same info different visual with manhattan plot.
+#' \item \code{$blacklist.id.similar}: blacklisted duplicates.
 #' }
 #'
 #' Saved in the working directory:
@@ -107,6 +107,12 @@
 #' If there is no outlier, don't bother running the function again with
 #' (\code{genome = TRUE}).
 #'
+#'\strong{Relative distance}
+#'
+#' Is the normalized distance for your dataset (not calculated by strata). For
+#' each individual, it's the distance divided by the maximum distance observed.
+#' The range is limited between 0 and 1. Closer to 0 = the more similar and
+#' closer to 1, the more distant.
 #'
 #' \strong{\code{genome = TRUE}}
 #'
@@ -117,7 +123,7 @@
 #' or the number of \strong{shared markers} between comparisons.
 #'
 #' \emph{Your outlier duo could well be the result of one of the individual having
-#' an extremely low number genotypes...}
+#' an extremely low number of genotypes...}
 
 
 #' @export
