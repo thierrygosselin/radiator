@@ -301,7 +301,15 @@ ref_dictionary <- function(x, parallel.core = parallel::detectCores() - 1) {
       x <- dplyr::select(x, MARKERS, GT_VCF_NUC) %>%
         dplyr::filter(GT_VCF_NUC != "./.") %>%
         tidyr::separate(col = GT_VCF_NUC, into = c("A1", "A2"), sep = "/") %>%
-        tidyr::gather(data = ., key = ALLELES_GROUP, value = ALLELES, -MARKERS) %>%
+        data.table::as.data.table(.) %>%
+        data.table::melt.data.table(
+          data = .,
+          id.vars = "MARKERS",
+          variable.name = "ALLELES_GROUP",
+          value.name = "ALLELES",
+          variable.factor = FALSE
+        ) %>%
+        tibble::as_tibble(.) %>%
         dplyr::select(-ALLELES_GROUP) %>%
         dplyr::group_by(MARKERS, ALLELES) %>%
         dplyr::tally(.) %>%
@@ -318,10 +326,16 @@ ref_dictionary <- function(x, parallel.core = parallel::detectCores() - 1) {
             A1 = stringi::stri_sub(str = GT, from = 1, to = 3),
             A2 = stringi::stri_sub(str = GT, from = 4, to = 6)
           ) %>%
-          dplyr::select(-GT) %>%
-          tidyr::gather(
+          dplyr::select(MARKERS, A1, A2) %>%
+          data.table::as.data.table(.) %>%
+          data.table::melt.data.table(
             data = .,
-            key = ALLELES_GROUP, value = ALLELES, -dplyr::one_of(names(x))) %>%
+            id.vars = "MARKERS",
+            variable.name = "ALLELES_GROUP",
+            value.name = "ALLELES",
+            variable.factor = FALSE
+          ) %>%
+          tibble::as_tibble(.) %>%
           dplyr::select(MARKERS, ALLELES) %>%
           dplyr::filter(ALLELES != "000") %>%
           dplyr::group_by(MARKERS, ALLELES) %>%

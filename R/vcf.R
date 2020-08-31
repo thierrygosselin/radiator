@@ -2601,9 +2601,13 @@ write_vcf <- function(
           dplyr::select(MARKERS, CHROM, LOCUS, POS, REF, ALT, INFO, INDIVIDUALS, GT_VCF, POP_ID) %>%
           dplyr::mutate(GT_VCF_POP_ID = stringi::stri_join(GT_VCF, POP_ID, sep = ":")) %>%
           dplyr::select(-c(GT_VCF, POP_ID)) %>%
-          dplyr::group_by(MARKERS, CHROM, LOCUS, POS, INFO, REF, ALT) %>%
-          tidyr::pivot_wider(data = ., names_from = "INDIVIDUALS", values_from = "GT_VCF_POP_ID") %>%
-          dplyr::ungroup(.) %>%
+          data.table::as.data.table(.) %>%
+          data.table::dcast.data.table(
+            data = .,
+            formula = MARKERS + CHROM + LOCUS + POS + INFO + REF + ALT ~ INDIVIDUALS,
+            value.var = "GT_VCF_POP_ID"
+          ) %>%
+          tibble::as_tibble(.) %>%
           dplyr::mutate(
             QUAL = rep(".", n()),
             FILTER = rep("PASS", n()),
@@ -2615,9 +2619,13 @@ write_vcf <- function(
       output <- suppressWarnings(
         dplyr::left_join(data, info.field, by = "MARKERS") %>%
           dplyr::select(MARKERS, CHROM, LOCUS, POS, REF, ALT, INDIVIDUALS, GT_VCF, INFO) %>%
-          dplyr::group_by(MARKERS, CHROM, LOCUS, POS, INFO, REF, ALT) %>%
-          tidyr::pivot_wider(data = ., names_from = "INDIVIDUALS", values_from = "GT_VCF") %>%
-          dplyr::ungroup(.) %>%
+          data.table::as.data.table(.) %>%
+          data.table::dcast.data.table(
+            data = .,
+            formula = MARKERS + CHROM + LOCUS + POS + INFO + REF + ALT ~ INDIVIDUALS,
+            value.var = "GT_VCF"
+          ) %>%
+          tibble::as_tibble(.) %>%
           dplyr::mutate(
             QUAL = rep(".", n()),
             FILTER = rep("PASS", n()),
@@ -3328,9 +3336,13 @@ vcf_strata <- function(data, strata, filename = NULL) {
       sep = ":",
       remove = TRUE
     ) %>%
-    dplyr::group_by(`#CHROM`, POS, ID,  REF, ALT, QUAL, FILTER, INFO, FORMAT) %>%
-    tidyr::pivot_wider(data = ., names_from = "INDIVIDUALS", values_from = "FORMAT_ID") %>%
-    dplyr::ungroup(.) %>%
+    data.table::as.data.table(.) %>%
+    data.table::dcast.data.table(
+      data = .,
+      formula = `#CHROM` + POS + ID +  REF + ALT + QUAL + FILTER + INFO + FORMAT ~ INDIVIDUALS,
+      value.var = "FORMAT_ID"
+    ) %>%
+    tibble::as_tibble(.) %>%
     dplyr::mutate(
       FORMAT = stringi::stri_join(
         FORMAT,

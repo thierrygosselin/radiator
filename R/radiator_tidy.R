@@ -92,19 +92,25 @@ tidy_wide <- function(data, import.metadata = FALSE) {
   # Determine long (tidy) or wide dataset
   if (!"MARKERS" %in% colnames(data) && !"LOCUS" %in% colnames(data)) {
     if (rlang::has_name(data, "POP_ID")) {
-      data <- tidyr::pivot_longer(
-        data = data,
-        cols = -c("POP_ID", "INDIVIDUALS"),
-        names_to = "MARKERS",
-        values_to = "GT"
-      )
+      data <- data.table::as.data.table(data) %>%
+        data.table::melt.data.table(
+          data = .,
+          id.vars = c("POP_ID", "INDIVIDUALS"),
+          variable.name = "MARKERS",
+          value.name = "GT",
+          variable.factor = FALSE
+        ) %>%
+        tibble::as_tibble(.)
     } else {
-      data <- tidyr::pivot_longer(
-        data = data,
-        cols = -INDIVIDUALS,
-        names_to = "MARKERS",
-        values_to = "GT"
-      )
+      data <- data.table::as.data.table(data) %>%
+        data.table::melt.data.table(
+          data = .,
+          id.vars = "INDIVIDUALS",
+          variable.name = "MARKERS",
+          value.name = "GT",
+          variable.factor = FALSE
+        ) %>%
+        tibble::as_tibble(.)
     }
   }
 
@@ -556,7 +562,18 @@ tidy_genomic_data <- function(
       n_max = 1,
       na = "-",
       col_names = FALSE,
-      col_types = readr::cols(.default = readr::col_character())) %>%
+      col_types = readr::cols(.default = readr::col_character())
+      ) %>%
+      # TODO... conversion to data.table with an example to double check...
+      # data.table::as.data.table(.) %>%
+      # data.table::melt.data.table(
+        # data = .,
+        # id.vars = "MARKERS",
+        # variable.name = "ALLELES_GROUP",
+        # value.name = "ALLELES",
+        # variable.factor = FALSE
+      # ) %>%
+      # tibble::as_tibble(.) %>%
       tidyr::pivot_longer(
         data = .,
         cols = dplyr::everything(),
@@ -593,12 +610,16 @@ tidy_genomic_data <- function(
 
     message("\nNumber of loci in catalog: ", n.catalog.locus)
     message("Number of individuals: ", n.individuals)
-    input <- tidyr::pivot_longer(
-      data = input,
-      cols = -LOCUS,
-      names_to = "INDIVIDUALS",
-      values_to = "GT_VCF_NUC"# previously using "GT_HAPLO"
-    )
+    input <- data.table::as.data.table(input) %>%
+      data.table::melt.data.table(
+        data = .,
+        id.vars = "LOCUS",
+        variable.name = "INDIVIDUALS",
+        value.name = "GT_VCF_NUC",
+        variable.factor = FALSE
+      ) %>%
+      tibble::as_tibble(.)
+
 
     input$INDIVIDUALS <- radiator::clean_ind_names(input$INDIVIDUALS)
 

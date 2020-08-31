@@ -172,9 +172,15 @@ tidy_fstat <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
   # Tidy -------------------------------------------------------------------------
 
   # work on the genotype field
-  data <- tidyr::gather(
-    data = data, key = MARKERS, value = GENOTYPE, -c(POP_ID, INDIVIDUALS)
+  data <- data.table::as.data.table(data) %>%
+    data.table::melt.data.table(
+      data = .,
+      id.vars = c("POP_ID", "INDIVIDUALS"),
+      variable.name = "MARKERS",
+      value.name = "GENOTYPE",
+      variable.factor = FALSE
     ) %>%
+    tibble::as_tibble(.) %>%
     tidyr::separate(
       col = GENOTYPE, into = c("A1", "A2"), sep = as.numeric(fstat.first.line$allele.coding)
     ) %>%
@@ -186,9 +192,13 @@ tidy_fstat <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
 
   # wide format
   if (!tidy) {
-    data <- data %>%
-      dplyr::group_by(POP_ID, INDIVIDUALS) %>%
-      tidyr::pivot_wider(data = ., names_from = "MARKERS", values_from = "GENOTYPE") %>%
+    data <- data.table::as.data.table(data) %>%
+      data.table::dcast.data.table(
+        data = .,
+        formula = POP_ID + INDIVIDUALS ~ MARKERS,
+        value.var = "GENOTYPE"
+      ) %>%
+      tibble::as_tibble(.) %>%
       dplyr::arrange(POP_ID, INDIVIDUALS)
   }
 
@@ -287,9 +297,13 @@ write_hierfstat <- function(data, filename = NULL) {
   data <- suppressWarnings(
     tidyr::unite(data = data, GT, A1, A2, sep = "") %>%
       dplyr::mutate(GT = as.numeric(GT)) %>%
-      dplyr::group_by(POP_ID, INDIVIDUALS) %>%
-      tidyr::pivot_wider(data = ., names_from = "MARKERS", values_from = "GT") %>%
-      dplyr::ungroup(.) %>%
+      data.table::as.data.table(.) %>%
+      data.table::dcast.data.table(
+        data = .,
+        formula = POP_ID + INDIVIDUALS ~ MARKERS,
+        value.var = "GT"
+      ) %>%
+      tibble::as_tibble(.) %>%
       dplyr::arrange(POP_ID, INDIVIDUALS) %>%
       dplyr::mutate(POP_ID = as.integer(POP_ID), INDIVIDUALS = NULL)
   )

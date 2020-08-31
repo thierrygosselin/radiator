@@ -1797,11 +1797,19 @@ This marker could be absent due to an error.")
     !is.null(res$homogametic.RD.silico.markers)) > 1) {
     # common markers plot
     n.pop = length(unique(res$sexy.summary$METHOD))
-    plot.data <-
-      dplyr::distinct(res$sexy.summary, SEX_MARKERS, METHOD) %>%
-      dplyr::mutate(n = rep(1, n()),
-                    METHOD = stringi::stri_join("METHOD_", METHOD)) %>%
-      tidyr::pivot_wider(data = ., names_from = "METHOD", values_from = "n", values_fill = 0) %>%
+    plot.data <- res$sexy.summary %>%
+      dplyr::distinct(SEX_MARKERS, METHOD) %>%
+      dplyr::mutate(
+        n = rep(1, n()),
+        METHOD = stringi::stri_join("METHOD_", METHOD)
+        ) %>%
+      data.table::as.data.table(.) %>%
+      data.table::dcast.data.table(
+        data = .,
+        formula = SEX_MARKERS ~ METHOD,
+        value.var = "n",
+        fill = 0
+      ) %>%
       data.frame(.)
 
     message("The 'upset' plot shows any overlapping sex-linked markers between methods")

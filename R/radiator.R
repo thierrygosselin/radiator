@@ -660,7 +660,6 @@ generate_folder <- function(
 #' @export
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 folder_short <- function(f) {
-
   # remove / if found last
   if (stringi::stri_sub(str = f, from = -1, length = 1) == "/") {
     f <- stringi::stri_replace_last_regex(

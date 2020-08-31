@@ -382,7 +382,8 @@ detect_duplicate_genomes <- function(
           dplyr::mutate(
             REF = 2 - ALT,
             REF = as.integer(REF),
-            ALT = as.integer(ALT)) %>%
+            ALT = as.integer(ALT)
+            ) %>%
           data.table::as.data.table(.) %>%
           data.table::melt.data.table(
             data = ., id.vars = c("MARKERS", "INDIVIDUALS"), variable.name = "ALLELES", value.name = "n",
