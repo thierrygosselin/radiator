@@ -88,7 +88,7 @@
       <h1 data-toc-skip>RADseq genomics in R</h1>
             <h3 class="subtitle">computer setup</h3>
             
-            <h4 class="date">2020-08-27</h4>
+            <h4 class="date">2020-09-03</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/thierrygosselin/radiator/blob/master/vignettes/rad_genomics_computer_setup.Rmd"><code>vignettes/rad_genomics_computer_setup.Rmd</code></a></small>
       <div class="hidden name"><code>rad_genomics_computer_setup.Rmd</code></div>
@@ -506,6 +506,21 @@
 <p><strong>Long-term solution:</strong></p>
 <p>Instead of using <code>Sys.setenv</code> each time you have a similar problem, you could add the <a href="https://stat.ethz.ch/R-manual/R-devel/library/base/html/EnvVar.html">environment variables</a> <code>LD_LIBRARY_PATH</code> to your <code>.Renviron file</code>. <a href="#Renviron">This is discussed in another problem above</a>.</p>
 </div>
+<div id="error-with-c-stacks-usage" class="section level2">
+<h2 class="hasAnchor">
+<a href="#error-with-c-stacks-usage" class="anchor"></a>Error with <code>C stacks usage</code>
+</h2>
+<div class="sourceCode" id="cb42"><html><body><pre class="r">Error: C stack usage  7971092 is too close to the limit</pre></body></html></div>
+<p>So far, I haven’t found the cure to this computer-specific problem.</p>
+<p><strong>Potential solutions:</strong></p>
+<ul>
+<li>Make sure you have enough RAM on your computer for the dataset you want to analyze (16GB is the bare minimum these days for small-medium RADseq dataset).</li>
+<li>Closing all windows/app running in the background somtimes help.</li>
+<li>Updating to the latest version of R, RStudio and libraries.</li>
+<li>Not a fan of upgrading to latest version, use <a href="https://rstudio.github.io/packrat/">Packrat</a>.</li>
+<li>Follow the guidelines to prepare your computer in this vignette, from the start…</li>
+</ul>
+</div>
 <div id="google-is-your-next-best-friend" class="section level2">
 <h2 class="hasAnchor">
 <a href="#google-is-your-next-best-friend" class="anchor"></a>Google is your next best friend…</h2>
@@ -522,58 +537,57 @@
 <h3 class="hasAnchor">
 <a href="#download" class="anchor"></a>Download</h3>
 <p>Download the latest github release of Allan Strand’s <strong>rmetasim</strong></p>
-<div class="sourceCode" id="cb42"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb42-1"><a href="#cb42-1"></a><span class="bu">cd</span> ~/Downloads</span>
-<span id="cb42-2"><a href="#cb42-2"></a><span class="fu">wget</span> --no-check-certificate https://github.com/stranda/rmetasim/archive/master.zip</span>
-<span id="cb42-3"><a href="#cb42-3"></a><span class="ex">curl</span> -O https://github.com/stranda/rmetasim/archive/master.zip</span>
-<span id="cb42-4"><a href="#cb42-4"></a><span class="fu">unzip</span> master.zip</span></code></pre></div>
+<div class="sourceCode" id="cb43"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb43-1"><a href="#cb43-1"></a><span class="bu">cd</span> ~/Downloads</span>
+<span id="cb43-2"><a href="#cb43-2"></a><span class="ex">curl</span> -L -O https://github.com/stranda/rmetasim/archive/master.zip</span>
+<span id="cb43-3"><a href="#cb43-3"></a><span class="fu">unzip</span> master.zip</span></code></pre></div>
 </div>
 <div id="modify-the-number-of-loci-maxloci" class="section level3">
 <h3 class="hasAnchor">
 <a href="#modify-the-number-of-loci-maxloci" class="anchor"></a>Modify the number of loci: MAXLOCI</h3>
 <p>If you want to use more loci during your simulations (default is 10001), you need to modify rmetasim before compiling. With a text editor, modify the <code>const.h</code> file in the <code>src</code> folder: <code>rmetasim-master/src/const.h</code>. Navigate to <strong>lane 33</strong> and change the integer to the desired maximum number of loci. Or do this in the Terminal:</p>
-<div class="sourceCode" id="cb43"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb43-1"><a href="#cb43-1"></a><span class="fu">sed</span> -i -e <span class="st">'s/#define MAXLOCI               10001/#define MAXLOCI               20000/g'</span> rmetasim-master/src/const.h</span></code></pre></div>
+<div class="sourceCode" id="cb44"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb44-1"><a href="#cb44-1"></a><span class="fu">sed</span> -i -e <span class="st">'s/#define MAXLOCI               10001/#define MAXLOCI               20000/g'</span> rmetasim-master/src/const.h</span></code></pre></div>
 </div>
 <div id="Makevars_config" class="section level3">
 <h3 class="hasAnchor">
 <a href="#Makevars_config" class="anchor"></a>Makevars configuration</h3>
 <p><em>rmetasim</em> requires these Makevars (<code>~/.R/Makevars</code> file) specifications. If you have other lines, comment (#) before compiling <code>rmetasim</code>:</p>
-<div class="sourceCode" id="cb44"><html><body><pre class="r"><span class="kw pkg">usethis</span><span class="kw ns">::</span><span class="fu"><a href="https://usethis.r-lib.org/reference/edit.html">edit_r_makevars</a></span>()</pre></body></html></div>
+<div class="sourceCode" id="cb45"><html><body><pre class="r"><span class="kw pkg">usethis</span><span class="kw ns">::</span><span class="fu"><a href="https://usethis.r-lib.org/reference/edit.html">edit_r_makevars</a></span>()</pre></body></html></div>
 <p><strong>With most OS (including macOS 10.14):</strong></p>
-<div class="sourceCode" id="cb45"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb45-1"><a href="#cb45-1"></a><span class="va">CC=</span>/usr/local/bin/clang</span>
-<span id="cb45-2"><a href="#cb45-2"></a><span class="va">CC=</span>/usr/local/bin/clang</span>
-<span id="cb45-3"><a href="#cb45-3"></a><span class="va">CXX=</span>/usr/local/bin/clang++</span>
-<span id="cb45-4"><a href="#cb45-4"></a><span class="va">CXX1X=</span>/usr/local/bin/clang++</span>
-<span id="cb45-5"><a href="#cb45-5"></a><span class="va">CXX11=</span>/usr/local/bin/clang++</span>
-<span id="cb45-6"><a href="#cb45-6"></a><span class="va">FLIBS=</span>-L/usr/local/lib</span>
-<span id="cb45-7"><a href="#cb45-7"></a><span class="va">CFLAGS=</span>-I/usr/local/include</span>
-<span id="cb45-8"><a href="#cb45-8"></a><span class="va">LDFLAGS=</span>-L/usr/local/lib</span>
-<span id="cb45-9"><a href="#cb45-9"></a><span class="va">CPPFLAGS=</span>-I/usr/local/include</span>
-<span id="cb45-10"><a href="#cb45-10"></a><span class="va">SHLIB_OPENMP_CFLAGS=</span> <span class="ex">-fopenmp</span></span>
-<span id="cb45-11"><a href="#cb45-11"></a><span class="va">SHLIB_OPENMP_FCFLAGS=</span> <span class="ex">-fopenmp</span></span>
-<span id="cb45-12"><a href="#cb45-12"></a><span class="va">SHLIB_OPENMP_FFLAGS=</span> <span class="ex">-fopenmp</span></span>
-<span id="cb45-13"><a href="#cb45-13"></a><span class="va">SHLIB_OPENMP_CXXFLAGS=</span> <span class="ex">-fopenmp</span></span></code></pre></div>
-<p><strong>macOS 10.15</strong></p>
-<p>This latest os requires extra lines:</p>
 <div class="sourceCode" id="cb46"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb46-1"><a href="#cb46-1"></a><span class="va">CC=</span>/usr/local/bin/clang</span>
 <span id="cb46-2"><a href="#cb46-2"></a><span class="va">CC=</span>/usr/local/bin/clang</span>
 <span id="cb46-3"><a href="#cb46-3"></a><span class="va">CXX=</span>/usr/local/bin/clang++</span>
 <span id="cb46-4"><a href="#cb46-4"></a><span class="va">CXX1X=</span>/usr/local/bin/clang++</span>
-<span id="cb46-5"><a href="#cb46-5"></a><span class="va">FLIBS=</span>-L/usr/local/lib</span>
-<span id="cb46-6"><a href="#cb46-6"></a><span class="va">LDFLAGS=</span>-L/usr/local/lib</span>
-<span id="cb46-7"><a href="#cb46-7"></a><span class="va">SHLIB_OPENMP_CFLAGS=</span> <span class="ex">-fopenmp</span></span>
-<span id="cb46-8"><a href="#cb46-8"></a><span class="va">SHLIB_OPENMP_FCFLAGS=</span> <span class="ex">-fopenmp</span></span>
-<span id="cb46-9"><a href="#cb46-9"></a><span class="va">SHLIB_OPENMP_FFLAGS=</span> <span class="ex">-fopenmp</span></span>
-<span id="cb46-10"><a href="#cb46-10"></a><span class="va">SHLIB_OPENMP_CXXFLAGS=</span> <span class="ex">-fopenmp</span></span>
-<span id="cb46-11"><a href="#cb46-11"></a><span class="va">CFLAGS+=</span>-isysroot <span class="ex">/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk</span></span>
-<span id="cb46-12"><a href="#cb46-12"></a><span class="va">CCFLAGS+=</span>-isysroot <span class="ex">/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk</span></span>
-<span id="cb46-13"><a href="#cb46-13"></a><span class="va">CXXFLAGS+=</span>-isysroot <span class="ex">/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk</span></span>
-<span id="cb46-14"><a href="#cb46-14"></a><span class="va">CPPFLAGS+=</span>-isysroot <span class="ex">/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk</span></span></code></pre></div>
+<span id="cb46-5"><a href="#cb46-5"></a><span class="va">CXX11=</span>/usr/local/bin/clang++</span>
+<span id="cb46-6"><a href="#cb46-6"></a><span class="va">FLIBS=</span>-L/usr/local/lib</span>
+<span id="cb46-7"><a href="#cb46-7"></a><span class="va">CFLAGS=</span>-I/usr/local/include</span>
+<span id="cb46-8"><a href="#cb46-8"></a><span class="va">LDFLAGS=</span>-L/usr/local/lib</span>
+<span id="cb46-9"><a href="#cb46-9"></a><span class="va">CPPFLAGS=</span>-I/usr/local/include</span>
+<span id="cb46-10"><a href="#cb46-10"></a><span class="va">SHLIB_OPENMP_CFLAGS=</span> <span class="ex">-fopenmp</span></span>
+<span id="cb46-11"><a href="#cb46-11"></a><span class="va">SHLIB_OPENMP_FCFLAGS=</span> <span class="ex">-fopenmp</span></span>
+<span id="cb46-12"><a href="#cb46-12"></a><span class="va">SHLIB_OPENMP_FFLAGS=</span> <span class="ex">-fopenmp</span></span>
+<span id="cb46-13"><a href="#cb46-13"></a><span class="va">SHLIB_OPENMP_CXXFLAGS=</span> <span class="ex">-fopenmp</span></span></code></pre></div>
+<p><strong>macOS 10.15</strong></p>
+<p>This latest os requires extra lines:</p>
+<div class="sourceCode" id="cb47"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb47-1"><a href="#cb47-1"></a><span class="va">CC=</span>/usr/local/bin/clang</span>
+<span id="cb47-2"><a href="#cb47-2"></a><span class="va">CC=</span>/usr/local/bin/clang</span>
+<span id="cb47-3"><a href="#cb47-3"></a><span class="va">CXX=</span>/usr/local/bin/clang++</span>
+<span id="cb47-4"><a href="#cb47-4"></a><span class="va">CXX1X=</span>/usr/local/bin/clang++</span>
+<span id="cb47-5"><a href="#cb47-5"></a><span class="va">FLIBS=</span>-L/usr/local/lib</span>
+<span id="cb47-6"><a href="#cb47-6"></a><span class="va">LDFLAGS=</span>-L/usr/local/lib</span>
+<span id="cb47-7"><a href="#cb47-7"></a><span class="va">SHLIB_OPENMP_CFLAGS=</span> <span class="ex">-fopenmp</span></span>
+<span id="cb47-8"><a href="#cb47-8"></a><span class="va">SHLIB_OPENMP_FCFLAGS=</span> <span class="ex">-fopenmp</span></span>
+<span id="cb47-9"><a href="#cb47-9"></a><span class="va">SHLIB_OPENMP_FFLAGS=</span> <span class="ex">-fopenmp</span></span>
+<span id="cb47-10"><a href="#cb47-10"></a><span class="va">SHLIB_OPENMP_CXXFLAGS=</span> <span class="ex">-fopenmp</span></span>
+<span id="cb47-11"><a href="#cb47-11"></a><span class="va">CFLAGS+=</span>-isysroot <span class="ex">/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk</span></span>
+<span id="cb47-12"><a href="#cb47-12"></a><span class="va">CCFLAGS+=</span>-isysroot <span class="ex">/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk</span></span>
+<span id="cb47-13"><a href="#cb47-13"></a><span class="va">CXXFLAGS+=</span>-isysroot <span class="ex">/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk</span></span>
+<span id="cb47-14"><a href="#cb47-14"></a><span class="va">CPPFLAGS+=</span>-isysroot <span class="ex">/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk</span></span></code></pre></div>
 </div>
 <div id="compile" class="section level3">
 <h3 class="hasAnchor">
 <a href="#compile" class="anchor"></a>Compile</h3>
-<div class="sourceCode" id="cb47"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb47-1"><a href="#cb47-1"></a><span class="ex">R</span> CMD INSTALL <span class="st">"rmetasim-master"</span> <span class="co"># Terminal command</span></span>
-<span id="cb47-2"><a href="#cb47-2"></a><span class="fu">sudo</span> rm -R rmetasim* <span class="co"># to remove the folders no longer required</span></span></code></pre></div>
+<div class="sourceCode" id="cb48"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb48-1"><a href="#cb48-1"></a><span class="ex">R</span> CMD INSTALL <span class="st">"rmetasim-master"</span> <span class="co"># Terminal command</span></span>
+<span id="cb48-2"><a href="#cb48-2"></a><span class="fu">sudo</span> rm -R rmetasim* <span class="co"># to remove the folders no longer required</span></span></code></pre></div>
 </div>
 </div>
 <div id="xgboost" class="section level2">
@@ -583,10 +597,10 @@
 <div id="download-the-github-version" class="section level3">
 <h3 class="hasAnchor">
 <a href="#download-the-github-version" class="anchor"></a>Download the github version</h3>
-<div class="sourceCode" id="cb48"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb48-1"><a href="#cb48-1"></a><span class="co"># terminal</span></span>
-<span id="cb48-2"><a href="#cb48-2"></a><span class="bu">cd</span> Downloads</span>
-<span id="cb48-3"><a href="#cb48-3"></a><span class="fu">git</span> clone --recursive https://github.com/dmlc/xgboost</span>
-<span id="cb48-4"><a href="#cb48-4"></a><span class="bu">cd</span> xgboost</span></code></pre></div>
+<div class="sourceCode" id="cb49"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb49-1"><a href="#cb49-1"></a><span class="co"># terminal</span></span>
+<span id="cb49-2"><a href="#cb49-2"></a><span class="bu">cd</span> Downloads</span>
+<span id="cb49-3"><a href="#cb49-3"></a><span class="fu">git</span> clone --recursive https://github.com/dmlc/xgboost</span>
+<span id="cb49-4"><a href="#cb49-4"></a><span class="bu">cd</span> xgboost</span></code></pre></div>
 </div>
 <div id="error" class="section level3">
 <h3 class="hasAnchor">
@@ -597,47 +611,47 @@
 <h3 class="hasAnchor">
 <a href="#modification" class="anchor"></a>Modification</h3>
 <p>Modify in a text editor the <code>configure</code> file inside the <code>xgboost/R-package</code> folder:</p>
-<div class="sourceCode" id="cb49"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb49-1"><a href="#cb49-1"></a><span class="co"># Go to line 1676</span></span>
-<span id="cb49-2"><a href="#cb49-2"></a><span class="co"># change</span></span>
-<span id="cb49-3"><a href="#cb49-3"></a><span class="va">ac_pkg_openmp=</span>no</span>
-<span id="cb49-4"><a href="#cb49-4"></a><span class="co"># to</span></span>
-<span id="cb49-5"><a href="#cb49-5"></a><span class="va">ac_pkg_openmp=</span>yes</span>
-<span id="cb49-6"><a href="#cb49-6"></a><span class="co">#save the file under the same name</span></span></code></pre></div>
+<div class="sourceCode" id="cb50"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb50-1"><a href="#cb50-1"></a><span class="co"># Go to line 1676</span></span>
+<span id="cb50-2"><a href="#cb50-2"></a><span class="co"># change</span></span>
+<span id="cb50-3"><a href="#cb50-3"></a><span class="va">ac_pkg_openmp=</span>no</span>
+<span id="cb50-4"><a href="#cb50-4"></a><span class="co"># to</span></span>
+<span id="cb50-5"><a href="#cb50-5"></a><span class="va">ac_pkg_openmp=</span>yes</span>
+<span id="cb50-6"><a href="#cb50-6"></a><span class="co">#save the file under the same name</span></span></code></pre></div>
 </div>
 <div id="makevars-configuration" class="section level3">
 <h3 class="hasAnchor">
 <a href="#makevars-configuration" class="anchor"></a>Makevars configuration</h3>
 <p><code>XGBoost</code> requires these Makevars specifications. If you have other lines, comment (#) before compiling:</p>
-<div class="sourceCode" id="cb50"><html><body><pre class="r"><span class="kw pkg">usethis</span><span class="kw ns">::</span><span class="fu"><a href="https://usethis.r-lib.org/reference/edit.html">edit_r_makevars</a></span>()</pre></body></html></div>
-<div class="sourceCode" id="cb51"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb51-1"><a href="#cb51-1"></a><span class="va">CC=</span>/usr/local/bin/gcc</span>
-<span id="cb51-2"><a href="#cb51-2"></a><span class="va">CXX=</span>/usr/local/bin/g++</span>
-<span id="cb51-3"><a href="#cb51-3"></a><span class="va">CXX11=</span>/usr/local/bin/g++</span>
-<span id="cb51-4"><a href="#cb51-4"></a><span class="va">CXX14=</span>/usr/local/bin/g++</span>
-<span id="cb51-5"><a href="#cb51-5"></a><span class="va">CXX17=</span>/usr/local/bin/g++</span>
-<span id="cb51-6"><a href="#cb51-6"></a><span class="va">SHLIB_OPENMP_CFLAGS=</span> <span class="ex">-fopenmp</span></span>
-<span id="cb51-7"><a href="#cb51-7"></a><span class="va">SHLIB_OPENMP_FCFLAGS=</span> <span class="ex">-fopenmp</span></span>
-<span id="cb51-8"><a href="#cb51-8"></a><span class="va">SHLIB_OPENMP_FFLAGS=</span> <span class="ex">-fopenmp</span></span>
-<span id="cb51-9"><a href="#cb51-9"></a><span class="va">SHLIB_OPENMP_CXXFLAGS=</span> <span class="ex">-fopenmp</span></span>
-<span id="cb51-10"><a href="#cb51-10"></a><span class="va">CFLAGS=</span>-g <span class="ex">-O3</span> -Wall -pedantic -std=gnu99 -mtune=native -pipe</span>
-<span id="cb51-11"><a href="#cb51-11"></a><span class="va">CXXFLAGS=</span>-g <span class="ex">-O3</span> -Wall -pedantic -std=c++11 -mtune=native -pipe</span>
-<span id="cb51-12"><a href="#cb51-12"></a><span class="va">LDFLAGS=</span>-L/usr/local/lib <span class="ex">-Wl</span>,-rpath,/usr/local/lib</span>
-<span id="cb51-13"><a href="#cb51-13"></a><span class="va">CPPFLAGS=</span>-I/usr/local/include <span class="ex">-I/usr/local/include</span></span></code></pre></div>
+<div class="sourceCode" id="cb51"><html><body><pre class="r"><span class="kw pkg">usethis</span><span class="kw ns">::</span><span class="fu"><a href="https://usethis.r-lib.org/reference/edit.html">edit_r_makevars</a></span>()</pre></body></html></div>
+<div class="sourceCode" id="cb52"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb52-1"><a href="#cb52-1"></a><span class="va">CC=</span>/usr/local/bin/gcc</span>
+<span id="cb52-2"><a href="#cb52-2"></a><span class="va">CXX=</span>/usr/local/bin/g++</span>
+<span id="cb52-3"><a href="#cb52-3"></a><span class="va">CXX11=</span>/usr/local/bin/g++</span>
+<span id="cb52-4"><a href="#cb52-4"></a><span class="va">CXX14=</span>/usr/local/bin/g++</span>
+<span id="cb52-5"><a href="#cb52-5"></a><span class="va">CXX17=</span>/usr/local/bin/g++</span>
+<span id="cb52-6"><a href="#cb52-6"></a><span class="va">SHLIB_OPENMP_CFLAGS=</span> <span class="ex">-fopenmp</span></span>
+<span id="cb52-7"><a href="#cb52-7"></a><span class="va">SHLIB_OPENMP_FCFLAGS=</span> <span class="ex">-fopenmp</span></span>
+<span id="cb52-8"><a href="#cb52-8"></a><span class="va">SHLIB_OPENMP_FFLAGS=</span> <span class="ex">-fopenmp</span></span>
+<span id="cb52-9"><a href="#cb52-9"></a><span class="va">SHLIB_OPENMP_CXXFLAGS=</span> <span class="ex">-fopenmp</span></span>
+<span id="cb52-10"><a href="#cb52-10"></a><span class="va">CFLAGS=</span>-g <span class="ex">-O3</span> -Wall -pedantic -std=gnu99 -mtune=native -pipe</span>
+<span id="cb52-11"><a href="#cb52-11"></a><span class="va">CXXFLAGS=</span>-g <span class="ex">-O3</span> -Wall -pedantic -std=c++11 -mtune=native -pipe</span>
+<span id="cb52-12"><a href="#cb52-12"></a><span class="va">LDFLAGS=</span>-L/usr/local/lib <span class="ex">-Wl</span>,-rpath,/usr/local/lib</span>
+<span id="cb52-13"><a href="#cb52-13"></a><span class="va">CPPFLAGS=</span>-I/usr/local/include <span class="ex">-I/usr/local/include</span></span></code></pre></div>
 </div>
 <div id="compile-1" class="section level3">
 <h3 class="hasAnchor">
 <a href="#compile-1" class="anchor"></a>Compile</h3>
-<div class="sourceCode" id="cb52"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb52-1"><a href="#cb52-1"></a><span class="fu">sudo</span> R CMD INSTALL R-package</span></code></pre></div>
+<div class="sourceCode" id="cb53"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb53-1"><a href="#cb53-1"></a><span class="fu">sudo</span> R CMD INSTALL R-package</span></code></pre></div>
 </div>
 <div id="test-r-package" class="section level3">
 <h3 class="hasAnchor">
 <a href="#test-r-package" class="anchor"></a>Test R-package</h3>
 <p>You should see a time difference between both runs</p>
-<div class="sourceCode" id="cb53"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/base/library.html">require</a></span>(<span class="no">xgboost</span>)
+<div class="sourceCode" id="cb54"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/base/library.html">require</a></span>(<span class="no">xgboost</span>)
 <span class="no">x</span> <span class="kw">&lt;-</span>  <span class="fu"><a href="https://rdrr.io/r/base/matrix.html">matrix</a></span>(<span class="fu"><a href="https://rdrr.io/r/stats/Normal.html">rnorm</a></span>(<span class="fl">100</span>*<span class="fl">10000</span>), <span class="fl">10000</span>, <span class="fl">100</span>)
 <span class="no">y</span> <span class="kw">&lt;-</span>  <span class="no">x</span> <span class="kw">%*%</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html">rnorm</a></span>(<span class="fl">100</span>) + <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html">rnorm</a></span>(<span class="fl">1000</span>)
 
-<span class="fu"><a href="https://rdrr.io/r/base/system.time.html">system.time</a></span>({<span class="no">bst</span> <span class="kw">=</span> <span class="fu">xgboost</span>(<span class="kw">data</span> <span class="kw">=</span> <span class="no">x</span>, <span class="kw">label</span> <span class="kw">=</span> <span class="no">y</span>, <span class="kw">nthread</span> <span class="kw">=</span> <span class="fl">1</span>, <span class="kw">nround</span> <span class="kw">=</span> <span class="fl">100</span>, <span class="kw">verbose</span> <span class="kw">=</span> <span class="fl">FALSE</span>)})
-<span class="fu"><a href="https://rdrr.io/r/base/system.time.html">system.time</a></span>({<span class="no">bst</span> <span class="kw">=</span> <span class="fu">xgboost</span>(<span class="kw">data</span> <span class="kw">=</span> <span class="no">x</span>, <span class="kw">label</span> <span class="kw">=</span> <span class="no">y</span>, <span class="kw">nthread</span> <span class="kw">=</span> <span class="fl">4</span>, <span class="kw">nround</span> <span class="kw">=</span> <span class="fl">100</span>, <span class="kw">verbose</span> <span class="kw">=</span> <span class="fl">FALSE</span>)})</pre></body></html></div>
+<span class="fu"><a href="https://rdrr.io/r/base/system.time.html">system.time</a></span>({<span class="no">bst</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/pkg/xgboost/man/xgb.train.html">xgboost</a></span>(<span class="kw">data</span> <span class="kw">=</span> <span class="no">x</span>, <span class="kw">label</span> <span class="kw">=</span> <span class="no">y</span>, <span class="kw">nthread</span> <span class="kw">=</span> <span class="fl">1</span>, <span class="kw">nround</span> <span class="kw">=</span> <span class="fl">100</span>, <span class="kw">verbose</span> <span class="kw">=</span> <span class="fl">FALSE</span>)})
+<span class="fu"><a href="https://rdrr.io/r/base/system.time.html">system.time</a></span>({<span class="no">bst</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/pkg/xgboost/man/xgb.train.html">xgboost</a></span>(<span class="kw">data</span> <span class="kw">=</span> <span class="no">x</span>, <span class="kw">label</span> <span class="kw">=</span> <span class="no">y</span>, <span class="kw">nthread</span> <span class="kw">=</span> <span class="fl">4</span>, <span class="kw">nround</span> <span class="kw">=</span> <span class="fl">100</span>, <span class="kw">verbose</span> <span class="kw">=</span> <span class="fl">FALSE</span>)})</pre></body></html></div>
 </div>
 </div>
 <div id="lightgbm" class="section level2">
@@ -648,28 +662,28 @@
 <div id="download-and-install-cmake" class="section level3">
 <h3 class="hasAnchor">
 <a href="#download-and-install-cmake" class="anchor"></a>Download and install CMake</h3>
-<div class="sourceCode" id="cb54"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb54-1"><a href="#cb54-1"></a><span class="co">#In browser or using wget in Terminal</span></span>
-<span id="cb54-2"><a href="#cb54-2"></a><span class="ex">https</span>://cmake.org/files/v3.12/cmake-3.12.2-Darwin-x86_64.dmg</span>
-<span id="cb54-3"><a href="#cb54-3"></a><span class="co"># double-click on the disk image and follow instructions</span></span></code></pre></div>
+<div class="sourceCode" id="cb55"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb55-1"><a href="#cb55-1"></a><span class="co">#In browser or using wget in Terminal</span></span>
+<span id="cb55-2"><a href="#cb55-2"></a><span class="ex">https</span>://cmake.org/files/v3.12/cmake-3.12.2-Darwin-x86_64.dmg</span>
+<span id="cb55-3"><a href="#cb55-3"></a><span class="co"># double-click on the disk image and follow instructions</span></span></code></pre></div>
 <p>To add CMake to the PATH:</p>
-<div class="sourceCode" id="cb55"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb55-1"><a href="#cb55-1"></a><span class="va">PATH=</span><span class="st">"/Applications/CMake.app/Contents/bin"</span>:<span class="st">"</span><span class="va">$PATH</span><span class="st">"</span></span>
-<span id="cb55-2"><a href="#cb55-2"></a><span class="co"># Or, to install symlinks to '/usr/local/bin', run:</span></span>
-<span id="cb55-3"><a href="#cb55-3"></a><span class="fu">sudo</span> <span class="st">"/Applications/CMake.app/Contents/bin/cmake-gui"</span> --install</span>
-<span id="cb55-4"><a href="#cb55-4"></a><span class="co"># Or, to install symlinks to another directory, run:</span></span>
-<span id="cb55-5"><a href="#cb55-5"></a><span class="fu">sudo</span> <span class="st">"/Applications/CMake.app/Contents/bin/cmake-gui"</span> --install=/path/to/bin</span>
-<span id="cb55-6"><a href="#cb55-6"></a><span class="co">#Then, run the following commands to install LightGBM:</span></span></code></pre></div>
+<div class="sourceCode" id="cb56"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb56-1"><a href="#cb56-1"></a><span class="va">PATH=</span><span class="st">"/Applications/CMake.app/Contents/bin"</span>:<span class="st">"</span><span class="va">$PATH</span><span class="st">"</span></span>
+<span id="cb56-2"><a href="#cb56-2"></a><span class="co"># Or, to install symlinks to '/usr/local/bin', run:</span></span>
+<span id="cb56-3"><a href="#cb56-3"></a><span class="fu">sudo</span> <span class="st">"/Applications/CMake.app/Contents/bin/cmake-gui"</span> --install</span>
+<span id="cb56-4"><a href="#cb56-4"></a><span class="co"># Or, to install symlinks to another directory, run:</span></span>
+<span id="cb56-5"><a href="#cb56-5"></a><span class="fu">sudo</span> <span class="st">"/Applications/CMake.app/Contents/bin/cmake-gui"</span> --install=/path/to/bin</span>
+<span id="cb56-6"><a href="#cb56-6"></a><span class="co">#Then, run the following commands to install LightGBM:</span></span></code></pre></div>
 </div>
 <div id="download-and-install-lightgbm" class="section level3">
 <h3 class="hasAnchor">
 <a href="#download-and-install-lightgbm" class="anchor"></a>Download and Install LightGBM</h3>
-<div class="sourceCode" id="cb56"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb56-1"><a href="#cb56-1"></a><span class="bu">cd</span> Downloads</span>
-<span id="cb56-2"><a href="#cb56-2"></a><span class="fu">git</span> clone --recursive https://github.com/Microsoft/LightGBM</span>
-<span id="cb56-3"><a href="#cb56-3"></a><span class="bu">cd</span> LightGBM</span>
-<span id="cb56-4"><a href="#cb56-4"></a><span class="ex">Rscript</span> build_r.R</span>
-<span id="cb56-5"><a href="#cb56-5"></a><span class="co"># previous version required running these lines instead</span></span>
-<span id="cb56-6"><a href="#cb56-6"></a><span class="co">#cd LightGBM/R-package</span></span>
-<span id="cb56-7"><a href="#cb56-7"></a><span class="co">#export CC=/usr/local/bin/gcc CXX=/usr/local/bin/g++</span></span>
-<span id="cb56-8"><a href="#cb56-8"></a><span class="co">#R CMD INSTALL --build . --no-multiarch</span></span></code></pre></div>
+<div class="sourceCode" id="cb57"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb57-1"><a href="#cb57-1"></a><span class="bu">cd</span> Downloads</span>
+<span id="cb57-2"><a href="#cb57-2"></a><span class="fu">git</span> clone --recursive https://github.com/Microsoft/LightGBM</span>
+<span id="cb57-3"><a href="#cb57-3"></a><span class="bu">cd</span> LightGBM</span>
+<span id="cb57-4"><a href="#cb57-4"></a><span class="ex">Rscript</span> build_r.R</span>
+<span id="cb57-5"><a href="#cb57-5"></a><span class="co"># previous version required running these lines instead</span></span>
+<span id="cb57-6"><a href="#cb57-6"></a><span class="co">#cd LightGBM/R-package</span></span>
+<span id="cb57-7"><a href="#cb57-7"></a><span class="co">#export CC=/usr/local/bin/gcc CXX=/usr/local/bin/g++</span></span>
+<span id="cb57-8"><a href="#cb57-8"></a><span class="co">#R CMD INSTALL --build . --no-multiarch</span></span></code></pre></div>
 </div>
 </div>
 <div id="randomforestsrc" class="section level2">
@@ -681,36 +695,36 @@
 <h3 class="hasAnchor">
 <a href="#makevars-configuration-1" class="anchor"></a>Makevars configuration</h3>
 <p>Check that the lines below <strong>are not</strong> commented in your <code>~/.R/Makevars</code> file:</p>
-<div class="sourceCode" id="cb57"><html><body><pre class="r"><span class="kw pkg">usethis</span><span class="kw ns">::</span><span class="fu"><a href="https://usethis.r-lib.org/reference/edit.html">edit_r_makevars</a></span>()</pre></body></html></div>
-<div class="sourceCode" id="cb58"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb58-1"><a href="#cb58-1"></a><span class="va">CC=</span>/usr/local/bin/gcc</span>
-<span id="cb58-2"><a href="#cb58-2"></a><span class="va">CXX=</span>/usr/local/bin/g++</span>
-<span id="cb58-3"><a href="#cb58-3"></a><span class="va">CFLAGS=</span>-g <span class="ex">-O3</span> -Wall -pedantic -std=gnu99 -mtune=native -pipe</span>
-<span id="cb58-4"><a href="#cb58-4"></a><span class="va">CXXFLAGS=</span>-g <span class="ex">-O3</span> -Wall -pedantic -std=c++11 -mtune=native -pipe</span>
-<span id="cb58-5"><a href="#cb58-5"></a><span class="va">PKG_CFLAGS=</span> <span class="ex">-O3</span> -Wall -pipe -pedantic -std=gnu99 -fopenmp</span>
-<span id="cb58-6"><a href="#cb58-6"></a><span class="va">PKG_CXXFLAGS=</span>-fopenmp <span class="ex">-std</span>=c++11</span>
-<span id="cb58-7"><a href="#cb58-7"></a><span class="va">FC=</span>/usr/local/bin/gfortran</span>
-<span id="cb58-8"><a href="#cb58-8"></a><span class="va">F77=</span>/usr/local/bin/gfortran</span>
-<span id="cb58-9"><a href="#cb58-9"></a><span class="va">LDFLAGS=</span>-L/usr/local/lib</span>
-<span id="cb58-10"><a href="#cb58-10"></a><span class="ex">PKG_LIBS</span> = <span class="st">"-liconv"</span></span></code></pre></div>
+<div class="sourceCode" id="cb58"><html><body><pre class="r"><span class="kw pkg">usethis</span><span class="kw ns">::</span><span class="fu"><a href="https://usethis.r-lib.org/reference/edit.html">edit_r_makevars</a></span>()</pre></body></html></div>
+<div class="sourceCode" id="cb59"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb59-1"><a href="#cb59-1"></a><span class="va">CC=</span>/usr/local/bin/gcc</span>
+<span id="cb59-2"><a href="#cb59-2"></a><span class="va">CXX=</span>/usr/local/bin/g++</span>
+<span id="cb59-3"><a href="#cb59-3"></a><span class="va">CFLAGS=</span>-g <span class="ex">-O3</span> -Wall -pedantic -std=gnu99 -mtune=native -pipe</span>
+<span id="cb59-4"><a href="#cb59-4"></a><span class="va">CXXFLAGS=</span>-g <span class="ex">-O3</span> -Wall -pedantic -std=c++11 -mtune=native -pipe</span>
+<span id="cb59-5"><a href="#cb59-5"></a><span class="va">PKG_CFLAGS=</span> <span class="ex">-O3</span> -Wall -pipe -pedantic -std=gnu99 -fopenmp</span>
+<span id="cb59-6"><a href="#cb59-6"></a><span class="va">PKG_CXXFLAGS=</span>-fopenmp <span class="ex">-std</span>=c++11</span>
+<span id="cb59-7"><a href="#cb59-7"></a><span class="va">FC=</span>/usr/local/bin/gfortran</span>
+<span id="cb59-8"><a href="#cb59-8"></a><span class="va">F77=</span>/usr/local/bin/gfortran</span>
+<span id="cb59-9"><a href="#cb59-9"></a><span class="va">LDFLAGS=</span>-L/usr/local/lib</span>
+<span id="cb59-10"><a href="#cb59-10"></a><span class="ex">PKG_LIBS</span> = <span class="st">"-liconv"</span></span></code></pre></div>
 </div>
 <div id="download-and-install" class="section level3">
 <h3 class="hasAnchor">
 <a href="#download-and-install" class="anchor"></a>Download and install</h3>
 <p>From the Terminal run these steps to download and compile randomForestSRC:</p>
-<div class="sourceCode" id="cb59"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb59-1"><a href="#cb59-1"></a><span class="bu">cd</span> ~/Downloads</span>
-<span id="cb59-2"><a href="#cb59-2"></a><span class="ex">curl</span> -O https://cran.r-project.org/src/contrib/randomForestSRC_2.9.3.tar.gz</span>
-<span id="cb59-3"><a href="#cb59-3"></a><span class="fu">tar</span> -zxvf randomForestSRC_2.9.3.tar.gz</span>
-<span id="cb59-4"><a href="#cb59-4"></a><span class="bu">cd</span> randomForestSRC</span></code></pre></div>
+<div class="sourceCode" id="cb60"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb60-1"><a href="#cb60-1"></a><span class="bu">cd</span> ~/Downloads</span>
+<span id="cb60-2"><a href="#cb60-2"></a><span class="ex">curl</span> -O https://cran.r-project.org/src/contrib/randomForestSRC_2.9.3.tar.gz</span>
+<span id="cb60-3"><a href="#cb60-3"></a><span class="fu">tar</span> -zxvf randomForestSRC_2.9.3.tar.gz</span>
+<span id="cb60-4"><a href="#cb60-4"></a><span class="bu">cd</span> randomForestSRC</span></code></pre></div>
 <p>Make sure you have autoconf installed:</p>
-<div class="sourceCode" id="cb60"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb60-1"><a href="#cb60-1"></a><span class="co"># in Terminal</span></span>
-<span id="cb60-2"><a href="#cb60-2"></a><span class="bu">cd</span> ~/Downloads</span>
-<span id="cb60-3"><a href="#cb60-3"></a><span class="fu">autoconf</span></span></code></pre></div>
-<p>Should output: <code>autoconf: error: no input file</code>, if not, install following the <a href="#useful">steps here</a>.</p>
 <div class="sourceCode" id="cb61"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb61-1"><a href="#cb61-1"></a><span class="co"># in Terminal</span></span>
-<span id="cb61-2"><a href="#cb61-2"></a><span class="bu">cd</span> ~/Downloads/randomForestSRC</span>
-<span id="cb61-3"><a href="#cb61-3"></a><span class="fu">autoconf</span></span>
-<span id="cb61-4"><a href="#cb61-4"></a><span class="bu">cd</span> ~/Downloads</span>
-<span id="cb61-5"><a href="#cb61-5"></a><span class="ex">R</span> CMD INSTALL --preclean --clean randomForestSRC</span></code></pre></div>
+<span id="cb61-2"><a href="#cb61-2"></a><span class="bu">cd</span> ~/Downloads</span>
+<span id="cb61-3"><a href="#cb61-3"></a><span class="fu">autoconf</span></span></code></pre></div>
+<p>Should output: <code>autoconf: error: no input file</code>, if not, install following the <a href="#useful">steps here</a>.</p>
+<div class="sourceCode" id="cb62"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb62-1"><a href="#cb62-1"></a><span class="co"># in Terminal</span></span>
+<span id="cb62-2"><a href="#cb62-2"></a><span class="bu">cd</span> ~/Downloads/randomForestSRC</span>
+<span id="cb62-3"><a href="#cb62-3"></a><span class="fu">autoconf</span></span>
+<span id="cb62-4"><a href="#cb62-4"></a><span class="bu">cd</span> ~/Downloads</span>
+<span id="cb62-5"><a href="#cb62-5"></a><span class="ex">R</span> CMD INSTALL --preclean --clean randomForestSRC</span></code></pre></div>
 <p>You want to make sure that this line is printed during execution of the previous command: <code>checking whether OpenMP will work in a package... yes</code> or <code>checking for /usr/local/bin/gcc option to support OpenMP... -fopenmp</code></p>
 </div>
 </div>
@@ -719,28 +733,28 @@
 <a href="#ranger" class="anchor"></a><code>ranger</code>
 </h2>
 <p><a href="https://github.com/imbs-hl/ranger">ranger</a> is easy to install.</p>
-<div class="sourceCode" id="cb62"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span>(<span class="st">"ranger"</span>)</pre></body></html></div>
+<div class="sourceCode" id="cb63"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span>(<span class="st">"ranger"</span>)</pre></body></html></div>
 </div>
 <div id="missranger" class="section level2">
 <h2 class="hasAnchor">
 <a href="#missranger" class="anchor"></a><code>missRanger</code>
 </h2>
 <p><a href="https://github.com/mayer79/missRanger">missRanger</a> is also very easy to install.</p>
-<div class="sourceCode" id="cb63"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span>(<span class="st">"missRanger"</span>)</pre></body></html></div>
+<div class="sourceCode" id="cb64"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span>(<span class="st">"missRanger"</span>)</pre></body></html></div>
 </div>
 <div id="miceranger" class="section level2">
 <h2 class="hasAnchor">
 <a href="#miceranger" class="anchor"></a><code>miceRanger</code>
 </h2>
 <p><a href="https://github.com/FarrellDay/miceRanger">miceRanger</a> easy to install.</p>
-<div class="sourceCode" id="cb64"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span>(<span class="st">"miceRanger"</span>)</pre></body></html></div>
+<div class="sourceCode" id="cb65"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span>(<span class="st">"miceRanger"</span>)</pre></body></html></div>
 </div>
 <div id="pcamethods" class="section level2">
 <h2 class="hasAnchor">
 <a href="#pcamethods" class="anchor"></a><code>pcaMethods</code>
 </h2>
 <p>To install <a href="https://github.com/hredestig/pcaMethods">pcaMethods</a>, from bioconductor:</p>
-<div class="sourceCode" id="cb65"><html><body><pre class="r"><span class="kw pkg">BiocManager</span><span class="kw ns">::</span><span class="fu"><a href="https://rdrr.io/pkg/BiocManager/man/install.html">install</a></span>(<span class="st">"pcaMethods"</span>)</pre></body></html></div>
+<div class="sourceCode" id="cb66"><html><body><pre class="r"><span class="kw pkg">BiocManager</span><span class="kw ns">::</span><span class="fu"><a href="https://rdrr.io/pkg/BiocManager/man/install.html">install</a></span>(<span class="st">"pcaMethods"</span>)</pre></body></html></div>
 </div>
 <div id="fastsimcoal2" class="section level2">
 <h2 class="hasAnchor">
@@ -750,36 +764,36 @@
 <div id="linux-1" class="section level3">
 <h3 class="hasAnchor">
 <a href="#linux-1" class="anchor"></a>LINUX</h3>
-<div class="sourceCode" id="cb66"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb66-1"><a href="#cb66-1"></a><span class="fu">wget</span> http://cmpg.unibe.ch/software/fastsimcoal2/downloads/fsc26_linux64.zip</span>
-<span id="cb66-2"><a href="#cb66-2"></a><span class="fu">unzip</span> fsc26_linux64.zip</span>
-<span id="cb66-3"><a href="#cb66-3"></a><span class="fu">sudo</span> mv fsc26_linux64/fsc26 /usr/local/bin/fsc26 <span class="co"># will ask for your computer password</span></span></code></pre></div>
+<div class="sourceCode" id="cb67"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb67-1"><a href="#cb67-1"></a><span class="fu">wget</span> http://cmpg.unibe.ch/software/fastsimcoal2/downloads/fsc26_linux64.zip</span>
+<span id="cb67-2"><a href="#cb67-2"></a><span class="fu">unzip</span> fsc26_linux64.zip</span>
+<span id="cb67-3"><a href="#cb67-3"></a><span class="fu">sudo</span> mv fsc26_linux64/fsc26 /usr/local/bin/fsc26 <span class="co"># will ask for your computer password</span></span></code></pre></div>
 </div>
 <div id="macos-1" class="section level3">
 <h3 class="hasAnchor">
 <a href="#macos-1" class="anchor"></a>MacOS</h3>
-<div class="sourceCode" id="cb67"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb67-1"><a href="#cb67-1"></a><span class="bu">cd</span> ~/Downloads</span>
-<span id="cb67-2"><a href="#cb67-2"></a><span class="ex">curl</span> -O http://cmpg.unibe.ch/software/fastsimcoal2/downloads/fsc26_mac64.zip</span>
-<span id="cb67-3"><a href="#cb67-3"></a><span class="fu">unzip</span> fsc26_mac64.zip</span>
-<span id="cb67-4"><a href="#cb67-4"></a><span class="fu">sudo</span> mv fsc26_mac64/fsc26 /usr/local/bin/fsc26 <span class="co"># will ask for your computer password</span></span></code></pre></div>
+<div class="sourceCode" id="cb68"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb68-1"><a href="#cb68-1"></a><span class="bu">cd</span> ~/Downloads</span>
+<span id="cb68-2"><a href="#cb68-2"></a><span class="ex">curl</span> -O http://cmpg.unibe.ch/software/fastsimcoal2/downloads/fsc26_mac64.zip</span>
+<span id="cb68-3"><a href="#cb68-3"></a><span class="fu">unzip</span> fsc26_mac64.zip</span>
+<span id="cb68-4"><a href="#cb68-4"></a><span class="fu">sudo</span> mv fsc26_mac64/fsc26 /usr/local/bin/fsc26 <span class="co"># will ask for your computer password</span></span></code></pre></div>
 </div>
 <div id="common-to-both-os" class="section level3">
 <h3 class="hasAnchor">
 <a href="#common-to-both-os" class="anchor"></a>Common to both OS:</h3>
-<div class="sourceCode" id="cb68"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb68-1"><a href="#cb68-1"></a><span class="fu">sudo</span> chmod 777 /usr/local/bin/fsc26</span>
-<span id="cb68-2"><a href="#cb68-2"></a><span class="ex">fsc26</span></span></code></pre></div>
+<div class="sourceCode" id="cb69"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb69-1"><a href="#cb69-1"></a><span class="fu">sudo</span> chmod 777 /usr/local/bin/fsc26</span>
+<span id="cb69-2"><a href="#cb69-2"></a><span class="ex">fsc26</span></span></code></pre></div>
 <p>Re-start R and the software fastsimcoal2 will automatically be in your PATH…</p>
 </div>
 <div id="path-1" class="section level3">
 <h3 class="hasAnchor">
 <a href="#path-1" class="anchor"></a>PATH</h3>
 <p>To see the path of the installation, in the <code>Terminal</code>:</p>
-<div class="sourceCode" id="cb69"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb69-1"><a href="#cb69-1"></a><span class="fu">which</span> fsc26</span>
-<span id="cb69-2"><a href="#cb69-2"></a><span class="co"># in macOS:</span></span>
-<span id="cb69-3"><a href="#cb69-3"></a><span class="co"># /usr/local/bin/fsc26</span></span></code></pre></div>
+<div class="sourceCode" id="cb70"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb70-1"><a href="#cb70-1"></a><span class="fu">which</span> fsc26</span>
+<span id="cb70-2"><a href="#cb70-2"></a><span class="co"># in macOS:</span></span>
+<span id="cb70-3"><a href="#cb70-3"></a><span class="co"># /usr/local/bin/fsc26</span></span></code></pre></div>
 <p>If that doesn’t work, do:</p>
-<div class="sourceCode" id="cb70"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb70-1"><a href="#cb70-1"></a><span class="bu">source</span> ~/.bash_profile</span></code></pre></div>
+<div class="sourceCode" id="cb71"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb71-1"><a href="#cb71-1"></a><span class="bu">source</span> ~/.bash_profile</span></code></pre></div>
 <p>Remove the files in the folder:</p>
-<div class="sourceCode" id="cb71"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb71-1"><a href="#cb71-1"></a><span class="fu">sudo</span> rm -R ~/Downloads/fsc26_mac64*</span></code></pre></div>
+<div class="sourceCode" id="cb72"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb72-1"><a href="#cb72-1"></a><span class="fu">sudo</span> rm -R ~/Downloads/fsc26_mac64*</span></code></pre></div>
 </div>
 </div>
 <div id="colony" class="section level2">
@@ -791,15 +805,15 @@
 <h3 class="hasAnchor">
 <a href="#macos-2" class="anchor"></a>MacOS</h3>
 <p>The old openmpi version (openmpi-1.6.5) is required, saddly.</p>
-<div class="sourceCode" id="cb72"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb72-1"><a href="#cb72-1"></a><span class="bu">cd</span> ~/Downloads</span>
-<span id="cb72-2"><a href="#cb72-2"></a><span class="ex">curl</span> -O https://download.open-mpi.org/release/open-mpi/v1.6/openmpi-1.6.5.tar.gz</span>
-<span id="cb72-3"><a href="#cb72-3"></a><span class="fu">tar</span> -zxvf openmpi-1.6.5.tar.gz</span>
-<span id="cb72-4"><a href="#cb72-4"></a><span class="bu">cd</span> openmpi-1.6.5</span>
-<span id="cb72-5"><a href="#cb72-5"></a><span class="bu">export</span> <span class="va">TMPDIR=</span>/tmp</span>
-<span id="cb72-6"><a href="#cb72-6"></a><span class="ex">./configure</span> F77=gfortran <span class="co">#--prefix=/usr/local -openmp # no longer work for some reason</span></span>
-<span id="cb72-7"><a href="#cb72-7"></a><span class="fu">make</span> -j 12</span>
-<span id="cb72-8"><a href="#cb72-8"></a><span class="fu">sudo</span> make install</span>
-<span id="cb72-9"><a href="#cb72-9"></a><span class="fu">sudo</span> rm -R ~/Downloads/openmpi*</span></code></pre></div>
+<div class="sourceCode" id="cb73"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb73-1"><a href="#cb73-1"></a><span class="bu">cd</span> ~/Downloads</span>
+<span id="cb73-2"><a href="#cb73-2"></a><span class="ex">curl</span> -O https://download.open-mpi.org/release/open-mpi/v1.6/openmpi-1.6.5.tar.gz</span>
+<span id="cb73-3"><a href="#cb73-3"></a><span class="fu">tar</span> -zxvf openmpi-1.6.5.tar.gz</span>
+<span id="cb73-4"><a href="#cb73-4"></a><span class="bu">cd</span> openmpi-1.6.5</span>
+<span id="cb73-5"><a href="#cb73-5"></a><span class="bu">export</span> <span class="va">TMPDIR=</span>/tmp</span>
+<span id="cb73-6"><a href="#cb73-6"></a><span class="ex">./configure</span> F77=gfortran <span class="co">#--prefix=/usr/local -openmp # no longer work for some reason</span></span>
+<span id="cb73-7"><a href="#cb73-7"></a><span class="fu">make</span> -j 12</span>
+<span id="cb73-8"><a href="#cb73-8"></a><span class="fu">sudo</span> make install</span>
+<span id="cb73-9"><a href="#cb73-9"></a><span class="fu">sudo</span> rm -R ~/Downloads/openmpi*</span></code></pre></div>
 <p>To download COLONY, follow instructions on Jinliang Wang <a href="https://www.zsl.org/science/software/colony">ZSL website</a>. The file you need to uncompress is named: <code>colony2.mac_.20180730.zip</code>.</p>
 </div>
 <div id="linux-2" class="section level3">
@@ -822,33 +836,33 @@
 <li>Install <a href="http://www.gnu.org/software/autoconf/">GNU Autoconf</a>
 </li>
 </ol>
-<div class="sourceCode" id="cb73"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb73-1"><a href="#cb73-1"></a><span class="bu">cd</span> ~/Downloads</span>
-<span id="cb73-2"><a href="#cb73-2"></a><span class="fu">wget</span> http://ftp.gnu.org/gnu/autoconf/autoconf-latest.tar.gz</span>
-<span id="cb73-3"><a href="#cb73-3"></a><span class="ex">curl</span> -O http://ftp.gnu.org/gnu/autoconf/autoconf-latest.tar.gz</span>
-<span id="cb73-4"><a href="#cb73-4"></a><span class="fu">tar</span> -xvzf autoconf-latest.tar.gz</span>
-<span id="cb73-5"><a href="#cb73-5"></a><span class="bu">cd</span> autoconf-2.69</span>
-<span id="cb73-6"><a href="#cb73-6"></a><span class="ex">./configure</span></span>
-<span id="cb73-7"><a href="#cb73-7"></a><span class="fu">make</span></span>
-<span id="cb73-8"><a href="#cb73-8"></a><span class="fu">sudo</span> make install</span>
-<span id="cb73-9"><a href="#cb73-9"></a><span class="bu">cd</span> .. </span>
-<span id="cb73-10"><a href="#cb73-10"></a><span class="fu">sudo</span> rm -R ~/Downloads/autoconf-*</span></code></pre></div>
+<div class="sourceCode" id="cb74"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb74-1"><a href="#cb74-1"></a><span class="bu">cd</span> ~/Downloads</span>
+<span id="cb74-2"><a href="#cb74-2"></a><span class="fu">wget</span> http://ftp.gnu.org/gnu/autoconf/autoconf-latest.tar.gz</span>
+<span id="cb74-3"><a href="#cb74-3"></a><span class="ex">curl</span> -O http://ftp.gnu.org/gnu/autoconf/autoconf-latest.tar.gz</span>
+<span id="cb74-4"><a href="#cb74-4"></a><span class="fu">tar</span> -xvzf autoconf-latest.tar.gz</span>
+<span id="cb74-5"><a href="#cb74-5"></a><span class="bu">cd</span> autoconf-2.69</span>
+<span id="cb74-6"><a href="#cb74-6"></a><span class="ex">./configure</span></span>
+<span id="cb74-7"><a href="#cb74-7"></a><span class="fu">make</span></span>
+<span id="cb74-8"><a href="#cb74-8"></a><span class="fu">sudo</span> make install</span>
+<span id="cb74-9"><a href="#cb74-9"></a><span class="bu">cd</span> .. </span>
+<span id="cb74-10"><a href="#cb74-10"></a><span class="fu">sudo</span> rm -R ~/Downloads/autoconf-*</span></code></pre></div>
 <ol start="2" style="list-style-type: decimal">
 <li>Install Github</li>
 </ol>
-<div class="sourceCode" id="cb74"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb74-1"><a href="#cb74-1"></a><span class="fu">git</span> --version                   <span class="co"># show current git version installed</span></span>
-<span id="cb74-2"><a href="#cb74-2"></a><span class="fu">which</span> git                       <span class="co"># returns where is git on your computer</span></span>
-<span id="cb74-3"><a href="#cb74-3"></a><span class="bu">cd</span> ~/Downloads</span>
-<span id="cb74-4"><a href="#cb74-4"></a><span class="fu">git</span> clone https://github.com/git/git <span class="co"># install the latest Git</span></span>
-<span id="cb74-5"><a href="#cb74-5"></a><span class="bu">cd</span> git</span>
-<span id="cb74-6"><a href="#cb74-6"></a><span class="fu">make</span> configure</span>
-<span id="cb74-7"><a href="#cb74-7"></a><span class="ex">./configure</span></span>
-<span id="cb74-8"><a href="#cb74-8"></a><span class="fu">make</span> -j12</span>
-<span id="cb74-9"><a href="#cb74-9"></a><span class="fu">sudo</span> make install</span>
-<span id="cb74-10"><a href="#cb74-10"></a><span class="bu">cd</span> .. </span>
-<span id="cb74-11"><a href="#cb74-11"></a><span class="fu">sudo</span> rm -R ~/Downloads/git/     <span class="co"># remove git folder</span></span>
-<span id="cb74-12"><a href="#cb74-12"></a><span class="bu">source</span> ~/.bash_profile          <span class="co"># reload startup script</span></span>
-<span id="cb74-13"><a href="#cb74-13"></a><span class="fu">git</span> --version                   <span class="co"># confirmed the version you just installed</span></span>
-<span id="cb74-14"><a href="#cb74-14"></a><span class="fu">which</span> git                       <span class="co"># returns /usr/local/bin</span></span></code></pre></div>
+<div class="sourceCode" id="cb75"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb75-1"><a href="#cb75-1"></a><span class="fu">git</span> --version                   <span class="co"># show current git version installed</span></span>
+<span id="cb75-2"><a href="#cb75-2"></a><span class="fu">which</span> git                       <span class="co"># returns where is git on your computer</span></span>
+<span id="cb75-3"><a href="#cb75-3"></a><span class="bu">cd</span> ~/Downloads</span>
+<span id="cb75-4"><a href="#cb75-4"></a><span class="fu">git</span> clone https://github.com/git/git <span class="co"># install the latest Git</span></span>
+<span id="cb75-5"><a href="#cb75-5"></a><span class="bu">cd</span> git</span>
+<span id="cb75-6"><a href="#cb75-6"></a><span class="fu">make</span> configure</span>
+<span id="cb75-7"><a href="#cb75-7"></a><span class="ex">./configure</span></span>
+<span id="cb75-8"><a href="#cb75-8"></a><span class="fu">make</span> -j12</span>
+<span id="cb75-9"><a href="#cb75-9"></a><span class="fu">sudo</span> make install</span>
+<span id="cb75-10"><a href="#cb75-10"></a><span class="bu">cd</span> .. </span>
+<span id="cb75-11"><a href="#cb75-11"></a><span class="fu">sudo</span> rm -R ~/Downloads/git/     <span class="co"># remove git folder</span></span>
+<span id="cb75-12"><a href="#cb75-12"></a><span class="bu">source</span> ~/.bash_profile          <span class="co"># reload startup script</span></span>
+<span id="cb75-13"><a href="#cb75-13"></a><span class="fu">git</span> --version                   <span class="co"># confirmed the version you just installed</span></span>
+<span id="cb75-14"><a href="#cb75-14"></a><span class="fu">which</span> git                       <span class="co"># returns /usr/local/bin</span></span></code></pre></div>
 </div>
 <div id="macos-terminal-from-specific-folder" class="section level2">
 <h2 class="hasAnchor">
@@ -861,14 +875,14 @@
 <a href="#shortcut-to-folder-path" class="anchor"></a>Shortcut to folder path</h2>
 <p>Open the Automator application (it’s on all MAC…).</p>
 <p><img src="../../../../../Mobile%20Documents/com~apple~CloudDocs/r_packages/radiator/vignettes/automator.png" width="112"></p>
-<div class="sourceCode" id="cb75"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb75-1"><a href="#cb75-1"></a><span class="ex">File</span> -<span class="op">&gt;</span> New (cmd-N)</span>
-<span id="cb75-2"><a href="#cb75-2"></a><span class="ex">Choose</span>: Services</span>
-<span id="cb75-3"><a href="#cb75-3"></a><span class="ex">Left</span> panel, choose: Library -<span class="op">&gt;</span> Utilities</span>
-<span id="cb75-4"><a href="#cb75-4"></a><span class="ex">Middle</span>, choose: Copy to Clipboard and drag it to the right panel</span>
-<span id="cb75-5"><a href="#cb75-5"></a><span class="ex">Now</span> you want to have: Service receives selected FILES OR FOLDERS in FINDER<span class="op">&gt;</span></span>
-<span id="cb75-6"><a href="#cb75-6"></a><span class="ex">You</span> should have something similar to the image below:</span></code></pre></div>
+<div class="sourceCode" id="cb76"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb76-1"><a href="#cb76-1"></a><span class="ex">File</span> -<span class="op">&gt;</span> New (cmd-N)</span>
+<span id="cb76-2"><a href="#cb76-2"></a><span class="ex">Choose</span>: Services</span>
+<span id="cb76-3"><a href="#cb76-3"></a><span class="ex">Left</span> panel, choose: Library -<span class="op">&gt;</span> Utilities</span>
+<span id="cb76-4"><a href="#cb76-4"></a><span class="ex">Middle</span>, choose: Copy to Clipboard and drag it to the right panel</span>
+<span id="cb76-5"><a href="#cb76-5"></a><span class="ex">Now</span> you want to have: Service receives selected FILES OR FOLDERS in FINDER<span class="op">&gt;</span></span>
+<span id="cb76-6"><a href="#cb76-6"></a><span class="ex">You</span> should have something similar to the image below:</span></code></pre></div>
 <p><img src="../../../../../Mobile%20Documents/com~apple~CloudDocs/r_packages/radiator/vignettes/copy_path.png" width="994"></p>
-<div class="sourceCode" id="cb76"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb76-1"><a href="#cb76-1"></a><span class="ex">Save</span> (cmd-S) <span class="ex">or</span> File -<span class="op">&gt;</span> Save service as: copy path to clipboard</span></code></pre></div>
+<div class="sourceCode" id="cb77"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb77-1"><a href="#cb77-1"></a><span class="ex">Save</span> (cmd-S) <span class="ex">or</span> File -<span class="op">&gt;</span> Save service as: copy path to clipboard</span></code></pre></div>
 <p>Go in the Finder, select a folder and right click on it you should see ‘copy path to clipboard’ at the bottom or in <strong>Services</strong>.</p>
 </div>
 </div>
