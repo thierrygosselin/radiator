@@ -9,6 +9,7 @@ detect_mixed_genomes(
   interactive.filter = TRUE,
   detect.mixed.genomes = TRUE,
   ind.heterozygosity.threshold = NULL,
+  by.strata = FALSE,
   verbose = TRUE,
   parallel.core = parallel::detectCores() - 1,
   ...
@@ -46,6 +47,13 @@ than the thresholds will be blacklisted.
 
 Default: \code{ind.heterozygosity.threshold = NULL} will turn off completely
 the filter and the function will only output the plots and table of heterozygosity.}
+
+\item{by.strata}{(optional, logical)
+Can only be used when \code{interactive.filter = TRUE}, allows to enter
+heterozygosity thresholds by strata, instead of overall. This is not recommended
+to use inside \code{\link{filter_rad}} or when doing population discovery.
+This is a good use when dealing with different species.
+Default: \code{by.strata = FALSE}.}
 
 \item{verbose}{(optional, logical) When \code{verbose = TRUE}
 the function is a little more chatty during execution.

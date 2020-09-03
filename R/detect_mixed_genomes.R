@@ -32,6 +32,15 @@
 #' Default: \code{ind.heterozygosity.threshold = NULL} will turn off completely
 #' the filter and the function will only output the plots and table of heterozygosity.
 
+
+#' @param by.strata (optional, logical)
+#' Can only be used when \code{interactive.filter = TRUE}, allows to enter
+#' heterozygosity thresholds by strata, instead of overall. This is not recommended
+#' to use inside \code{\link{filter_rad}} or when doing population discovery.
+#' This is a good use when dealing with different species.
+#' Default: \code{by.strata = FALSE}.
+
+
 #' @inheritParams radiator_common_arguments
 
 #' @details To help discard an individual based on his observed heterozygosity
@@ -167,6 +176,7 @@ detect_mixed_genomes <- function(
   interactive.filter = TRUE,
   detect.mixed.genomes = TRUE,
   ind.heterozygosity.threshold = NULL,
+  by.strata = FALSE,
   verbose = TRUE,
   parallel.core = parallel::detectCores() - 1,
   ...
@@ -181,8 +191,7 @@ detect_mixed_genomes <- function(
   # path.folder <- fp$detect_mixed_genomes
   # parameters = filters.parameters
   # parallel.core = parallel::detectCores() - 1
-
-  # obj.keeper <- c(ls(envir = globalenv()), "data")
+  # by.strata = FALSE
 
   if (interactive.filter || detect.mixed.genomes) {
     if (interactive.filter) verbose <- TRUE
@@ -200,7 +209,6 @@ detect_mixed_genomes <- function(
     on.exit(options(width = opt.change), add = TRUE)
     on.exit(radiator_toc(timing), add = TRUE)
     on.exit(radiator_function_header(f.name = "detect_mixed_genomes", start = FALSE, verbose = verbose), add = TRUE)
-    # on.exit(rm(list = setdiff(ls(envir = sys.frame(-1L)), obj.keeper), envir = sys.frame(-1L)))
 
     # Function call and dotslist -------------------------------------------------
     rad.dots <- radiator_dots(
@@ -318,7 +326,8 @@ detect_mixed_genomes <- function(
           MISSING_PROP_POP = unique(MISSING_PROP_POP),
           MISSING_PROP_OVERALL = unique(MISSING_PROP_OVERALL),
           HET_NUMBER = length(HET[HET == 1]),
-          HET_PROP = HET_NUMBER / GENOTYPED
+          HET_PROP = HET_NUMBER / GENOTYPED,
+          .groups = "keep"
         ) %>%
         dplyr::arrange(POP_ID, HET_PROP) %>%
         dplyr::ungroup(.) %>%
@@ -330,12 +339,15 @@ detect_mixed_genomes <- function(
       het.ind.overall <- dplyr::mutate(.data = het.ind, POP_ID = as.character(POP_ID)) %>%
         dplyr::bind_rows(dplyr::mutate(.data = het.ind, POP_ID = rep("OVERALL", n()))) %>%
         dplyr::mutate(POP_ID = factor(POP_ID, levels = c(pop.levels, "OVERALL"))) %>%
-        tidyr::pivot_longer(
+        data.table::as.data.table(.) %>%
+        data.table::melt.data.table(
           data = .,
-          cols = -c("POP_ID", "INDIVIDUALS", "GENOTYPED", "HET_NUMBER", "HET_PROP"),
-          names_to = "MISSING_GROUP",
-          values_to = "MISSING_PROP"
+          id.vars = c("POP_ID", "INDIVIDUALS", "GENOTYPED", "HET_NUMBER", "HET_PROP"),
+          variable.name = "MISSING_GROUP",
+          value.name = "MISSING_PROP",
+          variable.factor = FALSE
         ) %>%
+        tibble::as_tibble(.) %>%
         dplyr::mutate(MISSING_GROUP = factor(MISSING_GROUP, levels = c("MISSING_PROP_POP", "MISSING_PROP_OVERALL"))) %>%
         dplyr::arrange(POP_ID, MISSING_GROUP)
 
@@ -481,8 +493,12 @@ detect_mixed_genomes <- function(
         axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
         axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
       ) +
+      ggplot2::geom_hline(mapping = ggplot2::aes(yintercept = OUTLIERS_LOW),
+                          het.ind.stats, linetype = "dashed", size = 0.6) + #low
       ggplot2::geom_hline(mapping = ggplot2::aes(yintercept = MEAN),
                           het.ind.stats, linetype = "dotted", size = 0.6) +#mean
+      ggplot2::geom_hline(mapping = ggplot2::aes(yintercept = OUTLIERS_HIGH),
+                          het.ind.stats, linetype = "dashed", size = 0.6) + #high
       ggplot2::facet_grid(MISSING_GROUP ~ factor(POP_ID), switch = "x", scales = "free",
                           labeller = ggplot2::labeller(MISSING_GROUP = facet_names))
     # het.manhattan
@@ -509,7 +525,7 @@ detect_mixed_genomes <- function(
         name = "Mean Observed Heterozygosity (proportion)",
         breaks = y.breaks, labels = y.breaks, limits = c(y.breaks.min, y.breaks.max)) + #y.breaks
       # breaks = y.breaks, limits = c(0, y.breaks.max), expand = c(0.06, 0)) +
-      ggplot2::theme_classic()+
+      ggplot2::theme_classic() +
       ggplot2::theme(
         legend.position = "none",
         plot.title = ggplot2::element_text(size = 12, family = "Helvetica", face = "bold", hjust = 0.5),
@@ -538,13 +554,42 @@ to notice what we never expected to see.
 
 
       if (bl.id.het == "y") {
-        mix.text <- "    Enter the min value for ind.heterozygosity.threshold argument (0 turns off): "
-        threshold.min <- radiator_question(x = mix.text, minmax = c(0, 1))
 
-        mix.text <- "    Enter the max value for ind.heterozygosity.threshold argument (1 turns off): "
-        # threshold.max <- as.numeric(readLines(n = 1))
-        threshold.max <- radiator_question(x = mix.text, minmax = c(0, 1))
-        ind.heterozygosity.threshold <- as.numeric(c(threshold.min, threshold.max))
+        if (by.strata) {
+          ind.het.thresholds.by.strata <- het.ind.stats %>%
+            dplyr::select(
+              POP_ID,
+              THRESHOLD_OUTLIERS_LOW = OUTLIERS_LOW,
+              THRESHOLD_OUTLIERS_HIGH = OUTLIERS_HIGH
+            ) %>%
+            dplyr::filter(POP_ID != "OVERALL")
+
+          readr::write_tsv(
+            x = ind.het.thresholds.by.strata,
+            path = file.path(path.folder, "ind.het.thresholds.by.strata.tsv"),
+            append = FALSE,
+            col_names = TRUE
+          )
+          message("\nFile written: ind.het.thresholds.by.strata.tsv")
+          message("In directory: ", path.folder)
+          message("\nOpen in a text editor or MS Excel and adjust the thresholds by strata")
+          finished <- radiator_question(
+            x = "\nWhen finished with the file, save and come back here and type: `y`:",
+            answer.opt = c("y", "Y", "yes", "Yes", "YES"))
+
+          ind.het.thresholds.by.strata <- readr::read_tsv(
+            file = file.path(path.folder, "ind.het.thresholds.by.strata.tsv"),
+            col_types = "cdd")
+          ind.heterozygosity.threshold <- ind.het.thresholds.by.strata
+
+        } else {
+          mix.text <- "    Enter the min value for ind.heterozygosity.threshold argument (0 turns off): "
+          threshold.min <- radiator_question(x = mix.text, minmax = c(0, 1))
+          mix.text <- "    Enter the max value for ind.heterozygosity.threshold argument (1 turns off): "
+          # threshold.max <- as.numeric(readLines(n = 1))
+          threshold.max <- radiator_question(x = mix.text, minmax = c(0, 1))
+          ind.heterozygosity.threshold <- as.numeric(c(threshold.min, threshold.max))
+        }
       } else {
         threshold.min <- 0
         threshold.max <- 1
@@ -559,14 +604,26 @@ to notice what we never expected to see.
 
     ## Step 2: Blacklist outlier individuals -------------------------------------
     if (!is.null(ind.heterozygosity.threshold)) {
-      blacklist.ind.het  <- dplyr::ungroup(het.ind) %>%
-        dplyr::filter(HET_PROP > threshold.max | HET_PROP < threshold.min) %>%
-        dplyr::distinct(INDIVIDUALS)
+
+      if (by.strata) {
+        blacklist.ind.het <- dplyr::ungroup(het.ind) %>%
+          dplyr::right_join(ind.het.thresholds.by.strata, by = "POP_ID") %>%
+          dplyr::filter(HET_PROP > THRESHOLD_OUTLIERS_HIGH | HET_PROP < THRESHOLD_OUTLIERS_LOW) %>%
+          dplyr::distinct(INDIVIDUALS)
+      } else {
+        blacklist.ind.het  <- dplyr::ungroup(het.ind) %>%
+          dplyr::filter(HET_PROP > threshold.max | HET_PROP < threshold.min) %>%
+          dplyr::distinct(INDIVIDUALS)
+      }
+
+
       message("Filter individual's heterozygosity: ", length(blacklist.ind.het$INDIVIDUALS), " individual(s) blacklisted")
       readr::write_tsv(
         x = blacklist.ind.het,
         path = file.path(path.folder, "blacklist.ind.het.tsv"),
-        col_names = TRUE)
+        col_names = TRUE
+      )
+
     } else {
       blacklist.ind.het <- "ind.heterozygosity.threshold is necessary to get a blacklist of individuals"
     }
@@ -594,29 +651,59 @@ to notice what we never expected to see.
 
 
     # updating parameters
-    filters.parameters <- radiator_parameters(
-      generate = FALSE,
-      initiate = FALSE,
-      update = TRUE,
-      parameter.obj = filters.parameters,
-      data = data,
-      filter.name = "detect mixed genomes",
-      param.name = "ind.heterozygosity.threshold (min/max)",
-      values = paste(threshold.min, threshold.max, collapse = " / "),
-      path.folder = path.folder,
-      file.date = file.date,
-      internal = internal,
-      verbose = verbose)
-
+    if (by.strata && !is.null(ind.heterozygosity.threshold)) {
+      ind.het.thresholds.by.strata %<>%
+        dplyr::mutate(
+          THRESHOLDS = stringi::stri_join(THRESHOLD_OUTLIERS_LOW, THRESHOLD_OUTLIERS_HIGH, sep = "/"),
+          VALUES = stringi::stri_join(POP_ID, THRESHOLDS, sep = ": ")
+        )
+      filters.parameters <- radiator_parameters(
+        generate = FALSE,
+        initiate = FALSE,
+        update = TRUE,
+        parameter.obj = filters.parameters,
+        data = data,
+        filter.name = "detect mixed genomes",
+        param.name = "ind.heterozygosity.threshold (min/max) by strata",
+        values = paste(ind.het.thresholds.by.strata$VALUES, collapse = ", "),
+        path.folder = path.folder,
+        file.date = file.date,
+        internal = internal,
+        verbose = verbose)
+    } else {
+      filters.parameters <- radiator_parameters(
+        generate = FALSE,
+        initiate = FALSE,
+        update = TRUE,
+        parameter.obj = filters.parameters,
+        data = data,
+        filter.name = "detect mixed genomes",
+        param.name = "ind.heterozygosity.threshold (min/max)",
+        values = paste(threshold.min, threshold.max, collapse = " / "),
+        path.folder = path.folder,
+        file.date = file.date,
+        internal = internal,
+        verbose = verbose)
+    }
     # results ------------------------------------------------------------------
-    radiator_results_message(
-      rad.message = stringi::stri_join("Detect mixed genomes: ",
-                                       paste(threshold.min, threshold.max,
-                                             collapse = " / ")),
-      filters.parameters,
-      internal,
-      verbose
-    )
+    if (by.strata && !is.null(ind.heterozygosity.threshold)) {
+      radiator_results_message(
+        rad.message = stringi::stri_join("Detect mixed genomes: ",
+                                         paste(ind.het.thresholds.by.strata$VALUES, collapse = ", ")),
+        filters.parameters,
+        internal,
+        verbose
+      )
+    } else {
+      radiator_results_message(
+        rad.message = stringi::stri_join("Detect mixed genomes: ",
+                                         paste(threshold.min, threshold.max,
+                                               collapse = " / ")),
+        filters.parameters,
+        internal,
+        verbose
+      )
+    }
 
     # MONOMORPHIC MARKERS --------------------------------------------------
     if (check.mono) {
