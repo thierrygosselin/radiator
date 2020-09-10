@@ -813,6 +813,14 @@ detect_duplicate_genomes <- function(
         filename = file.path(path.folder, "manhattan.plot.genome.pdf"),
         plot = res$manhattan.plot.genome,
         width = 20, height = 15, dpi = 150, units = "cm", useDingbats = FALSE)
+
+      ggplot2::ggsave(
+        filename = file.path(path.folder, "manhattan.plot.genome.png"),
+        plot = res$manhattan.plot.genome,
+        width = 20, height = 15, dpi = 200, units = "cm")
+
+
+
     } # end genome method
 
     # Removing duplicates ------------------------------------------------------

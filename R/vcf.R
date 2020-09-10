@@ -2788,29 +2788,35 @@ write_vcf <- function(
 #' }
 
 extract_individuals_vcf <- function(data) {
-  temp.file <-
-    suppressWarnings(suppressMessages(
-      readr::read_table(file = data, n_max = 200, col_names = "HEADER")
-    ))
-  skip.number <- which(stringi::stri_detect_fixed(str = temp.file$HEADER,
-                                                  pattern = "#CHROM")) - 1
-  # for some VCF file that put all the markers (usually contigs info) in the header...
-  if (length(skip.number) == 0L) {
-    temp.file <-
-      suppressWarnings(suppressMessages(
-        readr::read_table(file = data, col_names = "HEADER")
-      ))
-    skip.number <- which(stringi::stri_detect_fixed(str = temp.file$HEADER,
-                                                    pattern = "#CHROM")) - 1
-  }
-  temp.file <- NULL
-  remove <- c("#CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT")
-  id <- tibble::tibble(INDIVIDUALS = colnames(readr::read_tsv(
-    file = data,
-    n_max = 1,
-    skip = skip.number,
-    col_types = readr::cols(.default = readr::col_character())) %>%
-      dplyr::select(-dplyr::one_of(remove))))
+  # OLD CODE and SLOW...
+  # temp.file <-
+  #   suppressWarnings(suppressMessages(
+  #     readr::read_table(file = data, n_max = 200, col_names = "HEADER")
+  #   ))
+  # skip.number <- which(stringi::stri_detect_fixed(str = temp.file$HEADER,
+  #                                                 pattern = "#CHROM")) - 1
+  # # for some VCF file that put all the markers (usually contigs info) in the header...
+  # if (length(skip.number) == 0L) {
+  #   temp.file <-
+  #     suppressWarnings(suppressMessages(
+  #       readr::read_table(file = data, col_names = "HEADER")
+  #     ))
+  #   skip.number <- which(stringi::stri_detect_fixed(str = temp.file$HEADER,
+  #                                                   pattern = "#CHROM")) - 1
+  # }
+  # temp.file <- NULL
+  # remove <- c("#CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT")
+  # id <- tibble::tibble(INDIVIDUALS = colnames(readr::read_tsv(
+  #   file = data,
+  #   n_max = 1,
+  #   skip = skip.number,
+  #   col_types = readr::cols(.default = readr::col_character())) %>%
+  #     dplyr::select(-dplyr::one_of(remove))))
+
+  id <- tibble::tibble(
+    INDIVIDUALS = SeqArray::seqVCF_Header(vcf.fn = data, getnum = TRUE)$sample.id
+  )
+
   return(id)
 }#End extract_individuals_vcf
 

@@ -237,3 +237,27 @@ detect_microsatellites <- function(data, gmata.dir = NULL, ...) {
   return(list(blacklist = blacklist, whitelist = whitelist))
 }#End detect_microsatellites
 
+
+### Internal function to prepare output from stacks ----------------------------
+# prep_stacks_fasta <- function(fasta.file) {
+# fasta <- suppressWarnings(
+#   vroom::vroom(
+#     file = fasta.file,
+#     delim = "\t",
+#     col_names = "DATA",
+#     col_types = "c",
+#     comment = "#"
+#   ) %>%
+#     dplyr::mutate(MARKERS = stringi::stri_sub(str = DATA, from = 3, to = 7)) %>%
+#     tidyr::separate(data = ., col = DATA, into = c("SEQUENCE", "LOCUS"), sep = "_")
+# )
+#
+# fasta <- dplyr::bind_cols(
+#   dplyr::filter(fasta, MARKERS == "Locus") %>%
+#     dplyr::select(LOCUS),
+#   dplyr::filter(fasta, MARKERS != "Locus") %>%
+#     dplyr::select(SEQUENCE)
+# ) %>%
+#   dplyr::mutate(LOCUS = as.numeric(LOCUS))
+# return(fasta)
+# }#prep_stacks_fasta

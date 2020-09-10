@@ -145,7 +145,8 @@ if (getRversion() >= "2.15.1") {
       "panelLSID", "pop.info", "protLSID", "strand", "MICROSATELLITES",
       "INDIVIDUALS_PLINK", "ind.heterozygosity.threshold", "INDIVIDUALS...3",
       "INDIVIDUALS...7", "MARKERS...2", "MARKERS...6", "VARIANT_ID...1",
-      "VARIANT_ID...5"
+      "VARIANT_ID...5", "THRESHOLDS", "THRESHOLD_OUTLIERS_HIGH",
+      "THRESHOLD_OUTLIERS_LOW"
     )
   )
 }
