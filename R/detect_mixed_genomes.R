@@ -146,6 +146,7 @@ detect_mixed_genomes <- function(
   # parameters = filters.parameters
   # parallel.core = parallel::detectCores() - 1
   # by.strata = FALSE
+  # internal <- FALSE
 
   if (interactive.filter || detect.mixed.genomes) {
     if (interactive.filter) verbose <- TRUE
@@ -340,7 +341,7 @@ detect_mixed_genomes <- function(
         verbose = FALSE)
 
       het.ind <- id.stats$info %>%
-        dplyr::rename(POP_ID = STRATA, HET_PROP = HETEROZYGOSITY, MISSING_PROP_OVERALL = MISSING_PROP) %>%
+        dplyr::select(INDIVIDUALS, POP_ID = STRATA, HET_PROP = HETEROZYGOSITY, MISSING_PROP_OVERALL = MISSING_PROP) %>%
         dplyr::mutate(MISSING_PROP_POP = MISSING_PROP_OVERALL)
 
       # Need the equivalent for this:

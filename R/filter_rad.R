@@ -420,7 +420,6 @@ filter_rad <- function(
 
   # Cleanup---------------------------------------------------------------------
   radiator_function_header(f.name = "filter_rad", verbose = verbose)
-  message("The function arguments names have changed: please read documentation\n")
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
   if (verbose) message("Execution date@time: ", file.date)
   old.dir <- getwd()

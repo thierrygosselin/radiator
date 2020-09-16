@@ -95,7 +95,7 @@
 #' @author Eric Anderson \email{eric.anderson@noaa.gov} and
 #' Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
-detect_het_outliers <- function (
+detect_het_outliers <- function(
   data,
   nreps = 2000,
   burn.in = NULL,
