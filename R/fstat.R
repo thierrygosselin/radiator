@@ -278,15 +278,16 @@ write_hierfstat <- function(data, filename = NULL) {
   nl.message <- stringi::stri_join("    * Number of markers, nl = ", nl, sep = "")
   message(nl.message)
 
-  data %<>%
-    dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT) %>%
-    dplyr::mutate(
-      GT = replace(GT, which(GT == "000000"), NA),
-      A1 = as.numeric(stringi::stri_sub(str = GT, from = 1, to = 3)),
-      A2 = as.numeric(stringi::stri_sub(str = GT, from = 4, to = 6)),
-      GT = NULL
-    )
-
+  data <- suppressWarnings(
+    data %>%
+      dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT) %>%
+      dplyr::mutate(
+        GT = replace(GT, which(GT == "000000"), NA),
+        A1 = as.numeric(stringi::stri_sub(str = GT, from = 1, to = 3)),
+        A2 = as.numeric(stringi::stri_sub(str = GT, from = 4, to = 6)),
+        GT = NULL
+      )
+  )
   # Get the highest number used to label an allele -----------------------------
   nu <- max(c(unique(data$A1), unique(data$A2)), na.rm = TRUE)
   nu.message <- stringi::stri_join("    * The highest number used to label an allele, nu = ",

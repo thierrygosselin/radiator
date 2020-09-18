@@ -232,11 +232,14 @@ res$trace.mcmc.plot <- ggplot2::ggplot(res$m.nreps, ggplot2::aes(x = iter, y = m
   ggplot2::theme_bw()
 if (!is.null(path.folder)) {
   ggplot2::ggsave(
-    filename = file.path(path.folder, "trace.mcmc.plot.pdf"),
+    filename = file.path(path.folder, "trace.mcmc.plot.png"),
     plot = res$trace.mcmc.plot,
-    width = 20, height = 10,
-    dpi = 600, units = "cm",
-    useDingbats = FALSE, limitsize = FALSE)
+    width = 20,
+    height = 10,
+    dpi = 200,
+    units = "cm",
+    # useDingbats = FALSE,
+    limitsize = FALSE)
 }
 
 print(res$trace.mcmc.plot)
@@ -450,11 +453,13 @@ plot_het_outliers <- function(data, path.folder = NULL) {
 
   if (!is.null(path.folder)) {
     ggplot2::ggsave(
-      filename = file.path(path.folder, "markers.genotypes.boundaries.pdf"),
+      filename = file.path(path.folder, "markers.genotypes.boundaries.png"),
       plot = res$gt.boundaries.plot,
-      width = 20, height = (n.pop + 1) * 5,# + 1 for overall always present
-      dpi = 300, units = "cm",
-      useDingbats = FALSE, limitsize = FALSE)
+      width = 20,
+      height = (n.pop + 1) * 5,# + 1 for overall always present
+      dpi = 200, units = "cm",
+      # useDingbats = FALSE,
+      limitsize = FALSE)
   }
   return(res)
 }#End plot_het_outliers

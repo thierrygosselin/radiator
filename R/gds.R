@@ -460,7 +460,7 @@ radiator_gds_skeleton <- function(gds) {
     node = gds,
     name = "radiator",
     replace = TRUE
-    )
+  )
 
   purrr::walk(
     .x = c(
@@ -944,13 +944,10 @@ extract_coverage <- function(
   # verbose = TRUE
   # depth.tibble = FALSE
 
-
   coverage.info <- list()
   data.source <- extract_data_source(gds)
 
-
-
-  n.markers<- summary_gds(gds, verbose = FALSE)$n.markers
+  n.markers <- summary_gds(gds, verbose = FALSE)$n.markers
 
   # DArT counts and VCFs -------------------------------------------------------
   if (!"dart" %in% data.source || "counts" %in% data.source) {
@@ -978,21 +975,25 @@ extract_coverage <- function(
       if (length(have) > 0) {
         want <- c("DP", "AD", "CATG")
         parse.format.list <- purrr::keep(.x = have, .p = have %in% want)
-        if (verbose) message("Extracting ", paste0(parse.format.list, collapse = ", "), " information...")
-        # work on parallelization of this part
-        depth <- tidy2wide(
-          x = purrr::map(
-            .x = parse.format.list,
-            .f = parse_gds_metadata,
+        if (length(parse.format.list) > 0) {
+          if (verbose) message("Extracting ", paste0(parse.format.list, collapse = ", "), " information...")
+          # work on parallelization of this part
+          depth <- tidy2wide(
+            x = purrr::map(
+              .x = parse.format.list,
+              .f = parse_gds_metadata,
+              gds = gds,
+              verbose = FALSE,
+              parallel.core = parallel.core
+            ) %>%
+              purrr::flatten(.) %>%
+              purrr::flatten_df(.),
             gds = gds,
-            verbose = FALSE,
-            parallel.core = parallel.core
-          ) %>%
-            purrr::flatten(.) %>%
-            purrr::flatten_df(.),
-          gds = gds,
-          tidy = TRUE,
-          wide = FALSE) %$% data.tidy
+            tidy = TRUE,
+            wide = FALSE) %$% data.tidy
+        } else {
+          depth <- NULL
+        }
         parse.format.list <- want <- NULL
       } else {
         depth <- NULL
@@ -1703,7 +1704,7 @@ update_bl_individuals <- function(
 #' @rdname generate_id_stats
 #' @keywords internal
 #' @export
-generate_id_stats <- function (
+generate_id_stats <- function(
   gds,
   missing = TRUE,
   heterozygosity = TRUE,
@@ -1721,8 +1722,13 @@ generate_id_stats <- function (
   # missing = TRUE
   # heterozygosity = TRUE
   # coverage = TRUE
+  # subsample = NULL
+  # path.folder = NULL
   # plot = TRUE
   # digits = 6
+  # file.date = NULL
+  # parallel.core = parallel::detectCores() - 1
+  # verbose = TRUE
 
   if (is.null(path.folder)) path.folder <- getwd()
   res <- list() # return result in this list
@@ -1745,9 +1751,13 @@ generate_id_stats <- function (
       dplyr::mutate(
         MISSING_PROP = round(
           SeqArray::seqMissing(
-            gdsfile = gds, per.variant = FALSE,
-            .progress = TRUE, parallel = parallel.core
-          ) , digits)
+            gdsfile = gds,
+            per.variant = FALSE,
+            .progress = TRUE,
+            parallel = parallel.core
+          )
+          , digits
+        )
       )
     # stats
     id.stats.m <- tibble_stats(
@@ -1764,9 +1774,14 @@ generate_id_stats <- function (
     # info
     id.info %<>%
       dplyr::mutate(
-        HETEROZYGOSITY = round(SeqVarTools::heterozygosity(
-          gdsobj = gds, margin = "by.sample", use.names = FALSE
-        ), digits)
+        HETEROZYGOSITY = round(
+          SeqVarTools::heterozygosity(
+            gdsobj = gds,
+            margin = "by.sample",
+            use.names = FALSE
+          )
+          , digits
+        )
       )
 
     id.info$HETEROZYGOSITY[is.na(id.info$HETEROZYGOSITY)] <- 0
@@ -1911,7 +1926,7 @@ generate_id_stats <- function (
 #' @rdname generate_markers_stats
 #' @keywords internal
 #' @export
-generate_markers_stats <- function (
+generate_markers_stats <- function(
   gds,
   coverage = TRUE,
   allele.coverage = TRUE,
@@ -1981,6 +1996,9 @@ generate_markers_stats <- function (
   if (allele.coverage) mac <- TRUE # by default the mac info is needed...
   if (!rlang::has_name(info, "COL")) snp.position.read <- FALSE
 
+  stats.cm <- stats.ct <- stats.mac <- NULL
+  stats.rt <- stats.at <- stats.am <- stats.rm <- NULL
+  stats.m <- stats.h <- stats.f <- stats.s <- stats.sp <- ad.info <- NULL
 
   # Coverage
   if (coverage) {
@@ -2009,8 +2027,6 @@ generate_markers_stats <- function (
         stats.ct <- tibble_stats(
           x = info$COVERAGE_TOTAL,
           group = "total coverage")
-      } else {
-        stats.ct <- NULL
       }
 
       if (!is.null(mc$markers.mean)) {
@@ -2018,15 +2034,13 @@ generate_markers_stats <- function (
         stats.cm <- tibble_stats(
           x = info$COVERAGE_MEAN,
           group = "mean coverage")
-      } else {
-        stats.cm <- NULL
       }
 
       if (!is.null(mc$ref.mean)) {
         info$REF_DEPTH_MEAN <- mc$ref.mean
         allele.coverage <- mac <- TRUE
       }
-      if (!is.null(mc$alt.mean)){
+      if (!is.null(mc$alt.mean)) {
         info$ALT_DEPTH_MEAN <- mc$alt.mean
       }
       mc <- NULL
@@ -2038,43 +2052,87 @@ generate_markers_stats <- function (
         x = info$COVERAGE_MEAN,
         group = "mean coverage")
     }
-  } else {
-    stats.cm <- stats.ct <- NULL
-  }
+  } #coverage
 
   if (mac) {
     if (!rlang::has_name(info, "MAC_GLOBAL") || force.stats) {
+
+      ac <- SeqArray::seqAlleleCount(
+        gdsfile = gds,
+        ref.allele = NULL,
+        .progress = TRUE,
+        parallel = parallel.core)
+
+      # check if more than 2 alternate alleles...
       info %<>%
-        dplyr::bind_cols(
-          SeqArray::seqAlleleCount(
-            gdsfile = gds,
-            ref.allele = NULL,
-            .progress = TRUE,
-            parallel = parallel.core) %>%
-            unlist(.) %>%
-            matrix(
-              data = .,
-              nrow = n.markers, ncol = 2, byrow = TRUE,
-              dimnames = list(rownames = info$VARIANT_ID,
-                              colnames = c("REF_COUNT", "ALT_COUNT"))) %>%
-            tibble::as_tibble(.)
-        ) %>%
         dplyr::mutate(
-          MAC_GLOBAL = dplyr::if_else(ALT_COUNT < REF_COUNT, ALT_COUNT, REF_COUNT),
-          MAF_GLOBAL = MAC_GLOBAL / (REF_COUNT + ALT_COUNT),
-          ALT_CHECK = dplyr::if_else(MAC_GLOBAL == ALT_COUNT, "ALT", "REF"),
-          ALT_COUNT = NULL
+          N_ALLELES = purrr::map_int(.x = ac, .f = length),
+          REF_COUNT = purrr::map_int(.x = ac, .f = max),
+          A_SUM = purrr::map_int(.x = ac, .f = sum),
+          MAC_GLOBAL = A_SUM - REF_COUNT,
+          MAF_GLOBAL = MAC_GLOBAL / A_SUM,
+          A_SUM = NULL
         )
+      ac <- NULL
+      n.al.max <- max(info$N_ALLELES, na.rm = TRUE)
+
+      # A1 = purrr::map_int(.x = ac, .f = 1),
+      # A2 = purrr::map_int(.x = ac, .f = 2),
+      # A3 = purrr::map_int(.x = ac, .f = 3, .default = NA),
+      # A4 = purrr::map_int(.x = ac, .f = 4, .default = NA)
+
+      # when more than 2 alternate alleles...
+      if (n.al.max > 2) {
+        info %<>% dplyr::mutate(ALT_CHECK = "ALT")
+        message("\n\nCaution: More than 2 alleles detected in the dataset")
+        wanted.info <- c("VARIANT_ID", "CHROM", "LOCUS", "POS", "MARKERS", "REF", "ALT", "N_ALLELES")
+        info %>%
+          dplyr::filter(N_ALLELES > 2) %>%
+          dplyr::select(dplyr::one_of(wanted.info)) %>%
+          write_rad(
+            data = .,
+            path = path.folder,
+            filename = "markers_number_alleles_problem.tsv",
+            tsv = TRUE,
+            write.message = "standard",
+            verbose = TRUE
+          )
+      } else {
+        info %<>%
+          dplyr::mutate(ALT_CHECK = dplyr::if_else(MAC_GLOBAL <= REF_COUNT, "ALT", "REF"))
+      }
+
+
+      ## previously:
+
+      # info %<>%
+      #   dplyr::bind_cols(
+      #     SeqArray::seqAlleleCount(
+      #       gdsfile = gds,
+      #       ref.allele = NULL,
+      #       .progress = TRUE,
+      #       parallel = parallel.core) %>%
+      #       unlist(.) %>%
+      #       matrix(
+      #         data = .,
+      #         nrow = n.markers, ncol = 2, byrow = TRUE,
+      #         dimnames = list(rownames = info$VARIANT_ID,
+      #                         colnames = c("REF_COUNT", "ALT_COUNT"))) %>%
+      #       tibble::as_tibble(.)
+      #   ) %>%
+      #   dplyr::mutate(
+      #     MAC_GLOBAL = dplyr::if_else(ALT_COUNT < REF_COUNT, ALT_COUNT, REF_COUNT),
+      #     MAF_GLOBAL = MAC_GLOBAL / (REF_COUNT + ALT_COUNT),
+      #     ALT_CHECK = dplyr::if_else(MAC_GLOBAL == ALT_COUNT, "ALT", "REF"),
+      #     ALT_COUNT = NULL
+      #   )
     }
 
     stats.mac <- tibble_stats(
       x = info$MAC_GLOBAL,
       group = "MAC")
 
-  } else {
-    stats.mac <- NULL
-  }
-
+  } #mac
 
   if (allele.coverage) {
 
@@ -2113,9 +2171,8 @@ generate_markers_stats <- function (
             ALT_DEPTH_MEAN = dplyr::if_else(ALT_CHECK == "ALT", AM, RM),
             ALT_CHECK = NULL, RM = NULL, AM = NULL
           )
-        ad <- NULL
+        ad <- ad.info <- NULL
       }
-      ad.info <- NULL
     }
 
     if (rlang::has_name(info, "REF_DEPTH_TOTAL")) {
@@ -2125,8 +2182,6 @@ generate_markers_stats <- function (
       stats.at <- tibble_stats(
         x = info$ALT_DEPTH_TOTAL,
         group = "total alt depth")
-    } else {
-      stats.rt <- stats.at <-  NULL
     }
 
     if (rlang::has_name(info, "REF_DEPTH_MEAN")) {
@@ -2136,20 +2191,12 @@ generate_markers_stats <- function (
       stats.am <- tibble_stats(
         x = info$ALT_DEPTH_MEAN,
         group = "mean alt depth")
-    } else {
-      stats.rm <- stats.am <-  NULL
     }
 
 
   } else {
     if (mac) info %<>% dplyr::select(-ALT_CHECK)
-    stats.rt <- stats.at <- stats.am <- stats.rm <- NULL
-
   }
-  # test <- SeqArray::seqMissing(
-  #   gdsfile = data,
-  #   per.variant = TRUE, .progress = TRUE, parallel = parallel.core)
-
 
   if (missing) {
     if (!rlang::has_name(info, "MISSING_PROP") || force.stats) {
@@ -2165,9 +2212,7 @@ generate_markers_stats <- function (
       x = info$MISSING_PROP,
       group = "missing genotypes")
 
-  } else {
-    stats.m <- NULL
-  }
+  } # missing
 
   if (heterozygosity) {
     if (!rlang::has_name(info, "HET_OBS") || force.stats) {
@@ -2187,9 +2232,7 @@ generate_markers_stats <- function (
       x = info$FIS,
       group = "inbreeding coefficient (Fis)")
 
-  } else {
-    stats.h <- stats.f <- NULL
-  }
+  } # heterozygosity
 
   if (snp.per.locus) {
     if (!rlang::has_name(info, "SNP_PER_LOCUS") || force.stats) {
@@ -2218,17 +2261,13 @@ generate_markers_stats <- function (
     stats.s <- tibble_stats(
       x = info$SNP_PER_LOCUS,
       group = "SNPs per locus")
-  } else {
-    stats.s <- NULL
-  }
+  } # snp.per.locus
 
   if (snp.position.read) {
     stats.sp <- tibble_stats(
       x = dplyr::distinct(info, COL) %$% COL,
       group = "SNP position on read")
-  } else {
-    stats.sp <- NULL
-  }
+  } # snp.position.read
 
   # Generate the stats
   stats <- dplyr::bind_rows(

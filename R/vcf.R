@@ -300,7 +300,7 @@ read_vcf <- function(
   if (verbose) message("Execution date@time: ", file.date)
   old.dir <- getwd()
   opt.change <- getOption("width")
-  options(future.globals.maxSize= Inf)
+  options(future.globals.maxSize = Inf)
   options(width = 70)
   timing <- radiator_tic()
   res <- list()
@@ -628,7 +628,7 @@ read_vcf <- function(
       COL = 1L)
   }
 
-  # GATK, platypus and freebayes specific adjustment
+  # GATK, platypus, freebayes and samtools specific adjustment
   # Locus with NA or . or ""
   weird.locus <- length(unique(markers.meta$LOCUS)) <= 1
   if (weird.locus && !stacks.2) {
@@ -1119,13 +1119,12 @@ read_vcf <- function(
             path = path.folder,
             filename = "strata.filtered.tsv",
             tsv = TRUE,
-            write.message = "Writing the filtered strata: strata.filtered.tsv",
+            write.message = "standard",
             verbose = verbose)
 
   #______________________________###############################################
   #-----------------------------------  VCF STATS   ----------------------------
   if (vcf.stats) {
-    if (verbose) message("\nGenerating statistics after filtering")
     # SUBSAMPLE markers
     n.markers <- length(markers.meta$VARIANT_ID)
     if (n.markers < 200000) subsample.markers.stats <- 1
@@ -1186,7 +1185,7 @@ read_vcf <- function(
   if (verbose) {
     cat("################################### SUMMARY ####################################\n")
     if (vcf.stats) {
-      message("\n\nSummary (AFTER filtering):\nMissing data: ")
+      message("\nVCF summary):\nMissing data: ")
       message("    markers: ", markers.missing)
       message("    individuals: ", ind.missing)
       if (dp) message("\n\nCoverage info:")
@@ -1645,7 +1644,7 @@ tidy_vcf <- function(
     if (is.null(gt.bin)) {
       if (n.markers < 5000) gt.bin <- TRUE
       if (n.markers >= 5000 && n.markers < 30000) gt.bin <- TRUE
-      if (n.markers >= 30000) gt.bin <- FALSE
+      if (n.markers >= 30000) gt.bin <- TRUE
     }
     # gt.vcf is genotype coding in the VCF: 0/0, 0/1, 1/1, ./.
     if (is.null(gt.vcf)) {
@@ -2830,15 +2829,13 @@ extract_individuals_vcf <- function(data) {
 #' @keywords internal
 #' @export
 extract_info_vcf <- function(vcf) {
-  res <- list()
-  # print(vcf, all=TRUE, attribute=TRUE)
-  # tic()
   vcf.info <- SeqArray::seqVCF_Header(vcf.fn = vcf, getnum = TRUE)
-  # toc()
-  res$vcf.source <- vcf.info$header$value[2]
-  res$n.ind <- vcf.info$num.sample
-  res$n.markers <- vcf.info$num.variant
-  res$sample.id <- vcf.info$sample.id
+  res <- list(
+    vcf.source = vcf.info$header$value[2],
+    n.ind = vcf.info$num.sample,
+    n.markers = vcf.info$num.variant,
+    sample.id = vcf.info$sample.id
+    )
   return(res)
 }#End extract_info_vcf
 
@@ -2851,8 +2848,10 @@ extract_info_vcf <- function(vcf) {
 #' @export
 check_header_source_vcf <- function(vcf) {
 
-  check.header <- SeqArray::seqVCF_Header(vcf)
-  problematic.id <- c("AD", "AO", "QA", "GL", "CATG", "RO", "QR", "MIN_DP")
+  # samtools problem encountered 20200918: PL now set to .
+
+  check.header <- SeqArray::seqVCF_Header(vcf.fn = vcf)
+  problematic.id <- c("AD", "AO", "QA", "GL", "CATG", "RO", "QR", "MIN_DP", "PL")
   problematic.id <-
     purrr::keep(
       .x = problematic.id,
