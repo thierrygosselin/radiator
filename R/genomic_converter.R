@@ -440,7 +440,7 @@ genomic_converter <- function(
     verbose = FALSE
   )
 
-  if(verbose) message("\nPreparing data for output\n")
+  if (verbose) message("\nPreparing data for output\n")
 
   if (!is.null(strata.bk) || rlang::has_name(input, "POP_ID")) {
     if (is.factor(input$POP_ID)) {
