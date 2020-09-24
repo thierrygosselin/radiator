@@ -151,7 +151,7 @@ representation of allelic copies and unequal coverage and ii) type I error
 during genotyping of heterozygote with low coverage data.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>detect_allele_problems</span>(<span class='no'>data</span>, <span class='kw'>allele.threshold</span> <span class='kw'>=</span> <span class='fl'>3</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='no'>...</span>)</pre>
+    <pre class="usage"><span class='fu'>detect_allele_problems</span>(<span class='kw'>data</span>, allele.threshold = <span class='fl'>3</span>, verbose = <span class='fl'>TRUE</span>, <span class='kw'>...</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -232,18 +232,22 @@ blacklist the problematic genotypes.
 <span class="pkg">radiator</span> <code><a href='tidy_genomic_data.html'>tidy_genomic_data</a></code> and
 <code><a href='genomic_converter.html'>genomic_converter</a></code> allows to erase problematic genotypes
 using a blacklist of genotypes...</p>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Thierry Gosselin <a href='mailto:thierrygosselin@icloud.com'>thierrygosselin@icloud.com</a></p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='kw'>if</span> (<span class='fl'>FALSE</span>) {
-<span class='no'>problem</span> <span class='kw'>&lt;-</span> <span class='fu'>detect_allele_problems</span>(
-        <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>salamander</span>,
-        <span class='kw'>strata</span> <span class='kw'>=</span> <span class='st'>"strata.salmon.tsv"</span>,
-        <span class='kw'>allele.threshold</span> <span class='kw'>=</span> <span class='fl'>3</span>)
+    <pre class="examples"><div class='input'><span class='co'>if</span> (<span class='fl'>FALSE</span>) {
+<span class='kw'>problem</span> <span class='op'>&lt;-</span> <span class='fu'>detect_allele_problems</span>(
+        data = <span class='kw'>salamander</span>,
+        strata = <span class='st'>"strata.salmon.tsv"</span>,
+        allele.threshold = <span class='fl'>3</span>)
 
 <span class='co'># The default with this function:</span>
 <span class='co'># filter.monomorphic = TRUE # = discarded</span>
 <span class='co'># filter.common.markers = TRUE # markers not in common between pop are discarded</span>
-}</div></pre>
+}
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
@@ -255,11 +259,11 @@ using a blacklist of genotypes...</p>
 
       <footer>
       <div class="copyright">
-  <p>Developed by Thierry Gosselin, Floriaan Devloo-Delva.</p>
+  <p>Developed by Thierry Gosselin, Manuel Lamothe, Floriaan Devloo-Delva.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>

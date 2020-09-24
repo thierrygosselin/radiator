@@ -140,15 +140,15 @@ that does it for 1 chrom. It's then used with purrr::map to run seriall on all c
     </div>
 
     <pre class="usage"><span class='fu'>ld_missing</span>(
-  <span class='no'>wl</span>,
-  <span class='no'>data</span>,
-  <span class='kw'>ld.threshold</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/seq.html'>seq</a></span>(<span class='fl'>0.1</span>, <span class='fl'>0.9</span>, <span class='kw'>by</span> <span class='kw'>=</span> <span class='fl'>0.1</span>),
-  <span class='kw'>denovo</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>ld.method</span> <span class='kw'>=</span> <span class='st'>"r2"</span>,
-  <span class='kw'>ld.figures</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>path.folder</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>parallel.core</span> <span class='kw'>=</span> <span class='kw pkg'>parallel</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span>() - <span class='fl'>1</span>,
-  <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>
+  <span class='kw'>wl</span>,
+  <span class='kw'>data</span>,
+  ld.threshold = <span class='fu'><a href='https://rdrr.io/r/base/seq.html'>seq</a></span>(<span class='fl'>0.1</span>, <span class='fl'>0.9</span>, by = <span class='fl'>0.1</span>),
+  denovo = <span class='kw'>NULL</span>,
+  ld.method = <span class='st'>"r2"</span>,
+  ld.figures = <span class='fl'>TRUE</span>,
+  path.folder = <span class='kw'>NULL</span>,
+  parallel.core = <span class='kw'>parallel</span>::<span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span>() <span class='op'>-</span> <span class='fl'>1</span>,
+  verbose = <span class='fl'>TRUE</span>
 )</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -195,6 +195,9 @@ that does it for 1 chrom. It's then used with purrr::map to run seriall on all c
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
     <p>A list with whitelists and blacklists of markers in LD.</p>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Thierry Gosselin <a href='mailto:thierrygosselin@icloud.com'>thierrygosselin@icloud.com</a></p>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
@@ -207,11 +210,11 @@ that does it for 1 chrom. It's then used with purrr::map to run seriall on all c
 
       <footer>
       <div class="copyright">
-  <p>Developed by Thierry Gosselin, Floriaan Devloo-Delva.</p>
+  <p>Developed by Thierry Gosselin, Manuel Lamothe, Floriaan Devloo-Delva.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>

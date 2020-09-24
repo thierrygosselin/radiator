@@ -135,7 +135,7 @@
     <p>The function highlight private alleles by strata, using a GDS or tidy file or object.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>private_alleles</span>(<span class='no'>data</span>, <span class='kw'>strata</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)</pre>
+    <pre class="usage"><span class='fu'>private_alleles</span>(<span class='kw'>data</span>, strata = <span class='kw'>NULL</span>, verbose = <span class='fl'>TRUE</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -171,11 +171,15 @@ Default: <code>verbose = TRUE</code>.</p></td>
 
     <p>A list with an object highlighting private alleles by markers and strata and
 a second object with private alleles summarized by strata.</p>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Thierry Gosselin <a href='mailto:thierrygosselin@icloud.com'>thierrygosselin@icloud.com</a></p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='kw'>if</span> (<span class='fl'>FALSE</span>) {
-<span class='no'>corals.private.alleles.by.pop</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>radiator</span><span class='kw ns'>::</span><span class='fu'>private_alleles</span>(<span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>tidy</span>, <span class='kw'>strata</span> <span class='kw'>=</span> <span class='no'>strata.pop</span>)
-}</div></pre>
+    <pre class="examples"><div class='input'><span class='co'>if</span> (<span class='fl'>FALSE</span>) {
+<span class='kw'>corals.private.alleles.by.pop</span> <span class='op'>&lt;-</span> <span class='kw'>radiator</span>::<span class='fu'>private_alleles</span>(data = <span class='kw'>tidy</span>, strata = <span class='kw'>strata.pop</span>)
+}
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
@@ -187,11 +191,11 @@ a second object with private alleles summarized by strata.</p>
 
       <footer>
       <div class="copyright">
-  <p>Developed by Thierry Gosselin, Floriaan Devloo-Delva.</p>
+  <p>Developed by Thierry Gosselin, Manuel Lamothe, Floriaan Devloo-Delva.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>

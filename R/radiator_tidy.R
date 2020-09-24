@@ -89,6 +89,10 @@ tidy_wide <- function(data, import.metadata = FALSE) {
     }
   }
 
+  # STRATA vs POP_ID
+  if (!rlang::has_name(data, "POP_ID") && rlang::has_name(data, "STRATA")) data %<>% dplyr::rename(POP_ID = STRATA)
+
+
   # Determine long (tidy) or wide dataset
   if (!"MARKERS" %in% colnames(data) && !"LOCUS" %in% colnames(data)) {
     if (rlang::has_name(data, "POP_ID")) {

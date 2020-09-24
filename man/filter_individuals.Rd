@@ -11,6 +11,8 @@ filter_individuals(
   filter.individuals.missing = NULL,
   filter.individuals.heterozygosity = NULL,
   filter.individuals.coverage.total = NULL,
+  filter.individuals.coverage.median = NULL,
+  filter.individuals.coverage.iqr = NULL,
   parallel.core = parallel::detectCores() - 1,
   verbose = TRUE,
   ...
@@ -38,9 +40,21 @@ Default: \code{filter.individuals.missing = NULL}.}
 above which the individuals are blacklisted and removed from the dataset.
 Default: \code{filter.individuals.heterozygosity = NULL}.}
 
-\item{filter.individuals.coverage.total}{(optional, string of doubles) A proportion below and
+\item{filter.individuals.coverage.total}{(optional, string of doubles)
+Target the total coverage per samples.
+A proportion below and
 above which the individuals are blacklisted and removed from the dataset.
 Default: \code{filter.individuals.coverage.total = NULL}.}
+
+\item{filter.individuals.coverage.median}{(optional, string of integers)
+Target the median coverage per samples.
+Integers, below and above, that blacklist individuals (removed from the dataset)
+Default: \code{filter.individuals.coverage.median = NULL}.}
+
+\item{filter.individuals.coverage.iqr}{(optional, string of integers)
+Target the IQR (Interquartile Range) coverage per samples.
+Integers, below and above, that blacklist individuals (removed from the dataset)
+Default: \code{filter.individuals.coverage.iqr = NULL}.}
 
 \item{parallel.core}{(optional) The number of core used for parallel
 execution during import.
@@ -62,19 +76,19 @@ Remove individuals with bad QC based on:
 \itemize{
 \item missingness (genotyping rate)
 \item heterozygosity
-\item coverage (total)
+\item coverage (total, median, iqr)
 }
 
 \strong{Filter targets}: Individuals
 
-\strong{Statistics}: Missingness, heterozygosity and total coverage
+\strong{Statistics}: Missingness, heterozygosity and coverage
 
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and might be of interest for users who wants to blacklist individuals.
 }
 \examples{
 \dontrun{
-require(SeqVarTools)
+require(SeqArray)
 
 # blacklisting outliers individuals:
 id.qc <- radiator::filter_individuals(

@@ -146,7 +146,9 @@ if (getRversion() >= "2.15.1") {
       "INDIVIDUALS_PLINK", "ind.heterozygosity.threshold", "INDIVIDUALS...3",
       "INDIVIDUALS...7", "MARKERS...2", "MARKERS...6", "VARIANT_ID...1",
       "VARIANT_ID...5", "THRESHOLDS", "THRESHOLD_OUTLIERS_HIGH",
-      "THRESHOLD_OUTLIERS_LOW"
+      "THRESHOLD_OUTLIERS_LOW", "A_SUM", "N_ALLELES",
+      "filter.individuals.coverage.iqr",
+      "filter.individuals.coverage.median"
     )
   )
 }

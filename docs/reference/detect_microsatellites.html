@@ -141,7 +141,7 @@ commonly known as microsatellites...
 software <a href='https://github.com/XuewenWangUGA/GMATA'>GMATA: Genome-wide Microsatellite Analyzing Toward Application</a>.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>detect_microsatellites</span>(<span class='no'>data</span>, <span class='kw'>gmata.dir</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>...</span>)</pre>
+    <pre class="usage"><span class='fu'>detect_microsatellites</span>(<span class='kw'>data</span>, gmata.dir = <span class='kw'>NULL</span>, <span class='kw'>...</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -181,12 +181,43 @@ special section)</p></td>
 <li><p>"whitelist.microsatellites.tsv": The whitelist of markers with NO microsatellites.</p></li>
 </ol><p>In the global environment, the object is a list with the blacklist and
 the whitelist.</p>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Thierry Gosselin <a href='mailto:thierrygosselin@icloud.com'>thierrygosselin@icloud.com</a></p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='kw'>if</span> (<span class='fl'>FALSE</span>) {
-<span class='co'># The simplest way to run the function:</span>
-<span class='no'>mic</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>radiator</span><span class='kw ns'>::</span><span class='fu'>detect_microsatellites</span>(<span class='kw'>data</span> <span class='kw'>=</span> <span class='st'>"my_whitelist.tsv"</span>)
-}</div></pre>
+    <pre class="examples"><div class='input'><span class='co'>if</span> (<span class='fl'>FALSE</span>) {
+<span class='co'># The simplest way to run the function when the raw data was DArT:</span>
+<span class='kw'>mic</span> <span class='op'>&lt;-</span> <span class='kw'>radiator</span>::<span class='fu'>detect_microsatellites</span>(data = <span class='st'>"my_whitelist.tsv"</span>)
+
+<span class='co'># With stacks pipeline, the populations module need to be run with --fasta-loci</span>
+<span class='co'># You could prepare the file this way (uncomment the function):</span>
+<span class='co'>#</span>
+<span class='co'># prep_stacks_fasta &lt;- function(fasta.file) {</span>
+<span class='co'>#   fasta &lt;- suppressWarnings(</span>
+<span class='co'>#     vroom::vroom(</span>
+<span class='co'>#      file = fasta.file,</span>
+<span class='co'>#      delim = "\t",</span>
+<span class='co'>#      col_names = "DATA",</span>
+<span class='co'>#      col_types = "c",</span>
+<span class='co'>#      comment = "#"</span>
+<span class='co'>#    ) %&gt;%</span>
+<span class='co'>#      dplyr::mutate(MARKERS = stringi::stri_sub(str = DATA, from = 3, to = 7)) %&gt;%</span>
+<span class='co'>#      tidyr::separate(data = ., col = DATA, into = c("SEQUENCE", "LOCUS"), sep = "_")</span>
+<span class='co'>#  )</span>
+<span class='co'>#</span>
+<span class='co'>#  fasta &lt;- dplyr::bind_cols(</span>
+<span class='co'>#   dplyr::filter(fasta, MARKERS == "Locus") %&gt;%</span>
+<span class='co'>#   dplyr::select(LOCUS),</span>
+<span class='co'>#   dplyr::filter(fasta, MARKERS != "Locus") %&gt;%</span>
+<span class='co'>#   dplyr::select(SEQUENCE)</span>
+<span class='co'>#  ) %&gt;%</span>
+<span class='co'>#  dplyr::mutate(LOCUS = as.numeric(LOCUS))</span>
+<span class='co'>#   return(fasta)</span>
+<span class='co'>#  } #prep_stacks_fasta</span>
+
+}
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
@@ -198,11 +229,11 @@ the whitelist.</p>
 
       <footer>
       <div class="copyright">
-  <p>Developed by Thierry Gosselin, Floriaan Devloo-Delva.</p>
+  <p>Developed by Thierry Gosselin, Manuel Lamothe, Floriaan Devloo-Delva.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>

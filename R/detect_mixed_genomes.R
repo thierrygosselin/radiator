@@ -123,7 +123,7 @@
 #'
 #' }
 
-#' @author Thierry Gosselin \email{thierrygosselin@@icloud.com} and Peter Grewe \email{peter.grewe@@csiro.au}
+#' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 detect_mixed_genomes <- function(
   data,
@@ -202,7 +202,7 @@ detect_mixed_genomes <- function(
     if (!data.type %in% c("SeqVarGDSClass", "gds.file")) {
 
       # Tidy data
-      data <- radiator::tidy_wide(data = data, import.metadata = FALSE)
+      data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
       n.pop <- dplyr::n_distinct(data$POP_ID)
 
       # Filter parameter file: generate and initiate -------------------------------
@@ -465,6 +465,15 @@ detect_mixed_genomes <- function(
       width = max(5 * n.pop, 20), height = 10 * as.numeric(missing.group),
       dpi = 600, units = "cm", useDingbats = FALSE, limitsize = FALSE)
 
+    ggplot2::ggsave(
+      filename = file.path(path.folder, "individual.heterozygosity.manhattan.plot.png"),
+      plot = het.manhattan,
+      width = max(5 * n.pop, 20),
+      height = 10 * as.numeric(missing.group),
+      dpi = 200,
+      units = "cm",
+      limitsize = FALSE
+      )
 
     het.bp <- ggplot2::ggplot(data = het.ind.overall,
                               ggplot2::aes(x = POP_ID, y = HET_PROP, colour = POP_ID)) +
@@ -496,6 +505,15 @@ detect_mixed_genomes <- function(
       plot = het.bp,
       width = max(4 * n.pop, 20), height = 10, dpi = 600, units = "cm",
       useDingbats = FALSE, limitsize = FALSE)
+
+
+    ggplot2::ggsave(
+      filename = file.path(path.folder, "individual.heterozygosity.boxplot.png"),
+      plot = het.bp,
+      width = max(4 * n.pop, 20), height = 10, dpi = 200, units = "cm",
+      limitsize = FALSE)
+
+
     het.ind.overall <- NULL
 
     if (interactive.filter) {

@@ -156,43 +156,43 @@ The code below was inspired from
     </div>
 
     <pre class="usage"><span class='fu'>mclapply_win</span>(
-  <span class='no'>X</span>,
-  <span class='no'>FUN</span>,
-  <span class='no'>...</span>,
-  <span class='kw'>mc.preschedule</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>mc.set.seed</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>mc.silent</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>mc.cores</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/options.html'>getOption</a></span>(<span class='st'>"mc.cores"</span>, <span class='fl'>2L</span>),
-  <span class='kw'>mc.cleanup</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>mc.allow.recursive</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>affinity.list</span> <span class='kw'>=</span> <span class='kw'>NULL</span>
+  <span class='kw'>X</span>,
+  <span class='kw'>FUN</span>,
+  <span class='kw'>...</span>,
+  mc.preschedule = <span class='fl'>TRUE</span>,
+  mc.set.seed = <span class='fl'>TRUE</span>,
+  mc.silent = <span class='fl'>FALSE</span>,
+  mc.cores = <span class='fu'><a href='https://rdrr.io/r/base/options.html'>getOption</a></span>(<span class='st'>"mc.cores"</span>, <span class='fl'>2L</span>),
+  mc.cleanup = <span class='fl'>TRUE</span>,
+  mc.allow.recursive = <span class='fl'>TRUE</span>,
+  affinity.list = <span class='kw'>NULL</span>
 )
 
 <span class='fu'>.radiator_parallel_mc</span>(
-  <span class='no'>X</span>,
-  <span class='no'>FUN</span>,
-  <span class='no'>...</span>,
-  <span class='kw'>mc.preschedule</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>mc.set.seed</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>mc.silent</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>mc.cores</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/options.html'>getOption</a></span>(<span class='st'>"mc.cores"</span>, <span class='fl'>2L</span>),
-  <span class='kw'>mc.cleanup</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>mc.allow.recursive</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>affinity.list</span> <span class='kw'>=</span> <span class='kw'>NULL</span>
+  <span class='kw'>X</span>,
+  <span class='kw'>FUN</span>,
+  <span class='kw'>...</span>,
+  mc.preschedule = <span class='fl'>TRUE</span>,
+  mc.set.seed = <span class='fl'>TRUE</span>,
+  mc.silent = <span class='fl'>FALSE</span>,
+  mc.cores = <span class='fu'><a href='https://rdrr.io/r/base/options.html'>getOption</a></span>(<span class='st'>"mc.cores"</span>, <span class='fl'>2L</span>),
+  mc.cleanup = <span class='fl'>TRUE</span>,
+  mc.allow.recursive = <span class='fl'>TRUE</span>,
+  affinity.list = <span class='kw'>NULL</span>
 )
 
 <span class='fu'>.radiator_parallel</span>(
-  <span class='no'>X</span>,
-  <span class='no'>FUN</span>,
-  <span class='no'>...</span>,
-  <span class='kw'>mc.style</span> <span class='kw'>=</span> <span class='st'>"ETA"</span>,
-  <span class='kw'>mc.substyle</span> <span class='kw'>=</span> <span class='fl'>NA</span>,
-  <span class='kw'>mc.cores</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/options.html'>getOption</a></span>(<span class='st'>"mc.cores"</span>, <span class='fl'>2L</span>),
-  <span class='kw'>ignore.interactive</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/options.html'>getOption</a></span>(<span class='st'>"ignore.interactive"</span>, <span class='no'>F</span>),
-  <span class='kw'>mc.preschedule</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>mc.set.seed</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>mc.cleanup</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>mc.allow.recursive</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>
+  <span class='kw'>X</span>,
+  <span class='kw'>FUN</span>,
+  <span class='kw'>...</span>,
+  mc.style = <span class='st'>"ETA"</span>,
+  mc.substyle = <span class='fl'>NA</span>,
+  mc.cores = <span class='fu'><a href='https://rdrr.io/r/base/options.html'>getOption</a></span>(<span class='st'>"mc.cores"</span>, <span class='fl'>2L</span>),
+  ignore.interactive = <span class='fu'><a href='https://rdrr.io/r/base/options.html'>getOption</a></span>(<span class='st'>"ignore.interactive"</span>, <span class='kw'>F</span>),
+  mc.preschedule = <span class='fl'>TRUE</span>,
+  mc.set.seed = <span class='fl'>TRUE</span>,
+  mc.cleanup = <span class='fl'>TRUE</span>,
+  mc.allow.recursive = <span class='fl'>TRUE</span>
 )</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -256,11 +256,11 @@ The code below was inspired from
 
       <footer>
       <div class="copyright">
-  <p>Developed by Thierry Gosselin, Floriaan Devloo-Delva.</p>
+  <p>Developed by Thierry Gosselin, Manuel Lamothe, Floriaan Devloo-Delva.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>

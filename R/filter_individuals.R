@@ -9,12 +9,12 @@
 #' \itemize{
 #' \item missingness (genotyping rate)
 #' \item heterozygosity
-#' \item coverage (total)
+#' \item coverage (total, median, iqr)
 #' }
 #'
 #' \strong{Filter targets}: Individuals
 #'
-#' \strong{Statistics}: Missingness, heterozygosity and total coverage
+#' \strong{Statistics}: Missingness, heterozygosity and coverage
 #'
 #' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 #' and might be of interest for users who wants to blacklist individuals.
@@ -36,9 +36,21 @@
 #' above which the individuals are blacklisted and removed from the dataset.
 #' Default: \code{filter.individuals.heterozygosity = NULL}.
 
-#' @param filter.individuals.coverage.total (optional, string of doubles) A proportion below and
+#' @param filter.individuals.coverage.total (optional, string of doubles)
+#' Target the total coverage per samples.
+#' A proportion below and
 #' above which the individuals are blacklisted and removed from the dataset.
 #' Default: \code{filter.individuals.coverage.total = NULL}.
+
+#' @param filter.individuals.coverage.median (optional, string of integers)
+#' Target the median coverage per samples.
+#' Integers, below and above, that blacklist individuals (removed from the dataset)
+#' Default: \code{filter.individuals.coverage.median = NULL}.
+
+#' @param filter.individuals.coverage.iqr (optional, string of integers)
+#' Target the IQR (Interquartile Range) coverage per samples.
+#' Integers, below and above, that blacklist individuals (removed from the dataset)
+#' Default: \code{filter.individuals.coverage.iqr = NULL}.
 
 #' @inheritParams radiator_common_arguments
 
@@ -54,7 +66,7 @@
 
 #' @examples
 #' \dontrun{
-#' require(SeqVarTools)
+#' require(SeqArray)
 #'
 #' # blacklisting outliers individuals:
 #' id.qc <- radiator::filter_individuals(
@@ -80,8 +92,9 @@ filter_individuals <- function(
   interactive.filter = TRUE,
   filter.individuals.missing = NULL,
   filter.individuals.heterozygosity = NULL,
-  # coverage.mean = NULL,
   filter.individuals.coverage.total = NULL,
+  filter.individuals.coverage.median = NULL,
+  filter.individuals.coverage.iqr = NULL,
   parallel.core = parallel::detectCores() - 1,
   verbose = TRUE,
   ...
@@ -92,23 +105,24 @@ filter_individuals <- function(
   # parameters <- NULL
   # id.stats <- NULL
   # internal <- FALSE
-  # dp <- TRUE
   # subsample <- NULL
   # subsample.markers.stats <- NULL
   # interactive.filter = TRUE
   # filter.individuals.missing = NULL
   # filter.individuals.heterozygosity = NULL
   # filter.individuals.coverage.total = NULL
+  # filter.individuals.coverage.median = NULL
+  # filter.individuals.coverage.iqr = NULL
   # parallel.core = parallel::detectCores() - 1
   # verbose = TRUE
 
 
-  # obj.keeper <- c(ls(envir = globalenv()), "data")
-
   if (interactive.filter ||
       !is.null(filter.individuals.missing) ||
       !is.null(filter.individuals.heterozygosity) ||
-      !is.null(filter.individuals.coverage.total)
+      !is.null(filter.individuals.coverage.total) ||
+      !is.null(filter.individuals.coverage.median) ||
+      !is.null(filter.individuals.coverage.iqr)
   ) {
     if (interactive.filter) verbose <- TRUE
     radiator_function_header(f.name = "filter_individuals", verbose = verbose)
@@ -135,7 +149,7 @@ filter_individuals <- function(
       fd = rlang::fn_fmls_names(),
       args.list = as.list(environment()),
       dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
-      keepers = c("path.folder", "parameters", "internal", "id.stats", "dp",
+      keepers = c("path.folder", "parameters", "internal", "id.stats",
                   "subsample", "subsample.markers.stats"),
       verbose = FALSE
     )
@@ -168,7 +182,7 @@ filter_individuals <- function(
       message("Step 1. Visualization")
       message("Step 2. Missingness")
       message("Step 3. Heterozygosity")
-      message("Step 4. Total Coverage (if available)\n\n")
+      message("Step 4. Coverage (if available)\n\n")
     }
 
     # Detect format ------------------------------------------------------------
@@ -430,13 +444,16 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
       )
     }#End filter.individuals.heterozygosity
 
-    # Step 4. Coverage total--------------------------------------------------------------
-    if (dp) {
+    # Step 4. Coverage ---------------------------------------------------------
+    depth.info <- "total coverage" %in% id.stats$stats$GROUP
+    if (depth.info) {
       if (interactive.filter) {
-        message("\nStep 4. Filtering markers based on individual's total coverage\n")
 
+        message("\nStep 4. Filtering markers based on individual's coverage\n")
+
+        # TOTAL COVERAGE -------------------------------------------------------
         filter.individuals.coverage.total <- radiator_question(
-          x = "Do you want to blacklist samples based on total coverage ? (y/n):",
+          x = "Do you want to blacklist samples based on TOTAL coverage ? (y/n):",
           answer.opt = c("y", "n"))
 
         if (filter.individuals.coverage.total == "y") {
@@ -447,24 +464,85 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
           } else {
             filter.individuals.coverage.total <- c(0,10000000000000000000000)
             filter.individuals.coverage.total[1] <- radiator_question(
-              x = "Enter the min proportion threshold (0-1)
-            The minimum amount of coverage you tolerate for a sample:", minmax = c(0, 10000000000000000000000))
+              x = "Enter the minimum TOTAL coverage threshold you tolerate for a sample:",
+              minmax = c(0, 10000000000000000000000)
+            )
             filter.individuals.coverage.total[2] <- radiator_question(
-              x = "Enter the max proportion threshold (0-1)
-            The maximum amount of coverage you tolerate for a sample:", minmax = c(0, 10000000000000000000000))
+              x = "Enter the maximum TOTAL coverage threshold you tolerate for a sample:",
+              minmax = c(0, 10000000000000000000000)
+              )
           }
           outlier.stats <- NULL
-        } else {
+        } else {# if no...
           filter.individuals.coverage.total <- NULL
         }
-      }
+
+        # MEDIAN COVERAGE  -----------------------------------------------------
+        filter.individuals.coverage.median <- radiator_question(
+          x = "Do you want to blacklist samples based on MEDIAN coverage ? (y/n):",
+          answer.opt = c("y", "n")
+        )
+
+        if (filter.individuals.coverage.median == "y") {
+          outlier.stats <- radiator_question(
+            x = "2 options to blacklist samples:\n1. based on the outlier statistics\n2. enter your own threshold", minmax = c(1, 2))
+          if (outlier.stats == 1) {
+            filter.individuals.coverage.median <- "outliers"
+          } else {
+            filter.individuals.coverage.median <- c(0,10000000000000000000000)
+            filter.individuals.coverage.median[1] <- radiator_question(
+              x = "Enter the minimum MEDIAN coverage threshold you tolerate for a sample:",
+              minmax = c(0, 10000000000000000000000)
+              )
+            filter.individuals.coverage.median[2] <- radiator_question(
+              x = "Enter the maximum MEDIAN coverage threshold you tolerate for a sample:",
+              minmax = c(0, 10000000000000000000000)
+              )
+          }
+          outlier.stats <- NULL
+        } else {# if no...
+          filter.individuals.coverage.median <- NULL
+        }
+
+
+        # IQR COVERAGE ---------------------------------------------------------
+        filter.individuals.coverage.iqr <- radiator_question(
+          x = "Do you want to blacklist samples based on Interquartile Range (IQR) coverage ? (y/n):",
+          answer.opt = c("y", "n")
+        )
+
+        if (filter.individuals.coverage.iqr == "y") {
+          outlier.stats <- radiator_question(
+            x = "2 options to blacklist samples:\n1. based on the outlier statistics\n2. enter your own threshold", minmax = c(1, 2))
+          if (outlier.stats == 1) {
+            filter.individuals.coverage.iqr <- "outliers"
+          } else {
+            filter.individuals.coverage.iqr <- c(0,10000000000000000000000)
+            filter.individuals.coverage.iqr[1] <- radiator_question(
+              x = "Enter the minimum IQR coverage threshold you tolerate for a sample:",
+              minmax = c(0, 10000000000000000000000)
+            )
+            filter.individuals.coverage.iqr[2] <- radiator_question(
+              x = "Enter the maximum IQR coverage threshold you tolerate for a sample:",
+              minmax = c(0, 10000000000000000000000)
+            )
+          }
+          outlier.stats <- NULL
+        } else {# if no...
+          filter.individuals.coverage.iqr <- NULL
+        }
+
+      }#End interactive mode
+
+
+      # filtering done here...
+      # TOTAL COVERAGE -------------------------------------------------------
       if (!is.null(filter.individuals.coverage.total)) {
         if (length(filter.individuals.coverage.total) > 1) {
           cov.low <- filter.individuals.coverage.total[1]
           cov.high <- filter.individuals.coverage.total[2]
           if (verbose) message("\nRemoving individuals based on total coverage statistics: ", cov.low, " / ", cov.high)
-          higher.eq <- FALSE
-          lower.eq <- FALSE
+          lower.eq <- higher.eq <- FALSE
         } else {
           if (is.character(filter.individuals.coverage.total)) {
             if (id.stats$stats$OUTLIERS_LOW[3] == id.stats$stats$MIN[3]) {
@@ -477,13 +555,11 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
             } else {
               higher.eq <- TRUE
             }
-            # cov.low <- floor(id.stats$stats$OUTLIERS_LOW[3]*1000)/1000
-            # cov.high <- floor(id.stats$stats$OUTLIERS_HIGH[3]*1000)/1000
             cov.low <- id.stats$stats$OUTLIERS_LOW[3]
             cov.high <- id.stats$stats$OUTLIERS_HIGH[3]
             if (verbose) message("\nRemoving outliers individuals based on total coverage statistics: ", cov.low, " / ", cov.high)
             } else {
-            rlang::abort("Unknown coverage total thresholds used")
+            rlang::abort("Unknown TOTAL coverage thresholds used")
           }
         }
 
@@ -519,16 +595,8 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
 
         if (n.bl > 0) {
           filter.monomorphic <- TRUE
-          # if (verbose) message("    number of individuals blacklisted based on total coverage: ", n.bl)
-          # if (verbose) message("    note that some duplicates might exist between blacklisted samples but accounted for in filtering")
-
           bl.filename <- stringi::stri_join("blacklist.individuals.coverate.total_", file.date, ".tsv")
           readr::write_tsv(x = bl, path = file.path(path.folder, bl.filename))
-          # bl.i <- update_bl_individuals(gds = data, update = bl)
-          # id.stats$info  %<>%
-          # dplyr::filter(!INDIVIDUALS %in% bl$INDIVIDUALS)
-
-          # update_radiator_gds(gds = data, node.name = "individuals.meta", value = id.stats$info, sync = TRUE)
         }
         # Filter parameter file: update
         filters.parameters <- radiator_parameters(
@@ -553,7 +621,181 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
           verbose
         )
       }#End coverage total
-    }
+
+      # MEDIAN COVERAGE  -----------------------------------------------------
+      if (!is.null(filter.individuals.coverage.median)) {
+        if (length(filter.individuals.coverage.median) > 1) {
+          cov.low <- filter.individuals.coverage.median[1]
+          cov.high <- filter.individuals.coverage.median[2]
+          if (verbose) message("\nRemoving individuals based on MEDIAN coverage statistics: ", cov.low, " / ", cov.high)
+          lower.eq <- higher.eq <- FALSE
+        } else {
+          if (is.character(filter.individuals.coverage.median)) {
+            if (id.stats$stats$OUTLIERS_LOW[5] == id.stats$stats$MIN[5]) {
+              lower.eq <- FALSE
+            } else {
+              lower.eq <- TRUE
+            }
+            if (id.stats$stats$OUTLIERS_HIGH[5] == id.stats$stats$MAX[5]) {
+              higher.eq <- FALSE
+            } else {
+              higher.eq <- TRUE
+            }
+            cov.low <- id.stats$stats$OUTLIERS_LOW[5]
+            cov.high <- id.stats$stats$OUTLIERS_HIGH[5]
+            if (verbose) message("\nRemoving outliers individuals based on MEDIAN coverage statistics: ", cov.low, " / ", cov.high)
+          } else {
+            rlang::abort("Unknown MEDIAN coverage thresholds used")
+          }
+        }
+
+        bl <- dplyr::ungroup(id.stats$info)
+
+        # fl & fh for filter high and low
+        if (lower.eq) {
+          fl <- "COVERAGE_MEDIAN <= cov.low"
+        } else {
+          fl <- "COVERAGE_MEDIAN < cov.low"
+        }
+        if (higher.eq) {
+          fh <- "COVERAGE_MEDIAN >= cov.high"
+        } else {
+          fh <- "COVERAGE_MEDIAN > cov.high"
+        }
+
+        filter.cov <- stringi::stri_join(fh, fl, sep = " | ")
+        bl %<>%
+          dplyr::filter(!!rlang::parse_expr(filter.cov)) %>%
+          dplyr::distinct(INDIVIDUALS) %>%
+          dplyr::mutate(FILTER = "filter.individuals.coverage.median")
+        n.bl <- nrow(bl)
+
+        individuals <- extract_individuals_metadata(gds = data, whitelist = FALSE) %>%
+          dplyr::mutate(
+            FILTERS = dplyr::if_else(
+              INDIVIDUALS %in% bl$INDIVIDUALS,
+              "filter.individuals.coverage.median", FILTERS
+            )
+          )
+        update_radiator_gds(gds = data, node.name = "individuals.meta", value = individuals, sync = TRUE)
+
+        if (n.bl > 0) {
+          filter.monomorphic <- TRUE
+          bl.filename <- stringi::stri_join("blacklist.individuals.coverate.median_", file.date, ".tsv")
+          readr::write_tsv(x = bl, path = file.path(path.folder, bl.filename))
+        }
+        # Filter parameter file: update
+        filters.parameters <- radiator_parameters(
+          generate = FALSE,
+          initiate = FALSE,
+          update = TRUE,
+          parameter.obj = filters.parameters,
+          data = data,
+          filter.name = "Filter individuals based on median coverage (with outlier stats or values)",
+          param.name = "filter.individuals.coverage.median",
+          values = paste(cov.low, cov.high, collapse = " / "),
+          path.folder = path.folder,
+          file.date = file.date,
+          internal = internal,
+          verbose = verbose)
+
+        # results ------------------------------------------------------------------
+        radiator_results_message(
+          rad.message = stringi::stri_join("\nFilter individuals based on median coverage: ", paste(cov.low, cov.high, collapse = " / ")),
+          filters.parameters,
+          internal,
+          verbose
+        )
+      }#End coverage median
+
+      # IQR COVERAGE ---------------------------------------------------------
+      if (!is.null(filter.individuals.coverage.iqr)) {
+        if (length(filter.individuals.coverage.iqr) > 1) {
+          cov.low <- filter.individuals.coverage.iqr[1]
+          cov.high <- filter.individuals.coverage.iqr[2]
+          if (verbose) message("\nRemoving individuals based on IQR coverage statistics: ", cov.low, " / ", cov.high)
+          lower.eq <- higher.eq <- FALSE
+        } else {
+          if (is.character(filter.individuals.coverage.iqr)) {
+            if (id.stats$stats$OUTLIERS_LOW[6] == id.stats$stats$MIN[6]) {
+              lower.eq <- FALSE
+            } else {
+              lower.eq <- TRUE
+            }
+            if (id.stats$stats$OUTLIERS_HIGH[6] == id.stats$stats$MAX[6]) {
+              higher.eq <- FALSE
+            } else {
+              higher.eq <- TRUE
+            }
+            cov.low <- id.stats$stats$OUTLIERS_LOW[6]
+            cov.high <- id.stats$stats$OUTLIERS_HIGH[6]
+            if (verbose) message("\nRemoving outliers individuals based on IQR coverage statistics: ", cov.low, " / ", cov.high)
+          } else {
+            rlang::abort("Unknown IQR coverage thresholds used")
+          }
+        }
+
+        bl <- dplyr::ungroup(id.stats$info)
+
+        # fl & fh for filter high and low
+        if (lower.eq) {
+          fl <- "COVERAGE_IQR <= cov.low"
+        } else {
+          fl <- "COVERAGE_IQR < cov.low"
+        }
+        if (higher.eq) {
+          fh <- "COVERAGE_IQR >= cov.high"
+        } else {
+          fh <- "COVERAGE_IQR > cov.high"
+        }
+
+        filter.cov <- stringi::stri_join(fh, fl, sep = " | ")
+        bl %<>%
+          dplyr::filter(!!rlang::parse_expr(filter.cov)) %>%
+          dplyr::distinct(INDIVIDUALS) %>%
+          dplyr::mutate(FILTER = "filter.individuals.coverage.iqr")
+        n.bl <- nrow(bl)
+
+        individuals <- extract_individuals_metadata(gds = data, whitelist = FALSE) %>%
+          dplyr::mutate(
+            FILTERS = dplyr::if_else(
+              INDIVIDUALS %in% bl$INDIVIDUALS,
+              "filter.individuals.coverage.iqr", FILTERS
+            )
+          )
+        update_radiator_gds(gds = data, node.name = "individuals.meta", value = individuals, sync = TRUE)
+
+        if (n.bl > 0) {
+          filter.monomorphic <- TRUE
+          bl.filename <- stringi::stri_join("blacklist.individuals.coverate.iqr_", file.date, ".tsv")
+          readr::write_tsv(x = bl, path = file.path(path.folder, bl.filename))
+        }
+        # Filter parameter file: update
+        filters.parameters <- radiator_parameters(
+          generate = FALSE,
+          initiate = FALSE,
+          update = TRUE,
+          parameter.obj = filters.parameters,
+          data = data,
+          filter.name = "Filter individuals based on iqr coverage (with outlier stats or values)",
+          param.name = "filter.individuals.coverage.iqr",
+          values = paste(cov.low, cov.high, collapse = " / "),
+          path.folder = path.folder,
+          file.date = file.date,
+          internal = internal,
+          verbose = verbose)
+
+        # results ------------------------------------------------------------------
+        radiator_results_message(
+          rad.message = stringi::stri_join("\nFilter individuals based on IQR coverage: ", paste(cov.low, cov.high, collapse = " / ")),
+          filters.parameters,
+          internal,
+          verbose
+        )
+      }#End coverage iqr
+
+
+    }#End DP
 
     # MONOMORPHIC MARKERS --------------------------------------------------
     data <- filter_monomorphic(

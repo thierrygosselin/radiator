@@ -151,5 +151,5 @@ radiator::detect_mixed_genomes(.)
 }
 }
 \author{
-Thierry Gosselin \email{thierrygosselin@icloud.com} and Peter Grewe \email{peter.grewe@csiro.au}
+Thierry Gosselin \email{thierrygosselin@icloud.com}
 }

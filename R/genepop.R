@@ -185,6 +185,12 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
   # With this function, it doesn't matter if the markers are on one row or one per row.
   markers <- dplyr::slice(.data = data, 1:(pop.indices[1] - 1)) %>% purrr::flatten_chr(.x = .)
   markers <- unlist(stringi::stri_split_fixed(str = markers, pattern = ","))
+  markers <- stringi::stri_replace_all_fixed(
+    str = markers,
+    pattern = " ",
+    replacement = "",
+    vectorize_all = FALSE
+    )
 
   # Remove markers from the dataset --------------------------------------------
   data %<>% dplyr::slice(-(1:(pop.indices[1] - 1)))

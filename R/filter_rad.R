@@ -404,8 +404,7 @@
 
 #' @export
 #' @rdname filter_rad
-#' @author Thierry Gosselin \email{thierrygosselin@@icloud.com} and
-#' Peter Grewe \email{peter.grewe@csiro.au}
+#' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 filter_rad <- function(
   data,
@@ -453,6 +452,7 @@ filter_rad <- function(
       "subsample.markers.stats",
       "filter.reproducibility", "filter.individuals.missing",
       "filter.individuals.heterozygosity", "filter.individuals.coverage.total",
+      "filter.individuals.coverage.median", "filter.individuals.coverage.iqr",
       "filter.common.markers", "filter.monomorphic", "filter.mac",
       "filter.coverage", "filter.genotyping", "filter.snp.position.read",
       "filter.snp.number", "filter.short.ld", "filter.long.ld", "long.ld.missing",
@@ -474,6 +474,8 @@ filter_rad <- function(
   filter.individuals.missing.bk <- filter.individuals.missing
   filter.individuals.heterozygosity.bk <- filter.individuals.heterozygosity
   filter.individuals.coverage.total.bk <- filter.individuals.coverage.total
+  filter.individuals.coverage.median.bk <- filter.individuals.coverage.median
+  filter.individuals.coverage.iqr.bk <- filter.individuals.coverage.iqr
   filter.mac.bk <- filter.mac
   filter.coverage.bk <- filter.coverage
   filter.genotyping.bk <- filter.genotyping
@@ -677,10 +679,10 @@ filter_rad <- function(
 
   # Genotypes metadata ---------------------------------------------------------
   # check for coverage information...
-  genotypes.meta <- extract_genotypes_metadata(gds, index.only = TRUE)
-  count.data <- "ALLELE_REF_DEPTH" %in% genotypes.meta
+  # genotypes.meta <- extract_genotypes_metadata(gds, index.only = TRUE)
+  # count.data <- "ALLELE_REF_DEPTH" %in% genotypes.meta
   # coverage.info <- "READ_DEPTH" %in% genotypes.meta
-  genotypes.meta <- NULL
+  # genotypes.meta <- NULL
 
   # Filter_individuals----------------------------------------------------------
   gds <- filter_individuals(
@@ -689,11 +691,12 @@ filter_rad <- function(
     filter.individuals.missing = filter.individuals.missing.bk,
     filter.individuals.heterozygosity = filter.individuals.heterozygosity.bk,
     filter.individuals.coverage.total = filter.individuals.coverage.total.bk,
+    filter.individuals.coverage.median = filter.individuals.coverage.median.bk,
+    filter.individuals.coverage.iqr = filter.individuals.coverage.iqr.bk,
     parallel.core = parallel.core,
     verbose = verbose,
     path.folder = wf,
     parameters = filters.parameters,
-    dp = count.data,
     internal = FALSE
   )
 

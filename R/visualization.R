@@ -211,6 +211,7 @@ tibble_stats <- function(x, group, subsample = NULL) {
     MIN = min(x, na.rm = TRUE),
     # Q25 = stats::quantile(x, 0.25, na.rm = TRUE),
     Q25 = Q[1],
+    MEAN = mean(x, na.rm = TRUE),
     MEDIAN = stats::median(x, na.rm = TRUE),
     Q75 = Q[2],
     MAX = max(x, na.rm = TRUE),
@@ -367,15 +368,17 @@ boxplot_stats <- function(
 
   print(fig.boxplot)
   if (!is.null(bp.filename)) {
-    suppressMessages(ggplot2::ggsave(
-      filename = file.path(path.folder, bp.filename),
-      plot = fig.boxplot,
-      width = width,
-      height = height,
-      dpi = 300, units = "cm",
-      limitsize = FALSE,
-      useDingbats = FALSE
-    )
+    suppressMessages(
+      ggplot2::ggsave(
+        filename = file.path(path.folder, bp.filename),
+        plot = fig.boxplot,
+        width = width,
+        height = height,
+        dpi = 300,
+        units = "cm",
+        limitsize = FALSE,
+        useDingbats = FALSE
+      )
     )
   }
   return(fig.boxplot)

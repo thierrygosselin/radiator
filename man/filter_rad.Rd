@@ -368,6 +368,5 @@ shark <- radiator::filter_rad(
 }
 }
 \author{
-Thierry Gosselin \email{thierrygosselin@icloud.com} and
-Peter Grewe \email{peter.grewe@csiro.au}
+Thierry Gosselin \email{thierrygosselin@icloud.com}
 }

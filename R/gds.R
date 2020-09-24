@@ -958,8 +958,9 @@ extract_coverage <- function(
       sync.markers.individuals = TRUE,
       whitelist = TRUE
     )
-    if (length(depth) == 0 || is.null(depth)) {
 
+    # No genotype metadata recorded:
+    if (length(depth) == 0 || is.null(depth)) {
       if (stringi::stri_detect_fixed(str = data.source, pattern = "Stacks") &&
           !gdsfmt::read.gdsn(gdsfmt::index.gdsn(
             node = gds, path = "radiator/biallelic", silent = TRUE))) {
@@ -972,9 +973,14 @@ extract_coverage <- function(
           check = "none", verbose = FALSE)$ID
       }
 
+      # by default
+      depth <- NULL
+
       if (length(have) > 0) {
         want <- c("DP", "AD", "CATG")
         parse.format.list <- purrr::keep(.x = have, .p = have %in% want)
+        depth <- NULL
+
         if (length(parse.format.list) > 0) {
           if (verbose) message("Extracting ", paste0(parse.format.list, collapse = ", "), " information...")
           # work on parallelization of this part
@@ -991,15 +997,15 @@ extract_coverage <- function(
             gds = gds,
             tidy = TRUE,
             wide = FALSE) %$% data.tidy
-        } else {
-          depth <- NULL
         }
         parse.format.list <- want <- NULL
       } else {
-        depth <- NULL
+        return(NULL)
       }
       have <- NULL
     }
+    # Defaults
+    m <- i <- coverage.info <- NULL
 
     if (!is.null(depth)) {
       # detect.catg
@@ -1034,7 +1040,9 @@ extract_coverage <- function(
       want <- c("READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH")
       have <- colnames(depth)
       want <- purrr::keep(.x = have, .p = have %in% want)
-      colnames_rep <- function(x, total = FALSE, mean = FALSE) {
+
+      # required functions -----------------------------------------------------
+      colnames_rep <- function(x, total = FALSE, mean = FALSE, median = FALSE, iqr = FALSE) {
         if (total) {
           x <- stringi::stri_replace_all_fixed(
             str = x,
@@ -1051,10 +1059,32 @@ extract_coverage <- function(
             vectorize_all = FALSE
           )
         }
+
+        if (median) {
+          x <- stringi::stri_replace_all_fixed(
+            str = x,
+            pattern = c("READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH"),
+            replacement = c("COVERAGE_MEDIAN", "REF_DEPTH_MEDIAN", "ALT_DEPTH_MEDIAN"),
+            vectorize_all = FALSE
+          )
+        }
+
+        if (iqr) {
+          x <- stringi::stri_replace_all_fixed(
+            str = x,
+            pattern = c("READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH"),
+            replacement = c("COVERAGE_IQR", "REF_DEPTH_IQR", "ALT_DEPTH_IQR"),
+            vectorize_all = FALSE
+          )
+        }
         return(x)
       }#End colnames_rep
 
-
+      # IQR radiator function
+      iqr_radiator <- function(x) {
+        iqr <- abs(diff(stats::quantile(x, probs = c(0.25, 0.75), na.rm = TRUE)))
+        return(iqr)
+      }#End iqr_radiator
 
       if (markers) {
         m <- dplyr::group_by(depth, MARKERS) %>%
@@ -1070,6 +1100,24 @@ extract_coverage <- function(
               dplyr::mutate_at(.tbl = ., .vars = want, .funs = as.integer) %>%
               dplyr::ungroup(.) %>%
               dplyr::rename_all(.funs = list(colnames_rep), mean = TRUE) %>%
+              dplyr::select(-MARKERS)
+          ) %>%
+          dplyr::bind_cols(
+            dplyr::group_by(depth, MARKERS) %>%
+              dplyr::summarise_at(.tbl = ., .vars = want, .funs = stats::median, na.rm = TRUE) %>%
+              dplyr::mutate_at(.tbl = ., .vars = want, .funs = round, digits = 0) %>%
+              dplyr::mutate_at(.tbl = ., .vars = want, .funs = as.integer) %>%
+              dplyr::ungroup(.) %>%
+              dplyr::rename_all(.funs = list(colnames_rep), median = TRUE) %>%
+              dplyr::select(-MARKERS)
+          ) %>%
+          dplyr::bind_cols(
+            dplyr::group_by(depth, MARKERS) %>%
+              dplyr::summarise_at(.tbl = ., .vars = want, .funs = iqr_radiator) %>%
+              dplyr::mutate_at(.tbl = ., .vars = want, .funs = round, digits = 0) %>%
+              dplyr::mutate_at(.tbl = ., .vars = want, .funs = as.integer) %>%
+              dplyr::ungroup(.) %>%
+              dplyr::rename_all(.funs = list(colnames_rep), iqr = TRUE) %>%
               dplyr::select(-MARKERS)
           )
       }
@@ -1088,10 +1136,26 @@ extract_coverage <- function(
               dplyr::ungroup(.) %>%
               dplyr::rename_all(.funs = list(colnames_rep), mean = TRUE) %>%
               dplyr::select(-INDIVIDUALS)
+          ) %>%
+          dplyr::bind_cols(
+            dplyr::group_by(depth, INDIVIDUALS) %>%
+              dplyr::summarise_at(.tbl = ., .vars = want, .funs = stats::median, na.rm = TRUE) %>%
+              dplyr::mutate_at(.tbl = ., .vars = want, .funs = round, digits = 0) %>%
+              dplyr::mutate_at(.tbl = ., .vars = want, .funs = as.integer) %>%
+              dplyr::ungroup(.) %>%
+              dplyr::rename_all(.funs = list(colnames_rep), median = TRUE) %>%
+              dplyr::select(-INDIVIDUALS)
+          ) %>%
+          dplyr::bind_cols(
+            dplyr::group_by(depth, INDIVIDUALS) %>%
+              dplyr::summarise_at(.tbl = ., .vars = want, .funs = iqr_radiator) %>%
+              dplyr::mutate_at(.tbl = ., .vars = want, .funs = round, digits = 0) %>%
+              dplyr::mutate_at(.tbl = ., .vars = want, .funs = as.integer) %>%
+              dplyr::ungroup(.) %>%
+              dplyr::rename_all(.funs = list(colnames_rep), iqr = TRUE) %>%
+              dplyr::select(-INDIVIDUALS)
           )
       }
-    } else {
-      m <- i <- coverage.info <- NULL
     }
 
   }#End DART counts
@@ -1103,16 +1167,17 @@ extract_coverage <- function(
       markers.meta.select = c("AVG_COUNT_REF", "AVG_COUNT_SNP"),
       whitelist = TRUE
     )
+    markers <- ind <- FALSE
+
     if (!is.null(depth)) {
       coverage.info$markers.mean <- as.integer(
         round(depth$AVG_COUNT_REF + depth$AVG_COUNT_SNP, 0))
       coverage.info$ref.mean <- as.integer(round(depth$AVG_COUNT_REF, 0))
       coverage.info$alt.mean <- as.integer(round(depth$AVG_COUNT_SNP, 0))
       depth <- NULL
-      markers <- ind <- FALSE
     } else {
       coverage.info <- NULL
-      markers <- ind <- FALSE
+      return(NULL)
     }
 
   }#End DART 1row and 2 rows
@@ -1122,7 +1187,11 @@ extract_coverage <- function(
   if (update.gds && markers) {
     markers.meta <- extract_markers_metadata(gds, whitelist = FALSE)
     m.levels <- markers.meta$MARKERS
-    not.wanted <- c("COVERAGE_MEAN", "REF_DEPTH_MEAN", "ALT_DEPTH_MEAN", "COVERAGE_TOTAL", "REF_DEPTH_TOTAL", "ALT_DEPTH_TOTAL")
+    not.wanted <- c("COVERAGE_MEAN", "REF_DEPTH_MEAN", "ALT_DEPTH_MEAN",
+                    "COVERAGE_TOTAL", "REF_DEPTH_TOTAL", "ALT_DEPTH_TOTAL",
+                    "COVERAGE_MEDIAN", "REF_DEPTH_MEDIAN", "ALT_DEPTH_MEDIAN",
+                    "COVERAGE_IQR", "REF_DEPTH_IQR", "ALT_DEPTH_IQR"
+    )
     if (any(not.wanted %in% colnames(markers.meta))) {
       suppressWarnings(markers.meta %<>% dplyr::select(-dplyr::one_of(not.wanted)))
     }
@@ -1140,19 +1209,26 @@ extract_coverage <- function(
   }
 
   if (markers) {
-    coverage.info$markers.tot <- if (rlang::has_name(m, "COVERAGE_TOTAL")) m$COVERAGE_TOTAL
-    coverage.info$markers.mean <- if (rlang::has_name(m, "COVERAGE_MEAN")) m$COVERAGE_MEAN
-    coverage.info$ref.tot <- if (rlang::has_name(m, "REF_DEPTH_TOTAL")) m$REF_DEPTH_TOTAL
-    coverage.info$ref.mean <- if (rlang::has_name(m, "REF_DEPTH_MEAN")) m$REF_DEPTH_MEAN
-    coverage.info$alt.tot <- if (rlang::has_name(m, "ALT_DEPTH_TOTAL")) m$ALT_DEPTH_TOTAL
-    coverage.info$alt.mean <- if (rlang::has_name(m, "ALT_DEPTH_MEAN")) m$ALT_DEPTH_MEAN
+    m %<>% dplyr::select(-MARKERS)
+    colnames(m) <- stringi::stri_replace_all_fixed(
+      str = colnames(m),
+      pattern = c("COVERAGE", "TOTAL", "_DEPTH", "_"),
+      replacement = c("markers", "tot", "", "."),
+      vectorize_all = FALSE
+      )
+    colnames(m) <- stringi::stri_trans_tolower(str = colnames(m))
+    coverage.info <- as.list(m)
     m <- NULL
   }
 
   if (update.gds && ind) {
     strata <- extract_individuals_metadata(gds = gds, whitelist = FALSE)
     i.levels <- strata$INDIVIDUALS
-    not.wanted <- c("COVERAGE_MEAN", "REF_DEPTH_MEAN", "ALT_DEPTH_MEAN", "COVERAGE_TOTAL", "REF_DEPTH_TOTAL", "ALT_DEPTH_TOTAL")
+    not.wanted <- c("COVERAGE_MEAN", "REF_DEPTH_MEAN", "ALT_DEPTH_MEAN",
+                    "COVERAGE_TOTAL", "REF_DEPTH_TOTAL", "ALT_DEPTH_TOTAL",
+                    "COVERAGE_MEDIAN", "REF_DEPTH_MEDIAN", "ALT_DEPTH_MEDIAN",
+                    "COVERAGE_IQR", "REF_DEPTH_IQR", "ALT_DEPTH_IQR"
+    )
     if (any(not.wanted %in% colnames(strata))) {
       suppressWarnings(strata %<>% dplyr::select(-dplyr::one_of(not.wanted)))
     }
@@ -1169,12 +1245,16 @@ extract_coverage <- function(
     strata <- NULL
   }
   if (ind) {
-    coverage.info$ind.cov.tot <- if (rlang::has_name(i, "COVERAGE_TOTAL")) i$COVERAGE_TOTAL
-    coverage.info$ind.cov.mean <- if (rlang::has_name(i, "COVERAGE_MEAN")) i$COVERAGE_MEAN
-    coverage.info$ind.ref.tot <- if (rlang::has_name(i, "REF_DEPTH_TOTAL")) i$REF_DEPTH_TOTAL
-    coverage.info$ind.ref.mean <- if (rlang::has_name(i, "REF_DEPTH_MEAN")) i$REF_DEPTH_MEAN
-    coverage.info$ind.alt.tot <- if (rlang::has_name(i, "ALT_DEPTH_TOTAL")) i$ALT_DEPTH_TOTAL
-    coverage.info$ind.alt.mean <- if (rlang::has_name(i, "ALT_DEPTH_MEAN")) i$ALT_DEPTH_MEAN
+    i %<>% dplyr::select(-INDIVIDUALS)
+    colnames(i) <- stringi::stri_replace_all_fixed(
+      str = colnames(i),
+      pattern = c("COVERAGE", "TOTAL", "_DEPTH", "REF", "ALT", "_"),
+      replacement = c("ind.cov", "tot", "", "ind.ref", "ind.alt", "."),
+      vectorize_all = FALSE
+    )
+    colnames(i) <- stringi::stri_trans_tolower(str = colnames(i))
+    i <- as.list(i)
+    coverage.info <- c(coverage.info, i)
     i <- NULL
   }
   return(coverage.info)
@@ -1698,7 +1778,7 @@ update_bl_individuals <- function(
 }#End update_bl_individuals
 
 
-# generate id/sample statistics-------------------------------------------------
+# generate id statistics--------------------------------------------------------
 #' @title generate_id_stats
 #' @description Generate id/sample statistics
 #' @rdname generate_id_stats
@@ -1744,6 +1824,9 @@ generate_id_stats <- function(
 
   id.info <- extract_individuals_metadata(gds, whitelist = TRUE)
 
+  # by defaults
+  id.stats.m <- id.stats.h <- id.stats.c <- NULL
+
   # missing --------------------------------------------------------------------
   if (missing) {
     # info
@@ -1763,9 +1846,6 @@ generate_id_stats <- function(
     id.stats.m <- tibble_stats(
       x = id.info$MISSING_PROP,
       group = "missing genotypes")
-  } else {
-    missing <- FALSE
-    id.stats.m <- NULL
   }# End missing
 
 
@@ -1790,21 +1870,21 @@ generate_id_stats <- function(
     id.stats.h <- tibble_stats(
       x = id.info$HETEROZYGOSITY,
       group = "heterozygosity")
-  } else {
-    heterozygosity <- FALSE
-    id.stats.h <- NULL
-  }
+  } # het
 
   # coverage -------------------------------------------------------------------
   if (coverage) {
     # info
     dp <- extract_coverage(gds, markers = FALSE)
 
+    # check that DP exist...
     if (!is.null(dp) && "ind.cov.tot" %in% names(dp)) {
       id.info %<>%
         dplyr::mutate(
           COVERAGE_TOTAL = dp$ind.cov.tot,
-          COVERAGE_MEAN = dp$ind.cov.mean
+          COVERAGE_MEAN = dp$ind.cov.mean,
+          COVERAGE_MEDIAN = dp$ind.cov.median,
+          COVERAGE_IQR = dp$ind.cov.iqr
         )
 
       id.info$COVERAGE_MEAN[is.na(id.info$COVERAGE_MEAN)] <- 0
@@ -1817,27 +1897,30 @@ generate_id_stats <- function(
           group = "total coverage"),
         tibble_stats(
           x = as.numeric(id.info$COVERAGE_MEAN),
-          group = "mean coverage")
+          group = "mean coverage"),
+        tibble_stats(
+          x = as.numeric(id.info$COVERAGE_MEDIAN),
+          group = "median coverage"),
+        tibble_stats(
+          x = as.numeric(id.info$COVERAGE_IQR),
+          group = "iqr coverage")
       )
     } else {
       coverage <- FALSE
       id.stats.c <- NULL
     }
-  } else {
-    coverage <- FALSE
-    id.stats.c <- NULL
   } # End coverage
 
   # Generate the stats
   id.stats <- dplyr::bind_rows(id.stats.m, id.stats.h, id.stats.c)
-  id.levels <- c("total coverage", "mean coverage", "missing genotypes", "heterozygosity")
+  id.levels <- c("total coverage", "mean coverage", "median coverage", "iqr coverage", "missing genotypes", "heterozygosity")
   id.stats$GROUP <- factor(x = id.stats$GROUP, levels = id.levels, ordered = TRUE)
   id.stats$GROUP <- droplevels(x = id.stats$GROUP)
 
   id.stats.filename <- stringi::stri_join("individuals.qc.stats_", file.date, ".tsv")
   if (!is.null(id.info)) readr::write_tsv(x = id.info, path = file.path(path.folder, id.stats.filename))
   id.stats.filename <- stringi::stri_join("individuals.qc.stats.summary_", file.date, ".tsv")
-  if (!is.null(id.stats))readr::write_tsv(x = id.stats, path = file.path(path.folder, id.stats.filename))
+  if (!is.null(id.stats)) readr::write_tsv(x = id.stats, path = file.path(path.folder, id.stats.filename))
   if (verbose) message("File written: individuals qc info and stats summary")
 
   # Generate plots
@@ -1881,7 +1964,8 @@ generate_id_stats <- function(
       n.markers.iqr <- ceiling(id.stats[[2,7]] * n.markers)
 
       corr.info <- stringi::stri_join(
-        "n. het markers in the bp range = ", n.markers.range,
+        "n.markers = ", n.markers,
+        "\nn. het markers in the bp range = ", n.markers.range,
         "\nn. het markers in the bp IQR = ", n.markers.iqr,
         "\n\n", corr.info
       )
@@ -1946,15 +2030,22 @@ generate_markers_stats <- function(
   verbose = TRUE
 ) {
 
-  # coverage <- TRUE
-  # allele.coverage <- TRUE
-  # mac <- TRUE
-  # missing <- TRUE
-  # heterozygosity <- TRUE
-  # snp.per.locus <- TRUE
-  # snp.position.read <- TRUE
+  # coverage = TRUE
+  # allele.coverage = TRUE
+  # missing = TRUE
+  # mac = TRUE
+  # heterozygosity = TRUE
+  # snp.position.read = TRUE
+  # snp.per.locus = TRUE
+  # path.folder = NULL
+  # filename = NULL
   # fig.filename = NULL
   # plot = TRUE
+  # force.stats = TRUE
+  # subsample = NULL
+  # file.date = NULL
+  # parallel.core = parallel::detectCores() - 1
+  # verbose = TRUE
 
   if (is.null(path.folder)) path.folder <- getwd()
   if (is.null(file.date)) file.date <- format(Sys.time(), "%Y%m%d@%H%M")
@@ -1996,6 +2087,7 @@ generate_markers_stats <- function(
   if (allele.coverage) mac <- TRUE # by default the mac info is needed...
   if (!rlang::has_name(info, "COL")) snp.position.read <- FALSE
 
+  stats.cmd <- stats.cmi <- NULL
   stats.cm <- stats.ct <- stats.mac <- NULL
   stats.rt <- stats.at <- stats.am <- stats.rm <- NULL
   stats.m <- stats.h <- stats.f <- stats.s <- stats.sp <- ad.info <- NULL
@@ -2035,7 +2127,18 @@ generate_markers_stats <- function(
           x = info$COVERAGE_MEAN,
           group = "mean coverage")
       }
-
+      if (!is.null(mc$markers.median)) {
+        info$COVERAGE_MEDIAN <- mc$markers.median
+        stats.cmd <- tibble_stats(
+          x = info$COVERAGE_MEDIAN,
+          group = "median coverage")
+      }
+      if (!is.null(mc$markers.iqr)) {
+        info$COVERAGE_IQR <- mc$markers.iqr
+        stats.cmi <- tibble_stats(
+          x = info$COVERAGE_IQR,
+          group = "iqr coverage")
+      }
       if (!is.null(mc$ref.mean)) {
         info$REF_DEPTH_MEAN <- mc$ref.mean
         allele.coverage <- mac <- TRUE
@@ -2043,6 +2146,19 @@ generate_markers_stats <- function(
       if (!is.null(mc$alt.mean)) {
         info$ALT_DEPTH_MEAN <- mc$alt.mean
       }
+      if (!is.null(mc$ref.median)) {
+        info$REF_DEPTH_MEDIAN <- mc$ref.median
+      }
+      if (!is.null(mc$ref.iqr)) {
+        info$REF_DEPTH_IQR <- mc$ref.iqr
+      }
+      if (!is.null(mc$alt.median)) {
+        info$ALT_DEPTH_MEDIAN <- mc$alt.median
+      }
+      if (!is.null(mc$alt.iqr)) {
+        info$ALT_DEPTH_IQR <- mc$alt.iqr
+      }
+
       mc <- NULL
     } else {
       stats.ct <- tibble_stats(
@@ -2271,7 +2387,7 @@ generate_markers_stats <- function(
 
   # Generate the stats
   stats <- dplyr::bind_rows(
-    stats.cm, stats.ct,#coverage
+    stats.cm, stats.cmd, stats.cmi, stats.ct,#coverage
     stats.mac, #MAC
     stats.rt, stats.at, stats.rm, stats.am, # allele depth
     stats.m, # missing
@@ -2284,7 +2400,7 @@ generate_markers_stats <- function(
 
   markers.levels <- c(
     "total coverage", "total ref depth", "total alt depth",
-    "mean coverage", "mean ref depth", "mean alt depth",
+    "mean coverage", "mean ref depth", "mean alt depth", "median coverage", "iqr coverage",
     "missing genotypes",
     "MAC",  "observed heterozygosity",
     "inbreeding coefficient (Fis)",

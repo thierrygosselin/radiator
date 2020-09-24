@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Write a <code>COLONY</code> input file — write_colony • radiator</title>
+<title>Write a COLONY input file — write_colony • radiator</title>
 
 
 <!-- jquery -->
@@ -39,7 +39,7 @@
 
 
 
-<meta property="og:title" content="Write a <code>COLONY</code> input file — write_colony" />
+<meta property="og:title" content="Write a COLONY input file — write_colony" />
 <meta property="og:description" content="Write a COLONY input file." />
 
 
@@ -136,25 +136,25 @@
     </div>
 
     <pre class="usage"><span class='fu'>write_colony</span>(
-  <span class='no'>data</span>,
-  <span class='kw'>strata</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>sample.markers</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>pop.select</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>allele.freq</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>inbreeding</span> <span class='kw'>=</span> <span class='fl'>0</span>,
-  <span class='kw'>mating.sys.males</span> <span class='kw'>=</span> <span class='fl'>0</span>,
-  <span class='kw'>mating.sys.females</span> <span class='kw'>=</span> <span class='fl'>0</span>,
-  <span class='kw'>clone</span> <span class='kw'>=</span> <span class='fl'>0</span>,
-  <span class='kw'>run.length</span> <span class='kw'>=</span> <span class='fl'>2</span>,
-  <span class='kw'>analysis</span> <span class='kw'>=</span> <span class='fl'>1</span>,
-  <span class='kw'>allelic.dropout</span> <span class='kw'>=</span> <span class='fl'>0</span>,
-  <span class='kw'>error.rate</span> <span class='kw'>=</span> <span class='fl'>0.02</span>,
-  <span class='kw'>print.all.colony.opt</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>random.seed</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>parallel.core</span> <span class='kw'>=</span> <span class='kw pkg'>parallel</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span>() - <span class='fl'>1</span>,
-  <span class='kw'>filename</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='no'>...</span>
+  <span class='kw'>data</span>,
+  strata = <span class='kw'>NULL</span>,
+  sample.markers = <span class='kw'>NULL</span>,
+  pop.select = <span class='kw'>NULL</span>,
+  allele.freq = <span class='kw'>NULL</span>,
+  inbreeding = <span class='fl'>0</span>,
+  mating.sys.males = <span class='fl'>0</span>,
+  mating.sys.females = <span class='fl'>0</span>,
+  clone = <span class='fl'>0</span>,
+  run.length = <span class='fl'>2</span>,
+  analysis = <span class='fl'>1</span>,
+  allelic.dropout = <span class='fl'>0</span>,
+  error.rate = <span class='fl'>0.02</span>,
+  print.all.colony.opt = <span class='fl'>FALSE</span>,
+  random.seed = <span class='kw'>NULL</span>,
+  verbose = <span class='fl'>FALSE</span>,
+  parallel.core = <span class='kw'>parallel</span>::<span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span>() <span class='op'>-</span> <span class='fl'>1</span>,
+  filename = <span class='kw'>NULL</span>,
+  <span class='kw'>...</span>
 )</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -309,12 +309,16 @@ Parentage Assignment from Multilocus Marker Data. Genetics, 191, 183–194.</p>
 <a href='http://www.zsl.org/science/software/colony'>http://www.zsl.org/science/software/colony</a></p>
 
 <p><a href='https://thierrygosselin.github.io/radiator/articles/rad_genomics_computer_setup.html#colony'>colony installation instructions</a></p></div>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Thierry Gosselin <a href='mailto:thierrygosselin@icloud.com'>thierrygosselin@icloud.com</a></p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='kw'>if</span> (<span class='fl'>FALSE</span>) {
+    <pre class="examples"><div class='input'><span class='co'>if</span> (<span class='fl'>FALSE</span>) {
 <span class='co'># Simplest way to run the function with a tidy dataset:</span>
-<span class='no'>colony.file</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>radiator</span><span class='kw ns'>::</span><span class='fu'>write_colony</span>(<span class='kw'>data</span> <span class='kw'>=</span> <span class='st'>"turtle.data.rad"</span>)
-}</div></pre>
+<span class='kw'>colony.file</span> <span class='op'>&lt;-</span> <span class='kw'>radiator</span>::<span class='fu'>write_colony</span>(data = <span class='st'>"turtle.data.rad"</span>)
+}
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
@@ -326,11 +330,11 @@ Parentage Assignment from Multilocus Marker Data. Genetics, 191, 183–194.</p>
 
       <footer>
       <div class="copyright">
-  <p>Developed by Thierry Gosselin, Floriaan Devloo-Delva.</p>
+  <p>Developed by Thierry Gosselin, Manuel Lamothe, Floriaan Devloo-Delva.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>

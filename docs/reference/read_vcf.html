@@ -41,8 +41,8 @@
 
 <meta property="og:title" content="Read VCF files and write a GDS file — read_vcf" />
 <meta property="og:description" content="The function reads VCF files for radiator and
-generate a connection SeqArray SeqArray
-GDS object/file of class SeqVarGDSClass (Zheng et al. 2017)
+generate a connection SeqArray
+GDS object/file of class SeqVarGDSClass (Zheng et al. 2017).
 The Genomic Data Structure (GDS) file format is detailed in
 gdsfmt.
 The function as an advance mode that allows various filtering arguments to
@@ -143,8 +143,8 @@ and might be of interest for users." />
 
     <div class="ref-description">
     <p>The function reads VCF files for radiator and
-generate a connection SeqArray <a href='https://github.com/zhengxwen/SeqArray'>SeqArray</a>
-GDS object/file of class <code>SeqVarGDSClass</code> (Zheng et al. 2017)
+generate a connection <a href='https://github.com/zhengxwen/SeqArray'>SeqArray</a>
+GDS object/file of class <code>SeqVarGDSClass</code> (Zheng et al. 2017).
 The Genomic Data Structure (GDS) file format is detailed in
 <a href='https://github.com/zhengxwen/gdsfmt'>gdsfmt</a>.</p>
 <p>The function as an advance mode that allows various filtering arguments to
@@ -156,13 +156,13 @@ and might be of interest for users.</p>
     </div>
 
     <pre class="usage"><span class='fu'>read_vcf</span>(
-  <span class='no'>data</span>,
-  <span class='kw'>strata</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>filename</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>vcf.stats</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>parallel.core</span> <span class='kw'>=</span> <span class='kw pkg'>parallel</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span>() - <span class='fl'>1</span>,
-  <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='no'>...</span>
+  <span class='kw'>data</span>,
+  strata = <span class='kw'>NULL</span>,
+  filename = <span class='kw'>NULL</span>,
+  vcf.stats = <span class='fl'>TRUE</span>,
+  parallel.core = <span class='kw'>parallel</span>::<span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span>() <span class='op'>-</span> <span class='fl'>1</span>,
+  verbose = <span class='fl'>TRUE</span>,
+  <span class='kw'>...</span>
 )</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -173,7 +173,7 @@ and might be of interest for users.</p>
       <td><p>(path, character) The VCF markers are biallelic SNPs or haplotypes.
 To make the VCF population-ready, you have to use <code>strata</code> argument.</p>
 <ul>
-<li><p><strong>GATK, platypus and ipyrad VCFs:</strong>
+<li><p><strong>GATK, platypus, samtools and ipyrad VCFs:</strong>
 Some VCFs have an <code>ID</code> column filled with <code>.</code>,
 the LOCUS information is all contained along the linkage group in the
 <code>CHROM</code> column. Consequently, the short read locus information is unknown.
@@ -250,7 +250,8 @@ Default: <code>verbose = TRUE</code>.</p></td>
     <p>A vcf file of 35 GB with ~4 millions SNPs take about ~7 min with 8 CPU.
 A vcf file of 21 GB with ~2 millions SNPs take about ~5 min with 7 CPU.</p>
 <p>After the file is generated, you can close your computer and
-come back to it a month later and it's now a matter of sec to open a connection.</p>
+come back to it a months later and it's now a matter of sec to open a connection.
+See example below.</p>
 
 <p><strong>markers heterozygosity and inbreeding coefficient</strong>:
 The heterozygosity statistics (het obs and Fis) presented in this function
@@ -283,8 +284,10 @@ the <code>ID</code> column is filled with the <code>POS</code> column info.</p>
 <p><strong>platypus:</strong> Some VCF files don't have an ID filed with values,
 here the same thing is done as GATK VCF files above.</p>
 <p><strong>freebayes:</strong> Some VCF files don't have an ID filed with values,
-here the same thing is done as GATK VCF files above.</p>
-<p><strong>stacks:</strong> with <em>de novo</em> approaches, the CHROM column is
+here the same thing is done as GATK VCF files above.
+<strong>samtools:</strong> Some VCF files don't have an ID filed with values,
+here the same thing is done as GATK VCF files above.
+<strong>stacks:</strong> with <em>de novo</em> approaches, the CHROM column is
 filled with "1", the LOCUS column correspond to the CHROM section in stacks VCF and
 the COL column is POS -1. With a reference genome, the ID column in stacks VCF is
 separated into "LOCUS", "COL", "STRANDS".</p>
@@ -381,29 +384,44 @@ Bioinformatics, 27, 2156-2158.</p>
     <div class='dont-index'><p><code><a href='filter_ld.html'>filter_ld</a></code>
 <code><a href='tidy_genomic_data.html'>tidy_genomic_data</a></code>
 <code><a href='tidy_vcf.html'>tidy_vcf</a></code></p></div>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Thierry Gosselin <a href='mailto:thierrygosselin@icloud.com'>thierrygosselin@icloud.com</a></p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='kw'>if</span> (<span class='fl'>FALSE</span>) {
-<span class='co'>#require(SeqVarTools)</span>
+    <pre class="examples"><div class='input'><span class='co'>if</span> (<span class='fl'>FALSE</span>) {
+<span class='co'># require(SeqArray)</span>
 <span class='co'># with built-in defaults:</span>
- <span class='no'>prep.data</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>radiator</span><span class='kw ns'>::</span><span class='fu'>read_vcf</span>(<span class='kw'>data</span> <span class='kw'>=</span> <span class='st'>"populations.snps.vcf"</span>)
 
-<span class='co'># Using more arguments and filters (recommended):</span>
-<span class='no'>prep.data</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>radiator</span><span class='kw ns'>::</span><span class='fu'>read_vcf</span>(
-    <span class='kw'>data</span> <span class='kw'>=</span> <span class='st'>"populations.snps.vcf"</span>,
-    <span class='kw'>strata</span> <span class='kw'>=</span> <span class='st'>"strata_salamander.tsv"</span>,
-    <span class='kw'>path.folder</span> <span class='kw'>=</span> <span class='st'>"salamander"</span>,
-    <span class='kw'>filter.individuals.missing</span> <span class='kw'>=</span> <span class='st'>"outliers"</span>,
-    <span class='kw'>filter.common.markers</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-    <span class='kw'>filter.strands</span> <span class='kw'>=</span> <span class='st'>"blacklist"</span>,
-    <span class='kw'>filter.mac</span> <span class='kw'>=</span> <span class='fl'>4</span>,
-    <span class='kw'>filter.genotyping</span> <span class='kw'>=</span> <span class='fl'>0.3</span>,
-    <span class='kw'>filter.snp.position.read</span> <span class='kw'>=</span> <span class='st'>"outliers"</span>,
-    <span class='kw'>filter.short.ld</span> <span class='kw'>=</span> <span class='st'>"mac"</span>,
-    <span class='kw'>filter.long.ld</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-    <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>
+<span class='kw'>data</span> <span class='op'>&lt;-</span> <span class='kw'>radiator</span>::<span class='fu'>read_vcf</span>(data = <span class='st'>"populations.snps.vcf"</span>)
+
+<span class='co'># Because no strata file is provided, the individuals are assumed to be in</span>
+<span class='co'># the same group.</span>
+
+<span class='co'># If you need to filter the VCF I recommend using ?radiator::filter_rad</span>
+
+<span class='co'># But if you're certain about the filters thresholds, additional arguments are available:</span>
+
+<span class='kw'>data</span> <span class='op'>&lt;-</span> <span class='kw'>radiator</span>::<span class='fu'>read_vcf</span>(
+    data = <span class='st'>"populations.snps.vcf"</span>,
+    strata = <span class='st'>"strata_salamander.tsv"</span>,
+    path.folder = <span class='st'>"salamander"</span>,
+    filter.individuals.missing = <span class='st'>"outliers"</span>,
+    filter.common.markers = <span class='fl'>TRUE</span>,
+    filter.strands = <span class='st'>"blacklist"</span>,
+    filter.mac = <span class='fl'>4</span>,
+    filter.genotyping = <span class='fl'>0.3</span>,
+    filter.snp.position.read = <span class='st'>"outliers"</span>,
+    filter.short.ld = <span class='st'>"mac"</span>,
+    filter.long.ld = <span class='kw'>NULL</span>,
+    verbose = <span class='fl'>TRUE</span>
     )
-}</div></pre>
+
+<span class='co'># In a new R session, to re-open the GDS file/connection:</span>
+
+<span class='kw'>data</span> <span class='op'>&lt;-</span> <span class='kw'>radiator</span>::<span class='fu'><a href='read_rad.html'>read_rad</a></span>(data = <span class='st'>"radiator_20200911@0748.gds"</span>)
+}
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
@@ -415,11 +433,11 @@ Bioinformatics, 27, 2156-2158.</p>
 
       <footer>
       <div class="copyright">
-  <p>Developed by Thierry Gosselin, Floriaan Devloo-Delva.</p>
+  <p>Developed by Thierry Gosselin, Manuel Lamothe, Floriaan Devloo-Delva.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>

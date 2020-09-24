@@ -164,13 +164,13 @@ reality of GBS/RADseq data while maintaining a reproducible workflow.</p>
     </div>
 
     <pre class="usage"><span class='fu'>genomic_converter</span>(
-  <span class='no'>data</span>,
-  <span class='kw'>strata</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>output</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>filename</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>parallel.core</span> <span class='kw'>=</span> <span class='kw pkg'>parallel</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span>() - <span class='fl'>1</span>,
-  <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='no'>...</span>
+  <span class='kw'>data</span>,
+  strata = <span class='kw'>NULL</span>,
+  output = <span class='kw'>NULL</span>,
+  filename = <span class='kw'>NULL</span>,
+  parallel.core = <span class='kw'>parallel</span>::<span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span>() <span class='op'>-</span> <span class='fl'>1</span>,
+  verbose = <span class='fl'>TRUE</span>,
+  <span class='kw'>...</span>
 )</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -245,7 +245,7 @@ Default: <code>verbose = TRUE</code>.</p></td>
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
     <p>The function returns an object (list). The content of the object
-can be listed with <code><a href='https://rdrr.io/r/base/names.html'>names(object)</a></code> and use <code>$</code> to isolate specific
+can be listed with <code><a href='https://rdrr.io/r/base/names.html'>names(object)</a></code> and use <code><a href='https://rdrr.io/r/base/Extract.html'>$</a></code> to isolate specific
 object (see examples). Some output format will write the output file in the
 working directory. The tidy genomic data frame is generated automatically.</p>
     <h2 class="hasAnchor" id="input-genomic-datasets"><a class="anchor" href="#input-genomic-datasets"></a>Input genomic datasets</h2>
@@ -412,23 +412,27 @@ Bioinformatics.</p>
 <p><code><a href='tidy_genomic_data.html'>tidy_genomic_data</a></code></p>
 <p><a href='https://github.com/thierrygosselin/grur'>grur</a></p>
 <p><code><a href='read_strata.html'>read_strata</a></code></p></div>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Thierry Gosselin <a href='mailto:thierrygosselin@icloud.com'>thierrygosselin@icloud.com</a></p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='kw'>if</span> (<span class='fl'>FALSE</span>) {
+    <pre class="examples"><div class='input'><span class='co'>if</span> (<span class='fl'>FALSE</span>) {
 <span class='co'>#To verify your file is detected by radiator as the correct format:</span>
-<span class='kw pkg'>radiator</span><span class='kw ns'>::</span><span class='fu'><a href='detect_genomic_format.html'>detect_genomic_format</a></span>(<span class='kw'>data</span> <span class='kw'>=</span> <span class='st'>"populations.snps.vcf"</span>)
+<span class='kw'>radiator</span>::<span class='fu'><a href='detect_genomic_format.html'>detect_genomic_format</a></span>(data = <span class='st'>"populations.snps.vcf"</span>)
 
 <span class='co'># The simplest form of the function:</span>
-<span class='fu'><a href='https://rdrr.io/r/base/library.html'>require</a></span>(<span class='no'>SeqVarTools</span>) <span class='co'># when using vcf as input file</span>
-<span class='no'>snowcrab</span> <span class='kw'>&lt;-</span> <span class='fu'>genomic_converter</span>(
-                   <span class='kw'>data</span> <span class='kw'>=</span> <span class='st'>"populations.snps.vcf"</span>, <span class='kw'>strata</span> <span class='kw'>=</span> <span class='st'>"snowcrab.strata.tsv"</span>,
-                   <span class='kw'>output</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"genlight"</span>, <span class='st'>"genepop"</span>))
+<span class='fu'><a href='https://rdrr.io/r/base/library.html'>require</a></span>(<span class='kw'><a href='https://github.com/smgogarten/SeqVarTools'>SeqVarTools</a></span>) <span class='co'># when using vcf as input file</span>
+<span class='kw'>snowcrab</span> <span class='op'>&lt;-</span> <span class='fu'>genomic_converter</span>(
+                   data = <span class='st'>"populations.snps.vcf"</span>, strata = <span class='st'>"snowcrab.strata.tsv"</span>,
+                   output = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"genlight"</span>, <span class='st'>"genepop"</span>))
 
 <span class='co'>#Get the content of the object created using:</span>
-<span class='fu'><a href='https://rdrr.io/r/base/names.html'>names</a></span>(<span class='no'>snowcrab</span>)
+<span class='fu'><a href='https://rdrr.io/r/base/names.html'>names</a></span>(<span class='kw'>snowcrab</span>)
 <span class='co'>#To isolate the genlight object (without imputation):</span>
-<span class='no'>genlight</span> <span class='kw'>&lt;-</span> <span class='no'>snowcrab</span>$<span class='no'>genlight</span>
-}</div></pre>
+<span class='kw'>genlight</span> <span class='op'>&lt;-</span> <span class='kw'>snowcrab</span><span class='op'>$</span><span class='kw'>genlight</span>
+}
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
@@ -440,11 +444,11 @@ Bioinformatics.</p>
 
       <footer>
       <div class="copyright">
-  <p>Developed by Thierry Gosselin, Floriaan Devloo-Delva.</p>
+  <p>Developed by Thierry Gosselin, Manuel Lamothe, Floriaan Devloo-Delva.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>

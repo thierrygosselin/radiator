@@ -565,7 +565,20 @@ detect_duplicate_genomes <- function(
       ggplot2::ggsave(
         filename = file.path(path.folder, "violin.plot.distance.pdf"),
         plot = res$violin.plot.distance,
-        width = 20, height = 15, dpi = 150, units = "cm", useDingbats = FALSE)
+        width = 20,
+        height = 15,
+        dpi = 200,
+        units = "cm",
+        useDingbats = FALSE
+        )
+      ggplot2::ggsave(
+        filename = file.path(path.folder, "violin.plot.distance.png"),
+        plot = res$violin.plot.distance,
+        width = 20,
+        height = 15,
+        dpi = 200,
+        units = "cm"
+      )
 
       # Manhattan plot
       res$manhattan.plot.distance <- ggplot2::ggplot(
@@ -589,10 +602,26 @@ detect_duplicate_genomes <- function(
           axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
         ) +
         ggplot2::theme_light()
+
       ggplot2::ggsave(
         filename = file.path(path.folder, "manhattan.plot.distance.pdf"),
         plot = res$manhattan.plot.distance,
-        width = 20, height = 15, dpi = 150, units = "cm", useDingbats = FALSE)
+        width = 20,
+        height = 15,
+        dpi = 200,
+        units = "cm",
+        useDingbats = FALSE
+        )
+
+      ggplot2::ggsave(
+        filename = file.path(path.folder, "manhattan.plot.distance.png"),
+        plot = res$manhattan.plot.distance,
+        width = 20,
+        height = 15,
+        dpi = 200,
+        units = "cm"
+      )
+
     } # end distance method
 
     # Compute genome similarity -------------------------------------------------

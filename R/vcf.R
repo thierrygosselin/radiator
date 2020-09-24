@@ -3,8 +3,8 @@
 #' @name read_vcf
 #' @title Read VCF files and write a GDS file
 #' @description The function reads VCF files for radiator and
-#' generate a connection SeqArray \href{https://github.com/zhengxwen/SeqArray}{SeqArray}
-#' GDS object/file of class \code{SeqVarGDSClass} (Zheng et al. 2017)
+#' generate a connection \href{https://github.com/zhengxwen/SeqArray}{SeqArray}
+#' GDS object/file of class \code{SeqVarGDSClass} (Zheng et al. 2017).
 #' The Genomic Data Structure (GDS) file format is detailed in
 #' \href{https://github.com/zhengxwen/gdsfmt}{gdsfmt}.
 #'
@@ -21,7 +21,7 @@
 #' To make the VCF population-ready, you have to use \code{strata} argument.
 #'
 #' \itemize{
-#' \item \strong{GATK, platypus and ipyrad VCFs:}
+#' \item \strong{GATK, platypus, samtools and ipyrad VCFs:}
 #' Some VCFs have an \code{ID} column filled with \code{.},
 #' the LOCUS information is all contained along the linkage group in the
 #' \code{CHROM} column. Consequently, the short read locus information is unknown.
@@ -69,7 +69,8 @@
 #' A vcf file of 21 GB with ~2 millions SNPs take about ~5 min with 7 CPU.
 #'
 #' After the file is generated, you can close your computer and
-#' come back to it a month later and it's now a matter of sec to open a connection.
+#' come back to it a months later and it's now a matter of sec to open a connection.
+#' See example below.
 #'
 #'
 #' \strong{markers heterozygosity and inbreeding coefficient}:
@@ -106,7 +107,10 @@
 #'
 #' \strong{freebayes:} Some VCF files don't have an ID filed with values,
 #' here the same thing is done as GATK VCF files above.
-#'
+
+#' \strong{samtools:} Some VCF files don't have an ID filed with values,
+#' here the same thing is done as GATK VCF files above.
+
 #' \strong{stacks:} with \emph{de novo} approaches, the CHROM column is
 #' filled with "1", the LOCUS column correspond to the CHROM section in stacks VCF and
 #' the COL column is POS -1. With a reference genome, the ID column in stacks VCF is
@@ -217,12 +221,19 @@
 
 #' @examples
 #' \dontrun{
-#' #require(SeqVarTools)
+#' # require(SeqArray)
 #' # with built-in defaults:
-#'  prep.data <- radiator::read_vcf(data = "populations.snps.vcf")
 #'
-#' # Using more arguments and filters (recommended):
-#' prep.data <- radiator::read_vcf(
+#' data <- radiator::read_vcf(data = "populations.snps.vcf")
+#'
+#' # Because no strata file is provided, the individuals are assumed to be in
+#' # the same group.
+#'
+#' # If you need to filter the VCF I recommend using ?radiator::filter_rad
+#'
+#' # But if you're certain about the filters thresholds, additional arguments are available:
+#'
+#' data <- radiator::read_vcf(
 #'     data = "populations.snps.vcf",
 #'     strata = "strata_salamander.tsv",
 #'     path.folder = "salamander",
@@ -236,6 +247,10 @@
 #'     filter.long.ld = NULL,
 #'     verbose = TRUE
 #'     )
+#'
+#' # In a new R session, to re-open the GDS file/connection:
+#'
+#' data <- radiator::read_rad(data = "radiator_20200911@0748.gds")
 #' }
 
 read_vcf <- function(
@@ -280,6 +295,8 @@ read_vcf <- function(
   # parameters <- NULL
   # filter.individuals.missing <- NULL
   # filter.individuals.coverage.total <- NULL
+  # filter.individuals.coverage.median <- NULL
+  # filter.individuals.coverage.iqr <- NULL
   # filter.snp.number <- NULL
 
   ## With filters
@@ -326,6 +343,7 @@ read_vcf <- function(
                 "filter.coverage", "filter.genotyping", "filter.short.ld",
                 "filter.long.ld", "long.ld.missing", "ld.method",
                 "filter.individuals.missing", "filter.individuals.coverage.total",
+                "filter.individuals.coverage.median", "filter.individuals.coverage.iqr",
                 "filter.common.markers", "filter.monomorphic",
                 "filter.strands",
                 "blacklist.id", "pop.select", "pop.levels", "pop.labels",
@@ -344,7 +362,8 @@ read_vcf <- function(
       !is.null(long.ld.missing) ||
       !is.null(filter.individuals.missing) ||
       !is.null(filter.individuals.coverage.total) ||
-      !is.null(filter.snp.number)) subsample.markers.stats <- 1
+      !is.null(filter.snp.number)
+      ) subsample.markers.stats <- 1
 
   if (!is.null(ld.method)) {
     ld.method <- match.arg(ld.method, c("composite", "r", "r2", "dprime", "corr"))
@@ -447,17 +466,16 @@ read_vcf <- function(
 
   # Get file size
   big.vcf <- file.size(data)
-  if (big.vcf <= 500000000) {
-    message("\nReading VCF")
+  message("\nReading VCF")
+  if (big.vcf >= 1000000000) {
+    message("    you might have time for an espresso or tea...")
   }
+  parallel.temp <- parallel.core
+  # for small VCF SeqArray not that good with parallel...
+  if (big.vcf < 10000000) parallel.temp <- FALSE
+  big.vcf <- NULL
 
-  if (big.vcf > 500000000 &&  big.vcf < 900000000) {
-    message("\nReading VCF...you might have time for a espresso...")
-  }
 
-  if (big.vcf >= 900000000) {
-    message("\nReading a large VCF...you actually have time for coffee or tea!\n")
-  }
   # Check for bad header generated by stacks
   detect.source <- check_header_source_vcf(data)
   stacks.2 <- detect.source$data.source
@@ -467,18 +485,13 @@ read_vcf <- function(
     pattern = "[\"]", replacement = "", vectorize_all = FALSE)
   if (length(data.source) == 0) data.source <- "unknown"
   check.header <- detect.source$check.header
-  dp <- "DP" %in% detect.source$check.header$format$ID # Check that DP is trere
+  dp <- "DP" %in% detect.source$check.header$format$ID # Check that DP is valid
 
   if (!is.null(detect.source$markers.info)) markers.info <- detect.source$markers.info
   if (!is.null(detect.source$overwrite.metadata)) overwrite.metadata <- detect.source$overwrite.metadata
 
-  # for small VCF SeqArray not that good with parallel...
-  parallel.temp <- parallel.core
-  if (big.vcf < 10000000) {
-    parallel.temp <- FALSE
-    # parallel_core_opt(parallel.core = parallel.core, max.core = parallel::detectCores())
-  }
-  big.vcf <- NULL
+
+  # generate the GDS
   gds <- suppressWarnings(
     SeqArray::seqVCF2GDS(
       vcf.fn = data,
@@ -496,20 +509,16 @@ read_vcf <- function(
   # VCF: Summary ----------------------------------------------------------------
   summary_gds(gds, verbose = TRUE)
   message("done! timing: ", round((proc.time() - timing.vcf)[[3]]), " sec\n")
-  if (verbose) message("\nFile written: ", filename.short)
+  if (verbose) message("\nGDS file written: ", filename.short)
   parallel.temp <- check.header <- detect.source <- NULL #no longer used
 
   # Generate radiator skeleton -------------------------------------------------
-  if (verbose)  message("\nAnalyzing the data...")
+  if (verbose)  message("\nAnalyzing the vcf...")
   radiator.gds <- radiator_gds_skeleton(gds)
 
   # VCF: source ----------------------------------------------------------------
-  if (length(data.source) > 0) {
-    update_radiator_gds(gds = gds, node.name = "data.source", value = data.source)
-    if (verbose) message("VCF source: ", data.source)
-  } else {
-    data.source <- "unknown"
-  }
+  update_radiator_gds(gds = gds, node.name = "data.source", value = data.source)
+  if (verbose) message("VCF source: ", data.source)
 
   # VCF: bi- or multi-alllelic--------------------------------------------------
   biallelic <- detect_biallelic_markers(data = gds, verbose = verbose)
@@ -526,11 +535,14 @@ read_vcf <- function(
   if (!identical(individuals.vcf$INDIVIDUALS_VCF, individuals.vcf$INDIVIDUALS_CLEAN)) {
     if (verbose) message("Cleaning VCF's sample names")
     clean.id.filename <- stringi::stri_join("cleaned.vcf.id.info_", file.date, ".tsv")
-    readr::write_tsv(x = individuals.vcf,
-                     path = file.path(radiator.folder, clean.id.filename))
-
+    readr::write_tsv(
+      x = individuals.vcf,
+      path = file.path(radiator.folder, clean.id.filename)
+      )
+    if (verbose) message("File written: ", clean.id.filename)
     update_radiator_gds(gds = gds, node.name = "id.clean", value = individuals.vcf)
   }
+
   # replace id in VCF
   update_radiator_gds(
     gds = gds,
@@ -985,6 +997,8 @@ read_vcf <- function(
     filter.individuals.missing = filter.individuals.missing,
     filter.individuals.heterozygosity = NULL,
     filter.individuals.coverage.total = filter.individuals.coverage.total,
+    filter.individuals.coverage.median = filter.individuals.coverage.median,
+    filter.individuals.coverage.iqr = filter.individuals.coverage.iqr,
     parallel.core = parallel.core,
     verbose = verbose,
     path.folder = wf,
@@ -1641,11 +1655,13 @@ tidy_vcf <- function(
     # Depending on the number of markers ...
     # All this can be overwritten in ... argument
     # gt.bin is the dosage of ALT allele: 0, 1, 2 NA
-    if (is.null(gt.bin)) {
-      if (n.markers < 5000) gt.bin <- TRUE
-      if (n.markers >= 5000 && n.markers < 30000) gt.bin <- TRUE
-      if (n.markers >= 30000) gt.bin <- TRUE
-    }
+    if (is.null(gt.bin)) gt.bin <- TRUE
+    #
+    #   {
+    #   if (n.markers < 5000) gt.bin <- TRUE
+    #   if (n.markers >= 5000 && n.markers < 30000) gt.bin <- TRUE
+    #   if (n.markers >= 30000) gt.bin <- TRUE
+    # }
     # gt.vcf is genotype coding in the VCF: 0/0, 0/1, 1/1, ./.
     if (is.null(gt.vcf)) {
       if (n.markers < 5000) gt.vcf <- TRUE

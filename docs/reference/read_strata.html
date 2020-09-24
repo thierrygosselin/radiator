@@ -144,16 +144,16 @@ and might be of interest for users.</p>
     </div>
 
     <pre class="usage"><span class='fu'>read_strata</span>(
-  <span class='no'>strata</span>,
-  <span class='kw'>pop.id</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>pop.levels</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>pop.labels</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>pop.select</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>blacklist.id</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>keep.two</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>path.folder</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>filename</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>
+  <span class='kw'>strata</span>,
+  pop.id = <span class='fl'>FALSE</span>,
+  pop.levels = <span class='kw'>NULL</span>,
+  pop.labels = <span class='kw'>NULL</span>,
+  pop.select = <span class='kw'>NULL</span>,
+  blacklist.id = <span class='kw'>NULL</span>,
+  keep.two = <span class='fl'>TRUE</span>,
+  path.folder = <span class='kw'>NULL</span>,
+  filename = <span class='kw'>NULL</span>,
+  verbose = <span class='fl'>FALSE</span>
 )</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -211,7 +211,7 @@ Default: <code>pop.select = NULL</code></p></td>
 or object in the global environment. The data frame
 as 1 column (named <code>INDIVIDUALS</code>) and is filled with the individual IDs
 The ids are cleaned with <code><a href='clean_ind_names.html'>clean_ind_names</a></code> for separators,
-only <code>-</code> are tolerated. Duplicates are removed automatically.
+only <code><a href='https://rdrr.io/r/base/Arithmetic.html'>-</a></code> are tolerated. Duplicates are removed automatically.
 Default: <code>blacklist.id = NULL</code>.</p></td>
     </tr>
     <tr>
@@ -297,24 +297,25 @@ See the example in <code><a href='extract_dart_target_id.html'>extract_dart_targ
 <code><a href='join_strata.html'>join_strata</a></code>, <code><a href='generate_strata.html'>generate_strata</a></code></p></div>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='kw'>if</span> (<span class='fl'>FALSE</span>) {
-<span class='no'>strata.info</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>radiator</span><span class='kw ns'>::</span><span class='fu'>read_strata</span>(<span class='no'>strata</span>)
+    <pre class="examples"><div class='input'><span class='co'>if</span> (<span class='fl'>FALSE</span>) {
+<span class='kw'>strata.info</span> <span class='op'>&lt;-</span> <span class='kw'>radiator</span>::<span class='fu'>read_strata</span>(<span class='kw'>strata</span>)
 
 <span class='co'># the return object is a list with 5 objects:</span>
-<span class='fu'><a href='https://rdrr.io/r/base/names.html'>names</a></span>(<span class='no'>strata.info</span>)
+<span class='fu'><a href='https://rdrr.io/r/base/names.html'>names</a></span>(<span class='kw'>strata.info</span>)
 
 <span class='co'># to get the strata</span>
-<span class='no'>new.strata</span> <span class='kw'>&lt;-</span> <span class='no'>strata.info</span>$<span class='no'>strata</span>
+<span class='kw'>new.strata</span> <span class='op'>&lt;-</span> <span class='kw'>strata.info</span><span class='op'>$</span><span class='kw'>strata</span>
 
 <span class='co'># if naything is changed from the original strata, a new strata file is</span>
 <span class='co'># generated automatically:</span>
 
-<span class='no'>new.strata</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>radiator</span><span class='kw ns'>::</span><span class='fu'>read_strata</span>(
-    <span class='kw'>strata</span> <span class='kw'>=</span> <span class='no'>strata</span>,
-    <span class='kw'>blacklist.id</span> <span class='kw'>=</span> <span class='st'>"blacklisted.ids.tsv"</span>
+<span class='kw'>new.strata</span> <span class='op'>&lt;-</span> <span class='kw'>radiator</span>::<span class='fu'>read_strata</span>(
+    strata = <span class='kw'>strata</span>,
+    blacklist.id = <span class='st'>"blacklisted.ids.tsv"</span>
     )
 
-}</div></pre>
+}
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
@@ -326,11 +327,11 @@ See the example in <code><a href='extract_dart_target_id.html'>extract_dart_targ
 
       <footer>
       <div class="copyright">
-  <p>Developed by Thierry Gosselin, Floriaan Devloo-Delva.</p>
+  <p>Developed by Thierry Gosselin, Manuel Lamothe, Floriaan Devloo-Delva.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>

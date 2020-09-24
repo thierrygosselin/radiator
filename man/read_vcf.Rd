@@ -19,7 +19,7 @@ read_vcf(
 To make the VCF population-ready, you have to use \code{strata} argument.
 
 \itemize{
-\item \strong{GATK, platypus and ipyrad VCFs:}
+\item \strong{GATK, platypus, samtools and ipyrad VCFs:}
 Some VCFs have an \code{ID} column filled with \code{.},
 the LOCUS information is all contained along the linkage group in the
 \code{CHROM} column. Consequently, the short read locus information is unknown.
@@ -79,8 +79,8 @@ The function returns a GDS object.
 }
 \description{
 The function reads VCF files for radiator and
-generate a connection SeqArray \href{https://github.com/zhengxwen/SeqArray}{SeqArray}
-GDS object/file of class \code{SeqVarGDSClass} (Zheng et al. 2017)
+generate a connection \href{https://github.com/zhengxwen/SeqArray}{SeqArray}
+GDS object/file of class \code{SeqVarGDSClass} (Zheng et al. 2017).
 The Genomic Data Structure (GDS) file format is detailed in
 \href{https://github.com/zhengxwen/gdsfmt}{gdsfmt}.
 
@@ -97,7 +97,8 @@ A vcf file of 35 GB with ~4 millions SNPs take about ~7 min with 8 CPU.
 A vcf file of 21 GB with ~2 millions SNPs take about ~5 min with 7 CPU.
 
 After the file is generated, you can close your computer and
-come back to it a month later and it's now a matter of sec to open a connection.
+come back to it a months later and it's now a matter of sec to open a connection.
+See example below.
 
 
 \strong{markers heterozygosity and inbreeding coefficient}:
@@ -135,7 +136,8 @@ here the same thing is done as GATK VCF files above.
 
 \strong{freebayes:} Some VCF files don't have an ID filed with values,
 here the same thing is done as GATK VCF files above.
-
+\strong{samtools:} Some VCF files don't have an ID filed with values,
+here the same thing is done as GATK VCF files above.
 \strong{stacks:} with \emph{de novo} approaches, the CHROM column is
 filled with "1", the LOCUS column correspond to the CHROM section in stacks VCF and
 the COL column is POS -1. With a reference genome, the ID column in stacks VCF is
@@ -226,12 +228,19 @@ expect a small computational cost.
 
 \examples{
 \dontrun{
-#require(SeqVarTools)
+# require(SeqArray)
 # with built-in defaults:
- prep.data <- radiator::read_vcf(data = "populations.snps.vcf")
 
-# Using more arguments and filters (recommended):
-prep.data <- radiator::read_vcf(
+data <- radiator::read_vcf(data = "populations.snps.vcf")
+
+# Because no strata file is provided, the individuals are assumed to be in
+# the same group.
+
+# If you need to filter the VCF I recommend using ?radiator::filter_rad
+
+# But if you're certain about the filters thresholds, additional arguments are available:
+
+data <- radiator::read_vcf(
     data = "populations.snps.vcf",
     strata = "strata_salamander.tsv",
     path.folder = "salamander",
@@ -245,6 +254,10 @@ prep.data <- radiator::read_vcf(
     filter.long.ld = NULL,
     verbose = TRUE
     )
+
+# In a new R session, to re-open the GDS file/connection:
+
+data <- radiator::read_rad(data = "radiator_20200911@0748.gds")
 }
 }
 \references{

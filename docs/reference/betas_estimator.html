@@ -135,7 +135,7 @@
     <p>Estimate \(\beta\)s per population.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>betas_estimator</span>(<span class='no'>data</span>, <span class='kw'>strata</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>filename</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</pre>
+    <pre class="usage"><span class='fu'>betas_estimator</span>(<span class='kw'>data</span>, strata = <span class='kw'>NULL</span>, filename = <span class='kw'>NULL</span>, verbose = <span class='fl'>FALSE</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -189,21 +189,25 @@ Default: <code>verbose = TRUE</code>.</p></td>
 betaiovl: Average \(\beta_i\) over loci,
 Hw: Within population gene diversities
 Hb: Between populations gene diversities</p>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Thierry Gosselin <a href='mailto:thierrygosselin@icloud.com'>thierrygosselin@icloud.com</a></p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='kw'>if</span> (<span class='fl'>FALSE</span>) {
+    <pre class="examples"><div class='input'><span class='co'>if</span> (<span class='fl'>FALSE</span>) {
 <span class='co'># Using a  VCF file, the simplest for of the function:</span>
-<span class='no'>fh</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='ibdg_fh.html'>ibdg_fh</a></span>(
-<span class='kw'>data</span> <span class='kw'>=</span> <span class='st'>"batch_1.vcf"</span>,
-<span class='kw'>strata</span> <span class='kw'>=</span> <span class='st'>"strata.panda.tsv"</span>
+<span class='kw'>fh</span> <span class='op'>&lt;-</span> <span class='fu'><a href='ibdg_fh.html'>ibdg_fh</a></span>(
+data = <span class='st'>"batch_1.vcf"</span>,
+strata = <span class='st'>"strata.panda.tsv"</span>
 )
 <span class='co'># To see what's inside the list</span>
-<span class='fu'><a href='https://rdrr.io/r/base/names.html'>names</a></span>(<span class='no'>fh</span>)
+<span class='fu'><a href='https://rdrr.io/r/base/names.html'>names</a></span>(<span class='kw'>fh</span>)
 <span class='co'># To view the manhattan plot:</span>
-<span class='no'>fh</span>$<span class='no'>fh.manhattan.plot</span>
+<span class='kw'>fh</span><span class='op'>$</span><span class='kw'>fh.manhattan.plot</span>
 <span class='co'># To view the distribution of FH values:</span>
-<span class='no'>fh</span>$<span class='no'>fh.distribution.plot</span>
-}</div></pre>
+<span class='kw'>fh</span><span class='op'>$</span><span class='kw'>fh.distribution.plot</span>
+}
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
@@ -215,11 +219,11 @@ Hb: Between populations gene diversities</p>
 
       <footer>
       <div class="copyright">
-  <p>Developed by Thierry Gosselin, Floriaan Devloo-Delva.</p>
+  <p>Developed by Thierry Gosselin, Manuel Lamothe, Floriaan Devloo-Delva.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>

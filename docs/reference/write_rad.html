@@ -158,15 +158,15 @@ and might be of interest for users.</p>
     </div>
 
     <pre class="usage"><span class='fu'>write_rad</span>(
-  <span class='no'>data</span>,
-  <span class='kw'>path</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>filename</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>tsv</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>internal</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>append</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>col.names</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>write.message</span> <span class='kw'>=</span> <span class='st'>"standard"</span>,
-  <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>
+  <span class='kw'>data</span>,
+  path = <span class='kw'>NULL</span>,
+  filename = <span class='kw'>NULL</span>,
+  tsv = <span class='fl'>FALSE</span>,
+  internal = <span class='fl'>FALSE</span>,
+  append = <span class='fl'>FALSE</span>,
+  col.names = <span class='fl'>TRUE</span>,
+  write.message = <span class='st'>"standard"</span>,
+  verbose = <span class='fl'>FALSE</span>
 )</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -234,13 +234,17 @@ Default: <code>verbose = FALSE</code>.</p></td>
     <div class='dont-index'><p><a href='https://github.com/fstpackage/fst'>fst</a>
 <a href='https://github.com/zhengxwen/gdsfmt'>GDS</a>
 <code><a href='read_rad.html'>read_rad</a></code></p></div>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Thierry Gosselin <a href='mailto:thierrygosselin@icloud.com'>thierrygosselin@icloud.com</a></p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='kw'>if</span> (<span class='fl'>FALSE</span>) {
-<span class='fu'><a href='https://rdrr.io/r/base/library.html'>require</a></span>(<span class='no'>SeqArray</span>)
-<span class='kw pkg'>radiator</span><span class='kw ns'>::</span><span class='fu'>write_rad</span>(<span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>tidy.data</span>, <span class='kw'>path</span> <span class='kw'>=</span> <span class='st'>"data.shark.rad"</span>)
-<span class='kw pkg'>radiator</span><span class='kw ns'>::</span><span class='fu'>write_rad</span>(<span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>gds.object</span>)
-}</div></pre>
+    <pre class="examples"><div class='input'><span class='co'>if</span> (<span class='fl'>FALSE</span>) {
+<span class='fu'><a href='https://rdrr.io/r/base/library.html'>require</a></span>(<span class='kw'><a href='http://github.com/zhengxwen/SeqArray'>SeqArray</a></span>)
+<span class='kw'>radiator</span>::<span class='fu'>write_rad</span>(data = <span class='kw'>tidy.data</span>, path = <span class='st'>"data.shark.rad"</span>)
+<span class='kw'>radiator</span>::<span class='fu'>write_rad</span>(data = <span class='kw'>gds.object</span>)
+}
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
@@ -252,11 +256,11 @@ Default: <code>verbose = FALSE</code>.</p></td>
 
       <footer>
       <div class="copyright">
-  <p>Developed by Thierry Gosselin, Floriaan Devloo-Delva.</p>
+  <p>Developed by Thierry Gosselin, Manuel Lamothe, Floriaan Devloo-Delva.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>
