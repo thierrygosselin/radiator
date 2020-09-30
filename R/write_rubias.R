@@ -128,14 +128,14 @@ write_rubias <- function(
         dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT_BIN) %>%
         dplyr::mutate(
           A1 = dplyr::case_when(
-            GT_BIN == 0 ~ 1,
-            GT_BIN == 1 ~ 1,
-            GT_BIN == 2 ~ 2
+            GT_BIN == 0L ~ 1L,
+            GT_BIN == 1L ~ 1L,
+            GT_BIN == 2L ~ 2L
           ),
           A2 = dplyr::case_when(
-            GT_BIN == 0 ~ 1,
-            GT_BIN == 1 ~ 2,
-            GT_BIN == 2 ~ 2
+            GT_BIN == 0L ~ 1L,
+            GT_BIN == 1L ~ 2L,
+            GT_BIN == 2L ~ 2L
           ),
           GT_BIN = NULL
         ) %>%
@@ -191,6 +191,7 @@ write_rubias <- function(
         ) %>%
         tidyr::unite(col = MARKERS_ALLELES, MARKERS , ALLELE_GROUP, sep = ".") %>%
         dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS_ALLELES) %>%
+        dplyr::mutate(ALLELES = as.character(ALLELES)) %>%
         data.table::as.data.table(.) %>%
         data.table::dcast.data.table(
           data = .,

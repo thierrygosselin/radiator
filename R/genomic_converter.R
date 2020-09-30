@@ -469,8 +469,9 @@ genomic_converter <- function(
     ) %$%
       input
   }
+
   # overide genind when marker number > 20K ------------------------------------
-  if ("genind" %in% output & biallelic) {
+  if ("genind" %in% output && biallelic) {
     # detect the number of marker
     marker.number <- length(unique(input$MARKERS))
     if (marker.number > 20000) {
@@ -521,11 +522,11 @@ genomic_converter <- function(
   # } # End imputations
 
   # OUTPUT ---------------------------------------------------------------------
-
   setwd(path.folder)
   if (!is.null(strata.bk) && is.vector(strata.bk)) {
     strata.bk <- file.path(old.dir, strata.bk)
   }
+
   # GENEPOP --------------------------------------------------------------------
   if ("genepop" %in% output) {
     if (verbose) message("Generating genepop file")
