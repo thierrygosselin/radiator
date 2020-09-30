@@ -133,6 +133,10 @@ or a biological reason (highly inbred individual, etc.).
 If you see a pattern with the heterozygosity and missing data,
 try changing the genotyping rate required to keep markers and/or individuals.
 }
+\note{
+Thanks to Peter Grewe for very useful comments
+on previous version of this function.
+}
 \examples{
 \dontrun{
 #Step1: highlight outlier individuals, the simplest way to run:

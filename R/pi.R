@@ -60,6 +60,9 @@
 #' Proceedings of the National Academy of Sciences of
 #' the United States of America, 76, 5269–5273.
 
+#' @note Thanks to Anne-Laure Ferchaud for very useful comments on previous version
+#' of this function.
+
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 pi <- function(

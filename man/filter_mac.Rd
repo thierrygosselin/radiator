@@ -99,6 +99,10 @@ with high threshold that inevitably results in biaises.
 \strong{Statistics}: count of the allele per markers. This filter as NO concept
 of strata/populations. It is computed globally.
 }
+\note{
+Thanks to Charles Perrier and Jeremy Gaudin for very useful comments
+on previous version of this function.
+}
 \section{MAC or MAF ?}{
 
 Using count or frequency to remove a SNPs ? The preferred choice in radiator

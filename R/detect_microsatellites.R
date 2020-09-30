@@ -67,6 +67,8 @@
 #' }
 #' @export
 #' @rdname detect_microsatellites
+#' @note Thanks to Peter Grewe for the idea of including this type of filter inside
+#' radiator.
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 

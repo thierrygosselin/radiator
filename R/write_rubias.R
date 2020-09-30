@@ -212,18 +212,32 @@ write_rubias <- function(
     ) %$%
       strata
 
-    # check strata
+    # check strata -------------------------------------------------------------
     if (ncol(strata) < 4 || FALSE %in% (c("SAMPLE_TYPE", "REPUNIT", "COLLECTION", "INDIVIDUALS") %in% colnames(strata))) {
-      rlang::abort("the strata file/object requires 4 columns: SAMPLE_TYPE, REPUNIT, COLLECTION, INDIVIDUALS")
+      message("The strata file/object requires 4 columns: SAMPLE_TYPE, REPUNIT, COLLECTION, INDIVIDUALS")
+      message("SAMPLE_TYPE filled with reference, REPUNIT and COLLECTION filled with STRATA/POP_ID column")
+
+      strata %<>%
+        dplyr::distinct(POP_ID, INDIVIDUALS) %>%
+        dplyr::mutate(
+          sample_type = "reference",
+          repunit = as.character(POP_ID),
+          collection = as.character(POP_ID),
+          indiv = INDIVIDUALS,
+          POP_ID = NULL
+        )
+
+    } else {
+      strata %<>%
+        dplyr::rename(
+          sample_type = SAMPLE_TYPE,
+          repunit = REPUNIT,
+          collection = COLLECTION
+        ) %>%
+        dplyr::mutate(indiv = INDIVIDUALS)
     }
 
-    strata %<>%
-      dplyr::rename(
-        sample_type = SAMPLE_TYPE,
-        repunit = REPUNIT,
-        collection = COLLECTION
-      ) %>%
-      dplyr::mutate(indiv = INDIVIDUALS)
+
 
   } else {
     if (!rlang::has_name(data, "POP_ID") && !rlang::has_name(data, "STRATA")) {

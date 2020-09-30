@@ -123,6 +123,9 @@
 #'
 #' }
 
+#' @note Thanks to Peter Grewe for very useful comments
+#' on previous version of this function.
+
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 detect_mixed_genomes <- function(

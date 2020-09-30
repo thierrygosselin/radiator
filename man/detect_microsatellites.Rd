@@ -42,6 +42,10 @@ commonly known as microsatellites...
 \strong{radiator} is not re-inventing the wheel here, it uses the
 software \href{https://github.com/XuewenWangUGA/GMATA}{GMATA: Genome-wide Microsatellite Analyzing Toward Application}.
 }
+\note{
+Thanks to Peter Grewe for the idea of including this type of filter inside
+radiator.
+}
 \examples{
 \dontrun{
 # The simplest way to run the function when the raw data was DArT:

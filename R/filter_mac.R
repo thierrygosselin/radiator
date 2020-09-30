@@ -155,6 +155,10 @@
 #' Molecular Ecology Resources 19(3), 639-647.
 #' https://dx.doi.org/10.1111/1755-0998.12995
 
+
+#' @note Thanks to Charles Perrier and Jeremy Gaudin for very useful comments
+#' on previous version of this function.
+
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 

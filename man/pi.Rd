@@ -62,6 +62,10 @@ Both radiator and stackr functions requires \code{stringdist} package.
 The \code{read.length} argument below is used directly in the calculations.
 To be correctly estimated, the reads obviously need to be of identical size...
 }
+\note{
+Thanks to Anne-Laure Ferchaud for very useful comments on previous version
+of this function.
+}
 \examples{
 \dontrun{
 require(stringdist)
