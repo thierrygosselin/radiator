@@ -135,7 +135,7 @@
     <p>The function highlight private alleles by strata, using a GDS or tidy file or object.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>private_alleles</span>(<span class='kw'>data</span>, strata = <span class='kw'>NULL</span>, verbose = <span class='fl'>TRUE</span>)</pre>
+    <pre class="usage"><span class='fu'>private_alleles</span><span class='op'>(</span><span class='va'>data</span>, strata <span class='op'>=</span> <span class='cn'>NULL</span>, verbose <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -176,9 +176,9 @@ a second object with private alleles summarized by strata.</p>
     <p>Thierry Gosselin <a href='mailto:thierrygosselin@icloud.com'>thierrygosselin@icloud.com</a></p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='co'>if</span> (<span class='fl'>FALSE</span>) {
-<span class='kw'>corals.private.alleles.by.pop</span> <span class='op'>&lt;-</span> <span class='kw'>radiator</span>::<span class='fu'>private_alleles</span>(data = <span class='kw'>tidy</span>, strata = <span class='kw'>strata.pop</span>)
-}
+    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
+<span class='va'>corals.private.alleles.by.pop</span> <span class='op'>&lt;-</span> <span class='fu'>radiator</span><span class='fu'>::</span><span class='fu'>private_alleles</span><span class='op'>(</span>data <span class='op'>=</span> <span class='va'>tidy</span>, strata <span class='op'>=</span> <span class='va'>strata.pop</span><span class='op'>)</span>
+<span class='op'>}</span>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

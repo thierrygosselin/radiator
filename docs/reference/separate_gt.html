@@ -135,17 +135,17 @@
     <p>Separate genotype field</p>
     </div>
 
-    <pre class="usage"><span class='fu'>separate_gt</span>(
-  <span class='kw'>x</span>,
-  sep = <span class='st'>"/"</span>,
-  gt = <span class='st'>"GT_VCF_NUC"</span>,
-  gather = <span class='fl'>TRUE</span>,
-  haplotypes = <span class='fl'>TRUE</span>,
-  exclude = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"LOCUS"</span>, <span class='st'>"INDIVIDUALS"</span>, <span class='st'>"POP_ID"</span>),
-  alleles.naming = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"ALLELE1"</span>, <span class='st'>"ALLELE2"</span>),
-  cpu.rounds = <span class='fl'>10</span>,
-  parallel.core = <span class='kw'>parallel</span>::<span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span>() <span class='op'>-</span> <span class='fl'>1</span>
-)</pre>
+    <pre class="usage"><span class='fu'>separate_gt</span><span class='op'>(</span>
+  <span class='va'>x</span>,
+  sep <span class='op'>=</span> <span class='st'>"/"</span>,
+  gt <span class='op'>=</span> <span class='st'>"GT_VCF_NUC"</span>,
+  gather <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  haplotypes <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  exclude <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"LOCUS"</span>, <span class='st'>"INDIVIDUALS"</span>, <span class='st'>"POP_ID"</span><span class='op'>)</span>,
+  alleles.naming <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"ALLELE1"</span>, <span class='st'>"ALLELE2"</span><span class='op'>)</span>,
+  cpu.rounds <span class='op'>=</span> <span class='fl'>10</span>,
+  parallel.core <span class='op'>=</span> <span class='fu'>parallel</span><span class='fu'>::</span><span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span><span class='op'>(</span><span class='op'>)</span> <span class='op'>-</span> <span class='fl'>1</span>
+<span class='op'>)</span></pre>
 
 
 

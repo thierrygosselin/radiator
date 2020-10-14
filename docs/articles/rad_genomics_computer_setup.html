@@ -88,7 +88,7 @@
       <h1 data-toc-skip>RADseq genomics in R</h1>
             <h3 class="subtitle">computer setup</h3>
             
-            <h4 class="date">2020-09-30</h4>
+            <h4 class="date">2020-10-14</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/thierrygosselin/radiator/blob/master/vignettes/rad_genomics_computer_setup.Rmd"><code>vignettes/rad_genomics_computer_setup.Rmd</code></a></small>
       <div class="hidden name"><code>rad_genomics_computer_setup.Rmd</code></div>
@@ -294,23 +294,20 @@
 <a href="#installing-libraries" class="anchor"></a>Installing Libraries</h1>
 <p>Below is how I setup most of my computers after a clean macOS install. 1. Start with <strong>devtools</strong> and <strong>tidyverse</strong></p>
 <div class="sourceCode" id="cb18"><pre class="downlit">
-<span class="co">if</span> (<span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/library.html">require</a></span>(<span class="st"><a href="https://devtools.r-lib.org">"devtools"</a></span>)) <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span>(<span class="st">"devtools"</span>) <span class="co"># to install</span>
-<span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span>(<span class="st">"tidyverse"</span>)
-</pre></div>
+<span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="kw"><a href="https://rdrr.io/r/base/library.html">require</a></span><span class="op">(</span><span class="st"><a href="https://devtools.r-lib.org/">"devtools"</a></span><span class="op">)</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span><span class="op">(</span><span class="st">"devtools"</span><span class="op">)</span> <span class="co"># to install</span>
+<span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span><span class="op">(</span><span class="st">"tidyverse"</span><span class="op">)</span></pre></div>
 <ol start="2" style="list-style-type: decimal">
 <li>The gsl package is required by numerous packages and can cause some headaches… Don’t install it from source.</li>
 </ol>
 <div class="sourceCode" id="cb19"><pre class="downlit">
-<span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span>(<span class="st">"gsl"</span>)
-</pre></div>
+<span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span><span class="op">(</span><span class="st">"gsl"</span><span class="op">)</span></pre></div>
 <p>If the console print this: <code>Do you want to install from sources the package which needs compilation? (Yes/no/cancel)</code>. Always aswer <strong>no</strong> unless of course you know what you are doing.</p>
 <ol start="3" style="list-style-type: decimal">
 <li>Than, I install <strong>grur</strong> and <strong>assigner</strong> my packges with the higher number of dependencies, this way it’s installing automatically 90% of the packages I need (including <strong>radiator</strong>).</li>
 </ol>
 <div class="sourceCode" id="cb20"><pre class="downlit">
-<span class="kw">devtools</span>::<span class="fu"><a href="https://devtools.r-lib.org//reference/remote-reexports.html">install_github</a></span>(<span class="st">"thierrygosselin/grur"</span>)
-<span class="kw">devtools</span>::<span class="fu"><a href="https://devtools.r-lib.org//reference/remote-reexports.html">install_github</a></span>(<span class="st">"thierrygosselin/assigner"</span>)
-</pre></div>
+<span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org//reference/remote-reexports.html">install_github</a></span><span class="op">(</span><span class="st">"thierrygosselin/grur"</span><span class="op">)</span>
+<span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org//reference/remote-reexports.html">install_github</a></span><span class="op">(</span><span class="st">"thierrygosselin/assigner"</span><span class="op">)</span></pre></div>
 </div>
 <div id="makevars-file" class="section level1">
 <h1 class="hasAnchor">
@@ -318,8 +315,7 @@
 <p>For some packages you might have to compile from source and the use of different compiler is sometimes very useful. You need to tell R how to use the compilers. This might change from one package to another. Nothing is simple, you know this by now… All this is done through R’s <strong>Makevars</strong> file located in <code>~/.R/Makevars</code>.</p>
 <p>To modify or create the file, the fastest way is to use the package <a href="https://usethis.r-lib.org">usethis</a> (it’s installed automatically with <code>devtools</code>):</p>
 <div class="sourceCode" id="cb21"><pre class="downlit">
-<span class="kw">usethis</span>::<span class="fu"><a href="https://usethis.r-lib.org/reference/edit.html">edit_r_makevars</a></span>()
-</pre></div>
+<span class="fu">usethis</span><span class="fu">::</span><span class="fu"><a href="https://usethis.r-lib.org/reference/edit.html">edit_r_makevars</a></span><span class="op">(</span><span class="op">)</span></pre></div>
 <p><strong>Makevars content required:</strong></p>
 <div class="sourceCode" id="cb22"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1"></a><span class="va">CC=</span>/usr/local/bin/gcc</span>
 <span id="cb22-2"><a href="#cb22-2"></a><span class="va">CXX=</span>/usr/local/bin/g++</span>
@@ -343,8 +339,7 @@
 <a href="#Installation_problems" class="anchor"></a>Installation problems</h1>
 <p>Sometimes you’ll get warnings while installing dependencies required for <em>x</em> package.</p>
 <div class="sourceCode" id="cb23"><pre class="downlit">
-<span class="co">#Warning: cannot remove prior installation of package ‘stringi’</span>
-</pre></div>
+<span class="co">#Warning: cannot remove prior installation of package ‘stringi’</span></pre></div>
 <p>To solve this problem, delete manually the problematic package in the installation folder (on mac: <code>/Library/Frameworks/R.framework/Resources/library</code>) or in the <code>Terminal</code>:</p>
 <div class="sourceCode" id="cb24"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb24-1"><a href="#cb24-1"></a><span class="fu">sudo</span> rm -R /Library/Frameworks/R.framework/Resources/library/package_name</span>
 <span id="cb24-2"><a href="#cb24-2"></a><span class="co"># Changing 'package_name' to the problematic package.</span></span>
@@ -412,8 +407,7 @@
 </h2>
 <p>Check that you have a file called <code>~/.Renviron</code>:</p>
 <div class="sourceCode" id="cb31"><pre class="downlit">
-<span class="fu"><a href="https://rdrr.io/r/base/files.html">file.exists</a></span>(<span class="st">"~/.Renviron"</span>)
-</pre></div>
+<span class="fu"><a href="https://rdrr.io/r/base/files.html">file.exists</a></span><span class="op">(</span><span class="st">"~/.Renviron"</span><span class="op">)</span></pre></div>
 <p>If you dont have the file:</p>
 <div class="sourceCode" id="cb32"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb32-1"><a href="#cb32-1"></a><span class="co">#In Terminal</span></span>
 <span id="cb32-2"><a href="#cb32-2"></a><span class="bu">cd</span> ~</span>
@@ -504,9 +498,8 @@
 <li>In R, check the output of this command that look for the <a href="https://stat.ethz.ch/R-manual/R-devel/library/base/html/EnvVar.html">environment variables</a>:</li>
 </ol>
 <div class="sourceCode" id="cb39"><pre class="downlit">
-<span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html">Sys.getenv</a></span>(<span class="st">"LD_LIBRARY_PATH"</span>)
-<span class="co"># [1]""</span>
-</pre></div>
+<span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html">Sys.getenv</a></span><span class="op">(</span><span class="st">"LD_LIBRARY_PATH"</span><span class="op">)</span>
+<span class="co"># [1]""</span></pre></div>
 <p>Note that if the output is not empty, like in the example above, write down the output.</p>
 <ol start="2" style="list-style-type: decimal">
 <li>Set the new <a href="https://stat.ethz.ch/R-manual/R-devel/library/base/html/EnvVar.html">environment variables</a> by adding <code>/usr/local/lib/</code> to the output above:</li>
@@ -514,13 +507,11 @@
 <p>When it’s empty:</p>
 <div class="sourceCode" id="cb40"><pre class="downlit">
 <span class="co"># in R:</span>
-<span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html">Sys.setenv</a></span>(LD_LIBRARY_PATH=<span class="st">"/usr/local/lib/"</span>)
-<span class="co"># For Linux you could use: /usr/local/lib/:/usr/lib64 </span>
-</pre></div>
+<span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html">Sys.setenv</a></span><span class="op">(</span>LD_LIBRARY_PATH<span class="op">=</span><span class="st">"/usr/local/lib/"</span><span class="op">)</span>
+<span class="co"># For Linux you could use: /usr/local/lib/:/usr/lib64 </span></pre></div>
 <p>When it’s not, add at the end, separated by <code><a href="https://rdrr.io/r/base/Colon.html">:</a></code></p>
 <div class="sourceCode" id="cb41"><pre class="downlit">
-<span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html">Sys.setenv</a></span>(LD_LIBRARY_PATH=<span class="st">"/usr/local/lib64/R/lib::/lib:/usr/local/lib64:/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.222.b10-0.amzn2.0.1.x86_64/jre/lib/amd64/server:/usr/local/lib/:/usr/lib64"</span>)
-</pre></div>
+<span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html">Sys.setenv</a></span><span class="op">(</span>LD_LIBRARY_PATH<span class="op">=</span><span class="st">"/usr/local/lib64/R/lib::/lib:/usr/local/lib64:/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.222.b10-0.amzn2.0.1.x86_64/jre/lib/amd64/server:/usr/local/lib/:/usr/lib64"</span><span class="op">)</span></pre></div>
 <p><strong>Long-term solution:</strong></p>
 <p>Instead of using <code>Sys.setenv</code> each time you have a similar problem, you could add the <a href="https://stat.ethz.ch/R-manual/R-devel/library/base/html/EnvVar.html">environment variables</a> <code>LD_LIBRARY_PATH</code> to your <code>.Renviron file</code>. <a href="#Renviron">This is discussed in another problem above</a>.</p>
 </div>
@@ -570,8 +561,7 @@
 <a href="#Makevars_config" class="anchor"></a>Makevars configuration</h3>
 <p><em>rmetasim</em> requires these Makevars (<code>~/.R/Makevars</code> file) specifications. If you have other lines, comment (#) before compiling <code>rmetasim</code>:</p>
 <div class="sourceCode" id="cb45"><pre class="downlit">
-<span class="kw">usethis</span>::<span class="fu"><a href="https://usethis.r-lib.org/reference/edit.html">edit_r_makevars</a></span>()
-</pre></div>
+<span class="fu">usethis</span><span class="fu">::</span><span class="fu"><a href="https://usethis.r-lib.org/reference/edit.html">edit_r_makevars</a></span><span class="op">(</span><span class="op">)</span></pre></div>
 <p><strong>With most OS (including macOS 10.14):</strong></p>
 <div class="sourceCode" id="cb46"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb46-1"><a href="#cb46-1"></a><span class="va">CC=</span>/usr/local/bin/clang</span>
 <span id="cb46-2"><a href="#cb46-2"></a><span class="va">CC=</span>/usr/local/bin/clang</span>
@@ -643,8 +633,7 @@
 <a href="#makevars-configuration" class="anchor"></a>Makevars configuration</h3>
 <p><code>XGBoost</code> requires these Makevars specifications. If you have other lines, comment (#) before compiling:</p>
 <div class="sourceCode" id="cb51"><pre class="downlit">
-<span class="kw">usethis</span>::<span class="fu"><a href="https://usethis.r-lib.org/reference/edit.html">edit_r_makevars</a></span>()
-</pre></div>
+<span class="fu">usethis</span><span class="fu">::</span><span class="fu"><a href="https://usethis.r-lib.org/reference/edit.html">edit_r_makevars</a></span><span class="op">(</span><span class="op">)</span></pre></div>
 <div class="sourceCode" id="cb52"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb52-1"><a href="#cb52-1"></a><span class="va">CC=</span>/usr/local/bin/gcc</span>
 <span id="cb52-2"><a href="#cb52-2"></a><span class="va">CXX=</span>/usr/local/bin/g++</span>
 <span id="cb52-3"><a href="#cb52-3"></a><span class="va">CXX11=</span>/usr/local/bin/g++</span>
@@ -669,13 +658,12 @@
 <a href="#test-r-package" class="anchor"></a>Test R-package</h3>
 <p>You should see a time difference between both runs</p>
 <div class="sourceCode" id="cb54"><pre class="downlit">
-<span class="fu"><a href="https://rdrr.io/r/base/library.html">require</a></span>(<span class="kw"><a href="https://github.com/dmlc/xgboost">xgboost</a></span>)
-<span class="kw">x</span> <span class="op">&lt;-</span>  <span class="fu"><a href="https://rdrr.io/r/base/matrix.html">matrix</a></span>(<span class="fu"><a href="https://rdrr.io/r/stats/Normal.html">rnorm</a></span>(<span class="fl">100</span><span class="op">*</span><span class="fl">10000</span>), <span class="fl">10000</span>, <span class="fl">100</span>)
-<span class="kw">y</span> <span class="op">&lt;-</span>  <span class="kw">x</span> <span class="op">%*%</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html">rnorm</a></span>(<span class="fl">100</span>) <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html">rnorm</a></span>(<span class="fl">1000</span>)
+<span class="kw"><a href="https://rdrr.io/r/base/library.html">require</a></span><span class="op">(</span><span class="va"><a href="https://github.com/dmlc/xgboost">xgboost</a></span><span class="op">)</span>
+<span class="va">x</span> <span class="op">&lt;-</span>  <span class="fu"><a href="https://rdrr.io/r/base/matrix.html">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html">rnorm</a></span><span class="op">(</span><span class="fl">100</span><span class="op">*</span><span class="fl">10000</span><span class="op">)</span>, <span class="fl">10000</span>, <span class="fl">100</span><span class="op">)</span>
+<span class="va">y</span> <span class="op">&lt;-</span>  <span class="va">x</span> <span class="op">%*%</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html">rnorm</a></span><span class="op">(</span><span class="fl">100</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html">rnorm</a></span><span class="op">(</span><span class="fl">1000</span><span class="op">)</span>
 
-<span class="fu"><a href="https://rdrr.io/r/base/system.time.html">system.time</a></span>({<span class="kw">bst</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/xgboost/man/xgb.train.html">xgboost</a></span>(data = <span class="kw">x</span>, label = <span class="kw">y</span>, nthread = <span class="fl">1</span>, nround = <span class="fl">100</span>, verbose = <span class="fl">FALSE</span>)})
-<span class="fu"><a href="https://rdrr.io/r/base/system.time.html">system.time</a></span>({<span class="kw">bst</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/xgboost/man/xgb.train.html">xgboost</a></span>(data = <span class="kw">x</span>, label = <span class="kw">y</span>, nthread = <span class="fl">4</span>, nround = <span class="fl">100</span>, verbose = <span class="fl">FALSE</span>)})
-</pre></div>
+<span class="fu"><a href="https://rdrr.io/r/base/system.time.html">system.time</a></span><span class="op">(</span><span class="op">{</span><span class="va">bst</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/xgboost/man/xgb.train.html">xgboost</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">x</span>, label <span class="op">=</span> <span class="va">y</span>, nthread <span class="op">=</span> <span class="fl">1</span>, nround <span class="op">=</span> <span class="fl">100</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">}</span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/r/base/system.time.html">system.time</a></span><span class="op">(</span><span class="op">{</span><span class="va">bst</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/xgboost/man/xgb.train.html">xgboost</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">x</span>, label <span class="op">=</span> <span class="va">y</span>, nthread <span class="op">=</span> <span class="fl">4</span>, nround <span class="op">=</span> <span class="fl">100</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">}</span><span class="op">)</span></pre></div>
 </div>
 </div>
 <div id="lightgbm" class="section level2">
@@ -720,8 +708,7 @@
 <a href="#makevars-configuration-1" class="anchor"></a>Makevars configuration</h3>
 <p>Check that the lines below <strong>are not</strong> commented in your <code>~/.R/Makevars</code> file:</p>
 <div class="sourceCode" id="cb58"><pre class="downlit">
-<span class="kw">usethis</span>::<span class="fu"><a href="https://usethis.r-lib.org/reference/edit.html">edit_r_makevars</a></span>()
-</pre></div>
+<span class="fu">usethis</span><span class="fu">::</span><span class="fu"><a href="https://usethis.r-lib.org/reference/edit.html">edit_r_makevars</a></span><span class="op">(</span><span class="op">)</span></pre></div>
 <div class="sourceCode" id="cb59"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb59-1"><a href="#cb59-1"></a><span class="va">CC=</span>/usr/local/bin/gcc</span>
 <span id="cb59-2"><a href="#cb59-2"></a><span class="va">CXX=</span>/usr/local/bin/g++</span>
 <span id="cb59-3"><a href="#cb59-3"></a><span class="va">CFLAGS=</span>-g <span class="ex">-O3</span> -Wall -pedantic -std=gnu99 -mtune=native -pipe</span>
@@ -760,8 +747,7 @@
 </h2>
 <p><a href="https://github.com/imbs-hl/ranger">ranger</a> is easy to install.</p>
 <div class="sourceCode" id="cb63"><pre class="downlit">
-<span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span>(<span class="st">"ranger"</span>)
-</pre></div>
+<span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span><span class="op">(</span><span class="st">"ranger"</span><span class="op">)</span></pre></div>
 </div>
 <div id="missranger" class="section level2">
 <h2 class="hasAnchor">
@@ -769,8 +755,7 @@
 </h2>
 <p><a href="https://github.com/mayer79/missRanger">missRanger</a> is also very easy to install.</p>
 <div class="sourceCode" id="cb64"><pre class="downlit">
-<span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span>(<span class="st">"missRanger"</span>)
-</pre></div>
+<span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span><span class="op">(</span><span class="st">"missRanger"</span><span class="op">)</span></pre></div>
 </div>
 <div id="miceranger" class="section level2">
 <h2 class="hasAnchor">
@@ -778,8 +763,7 @@
 </h2>
 <p><a href="https://github.com/FarrellDay/miceRanger">miceRanger</a> easy to install.</p>
 <div class="sourceCode" id="cb65"><pre class="downlit">
-<span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span>(<span class="st">"miceRanger"</span>)
-</pre></div>
+<span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span><span class="op">(</span><span class="st">"miceRanger"</span><span class="op">)</span></pre></div>
 </div>
 <div id="pcamethods" class="section level2">
 <h2 class="hasAnchor">
@@ -787,8 +771,7 @@
 </h2>
 <p>To install <a href="https://github.com/hredestig/pcaMethods">pcaMethods</a>, from bioconductor:</p>
 <div class="sourceCode" id="cb66"><pre class="downlit">
-<span class="kw">BiocManager</span>::<span class="fu"><a href="https://rdrr.io/pkg/BiocManager/man/install.html">install</a></span>(<span class="st">"pcaMethods"</span>)
-</pre></div>
+<span class="fu">BiocManager</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/BiocManager/man/install.html">install</a></span><span class="op">(</span><span class="st">"pcaMethods"</span><span class="op">)</span></pre></div>
 </div>
 <div id="fastsimcoal2" class="section level2">
 <h2 class="hasAnchor">

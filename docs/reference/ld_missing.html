@@ -139,17 +139,17 @@ Prune dataset based on LD, uses missingness to keep 1 SNP. This is the function
 that does it for 1 chrom. It's then used with purrr::map to run seriall on all chrom.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>ld_missing</span>(
-  <span class='kw'>wl</span>,
-  <span class='kw'>data</span>,
-  ld.threshold = <span class='fu'><a href='https://rdrr.io/r/base/seq.html'>seq</a></span>(<span class='fl'>0.1</span>, <span class='fl'>0.9</span>, by = <span class='fl'>0.1</span>),
-  denovo = <span class='kw'>NULL</span>,
-  ld.method = <span class='st'>"r2"</span>,
-  ld.figures = <span class='fl'>TRUE</span>,
-  path.folder = <span class='kw'>NULL</span>,
-  parallel.core = <span class='kw'>parallel</span>::<span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span>() <span class='op'>-</span> <span class='fl'>1</span>,
-  verbose = <span class='fl'>TRUE</span>
-)</pre>
+    <pre class="usage"><span class='fu'>ld_missing</span><span class='op'>(</span>
+  <span class='va'>wl</span>,
+  <span class='va'>data</span>,
+  ld.threshold <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/seq.html'>seq</a></span><span class='op'>(</span><span class='fl'>0.1</span>, <span class='fl'>0.9</span>, by <span class='op'>=</span> <span class='fl'>0.1</span><span class='op'>)</span>,
+  denovo <span class='op'>=</span> <span class='cn'>NULL</span>,
+  ld.method <span class='op'>=</span> <span class='st'>"r2"</span>,
+  ld.figures <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  path.folder <span class='op'>=</span> <span class='cn'>NULL</span>,
+  parallel.core <span class='op'>=</span> <span class='fu'>parallel</span><span class='fu'>::</span><span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span><span class='op'>(</span><span class='op'>)</span> <span class='op'>-</span> <span class='fl'>1</span>,
+  verbose <span class='op'>=</span> <span class='cn'>TRUE</span>
+<span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">

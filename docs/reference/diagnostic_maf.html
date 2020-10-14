@@ -135,7 +135,7 @@
     <p>Minor Allele Frequency diagnostic, help choose a filter threshold.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>diagnostic_maf</span>(<span class='kw'>data</span>, <span class='kw'>group.rank</span>, filename = <span class='kw'>NULL</span>)</pre>
+    <pre class="usage"><span class='fu'>diagnostic_maf</span><span class='op'>(</span><span class='va'>data</span>, <span class='va'>group.rank</span>, filename <span class='op'>=</span> <span class='cn'>NULL</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -166,10 +166,10 @@ in wide or long (tidy) formats. To import, the function uses
     <div class='dont-index'><p><a href='filter_maf.html'>filter_maf</a></p></div>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='co'>if</span> (<span class='fl'>FALSE</span>) {
-<span class='kw'>problem</span> <span class='op'>&lt;-</span> <span class='kw'>radiator</span>::<span class='fu'>diagnostic_maf</span>(
-data = <span class='kw'>tidy.salmon.data</span>, group.rank = <span class='fl'>10</span>)
-}
+    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
+<span class='va'>problem</span> <span class='op'>&lt;-</span> <span class='fu'>radiator</span><span class='fu'>::</span><span class='fu'>diagnostic_maf</span><span class='op'>(</span>
+data <span class='op'>=</span> <span class='va'>tidy.salmon.data</span>, group.rank <span class='op'>=</span> <span class='fl'>10</span><span class='op'>)</span>
+<span class='op'>}</span>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

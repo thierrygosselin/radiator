@@ -145,18 +145,18 @@ DArT counts or RADseq with allele read depth &gt; DArT silico (genotypes) &gt;
 RADseq (genotypes) and DArT (1-row, 2-rows genotypes).</p>
     </div>
 
-    <pre class="usage"><span class='fu'>sexy_markers</span>(
-  <span class='kw'>data</span>,
-  silicodata = <span class='kw'>NULL</span>,
-  boost.analysis = <span class='fl'>FALSE</span>,
-  strata = <span class='kw'>NULL</span>,
-  coverage.thresholds = <span class='fl'>1</span>,
-  filters = <span class='fl'>TRUE</span>,
-  interactive.filter = <span class='fl'>TRUE</span>,
-  folder.name = <span class='kw'>NULL</span>,
-  parallel.core = <span class='kw'>parallel</span>::<span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span>() <span class='op'>-</span> <span class='fl'>1</span>,
-  <span class='kw'>...</span>
-)</pre>
+    <pre class="usage"><span class='fu'>sexy_markers</span><span class='op'>(</span>
+  <span class='va'>data</span>,
+  silicodata <span class='op'>=</span> <span class='cn'>NULL</span>,
+  boost.analysis <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  strata <span class='op'>=</span> <span class='cn'>NULL</span>,
+  coverage.thresholds <span class='op'>=</span> <span class='fl'>1</span>,
+  filters <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  interactive.filter <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  folder.name <span class='op'>=</span> <span class='cn'>NULL</span>,
+  parallel.core <span class='op'>=</span> <span class='fu'>parallel</span><span class='fu'>::</span><span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span><span class='op'>(</span><span class='op'>)</span> <span class='op'>-</span> <span class='fl'>1</span>,
+  <span class='va'>...</span>
+<span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -375,13 +375,13 @@ perform better with new samples.</p>
 Thierry Gosselin <a href='mailto:thierrygosselin@icloud.com'>thierrygosselin@icloud.com</a></p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='co'>if</span> (<span class='fl'>FALSE</span>) {
+    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
 <span class='co'># The minimum</span>
-<span class='kw'>sex.markers</span> <span class='op'>&lt;-</span> <span class='kw'>radiator</span>::<span class='fu'>sexy_markers</span>(
-    data = <span class='st'>"shark.dart.data.csv"</span>,
-    strata = <span class='st'>"shark.strata.tsv"</span>)
+<span class='va'>sex.markers</span> <span class='op'>&lt;-</span> <span class='fu'>radiator</span><span class='fu'>::</span><span class='fu'>sexy_markers</span><span class='op'>(</span>
+    data <span class='op'>=</span> <span class='st'>"shark.dart.data.csv"</span>,
+    strata <span class='op'>=</span> <span class='st'>"shark.strata.tsv"</span><span class='op'>)</span>
 <span class='co'># This will use the default: interactive version and a list is created and to view the sex markers</span>
-}
+<span class='op'>}</span>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

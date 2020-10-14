@@ -135,7 +135,7 @@
     <p>Detect if the dataset was de novo or reference genome assembled</p>
     </div>
 
-    <pre class="usage"><span class='fu'>detect_ref_genome</span>(chromosome = <span class='kw'>NULL</span>, data = <span class='kw'>NULL</span>, verbose = <span class='fl'>TRUE</span>)</pre>
+    <pre class="usage"><span class='fu'>detect_ref_genome</span><span class='op'>(</span>chromosome <span class='op'>=</span> <span class='cn'>NULL</span>, data <span class='op'>=</span> <span class='cn'>NULL</span>, verbose <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -171,9 +171,9 @@ Default: <code>verbose = TRUE</code>.</p></td>
     <p>Thierry Gosselin <a href='mailto:thierrygosselin@icloud.com'>thierrygosselin@icloud.com</a></p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='co'>if</span> (<span class='fl'>FALSE</span>) {
-<span class='kw'>ref.genome</span> <span class='op'>&lt;-</span> <span class='kw'>radiator</span>::<span class='fu'>detect_ref_genome</span>(chromosome = <span class='kw'>tidy.data</span><span class='op'>$</span><span class='kw'>CHROM</span>)
-}
+    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
+<span class='va'>ref.genome</span> <span class='op'>&lt;-</span> <span class='fu'>radiator</span><span class='fu'>::</span><span class='fu'>detect_ref_genome</span><span class='op'>(</span>chromosome <span class='op'>=</span> <span class='va'>tidy.data</span><span class='op'>$</span><span class='va'>CHROM</span><span class='op'>)</span>
+<span class='op'>}</span>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

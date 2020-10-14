@@ -148,19 +148,19 @@ to highligh potential duplicate individuals.</p><ol>
 
     </div>
 
-    <pre class="usage"><span class='fu'>detect_duplicate_genomes</span>(
-  <span class='kw'>data</span>,
-  interactive.filter = <span class='fl'>TRUE</span>,
-  detect.duplicate.genomes = <span class='fl'>TRUE</span>,
-  dup.threshold = <span class='fl'>0</span>,
-  distance.method = <span class='st'>"manhattan"</span>,
-  genome = <span class='fl'>FALSE</span>,
-  threshold.common.markers = <span class='kw'>NULL</span>,
-  blacklist.duplicates = <span class='fl'>FALSE</span>,
-  parallel.core = <span class='kw'>parallel</span>::<span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span>() <span class='op'>-</span> <span class='fl'>1</span>,
-  verbose = <span class='fl'>TRUE</span>,
-  <span class='kw'>...</span>
-)</pre>
+    <pre class="usage"><span class='fu'>detect_duplicate_genomes</span><span class='op'>(</span>
+  <span class='va'>data</span>,
+  interactive.filter <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  detect.duplicate.genomes <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  dup.threshold <span class='op'>=</span> <span class='fl'>0</span>,
+  distance.method <span class='op'>=</span> <span class='st'>"manhattan"</span>,
+  genome <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  threshold.common.markers <span class='op'>=</span> <span class='cn'>NULL</span>,
+  blacklist.duplicates <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  parallel.core <span class='op'>=</span> <span class='fu'>parallel</span><span class='fu'>::</span><span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span><span class='op'>(</span><span class='op'>)</span> <span class='op'>-</span> <span class='fl'>1</span>,
+  verbose <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  <span class='va'>...</span>
+<span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -303,9 +303,9 @@ an extremely low number of genotypes...</em></p>
     <p>Thierry Gosselin <a href='mailto:thierrygosselin@icloud.com'>thierrygosselin@icloud.com</a></p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='co'>if</span> (<span class='fl'>FALSE</span>) {
+    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
 <span class='co'># First run and simplest way (if you have the tidy tibble):</span>
-<span class='kw'>dup</span> <span class='op'>&lt;-</span> <span class='kw'>radiator</span>::<span class='fu'>detect_duplicate_genomes</span>(data = <span class='st'>"wombat_tidy.rad"</span>)
+<span class='va'>dup</span> <span class='op'>&lt;-</span> <span class='fu'>radiator</span><span class='fu'>::</span><span class='fu'>detect_duplicate_genomes</span><span class='op'>(</span>data <span class='op'>=</span> <span class='st'>"wombat_tidy.rad"</span><span class='op'>)</span>
 
 <span class='co'># This will use by default:</span>
 <span class='co'># distance.method = "manhattan"</span>
@@ -317,41 +317,41 @@ an extremely low number of genotypes...</em></p>
 
 
 <span class='co'># To view the manhattan plot:</span>
-<span class='kw'>dup</span><span class='op'>$</span><span class='kw'>manhattan.plot.distance</span>
+<span class='va'>dup</span><span class='op'>$</span><span class='va'>manhattan.plot.distance</span>
 
 <span class='co'># to view the data stats</span>
-<span class='kw'>dup.data.stats</span> <span class='op'>&lt;-</span> <span class='kw'>dup</span><span class='op'>$</span><span class='kw'>distance.stats</span>
+<span class='va'>dup.data.stats</span> <span class='op'>&lt;-</span> <span class='va'>dup</span><span class='op'>$</span><span class='va'>distance.stats</span>
 
 <span class='co'># to view the data</span>
-<span class='kw'>dup.data</span> <span class='op'>&lt;-</span> <span class='kw'>dup</span><span class='op'>$</span><span class='kw'>distance</span>
+<span class='va'>dup.data</span> <span class='op'>&lt;-</span> <span class='va'>dup</span><span class='op'>$</span><span class='va'>distance</span>
 
 <span class='co'># Based on the look of the distribution using both manhattan and boxplot,</span>
 <span class='co'># I can filter the dataset to highlight potential duplicates.</span>
 
 <span class='co'># To run the distance (with euclidean distance instead of the default manhattan,</span>
 <span class='co'># and also carry the second analysis (with the genome method):</span>
-<span class='kw'>dup</span> <span class='op'>&lt;-</span> <span class='kw'>radiator</span>::<span class='fu'><a href='tidy_genomic_data.html'>tidy_genomic_data</a></span>(
-    data = <span class='kw'>wombat_tidy_object</span>,
-    strata = <span class='st'>"wombat.strata.tsv"</span>,
-    vcf.metadata = <span class='fl'>FALSE</span>
-) <span class='op'>%&gt;%</span>
-<span class='kw'>radiator</span>::<span class='fu'>detect_duplicate_genomes</span>(
-    data = <span class='kw'>.</span>,
-    distance.method = <span class='st'>"euclidean"</span>,
-    genome = <span class='fl'>TRUE</span>
-    )
+<span class='va'>dup</span> <span class='op'>&lt;-</span> <span class='fu'>radiator</span><span class='fu'>::</span><span class='fu'><a href='tidy_genomic_data.html'>tidy_genomic_data</a></span><span class='op'>(</span>
+    data <span class='op'>=</span> <span class='va'>wombat_tidy_object</span>,
+    strata <span class='op'>=</span> <span class='st'>"wombat.strata.tsv"</span>,
+    vcf.metadata <span class='op'>=</span> <span class='cn'>FALSE</span>
+<span class='op'>)</span> <span class='op'>%&gt;%</span>
+<span class='fu'>radiator</span><span class='fu'>::</span><span class='fu'>detect_duplicate_genomes</span><span class='op'>(</span>
+    data <span class='op'>=</span> <span class='va'>.</span>,
+    distance.method <span class='op'>=</span> <span class='st'>"euclidean"</span>,
+    genome <span class='op'>=</span> <span class='cn'>TRUE</span>
+    <span class='op'>)</span>
 
 <span class='co'># to view the data of the genome data</span>
-<span class='kw'>dup.data</span> <span class='op'>&lt;-</span> <span class='kw'>dup</span><span class='op'>$</span><span class='kw'>pairwise.genome.similarity</span>
+<span class='va'>dup.data</span> <span class='op'>&lt;-</span> <span class='va'>dup</span><span class='op'>$</span><span class='va'>pairwise.genome.similarity</span>
 
 <span class='co'># Based on the look of the distribution using both manhattan and boxplot,</span>
 <span class='co'># I can filter the dataset based on 98% of identical genotype proportion,</span>
 <span class='co'># to highlight potential duplicates:</span>
-<span class='kw'>dup.filtered</span> <span class='op'>&lt;-</span> <span class='kw'>dplyr</span>::<span class='fu'><a href='https://dplyr.tidyverse.org/reference/filter.html'>filter</a></span>(.data = <span class='kw'>dup.data</span>, <span class='kw'>PROP_IDENTICAL</span> <span class='op'>&gt;</span> <span class='fl'>0.98</span>)
+<span class='va'>dup.filtered</span> <span class='op'>&lt;-</span> <span class='fu'>dplyr</span><span class='fu'>::</span><span class='fu'><a href='https://dplyr.tidyverse.org/reference/filter.html'>filter</a></span><span class='op'>(</span>.data <span class='op'>=</span> <span class='va'>dup.data</span>, <span class='va'>PROP_IDENTICAL</span> <span class='op'>&gt;</span> <span class='fl'>0.98</span><span class='op'>)</span>
 
 <span class='co'># Get the list of duplicates id</span>
-<span class='kw'>dup.list.names</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span>(INDIVIDUALS = <span class='fu'><a href='https://rdrr.io/r/base/unique.html'>unique</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='kw'>dup.filtered</span><span class='op'>$</span><span class='kw'>ID1</span>, <span class='kw'>dup.filtered</span><span class='op'>$</span><span class='kw'>ID2</span>)))
-}
+<span class='va'>dup.list.names</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span><span class='op'>(</span>INDIVIDUALS <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/unique.html'>unique</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='va'>dup.filtered</span><span class='op'>$</span><span class='va'>ID1</span>, <span class='va'>dup.filtered</span><span class='op'>$</span><span class='va'>ID2</span><span class='op'>)</span><span class='op'>)</span><span class='op'>)</span>
+<span class='op'>}</span>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

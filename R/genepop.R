@@ -6,7 +6,7 @@
 #' @description Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 #' and might be of interest for users.
 #' The function \code{tidy_genepop} reads a file in the
-#' \href{http://genepop.curtin.edu.au/help_input.html}{genepop format}
+#' \href{https://genepop.curtin.edu.au/help_input.html}{genepop format}
 #' (see details and note for convention) and output a data frame in wide or long/tidy format.
 #'
 #' To manipulate and prune the dataset prior to tidying, use the functions
@@ -14,7 +14,7 @@
 #' \code{\link[radiator]{genomic_converter}}, that uses blacklist and whitelist along
 #' several other filtering options.
 
-#' @param data A \href{http://genepop.curtin.edu.au/help_input.html}{genepop}
+#' @param data A \href{https://genepop.curtin.edu.au/help_input.html}{genepop}
 #' filename with extension \code{.gen}.
 
 #' @param strata (optional) A tab delimited file with 2 columns. Header:
@@ -37,7 +37,7 @@
 #' If \code{filename} is provided, the wide or long/tidy data frame is also
 #' written to the working directory.
 
-#' @details \href{http://genepop.curtin.edu.au/help_input.html}{genepop format}
+#' @details \href{https://genepop.curtin.edu.au/help_input.html}{genepop format}
 #' \enumerate{
 #' \item \strong{First line:} This line is used to store information about
 #' your data, any characters are allowed.
@@ -49,12 +49,12 @@
 #' not recommended with genomic datasets with thousands of markers...).
 #'
 #' The remaining lines are blocks of population and genotypes,
-#' \href{http://genepop.curtin.edu.au/help_input.html}{for genepop format examples}.
+#' \href{https://genepop.curtin.edu.au/help_input.html}{for genepop format examples}.
 #' \item \strong{population identifier:} The population block are separated by
 #' the word: \code{POP}, or \code{Pop} or \code{pop}. Flavors of the genepop
 #' software uses the first or the last identifier of every sub-population,
 #' in all output files, to name populations
-#' \href{http://genepop.curtin.edu.au/help_input.html}{(more info)}.
+#' \href{https://genepop.curtin.edu.au/help_input.html}{(more info)}.
 #' This is not very convenient for population naming and prone to errors,
 #' this is where the \code{strata} argument inside \code{tidy_genepop}
 #' (described above) becomes handy.
@@ -78,7 +78,7 @@
 #' }
 
 #' @note
-#' \href{http://genepop.curtin.edu.au/help_input.html}{genepop format notes:}
+#' \href{https://genepop.curtin.edu.au/help_input.html}{genepop format notes:}
 #' \itemize{
 #' \item No constraint on blanks separating the various fields.
 #' \item tabs or spaces allowed.
@@ -139,7 +139,7 @@
 #' 2008, 8: 103-106.
 #' doi:10.1111/j.1471-8286.2007.01931.x
 
-#' @seealso \href{http://genepop.curtin.edu.au}{genepop}
+#' @seealso \href{https://genepop.curtin.edu.au}{genepop}
 
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 

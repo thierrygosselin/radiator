@@ -96,14 +96,13 @@
 <a href="#installation" class="anchor"></a>Installation</h2>
 <p>To try out the dev version of <strong>radiator</strong>, copy/paste the code below:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit">
-<span class="co">if</span> (<span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/library.html">require</a></span>(<span class="st"><a href="https://devtools.r-lib.org">"devtools"</a></span>)) <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span>(<span class="st">"devtools"</span>)
-<span class="kw">devtools</span>::<span class="fu"><a href="https://devtools.r-lib.org//reference/remote-reexports.html">install_github</a></span>(<span class="st">"thierrygosselin/radiator"</span>)
-<span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="kw"><a href="https://thierrygosselin.github.io/radiator">radiator</a></span>)
+<span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="kw"><a href="https://rdrr.io/r/base/library.html">require</a></span><span class="op">(</span><span class="st"><a href="https://devtools.r-lib.org/">"devtools"</a></span><span class="op">)</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span><span class="op">(</span><span class="st">"devtools"</span><span class="op">)</span>
+<span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org//reference/remote-reexports.html">install_github</a></span><span class="op">(</span><span class="st">"thierrygosselin/radiator"</span><span class="op">)</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://thierrygosselin.github.io/radiator/">radiator</a></span><span class="op">)</span>
 
 <span class="co"># Run:</span>
-<span class="kw">devtools</span>::<span class="fu"><a href="https://rdrr.io/pkg/sessioninfo/man/package_info.html">package_info</a></span>(pkgs = <span class="st">"SeqArray"</span>)
-<span class="co"># Verify that package gdsfmt was installed and that you have package SeqArray version &gt;= 1.28.1.</span>
-</pre></div>
+<span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/sessioninfo/man/package_info.html">package_info</a></span><span class="op">(</span>pkgs <span class="op">=</span> <span class="st">"SeqArray"</span><span class="op">)</span>
+<span class="co"># Verify that package gdsfmt was installed and that you have package SeqArray version &gt;= 1.28.1.</span></pre></div>
 <p>Web site with additional info: <a href="https://thierrygosselin.github.io/radiator/" class="uri">https://thierrygosselin.github.io/radiator/</a></p>
 <ul>
 <li><a href="https://thierrygosselin.github.io/radiator/articles/rad_genomics_computer_setup.html">Computer setup and troubleshooting</a></li>
@@ -170,7 +169,8 @@
 <li><a href="http://www.repostatus.org/#active"><img src="http://www.repostatus.org/badges/latest/active.svg" alt="Project Status: Active – The project has reached a stable, usable state and is being actively developed."></a></li>
 <li><a href="https://doi.org/10.5281/zenodo.3687060"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.3687060.svg" alt="DOI"></a></li>
 <li><a href="commits/master"><img src="https://img.shields.io/badge/Package%20version-1.1.7-orange.svg" alt="packageversion"></a></li>
-<li><a href="/commits/master"><img src="https://img.shields.io/badge/last%20change-2020--09--30-brightgreen.svg" alt="Last-changedate"></a></li>
+<li><a href="/commits/master"><img src="https://img.shields.io/badge/last%20change-2020--10--14-brightgreen.svg" alt="Last-changedate"></a></li>
+<li><a href="https://cran.r-project.org/"><img src="https://img.shields.io/badge/R%3E%3D-3.5.0-6666ff.svg" alt="minimal R version"></a></li>
 </ul>
 </div>
 </div>

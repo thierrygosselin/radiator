@@ -203,12 +203,6 @@ filter_whitelist <- function(
     }
   }
 
-  # if (data.type == "SeqVarGDSClass") {
-  # if (verbose) message("GDS filter reset")
-  # sync_gds(gds = data, reset.gds = TRUE, verbose = FALSE)
-  # radiator::summary_gds(gds = data, check.sync = TRUE)
-  # }
-
   # Filter parameter file: generate and initiate -----------------------------
   filters.parameters <- radiator_parameters(
     generate = TRUE,
@@ -243,6 +237,19 @@ filter_whitelist <- function(
     )
 
     if (rlang::has_name(whitelist.markers, "VARIANT_ID") && rlang::has_name(markers.meta, "VARIANT_ID")) {
+      use.variant <- TRUE
+      use.markers <- use.others <- FALSE
+    } else if (rlang::has_name(whitelist.markers, "MARKERS") && rlang::has_name(markers.meta, "MARKERS")) {
+      use.variant <- use.others <- FALSE
+      use.markers <- TRUE
+      FALSE
+    } else {
+      use.variant <- use.markers <- FALSE
+      use.others <- TRUE
+    }
+
+
+    if (use.variant) {
       markers.meta %<>%
         dplyr::mutate(
           FILTERS = dplyr::if_else(
@@ -252,7 +259,10 @@ filter_whitelist <- function(
             FILTERS
           )
         )
-    } else {
+    }
+
+
+    if (use.markers) {
       markers.meta %<>%
         dplyr::mutate(
           FILTERS = dplyr::if_else(
@@ -263,6 +273,33 @@ filter_whitelist <- function(
           )
         )
     }
+
+    if (use.others) {
+      common.meta <- rlang::syms((intersect(colnames(markers.meta), colnames(whitelist.markers))))
+      whitelist.markers %<>%
+        dplyr::mutate(
+          .data = .,
+          COMMON_META = stringi::stri_join(!!!common.meta, sep = "__")
+        )
+
+      test <- markers.meta %>%
+        dplyr::mutate(
+          .data = .,
+          COMMON_META = stringi::stri_join(!!!common.meta, sep = "__")
+        ) %>%
+        dplyr::filter(COMMON_META %in% whitelist.markers$COMMON_META)
+
+      #   FILTERS = dplyr::if_else(
+        #     !COMMON_META %in% whitelist.markers$COMMON_META &
+        #       FILTERS == "whitelist",
+        #     "filter.whitelist",
+        #     FILTERS
+        #   )
+        #   # COMMON_META = NULL
+        # )
+      common.meta <- NULL
+    }
+
 
     if (nrow(dplyr::filter(markers.meta, FILTERS == "whitelist")) == 0) {
       rlang::abort("No markers left in the dataset, check whitelist...")

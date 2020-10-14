@@ -141,12 +141,12 @@ Used internally in
 and might be of interest for users.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>write_hzar</span>(
-  <span class='kw'>data</span>,
-  distances = <span class='kw'>NULL</span>,
-  filename = <span class='kw'>NULL</span>,
-  parallel.core = <span class='kw'>parallel</span>::<span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span>() <span class='op'>-</span> <span class='fl'>1</span>
-)</pre>
+    <pre class="usage"><span class='fu'>write_hzar</span><span class='op'>(</span>
+  <span class='va'>data</span>,
+  distances <span class='op'>=</span> <span class='cn'>NULL</span>,
+  filename <span class='op'>=</span> <span class='cn'>NULL</span>,
+  parallel.core <span class='op'>=</span> <span class='fu'>parallel</span><span class='fu'>::</span><span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span><span class='op'>(</span><span class='op'>)</span> <span class='op'>-</span> <span class='fl'>1</span>
+<span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -195,25 +195,25 @@ Molecular Ecology Resources. 2013;14: 652-663. doi:10.1111/1755-0998.12209</p>
     <p>Thierry Gosselin <a href='mailto:thierrygosselin@icloud.com'>thierrygosselin@icloud.com</a></p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='co'>if</span> (<span class='fl'>FALSE</span>) {
+    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
 <span class='co'># The simplest form of the function:</span>
-<span class='kw'>hzar.data</span> <span class='op'>&lt;-</span> <span class='kw'>radiator</span>::<span class='fu'>write_hzar</span>(data = <span class='kw'>tidydata</span>)
+<span class='va'>hzar.data</span> <span class='op'>&lt;-</span> <span class='fu'>radiator</span><span class='fu'>::</span><span class='fu'>write_hzar</span><span class='op'>(</span>data <span class='op'>=</span> <span class='va'>tidydata</span><span class='op'>)</span>
 
 
 <span class='co'># Using genepop dataset, nancycats, from adegenet</span>
 <span class='co'># require(adegenet)</span>
-<span class='kw'>nancycats</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/system.file.html'>system.file</a></span>(<span class='st'>"files/nancycats.gen"</span>, package = <span class='st'>"adegenet"</span>)
+<span class='va'>nancycats</span> <span class='op'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/system.file.html'>system.file</a></span><span class='op'>(</span><span class='st'>"files/nancycats.gen"</span>, package <span class='op'>=</span> <span class='st'>"adegenet"</span><span class='op'>)</span>
 
 
 <span class='co'># using genomic_converter:</span>
-<span class='kw'>nanycats.hzar</span> <span class='op'>&lt;-</span> <span class='kw'>radiator</span>::<span class='fu'><a href='genomic_converter.html'>genomic_converter</a></span>(data = <span class='kw'>nancycats</span>, output = <span class='st'>"hzar"</span>)
+<span class='va'>nanycats.hzar</span> <span class='op'>&lt;-</span> <span class='fu'>radiator</span><span class='fu'>::</span><span class='fu'><a href='genomic_converter.html'>genomic_converter</a></span><span class='op'>(</span>data <span class='op'>=</span> <span class='va'>nancycats</span>, output <span class='op'>=</span> <span class='st'>"hzar"</span><span class='op'>)</span>
 
 
 <span class='co'># using the separate modules:</span>
 <span class='co'># tidy the genepop file then pipe the result in write_hzar</span>
-<span class='kw'>nanycats.hzar</span> <span class='op'>&lt;-</span> <span class='kw'>radiator</span>::<span class='fu'><a href='tidy_genepop.html'>tidy_genepop</a></span>(data = <span class='kw'>nancycats</span>) <span class='op'>%&gt;%</span>
-    <span class='kw'>radiator</span>::<span class='fu'>write_hzar</span>(data = <span class='kw'>.</span>)
-}
+<span class='va'>nanycats.hzar</span> <span class='op'>&lt;-</span> <span class='fu'>radiator</span><span class='fu'>::</span><span class='fu'><a href='tidy_genepop.html'>tidy_genepop</a></span><span class='op'>(</span>data <span class='op'>=</span> <span class='va'>nancycats</span><span class='op'>)</span> <span class='op'>%&gt;%</span>
+    <span class='fu'>radiator</span><span class='fu'>::</span><span class='fu'>write_hzar</span><span class='op'>(</span>data <span class='op'>=</span> <span class='va'>.</span><span class='op'>)</span>
+<span class='op'>}</span>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

@@ -48,6 +48,7 @@ Suggests:
     tibble,
     tidyr (>= 1.1.0),
     utils
+Remotes: ericarcher/strataG
 License: GPL-3
 LazyLoad: yes
 VignetteBuilder: knitr

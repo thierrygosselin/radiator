@@ -135,12 +135,12 @@
     <p>Split rows of tibble for parallel processing</p>
     </div>
 
-    <pre class="usage"><span class='fu'>split_tibble_rows</span>(
-  <span class='kw'>x</span>,
-  lines.cpu = <span class='fl'>1000</span>,
-  parallel.core = <span class='kw'>parallel</span>::<span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span>() <span class='op'>-</span> <span class='fl'>1</span>,
-  group.split = <span class='fl'>TRUE</span>
-)</pre>
+    <pre class="usage"><span class='fu'>split_tibble_rows</span><span class='op'>(</span>
+  <span class='va'>x</span>,
+  lines.cpu <span class='op'>=</span> <span class='fl'>1000</span>,
+  parallel.core <span class='op'>=</span> <span class='fu'>parallel</span><span class='fu'>::</span><span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span><span class='op'>(</span><span class='op'>)</span> <span class='op'>-</span> <span class='fl'>1</span>,
+  group.split <span class='op'>=</span> <span class='cn'>TRUE</span>
+<span class='op'>)</span></pre>
 
 
 

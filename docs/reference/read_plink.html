@@ -149,13 +149,13 @@ The Genomic Data Structure (GDS) file format is detailed in
 and might be of interest for users.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>read_plink</span>(
-  <span class='kw'>data</span>,
-  filename = <span class='kw'>NULL</span>,
-  parallel.core = <span class='kw'>parallel</span>::<span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span>() <span class='op'>-</span> <span class='fl'>1</span>,
-  verbose = <span class='fl'>TRUE</span>,
-  <span class='kw'>...</span>
-)</pre>
+    <pre class="usage"><span class='fu'>read_plink</span><span class='op'>(</span>
+  <span class='va'>data</span>,
+  filename <span class='op'>=</span> <span class='cn'>NULL</span>,
+  parallel.core <span class='op'>=</span> <span class='fu'>parallel</span><span class='fu'>::</span><span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span><span class='op'>(</span><span class='op'>)</span> <span class='op'>-</span> <span class='fl'>1</span>,
+  verbose <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  <span class='va'>...</span>
+<span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -224,11 +224,11 @@ American Journal of Human Genetics. 2007: 81: 559–575. doi:10.1086/519795</p>
     <p>Thierry Gosselin <a href='mailto:thierrygosselin@icloud.com'>thierrygosselin@icloud.com</a></p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='co'>if</span> (<span class='fl'>FALSE</span>) {
-<span class='kw'>data</span> <span class='op'>&lt;-</span> <span class='kw'>radiator</span>::<span class='fu'>read_plink</span>(data = <span class='st'>"my_plink_file.bed"</span>)
+    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
+<span class='va'>data</span> <span class='op'>&lt;-</span> <span class='fu'>radiator</span><span class='fu'>::</span><span class='fu'>read_plink</span><span class='op'>(</span>data <span class='op'>=</span> <span class='st'>"my_plink_file.bed"</span><span class='op'>)</span>
 <span class='co'># when conversion is required from TPED to BED, in Terminal:</span>
 <span class='co'># plink --tfile my_plink_file --make-bed --allow-no-sex --allow-extra-chr --chr-set 95</span>
-}
+<span class='op'>}</span>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

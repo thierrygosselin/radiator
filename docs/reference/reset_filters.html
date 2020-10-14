@@ -137,28 +137,28 @@ Reset specific filters or all filters at once." />
 Reset specific filters or all filters at once.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>reset_filters</span>(
-  <span class='kw'>gds</span>,
-  list.filters = <span class='fl'>TRUE</span>,
-  reset.all = <span class='fl'>FALSE</span>,
-  filter.individuals.missing = <span class='fl'>FALSE</span>,
-  filter.individuals.heterozygosity = <span class='fl'>FALSE</span>,
-  filter.individuals.coverage.total = <span class='fl'>FALSE</span>,
-  detect.mixed.genomes = <span class='fl'>FALSE</span>,
-  detect.duplicate.genomes = <span class='fl'>FALSE</span>,
-  filter.reproducibility = <span class='fl'>FALSE</span>,
-  filter.monomorphic = <span class='fl'>FALSE</span>,
-  filter.common.markers = <span class='fl'>FALSE</span>,
-  filter.mac = <span class='fl'>FALSE</span>,
-  filter.mean.coverage = <span class='fl'>FALSE</span>,
-  filter.genotyping = <span class='fl'>FALSE</span>,
-  filter.snp.position.read = <span class='fl'>FALSE</span>,
-  filter.snp.number = <span class='fl'>FALSE</span>,
-  filter.short.ld = <span class='fl'>FALSE</span>,
-  filter.long.ld = <span class='fl'>FALSE</span>,
-  filter.hwe = <span class='fl'>FALSE</span>,
-  filter.whitelist = <span class='fl'>FALSE</span>
-)</pre>
+    <pre class="usage"><span class='fu'>reset_filters</span><span class='op'>(</span>
+  <span class='va'>gds</span>,
+  list.filters <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  reset.all <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  filter.individuals.missing <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  filter.individuals.heterozygosity <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  filter.individuals.coverage.total <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  detect.mixed.genomes <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  detect.duplicate.genomes <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  filter.reproducibility <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  filter.monomorphic <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  filter.common.markers <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  filter.mac <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  filter.mean.coverage <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  filter.genotyping <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  filter.snp.position.read <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  filter.snp.number <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  filter.short.ld <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  filter.long.ld <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  filter.hwe <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  filter.whitelist <span class='op'>=</span> <span class='cn'>FALSE</span>
+<span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -276,14 +276,14 @@ Default: <code>filter.whitelist = FALSE</code>.</p></td>
     <p>Thierry Gosselin <a href='mailto:thierrygosselin@icloud.com'>thierrygosselin@icloud.com</a></p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='co'>if</span> (<span class='fl'>FALSE</span>) {
+    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
 <span class='co'># List active filters for individuals and markers</span>
-<span class='fu'>reset_filters</span>(<span class='kw'>gds</span>)
+<span class='fu'>reset_filters</span><span class='op'>(</span><span class='va'>gds</span><span class='op'>)</span>
 
 <span class='co'># You changed your decision concerning the genotyping threshold or</span>
 <span class='co'># entered the wrong one:</span>
-<span class='fu'>reset_filters</span>(<span class='kw'>gds</span>, filter.genotyping = <span class='fl'>TRUE</span>)
-}
+<span class='fu'>reset_filters</span><span class='op'>(</span><span class='va'>gds</span>, filter.genotyping <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
+<span class='op'>}</span>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

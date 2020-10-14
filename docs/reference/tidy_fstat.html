@@ -151,7 +151,7 @@ into a wide or long/tidy data frame</p>
 several other filtering options.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>tidy_fstat</span>(<span class='kw'>data</span>, strata = <span class='kw'>NULL</span>, tidy = <span class='fl'>TRUE</span>, filename = <span class='kw'>NULL</span>)</pre>
+    <pre class="usage"><span class='fu'>tidy_fstat</span><span class='op'>(</span><span class='va'>data</span>, strata <span class='op'>=</span> <span class='cn'>NULL</span>, tidy <span class='op'>=</span> <span class='cn'>TRUE</span>, filename <span class='op'>=</span> <span class='cn'>NULL</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -203,27 +203,27 @@ Journal of Heredity 86:485-486</p>
     <p>Thierry Gosselin <a href='mailto:thierrygosselin@icloud.com'>thierrygosselin@icloud.com</a></p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='co'>if</span> (<span class='fl'>FALSE</span>) {
+    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
 <span class='co'># We will use the fstat dataset provided with adegenet package</span>
-<span class='fu'><a href='https://rdrr.io/r/base/library.html'>require</a></span>(<span class='st'>"hierfstat"</span>)
+<span class='kw'><a href='https://rdrr.io/r/base/library.html'>require</a></span><span class='op'>(</span><span class='st'>"hierfstat"</span><span class='op'>)</span>
 
 <span class='co'># The simplest form of the function:</span>
-<span class='kw'>fstat.file</span> <span class='op'>&lt;-</span> <span class='kw'>radiator</span>::<span class='fu'>tidy_fstat</span>(
-    data = <span class='fu'><a href='https://rdrr.io/r/base/system.file.html'>system.file</a></span>(
+<span class='va'>fstat.file</span> <span class='op'>&lt;-</span> <span class='fu'>radiator</span><span class='fu'>::</span><span class='fu'>tidy_fstat</span><span class='op'>(</span>
+    data <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/system.file.html'>system.file</a></span><span class='op'>(</span>
     <span class='st'>"extdata/diploid.dat"</span>,
-    package = <span class='st'>"hierfstat"</span>
-    )
- )
+    package <span class='op'>=</span> <span class='st'>"hierfstat"</span>
+    <span class='op'>)</span>
+ <span class='op'>)</span>
 
 <span class='co'># To output a data frame in wide format, with markers in separate columns:</span>
-<span class='kw'>nancycats.wide</span> <span class='op'>&lt;-</span> <span class='kw'>radiator</span>::<span class='fu'>tidy_fstat</span>(
-    data = <span class='fu'><a href='https://rdrr.io/r/base/system.file.html'>system.file</a></span>(
+<span class='va'>nancycats.wide</span> <span class='op'>&lt;-</span> <span class='fu'>radiator</span><span class='fu'>::</span><span class='fu'>tidy_fstat</span><span class='op'>(</span>
+    data <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/system.file.html'>system.file</a></span><span class='op'>(</span>
         <span class='st'>"extdata/diploid.dat"</span>,
-        package = <span class='st'>"hierfstat"</span>
-    ),
-tidy = <span class='fl'>FALSE</span>
-)
-}
+        package <span class='op'>=</span> <span class='st'>"hierfstat"</span>
+    <span class='op'>)</span>,
+tidy <span class='op'>=</span> <span class='cn'>FALSE</span>
+<span class='op'>)</span>
+<span class='op'>}</span>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

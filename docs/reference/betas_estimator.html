@@ -135,7 +135,7 @@
     <p>Estimate \(\beta\)s per population.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>betas_estimator</span>(<span class='kw'>data</span>, strata = <span class='kw'>NULL</span>, filename = <span class='kw'>NULL</span>, verbose = <span class='fl'>FALSE</span>)</pre>
+    <pre class="usage"><span class='fu'>betas_estimator</span><span class='op'>(</span><span class='va'>data</span>, strata <span class='op'>=</span> <span class='cn'>NULL</span>, filename <span class='op'>=</span> <span class='cn'>NULL</span>, verbose <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -194,19 +194,19 @@ Hb: Between populations gene diversities</p>
     <p>Thierry Gosselin <a href='mailto:thierrygosselin@icloud.com'>thierrygosselin@icloud.com</a></p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='co'>if</span> (<span class='fl'>FALSE</span>) {
+    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
 <span class='co'># Using a  VCF file, the simplest for of the function:</span>
-<span class='kw'>fh</span> <span class='op'>&lt;-</span> <span class='fu'><a href='ibdg_fh.html'>ibdg_fh</a></span>(
-data = <span class='st'>"batch_1.vcf"</span>,
-strata = <span class='st'>"strata.panda.tsv"</span>
-)
+<span class='va'>fh</span> <span class='op'>&lt;-</span> <span class='fu'><a href='ibdg_fh.html'>ibdg_fh</a></span><span class='op'>(</span>
+data <span class='op'>=</span> <span class='st'>"batch_1.vcf"</span>,
+strata <span class='op'>=</span> <span class='st'>"strata.panda.tsv"</span>
+<span class='op'>)</span>
 <span class='co'># To see what's inside the list</span>
-<span class='fu'><a href='https://rdrr.io/r/base/names.html'>names</a></span>(<span class='kw'>fh</span>)
+<span class='fu'><a href='https://rdrr.io/r/base/names.html'>names</a></span><span class='op'>(</span><span class='va'>fh</span><span class='op'>)</span>
 <span class='co'># To view the manhattan plot:</span>
-<span class='kw'>fh</span><span class='op'>$</span><span class='kw'>fh.manhattan.plot</span>
+<span class='va'>fh</span><span class='op'>$</span><span class='va'>fh.manhattan.plot</span>
 <span class='co'># To view the distribution of FH values:</span>
-<span class='kw'>fh</span><span class='op'>$</span><span class='kw'>fh.distribution.plot</span>
-}
+<span class='va'>fh</span><span class='op'>$</span><span class='va'>fh.distribution.plot</span>
+<span class='op'>}</span>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

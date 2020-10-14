@@ -141,16 +141,16 @@ Remove markers based on Minor/Alternate Allele Frequency (MAF) or Count (MAC).</
 <code><a href='tidy_genomic_data.html'>tidy_genomic_data</a></code>.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>filter_maf</span>(
-  interactive.filter = <span class='fl'>TRUE</span>,
-  <span class='kw'>data</span>,
-  strata = <span class='kw'>NULL</span>,
-  maf.thresholds = <span class='kw'>NULL</span>,
-  filename = <span class='kw'>NULL</span>,
-  parallel.core = <span class='kw'>parallel</span>::<span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span>() <span class='op'>-</span> <span class='fl'>1</span>,
-  verbose = <span class='fl'>TRUE</span>,
-  <span class='kw'>...</span>
-)</pre>
+    <pre class="usage"><span class='fu'>filter_maf</span><span class='op'>(</span>
+  interactive.filter <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  <span class='va'>data</span>,
+  strata <span class='op'>=</span> <span class='cn'>NULL</span>,
+  maf.thresholds <span class='op'>=</span> <span class='cn'>NULL</span>,
+  filename <span class='op'>=</span> <span class='cn'>NULL</span>,
+  parallel.core <span class='op'>=</span> <span class='fu'>parallel</span><span class='fu'>::</span><span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span><span class='op'>(</span><span class='op'>)</span> <span class='op'>-</span> <span class='fl'>1</span>,
+  verbose <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  <span class='va'>...</span>
+<span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -333,24 +333,24 @@ use the interactive version.</p>
     <p>Thierry Gosselin <a href='mailto:thierrygosselin@icloud.com'>thierrygosselin@icloud.com</a></p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='co'>if</span> (<span class='fl'>FALSE</span>) {
+    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
 <span class='co'># The minumum</span>
-<span class='kw'>turtle.maf</span> <span class='op'>&lt;-</span> <span class='kw'>radiator</span>::<span class='fu'>filter_maf</span>(
-        data = <span class='st'>"turtle.vcf"</span>,
-        strata = <span class='st'>"turtle.strata.tsv"</span>)
+<span class='va'>turtle.maf</span> <span class='op'>&lt;-</span> <span class='fu'>radiator</span><span class='fu'>::</span><span class='fu'>filter_maf</span><span class='op'>(</span>
+        data <span class='op'>=</span> <span class='st'>"turtle.vcf"</span>,
+        strata <span class='op'>=</span> <span class='st'>"turtle.strata.tsv"</span><span class='op'>)</span>
 <span class='co'># This will use the default: interactive version,</span>
 <span class='co'># a list is created and to view the filtered tidy data:</span>
-<span class='kw'>tidy.data</span> <span class='op'>&lt;-</span> <span class='kw'>turtle.maf</span><span class='op'>$</span><span class='kw'>tidy.filtered.maf</span>
+<span class='va'>tidy.data</span> <span class='op'>&lt;-</span> <span class='va'>turtle.maf</span><span class='op'>$</span><span class='va'>tidy.filtered.maf</span>
 
 <span class='co'># The remaining argument are used in tidy_genomic_data during import and allow</span>
 <span class='co'># the user to apply some filtering or selection before doing the MAF filtering.</span>
 
 <span class='co'># If I want to filter Alternate alleles based on count.</span>
-<span class='kw'>turtle.maf</span> <span class='op'>&lt;-</span> <span class='kw'>radiator</span>::<span class='fu'>filter_maf</span>(
-        data = <span class='st'>"turtle.vcf"</span>,
-        strata = <span class='st'>"turtle.strata.tsv"</span>,
-        maf.thresholds = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"SNP"</span>, <span class='fl'>3</span>, <span class='st'>"OR"</span>, <span class='st'>"5"</span>, <span class='fl'>1</span>),
-        filename = <span class='st'>"turtle.maf"</span>)
+<span class='va'>turtle.maf</span> <span class='op'>&lt;-</span> <span class='fu'>radiator</span><span class='fu'>::</span><span class='fu'>filter_maf</span><span class='op'>(</span>
+        data <span class='op'>=</span> <span class='st'>"turtle.vcf"</span>,
+        strata <span class='op'>=</span> <span class='st'>"turtle.strata.tsv"</span>,
+        maf.thresholds <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"SNP"</span>, <span class='fl'>3</span>, <span class='st'>"OR"</span>, <span class='st'>"5"</span>, <span class='fl'>1</span><span class='op'>)</span>,
+        filename <span class='op'>=</span> <span class='st'>"turtle.maf"</span><span class='op'>)</span>
 
 <span class='co'># This will remove monomorphic markers (by default filter.monomorphic = TRUE)</span>
 <span class='co'># it will use the SNP approache (SNPs are considered independent and</span>
@@ -360,7 +360,7 @@ use the interactive version.</p>
 <span class='co'># I keep the marker if at leat 1 pop pass that.</span>
 <span class='co'># finally the filtered data will be written in the directory under the name:</span>
 <span class='co'># turtle.maf.rad</span>
-}
+<span class='op'>}</span>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

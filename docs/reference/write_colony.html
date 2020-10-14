@@ -135,27 +135,27 @@
     <p>Write a <code>COLONY</code> input file.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>write_colony</span>(
-  <span class='kw'>data</span>,
-  strata = <span class='kw'>NULL</span>,
-  sample.markers = <span class='kw'>NULL</span>,
-  pop.select = <span class='kw'>NULL</span>,
-  allele.freq = <span class='kw'>NULL</span>,
-  inbreeding = <span class='fl'>0</span>,
-  mating.sys.males = <span class='fl'>0</span>,
-  mating.sys.females = <span class='fl'>0</span>,
-  clone = <span class='fl'>0</span>,
-  run.length = <span class='fl'>2</span>,
-  analysis = <span class='fl'>1</span>,
-  allelic.dropout = <span class='fl'>0</span>,
-  error.rate = <span class='fl'>0.02</span>,
-  print.all.colony.opt = <span class='fl'>FALSE</span>,
-  random.seed = <span class='kw'>NULL</span>,
-  verbose = <span class='fl'>FALSE</span>,
-  parallel.core = <span class='kw'>parallel</span>::<span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span>() <span class='op'>-</span> <span class='fl'>1</span>,
-  filename = <span class='kw'>NULL</span>,
-  <span class='kw'>...</span>
-)</pre>
+    <pre class="usage"><span class='fu'>write_colony</span><span class='op'>(</span>
+  <span class='va'>data</span>,
+  strata <span class='op'>=</span> <span class='cn'>NULL</span>,
+  sample.markers <span class='op'>=</span> <span class='cn'>NULL</span>,
+  pop.select <span class='op'>=</span> <span class='cn'>NULL</span>,
+  allele.freq <span class='op'>=</span> <span class='cn'>NULL</span>,
+  inbreeding <span class='op'>=</span> <span class='fl'>0</span>,
+  mating.sys.males <span class='op'>=</span> <span class='fl'>0</span>,
+  mating.sys.females <span class='op'>=</span> <span class='fl'>0</span>,
+  clone <span class='op'>=</span> <span class='fl'>0</span>,
+  run.length <span class='op'>=</span> <span class='fl'>2</span>,
+  analysis <span class='op'>=</span> <span class='fl'>1</span>,
+  allelic.dropout <span class='op'>=</span> <span class='fl'>0</span>,
+  error.rate <span class='op'>=</span> <span class='fl'>0.02</span>,
+  print.all.colony.opt <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  random.seed <span class='op'>=</span> <span class='cn'>NULL</span>,
+  verbose <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  parallel.core <span class='op'>=</span> <span class='fu'>parallel</span><span class='fu'>::</span><span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span><span class='op'>(</span><span class='op'>)</span> <span class='op'>-</span> <span class='fl'>1</span>,
+  filename <span class='op'>=</span> <span class='cn'>NULL</span>,
+  <span class='va'>...</span>
+<span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -306,7 +306,7 @@ Parentage Assignment from Multilocus Marker Data. Genetics, 191, 183–194.</p>
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
     <div class='dont-index'><p><code>COLONY</code> is available on Jinliang Wang web site
-<a href='http://www.zsl.org/science/software/colony'>http://www.zsl.org/science/software/colony</a></p>
+<a href='https://www.zsl.org/science/software/colony'>https://www.zsl.org/science/software/colony</a></p>
 
 <p><a href='https://thierrygosselin.github.io/radiator/articles/rad_genomics_computer_setup.html#colony'>colony installation instructions</a></p></div>
     <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
@@ -314,10 +314,10 @@ Parentage Assignment from Multilocus Marker Data. Genetics, 191, 183–194.</p>
     <p>Thierry Gosselin <a href='mailto:thierrygosselin@icloud.com'>thierrygosselin@icloud.com</a></p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='co'>if</span> (<span class='fl'>FALSE</span>) {
+    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
 <span class='co'># Simplest way to run the function with a tidy dataset:</span>
-<span class='kw'>colony.file</span> <span class='op'>&lt;-</span> <span class='kw'>radiator</span>::<span class='fu'>write_colony</span>(data = <span class='st'>"turtle.data.rad"</span>)
-}
+<span class='va'>colony.file</span> <span class='op'>&lt;-</span> <span class='fu'>radiator</span><span class='fu'>::</span><span class='fu'>write_colony</span><span class='op'>(</span>data <span class='op'>=</span> <span class='st'>"turtle.data.rad"</span><span class='op'>)</span>
+<span class='op'>}</span>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
