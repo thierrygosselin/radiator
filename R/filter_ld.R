@@ -510,7 +510,7 @@ filter_ld <- function(
                 dplyr::filter(!MARKERS %in% one.snp$MARKERS) %>%
                 dplyr::left_join(split.vec, by = "MARKERS") %>%
                 split(x = ., f = .$SPLIT_VEC) %>%
-                .radiator_parallel_mc(
+                radiator_parallel_mc(
                   X = .,
                   FUN = global_mac,
                   mc.cores = parallel.core

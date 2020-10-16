@@ -345,7 +345,7 @@ separate_gt <- function(
     n.row <- nrow(x)
     split.vec <- as.integer(floor((parallel.core * cpu.rounds * (1:n.row - 1) / n.row) + 1))
     res <- split(x = x, f = split.vec) %>%
-      .radiator_parallel_mc(
+      radiator_parallel_mc(
         X = .,
         FUN = separate_genotype,
         mc.cores = parallel.core,
@@ -393,7 +393,7 @@ radiator_split_tibble <- function(x, parallel.core = parallel::detectCores() - 1
 
   x %<>%
     tibble::as_tibble(x = .) %>%
-    .radiator_parallel_mc(
+    radiator_parallel_mc(
       X = .,
       FUN = split_gt,
       mc.cores = parallel.core
@@ -419,7 +419,7 @@ radiator_split_tibble <- function(x, parallel.core = parallel::detectCores() - 1
 
 # parallel version is fast, small cost with < 2000 markers
 # tictoc::tic()
-# test <- .radiator_parallel_mc(
+# test <- radiator_parallel_mc(
 #   X = gt2,
 #   FUN = data.table::tstrsplit,
 #   "/",

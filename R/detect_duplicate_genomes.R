@@ -410,7 +410,7 @@ detect_duplicate_genomes <- function(
                 SPLIT_VEC = dplyr::ntile(x = 1:nrow(.), n = parallel.core * 3))
             , by = "MARKERS") %>%
           split(x = ., f = .$SPLIT_VEC) %>%
-          .radiator_parallel(
+          radiator_parallel(
             X = .,
             FUN = allele_count,
             mc.cores = parallel.core
@@ -715,7 +715,7 @@ detect_duplicate_genomes <- function(
 
 
       res$pairwise.genome.similarity <- list()
-      res$pairwise.genome.similarity <- .radiator_parallel(
+      res$pairwise.genome.similarity <- radiator_parallel(
         X = unique(all.pairs$SPLIT_VEC),
         FUN = genome_similarity,
         mc.preschedule = FALSE,

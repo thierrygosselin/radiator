@@ -118,7 +118,7 @@ write_hzar <- function(
           SPLIT_VEC = dplyr::ntile(x = 1:nrow(.), n = parallel.core * 3))
       , by = "MARKERS") %>%
     split(x = ., f = .$SPLIT_VEC) %>%
-    .radiator_parallel(
+    radiator_parallel(
       X = .,
       FUN = generate_hzar,
       mc.cores = parallel.core

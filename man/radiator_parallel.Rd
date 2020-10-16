@@ -2,8 +2,8 @@
 % Please edit documentation in R/radiator_parallel.R
 \name{mclapply_win}
 \alias{mclapply_win}
-\alias{.radiator_parallel_mc}
-\alias{.radiator_parallel}
+\alias{radiator_parallel_mc}
+\alias{radiator_parallel}
 \title{hack to switch function for parallel computation based on OS}
 \usage{
 mclapply_win(
@@ -19,7 +19,7 @@ mclapply_win(
   affinity.list = NULL
 )
 
-.radiator_parallel_mc(
+radiator_parallel_mc(
   X,
   FUN,
   ...,
@@ -32,7 +32,7 @@ mclapply_win(
   affinity.list = NULL
 )
 
-.radiator_parallel(
+radiator_parallel(
   X,
   FUN,
   ...,

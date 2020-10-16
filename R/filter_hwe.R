@@ -947,7 +947,7 @@ hwe_analysis <- function(x, parallel.core = parallel::detectCores() - 1) {
       dplyr::mutate(SPLIT_VEC = split_vec_row(x = ., cpu.rounds = 10,
                                               parallel.core = parallel.core)) %>%
       split(x = ., f = .$SPLIT_VEC) %>%
-      .radiator_parallel(X = ., FUN = hwe_radiator, mc.cores = parallel.core) %>%
+      radiator_parallel(X = ., FUN = hwe_radiator, mc.cores = parallel.core) %>%
       dplyr::bind_rows(.)
     return(x)
   }#hwe_map

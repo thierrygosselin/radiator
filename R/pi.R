@@ -200,7 +200,7 @@ pi <- function(
     POP_ID = "OVERALL",
     PI_NEI = data %>%
       split(x = ., f = .$MARKERS) %>%
-      .radiator_parallel(
+      radiator_parallel(
         X = .,
         FUN = pi_rad,
         mc.cores = parallel.core,
@@ -300,7 +300,7 @@ pi_pop <- function(data, read.length, parallel.core = parallel::detectCores() - 
 
   pi.pop <- data %>%
     split(x = ., f = .$MARKERS) %>%
-    .radiator_parallel(
+    radiator_parallel(
       X = .,
       FUN = pi_rad,
       mc.cores = parallel.core,

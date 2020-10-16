@@ -677,7 +677,7 @@ compute_mac <- function (
               parallel.core = parallel.core))
           , by = "MARKERS") %>%
         split(x = ., f = .$SPLIT_VEC) %>%
-        .radiator_parallel_mc(
+        radiator_parallel_mc(
           X = .,
           FUN = mac_one,
           mc.cores = parallel.core

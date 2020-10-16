@@ -373,7 +373,7 @@ ref_dictionary <- function(x, parallel.core = parallel::detectCores() - 1) {
       dplyr::mutate(SPLIT_VEC = split_vec_row(x = ., cpu.rounds = 3, parallel.core = parallel.core))
     , by = "MARKERS") %>%
     split(x = ., f = .$SPLIT_VEC) %>%
-    .radiator_parallel_mc(
+    radiator_parallel_mc(
       X = .,
       FUN = generate_ref,
       mc.cores = parallel.core
@@ -504,7 +504,7 @@ integrate_ref <- function(
   new.gt <- new.gt %>%
     dplyr::mutate(SPLIT_VEC = split_vec_row(x = ., cpu.rounds = 3, parallel.core = parallel.core)) %>%
     split(x = ., f = .$SPLIT_VEC) %>%
-    .radiator_parallel_mc(
+    radiator_parallel_mc(
       X = .,
       FUN = new_gt,
       mc.cores = parallel.core,
@@ -550,7 +550,7 @@ generate_vcf_nuc <- function(x, parallel.core = parallel::detectCores() - 1) {
   x <- x %>%
     dplyr::mutate(SPLIT_VEC = split_vec_row(x = ., cpu.rounds = 3, parallel.core = parallel.core)) %>%
     split(x = ., f = .$SPLIT_VEC) %>%
-    .radiator_parallel_mc(
+    radiator_parallel_mc(
       X = .,
       FUN = vcf_nuc,
       mc.cores = parallel.core

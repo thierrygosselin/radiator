@@ -435,7 +435,7 @@ filter_maf <- function(
 
       maf.data <- dplyr::left_join(maf.data, split.vec, by = "MARKERS") %>%
         split(x = ., f = .$SPLIT_VEC) %>%
-        .radiator_parallel_mc(
+        radiator_parallel_mc(
           X = .,
           FUN = compute_maf,
           mc.cores = parallel.core,

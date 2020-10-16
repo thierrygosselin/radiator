@@ -2303,7 +2303,7 @@ clean_ad <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) 
   # future::plan(multiprocess)
   x <- split(x = x, f = split.vec) %>%
     # furrr::future_map(.x = ., .f = clean, .progress = TRUE) %>%
-    .radiator_parallel_mc(
+    radiator_parallel_mc(
       X = ., FUN = clean,
       mc.cores = parallel.core
     ) %>%
@@ -2341,7 +2341,7 @@ clean_pl <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) 
     dplyr::ungroup(x) %>%
       dplyr::select(GT_VCF, PL) %>%
       split(x = ., f = split.vec) %>%
-      .radiator_parallel_mc(
+      radiator_parallel_mc(
         X = .,
         FUN = clean,
         mc.cores = parallel.core
@@ -2403,7 +2403,7 @@ clean_gl <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) 
         dplyr::ungroup(x) %>%
           dplyr::select(GL) %>%
           split(x = ., f = split.vec) %>%
-          .radiator_parallel_mc(
+          radiator_parallel_mc(
             X = .,
             FUN = clean,
             mc.cores = parallel.core
@@ -2444,7 +2444,7 @@ clean_nr <- function(x, split.vec, parallel.core = parallel::detectCores() - 1){
       dplyr::mutate(NR = dplyr::if_else(GT_VCF == "./.", NA_character_, NR)) %>%
       dplyr::select(NR) %>%
       split(x = ., f = split.vec) %>%
-      .radiator_parallel_mc(
+      radiator_parallel_mc(
         X = .,
         FUN = clean,
         mc.cores = parallel.core,
@@ -2476,7 +2476,7 @@ clean_nv <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) 
       dplyr::mutate(NV = dplyr::if_else(GT_VCF == "./.", NA_character_, NV)) %>%
       dplyr::select(NV) %>%
       split(x = ., f = split.vec) %>%
-      .radiator_parallel_mc(
+      radiator_parallel_mc(
         X = ., FUN = clean, mc.cores = parallel.core,
         nv.col.names = nv.col.names
       ) %>%
@@ -3064,7 +3064,7 @@ split_vcf <- function(
 
   split <- strata <- blacklist <- NULL
 
-  .radiator_parallel_mc(
+  radiator_parallel_mc(
     X = input,
     FUN = split_vcf,
     mc.cores = parallel.core,

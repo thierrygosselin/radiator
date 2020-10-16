@@ -55,7 +55,7 @@ haplotype_reconstruction <- function(
     return(data)
   }
 
-  res <- .radiator_parallel(
+  res <- radiator_parallel(
     X = markers,
     FUN = reconstruct,
     mc.cores = parallel.core,
