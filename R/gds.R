@@ -2516,7 +2516,7 @@ generate_markers_stats <- function(
 
     dplyr::mutate(.data = stats,
                     dplyr::across(
-                      .cols = where(is.numeric),
+                      .cols = tidyselect::where(is.numeric),
                       .fns = format,
                       scientific = FALSE
                       )

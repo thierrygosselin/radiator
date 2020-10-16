@@ -422,7 +422,7 @@ information")
       HET_MIN = min(HET_PROP, na.rm = TRUE),
       HET_MAX = max(HET_PROP, na.rm = TRUE)
     ) %>%
-    dplyr::mutate(dplyr::across(where(is.numeric), .fns = round, digits = 4)) %>%
+    dplyr::mutate(dplyr::across(tidyselect::where(is.numeric), .fns = round, digits = 4)) %>%
     tidyr::unite(data = ., HET_RANGE, HET_MIN, HET_MAX, sep = " - ") %>%
     dplyr::arrange(POP_ID, HET_MEAN)
 

@@ -333,7 +333,7 @@ summarise_genotypes <- function(data, path.folder = NULL) {
       value.var = "n"
     ) %>%
     tibble::as_tibble(.) %>%
-    dplyr::mutate(dplyr::across(where(is.integer), .fns = replace_zero))
+    dplyr::mutate(dplyr::across(tidyselect::where(is.integer), .fns = replace_zero))
 
   if (!rlang::has_name(pop, "HET")) {
     pop %<>% dplyr::mutate(HET = 0)

@@ -321,7 +321,7 @@ genomic_converter <- function(
 
 
   # Check for specific format vs package required-----------------------------
-  if ("gtypes" %in% output) radiator_packages_dep(package = "strataG")
+  # if ("gtypes" %in% output) radiator_packages_dep(package = "strataG")
   if ("genlight" %in% output) radiator_packages_dep(package = "adegenet")
   if ("seqarray" %in% output) {
     radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
@@ -580,10 +580,10 @@ genomic_converter <- function(
 
   # strataG --------------------------------------------------------------------
   if ("gtypes" %in% output) {
-    if (!requireNamespace("strataG", quietly = TRUE)) {
-      rlang::abort("strataG needed for this function to work
-                 Install with install.packages('strataG')")
-    }
+    # if (!requireNamespace("strataG", quietly = TRUE)) {
+      # rlang::abort("strataG needed for this function to work
+                 # Install with install.packages('strataG')")
+    # }
     if (verbose) message("Generating strataG gtypes object")
     res$gtypes <- radiator::write_gtypes(
       data = input,
