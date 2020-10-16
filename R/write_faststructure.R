@@ -169,7 +169,7 @@ write_faststructure <- function(
 
     data %<>%
       dplyr::mutate(C3 = 1L, C4 = 1L, C5 = 1L, C6 = 1L) %>%
-      dplyr::select(INDIVIDUALS, POP_ID, C3, C4, C5, C6, dplyr::everything(markers.col)) %>%
+      dplyr::select(INDIVIDUALS, POP_ID, C3, C4, C5, C6, everything(markers.col)) %>%
       dplyr::arrange(POP_ID, INDIVIDUALS)
 
     # Write the file in faststructure format -----------------------------------------

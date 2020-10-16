@@ -545,11 +545,11 @@ join_strata <- function(data, strata = NULL, pop.id = FALSE, verbose = TRUE) {
   if (verbose) {
     if (rlang::has_name(data, "POP_ID")) {
       message("    Number of strata: ", length(unique(data$POP_ID)))
-      data %<>% dplyr::select(POP_ID, INDIVIDUALS, dplyr::everything())
+      data %<>% dplyr::select(POP_ID, INDIVIDUALS, everything())
     }
     if (rlang::has_name(data, "STRATA")) {
       message("    Number of strata: ", length(unique(data$STRATA)))
-      data %<>% dplyr::select(STRATA, INDIVIDUALS, dplyr::everything())
+      data %<>% dplyr::select(STRATA, INDIVIDUALS, everything())
     }
     message("    Number of individuals: ", length(unique(data$INDIVIDUALS)))
   }
@@ -620,7 +620,7 @@ strata_haplo <- function(strata = NULL, data = NULL, blacklist.id = NULL) {
       col_types = readr::cols(.default = readr::col_character())) %>%
       tidyr::pivot_longer(
         data = .,
-        cols = dplyr::everything(),
+        cols = everything(),
         names_to = "DELETE",
         values_to = "INDIVIDUALS"
       ) %>%
@@ -700,7 +700,7 @@ read_blacklist_id <- function(blacklist.id = NULL, verbose = TRUE) {
       }
       blacklist.id <- dplyr::mutate(
         .data = blacklist.id,
-        dplyr::across(dplyr::everything(), .fns = as.character)
+        dplyr::across(everything(), .fns = as.character)
         )
     }
     blacklist.id$INDIVIDUALS <- radiator::clean_ind_names(blacklist.id$INDIVIDUALS)

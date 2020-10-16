@@ -420,7 +420,7 @@ run_bayescan <- function(
     ) %>%
       tidyr::pivot_longer(
         data = .,
-        cols = dplyr::everything(),
+        cols = everything(),
         names_to = "ACCURACY_MARKERS",
         values_to = "N"
       ) %>%

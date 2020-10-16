@@ -130,7 +130,7 @@ write_hzar <- function(
     tidyr::spread(data = ., key = GROUP, value = VALUE, fill = 0) %>%
     dplyr::ungroup(.) %>%
     dplyr::left_join(distances, by = "POP_ID") %>%
-    dplyr::select(POP_ID, Distance, dplyr::everything(.)) %>%
+    dplyr::select(POP_ID, Distance, everything(.)) %>%
     dplyr::rename(Population = POP_ID)
 
   data <- NULL

@@ -580,7 +580,7 @@ tidy_genomic_data <- function(
       # tibble::as_tibble(.) %>%
       tidyr::pivot_longer(
         data = .,
-        cols = dplyr::everything(),
+        cols = everything(),
         names_to = "DELETE",
         values_to = "DELETE"
       ) %>%

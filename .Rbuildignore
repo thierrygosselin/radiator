@@ -6,7 +6,7 @@
 ^README-.*\.png$
 ^vignettes/*\.Rmd
 ^_pkgdown\.yml$
-^docs
+^docs$
 ^pkgdown$
 ^\.github
 ^LICENSE\.md$

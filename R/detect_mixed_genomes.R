@@ -393,7 +393,7 @@ detect_mixed_genomes <- function(
         OUTLIERS_HIGH_N = length(HET_PROP[HET_PROP > OUTLIERS_HIGH]),
         OUTLIERS_TOTAL = OUTLIERS_HIGH_N + OUTLIERS_LOW_N,
         OUTLIERS_PROP = round(OUTLIERS_TOTAL / length(HET_PROP), 3)) %>%
-      dplyr::mutate(dplyr::across(tidyselect::where(is.numeric), .fns = round, digits = 6)) %>%
+      dplyr::mutate(dplyr::across(where(is.numeric), .fns = round, digits = 6)) %>%
       tidyr::unite(data = ., HET_RANGE, MIN, MAX, sep = " - ") %>%
       dplyr::arrange(POP_ID) %>%
       readr::write_tsv(

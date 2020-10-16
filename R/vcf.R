@@ -1954,7 +1954,7 @@ tidy_vcf <- function(
                 "REF", "ALT", "GT_VCF", "GT_VCF_NUC", "GT", "GT_BIN")
 
       suppressWarnings(
-        tidy.data %<>% dplyr::select(dplyr::one_of(want), dplyr::everything())
+        tidy.data %<>% dplyr::select(dplyr::one_of(want), everything())
       )
 
       # Sort id
@@ -2693,7 +2693,6 @@ write_vcf <- function(
       dplyr::arrange(CHROM, LOCUS, POS) %>%
       dplyr::select(-MARKERS) %>%
       dplyr::select('#CHROM' = CHROM, POS, ID = LOCUS, REF, ALT, QUAL, FILTER, INFO, FORMAT, id.string)
-    # dplyr::select('#CHROM' = CHROM, POS, ID = LOCUS, REF, ALT, QUAL, FILTER, INFO, FORMAT, dplyr::everything())
   }
 
   # Filename ------------------------------------------------------------------

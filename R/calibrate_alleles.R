@@ -264,13 +264,13 @@ calibrate_alleles <- function(
     no.need.markers.meta <- unique(colnames(markers.meta) %in% colnames(data))
     if (length(no.need.markers.meta) == 1 && !no.need.markers.meta) {
       data <- dplyr::left_join(data, markers.meta, by = "MARKERS") %>%
-        dplyr::select(MARKERS, CHROM, LOCUS, POS, POP_ID, INDIVIDUALS, dplyr::everything())
+        dplyr::select(MARKERS, CHROM, LOCUS, POS, POP_ID, INDIVIDUALS, everything())
     }
     markers.meta <- NULL
   } else {
     data <- dplyr::select(
       data,
-      MARKERS, POP_ID, INDIVIDUALS, dplyr::everything())
+      MARKERS, POP_ID, INDIVIDUALS, everything())
   }
 
   #Remove markers with REF = NA ------------------------------------------------

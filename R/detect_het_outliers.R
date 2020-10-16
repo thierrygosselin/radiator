@@ -203,7 +203,7 @@ res$summary.alt.allele <-  dplyr::ungroup(res$outlier.summary$het.summary) %>%
   ) %>%
   tidyr::pivot_longer(
     data = .,
-    cols = dplyr::everything(),
+    cols = everything(),
     names_to = "MARKERS",
     values_to = "NUMBERS"
   ) %>%
@@ -333,7 +333,7 @@ summarise_genotypes <- function(data, path.folder = NULL) {
       value.var = "n"
     ) %>%
     tibble::as_tibble(.) %>%
-    dplyr::mutate(dplyr::across(tidyselect::where(is.integer), .fns = replace_zero))
+    dplyr::mutate(dplyr::across(where(is.integer), .fns = replace_zero))
 
   if (!rlang::has_name(pop, "HET")) {
     pop %<>% dplyr::mutate(HET = 0)
@@ -354,7 +354,7 @@ summarise_genotypes <- function(data, path.folder = NULL) {
     pop,
     dplyr::mutate(pop, POP_ID = "OVERALL") %>%
       dplyr::group_by(MARKERS, POP_ID) %>%
-      dplyr::summarise(dplyr::across(.cols = dplyr::everything(), .fns = sum))
+      dplyr::summarise(dplyr::across(.cols = everything(), .fns = sum))
     ) %>%
     dplyr::arrange(MARKERS, POP_ID)
   pop <- NULL

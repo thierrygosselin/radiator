@@ -478,7 +478,7 @@ read_dart <- function(
       dplyr::mutate(FILTERS = "whitelist") %>%
       dplyr::select(
         FILTERS, VARIANT_ID, MARKERS, CHROM, LOCUS, POS, COL, REF, ALT,
-        dplyr::everything(.)
+        everything(.)
       )
   )
 
@@ -943,7 +943,7 @@ clean_dart_locus <- function(x, fast = TRUE) {
           VARIANT_ID = as.integer(factor(MARKERS)),
           COL = POS
         ) %>%
-        dplyr::select(dplyr::one_of(want), dplyr::everything()) %>%
+        dplyr::select(dplyr::one_of(want), everything()) %>%
         dplyr::mutate(
           dplyr::across(
             .cols = c(MARKERS, CHROM, LOCUS, POS),
@@ -985,7 +985,7 @@ detect_dart_format <- function(x = NULL, target.id = NULL, verbose = TRUE) {
             sample(x = target.id, size = min(10, floor(0.1 * length(target.id))))
           )
         ) %>%
-        dplyr::mutate(dplyr::across(dplyr::everything(), .fns = as.numeric)) %>%
+        dplyr::mutate(dplyr::across(everything(), .fns = as.numeric)) %>%
         purrr::flatten_dbl(.) %>%
         unique(.)
 
@@ -1462,7 +1462,7 @@ tidy_dart_metadata <- function(
     dart.col.type <- dart.col.type %>%
       tidyr::pivot_longer(
         data = .,
-        cols = dplyr::everything(),
+        cols = everything(),
         names_to = "DELETE",
         values_to = "INFO"
       ) %>%
@@ -1518,7 +1518,7 @@ tidy_dart_metadata <- function(
         dplyr::mutate(
           CHROM = rep("CHROM_1", n()),
           MARKERS = stringi::stri_join(CHROM, LOCUS, POS, sep = "__")) %>%
-        dplyr::select(dplyr::one_of(want), dplyr::everything()) %>%
+        dplyr::select(dplyr::one_of(want), everything()) %>%
         dplyr::mutate(
           dplyr::across(
             .cols = c(MARKERS, CHROM, LOCUS, POS),

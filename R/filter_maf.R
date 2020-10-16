@@ -394,7 +394,7 @@ filter_maf <- function(
     markers.meta <- suppressWarnings(
       dplyr::select(input, dplyr::one_of(c("MARKERS", "CHROM", "LOCUS", "POS"))) %>%
         dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-        dplyr::mutate(dplyr::across(dplyr::everything(), .fns = as.character))
+        dplyr::mutate(dplyr::across(everything(), .fns = as.character))
     )
 
     # strata ---------------------------------------------------------------------
@@ -576,7 +576,7 @@ filter_maf <- function(
         dplyr::filter(POP_ID != "TOTAL/GLOBAL") %>%
         dplyr::summarise_if(.tbl = ., .predicate = is.numeric, .funs = min ) %>%
         dplyr::mutate(POP_ID = "MIN_LOCAL", n = NA) %>%
-        dplyr::select(POP_ID, n, dplyr::everything())
+        dplyr::select(POP_ID, n, everything())
 
       sort.pop <- c(levels(input$POP_ID), "MIN_LOCAL", "TOTAL/GLOBAL")
 
@@ -753,12 +753,12 @@ because LOCUS and POS (SNP) info is not available")
         # maf.data.thresholds <- suppressWarnings(
         #   maf.data.thresholds %>%
         #     dplyr::left_join(markers.meta, by = "MARKERS") %>%
-        #     dplyr::select(dplyr::one_of(markers.meta.col), dplyr::everything(.)))
+        #     dplyr::select(dplyr::one_of(markers.meta.col), everything(.)))
 
         maf.data <- suppressWarnings(
           maf.data %>%
             dplyr::left_join(markers.meta, by = "MARKERS") %>%
-            dplyr::select(dplyr::one_of(markers.meta.col), dplyr::everything(.)))
+            dplyr::select(dplyr::one_of(markers.meta.col), everything(.)))
       }
 
       readr::write_tsv(
@@ -940,11 +940,11 @@ because LOCUS and POS (SNP) info is not available")
     if (tibble::has_name(filter, "CHROM")) {
       whitelist.markers <- dplyr::ungroup(filter) %>%
         dplyr::distinct(CHROM, LOCUS, POS) %>%
-        dplyr::mutate(dplyr::across(dplyr::everything(), .fns = as.character))
+        dplyr::mutate(dplyr::across(everything(), .fns = as.character))
     } else {
       whitelist.markers <- dplyr::ungroup(filter) %>%
         dplyr::distinct(MARKERS) %>%
-        dplyr::mutate(dplyr::across(dplyr::everything(), .fns = as.character))
+        dplyr::mutate(dplyr::across(everything(), .fns = as.character))
     }
     readr::write_tsv(whitelist.markers, file.path(path.folder, "whitelist.markers.maf.tsv"), append = FALSE, col_names = TRUE)
 

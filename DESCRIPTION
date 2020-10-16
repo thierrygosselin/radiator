@@ -46,11 +46,11 @@ Suggests:
     stringi,
     tibble,
     tidyr (>= 1.1.0),
-    tidyselect,
     utils
 License: GPL-3
 LazyLoad: yes
-VignetteBuilder: knitr
+VignetteBuilder: 
+    knitr
 RoxygenNote: 7.1.1
 ByteCompile: TRUE
 URL: https://thierrygosselin.github.io/radiator/

@@ -108,7 +108,7 @@ write_hapmap <- function(
     ) %>%
     dplyr::select('rs#' = MARKERS, alleles, chrom = CHROM, pos = POS, strand,
                   'assembly#', center, protLSID, assayLSID, panelLSID, QCcode,
-                  dplyr::everything(.))
+                  everything(.))
 
   # Filename ------------------------------------------------------------------
   if (is.null(filename)) {

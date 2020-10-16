@@ -105,7 +105,7 @@ markers_genotyped_helper <- function(x, y, overall.only = FALSE) {
     ) %>%
     tidyr::pivot_longer(
       data = .,
-      cols = dplyr::everything(),
+      cols = everything(),
       names_to = "GENOTYPED_THRESHOLD",
       values_to = "NUMBER_MARKERS"
     ) %>%
@@ -219,7 +219,7 @@ tibble_stats <- function(x, group, subsample = NULL) {
     # IQR = stats::IQR(depth, na.rm = TRUE),
     OUTLIERS_LOW = Q25 - (1.5 * IQR),
     OUTLIERS_HIGH =  Q75 + (1.5 * IQR)) %>%
-    dplyr::mutate(dplyr::across(tidyselect::where(is.integer), .fns = as.numeric)) %>%
+    dplyr::mutate(dplyr::across(where(is.integer), .fns = as.numeric)) %>%
     dplyr::mutate(
       OUTLIERS_LOW = dplyr::if_else(OUTLIERS_LOW < MIN, MIN, OUTLIERS_LOW),
       OUTLIERS_HIGH = dplyr::if_else(OUTLIERS_HIGH > MAX, MAX, OUTLIERS_HIGH),
@@ -648,7 +648,7 @@ plot_density_distribution_het <- function(data, pop.levels, het.group, aes.colou
     dplyr::group_by(LOCUS, POP_ID) %>%
     tidyr::pivot_longer(
       data = .,
-      cols = dplyr::everything(),
+      cols = everything(),
       names_to = "HET_GROUP",
       values_to = "VALUE"
     )
