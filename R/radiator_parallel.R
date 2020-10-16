@@ -1,5 +1,5 @@
 # mclappply_win ----------------------------------------------------------------
-#' @name mclapply_win
+# @name mclapply_win
 #' @title hack to switch function for parallel computation based on OS
 #' @description \code{parallel::mclapply} doesn't work on Windows,
 #' because forking is not supported.
@@ -15,16 +15,16 @@
 # @inheritParams parallel::mclapply
 # Doesnt work and throws an error for bad markup so have to do it manually until
 # parallel fix this bug
-#' @param X see \pkg{parallel} \code{\link{mclapply}}
-#' @param FUN see \pkg{parallel} \code{\link{mclapply}}
-#' @param ... see \pkg{parallel} \code{\link{mclapply}}
-#' @param mc.preschedule see \pkg{parallel} \code{\link{mclapply}}
-#' @param mc.set.seed see \pkg{parallel} \code{\link{mclapply}}
-#' @param mc.silent see \pkg{parallel} \code{\link{mclapply}}
-#' @param mc.cores see \pkg{parallel} \code{\link{mclapply}}
-#' @param mc.cleanup see \pkg{parallel} \code{\link{mclapply}}
-#' @param mc.allow.recursive see \pkg{parallel} \code{\link{mclapply}}
-#' @param affinity.list see \pkg{parallel} \code{\link{mclapply}}
+# @param X see \pkg{parallel} \code{\link{mclapply}}
+# @param FUN see \pkg{parallel} \code{\link{mclapply}}
+# @param ... see \pkg{parallel} \code{\link{mclapply}}
+# @param mc.preschedule see \pkg{parallel} \code{\link{mclapply}}
+# @param mc.set.seed see \pkg{parallel} \code{\link{mclapply}}
+# @param mc.silent see \pkg{parallel} \code{\link{mclapply}}
+# @param mc.cores see \pkg{parallel} \code{\link{mclapply}}
+# @param mc.cleanup see \pkg{parallel} \code{\link{mclapply}}
+# @param mc.allow.recursive see \pkg{parallel} \code{\link{mclapply}}
+# @param affinity.list see \pkg{parallel} \code{\link{mclapply}}
 
 # @return For mclapply, a list of the same length as X and named by X.
 #' @rdname radiator_parallel
@@ -103,19 +103,19 @@ mclapply_win <- function(
 # @description Internal hack to enable parallel execution of \pkg{assigner}
 #' functions on Windows.
 # @inheritParams parallel::mclapply
-#' @return For mclapply, a list of the same length as X and named by X.
-#' @rdname radiator_parallel
-#' @param X see \pkg{parallel} \code{\link{mclapply}}
-#' @param FUN see \pkg{parallel} \code{\link{mclapply}}
-#' @param ... see \pkg{parallel} \code{\link{mclapply}}
-#' @param mc.preschedule see \pkg{parallel} \code{\link{mclapply}}
-#' @param mc.set.seed see \pkg{parallel} \code{\link{mclapply}}
-#' @param mc.silent see \pkg{parallel} \code{\link{mclapply}}
-#' @param mc.cores see \pkg{parallel} \code{\link{mclapply}}
-#' @param mc.cleanup see \pkg{parallel} \code{\link{mclapply}}
-#' @param mc.allow.recursive see \pkg{parallel} \code{\link{mclapply}}
-#' @param affinity.list see \pkg{parallel} \code{\link{mclapply}}
+# @return For mclapply, a list of the same length as X and named by X.
+# @param X see \pkg{parallel} \code{\link{mclapply}}
+# @param FUN see \pkg{parallel} \code{\link{mclapply}}
+# @param ... see \pkg{parallel} \code{\link{mclapply}}
+# @param mc.preschedule see \pkg{parallel} \code{\link{mclapply}}
+# @param mc.set.seed see \pkg{parallel} \code{\link{mclapply}}
+# @param mc.silent see \pkg{parallel} \code{\link{mclapply}}
+# @param mc.cores see \pkg{parallel} \code{\link{mclapply}}
+# @param mc.cleanup see \pkg{parallel} \code{\link{mclapply}}
+# @param mc.allow.recursive see \pkg{parallel} \code{\link{mclapply}}
+# @param affinity.list see \pkg{parallel} \code{\link{mclapply}}
 #' @keywords internal
+#' @rdname radiator_parallel
 #' @export
 radiator_parallel_mc <- switch(
   Sys.info()[['sysname']],
@@ -130,18 +130,18 @@ radiator_parallel_mc <- switch(
 # @description Internal hack to enable parallel execution of \pkg{assigner}
 #' functions on Windows.
 # @inheritParams parallel::mclapply
-#' @return For mclapply, a list of the same length as X and named by X.
+# @return For mclapply, a list of the same length as X and named by X.
+# @param X see \pkg{parallel} \code{\link{mclapply}}
+# @param FUN see \pkg{parallel} \code{\link{mclapply}}
+# @param ... see \pkg{parallel} \code{\link{mclapply}}
+# @param mc.preschedule see \pkg{parallel} \code{\link{mclapply}}
+# @param mc.set.seed see \pkg{parallel} \code{\link{mclapply}}
+# @param mc.silent see \pkg{parallel} \code{\link{mclapply}}
+# @param mc.cores see \pkg{parallel} \code{\link{mclapply}}
+# @param mc.cleanup see \pkg{parallel} \code{\link{mclapply}}
+# @param mc.allow.recursive see \pkg{parallel} \code{\link{mclapply}}
+# @param affinity.list see \pkg{parallel} \code{\link{mclapply}}
 #' @rdname radiator_parallel
-#' @param X see \pkg{parallel} \code{\link{mclapply}}
-#' @param FUN see \pkg{parallel} \code{\link{mclapply}}
-#' @param ... see \pkg{parallel} \code{\link{mclapply}}
-#' @param mc.preschedule see \pkg{parallel} \code{\link{mclapply}}
-#' @param mc.set.seed see \pkg{parallel} \code{\link{mclapply}}
-#' @param mc.silent see \pkg{parallel} \code{\link{mclapply}}
-#' @param mc.cores see \pkg{parallel} \code{\link{mclapply}}
-#' @param mc.cleanup see \pkg{parallel} \code{\link{mclapply}}
-#' @param mc.allow.recursive see \pkg{parallel} \code{\link{mclapply}}
-#' @param affinity.list see \pkg{parallel} \code{\link{mclapply}}
 #' @keywords internal
 #' @export
 radiator_parallel <- switch(

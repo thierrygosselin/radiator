@@ -46,32 +46,6 @@ radiator_parallel(
   mc.allow.recursive = TRUE
 )
 }
-\arguments{
-\item{X}{see \pkg{parallel} \code{\link{mclapply}}}
-
-\item{FUN}{see \pkg{parallel} \code{\link{mclapply}}}
-
-\item{...}{see \pkg{parallel} \code{\link{mclapply}}}
-
-\item{mc.preschedule}{see \pkg{parallel} \code{\link{mclapply}}}
-
-\item{mc.set.seed}{see \pkg{parallel} \code{\link{mclapply}}}
-
-\item{mc.silent}{see \pkg{parallel} \code{\link{mclapply}}}
-
-\item{mc.cores}{see \pkg{parallel} \code{\link{mclapply}}}
-
-\item{mc.cleanup}{see \pkg{parallel} \code{\link{mclapply}}}
-
-\item{mc.allow.recursive}{see \pkg{parallel} \code{\link{mclapply}}}
-
-\item{affinity.list}{see \pkg{parallel} \code{\link{mclapply}}}
-}
-\value{
-For mclapply, a list of the same length as X and named by X.
-
-For mclapply, a list of the same length as X and named by X.
-}
 \description{
 \code{parallel::mclapply} doesn't work on Windows,
 because forking is not supported.

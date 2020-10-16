@@ -9,6 +9,7 @@
 ^vignettes/*\.Rmd
 ^_pkgdown\.yml$
 ^inst/doc
+^docs
 ^pkgdown$
 ^\.github
 ^LICENSE\.md$
