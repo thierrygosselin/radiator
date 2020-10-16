@@ -340,7 +340,6 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
     pop.levels <- unique(data$POP_ID)
   }
   # Make sure that POP_ID and INDIVIDUALS are character
-  # data <- dplyr::mutate_at(.tbl = data, .vars = c("POP_ID", "INDIVIDUALS"), .funs = as.character)
   data$INDIVIDUALS <- as.character(data$INDIVIDUALS)
   data$POP_ID <- as.character(data$POP_ID)
 

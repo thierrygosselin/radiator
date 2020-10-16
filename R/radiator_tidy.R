@@ -567,15 +567,15 @@ tidy_genomic_data <- function(
       na = "-",
       col_names = FALSE,
       col_types = readr::cols(.default = readr::col_character())
-      ) %>%
+    ) %>%
       # TODO... conversion to data.table with an example to double check...
       # data.table::as.data.table(.) %>%
       # data.table::melt.data.table(
-        # data = .,
-        # id.vars = "MARKERS",
-        # variable.name = "ALLELES_GROUP",
-        # value.name = "ALLELES",
-        # variable.factor = FALSE
+      # data = .,
+      # id.vars = "MARKERS",
+      # variable.name = "ALLELES_GROUP",
+      # value.name = "ALLELES",
+      # variable.factor = FALSE
       # ) %>%
       # tibble::as_tibble(.) %>%
       tidyr::pivot_longer(
@@ -736,10 +736,18 @@ tidy_genomic_data <- function(
     data <- NULL
     # remove unwanted sep in id and pop.id names
     input <- input %>%
-      dplyr::mutate_at(.tbl = ., .vars = "INDIVIDUALS",
-                       .funs = clean_ind_names) %>%
-      dplyr::mutate_at(.tbl = ., .vars = "POP_ID",
-                       .funs = clean_pop_names)
+      dplyr::mutate(
+        dplyr::across(
+          .cols = "INDIVIDUALS",
+          .fns = clean_ind_names
+        )
+      ) %>%
+      dplyr::mutate(
+        dplyr::across(
+          .cols = "POP_ID",
+          .fns = clean_pop_names
+        )
+      )
     skip.tidy.wide <- TRUE
   } # End tidy genind
 
@@ -750,10 +758,18 @@ tidy_genomic_data <- function(
     data <- NULL
     # remove unwanted sep in id and pop.id names
     input <- input %>%
-      dplyr::mutate_at(.tbl = ., .vars = "INDIVIDUALS",
-                       .funs = clean_ind_names) %>%
-      dplyr::mutate_at(.tbl = ., .vars = "POP_ID",
-                       .funs = clean_pop_names)
+      dplyr::mutate(
+        dplyr::across(
+          .cols = "INDIVIDUALS",
+          .fns = clean_ind_names
+        )
+      ) %>%
+      dplyr::mutate(
+        dplyr::across(
+          .cols = "POP_ID",
+          .fns = clean_pop_names
+        )
+      )
     biallelic <- TRUE
     skip.tidy.wide <- TRUE
   } # End tidy genlight
@@ -762,10 +778,18 @@ tidy_genomic_data <- function(
   if (data.type == "gtypes") { # DATA FRAME OF GENOTYPES
     if (verbose) message("Tidying the gtypes object ...")
     input <- tidy_gtypes(data) %>%
-      dplyr::mutate_at(.tbl = ., .vars = "INDIVIDUALS",
-                       .funs = clean_ind_names) %>%
-      dplyr::mutate_at(.tbl = ., .vars = "POP_ID",
-                       .funs = clean_pop_names)
+      dplyr::mutate(
+        dplyr::across(
+          .cols = "INDIVIDUALS",
+          .fns = clean_ind_names
+        )
+      ) %>%
+      dplyr::mutate(
+        dplyr::across(
+          .cols = "POP_ID",
+          .fns = clean_pop_names
+        )
+      )
     data <- NULL
     skip.tidy.wide <- TRUE
   } # End tidy gtypes

@@ -270,7 +270,7 @@ radiator_colony <- function(
       dplyr::select(MARKERS, ALLELES, FREQ) %>%
       dplyr::arrange(MARKERS) %>%
       dplyr::mutate(GROUP = seq(1, n(), by = 1)) %>%
-      dplyr::mutate_all(.tbl = ., .funs = as.character) %>%
+      dplyr::mutate(dplyr::across(dplyr::everything(), .fns = as.character)) %>%
       tidyr::pivot_longer(
         data = .,
         cols = -c("GROUP", "MARKERS"),
@@ -299,7 +299,7 @@ radiator_colony <- function(
     dplyr::arrange(POP_ID, INDIVIDUALS) %>%
     dplyr::ungroup(.) %>%
     dplyr::select(-POP_ID) %>%
-    dplyr::mutate_all(.tbl = ., .funs = as.character)
+    dplyr::mutate(dplyr::across(dplyr::everything(), .fns = as.character))
 
   # Line 1 = Dataset name-------------------------------------------------------
   dataset.opt <- "`My first COLONY run`                ! Dataset name\n"

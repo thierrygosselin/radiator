@@ -72,7 +72,7 @@ write_related <- function(
       formula = INDIVIDUALS ~ MARKERS_ALLELES,
       value.var = "HAPLOTYPES"
     ) %>%
-    tibble::as_data_frame(.)
+    tibble::as_tibble(.)
 
   # Write the file in related format -------------------------------------------
   # Date and time

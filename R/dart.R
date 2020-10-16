@@ -913,10 +913,11 @@ clean_dart_locus <- function(x, fast = TRUE) {
         SNP = NULL
       ) %>%
       dplyr::select(dplyr::one_of(want), dplyr::everything()) %>%
-      dplyr::mutate_at(
-        .tbl = .,
-        .vars = c("MARKERS", "CHROM", "LOCUS", "POS"),
-        .funs = as.character
+      dplyr::mutate(
+        dplyr::across(
+          .cols = c(MARKERS, CHROM, LOCUS, POS),
+          .fns = as.character
+        )
       ) %>%
       dplyr::arrange(CHROM, LOCUS, POS, REF)
 
@@ -943,10 +944,11 @@ clean_dart_locus <- function(x, fast = TRUE) {
           COL = POS
         ) %>%
         dplyr::select(dplyr::one_of(want), dplyr::everything()) %>%
-        dplyr::mutate_at(
-          .tbl = .,
-          .vars = c("MARKERS", "CHROM", "LOCUS", "POS"),
-          .funs = as.character
+        dplyr::mutate(
+          dplyr::across(
+            .cols = c(MARKERS, CHROM, LOCUS, POS),
+            .fns = as.character
+          )
         ) %>%
         dplyr::arrange(CHROM, LOCUS, POS, REF)
     )
@@ -983,7 +985,7 @@ detect_dart_format <- function(x = NULL, target.id = NULL, verbose = TRUE) {
             sample(x = target.id, size = min(10, floor(0.1 * length(target.id))))
           )
         ) %>%
-        dplyr::mutate_all(.tbl = ., .funs = as.numeric) %>%
+        dplyr::mutate(dplyr::across(dplyr::everything(), .fns = as.numeric)) %>%
         purrr::flatten_dbl(.) %>%
         unique(.)
 
@@ -1106,19 +1108,23 @@ dart2gds <- function(
 
     # generate allele count from the 1 row dart-----------------------------------
     alt <- dplyr::select(data, -REF, -ALT) %>%
-      dplyr::mutate_at(.tbl = .,
-                       .vars = strata$INDIVIDUALS,
-                       .funs = switch_allele_count,
-                       dart.group = TRUE,
-                       ref = FALSE
+      dplyr::mutate(
+        dplyr::across(
+          .cols = strata$INDIVIDUALS,
+          .fns = switch_allele_count,
+          dart.group = TRUE,
+          ref = FALSE
+        )
       )
 
     ref <- dplyr::select(data, -REF, -ALT) %>%
-      dplyr::mutate_at(.tbl = .,
-                       .vars = strata$INDIVIDUALS,
-                       .funs = switch_allele_count,
-                       dart.group = TRUE,
-                       ref = TRUE
+      dplyr::mutate(
+        dplyr::across(
+          .cols = strata$INDIVIDUALS,
+          .fns = switch_allele_count,
+          dart.group = TRUE,
+          ref = TRUE
+        )
       )
   }#1row genotypes
 
@@ -1126,7 +1132,7 @@ dart2gds <- function(
   switch <- ref$VARIANT_ID[
     rowSums(x = dplyr::select(ref, -VARIANT_ID, -MARKERS), na.rm = TRUE) <
       rowSums(x = dplyr::select(alt, -VARIANT_ID, -MARKERS), na.rm = TRUE)
-    ]
+  ]
   n.switch <- length(switch)
   if (n.switch > 0) {
     if ("counts" %in% data.source) {
@@ -1252,18 +1258,20 @@ dart2gds <- function(
           ALLELE_REF_DEPTH == 0L & ALLELE_ALT_DEPTH > 0L ~ 2L
         )
       ) %>%
-      dplyr::mutate_at(
-        .tbl = .,
-        .vars = c("READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH"),
-        .funs = replace_by_na, what = 0
+      dplyr::mutate(
+        dplyr::across(
+          .cols = c(READ_DEPTH, ALLELE_REF_DEPTH, ALLELE_ALT_DEPTH),
+          .fns = replace_by_na, what = 0
+        )
       )
   } else {
     genotypes.meta %<>%
-      dplyr::mutate_at(
-        .tbl = .,
-        .vars = "ALLELE_REF_DEPTH",
-        .funs = switch_allele_count,
-        dart.group = FALSE) %>%
+      dplyr::mutate(
+        dplyr::across(
+          .cols = "ALLELE_REF_DEPTH",
+          .fns = switch_allele_count, dart.group = FALSE
+        )
+      ) %>%
       dplyr::mutate(
         GT_BIN = ALLELE_REF_DEPTH + ALLELE_ALT_DEPTH,
         ALLELE_ALT_DEPTH = NULL,
@@ -1511,7 +1519,12 @@ tidy_dart_metadata <- function(
           CHROM = rep("CHROM_1", n()),
           MARKERS = stringi::stri_join(CHROM, LOCUS, POS, sep = "__")) %>%
         dplyr::select(dplyr::one_of(want), dplyr::everything()) %>%
-        dplyr::mutate_at(.tbl = ., .vars = c("MARKERS", "CHROM", "LOCUS", "POS"), .funs = as.character) %>%
+        dplyr::mutate(
+          dplyr::across(
+            .cols = c(MARKERS, CHROM, LOCUS, POS),
+            .fns = as.character
+          )
+        ) %>%
         dplyr::arrange(CHROM, LOCUS, POS, REF) %>%
         dplyr::filter(!is.na(REF) | !is.na(ALT)) %>%
         dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
@@ -1755,132 +1768,131 @@ merge_dart <- function(
   )
 
 
-message("Importing and tidying dart2...")
-dart2 <- suppressWarnings(
-  radiator::read_dart(
-    data = dart2,
-    strata = strata2,
-    filename = "dart2",
-    tidy.dart = TRUE,
-    parallel.core = parallel.core,
-    path.folder = path.folder,
-    verbose = FALSE
+  message("Importing and tidying dart2...")
+  dart2 <- suppressWarnings(
+    radiator::read_dart(
+      data = dart2,
+      strata = strata2,
+      filename = "dart2",
+      tidy.dart = TRUE,
+      parallel.core = parallel.core,
+      path.folder = path.folder,
+      verbose = FALSE
+    )
   )
-)
 
-# cleaning up non-immortalized markers ---------------------------------------
-markers.before <- length(unique(input$MARKERS)) + length(unique(dart2$MARKERS))
-if (remove.non.immortalized.dart.markers) {
-  message("Removing non-immortalized DArT markers...")
-  input <- suppressWarnings(dplyr::filter(input, !stringi::stri_detect_regex(str = LOCUS, pattern = "^1000")))
-  dart2 <- suppressWarnings(dplyr::filter(dart2, !stringi::stri_detect_regex(str = LOCUS, pattern = "^1000")))
-  markers.after <- length(unique(input$MARKERS)) + length(unique(dart2$MARKERS))
-  message("    Number of blacklisted markers: ", markers.before - markers.after)
-}
-# merging DArT tidy data -----------------------------------------------------
-# we keep common column
-dart.col <- dplyr::intersect(colnames(input), colnames(dart2))
+  # cleaning up non-immortalized markers ---------------------------------------
+  markers.before <- length(unique(input$MARKERS)) + length(unique(dart2$MARKERS))
+  if (remove.non.immortalized.dart.markers) {
+    message("Removing non-immortalized DArT markers...")
+    input <- suppressWarnings(dplyr::filter(input, !stringi::stri_detect_regex(str = LOCUS, pattern = "^1000")))
+    dart2 <- suppressWarnings(dplyr::filter(dart2, !stringi::stri_detect_regex(str = LOCUS, pattern = "^1000")))
+    markers.after <- length(unique(input$MARKERS)) + length(unique(dart2$MARKERS))
+    message("    Number of blacklisted markers: ", markers.before - markers.after)
+  }
+  # merging DArT tidy data -----------------------------------------------------
+  # we keep common column
+  dart.col <- dplyr::intersect(colnames(input), colnames(dart2))
 
-input <- suppressWarnings(
-  dplyr::select(input, dplyr::one_of(dart.col)) %>%
-    dplyr::bind_rows(dplyr::select(dart2, dplyr::one_of(dart.col)))
-)
-dart2 <- NULL
-
+  input <- suppressWarnings(
+    dplyr::select(input, dplyr::one_of(dart.col)) %>%
+      dplyr::bind_rows(dplyr::select(dart2, dplyr::one_of(dart.col)))
+  )
+  dart2 <- NULL
 
 
-# Remove weird markers ---------------------------------------------------------
-setwd(path.folder)
-biallelic.data <- NULL # global variables...
-input <- radiator::detect_biallelic_problems(
-  data = input,
-  verbose = TRUE,
-  parallel.core = parallel.core
-) %$%
-  biallelic.data
-setwd(old.dir)
 
-if (rlang::has_name(input, "POLYMORPHIC")) {
-  input %<>% dplyr::select(-POLYMORPHIC)
-}
+  # Remove weird markers ---------------------------------------------------------
+  setwd(path.folder)
+  biallelic.data <- NULL # global variables...
+  input <- radiator::detect_biallelic_problems(
+    data = input,
+    verbose = TRUE,
+    parallel.core = parallel.core
+  ) %$%
+    biallelic.data
+  setwd(old.dir)
 
-# Averaging across markers the call rate and other DArT markers metadata statistics
-# Note to myself: Might be easier/faster to use mutate_if
-if (rlang::has_name(input, "CALL_RATE")) {
-  message("Averaging across markers the call rate")
-  input %<>%
-    dplyr::group_by(MARKERS) %>%
-    dplyr::mutate(CALL_RATE = mean(CALL_RATE)) %>%
-    dplyr::ungroup(.)
-}
+  if (rlang::has_name(input, "POLYMORPHIC")) {
+    input %<>% dplyr::select(-POLYMORPHIC)
+  }
 
-if (rlang::has_name(input, "REP_AVG")) {
-  message("Averaging across markers the REP_AVG")
-  input %<>%
-    dplyr::group_by(MARKERS) %>%
-    dplyr::mutate(REP_AVG = mean(REP_AVG)) %>%
-    dplyr::ungroup(.)
-}
+  # Averaging across markers the call rate and other DArT markers metadata statistics
+  if (rlang::has_name(input, "CALL_RATE")) {
+    message("Averaging across markers the call rate")
+    input %<>%
+      dplyr::group_by(MARKERS) %>%
+      dplyr::mutate(CALL_RATE = mean(CALL_RATE)) %>%
+      dplyr::ungroup(.)
+  }
 
-# message("Adjusting REF/ALT alleles...")
-# Thats done in the section above: Remove weird markers
+  if (rlang::has_name(input, "REP_AVG")) {
+    message("Averaging across markers the REP_AVG")
+    input %<>%
+      dplyr::group_by(MARKERS) %>%
+      dplyr::mutate(REP_AVG = mean(REP_AVG)) %>%
+      dplyr::ungroup(.)
+  }
 
-# input <- radiator::calibrate_alleles(
-#   data = input,
-#   biallelic = NULL,
-#   parallel.core = parallel.core,
-#   verbose = TRUE
-# ) %$%
-#   input
+  # message("Adjusting REF/ALT alleles...")
+  # Thats done in the section above: Remove weird markers
 
-if (rlang::has_name(input, "AVG_COUNT_REF")) {
-  message("Averaging across markers the coverage for the REF allele")
-  input %<>%
-    dplyr::group_by(MARKERS) %>%
-    dplyr::mutate(AVG_COUNT_REF = mean(AVG_COUNT_REF)) %>%
-    dplyr::ungroup(.)
-}
+  # input <- radiator::calibrate_alleles(
+  #   data = input,
+  #   biallelic = NULL,
+  #   parallel.core = parallel.core,
+  #   verbose = TRUE
+  # ) %$%
+  #   input
 
-if (rlang::has_name(input, "AVG_COUNT_ALT")) {
-  message("Averaging across markers the coverage for the ALT allele")
-  input %<>%
-    dplyr::group_by(MARKERS) %>%
-    dplyr::mutate(AVG_COUNT_REF = mean(AVG_COUNT_REF)) %>%
-    dplyr::ungroup(.)
-}
+  if (rlang::has_name(input, "AVG_COUNT_REF")) {
+    message("Averaging across markers the coverage for the REF allele")
+    input %<>%
+      dplyr::group_by(MARKERS) %>%
+      dplyr::mutate(AVG_COUNT_REF = mean(AVG_COUNT_REF)) %>%
+      dplyr::ungroup(.)
+  }
 
-# monomorphic markers (the TRUE/FALSE is included inside the function)
-input <- radiator::filter_monomorphic(
-  data = input,
-  filter.monomorphic = filter.monomorphic,
-  path.folder = path.folder,
-  verbose = TRUE)
+  if (rlang::has_name(input, "AVG_COUNT_ALT")) {
+    message("Averaging across markers the coverage for the ALT allele")
+    input %<>%
+      dplyr::group_by(MARKERS) %>%
+      dplyr::mutate(AVG_COUNT_REF = mean(AVG_COUNT_REF)) %>%
+      dplyr::ungroup(.)
+  }
 
-# common markers (the TRUE/FALSE is included inside the function)
-input <- filter_common_markers(
-  data = input,
-  filter.common.markers = filter.common.markers,
-  path.folder = path.folder,
-  verbose = TRUE
-)
+  # monomorphic markers (the TRUE/FALSE is included inside the function)
+  input <- radiator::filter_monomorphic(
+    data = input,
+    filter.monomorphic = filter.monomorphic,
+    path.folder = path.folder,
+    verbose = TRUE)
+
+  # common markers (the TRUE/FALSE is included inside the function)
+  input <- filter_common_markers(
+    data = input,
+    filter.common.markers = filter.common.markers,
+    path.folder = path.folder,
+    verbose = TRUE
+  )
 
 
-# Write tidy in the working directory
-radiator::write_rad(data = input, path = file.path(path.folder, filename))
+  # Write tidy in the working directory
+  radiator::write_rad(data = input, path = file.path(path.folder, filename))
 
-strata <- radiator::generate_strata(data = input, pop.id = FALSE)
-readr::write_tsv(x = strata, path = file.path(path.folder, strata.filename))
+  strata <- radiator::generate_strata(data = input, pop.id = FALSE)
+  readr::write_tsv(x = strata, path = file.path(path.folder, strata.filename))
 
-# results --------------------------------------------------------------------
-message("\nMerged DArT file and strata file generated:")
-message("    ", filename)
-message("    ", strata.filename)
+  # results --------------------------------------------------------------------
+  message("\nMerged DArT file and strata file generated:")
+  message("    ", filename)
+  message("    ", strata.filename)
 
-message("\nNumber of chrom / locus / SNP:")
-message(length(unique(input$CHROM)), " / ", length(unique(input$LOCUS)), " / ",
-        length(unique(input$MARKERS)), "\n")
-radiator::summary_strata(strata = strata)
-return(res = list(merged.dart = input, strata = strata))
+  message("\nNumber of chrom / locus / SNP:")
+  message(length(unique(input$CHROM)), " / ", length(unique(input$LOCUS)), " / ",
+          length(unique(input$MARKERS)), "\n")
+  radiator::summary_strata(strata = strata)
+  return(res = list(merged.dart = input, strata = strata))
 }#End merge_dart
 
 

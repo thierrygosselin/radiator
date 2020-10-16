@@ -233,14 +233,14 @@ filter_maf <- function(
 
     if (length(unknowned_param) > 0) {
       rlang::abort("Unknowned \"...\" parameters to filter_maf: ",
-           stringi::stri_join(unknowned_param, collapse = " "))
+                   stringi::stri_join(unknowned_param, collapse = " "))
     }
     radiator.dots <- dotslist[
       names(dotslist) %in%
         c("whitelist.markers", "blacklist.id", "blacklist.genotype", "pop.levels",
           "pop.labels", "vcf.metadata", "filter.short.ld", "filter.monomorphic",
           "filter.common.markers")
-      ]
+    ]
 
     if (!is.null(radiator.dots[["whitelist.markers"]])) {
       whitelist.markers <- radiator.dots[["whitelist.markers"]]
@@ -393,8 +393,9 @@ filter_maf <- function(
     # keeping markers meta -------------------------------------------------------
     markers.meta <- suppressWarnings(
       dplyr::select(input, dplyr::one_of(c("MARKERS", "CHROM", "LOCUS", "POS"))) %>%
-      dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-      dplyr::mutate_all(.tbl = ., .funs = as.character))
+        dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
+        dplyr::mutate(dplyr::across(dplyr::everything(), .fns = as.character))
+    )
 
     # strata ---------------------------------------------------------------------
     strata.df <- input %>%
@@ -526,7 +527,7 @@ filter_maf <- function(
           values_to = "LOCAL"
         ) %>%
         ggplot2::ggplot(
-        data = ., ggplot2::aes(x = LOCAL, na.rm = FALSE)) +
+          data = ., ggplot2::aes(x = LOCAL, na.rm = FALSE)) +
         ggplot2::geom_histogram(bins = 30) +
         ggplot2::labs(x = "Minor Allele Frequency (MAF)", y = "Number of markers") +
         ggplot2::expand_limits(y = 0) +
@@ -858,7 +859,7 @@ because LOCUS and POS (SNP) info is not available")
           filter %>%
             dplyr::filter(!MARKERS %in% haplo.reconstruction$MARKERS) %>%
             write_rad(data = ., path = file.path(path.folder, "temp.rad"))
-            # readr::write_tsv(x = ., path = file.path(path.folder, "temp.rad"))
+          # readr::write_tsv(x = ., path = file.path(path.folder, "temp.rad"))
 
           filter <- dplyr::select(filter, MARKERS, POP_ID, INDIVIDUALS, GT_VCF_NUC) %>%
             dplyr::filter(MARKERS %in% haplo.reconstruction$MARKERS) %>%
@@ -939,11 +940,11 @@ because LOCUS and POS (SNP) info is not available")
     if (tibble::has_name(filter, "CHROM")) {
       whitelist.markers <- dplyr::ungroup(filter) %>%
         dplyr::distinct(CHROM, LOCUS, POS) %>%
-        dplyr::mutate_all(.tbl = ., .funs = as.character)
+        dplyr::mutate(dplyr::across(dplyr::everything(), .fns = as.character))
     } else {
       whitelist.markers <- dplyr::ungroup(filter) %>%
         dplyr::distinct(MARKERS) %>%
-        dplyr::mutate_all(.tbl = ., .funs = as.character)
+        dplyr::mutate(dplyr::across(dplyr::everything(), .fns = as.character))
     }
     readr::write_tsv(whitelist.markers, file.path(path.folder, "whitelist.markers.maf.tsv"), append = FALSE, col_names = TRUE)
 
@@ -953,7 +954,6 @@ because LOCUS and POS (SNP) info is not available")
     if (tibble::has_name(filter, "CHROM")) {
       blacklist.markers <- dplyr::setdiff(
         dplyr::select(markers.meta, CHROM, LOCUS, POS), whitelist.markers)
-      # dplyr::select(markers.meta, CHROM, LOCUS, POS), dplyr::mutate_all(.tbl = whitelist.markers, .funs = as.character))
 
     } else {
       blacklist.markers <- dplyr::setdiff(

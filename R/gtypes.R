@@ -27,7 +27,7 @@ tidy_gtypes <- function(data) {
 
   # import ---------------------------------------------------------------------
   input <- suppressWarnings(
-    tibble::as_data_frame(data@data) %>%
+    tibble::as_tibble(data@data) %>%
       dplyr::rename(INDIVIDUALS = ids, POP_ID = strata) %>%
       dplyr::mutate(ALLELES = rep(c("A1", "A2"), n() / 2)) %>%
       tidyr::pivot_longer(

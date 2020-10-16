@@ -699,10 +699,12 @@ read_vcf <- function(
   }
   # Generate MARKERS column and fix types --------------------------------------
   markers.meta %<>%
-    dplyr::mutate_at(
-      .tbl = .,
-      .vars = c("CHROM", "LOCUS", "POS"),
-      .funs = radiator::clean_markers_names) %>%
+    dplyr::mutate(
+      dplyr::across(
+        .cols = c(CHROM, LOCUS, POS),
+        .fns = radiator::clean_markers_names
+      )
+    ) %>%
     dplyr::mutate(
       MARKERS = stringi::stri_join(CHROM, LOCUS, POS, sep = "__"),
       REF = SeqArray::seqGetData(gdsfile = gds, var.name = "$ref"),
@@ -2282,8 +2284,18 @@ split_vcf_id <- function(x) {
   res <- dplyr::rename(x, ID = LOCUS) %>%
     tidyr::separate(data = ., col = ID, into = c("LOCUS", "COL"),
                     sep = "_", extra = "drop", remove = FALSE) %>%
-    dplyr::mutate_at(.tbl = ., .vars = c("CHROM", "POS", "LOCUS"), .funs = as.character) %>%
-    dplyr::mutate_at(.tbl = ., .vars = c("CHROM", "POS", "LOCUS"), .funs = clean_markers_names) %>%
+    dplyr::mutate(
+      dplyr::across(
+        .cols = c(CHROM, LOCUS, POS),
+        .fns = as.character
+      )
+    ) %>%
+    dplyr::mutate(
+      dplyr::across(
+        .cols = c(CHROM, LOCUS, POS),
+        .fns = radiator::clean_markers_names
+      )
+    ) %>%
     tidyr::unite(MARKERS, c(CHROM, LOCUS, POS), sep = "__", remove = FALSE)
   return(res)
 }#End split_vcf_id
@@ -2330,9 +2342,12 @@ clean_pl <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) 
       tidyr::separate(
         data = ., PL, c("PROB_HOM_REF", "PROB_HET", "PROB_HOM_ALT"),
         sep = ",", extra = "drop", remove = FALSE) %>%
-      dplyr::mutate_at(
-        .tbl = ., .vars = c("PROB_HOM_REF", "PROB_HET", "PROB_HOM_ALT"),
-        .funs = as.numeric) %>%
+      dplyr::mutate(
+        dplyr::across(
+          .cols = c(PROB_HOM_REF, PROB_HET, PROB_HOM_ALT),
+          .fns = as.numeric
+        )
+      ) %>%
       dplyr::select(-GT_VCF)
     return(res)
   }#End clean
@@ -2383,18 +2398,17 @@ clean_gl <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) 
       # Value 1: probability that the site is homozgyous REF
       # Value 2: probability that the sample is heterzygous
       # Value 2: probability that it is homozygous ALT
-      # system.time(input2 <- input %>%
-      #   tidyr::separate(data = ., GL, c("PROB_HOM_REF", "PROB_HET", "PROB_HOM_ALT"), sep = ",", extra = "drop", remove = FALSE) %>%
-      #   dplyr::mutate_at(.tbl = ., .vars = c("PROB_HOM_REF", "PROB_HET", "PROB_HOM_ALT"), .funs = as.numeric)
-      # )
       clean <- function(x) {
         res <- x %>%
           tidyr::separate(
             data = ., GL, c("PROB_HOM_REF", "PROB_HET", "PROB_HOM_ALT"),
             sep = ",", extra = "drop", remove = FALSE) %>%
-          dplyr::mutate_at(
-            .tbl = ., .vars = c("PROB_HOM_REF", "PROB_HET", "PROB_HOM_ALT"),
-            .funs = as.numeric)
+          dplyr::mutate(
+            dplyr::across(
+              .cols = c(PROB_HOM_REF, PROB_HET, PROB_HOM_ALT),
+              .fns = as.numeric
+            )
+          )
         return(res)
       }
 

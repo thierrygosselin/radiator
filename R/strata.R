@@ -369,7 +369,7 @@ individuals2strata <- function(
   if (missing(strata.end)) rlang::abort("strata.end argument missing")
   if (is.vector(data)) data <- readr::read_tsv(file = data)
 
-  data <- tibble::as_data_frame(data) %>%
+  data <- tibble::as_tibble(data) %>%
     dplyr::mutate(
       INDIVIDUALS =  as.character(INDIVIDUALS),
       STRATA = stringi::stri_sub(str = INDIVIDUALS, from = strata.start, to = strata.end)
@@ -698,7 +698,10 @@ read_blacklist_id <- function(blacklist.id = NULL, verbose = TRUE) {
       if (!rlang::has_name(blacklist.id, "INDIVIDUALS")) {
         rlang::abort("Blacklist of individuals should have 1 column named: INDIVIDUALS")
       }
-      blacklist.id <- dplyr::mutate_all(.tbl = blacklist.id, .funs = as.character)
+      blacklist.id <- dplyr::mutate(
+        .data = blacklist.id,
+        dplyr::across(dplyr::everything(), .fns = as.character)
+        )
     }
     blacklist.id$INDIVIDUALS <- radiator::clean_ind_names(blacklist.id$INDIVIDUALS)
 

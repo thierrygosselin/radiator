@@ -133,8 +133,8 @@ tidy_genlight <- function(
     LOCUS = data@loc.names,#adegenet::locNames(data),
     POS = data@position#adegenet::position(data)
   ) %>%
-    dplyr::mutate_all(.tbl = ., .funs = as.character) %>%
-    dplyr::mutate_all(.tbl = ., .funs = radiator::clean_markers_names) %>%
+    dplyr::mutate(dplyr::across(dplyr::everything(), .fns = as.character)) %>%
+    dplyr::mutate(dplyr::across(dplyr::everything(), .fns = radiator::clean_markers_names)) %>%
     tidyr::unite(data = ., col = MARKERS, CHROM, LOCUS, POS, sep = "__", remove = FALSE) %>%
     dplyr::select(MARKERS, CHROM, LOCUS, POS)
 

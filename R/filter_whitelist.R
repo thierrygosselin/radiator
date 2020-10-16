@@ -43,7 +43,8 @@ read_whitelist <- function(whitelist.markers = NULL, verbose = FALSE) {
     if (is.vector(whitelist.markers)) {
       whitelist.markers <- suppressMessages(
         readr::read_tsv(whitelist.markers, col_names = TRUE) %>%
-          dplyr::mutate_all(.tbl = ., .funs = as.character))
+          dplyr::mutate(dplyr::across(dplyr::everything(), .fns = as.character))
+      )
     }
     nrow.before <- nrow(whitelist.markers)
     whitelist.markers <- dplyr::distinct(whitelist.markers)
@@ -57,8 +58,10 @@ read_whitelist <- function(whitelist.markers = NULL, verbose = FALSE) {
     nrow.before <- duplicate.whitelist.markers <- nrow.after <- NULL
 
     # cleaning names of markers
-    whitelist.markers <- dplyr::mutate_all(
-      .tbl = whitelist.markers, .funs = clean_markers_names)
+    whitelist.markers <- dplyr::mutate(
+      .data = whitelist.markers,
+      dplyr::across(dplyr::everything(), .fns = clean_markers_names)
+      )
 
     if (tibble::has_name(whitelist.markers, "VARIANT_ID")) {
       whitelist.markers$VARIANT_ID <- as.integer(whitelist.markers$VARIANT_ID)

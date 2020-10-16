@@ -91,7 +91,14 @@ betas_estimator <- function(
 
     betas <- dplyr::select(.data = betas.prep, MARKERS, POP_ID, FREQ_ALT, FREQ_REF) %>%
       dplyr::group_by(MARKERS) %>%
-      dplyr::summarise_at(.tbl = ., .vars = c("FREQ_ALT", "FREQ_REF"), .funs = list) %>%
+      dplyr::summarise(
+        .data = .,
+        dplyr::across(
+          .cols = c(FREQ_ALT, FREQ_REF),
+          .fns = list
+        ),
+        .groups = "keep"
+      ) %>%
       dplyr::mutate(
         FREQ_ALT = purrr::map(.x = FREQ_ALT, .f = gene_diversity_between),
         FREQ_REF = purrr::map(.x = FREQ_REF, .f = gene_diversity_between)
@@ -148,7 +155,14 @@ betas_estimator <- function(
 
     betas <- dplyr::select(.data = betas.prep, MARKERS, POP_ID, GT, HOM_O) %>%
       dplyr::group_by(MARKERS, GT) %>%
-      dplyr::summarise_at(.tbl = ., .vars = "HOM_O", .funs = list) %>%
+      dplyr::summarise(
+        .data = .,
+        dplyr::across(
+          .cols = "HOM_O",
+          .fns = list
+        ),
+        .groups = "keep"
+      ) %>%
       dplyr::mutate(
         FREQ = unlist(purrr::map(.x = HOM_O, .f = gene_diversity_between))
       ) %>%

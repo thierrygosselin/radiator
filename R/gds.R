@@ -289,7 +289,7 @@ tidy2gds <- function(x) {
   if (!rlang::has_name(x, "VARIANT_ID")) {
     mk.col <- dplyr::intersect(colnames(x), c("CHROM", "LOCUS", "POS"))
     x %<>%
-      dplyr::mutate_at(.tbl = ., .vars = mk.col, .funs = as.character) %>%
+      dplyr::mutate(dplyr::across(.cols = mk.col, .fns = as.character)) %>%
       dplyr::arrange(MARKERS) %>%
       dplyr::mutate(VARIANT_ID = as.integer(factor(MARKERS)))
   }
@@ -788,7 +788,7 @@ extract_markers_metadata <- function(
 
   mk.col <- dplyr::intersect(colnames(markers.meta), c("CHROM", "LOCUS", "POS"))
   markers.meta  %<>%
-    dplyr::mutate_at(.tbl = ., .vars = mk.col, .funs = as.character)
+    dplyr::mutate(dplyr::across(.cols = mk.col, .fns = as.character))
 
   if (!whitelist && !blacklist && !rlang::has_name(markers.meta, "FILTERS")) {
     markers.meta %<>% dplyr::mutate(FILTERS = "whitelist")
@@ -1088,34 +1088,56 @@ extract_coverage <- function(
 
       if (markers) {
         m <- dplyr::group_by(depth, MARKERS) %>%
-          dplyr::summarise_at(.tbl = ., .vars = want, .funs = sum, na.rm = TRUE) %>%
-          dplyr::mutate_at(.tbl = ., .vars = want, .funs = round, digits = 0) %>%
-          dplyr::mutate_at(.tbl = ., .vars = want, .funs = as.integer) %>%
+          dplyr::summarise(
+            .data = .,
+            dplyr::across(
+              .cols = want,
+              .fns = sum, na.rm = TRUE
+            ),
+            .groups = "keep"
+          ) %>%
+          dplyr::mutate(dplyr::across(.cols = want, .fns = round, digits = 0)) %>%
+          dplyr::mutate(dplyr::across(.cols = want, .fns = as.integer)) %>%
           dplyr::ungroup(.) %>%
           dplyr::rename_all(.funs = list(colnames_rep), total = TRUE) %>%
           dplyr::bind_cols(
             dplyr::group_by(depth, MARKERS) %>%
-              dplyr::summarise_at(.tbl = ., .vars = want, .funs = mean, na.rm = TRUE) %>%
-              dplyr::mutate_at(.tbl = ., .vars = want, .funs = round, digits = 0) %>%
-              dplyr::mutate_at(.tbl = ., .vars = want, .funs = as.integer) %>%
+              dplyr::summarise(
+                .data = .,
+                dplyr::across(
+                  .cols = want,
+                  .fns = mean, na.rm = TRUE
+                ),
+                .groups = "keep"
+              ) %>%
+              dplyr::mutate(dplyr::across(.cols = want, .fns = round, digits = 0)) %>%
+              dplyr::mutate(dplyr::across(.cols = want, .fns = as.integer)) %>%
               dplyr::ungroup(.) %>%
               dplyr::rename_all(.funs = list(colnames_rep), mean = TRUE) %>%
               dplyr::select(-MARKERS)
           ) %>%
           dplyr::bind_cols(
             dplyr::group_by(depth, MARKERS) %>%
-              dplyr::summarise_at(.tbl = ., .vars = want, .funs = stats::median, na.rm = TRUE) %>%
-              dplyr::mutate_at(.tbl = ., .vars = want, .funs = round, digits = 0) %>%
-              dplyr::mutate_at(.tbl = ., .vars = want, .funs = as.integer) %>%
+              dplyr::summarise(
+                .data = .,
+                dplyr::across(.cols = want, .fns = stats::median, na.rm = TRUE),
+                .groups = "keep"
+              ) %>%
+              dplyr::mutate(dplyr::across(.cols = want, .fns = round, digits = 0)) %>%
+              dplyr::mutate(dplyr::across(.cols = want, .fns = as.integer)) %>%
               dplyr::ungroup(.) %>%
               dplyr::rename_all(.funs = list(colnames_rep), median = TRUE) %>%
               dplyr::select(-MARKERS)
           ) %>%
           dplyr::bind_cols(
             dplyr::group_by(depth, MARKERS) %>%
-              dplyr::summarise_at(.tbl = ., .vars = want, .funs = iqr_radiator) %>%
-              dplyr::mutate_at(.tbl = ., .vars = want, .funs = round, digits = 0) %>%
-              dplyr::mutate_at(.tbl = ., .vars = want, .funs = as.integer) %>%
+              dplyr::summarise(
+                .data = .,
+                dplyr::across(.cols = want, .fns = iqr_radiator),
+                .groups = "keep"
+              ) %>%
+              dplyr::mutate(dplyr::across(.cols = want, .fns = round, digits = 0)) %>%
+              dplyr::mutate(dplyr::across(.cols = want, .fns = as.integer)) %>%
               dplyr::ungroup(.) %>%
               dplyr::rename_all(.funs = list(colnames_rep), iqr = TRUE) %>%
               dplyr::select(-MARKERS)
@@ -1123,34 +1145,50 @@ extract_coverage <- function(
       }
       if (ind) {
         i <- dplyr::group_by(depth, INDIVIDUALS) %>%
-          dplyr::summarise_at(.tbl = ., .vars = want, .funs = sum, na.rm = TRUE) %>%
-          dplyr::mutate_at(.tbl = ., .vars = want, .funs = round, digits = 0) %>%
-          dplyr::mutate_at(.tbl = ., .vars = want, .funs = as.integer) %>%
+          dplyr::summarise(
+            .data = .,
+            dplyr::across(.cols = want, .fns = sum, na.rm = TRUE),
+            .groups = "keep"
+          ) %>%
+          dplyr::mutate(dplyr::across(.cols = want, .fns = round, digits = 0)) %>%
+          dplyr::mutate(dplyr::across(.cols = want, .fns = as.integer)) %>%
           dplyr::ungroup(.) %>%
           dplyr::rename_all(.funs = list(colnames_rep), total = TRUE) %>%
           dplyr::bind_cols(
             dplyr::group_by(depth, INDIVIDUALS) %>%
-              dplyr::summarise_at(.tbl = ., .vars = want, .funs = mean, na.rm = TRUE) %>%
-              dplyr::mutate_at(.tbl = ., .vars = want, .funs = round, digits = 0) %>%
-              dplyr::mutate_at(.tbl = ., .vars = want, .funs = as.integer) %>%
+              dplyr::summarise(
+                .data = .,
+                dplyr::across(.cols = want, .fns = mean, na.rm = TRUE),
+                .groups = "keep"
+              ) %>%
+              dplyr::mutate(dplyr::across(.cols = want, .fns = round, digits = 0)) %>%
+              dplyr::mutate(dplyr::across(.cols = want, .fns = as.integer)) %>%
               dplyr::ungroup(.) %>%
               dplyr::rename_all(.funs = list(colnames_rep), mean = TRUE) %>%
               dplyr::select(-INDIVIDUALS)
           ) %>%
           dplyr::bind_cols(
             dplyr::group_by(depth, INDIVIDUALS) %>%
-              dplyr::summarise_at(.tbl = ., .vars = want, .funs = stats::median, na.rm = TRUE) %>%
-              dplyr::mutate_at(.tbl = ., .vars = want, .funs = round, digits = 0) %>%
-              dplyr::mutate_at(.tbl = ., .vars = want, .funs = as.integer) %>%
+              dplyr::summarise(
+                .data = .,
+                dplyr::across(.cols = want, .fns = stats::median, na.rm = TRUE),
+                .groups = "keep"
+              ) %>%
+              dplyr::mutate(dplyr::across(.cols = want, .fns = round, digits = 0)) %>%
+              dplyr::mutate(dplyr::across(.cols = want, .fns = as.integer)) %>%
               dplyr::ungroup(.) %>%
               dplyr::rename_all(.funs = list(colnames_rep), median = TRUE) %>%
               dplyr::select(-INDIVIDUALS)
           ) %>%
           dplyr::bind_cols(
             dplyr::group_by(depth, INDIVIDUALS) %>%
-              dplyr::summarise_at(.tbl = ., .vars = want, .funs = iqr_radiator) %>%
-              dplyr::mutate_at(.tbl = ., .vars = want, .funs = round, digits = 0) %>%
-              dplyr::mutate_at(.tbl = ., .vars = want, .funs = as.integer) %>%
+              dplyr::summarise(
+                .data = .,
+                dplyr::across(.cols = want, .fns = iqr_radiator),
+                .groups = "keep"
+              ) %>%
+              dplyr::mutate(dplyr::across(.cols = want, .fns = round, digits = 0)) %>%
+              dplyr::mutate(dplyr::across(.cols = want, .fns = as.integer)) %>%
               dplyr::ungroup(.) %>%
               dplyr::rename_all(.funs = list(colnames_rep), iqr = TRUE) %>%
               dplyr::select(-INDIVIDUALS)
@@ -2476,9 +2514,16 @@ generate_markers_stats <- function(
       path.folder = path.folder)
 
 
-    dplyr::mutate_if(
-      .tbl = stats, .predicate = is.numeric, .funs = format, scientific = FALSE) %>%
+    dplyr::mutate(.data = stats,
+                    dplyr::across(
+                      .cols = where(is.numeric),
+                      .fns = format,
+                      scientific = FALSE
+                      )
+                  ) %>%
       readr::write_tsv(x = ., path = file.path(path.folder, markers.stats.file))
+
+
   } else {
     fig <- NULL
   }

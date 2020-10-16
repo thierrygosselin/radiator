@@ -355,10 +355,12 @@ read_plink <- function(
 
     # Generate MARKERS column and fix types --------------------------------------
     markers.meta %<>%
-      dplyr::mutate_at(
-        .tbl = .,
-        .vars = c("CHROM", "LOCUS", "POS"),
-        .funs = radiator::clean_markers_names) %>%
+      dplyr::mutate(
+        dplyr::across(
+          .cols = c(CHROM, LOCUS, POS),
+          .fns = radiator::clean_markers_names
+        )
+      ) %>%
       dplyr::mutate(
         MARKERS = stringi::stri_join(CHROM, LOCUS, POS, sep = "__"),
         REF = SeqArray::seqGetData(gdsfile = gds, var.name = "$ref"),

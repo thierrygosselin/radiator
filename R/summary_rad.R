@@ -82,7 +82,7 @@ summary_rad <- function(
     data <- tidy.data
     tidy.data <- NULL
 
-  } else { #tidy.data
+  } else {#tidy.data
     if (is.vector(data)) data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
   }
   if (verbose) message("Summarizing...")
@@ -131,22 +131,26 @@ summary_rad <- function(
   ps <- dplyr::bind_cols(
     dplyr::group_by(data, POP_ID) %>% dplyr::summarise(N = length(unique(INDIVIDUALS))),
     dplyr::group_by(mps, POP_ID) %>%
-      dplyr::summarise_at(
-      .tbl = .,
-      .vars = c("N", "FREQ_REF", "MAF_LOCAL", "HET_O", "HET_E"),
-      .funs = mean,
-      na.rm = TRUE) %>%
+      dplyr::summarise(
+        .data = .,
+        dplyr::across(
+          .cols = c(N, FREQ_REF, MAF_LOCAL, HET_O, HET_E),
+          .fns = mean, na.rm = TRUE
+        ),
+        .groups = "keep"
+      ) %>%
       dplyr::rename(N_MEAN = N)
   ) %>%
     dplyr::mutate(
       POP_ID1 = NULL,
       FIS = dplyr::if_else(HET_O == 0, 1, round(((HET_E - HET_O) / HET_E), digits))
     ) %>%
-    dplyr::mutate_at(
-      .tbl = .,
-      .vars = c("FREQ_REF", "MAF_LOCAL", "HET_O", "HET_E", "FIS"),
-      .funs = round,
-      digits = digits
+    dplyr::mutate(
+      dplyr::across(
+        .cols = c(FREQ_REF, MAF_LOCAL, HET_O, HET_E, FIS),
+        .fns = round,
+        digits = digits
+      )
     )
 
   # writting the results

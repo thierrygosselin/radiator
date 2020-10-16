@@ -52,7 +52,7 @@ read_blacklist_genotypes <- function(
 
   if (length(unknowned_param) > 0) {
     rlang::abort("Unknowned \"...\" parameters ",
-         stringi::stri_join(unknowned_param, collapse = " "))
+                 stringi::stri_join(unknowned_param, collapse = " "))
   }
 
   radiator.dots <- dotslist[names(dotslist) %in% want]
@@ -75,7 +75,8 @@ read_blacklist_genotypes <- function(
     if (is.vector(blacklist.genotypes)) {
       blacklist.genotypes <- suppressMessages(
         readr::read_tsv(blacklist.genotypes, col_names = TRUE) %>%
-          dplyr::mutate_all(.tbl = ., .funs = as.character))
+          dplyr::mutate(dplyr::across(dplyr::everything(), .fns = as.character))
+      )
     }
     nrow.before <- nrow(blacklist.genotypes)
     blacklist.genotypes <- dplyr::distinct(blacklist.genotypes)
@@ -93,15 +94,21 @@ read_blacklist_genotypes <- function(
       .x = colnames(blacklist.genotypes),
       .p = colnames(blacklist.genotypes) %in% "INDIVIDUALS")
 
-    blacklist.genotypes <- dplyr::mutate_at(
-      .tbl = blacklist.genotypes,
-      .vars = need.cleaning,
-      .funs = clean_markers_names)
+    blacklist.genotypes <- dplyr::mutate(
+      .data = blacklist.genotypes,
+      dplyr::across(
+        .cols = need.cleaning,
+        .fns = clean_markers_names
+      )
+    )
 
-    blacklist.genotypes <- dplyr::mutate_at(
-      .tbl = blacklist.genotypes,
-      .vars = "INDIVIDUALS",
-      .funs = clean_ind_names)
+    blacklist.genotypes <- dplyr::mutate(
+      .data = blacklist.genotypes,
+      dplyr::across(
+        .cols = "INDIVIDUALS",
+        .fns = clean_ind_names
+      )
+    )
   } else {
     blacklist.genotypes <- NULL
   }
@@ -171,7 +178,7 @@ filter_blacklist_genotypes <- function(
 
   if (length(unknowned_param) > 0) {
     rlang::abort("Unknowned \"...\" parameters ",
-         stringi::stri_join(unknowned_param, collapse = " "))
+                 stringi::stri_join(unknowned_param, collapse = " "))
   }
 
   radiator.dots <- dotslist[names(dotslist) %in% want]
@@ -341,10 +348,9 @@ filter_blacklist_genotypes <- function(
 #   }
 #   suppressWarnings(suppressMessages(
 #     blacklist.genotype <- blacklist.genotype %>%
-#       dplyr::mutate_at(.tbl = ., .vars = "INDIVIDUALS",
-#                        .funs = clean_ind_names) %>%
+#       dplyr::mutate(dplyr::across(.cols = "INDIVIDUALS", .fns = clean_ind_names)) %>%dplyr::mutate(dplyr::across(dplyr::everything(), .fns = as.character))
 #       dplyr::select(dplyr::one_of(want)) %>%
-#       dplyr::mutate_all(.tbl = ., .funs = as.character, exclude = NA)))
+# dplyr::mutate(dplyr::across(dplyr::everything(), .fns = as.character, exclude = NA))
 #   columns.names.blacklist.genotype <- colnames(blacklist.genotype)
 #
 #   if (data.type == "haplo.file") {
