@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="Thierry Gosselin" />
+
+<meta name="date" content="2020-10-16" />
+
+<title>Get Started</title>
+
+<script>// Hide empty <a> tag within highlighted CodeBlock for screen reader accessibility (see https://github.com/jgm/pandoc/issues/6352#issuecomment-626106786) -->
+// v0.0.1
+// Written by JooYoung Seo (jooyoung@psu.edu) and Atsushi Yasumoto on June 1st, 2020.
+
+document.addEventListener('DOMContentLoaded', function() {
+  const codeList = document.getElementsByClassName("sourceCode");
+  for (var i = 0; i < codeList.length; i++) {
+    var linkList = codeList[i].getElementsByTagName('a');
+    for (var j = 0; j < linkList.length; j++) {
+      if (linkList[j].innerHTML === "") {
+        linkList[j].setAttribute('aria-hidden', 'true');
+      }
+    }
+  }
+});
+</script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+      code.sourceCode > span { display: inline-block; line-height: 1.25; }
+  code.sourceCode > span { color: inherit; text-decoration: inherit; }
+  code.sourceCode > span:empty { height: 1.2em; }
+  .sourceCode { overflow: visible; }
+  code.sourceCode { white-space: pre; position: relative; }
+  div.sourceCode { margin: 1em 0; }
+  pre.sourceCode { margin: 0; }
+  @media screen {
+  div.sourceCode { overflow: auto; }
+  }
+  @media print {
+  code.sourceCode { white-space: pre-wrap; }
+  code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+  }
+  pre.numberSource code
+    { counter-reset: source-line 0; }
+  pre.numberSource code > span
+    { position: relative; left: -4em; counter-increment: source-line; }
+  pre.numberSource code > span > a:first-child::before
+    { content: counter(source-line);
+      position: relative; left: -1em; text-align: right; vertical-align: baseline;
+      border: none; display: inline-block;
+      -webkit-touch-callout: none; -webkit-user-select: none;
+      -khtml-user-select: none; -moz-user-select: none;
+      -ms-user-select: none; user-select: none;
+      padding: 0 4px; width: 4em;
+      color: #aaaaaa;
+    }
+  pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+  div.sourceCode
+    {   }
+  @media screen {
+  code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+  }
+  code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+  code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+  code span.at { color: #7d9029; } /* Attribute */
+  code span.bn { color: #40a070; } /* BaseN */
+  code span.bu { } /* BuiltIn */
+  code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+  code span.ch { color: #4070a0; } /* Char */
+  code span.cn { color: #880000; } /* Constant */
+  code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+  code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+  code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+  code span.dt { color: #902000; } /* DataType */
+  code span.dv { color: #40a070; } /* DecVal */
+  code span.er { color: #ff0000; font-weight: bold; } /* Error */
+  code span.ex { } /* Extension */
+  code span.fl { color: #40a070; } /* Float */
+  code span.fu { color: #06287e; } /* Function */
+  code span.im { } /* Import */
+  code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+  code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+  code span.op { color: #666666; } /* Operator */
+  code span.ot { color: #007020; } /* Other */
+  code span.pp { color: #bc7a00; } /* Preprocessor */
+  code span.sc { color: #4070a0; } /* SpecialChar */
+  code span.ss { color: #bb6688; } /* SpecialString */
+  code span.st { color: #4070a0; } /* String */
+  code span.va { color: #19177c; } /* Variable */
+  code span.vs { color: #4070a0; } /* VerbatimString */
+  code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+    </style>
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css" data-origin="pandoc">
+code.sourceCode > span { display: inline-block; line-height: 1.25; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode { white-space: pre; position: relative; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+code.sourceCode { white-space: pre-wrap; }
+code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    for (var j = 0; j < rules.length; j++) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Get Started</h1>
+<h4 class="author">Thierry Gosselin</h4>
+<h4 class="date">2020-10-16</h4>
+
+
+
+<div id="learning-radiator" class="section level1">
+<h1>Learning radiator</h1>
+<p>To see if radiator is the right tool for you, you can start with the basics.</p>
+<div id="prepare-a-strata-file" class="section level2">
+<h2>1. Prepare a strata file</h2>
+<ul>
+<li>It’s a tab separated file, e.g. <a href="https://www.dropbox.com/s/g0vsek0dmtpxntt/example.strata.tsv?dl=0">example.strata.tsv</a>.</li>
+<li>A minimum of 2 columns: <code>INDIVIDUALS</code> and <code>STRATA</code> is required.</li>
+<li>The <code>STRATA</code> column identifies the individuals stratification, the hierarchical groupings: populations, sampling sites or any grouping you want.</li>
+<li>It’s like <em>stacks</em> population map file with header…</li>
+<li>DArT users: the strata requires 3 columns and is described in <code>??radiator::readr_dart</code> <a href="https://www.dropbox.com/s/utq2h6o00v55kep/example.dart.strata.tsv?dl=0">example.dart.strata.tsv</a>.</li>
+</ul>
+<p>To make sure it’s going to work properly, try:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a>radiator<span class="op">::</span><span class="kw">summary_strata</span>(<span class="st">&quot;my.strata.tsv&quot;</span>)</span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="co"># more details in with `??radiator::summary_strata`</span></span></code></pre></div>
+</div>
+<div id="filter-your-radseq-data" class="section level2">
+<h2>2. Filter your RADseq data</h2>
+<ul>
+<li><code>filter_rad</code> is the ONE FUNCTION TO RULE THEM ALL.</li>
+<li>There’s a built-in interactive mode that requires users to visualize the data before choosing thresholds.</li>
+<li>The function is made of filtering modules that user’s can also access separately or in combination.</li>
+<li>For 95% of users, <code>filter_rad</code> will be enough to start exploring the biology!</li>
+</ul>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a>data &lt;-<span class="st"> </span>radiator<span class="op">::</span><span class="kw">filter_rad</span>(</span>
+<span id="cb2-2"><a href="#cb2-2"></a>    <span class="dt">data =</span> <span class="st">&quot;my.vcf&quot;</span>,</span>
+<span id="cb2-3"><a href="#cb2-3"></a>    <span class="dt">strata =</span> <span class="st">&quot;my.strata.tsv&quot;</span>, </span>
+<span id="cb2-4"><a href="#cb2-4"></a>    <span class="dt">output =</span> <span class="kw">c</span>(<span class="st">&quot;genind&quot;</span>, <span class="st">&quot;stockr&quot;</span>)</span>
+<span id="cb2-5"><a href="#cb2-5"></a>    )</span></code></pre></div>
+<p><strong>To cite radiator</strong>, inside R type <code>citation(&quot;radiator&quot;)</code></p>
+</div>
+</div>
+<div id="overview" class="section level1">
+<h1>Overview</h1>
+<table>
+<colgroup>
+<col width="25%"></col>
+<col width="74%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Caracteristics</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"><strong>Import</strong></td>
+<td align="left">List of the 14 supported input genomic file formats (<strong>diploid data only</strong>) and their variations:<br> <a href="https://samtools.github.io/hts-specs/">VCF: SNPs and haplotypes</a> (Danecek et al., 2011)<br><a href="http://www.diversityarrays.com">DArT files (5): genotypes in 1row, alleles counts and coverage in 2 rows, SilicoDArT genotypes and counts</a><br><a href="https://www.cog-genomics.org/plink2">PLINK: bed/tped/tfam</a> (Purcell et al., 2007)<br><a href="https://github.com/thibautjombart/adegenet">genind</a> (Jombart et al., 2010; Jombart and Ahmed, 2011)<br> <a href="https://github.com/thibautjombart/adegenet">genlight</a> (Jombart et al., 2010; Jombart and Ahmed, 2011)<br><a href="https://github.com/EricArcher/strataG">strataG gtypes</a> (Archer et al., 2016)<br><a href="http://genepop.curtin.edu.au">Genepop</a> (Raymond and Rousset, 1995; Rousset, 2008)<br><a href="http://catchenlab.life.illinois.edu/stacks/">STACKS haplotype file</a> (Catchen et al., 2011, 2013)<br><a href="https://github.com/jgx65/hierfstat">hierfstat</a> (Goudet, 2005)<br><a href="https://github.com/zhengxwen/SeqArray">SeqArray</a> (Zheng et al., 2017)<br><a href="https://github.com/zhengxwen/SNPRelate">SNPRelate</a> (Zheng et al., 2012)<br>Dataframes of genotypes in wide or long/tidy format<br><br><strong>Reading and tidying is found inside: <code>genomic_converter</code>, <code>tidy_</code> and <code>read_</code> functions</strong></td>
+</tr>
+<tr class="even">
+<td align="left"><strong>Output</strong></td>
+<td align="left">29 genomic data formats can be exported out of <strong>radiator</strong>. The module responsible for this is <code>genomic_converter</code>. Separate modules handles the different formats and are also available:<br><code>write_vcf</code>: <a href="https://samtools.github.io/hts-specs/">VCF</a> (Danecek et al., 2011)<br><code>write_plink</code>: <a href="https://www.cog-genomics.org/plink2">PLINK tped/tfam</a> (Purcell et al., 2007)<br><code>write_genind</code>: <a href="https://github.com/thibautjombart/adegenet">adegenet genind and genlight</a> (Jombart et al., 2010; Jombart and Ahmed, 2011)<br><code>write_genlight</code>: <a href="https://github.com/thibautjombart/adegenet">genlight</a> (Jombart et al., 2010; Jombart and Ahmed, 2011)<br><code>write_gsi_sim</code>: <a href="https://github.com/eriqande/gsi_sim">gsi_sim</a> (Anderson et al. 2008)<br><code>write_rubias</code>: <a href="https://github.com/eriqande/rubias">rubias</a> (Moran and Anderson, 2018)<br><code>write_gtypes</code>: <a href="https://github.com/EricArcher/strataG">strataG gtypes</a> (Archer et al. 2016)<br><code>write_colony</code>: <a href="https://www.zsl.org/science/software/colony">COLONY</a> (Jones and Wang, 2010; Wang, 2012)<br><code>write_genepop</code>: <a href="http://genepop.curtin.edu.au">Genepop</a> (Raymond and Rousset, 1995; Rousset, 2008)<br><code>write_genepopedit</code>: <a href="https://github.com/rystanley/genepopedit">genepopedit</a> (Stanley et al., 2017)<br><a href="http://catchenlab.life.illinois.edu/stacks/">STACKS haplotype file</a> (Catchen et al., 2011, 2013)<br><code>write_betadiv</code>: <a href="http://adn.biol.umontreal.ca/~numericalecology/Rcode/">betadiv</a> (Lamy, 2015)<br> <code>write_dadi</code>: <a href="http://gutengroup.mcb.arizona.edu/software/">δaδi</a> (Gutenkunst et al., 2009)<br> <code>write_structure</code>: <a href="https://web.stanford.edu/group/pritchardlab/structure.html">structure</a> (Pritchard et al., 2000)<br> <code>write_faststructure</code>: <a href="https://github.com/rajanil/fastStructure">faststructure</a> (Raj &amp; Pritchard, 2014)<br> <code>write_arlequin</code>: <a href="http://cmpg.unibe.ch/software/arlequin35/">Arlequin</a> (Excoffier et al. 2005)<br> <code>write_hierfstat</code>: <a href="https://github.com/jgx65/hierfstat">hierfstat</a> (Goudet, 2005)<br> <code>write_snprelate</code>: <a href="https://github.com/zhengxwen/SNPRelate">SNPRelate</a> (Zheng et al. 2012)<br><code>write_seqarray</code>: <a href="https://github.com/zhengxwen/SeqArray">SeqArray</a> (Zheng et al. 2017)<br> <code>write_bayescan</code>: <a href="http://cmpg.unibe.ch/software/BayeScan">BayeScan</a> (Foll and Gaggiotti, 2008)<br><code>write_pcadapt</code>: <a href="https://github.com/bcm-uga/pcadapt">pcadapt</a> (Luu et al. 2017)<br><code>write_hzar</code> (Derryberry et al. 2013) <br><code>write_fineradstructure</code> (Malinsky et al., 2018) <br><code>write_related</code> <a href="https://github.com/timothyfrasier/related">related</a> (Pew et al., 2015)<br><code>write_stockr</code> for stockR package (Foster el al., submitted)<br><code>write_maverick</code> <a href="http://www.bobverity.com/home/maverick/what-is-maverick/">MavericK</a> (Verity &amp; Nichols, 2016)<br><code>write_ldna</code> <a href="https://github.com/petrikemppainen/LDna">LDna</a> (Kemppainen et al. 2015)<br><code>write_hapmap</code> <a href="https://www.ncbi.nlm.nih.gov/variation/news/NCBI_retiring_HapMap/">HapMap</a><br>Dataframes of genotypes in wide or long/tidy format</td>
+</tr>
+<tr class="odd">
+<td align="left"><strong>Conversion function</strong></td>
+<td align="left"><code>genomic_converter</code> import/export genomic formats mentioned above. The function is also integrated with usefull filters, blacklist and whitelist.</td>
+</tr>
+<tr class="even">
+<td align="left"><strong>Outliers detection</strong></td>
+<td align="left"><code>detect_duplicate_genomes</code>: detect and remove duplicate individuals from your dataset <br><code>detect_mixed_genomes</code>: detect and remove potentially mixed individuals<br><code>stackr::summary_haplotype</code> and <code>filter_snp_number</code>: Discard of outlier markers with <em>de novo</em> assembly artifact (e.g. markers with an extreme number of SNP per haplotype or with irregular number of alleles)</td>
+</tr>
+<tr class="odd">
+<td align="left"><strong>Filters</strong></td>
+<td align="left">Targets of filters: alleles, genotypes, markers, individuals and populations and associated metrics and statistics can be filtered and/or selected in several ways inside the main filtering function <code>filter_rad</code> and/or the underlying modules:<br><br><code>filter_rad</code>: designed for RADseq data, it’s the <em>one function to rule them all</em>. Best used with unfiltered or very low filtered VCF (or listed input) file. The function can handle very large VCF files (e.g. no problem with &gt;2M SNPs, &gt; 30GB files), all within R!!<br><code>filter_dart_reproducibility</code>: blaclist markers under a certain threshold of DArT reproducibility metric.<br><code>filter_monomorphic</code>: blacklist markers with only 1 morph.<br><code>filter_common_markers</code>: keep only markers common between strata.<br><code>filter_individuals</code>: blacklist individuals based on missingness, heterozygosity and/or total coverage.<br><code>filter_mac</code>: blacklist markers based on minor/alternate allele count.<br><code>filter_coverage</code>: blacklist markers based on mean read depth (coverage).<br><code>filter_genotype_likelihood</code>: Discard markers based on genotype likelihood<br><code>filter_genotyping</code>: blacklist markers based on genotyping/call rate.<br><code>filter_snp_position_read</code>: blacklist markers based based on the SNP position on the read/locus.<br><code>filter_snp_number</code>: blacklist locus with too many SNPs.<br><code>filter_ld</code>: blacklist markers based on short and/or long distance linkage disequilibrium.<br><code>filter_hwe</code>: blacklist markers based on Hardy-Weinberg Equilibrium expectations (HWE).<br><code>filter_het</code>: blacklist markers based on the observed heterozygosity (Het obs).<br><code>filter_fis</code>: blacklist markers based on the inbreeding coefficient (Fis).<br><code>filter_whitelist</code>: keep only markers present in a whitelist</td>
+</tr>
+<tr class="even">
+<td align="left"><strong><a href="https://ggplot2.tidyverse.org">ggplot2</a>-based plotting</strong></td>
+<td align="left">Visualize distribution of important metric and statistics and create publication-ready figures</td>
+</tr>
+<tr class="odd">
+<td align="left"><strong>Parallel</strong></td>
+<td align="left">Codes designed and optimized for fast computations using Genomic Data Structure <a href="https://github.com/zhengxwen/gdsfmt">GDS</a> file format and data science packages in <a href="https://www.tidyverse.org">tiverse</a>. Works with all OS: Linux, Mac and now PC!</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

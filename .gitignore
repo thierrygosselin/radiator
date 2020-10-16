@@ -1,9 +1,5 @@
 .Rproj.user
 .Rhistory
 .RData
-vignettes/*.R
-vignettes/*.Rmd
-vignettes/*.html
-packrat/lib*/
 inst/doc
 docs/

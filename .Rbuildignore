@@ -4,7 +4,8 @@
 ^\.Rproj\.user$
 ^README\.Rmd$
 ^README-.*\.png$
-^vignettes/*\.Rmd
+^vignettes/*\.R
+^vignettes/*\.png
 ^_pkgdown\.yml$
 ^docs$
 ^pkgdown$
