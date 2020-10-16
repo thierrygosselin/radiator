@@ -27,7 +27,7 @@
 # @param affinity.list see \pkg{parallel} \code{\link{mclapply}}
 
 # @return For mclapply, a list of the same length as X and named by X.
-#' @rdname radiator_parallel
+#' @rdname mclapply_win
 #' @export
 #' @keywords internal
 
@@ -35,13 +35,11 @@ mclapply_win <- function(
   X,
   FUN,
   ...,
+  mc.cores = getOption("mc.cores", 2L),
   mc.preschedule = TRUE,
   mc.set.seed = TRUE,
-  mc.silent = FALSE,
-  mc.cores = getOption("mc.cores", 2L),
   mc.cleanup = TRUE,
-  mc.allow.recursive = TRUE,
-  affinity.list = NULL
+  mc.allow.recursive = TRUE
 ) {
 
   # Create a cluster
@@ -115,7 +113,7 @@ mclapply_win <- function(
 # @param mc.allow.recursive see \pkg{parallel} \code{\link{mclapply}}
 # @param affinity.list see \pkg{parallel} \code{\link{mclapply}}
 #' @keywords internal
-#' @rdname radiator_parallel
+#' @rdname radiator_parallel_mc
 #' @export
 radiator_parallel_mc <- switch(
   Sys.info()[['sysname']],

@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>functions on Windows. — radiator_parallel • radiator</title>
+<title>functions on Windows. — radiator_parallel_mc • radiator</title>
 
 
 <!-- jquery -->
@@ -39,7 +39,7 @@
 
 
 
-<meta property="og:title" content="functions on Windows. — radiator_parallel" />
+<meta property="og:title" content="functions on Windows. — radiator_parallel_mc" />
 <meta property="og:description" content="functions on Windows." />
 
 
@@ -128,25 +128,24 @@
     <div class="page-header">
     <h1>functions on Windows.</h1>
     <small class="dont-index">Source: <a href='https://github.com/thierrygosselin/radiator/blob/master/R/radiator_parallel.R'><code>R/radiator_parallel.R</code></a></small>
-    <div class="hidden name"><code>radiator_parallel.Rd</code></div>
+    <div class="hidden name"><code>radiator_parallel_mc.Rd</code></div>
     </div>
 
     <div class="ref-description">
     <p>functions on Windows.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>radiator_parallel</span><span class='op'>(</span>
+    <pre class="usage"><span class='fu'>radiator_parallel_mc</span><span class='op'>(</span>
   <span class='va'>X</span>,
   <span class='va'>FUN</span>,
   <span class='va'>...</span>,
-  mc.style <span class='op'>=</span> <span class='st'>"ETA"</span>,
-  mc.substyle <span class='op'>=</span> <span class='cn'>NA</span>,
-  mc.cores <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/options.html'>getOption</a></span><span class='op'>(</span><span class='st'>"mc.cores"</span>, <span class='fl'>2L</span><span class='op'>)</span>,
-  ignore.interactive <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/options.html'>getOption</a></span><span class='op'>(</span><span class='st'>"ignore.interactive"</span>, <span class='cn'>F</span><span class='op'>)</span>,
   mc.preschedule <span class='op'>=</span> <span class='cn'>TRUE</span>,
   mc.set.seed <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  mc.silent <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  mc.cores <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/options.html'>getOption</a></span><span class='op'>(</span><span class='st'>"mc.cores"</span>, <span class='fl'>2L</span><span class='op'>)</span>,
   mc.cleanup <span class='op'>=</span> <span class='cn'>TRUE</span>,
-  mc.allow.recursive <span class='op'>=</span> <span class='cn'>TRUE</span>
+  mc.allow.recursive <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  affinity.list <span class='op'>=</span> <span class='cn'>NULL</span>
 <span class='op'>)</span></pre>
 
 

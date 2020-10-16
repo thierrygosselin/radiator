@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>functions on Windows. — radiator_parallel • radiator</title>
+<title>hack to switch function for parallel computation based on OS — mclapply_win • radiator</title>
 
 
 <!-- jquery -->
@@ -39,8 +39,18 @@
 
 
 
-<meta property="og:title" content="functions on Windows. — radiator_parallel" />
-<meta property="og:description" content="functions on Windows." />
+<meta property="og:title" content="hack to switch function for parallel computation based on OS — mclapply_win" />
+<meta property="og:description" content="parallel::mclapply doesn't work on Windows,
+because forking is not supported.
+This function defines a socket version of mclapply for windows computer
+An implementation that switch automatically the parallel process when detecting
+the os.
+The code below was inspired from
+parallel mclapply,
+Nathan VanHoudnos,
+Kevin Kuang,
+Peter Solymos and
+Eric Archer." />
 
 
 
@@ -126,23 +136,30 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>functions on Windows.</h1>
+    <h1>hack to switch function for parallel computation based on OS</h1>
     <small class="dont-index">Source: <a href='https://github.com/thierrygosselin/radiator/blob/master/R/radiator_parallel.R'><code>R/radiator_parallel.R</code></a></small>
-    <div class="hidden name"><code>radiator_parallel.Rd</code></div>
+    <div class="hidden name"><code>mclapply_win.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>functions on Windows.</p>
+    <p><code><a href='https://rdrr.io/r/parallel/mclapply.html'>parallel::mclapply</a></code> doesn't work on Windows,
+because forking is not supported.
+This function defines a socket version of mclapply for windows computer
+An implementation that switch automatically the parallel process when detecting
+the os.
+The code below was inspired from
+<span class="pkg">parallel</span> <code>mclapply</code>,
+<a href='https://github.com/nathanvan'>Nathan VanHoudnos</a>,
+<a href='https://github.com/kvnkuang/pbmcapply'>Kevin Kuang</a>,
+<a href='https://github.com/psolymos/pbapply'>Peter Solymos</a> and
+<a href='https://github.com/EricArcher/'>Eric Archer</a>.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>radiator_parallel</span><span class='op'>(</span>
+    <pre class="usage"><span class='fu'>mclapply_win</span><span class='op'>(</span>
   <span class='va'>X</span>,
   <span class='va'>FUN</span>,
   <span class='va'>...</span>,
-  mc.style <span class='op'>=</span> <span class='st'>"ETA"</span>,
-  mc.substyle <span class='op'>=</span> <span class='cn'>NA</span>,
   mc.cores <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/options.html'>getOption</a></span><span class='op'>(</span><span class='st'>"mc.cores"</span>, <span class='fl'>2L</span><span class='op'>)</span>,
-  ignore.interactive <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/options.html'>getOption</a></span><span class='op'>(</span><span class='st'>"ignore.interactive"</span>, <span class='cn'>F</span><span class='op'>)</span>,
   mc.preschedule <span class='op'>=</span> <span class='cn'>TRUE</span>,
   mc.set.seed <span class='op'>=</span> <span class='cn'>TRUE</span>,
   mc.cleanup <span class='op'>=</span> <span class='cn'>TRUE</span>,
