@@ -202,64 +202,6 @@ After modifying your shell start up script always run the command `source ~/.bas
 Below are useful but not essential software you will like to have on your mac.
 
 
-### [wget](https://www.gnu.org/software/wget/) utility
-
-This software is similar to curl that is already on your Mac, it's also good to have it.
-This will help you save a lot of time in the future.
-
-**Option 1: trouble-free install**
-
-```{bash eval=FALSE}
-cd ~/Downloads
-curl -O https://raw.githubusercontent.com/rudix-mac/packages/master/10.12/wget-1.18-0.pkg
-# Go in your Downloads folder double-click on the wget file and follow the instructions
-```
-
-**Option 2: from source**
-
-Install [gnutls](http://www.gnutls.org) dependency
-
-```{bash eval=FALSE}
-# for novice user: copy one line at a time in the Terminal:
-cd ~/Downloads
-curl -O http://www.gnupg.org/ftp/gcrypt/gnutls/v3.5/gnutls-3.5.18.tar.xz
-tar -zxvf gnutls-3.5.18.tar.xz
-cd gnutls-3.5.18
-./configure --with-included-libtasn1 --without-p11-kit
-#Forget about the remaining warnings and proceed with `make`
-make
-sudo make install
-```
-
-Now the wget part...
-
-First look for the *.tar.gz* file with
-the latest release (currently: wget2-1.99.2.tar.gz) in this [folder](<http://ftp.gnu.org/gnu/wget/),
-Modify (if you need to), Copy & Paste the commands below (one line at a time):
-
-```{bash eval=FALSE}
-cd ~/Downloads
-# change the '-x.xx.tar.gz' number below with the latest release version.
-curl -O http://ftp.gnu.org/gnu/wget/wget2-1.99.2.tar.gz
-tar -zxvf wget2-1.99.2.tar.gz
-cd wget2-1.99.2
-./configure
-make
-sudo make install                     # will prompt you to enter your password
-cd ..                                 # goes up to the enclosing directory
-wget --help                           # to test installation!
-```
-
-
-Note: 
-
-To remove a folder and downloaded packages use the `sudo rm -R` command,
-but be very careful with this command because the content is deleted FOREVER,
-it doesn't go in the trash...
-
-Delete the wget folder and package using `sudo rm -R wget*`. 
-
-
 ### [BBEdit](http://www.barebones.com/products/bbedit/index.html)
 
 This is TextWrangler replacement and is a free text editor that will help you save time. Once
@@ -775,7 +717,7 @@ Additionally, `LightGBM` requires [CMake](https://cmake.org/overview/)
 
 ### Download and install CMake
 ```{bash eval=FALSE}
-#In browser or using wget in Terminal
+#In browser or using curl in Terminal
 https://cmake.org/files/v3.12/cmake-3.12.2-Darwin-x86_64.dmg
 # double-click on the disk image and follow instructions
 ```
@@ -891,7 +833,7 @@ To install [fastsimcoal2 v.2.6.0.3](http://cmpg.unibe.ch/software/fastsimcoal2/)
 
 ### LINUX
 ```{bash Linux, eval=FALSE}
-wget http://cmpg.unibe.ch/software/fastsimcoal2/downloads/fsc26_linux64.zip
+curl -O http://cmpg.unibe.ch/software/fastsimcoal2/downloads/fsc26_linux64.zip
 unzip fsc26_linux64.zip
 sudo mv fsc26_linux64/fsc26 /usr/local/bin/fsc26 # will ask for your computer password
 ```
@@ -975,7 +917,6 @@ commands:
 
 ```{bash eval=FALSE}
 cd ~/Downloads
-wget http://ftp.gnu.org/gnu/autoconf/autoconf-latest.tar.gz
 curl -O http://ftp.gnu.org/gnu/autoconf/autoconf-latest.tar.gz
 tar -xvzf autoconf-latest.tar.gz
 cd autoconf-2.69

@@ -2,7 +2,7 @@
 % Please edit documentation in R/radiator_parallel.R
 \name{radiator_parallel_mc}
 \alias{radiator_parallel_mc}
-\title{functions on Windows.}
+\title{Enable parallel execution with mclapply}
 \usage{
 radiator_parallel_mc(
   X,
@@ -18,6 +18,7 @@ radiator_parallel_mc(
 )
 }
 \description{
-functions on Windows.
+Internal hack to enable parallel execution
+on all OS.
 }
 \keyword{internal}

@@ -2,7 +2,7 @@
 % Please edit documentation in R/radiator_parallel.R
 \name{radiator_parallel}
 \alias{radiator_parallel}
-\title{functions on Windows.}
+\title{Enable parallel execution with pbmcapply}
 \usage{
 radiator_parallel(
   X,
@@ -19,6 +19,7 @@ radiator_parallel(
 )
 }
 \description{
-functions on Windows.
+Internal hack to enable parallel execution
+on all OS with pbmclapply and it's progress bar.
 }
 \keyword{internal}

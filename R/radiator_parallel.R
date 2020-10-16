@@ -27,8 +27,8 @@
 # @param affinity.list see \pkg{parallel} \code{\link{mclapply}}
 
 # @return For mclapply, a list of the same length as X and named by X.
+# @keywords internal
 #' @rdname mclapply_win
-#' @export
 #' @keywords internal
 
 mclapply_win <- function(
@@ -97,24 +97,12 @@ mclapply_win <- function(
 
 # radiator_parallel_mc--------------------------------------------------------------
 # Overwrite the serial version of mclapply on Windows only
-# @title Enable parallel execution on Windows
-# @description Internal hack to enable parallel execution of \pkg{assigner}
-#' functions on Windows.
-# @inheritParams parallel::mclapply
-# @return For mclapply, a list of the same length as X and named by X.
-# @param X see \pkg{parallel} \code{\link{mclapply}}
-# @param FUN see \pkg{parallel} \code{\link{mclapply}}
-# @param ... see \pkg{parallel} \code{\link{mclapply}}
-# @param mc.preschedule see \pkg{parallel} \code{\link{mclapply}}
-# @param mc.set.seed see \pkg{parallel} \code{\link{mclapply}}
-# @param mc.silent see \pkg{parallel} \code{\link{mclapply}}
-# @param mc.cores see \pkg{parallel} \code{\link{mclapply}}
-# @param mc.cleanup see \pkg{parallel} \code{\link{mclapply}}
-# @param mc.allow.recursive see \pkg{parallel} \code{\link{mclapply}}
-# @param affinity.list see \pkg{parallel} \code{\link{mclapply}}
+#' @title Enable parallel execution with mclapply
+#' @description Internal hack to enable parallel execution
+#' on all OS.
 #' @keywords internal
 #' @rdname radiator_parallel_mc
-#' @export
+# @export
 radiator_parallel_mc <- switch(
   Sys.info()[['sysname']],
   Windows = {mclapply_win},
@@ -124,24 +112,12 @@ radiator_parallel_mc <- switch(
 
 # radiator_parallel with progress bar -------------------------------------------
 # Overwrite the serial version of mclapply on Windows only
-# @title Enable parallel execution on Windows
-# @description Internal hack to enable parallel execution of \pkg{assigner}
-#' functions on Windows.
-# @inheritParams parallel::mclapply
-# @return For mclapply, a list of the same length as X and named by X.
-# @param X see \pkg{parallel} \code{\link{mclapply}}
-# @param FUN see \pkg{parallel} \code{\link{mclapply}}
-# @param ... see \pkg{parallel} \code{\link{mclapply}}
-# @param mc.preschedule see \pkg{parallel} \code{\link{mclapply}}
-# @param mc.set.seed see \pkg{parallel} \code{\link{mclapply}}
-# @param mc.silent see \pkg{parallel} \code{\link{mclapply}}
-# @param mc.cores see \pkg{parallel} \code{\link{mclapply}}
-# @param mc.cleanup see \pkg{parallel} \code{\link{mclapply}}
-# @param mc.allow.recursive see \pkg{parallel} \code{\link{mclapply}}
-# @param affinity.list see \pkg{parallel} \code{\link{mclapply}}
+#' @title Enable parallel execution with pbmcapply
+#' @description Internal hack to enable parallel execution
+#' on all OS with pbmclapply and it's progress bar.
 #' @rdname radiator_parallel
 #' @keywords internal
-#' @export
+# @export
 radiator_parallel <- switch(
   Sys.info()[['sysname']],
   Windows = {mclapply_win},

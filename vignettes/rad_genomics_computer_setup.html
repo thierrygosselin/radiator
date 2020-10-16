@@ -1626,40 +1626,6 @@ clang -v</code></pre>
 <div id="useful-tools" class="section level2">
 <h2>Useful tools</h2>
 <p>Below are useful but not essential software you will like to have on your mac.</p>
-<div id="wget-utility" class="section level3">
-<h3><a href="https://www.gnu.org/software/wget/">wget</a> utility</h3>
-<p>This software is similar to curl that is already on your Mac, it’s also good to have it. This will help you save a lot of time in the future.</p>
-<p><strong>Option 1: trouble-free install</strong></p>
-<pre class="bash"><code>cd ~/Downloads
-curl -O https://raw.githubusercontent.com/rudix-mac/packages/master/10.12/wget-1.18-0.pkg
-# Go in your Downloads folder double-click on the wget file and follow the instructions</code></pre>
-<p><strong>Option 2: from source</strong></p>
-<p>Install <a href="http://www.gnutls.org">gnutls</a> dependency</p>
-<pre class="bash"><code># for novice user: copy one line at a time in the Terminal:
-cd ~/Downloads
-curl -O http://www.gnupg.org/ftp/gcrypt/gnutls/v3.5/gnutls-3.5.18.tar.xz
-tar -zxvf gnutls-3.5.18.tar.xz
-cd gnutls-3.5.18
-./configure --with-included-libtasn1 --without-p11-kit
-#Forget about the remaining warnings and proceed with `make`
-make
-sudo make install</code></pre>
-<p>Now the wget part…</p>
-<p>First look for the <em>.tar.gz</em> file with the latest release (currently: wget2-1.99.2.tar.gz) in this <a href="%3Chttp://ftp.gnu.org/gnu/wget/">folder</a>, Modify (if you need to), Copy &amp; Paste the commands below (one line at a time):</p>
-<pre class="bash"><code>cd ~/Downloads
-# change the &#39;-x.xx.tar.gz&#39; number below with the latest release version.
-curl -O http://ftp.gnu.org/gnu/wget/wget2-1.99.2.tar.gz
-tar -zxvf wget2-1.99.2.tar.gz
-cd wget2-1.99.2
-./configure
-make
-sudo make install                     # will prompt you to enter your password
-cd ..                                 # goes up to the enclosing directory
-wget --help                           # to test installation!</code></pre>
-<p>Note:</p>
-<p>To remove a folder and downloaded packages use the <code>sudo rm -R</code> command, but be very careful with this command because the content is deleted FOREVER, it doesn’t go in the trash…</p>
-<p>Delete the wget folder and package using <code>sudo rm -R wget*</code>.</p>
-</div>
 <div id="bbedit" class="section level3">
 <h3><a href="http://www.barebones.com/products/bbedit/index.html">BBEdit</a></h3>
 <p>This is TextWrangler replacement and is a free text editor that will help you save time. Once installed, go in the <code>Apple Menu bar -&gt; BBEdit -&gt; Install Command Line</code></p>
@@ -2022,7 +1988,7 @@ system.time({bst = xgboost(data = x, label = y, nthread = 4, nround = 100, verbo
 <p><code>LightGBM</code> requires an OpenMP-enabled compiler. Currently, it doesn’t work well with clang, so make sure you have updated your GCC compiler (instructions above). Additionally, <code>LightGBM</code> requires <a href="https://cmake.org/overview/">CMake</a></p>
 <div id="download-and-install-cmake" class="section level3">
 <h3>Download and install CMake</h3>
-<pre class="bash"><code>#In browser or using wget in Terminal
+<pre class="bash"><code>#In browser or using curl in Terminal
 https://cmake.org/files/v3.12/cmake-3.12.2-Darwin-x86_64.dmg
 # double-click on the disk image and follow instructions</code></pre>
 <p>To add CMake to the PATH:</p>
@@ -2108,7 +2074,7 @@ R CMD INSTALL --preclean --clean randomForestSRC</code></pre>
 <p>To install <a href="http://cmpg.unibe.ch/software/fastsimcoal2/">fastsimcoal2 v.2.6.0.3</a>, to use in <code>grur::simulate_rad</code>:</p>
 <div id="linux-1" class="section level3">
 <h3>LINUX</h3>
-<pre class="bash"><code>wget http://cmpg.unibe.ch/software/fastsimcoal2/downloads/fsc26_linux64.zip
+<pre class="bash"><code>curl -O http://cmpg.unibe.ch/software/fastsimcoal2/downloads/fsc26_linux64.zip
 unzip fsc26_linux64.zip
 sudo mv fsc26_linux64/fsc26 /usr/local/bin/fsc26 # will ask for your computer password</code></pre>
 </div>
@@ -2170,7 +2136,6 @@ sudo rm -R ~/Downloads/openmpi*</code></pre>
 <li>Install <a href="http://www.gnu.org/software/autoconf/">GNU Autoconf</a></li>
 </ol>
 <pre class="bash"><code>cd ~/Downloads
-wget http://ftp.gnu.org/gnu/autoconf/autoconf-latest.tar.gz
 curl -O http://ftp.gnu.org/gnu/autoconf/autoconf-latest.tar.gz
 tar -xvzf autoconf-latest.tar.gz
 cd autoconf-2.69
