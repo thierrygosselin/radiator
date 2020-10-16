@@ -15,6 +15,7 @@
 #' @param verbose (optional, logical) \code{verbose = TRUE} to be chatty
 #' during execution.
 #' Default: \code{verbose = TRUE}.
+#' @inheritParams radiator_common_arguments
 
 #' @return A list with allele frequencies in a data frame in long and wide format,
 #' and a matrix. Local (pop) and global minor allele frequency (MAF) is also computed.
@@ -23,7 +24,7 @@
 #' @rdname allele_frequencies
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
-allele_frequencies <- function(data, verbose = TRUE) {
+allele_frequencies <- function(data, verbose = TRUE, parallel.core = parallel::detectCores() - 1) {
 
   if (verbose) {
     cat("#######################################################################\n")
@@ -76,14 +77,23 @@ allele_frequencies <- function(data, verbose = TRUE) {
         parallel.core = parallel::detectCores() - 1))
 
     maf.data <- dplyr::left_join(maf.data, split.vec, by = "MARKERS") %>%
-      split(x = ., f = .$SPLIT_VEC) %>%
-      radiator_parallel_mc(
+      radiator_future(
         X = .,
         FUN = compute_maf,
-        mc.cores = parallel::detectCores() - 1,
+        parallel.core = parallel.core,
+        split.tibble = .$SPLIT_VEC,
+        bind.rows = TRUE,
         biallelic = biallelic
-      ) %>%
-      dplyr::bind_rows(.)
+      )
+      #
+      # split(x = ., f = .$SPLIT_VEC) %>%
+      # radiator_parallel_mc(
+      #   X = .,
+      #   FUN = compute_maf,
+      #   mc.cores = parallel::detectCores() - 1,
+      #   biallelic = biallelic
+      # ) %>%
+      # dplyr::bind_rows(.)
     markers.df <- split.vec <- NULL
   } else {
     maf.data <- compute_maf(x = maf.data, biallelic = biallelic)

@@ -117,13 +117,20 @@ write_hzar <- function(
         dplyr::mutate(
           SPLIT_VEC = dplyr::ntile(x = 1:nrow(.), n = parallel.core * 3))
       , by = "MARKERS") %>%
-    split(x = ., f = .$SPLIT_VEC) %>%
-    radiator_parallel(
+    radiator_future(
       X = .,
       FUN = generate_hzar,
-      mc.cores = parallel.core
+      parallel.core = parallel.core,
+      split.tibble = .$SPLIT_VEC,
+      bind.rows = TRUE
     ) %>%
-    dplyr::bind_rows(.) %>%
+    # split(x = ., f = .$SPLIT_VEC) %>%
+    # radiator_parallel(
+    #   X = .,
+    #   FUN = generate_hzar,
+    #   mc.cores = parallel.core
+    # ) %>%
+    # dplyr::bind_rows(.) %>%
     dplyr::arrange(MARKERS, POP_ID, VALUE) %>%
     dplyr::select(-MARKERS) %>%
     dplyr::group_by(POP_ID) %>%

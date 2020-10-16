@@ -198,15 +198,22 @@ pi <- function(
   res$pi.populations <- tibble::add_row(
     .data = res$pi.populations,
     POP_ID = "OVERALL",
-    PI_NEI = data %>%
-      split(x = ., f = .$MARKERS) %>%
-      radiator_parallel(
-        X = .,
-        FUN = pi_rad,
-        mc.cores = parallel.core,
-        read.length = read.length
-      ) %>%
-      dplyr::bind_rows(.) %>%
+    PI_NEI = radiator_future(
+      X = data,
+      FUN = pi_rad,
+      parallel.core = parallel.core,
+      split.tibble = .$MARKERS,
+      bind.rows = TRUE,
+      read.length = read.length
+    ) %>%
+      # split(x = ., f = .$MARKERS) %>%
+      # radiator_parallel(
+      #   X = .,
+      #   FUN = pi_rad,
+      #   mc.cores = parallel.core,
+      #   read.length = read.length
+      # ) %>%
+      # dplyr::bind_rows(.) %>%
       dplyr::summarise(PI_NEI = mean(PI)) %>%
       purrr::flatten_dbl(.)
   )
@@ -244,8 +251,8 @@ pi <- function(
     width = max(10, n.pop * 2), height = 10,
     dpi = 300, units = "cm", useDingbats = FALSE)
 
-# results --------------------------------------------------------------------
-return(res)
+  # results --------------------------------------------------------------------
+  return(res)
 }#End pi
 
 # Internal nested functions ----------------------------------------------------
@@ -298,15 +305,23 @@ pi_pop <- function(data, read.length, parallel.core = parallel::detectCores() - 
   # data <- df.split.pop[["DD"]]
   # data <- df.split.pop[["SKY"]]
 
-  pi.pop <- data %>%
-    split(x = ., f = .$MARKERS) %>%
-    radiator_parallel(
-      X = .,
-      FUN = pi_rad,
-      mc.cores = parallel.core,
-      read.length = read.length
-    ) %>%
-    dplyr::bind_rows(.) %>%
+  pi.pop <- radiator_future(
+    X = data,
+    FUN = pi_rad,
+    parallel.core = parallel.core,
+    split.tibble = .$MARKERS,
+    bind.rows = TRUE,
+    read.length = read.length
+  ) %>%
+    # data %>%
+    # split(x = ., f = .$MARKERS) %>%
+    # radiator_parallel(
+    #   X = .,
+    #   FUN = pi_rad,
+    #   mc.cores = parallel.core,
+    #   read.length = read.length
+    # ) %>%
+    # dplyr::bind_rows(.) %>%
     dplyr::summarise(PI_NEI = mean(PI)) %>%
     tibble::add_column(.data = ., POP_ID = pop, .before = "PI_NEI")
 

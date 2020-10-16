@@ -409,13 +409,21 @@ detect_duplicate_genomes <- function(
               dplyr::mutate(
                 SPLIT_VEC = dplyr::ntile(x = 1:nrow(.), n = parallel.core * 3))
             , by = "MARKERS") %>%
-          split(x = ., f = .$SPLIT_VEC) %>%
-          radiator_parallel(
+          radiator_future(
             X = .,
             FUN = allele_count,
-            mc.cores = parallel.core
-          ) %>%
-          dplyr::bind_rows(.)
+            parallel.core = parallel.core,
+            split.tibble = .$SPLIT_VEC,
+            bind.rows = TRUE
+          )
+          #
+          # split(x = ., f = .$SPLIT_VEC) %>%
+          # radiator_parallel(
+          #   X = .,
+          #   FUN = allele_count,
+          #   mc.cores = parallel.core
+          # ) %>%
+          # dplyr::bind_rows(.)
 
         if (nrow(missing.geno) > 0) {
           input.prep <- dplyr::anti_join(input.prep, missing.geno, by = c("MARKERS", "INDIVIDUALS"))
@@ -715,21 +723,35 @@ detect_duplicate_genomes <- function(
 
 
       res$pairwise.genome.similarity <- list()
-      res$pairwise.genome.similarity <- radiator_parallel(
+      res$pairwise.genome.similarity <- radiator_future(
         X = unique(all.pairs$SPLIT_VEC),
         FUN = genome_similarity,
-        mc.preschedule = FALSE,
-        mc.silent = FALSE,
-        mc.cleanup = TRUE,
-        mc.cores = parallel.core,
+        parallel.core = parallel.core,
+        bind.rows = TRUE,
         all.pairs = all.pairs,
-        data = input.prep,
-        threshold.common.markers = threshold.common.markers,
-        keep.data = keep.data,
-        pairwise.filename = pairwise.filename,
-        blacklist.pairs.filename = blacklist.pairs.filename
-      ) %>%
-        dplyr::bind_rows(.)
+          data = input.prep,
+          threshold.common.markers = threshold.common.markers,
+          keep.data = keep.data,
+          pairwise.filename = pairwise.filename,
+          blacklist.pairs.filename = blacklist.pairs.filename
+      )
+
+
+      # res$pairwise.genome.similarity <- radiator_parallel(
+      #   X = unique(all.pairs$SPLIT_VEC),
+      #   FUN = genome_similarity,
+      #   mc.preschedule = FALSE,
+      #   mc.silent = FALSE,
+      #   mc.cleanup = TRUE,
+      #   mc.cores = parallel.core,
+      #   all.pairs = all.pairs,
+      #   data = input.prep,
+      #   threshold.common.markers = threshold.common.markers,
+      #   keep.data = keep.data,
+      #   pairwise.filename = pairwise.filename,
+      #   blacklist.pairs.filename = blacklist.pairs.filename
+      # ) %>%
+      #   dplyr::bind_rows(.)
       input.prep <- id.pairwise <- NULL # no longer needed
 
       if (verbose) message("Generating summary statistics")

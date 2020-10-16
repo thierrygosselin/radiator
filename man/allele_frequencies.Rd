@@ -4,7 +4,11 @@
 \alias{allele_frequencies}
 \title{Compute allele frequencies per markers and populations}
 \usage{
-allele_frequencies(data, verbose = TRUE)
+allele_frequencies(
+  data,
+  verbose = TRUE,
+  parallel.core = parallel::detectCores() - 1
+)
 }
 \arguments{
 \item{data}{A tidy data frame object in the global environment or
@@ -15,6 +19,10 @@ Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.}
 \item{verbose}{(optional, logical) \code{verbose = TRUE} to be chatty
 during execution.
 Default: \code{verbose = TRUE}.}
+
+\item{parallel.core}{(optional) The number of core used for parallel
+execution during import.
+Default: \code{parallel.core = parallel::detectCores() - 1}.}
 }
 \value{
 A list with allele frequencies in a data frame in long and wide format,

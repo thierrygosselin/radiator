@@ -2,12 +2,13 @@
 #' @title haplotype_reconstruction
 #' @description Reconstruct haplotypes
 #' @rdname haplotype_reconstruction
+#' @inheritParams radiator_common_arguments
 #' @keywords internal
 #' @export
 haplotype_reconstruction <- function(
   data,
   parallel.core = parallel::detectCores() - 1
-  ) {
+) {
   # data <- haplo.reconstruction
   data <- dplyr::ungroup(data)
   markers <- dplyr::distinct(data, MARKERS) %>% purrr::flatten_chr(.)
@@ -54,13 +55,19 @@ haplotype_reconstruction <- function(
       dplyr::select(MARKERS, HAPLOTYPES, HAPLOTYPES_NEW)
     return(data)
   }
-
-  res <- radiator_parallel(
+  res <- radiator_future(
     X = markers,
     FUN = reconstruct,
-    mc.cores = parallel.core,
+    parallel.core = parallel.core,
+    bind.rows = TRUE,
     data = data
-  ) %>%
-    dplyr::bind_rows(.)
+  )
+  # res <- radiator_parallel(
+  #   X = markers,
+  #   FUN = reconstruct,
+  #   mc.cores = parallel.core,
+  #   data = data
+  # ) %>%
+  #   dplyr::bind_rows(.)
   return(res)
 }#End haplotype_reconstruction

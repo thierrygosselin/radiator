@@ -357,7 +357,7 @@ filter_mac <- function(
       units = "cm",
       limitsize = FALSE,
       useDingbats = FALSE
-      )
+    )
 
     if (verbose) message("MAC range: [", mac.stats$MIN, " - ", mac.stats$MAX, "]")
     if (verbose) message("MAF range: [", format(round(mac.stats$MIN/n.diplo.samples, 4), scientific = FALSE), " - ", format(round(mac.stats$MAX/n.diplo.samples, 4), scientific = FALSE), "]")
@@ -676,13 +676,20 @@ compute_mac <- function (
               cpu.rounds = ceiling(n.markers/10000),
               parallel.core = parallel.core))
           , by = "MARKERS") %>%
-        split(x = ., f = .$SPLIT_VEC) %>%
-        radiator_parallel_mc(
+        radiator_future(
           X = .,
           FUN = mac_one,
-          mc.cores = parallel.core
-        ) %>%
-        dplyr::bind_rows(.)
+          parallel.core = parallel.core,
+          split.tibble = .$SPLIT_VEC,
+          bind.rows = TRUE
+        )
+      # split(x = ., f = .$SPLIT_VEC) %>%
+      # radiator_parallel_mc(
+      #   X = .,
+      #   FUN = mac_one,
+      #   mc.cores = parallel.core
+      # ) %>%
+      # dplyr::bind_rows(.)
     } else {
       mac.data <- mac_one(x = data)
     }

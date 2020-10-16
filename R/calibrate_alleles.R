@@ -372,13 +372,21 @@ ref_dictionary <- function(x, parallel.core = parallel::detectCores() - 1) {
     dplyr::distinct(x, MARKERS) %>%
       dplyr::mutate(SPLIT_VEC = split_vec_row(x = ., cpu.rounds = 3, parallel.core = parallel.core))
     , by = "MARKERS") %>%
-    split(x = ., f = .$SPLIT_VEC) %>%
-    radiator_parallel_mc(
+    radiator_future(
       X = .,
       FUN = generate_ref,
-      mc.cores = parallel.core
-    ) %>%
-    dplyr::bind_rows(.)
+      parallel.core = parallel.core,
+      split.tibble = .$SPLIT_VEC,
+      bind.rows = TRUE
+    )
+    #
+    # split(x = ., f = .$SPLIT_VEC) %>%
+    # radiator_parallel_mc(
+    #   X = .,
+    #   FUN = generate_ref,
+    #   mc.cores = parallel.core
+    # ) %>%
+    # dplyr::bind_rows(.)
   return(x)
 }
 
@@ -503,15 +511,24 @@ integrate_ref <- function(
   }
   new.gt <- new.gt %>%
     dplyr::mutate(SPLIT_VEC = split_vec_row(x = ., cpu.rounds = 3, parallel.core = parallel.core)) %>%
-    split(x = ., f = .$SPLIT_VEC) %>%
-    radiator_parallel_mc(
+    radiator_future(
       X = .,
       FUN = new_gt,
-      mc.cores = parallel.core,
+      parallel.core = parallel.core,
+      split.tibble = .$SPLIT_VEC,
+      bind.rows = TRUE,
       conversion.df = conversion.df,
       biallelic = biallelic
-    ) %>%
-    dplyr::bind_rows(.)
+    )
+    # split(x = ., f = .$SPLIT_VEC) %>%
+    # radiator_parallel_mc(
+    #   X = .,
+    #   FUN = new_gt,
+    #   mc.cores = parallel.core,
+    #   conversion.df = conversion.df,
+    #   biallelic = biallelic
+    # ) %>%
+    # dplyr::bind_rows(.)
 
   if (nuc.info) {
     if (tibble::has_name(x, "GT_VCF")) x <- dplyr::select(x, -GT_VCF)
@@ -549,12 +566,19 @@ generate_vcf_nuc <- function(x, parallel.core = parallel::detectCores() - 1) {
 
   x <- x %>%
     dplyr::mutate(SPLIT_VEC = split_vec_row(x = ., cpu.rounds = 3, parallel.core = parallel.core)) %>%
-    split(x = ., f = .$SPLIT_VEC) %>%
-    radiator_parallel_mc(
+    radiator_future(
       X = .,
       FUN = vcf_nuc,
-      mc.cores = parallel.core
-    ) %>%
-    dplyr::bind_rows(.)
+      parallel.core = parallel.core,
+      split.tibble = .$SPLIT_VEC,
+      bind.rows = TRUE
+    )
+    # split(x = ., f = .$SPLIT_VEC) %>%
+    # radiator_parallel_mc(
+    #   X = .,
+    #   FUN = vcf_nuc,
+    #   mc.cores = parallel.core
+    # ) %>%
+    # dplyr::bind_rows(.)
   return(x)
 }#End generate_vcf_nuc

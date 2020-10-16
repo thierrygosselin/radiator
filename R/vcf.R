@@ -363,7 +363,7 @@ read_vcf <- function(
       !is.null(filter.individuals.missing) ||
       !is.null(filter.individuals.coverage.total) ||
       !is.null(filter.snp.number)
-      ) subsample.markers.stats <- 1
+  ) subsample.markers.stats <- 1
 
   if (!is.null(ld.method)) {
     ld.method <- match.arg(ld.method, c("composite", "r", "r2", "dprime", "corr"))
@@ -538,7 +538,7 @@ read_vcf <- function(
     readr::write_tsv(
       x = individuals.vcf,
       path = file.path(radiator.folder, clean.id.filename)
-      )
+    )
     if (verbose) message("File written: ", clean.id.filename)
     update_radiator_gds(gds = gds, node.name = "id.clean", value = individuals.vcf)
   }
@@ -2312,14 +2312,19 @@ clean_ad <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) 
   clean <- function(x) {
     x <- as.integer(replace_by_na(data = x, what = 0))
   }
-  # future::plan(multiprocess)
-  x <- split(x = x, f = split.vec) %>%
-    # furrr::future_map(.x = ., .f = clean, .progress = TRUE) %>%
-    radiator_parallel_mc(
-      X = ., FUN = clean,
-      mc.cores = parallel.core
-    ) %>%
-    purrr::flatten_int(.)
+  x <- radiator_future(
+    X = x,
+    FUN = clean,
+    parallel.core = parallel.core,
+    split.tibble = split.vec,
+    flatten.int = TRUE
+    )
+    # split(x = x, f = split.vec) %>%
+    # radiator_parallel_mc(
+    #   X = ., FUN = clean,
+    #   mc.cores = parallel.core
+    # ) %>%
+    # purrr::flatten_int(.)
   return(x)
 }#End clean_ad
 
@@ -2355,14 +2360,23 @@ clean_pl <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) 
     dplyr::select(x, -PL),
     dplyr::ungroup(x) %>%
       dplyr::select(GT_VCF, PL) %>%
-      split(x = ., f = split.vec) %>%
-      radiator_parallel_mc(
+      radiator_future(
         X = .,
         FUN = clean,
-        mc.cores = parallel.core
-        # max.vector.size = 1000000000000
-      ) %>%
-      dplyr::bind_rows(.))
+        parallel.core = parallel.core,
+        split.tibble = split.vec,
+        bind.rows = TRUE
+      )
+  )
+
+      # split(x = ., f = split.vec) %>%
+      # radiator_parallel_mc(
+      #   X = .,
+      #   FUN = clean,
+      #   mc.cores = parallel.core
+      #   # max.vector.size = 1000000000000
+      # ) %>%
+      # dplyr::bind_rows(.))
   return(x)
 }#End clean_pl
 
@@ -2416,14 +2430,22 @@ clean_gl <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) 
         dplyr::select(x, -GL),
         dplyr::ungroup(x) %>%
           dplyr::select(GL) %>%
-          split(x = ., f = split.vec) %>%
-          radiator_parallel_mc(
+          radiator_future(
             X = .,
             FUN = clean,
-            mc.cores = parallel.core
-            # max.vector.size = 1000000000000
-          ) %>%
-          dplyr::bind_rows(.))
+            parallel.core = parallel.core,
+            split.tibble = split.vec,
+            bind.rows = TRUE
+          )
+      )
+      # split(x = ., f = split.vec) %>%
+      # radiator_parallel_mc(
+      #   X = .,
+      #   FUN = clean,
+      #   mc.cores = parallel.core
+      #   # max.vector.size = 1000000000000
+      # ) %>%
+      # dplyr::bind_rows(.))
 
     } else {
       x$GL <- suppressWarnings(as.numeric(x$GL))
@@ -2457,13 +2479,22 @@ clean_nr <- function(x, split.vec, parallel.core = parallel::detectCores() - 1){
     dplyr::ungroup(x) %>%
       dplyr::mutate(NR = dplyr::if_else(GT_VCF == "./.", NA_character_, NR)) %>%
       dplyr::select(NR) %>%
-      split(x = ., f = split.vec) %>%
-      radiator_parallel_mc(
+      radiator_future(
         X = .,
         FUN = clean,
-        mc.cores = parallel.core,
-        nr.col.names = nr.col.names) %>%
-      dplyr::bind_rows(.))
+        parallel.core = parallel.core,
+        split.tibble = split.vec,
+        bind.rows = TRUE,
+        nr.col.names = nr.col.names
+      )
+  )
+  # split(x = ., f = split.vec) %>%
+  # radiator_parallel_mc(
+  #   X = .,
+  #   FUN = clean,
+  #   mc.cores = parallel.core,
+  #   nr.col.names = nr.col.names) %>%
+  # dplyr::bind_rows(.)
   return(x)
 }#End clean_nr
 
@@ -2489,13 +2520,22 @@ clean_nv <- function(x, split.vec, parallel.core = parallel::detectCores() - 1) 
     dplyr::ungroup(x) %>%
       dplyr::mutate(NV = dplyr::if_else(GT_VCF == "./.", NA_character_, NV)) %>%
       dplyr::select(NV) %>%
-      split(x = ., f = split.vec) %>%
-      radiator_parallel_mc(
-        X = ., FUN = clean, mc.cores = parallel.core,
+      radiator_future(
+        X = .,
+        FUN = clean,
+        parallel.core = parallel.core,
+        split.tibble = split.vec,
+        bind.rows = TRUE,
         nv.col.names = nv.col.names
-      ) %>%
-      dplyr::bind_rows(.)
+      )
   )
+  # split(x = ., f = split.vec) %>%
+  # radiator_parallel_mc(
+  # X = ., FUN = clean, mc.cores = parallel.core,
+  # nv.col.names = nv.col.names
+  # ) %>%
+  # dplyr::bind_rows(.)
+  # )
   return(x)
 }#End clean_nv
 
@@ -2864,7 +2904,7 @@ extract_info_vcf <- function(vcf) {
     n.ind = vcf.info$num.sample,
     n.markers = vcf.info$num.variant,
     sample.id = vcf.info$sample.id
-    )
+  )
   return(res)
 }#End extract_info_vcf
 
@@ -3076,14 +3116,13 @@ split_vcf <- function(
   )
 
   split <- strata <- blacklist <- NULL
-
-  radiator_parallel_mc(
-    X = input,
-    FUN = split_vcf,
-    mc.cores = parallel.core,
-    filename = filename#,max.vector.size = 1000000000000
-  )
-
+  radiator_future(X = input, FUN = split_vcf, parallel.core = parallel.core, filename = filename)
+  # radiator_parallel_mc(
+  #   X = input,
+  #   FUN = split_vcf,
+  #   mc.cores = parallel.core,
+  #   filename = filename#,max.vector.size = 1000000000000
+  # )
 
   # results --------------------------------------------------------------------
   message("Split VCFs were written in the working directory")

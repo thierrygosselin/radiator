@@ -344,19 +344,33 @@ separate_gt <- function(
   if (parallel.core > 1) {
     n.row <- nrow(x)
     split.vec <- as.integer(floor((parallel.core * cpu.rounds * (1:n.row - 1) / n.row) + 1))
-    res <- split(x = x, f = split.vec) %>%
-      radiator_parallel_mc(
-        X = .,
-        FUN = separate_genotype,
-        mc.cores = parallel.core,
-        sep = sep,
-        gt = gt,
-        alleles.naming = alleles.naming,
-        gather = gather,
-        haplotypes = haplotypes,
-        exclude = exclude
-      ) %>%
-      dplyr::bind_rows(.)
+    res <- radiator_future(
+      X = x,
+      FUN = separate_genotype,
+      parallel.core = parallel.core,
+      split.tibble = split.vec,
+      bind.rows = TRUE,
+      sep = sep,
+      gt = gt,
+      alleles.naming = alleles.naming,
+      gather = gather,
+      haplotypes = haplotypes,
+      exclude = exclude
+    )
+
+      # split(x = x, f = split.vec) %>%
+      # radiator_parallel_mc(
+      #   X = .,
+      #   FUN = separate_genotype,
+      #   mc.cores = parallel.core,
+      #   sep = sep,
+      #   gt = gt,
+      #   alleles.naming = alleles.naming,
+      #   gather = gather,
+      #   haplotypes = haplotypes,
+      #   exclude = exclude
+      # ) %>%
+      # dplyr::bind_rows(.)
   } else {
     res <- separate_genotype(
       x = x,
@@ -393,12 +407,18 @@ radiator_split_tibble <- function(x, parallel.core = parallel::detectCores() - 1
 
   x %<>%
     tibble::as_tibble(x = .) %>%
-    radiator_parallel_mc(
+    radiator_future(
       X = .,
       FUN = split_gt,
-      mc.cores = parallel.core
-    ) %>%
-    dplyr::bind_cols(.)
+      parallel.core = parallel.core,
+      bind.rows = TRUE
+    )
+    # radiator_parallel_mc(
+    #   X = .,
+    #   FUN = split_gt,
+    #   mc.cores = parallel.core
+    # ) %>%
+    # dplyr::bind_cols(.)
   return(x)
 }#End radiator_split_tibble
 # Note to myself:

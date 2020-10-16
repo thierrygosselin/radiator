@@ -18,9 +18,9 @@ Imports:
     data.table,
     dplyr (>= 1.0.0),
     fst (>= 0.8.4),
+    future,
     HardyWeinberg,
     magrittr,
-    pbmcapply,
     tidyverse,
     SeqVarTools,
     UpSetR
@@ -29,6 +29,7 @@ Suggests:
     amap,
     BiocManager,
     devtools,
+    future.apply,
     gdsfmt,
     ggplot2,
     knitr,

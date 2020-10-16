@@ -434,15 +434,25 @@ filter_maf <- function(
           cpu.rounds = ceiling(n.markers/10000),
           parallel.core = parallel.core))
 
-      maf.data <- dplyr::left_join(maf.data, split.vec, by = "MARKERS") %>%
-        split(x = ., f = .$SPLIT_VEC) %>%
-        radiator_parallel_mc(
+      maf.data %<>%
+        dplyr::left_join(split.vec, by = "MARKERS") %>%
+        radiator_future(
           X = .,
           FUN = compute_maf,
-          mc.cores = parallel.core,
+          parallel.core = parallel.core,
+          split.tibble = .$SPLIT_VEC,
+          bind.rows = TRUE,
           biallelic = biallelic
-        ) %>%
-        dplyr::bind_rows(.)
+        )
+
+        # split(x = ., f = .$SPLIT_VEC) %>%
+        # radiator_parallel_mc(
+        #   X = .,
+        #   FUN = compute_maf,
+        #   mc.cores = parallel.core,
+        #   biallelic = biallelic
+        # ) %>%
+        # dplyr::bind_rows(.)
       markers.df <- split.vec <- NULL
     } else {
       maf.data <- compute_maf(x = maf.data, biallelic = biallelic)
