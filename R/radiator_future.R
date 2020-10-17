@@ -25,6 +25,7 @@ radiator_future <- function(
 
     if (!is.null(split.with)) {
       if (length(split.with) == 1 && is.character(split.with)) {
+        .data <- NULL
         .x %<>% dplyr::group_split(.tbl = ., .data[[split.with]])
       } else {
         .x %<>% split(x = ., f = split.with)

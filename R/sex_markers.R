@@ -311,7 +311,7 @@ sexy_markers <- function(data,
   # write the dots file
   write_rad(
     data = rad.dots,
-    file = path.folder,
+    path = path.folder,
     filename = stringi::stri_join("radiator_sexy_markers_args_", file.date, ".tsv"),
     tsv = TRUE,
     internal = FALSE,
@@ -1151,7 +1151,7 @@ This marker could be absent due to an error.")
         # dplyr::select(-c(TARGET_ID.y))
         # dplyr::mutate(GENETIC_STRATA = STRATA)
         radiator::write_rad(data = silicodata,
-                            file = file.path(wd, "sexy_markers_silicodata_genetic_SNP_sex_ID.rad"))
+                            path = file.path(wd, "sexy_markers_silicodata_genetic_SNP_sex_ID.rad"))
       } else{
         silicodata <- NULL
       }

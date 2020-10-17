@@ -1136,7 +1136,9 @@ genome_similarity <- carrier::crate(function(
   threshold.common.markers = NULL,
   keep.data = TRUE,
   pairwise.filename = NULL,
-  blacklist.pairs.filename = NULL) {
+  blacklist.pairs.filename = NULL
+  ) {
+  `%>%` <- magrittr::`%>%`
   # split.vec <- 20 # test
   all.pairs <- dplyr::filter(all.pairs, SPLIT_VEC == split.vec) %>%
     dplyr::select(-SPLIT_VEC)
@@ -1147,6 +1149,8 @@ genome_similarity <- carrier::crate(function(
     data = NULL,
     threshold.common.markers = NULL
   ) {
+    `%>%` <- magrittr::`%>%`
+
     # pair <- 1#test
     res <- list()
     res$genome.comparison <- dplyr::filter(some.pairs, PAIRS == pair) %>%
@@ -1278,6 +1282,7 @@ genome_similarity <- carrier::crate(function(
 #' @export
 #' @keywords internal
 allele_count <- carrier::crate(function(x) {
+  `%>%` <- magrittr::`%>%`
   res <- dplyr::ungroup(x) %>%
     dplyr::select(MARKERS, INDIVIDUALS, GT) %>%
     dplyr::filter(GT != "000000") %>%

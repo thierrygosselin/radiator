@@ -506,6 +506,8 @@ filter_mac <- function(
 #' @keywords internal
 #' @export
 compute_maf <- carrier::crate(function(x, biallelic) {
+  `%>%` <- magrittr::`%>%`
+
   if (tibble::has_name(x, "GT_BIN") && biallelic) {
     x <- x %>%
       dplyr::group_by(MARKERS, POP_ID) %>%
@@ -778,6 +780,9 @@ compute_mac <- function(
 #' @keywords internal
 #' @export
 mac_one <- carrier::crate(function(x) {
+  `%>%` <- magrittr::`%>%`
+  `%<>%` <- magrittr::`%<>%`
+
   if (tibble::has_name(x, "GT_BIN")) {
     mac.data <- x %>%
       dplyr::select(MARKERS, INDIVIDUALS, GT_BIN) %>%

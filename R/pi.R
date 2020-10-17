@@ -265,6 +265,7 @@ pi <- function(
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 pi_rad <- carrier::crate(function(data, read.length) {
+  `%>%` <- magrittr::`%>%`
   y <- dplyr::select(data, ALLELES) %>%
     purrr::flatten_chr(.)
 

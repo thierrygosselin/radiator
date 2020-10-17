@@ -182,6 +182,7 @@ write_hzar <- function(
 #' @export
 
 generate_hzar <- carrier::crate(function(x) {
+  `%>%` <- magrittr::`%>%`
   freq.info <- x %>%
     dplyr::mutate(
       A1 = stringi::stri_sub(GT, 1, 3),
