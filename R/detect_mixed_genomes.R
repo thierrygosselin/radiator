@@ -291,7 +291,7 @@ detect_mixed_genomes <- function(
         dplyr::ungroup(.) %>%
         readr::write_tsv(
           x = .,
-          path = file.path(path.folder, "individual.heterozygosity.tsv"),
+          file = file.path(path.folder, "individual.heterozygosity.tsv"),
           col_names = TRUE)
 
       het.ind.overall <- dplyr::mutate(.data = het.ind, POP_ID = as.character(POP_ID)) %>%
@@ -398,7 +398,7 @@ detect_mixed_genomes <- function(
       dplyr::arrange(POP_ID) %>%
       readr::write_tsv(
         x = .,
-        path = file.path(path.folder, "heterozygosity.statistics.tsv"),
+        file = file.path(path.folder, "heterozygosity.statistics.tsv"),
         col_names = TRUE)
 
 
@@ -542,7 +542,7 @@ to notice what we never expected to see.
 
           readr::write_tsv(
             x = ind.het.thresholds.by.strata,
-            path = file.path(path.folder, "ind.het.thresholds.by.strata.tsv"),
+            file = file.path(path.folder, "ind.het.thresholds.by.strata.tsv"),
             append = FALSE,
             col_names = TRUE
           )
@@ -596,7 +596,7 @@ to notice what we never expected to see.
       message("Filter individual's heterozygosity: ", length(blacklist.ind.het$INDIVIDUALS), " individual(s) blacklisted")
       readr::write_tsv(
         x = blacklist.ind.het,
-        path = file.path(path.folder, "blacklist.ind.het.tsv"),
+        file = file.path(path.folder, "blacklist.ind.het.tsv"),
         col_names = TRUE
       )
 

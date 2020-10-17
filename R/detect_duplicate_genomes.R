@@ -288,7 +288,7 @@ detect_duplicate_genomes <- function(
     } else {
       set.seed(random.seed)
     }
-    readr::write_lines(x = random.seed, path = file.path(path.folder, "random.seed"))
+    readr::write_lines(x = random.seed, file = file.path(path.folder, "random.seed"))
     if (verbose) message("File written: random.seed (", random.seed,")")
 
     # Detect format --------------------------------------------------------------
@@ -341,7 +341,7 @@ detect_duplicate_genomes <- function(
       #   }
       #   sample.markers <- dplyr::distinct(data, MARKERS) %>%
       #     dplyr::sample_n(tbl = ., size = subsample.markers) %>%
-      #     readr::write_tsv(x = ., path = file.path(path.folder, stringi::stri_join("subsampled.markers_random.seed_", random.seed, ".tsv"))) %>%
+      #     readr::write_tsv(x = ., file = file.path(path.folder, stringi::stri_join("subsampled.markers_random.seed_", random.seed, ".tsv"))) %>%
       #     purrr::flatten_chr(.)
       #   data <- dplyr::filter(data, MARKERS %in% sample.markers)
       #   sample.markers <- NULL
@@ -367,7 +367,7 @@ detect_duplicate_genomes <- function(
       }
       readr::write_tsv(
         x = geno.stats,
-        path = file.path(path.folder, "genotyped.statistics.tsv"))
+        file = file.path(path.folder, "genotyped.statistics.tsv"))
 
       # GT_BIN available
       # for biallelic data set, just need to keep
@@ -410,12 +410,12 @@ detect_duplicate_genomes <- function(
                 SPLIT_VEC = dplyr::ntile(x = 1:nrow(.), n = parallel.core * 3))
             , by = "MARKERS") %>%
           radiator_future(
-            X = .,
-            FUN = allele_count,
+            .x = .,
+            .f = allele_count,
             parallel.core = parallel.core,
-            split.tibble = .$SPLIT_VEC,
-            bind.rows = TRUE
-          )
+            split.with = "SPLIT_VEC",
+            flat.future = "dfr"
+            )
           #
           # split(x = ., f = .$SPLIT_VEC) %>%
           # radiator_parallel(
@@ -474,7 +474,7 @@ detect_duplicate_genomes <- function(
       geno.stats %<>% dplyr::select(INDIVIDUALS, GENOTYPED_PROP )
       readr::write_tsv(
         x = geno.stats,
-        path = file.path(path.folder, "genotyped.statistics.tsv"))
+        file = file.path(path.folder, "genotyped.statistics.tsv"))
       genome <- FALSE
     }
     # Computing distance ---------------------------------------------------------
@@ -524,7 +524,7 @@ detect_duplicate_genomes <- function(
       # test <- res$distance
       readr::write_tsv(
         x = res$distance,
-        path = file.path(path.folder, "individuals.pairwise.dist.tsv"),
+        file = file.path(path.folder, "individuals.pairwise.dist.tsv"),
         col_names = TRUE
       )
 
@@ -544,7 +544,7 @@ detect_duplicate_genomes <- function(
         ) %>%
         readr::write_tsv(
           x = .,
-          path = file.path(path.folder, "individuals.pairwise.distance.stats.tsv"),
+          file = file.path(path.folder, "individuals.pairwise.distance.stats.tsv"),
           col_names = TRUE
         )
 
@@ -708,7 +708,7 @@ detect_duplicate_genomes <- function(
       ) %>%
         readr::write_tsv(
           x = .,
-          path = pairwise.filename,
+          file = pairwise.filename,
           col_names = TRUE)
 
       blacklist.pairs.filename <- file.path(path.folder, "blacklist.pairs.threshold.tsv")
@@ -718,22 +718,22 @@ detect_duplicate_genomes <- function(
         ID2 = as.character()) %>%
         readr::write_tsv(
           x = .,
-          path =  blacklist.pairs.filename,
+          file =  blacklist.pairs.filename,
           col_names = TRUE)
 
 
       res$pairwise.genome.similarity <- list()
       res$pairwise.genome.similarity <- radiator_future(
-        X = unique(all.pairs$SPLIT_VEC),
-        FUN = genome_similarity,
+        .x = unique(all.pairs$SPLIT_VEC),
+        .f = genome_similarity,
         parallel.core = parallel.core,
-        bind.rows = TRUE,
+        flat.future = "dfr",
         all.pairs = all.pairs,
-          data = input.prep,
-          threshold.common.markers = threshold.common.markers,
-          keep.data = keep.data,
-          pairwise.filename = pairwise.filename,
-          blacklist.pairs.filename = blacklist.pairs.filename
+        data = input.prep,
+        threshold.common.markers = threshold.common.markers,
+        keep.data = keep.data,
+        pairwise.filename = pairwise.filename,
+        blacklist.pairs.filename = blacklist.pairs.filename
       )
 
 
@@ -792,7 +792,7 @@ detect_duplicate_genomes <- function(
 
       readr::write_tsv(
         x = res$genome.stats,
-        path = file.path(path.folder, "individuals.pairwise.genome.stats.tsv"),
+        file = file.path(path.folder, "individuals.pairwise.genome.stats.tsv"),
         col_names = TRUE
       )
 
@@ -893,7 +893,7 @@ detect_duplicate_genomes <- function(
         if (remove.dup == 2) {
           readr::write_tsv(
             x = tibble::tibble(INDIVIDUALS = as.character()),
-            path = file.path(path.folder, "blacklist.id.similar.tsv"),
+            file = file.path(path.folder, "blacklist.id.similar.tsv"),
             append = FALSE, col_names = TRUE)
           message("    An empty blacklist file was generated: blacklist.id.similar.tsv")
           message("    Keep column name, just add the individual(s) to blacklist(s)")
@@ -1129,7 +1129,7 @@ distance_individuals <- function(
 #' @rdname genome_similarity
 #' @export
 #' @keywords internal
-genome_similarity <- function(
+genome_similarity <- carrier::crate(function(
   split.vec,
   all.pairs,
   data = NULL,
@@ -1256,20 +1256,20 @@ genome_similarity <- function(
   if (nrow(blacklist.pairs.threshold) > 0) {
     readr::write_tsv(
       x = blacklist.pairs.threshold,
-      path = blacklist.pairs.filename,
+      file = blacklist.pairs.filename,
       append = TRUE, col_names = FALSE)
   }
   genome.comparison <- genome.comparison %>%
     purrr::map_df("genome.comparison") %>%
     readr::write_tsv(
-      x = ., path = pairwise.filename, append = TRUE, col_names = FALSE)
+      x = ., file = pairwise.filename, append = TRUE, col_names = FALSE)
 
   if (!keep.data) {
     genome.comparison <- NULL
   }
   blacklist.pairs.threshold <- NULL
   return(genome.comparison)
-} #End genome_similarity
+})#End genome_similarity
 
 # calculate allele count in parallel -------------------------------------------
 #' @title allele_count
@@ -1277,7 +1277,7 @@ genome_similarity <- function(
 #' @rdname allele_count
 #' @export
 #' @keywords internal
-allele_count <- function(x) {
+allele_count <- carrier::crate(function(x) {
   res <- dplyr::ungroup(x) %>%
     dplyr::select(MARKERS, INDIVIDUALS, GT) %>%
     dplyr::filter(GT != "000000") %>%
@@ -1298,7 +1298,7 @@ allele_count <- function(x) {
     tidyr::complete(
       data = ., INDIVIDUALS, tidyr::nesting(MARKERS, GT), fill = list(n = 0))
   return(res)
-}#End allele_count
+})#End allele_count
 
 
 # remove_duplicates  -----------------------------------------------------------
@@ -1425,7 +1425,7 @@ remove_duplicates <- function(
     res$blacklist.id <- dplyr::distinct(res$blacklist.id, INDIVIDUALS)
     res$whitelist.id <- dplyr::distinct(res$whitelist.id, INDIVIDUALS)
     message("With threshold selected, ", nrow(res$blacklist.id) ," individual(s) blacklisted")
-    readr::write_tsv(x = res$blacklist.id, path = file.path(path.folder, "blacklist.id.similar.tsv"))
+    readr::write_tsv(x = res$blacklist.id, file = file.path(path.folder, "blacklist.id.similar.tsv"))
     message("Written in the directory: blacklist.id.similar.tsv")
 
   } else {

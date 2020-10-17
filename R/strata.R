@@ -379,7 +379,7 @@ individuals2strata <- function(
   # Write to working directory
   if (!is.null(filename)) {
     message("Writing the strata object to the working directory: \n", filename)
-    readr::write_tsv(x = data, path = filename, col_names = TRUE)
+    readr::write_tsv(x = data, file = filename, col_names = TRUE)
   }
 
   return(data)

@@ -204,7 +204,7 @@ tidy_fstat <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
 
   # writing to a file  ---------------------------------------------------------
   if (!is.null(filename)) {
-    readr::write_tsv(x = data, path = filename, col_names = TRUE)
+    readr::write_tsv(x = data, file = filename, col_names = TRUE)
   }
 
   return(data)
@@ -324,16 +324,16 @@ write_hierfstat <- function(data, filename = NULL) {
   # FSTAT: write the first line ------------------------------------------------
   fstat.first.line <- stringi::stri_join(np, nl, nu, allele.coding, sep = " ")
   fstat.first.line <- as.data.frame(fstat.first.line)
-  readr::write_delim(x = fstat.first.line, path = filename, delim = "\n", append = FALSE,
+  readr::write_delim(x = fstat.first.line, file = filename, delim = "\n", append = FALSE,
                      col_names = FALSE)
 
   # FSTAT: write the locus name to the file
   loci.table <- as.data.frame(markers)
-  readr::write_delim(x = loci.table, path = filename, delim = "\n", append = TRUE,
+  readr::write_delim(x = loci.table, file = filename, delim = "\n", append = TRUE,
                      col_names = FALSE)
 
   # FSTAT: write the pop and genotypes
-  readr::write_delim(x = data, na = "00", path = filename, delim = "\t", append = TRUE,
+  readr::write_delim(x = data, na = "00", file = filename, delim = "\t", append = TRUE,
                      col_names = FALSE)
   data <- as.data.frame(data) # required by hierfstat...
   return(data)

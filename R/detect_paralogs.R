@@ -336,7 +336,7 @@ detect_paralogs <- function(
       Z_SCORE = -(TOTAL_COUNTS / 2 - DEPTH_REF) / sqrt(TOTAL_COUNTS * 0.5 * 0.5)
     )
   depth.info <- NULL
-  readr::write_tsv(x = markers.het.summary, path = file.path(path.folder, "markers.het.summary.tsv"))
+  readr::write_tsv(x = markers.het.summary, file = file.path(path.folder, "markers.het.summary.tsv"))
 
   # prepare the summary for the figure
   markers.het.summary %<>%

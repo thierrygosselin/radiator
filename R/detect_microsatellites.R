@@ -200,7 +200,7 @@ detect_microsatellites <- function(data, gmata.dir = NULL, ...) {
     tibble::as_tibble(.) %>%
     dplyr::arrange(ID) %>%
     dplyr::select(MICROSATELLITES) %>%
-    readr::write_tsv(x = ., path = filename, col_names = FALSE)
+    readr::write_tsv(x = ., file = filename, col_names = FALSE)
 
 
   # Run GMATA ------------------------------------------------------------------
@@ -243,14 +243,14 @@ detect_microsatellites <- function(data, gmata.dir = NULL, ...) {
         vectorize_all = FALSE
       )
     ) %>%
-    readr::write_tsv(x = ., path = ssr.file)
+    readr::write_tsv(x = ., file = ssr.file)
 
   n.micro <- nrow(micro)
   message("Number of microsatellite(s) detected: ", n.micro)
   if (n.micro > 0L) {
     blacklist <- micro %>%
       dplyr::distinct(MARKERS) %>%
-      readr::write_tsv(x = ., path = "blacklist.microsatellites.tsv")
+      readr::write_tsv(x = ., file = "blacklist.microsatellites.tsv")
     message("Number of unique markers with microsatellite(s): ", nrow(blacklist))
   } else {
     blacklist <- NULL
@@ -262,7 +262,7 @@ detect_microsatellites <- function(data, gmata.dir = NULL, ...) {
 
   whitelist %<>%
     dplyr::filter(!MARKERS %in% blacklist$MARKERS) %>%
-    readr::write_tsv(x = ., path = "whitelist.microsatellites.tsv")
+    readr::write_tsv(x = ., file = "whitelist.microsatellites.tsv")
   return(list(blacklist = blacklist, whitelist = whitelist))
 }#End detect_microsatellites
 

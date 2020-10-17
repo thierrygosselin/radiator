@@ -310,7 +310,7 @@ filter_maf <- function(
     filters.parameters <- list.files(path = getwd(), pattern = "filters_parameters.tsv", full.names = TRUE)
     if (length(filters.parameters) == 0) {
       filters.parameters <- tibble::data_frame(FILTERS = as.character(), PARAMETERS = as.character(), VALUES = as.integer(), BEFORE = as.character(), AFTER = as.character(), BLACKLIST = as.integer(), UNITS = as.character(), COMMENTS = as.character())
-      readr::write_tsv(x = filters.parameters, path = "filters_parameters.tsv", append = FALSE, col_names = TRUE)
+      readr::write_tsv(x = filters.parameters, file = "filters_parameters.tsv", append = FALSE, col_names = TRUE)
       if (verbose) message("    Created a parameter file: filters_parameters.tsv")
     } else {
       if (verbose) message("    Using the filters parameters file: filters_parameters.tsv")
@@ -424,7 +424,7 @@ filter_maf <- function(
       maf.data <- dplyr::filter(input, GT != "000000")
     }
     write_rad(data = input, path = "maf.temp.rad")
-    # readr::write_tsv(x = input, path = "maf.temp.rad")
+    # readr::write_tsv(x = input, file = "maf.temp.rad")
     input <- NULL
 
     if (n.markers > 10000) {
@@ -437,11 +437,11 @@ filter_maf <- function(
       maf.data %<>%
         dplyr::left_join(split.vec, by = "MARKERS") %>%
         radiator_future(
-          X = .,
-          FUN = compute_maf,
+          .x = .,
+          .f = compute_maf,
           parallel.core = parallel.core,
-          split.tibble = .$SPLIT_VEC,
-          bind.rows = TRUE,
+          split.with = "SPLIT_VEC",
+          flat.future = "dfr",
           biallelic = biallelic
         )
 
@@ -509,7 +509,7 @@ filter_maf <- function(
 
       global.data <- NULL # unused object
 
-      readr::write_tsv(x = maf.global.summary, path = file.path(path.folder, "maf.global.summary.tsv"))
+      readr::write_tsv(x = maf.global.summary, file = file.path(path.folder, "maf.global.summary.tsv"))
       if (verbose) message("maf.global.summary.tsv table written in the folder")
 
       message("\nThe global MAF mean: ", round(maf.global.summary$MEAN, 4))
@@ -598,7 +598,7 @@ filter_maf <- function(
 
       readr::write_tsv(
         x = maf.helper.table,
-        path = file.path(path.folder, "maf.helper.table.tsv"))
+        file = file.path(path.folder, "maf.helper.table.tsv"))
 
       message("\nWritten in the directory: maf.helper.table.tsv")
     }
@@ -773,7 +773,7 @@ because LOCUS and POS (SNP) info is not available")
 
       readr::write_tsv(
         x = maf.data,
-        path = file.path(path.folder, "maf.data.tsv"),
+        file = file.path(path.folder, "maf.data.tsv"),
         col_names = TRUE,
         append = FALSE
       )
@@ -869,7 +869,7 @@ because LOCUS and POS (SNP) info is not available")
           filter %>%
             dplyr::filter(!MARKERS %in% haplo.reconstruction$MARKERS) %>%
             write_rad(data = ., path = file.path(path.folder, "temp.rad"))
-          # readr::write_tsv(x = ., path = file.path(path.folder, "temp.rad"))
+          # readr::write_tsv(x = ., file = file.path(path.folder, "temp.rad"))
 
           filter <- dplyr::select(filter, MARKERS, POP_ID, INDIVIDUALS, GT_VCF_NUC) %>%
             dplyr::filter(MARKERS %in% haplo.reconstruction$MARKERS) %>%
@@ -934,14 +934,14 @@ because LOCUS and POS (SNP) info is not available")
       UNITS = c("", "", "", "", "SNP/LOCUS"),
       COMMENTS = c("", "", "", "", "")
     )
-    readr::write_tsv(x = filters.parameters, path = "filters_parameters.tsv", append = TRUE, col_names = FALSE)
+    readr::write_tsv(x = filters.parameters, file = "filters_parameters.tsv", append = TRUE, col_names = FALSE)
 
     # saving filtered tidy data --------------------------------------------------
     if (!is.null(filename)) {
       tidy.name <- stringi::stri_join(filename, ".rad")
       if (verbose) message("Writing the MAF filtered tidy data set: ", tidy.name)
       write_rad(data = filter, path = file.path(path.folder, tidy.name))
-      # readr::write_tsv(x = filter, path = tidy.name)
+      # readr::write_tsv(x = filter, file = tidy.name)
     }
 
     # saving whitelist

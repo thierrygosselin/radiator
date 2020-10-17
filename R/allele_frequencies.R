@@ -78,11 +78,11 @@ allele_frequencies <- function(data, verbose = TRUE, parallel.core = parallel::d
 
     maf.data <- dplyr::left_join(maf.data, split.vec, by = "MARKERS") %>%
       radiator_future(
-        X = .,
-        FUN = compute_maf,
+        .x = .,
+        .f = compute_maf,
         parallel.core = parallel.core,
-        split.tibble = .$SPLIT_VEC,
-        bind.rows = TRUE,
+        split.with = "SPLIT_VEC",
+        flat.future = "dfr",
         biallelic = biallelic
       )
       #

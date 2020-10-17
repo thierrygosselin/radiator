@@ -543,13 +543,13 @@ write_dadi <- function(
 
   readr::write_tsv(
     x = file.header.line,
-    path = dadi.input.filename,
+    file = dadi.input.filename,
     append = FALSE,
     col_names = FALSE
   ) # write the header line
   readr::write_tsv(
     x = dadi.input,
-    path = dadi.input.filename,
+    file = dadi.input.filename,
     append = TRUE,
     col_names = TRUE
   ) # write the data frame

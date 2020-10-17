@@ -304,7 +304,7 @@ run_bayescan <- function(
     subsampling.individuals <- dplyr::bind_rows(subsample.list)
     readr::write_tsv(
       x = subsampling.individuals,
-      path = file.path(path.folder, "radiator_bayescan_subsampling_individuals.tsv"),
+      file = file.path(path.folder, "radiator_bayescan_subsampling_individuals.tsv"),
       col_names = TRUE,
       append = FALSE
     )
@@ -353,7 +353,7 @@ run_bayescan <- function(
       dplyr::select(-BAYESCAN_MARKERS)
     readr::write_tsv(
       x = res$bayescan.all.subsamples,
-      path = file.path(path.folder, "bayescan.all.subsamples.tsv"),
+      file = file.path(path.folder, "bayescan.all.subsamples.tsv"),
       col_names = TRUE,
       append = FALSE
     )
@@ -385,7 +385,7 @@ run_bayescan <- function(
 
     readr::write_tsv(
       x = res$selection.accuracy,
-      path = file.path(path.folder, "selection.accuracy.tsv"),
+      file = file.path(path.folder, "selection.accuracy.tsv"),
       col_names = TRUE,
       append = FALSE
     )
@@ -397,7 +397,7 @@ run_bayescan <- function(
 
     readr::write_tsv(
       x = res$accurate.markers,
-      path = file.path(path.folder, "accurate.markers.tsv"),
+      file = file.path(path.folder, "accurate.markers.tsv"),
       col_names = TRUE,
       append = FALSE
     )
@@ -428,7 +428,7 @@ run_bayescan <- function(
 
     readr::write_tsv(
       x = res$accuracy.summary,
-      path = file.path(path.folder, "accuracy.summary.tsv"),
+      file = file.path(path.folder, "accuracy.summary.tsv"),
       col_names = TRUE,
       append = FALSE
     )
@@ -460,7 +460,7 @@ run_bayescan <- function(
 
     readr::write_tsv(
       x = res$bayescan.summary,
-      path = file.path(path.folder, "bayescan.summary.tsv"),
+      file = file.path(path.folder, "bayescan.summary.tsv"),
       col_names = TRUE,
       append = FALSE
     )
@@ -480,7 +480,7 @@ run_bayescan <- function(
 
     readr::write_tsv(
       x = res$selection.summary,
-      path = file.path(path.folder, "selection.summary.tsv"),
+      file = file.path(path.folder, "selection.summary.tsv"),
       col_names = TRUE,
       append = FALSE
     )
@@ -498,7 +498,7 @@ run_bayescan <- function(
     if (nrow(res$whitelist.markers.positive.selection) > 0) {
       readr::write_tsv(
         x = res$whitelist.markers.positive.selection,
-        path = file.path(path.folder, "whitelist.markers.positive.selection.tsv"))
+        file = file.path(path.folder, "whitelist.markers.positive.selection.tsv"))
       positive <- TRUE
       message("    whitelist positive/directional selection: generated")
     } else {
@@ -514,7 +514,7 @@ run_bayescan <- function(
     if (nrow(res$whitelist.markers.neutral.selection) > 0) {
       readr::write_tsv(
         x = res$whitelist.markers.neutral.selection,
-        path = file.path(path.folder, "whitelist.markers.neutral.selection.tsv"))
+        file = file.path(path.folder, "whitelist.markers.neutral.selection.tsv"))
       neutral <- TRUE
       message("    whitelist neutral selection: generated")
     } else {
@@ -530,7 +530,7 @@ run_bayescan <- function(
         dplyr::arrange (MARKERS)
       readr::write_tsv(
         x = res$whitelist.markers.neutral.positive.selection,
-        path = file.path(path.folder, "whitelist.markers.neutral.positive.selection.tsv"))
+        file = file.path(path.folder, "whitelist.markers.neutral.positive.selection.tsv"))
       message("    whitelist neutral and positive/directional selections: generated")
     } else {
       message("    whitelist neutral and positive/directional selections: not generated")
@@ -545,7 +545,7 @@ run_bayescan <- function(
     if (nrow(res$blacklist.markers.balancing.selection) > 0) {
       readr::write_tsv(
         x = res$blacklist.markers.balancing.selection,
-        path = file.path(path.folder, "blacklist.markers.balancing.selection.tsv"))
+        file = file.path(path.folder, "blacklist.markers.balancing.selection.tsv"))
       balancing <- TRUE
       message("    blacklist balancing selection: generated")
     } else {
@@ -561,7 +561,7 @@ run_bayescan <- function(
         dplyr::anti_join(res$whitelist.markers.positive.selection, by = "MARKERS") %>%
         readr::write_tsv(
           x = res$whitelist.markers.without.balancing.positive,
-          path = file.path(path.folder, "whitelist.markers.without.balancing.positive.tsv"))
+          file = file.path(path.folder, "whitelist.markers.without.balancing.positive.tsv"))
       message("    whitelist without balancing and positive selection: generated")
     }
 
@@ -572,7 +572,7 @@ run_bayescan <- function(
         all.markers, res$blacklist.markers.balancing.selection, by = "MARKERS")
       readr::write_tsv(
         x = res$whitelist.markers.without.balancing.positive,
-        path = file.path(path.folder, "whitelist.markers.without.balancing.positive.tsv"))
+        file = file.path(path.folder, "whitelist.markers.without.balancing.positive.tsv"))
       message("    whitelist without balancing and positive selection: generated")
     }
   }# End
@@ -864,7 +864,7 @@ bayescan_one <- function(
         dplyr::arrange(LOCUS)
       readr::write_tsv(
         x = res$whitelist.accurate.locus,
-        path = file.path(path.folder.subsample, "whitelist.accurate.locus.tsv"))
+        file = file.path(path.folder.subsample, "whitelist.accurate.locus.tsv"))
 
       res$blacklist.not.accurate.locus <- locus.accuracy %>%
         dplyr::filter(ACCURACY == "not accurate") %>%
@@ -872,7 +872,7 @@ bayescan_one <- function(
         dplyr::arrange(LOCUS)
       readr::write_tsv(
         x = res$blacklist.not.accurate.locus,
-        path = file.path(path.folder.subsample, "blacklist.not.accurate.locus.tsv"))
+        file = file.path(path.folder.subsample, "blacklist.not.accurate.locus.tsv"))
 
 
       # correlation between number of snps and accuracy... ?
@@ -882,7 +882,7 @@ bayescan_one <- function(
         dplyr::tally(.)
       readr::write_tsv(
         x = res$accuracy.snp.number,
-        path = file.path(path.folder.subsample, "accuracy.snp.number.tsv"))
+        file = file.path(path.folder.subsample, "accuracy.snp.number.tsv"))
 
       res$accuracy.snp.number.plot <- ggplot2::ggplot(res$accuracy.snp.number, ggplot2::aes(y = n, x = SNP_NUMBER, fill = ACCURACY)) +
         ggplot2::geom_bar(stat = "identity") +
@@ -916,7 +916,7 @@ bayescan_one <- function(
           PROP_TOTAL_MARKERS = round(LOCUS_NUMBER/markers.more.snp, 4))
       readr::write_tsv(
         x = res$not.accurate.summary,
-        path = file.path(path.folder.subsample, "not.accurate.summary.tsv"))
+        file = file.path(path.folder.subsample, "not.accurate.summary.tsv"))
     }
 
   }
@@ -935,7 +935,7 @@ bayescan_one <- function(
 
   readr::write_tsv(
     x = res$whitelist.markers.positive.selection,
-    path = file.path(path.folder.subsample, "whitelist.markers.positive.selection.tsv"))
+    file = file.path(path.folder.subsample, "whitelist.markers.positive.selection.tsv"))
 
   res$whitelist.markers.neutral.selection <- res$bayescan %>%
     dplyr::filter(SELECTION == "neutral") %>%
@@ -947,7 +947,7 @@ bayescan_one <- function(
   }
   readr::write_tsv(
     x = res$whitelist.markers.neutral.selection,
-    path = file.path(path.folder.subsample, "whitelist.markers.neutral.selection.tsv"))
+    file = file.path(path.folder.subsample, "whitelist.markers.neutral.selection.tsv"))
 
   # neutral and positive
   res$whitelist.markers.neutral.positive.selection <- res$bayescan %>%
@@ -959,7 +959,7 @@ bayescan_one <- function(
   }
   readr::write_tsv(
     x = res$whitelist.markers.neutral.positive.selection,
-    path = file.path(path.folder.subsample, "whitelist.markers.neutral.positive.selection.tsv"))
+    file = file.path(path.folder.subsample, "whitelist.markers.neutral.positive.selection.tsv"))
 
   res$blacklist.markers.balancing.selection <- res$bayescan %>%
     dplyr::filter(SELECTION == "balancing") %>%
@@ -970,7 +970,7 @@ bayescan_one <- function(
   }
   readr::write_tsv(
     x = res$blacklist.markers.balancing.selection,
-    path = file.path(path.folder.subsample, "blacklist.markers.balancing.selection.tsv"))
+    file = file.path(path.folder.subsample, "blacklist.markers.balancing.selection.tsv"))
 
   # Get the numbers of LOCI under various evolutionary forces
   # Get the numbers for markers under directional selection
@@ -982,7 +982,7 @@ bayescan_one <- function(
   }
   readr::write_tsv(
     x = selection,
-    path = file.path(path.folder.subsample, "selection.summary.tsv"))
+    file = file.path(path.folder.subsample, "selection.summary.tsv"))
 
 
 
@@ -1012,11 +1012,11 @@ bayescan_one <- function(
     temp.name <-  stringi::stri_join("bayescan_", subsample.id, ".tsv")
     readr::write_tsv(
       x = res$bayescan,
-      path = file.path(path.folder.subsample, temp.name))
+      file = file.path(path.folder.subsample, temp.name))
   } else {
     readr::write_tsv(
       x = res$bayescan,
-      path = file.path(path.folder.subsample, "bayescan.tsv"))
+      file = file.path(path.folder.subsample, "bayescan.tsv"))
   }
   # Update results list --------------------------------------------------------
   res$selection.summary <- selection
@@ -1306,13 +1306,13 @@ write_bayescan <- function(
   message("Writting populations dictionary")
   readr::write_tsv(
     x = pop.dictionary,
-    path = stringi::stri_replace_all_fixed(
+    file = stringi::stri_replace_all_fixed(
       str = filename, pattern = ".txt",
       replacement = "_pop_dictionary.tsv", vectorize_all = FALSE))
   message("Writting markers dictionary")
   readr::write_tsv(
     x = markers.dictionary,
-    path = stringi::stri_replace_all_fixed(
+    file = stringi::stri_replace_all_fixed(
       str = filename, pattern = ".txt",
       replacement = "_markers_dictionary.tsv", vectorize_all = FALSE))
 

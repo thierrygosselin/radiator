@@ -5,19 +5,13 @@
 \title{radiator parallel function}
 \usage{
 radiator_future(
-  X,
-  FUN,
+  .x,
+  .f,
   parallel.core = parallel::detectCores() - 1,
-  split.tibble = NULL,
-  bind.rows = FALSE,
-  flatten.int = FALSE,
+  split.with = NULL,
+  flat.future = c("int", "chr", "dfr", "dfc", "walk", "drop"),
   ...
 )
-}
-\arguments{
-\item{X}{an array, including a matrix.}
-
-\item{FUN}{A function taking at least one argument.}
 }
 \description{
 Updating radiator to use future

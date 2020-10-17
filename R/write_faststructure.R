@@ -185,7 +185,7 @@ write_faststructure <- function(
     # writeLines(text = stringi::stri_join(markers, sep = "\t", collapse = "\t"),
     #            con = filename.connection, sep = "\n")
     # close(filename.connection) # close the connection
-    readr::write_tsv(x = data, path = filename, append = FALSE, col_names = FALSE)
+    readr::write_tsv(x = data, file = filename, append = FALSE, col_names = FALSE)
   }
   return(filename)
 } # end write_faststructure

@@ -278,13 +278,13 @@ detect_allele_problems <- function(
     ggplot2::facet_grid(~ ALLELE_COPIES)
   # alt.depth.count.distribution.plot
 
-  readr::write_tsv(x = allele.summary, path = "problematic.allele.summary.stats.tsv")
+  readr::write_tsv(x = allele.summary, file = "problematic.allele.summary.stats.tsv")
   message("Written to the working directory:\nproblematic.allele.summary.stats.tsv")
 
   blacklist.markers <- dplyr::ungroup(allele.summary) %>%
     dplyr::distinct(MARKERS, CHROM, LOCUS, POS)
 
-  readr::write_tsv(x = blacklist.markers, path = "blacklist.markers.allele.problem.tsv")
+  readr::write_tsv(x = blacklist.markers, file = "blacklist.markers.allele.problem.tsv")
   message("Written to the working directory:\nblacklist.markers.allele.problem.tsv")
 
   # if the problem is systematically targetting some individuals

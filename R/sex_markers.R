@@ -311,7 +311,7 @@ sexy_markers <- function(data,
   # write the dots file
   write_rad(
     data = rad.dots,
-    path = path.folder,
+    file = path.folder,
     filename = stringi::stri_join("radiator_sexy_markers_args_", file.date, ".tsv"),
     tsv = TRUE,
     internal = FALSE,
@@ -446,7 +446,7 @@ sexy_markers <- function(data,
   # Generate new strata and write to disk
   # strata <- generate_strata(data)
   readr::write_tsv(x = strata,
-                   path = file.path(path.folder, "sexy_markers_strata-original_cleaned.tsv"))
+                   file = file.path(path.folder, "sexy_markers_strata-original_cleaned.tsv"))
 
 
   # check Sex Ratio ------------------------------------------------------------
@@ -913,7 +913,7 @@ This marker could be absent due to an error.")
     print(SumTable)
     readr::write_tsv(
       x = SumTable,
-      path = file.path(
+      file = file.path(
         path.folder,
         "sexy_markers_summary_table_visual.VS.geneticSNP_sex.tsv"
       )
@@ -1054,7 +1054,7 @@ This marker could be absent due to an error.")
     print(SumTable)
     readr::write_tsv(
       x = SumTable,
-      path = file.path(
+      file = file.path(
         path.folder,
         "sexy_markers_summary_table_visual.VS.geneticSILICO_sex.tsv"
       )
@@ -1070,7 +1070,7 @@ This marker could be absent due to an error.")
     print(SumTable)
     readr::write_tsv(
       x = SumTable,
-      path = file.path(
+      file = file.path(
         path.folder,
         "sexy_markers_summary_table_geneticSNP.VS.geneticSILICO_sex.tsv"
       )
@@ -1124,7 +1124,7 @@ This marker could be absent due to an error.")
     if (sex.id.input == 2) {
       readr::write_tsv(
         x = y.data,
-        path = file.path(
+        file = file.path(
           path.folder,
           "sexy_markers_strata_new_with_genetic_sex_according_to_SNPdata.tsv"
         )
@@ -1151,7 +1151,7 @@ This marker could be absent due to an error.")
         # dplyr::select(-c(TARGET_ID.y))
         # dplyr::mutate(GENETIC_STRATA = STRATA)
         radiator::write_rad(data = silicodata,
-                            path = file.path(wd, "sexy_markers_silicodata_genetic_SNP_sex_ID.rad"))
+                            file = file.path(wd, "sexy_markers_silicodata_genetic_SNP_sex_ID.rad"))
       } else{
         silicodata <- NULL
       }
@@ -1159,7 +1159,7 @@ This marker could be absent due to an error.")
     } else if (sex.id.input == 3) {
       readr::write_tsv(
         x = y.silico.data,
-        path = file.path(
+        file = file.path(
           path.folder,
           "sexy_markers_strata_new_with_genetic_sex_according_to_SILICOdata.tsv"
         )

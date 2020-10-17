@@ -22,7 +22,7 @@ to make sure you have the right individuals in your VCF.
 # Built a strata file:
 strata <- radiator::extract_individuals_vcf("my.vcf") \%>\%
     dplyr::mutate(STRATA = "fill this") \%>\%
-    readr::write_tsv(x = ., path = "my.new.vcf.strata.tsv")
+    readr::write_tsv(x = ., file = "my.new.vcf.strata.tsv")
 }
 }
 \seealso{

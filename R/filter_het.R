@@ -277,7 +277,7 @@ filter_het <- function(
   filters.parameters <- list.files(path = getwd(), pattern = "filters_parameters.tsv", full.names = TRUE)
   if (length(filters.parameters) == 0) {
     filters.parameters <- tibble::data_frame(FILTERS = as.character(), PARAMETERS = as.character(), VALUES = as.integer(), BEFORE = as.character(), AFTER = as.character(), BLACKLIST = as.integer(), UNITS = as.character(), COMMENTS = as.character())
-    readr::write_tsv(x = filters.parameters, path = "filters_parameters.tsv", append = FALSE, col_names = TRUE)
+    readr::write_tsv(x = filters.parameters, file = "filters_parameters.tsv", append = FALSE, col_names = TRUE)
     message("    Created a parameter file: filters_parameters.tsv")
   } else {
     message("    Using the filters parameters file: filters_parameters.tsv")
@@ -564,7 +564,7 @@ Enter the values (proportion, e.g. 0.34 for max threshold:")
   if (length(blacklist.ind.het$INDIVIDUALS > 0)) {
     readr::write_tsv(
       x = blacklist.ind.het,
-      path = stringi::stri_join(path.folder, "/blacklist.individuals.heterozygosity.tsv"),
+      file = stringi::stri_join(path.folder, "/blacklist.individuals.heterozygosity.tsv"),
       col_names = TRUE
     )
     message("Blacklist (blacklist.individuals.heterozygosity) written in the folder")
@@ -1078,28 +1078,28 @@ use the overall approach.\n")
       )
       readr::write_tsv(
         x = max.threshold,
-        path = stringi::stri_join(path.folder, "/helper.table.het.max.threshold.tsv")
+        file = stringi::stri_join(path.folder, "/helper.table.het.max.threshold.tsv")
       )
       readr::write_tsv(
         x = max.threshold.overall,
-        path = stringi::stri_join(path.folder, "/helper.table.het.max.threshold.overall.tsv")
+        file = stringi::stri_join(path.folder, "/helper.table.het.max.threshold.overall.tsv")
       )
 
       readr::write_tsv(
         x = dif.threshold,
-        path = stringi::stri_join(path.folder, "/helper.table.het.dif.threshold.tsv")
+        file = stringi::stri_join(path.folder, "/helper.table.het.dif.threshold.tsv")
       )
       readr::write_tsv(
         x = dif.threshold.overall,
-        path = stringi::stri_join(path.folder, "/helper.table.het.dif.threshold.overall.tsv")
+        file = stringi::stri_join(path.folder, "/helper.table.het.dif.threshold.overall.tsv")
       )
       readr::write_tsv(
         x = max.dif.threshold.combined,
-        path = stringi::stri_join(path.folder, "/helper.table.het.max.dif.threshold.tsv")
+        file = stringi::stri_join(path.folder, "/helper.table.het.max.dif.threshold.tsv")
       )
       readr::write_tsv(
         x = max.dif.threshold.combined.overall,
-        path = stringi::stri_join(path.folder, "/helper.table.het.max.dif.threshold.overall.tsv")
+        file = stringi::stri_join(path.folder, "/helper.table.het.max.dif.threshold.overall.tsv")
       )
       n.markers <- het.helper <- max.threshold <- max.threshold.overall <- dif.threshold <- dif.threshold.overall <- max.dif.threshold.combined <- max.dif.threshold.combined.overall <- NULL
     } else {# by SNP
@@ -1185,11 +1185,11 @@ use the overall approach.\n")
 
       readr::write_tsv(
         x = helper.table.het.pop,
-        path = stringi::stri_join(path.folder, "/helper.table.het.threshold.pop.tsv")
+        file = stringi::stri_join(path.folder, "/helper.table.het.threshold.pop.tsv")
       )
       readr::write_tsv(
         x = helper.table.het.overall,
-        path = stringi::stri_join(path.folder, "/helper.table.het.threshold.overall.tsv")
+        file = stringi::stri_join(path.folder, "/helper.table.het.threshold.overall.tsv")
       )
       n.markers <- NULL
     }# End by SNP approach
@@ -1533,7 +1533,7 @@ number of populations in the dataset turns off the filter.\n")
     UNITS = c("individual" , "", "", "", "SNP/LOCUS"),
     COMMENTS = c("min/max values", "", "", "", "")
   )
-  readr::write_tsv(x = filters.parameters, path = "filters_parameters.tsv", append = TRUE, col_names = FALSE)
+  readr::write_tsv(x = filters.parameters, file = "filters_parameters.tsv", append = TRUE, col_names = FALSE)
 
   # saving filtered tidy data --------------------------------------------------
   if (!is.null(filename)) {

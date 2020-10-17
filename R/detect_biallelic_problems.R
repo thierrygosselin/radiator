@@ -109,7 +109,7 @@ detect_biallelic_problems <- function(
   } else {
     # write the blacklist
     blacklist.filename <- stringi::stri_join("blacklist.markers.not.biallelic_", file.date, ".tsv")
-    readr::write_tsv(x = blacklist.markers, path = blacklist.filename)
+    readr::write_tsv(x = blacklist.markers, file = blacklist.filename)
 
     res$blacklist.markers <- blacklist.markers
 
@@ -156,7 +156,7 @@ detect_biallelic_problems <- function(
       dplyr::ungroup(.) %>%
       dplyr::group_by_at(dplyr::vars(c(markers.metadata, "ALLELES", "REF"))) %>%
       tidyr::pivot_wider(data = ., names_from = "POP_ID", values_from = "N") %>%
-      readr::write_tsv(x = ., path = blacklist.info.filename, na = "-")
+      readr::write_tsv(x = ., file = blacklist.info.filename, na = "-")
     res$blacklist.info <- blacklist.info
     dodgy.markers <- dplyr::n_distinct(blacklist.info$MARKERS)
     message("\nNumber of suspicious markers (> 2 alleles): ", dodgy.markers)

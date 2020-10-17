@@ -434,6 +434,9 @@ gds2tidy <- function(
     }
     # re-calibration of ref/alt alleles ------------------------------------------
     # if (verbose) message("\nCalculating REF/ALT alleles...")
+
+    # Note to myself: maybe this should be done on the GDS before conversion...
+    # for small dataset, it won't matter, but for large ones, this could be the bottleneck
     if (calibrate.alleles && !wide) {
       tidy.data <- radiator::calibrate_alleles(
         data = tidy.data,
@@ -996,7 +999,9 @@ extract_coverage <- function(
               purrr::flatten_df(.),
             gds = gds,
             tidy = TRUE,
-            wide = FALSE) %$% data.tidy
+            wide = FALSE
+            ) %$%
+            data.tidy
         }
         parse.format.list <- want <- NULL
       } else {
@@ -1416,7 +1421,7 @@ list_filters <- function(gds) {
     data.type <- "SeqVarGDSClass"
   }
   i <- extract_individuals_metadata(gds = gds, ind.field.select = "FILTERS", blacklist = FALSE) %>%
-    dplyr::count(FILTERS, FILTERS) #%>% readr::write_tsv(x = i, path = "filters.individuals.tsv")
+    dplyr::count(FILTERS, FILTERS) #%>% readr::write_tsv(x = i, file = "filters.individuals.tsv")
   i %<>% dplyr::filter(FILTERS != "whitelist")
   message("Number of filters for individuals: ", nrow(i))
   if (nrow(i) > 0) {
@@ -1424,7 +1429,7 @@ list_filters <- function(gds) {
     message(stringi::stri_join(i$FILTERS, collapse = "\n"))
   }
   m <- extract_markers_metadata(gds = gds, markers.meta.select = "FILTERS", blacklist = FALSE) %>%
-    dplyr::count(FILTERS, FILTERS) #%>% readr::write_tsv(x = i, path = "filters.individuals.tsv")
+    dplyr::count(FILTERS, FILTERS) #%>% readr::write_tsv(x = i, file = "filters.individuals.tsv")
   m %<>% dplyr::filter(FILTERS != "whitelist")
   message("\nNumber of filters for markers: ", nrow(m))
   if (nrow(m) > 0) {
@@ -1956,9 +1961,9 @@ generate_id_stats <- function(
   id.stats$GROUP <- droplevels(x = id.stats$GROUP)
 
   id.stats.filename <- stringi::stri_join("individuals.qc.stats_", file.date, ".tsv")
-  if (!is.null(id.info)) readr::write_tsv(x = id.info, path = file.path(path.folder, id.stats.filename))
+  if (!is.null(id.info)) readr::write_tsv(x = id.info, file = file.path(path.folder, id.stats.filename))
   id.stats.filename <- stringi::stri_join("individuals.qc.stats.summary_", file.date, ".tsv")
-  if (!is.null(id.stats)) readr::write_tsv(x = id.stats, path = file.path(path.folder, id.stats.filename))
+  if (!is.null(id.stats)) readr::write_tsv(x = id.stats, file = file.path(path.folder, id.stats.filename))
   if (verbose) message("File written: individuals qc info and stats summary")
 
   # Generate plots
@@ -2450,7 +2455,7 @@ generate_markers_stats <- function(
   stats$GROUP <- droplevels(x = stats$GROUP)
 
   info %<>% dplyr::arrange(MARKERS) %>%
-    readr::write_tsv(x = ., path = file.path(path.folder, filename))
+    readr::write_tsv(x = ., file = file.path(path.folder, filename))
 
   # Generate plots
   if (plot) {
@@ -2521,7 +2526,7 @@ generate_markers_stats <- function(
                       scientific = FALSE
                       )
                   ) %>%
-      readr::write_tsv(x = ., path = file.path(path.folder, markers.stats.file))
+      readr::write_tsv(x = ., file = file.path(path.folder, markers.stats.file))
 
 
   } else {

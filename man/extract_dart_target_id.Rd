@@ -59,7 +59,7 @@ strata <- radiator::extract_dart_target_id("mt.dart.file.csv") \%>\%
         INDIVIDUALS = "new id you want to give",
         STRATA = "fill this"
     ) \%>\%
-    readr::write_tsv(x = ., path = "my.new.dart.strata.tsv")
+    readr::write_tsv(x = ., file = "my.new.dart.strata.tsv")
 }
 }
 \author{

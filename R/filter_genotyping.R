@@ -233,7 +233,7 @@ filter_genotyping <- function(
 
     readr::write_tsv(
       x = helper.table,
-      path = file.path(path.folder, "genotyping.helper.table.tsv")
+      file = file.path(path.folder, "genotyping.helper.table.tsv")
     )
 
     # checking if strata present
@@ -266,7 +266,7 @@ filter_genotyping <- function(
           dplyr::arrange(STRATA) %>%
           readr::write_tsv(
             x = .,
-            path = file.path(path.folder, "markers.pop.missing.helper.table.tsv")))
+            file = file.path(path.folder, "markers.pop.missing.helper.table.tsv")))
       m.strata <- round_mean <- mean.pop <- NULL
 
       if (verbose) message("File written: markers.pop.missing.helper.table.tsv")

@@ -1,3 +1,9 @@
+# radiator 1.1.8 2020-10-17
+
+* No longer using Travis CI and AppVeyor to test the package
+* R-CMD-check: now using GitHub actions and rhub that test on the 3 OS.
+* Taking advantage of future, furrr and carrier packages
+
 # radiator 1.1.7 2020-08-21
 
 * PLINK files: fix a couple of bugs reading the tped

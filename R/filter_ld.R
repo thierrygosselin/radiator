@@ -324,7 +324,7 @@ filter_ld <- function(
       dplyr::summarise(SNP_N = n()) %>%
       dplyr::count(SNP_N) %>%
       readr::write_tsv(
-        x = ., path = file.path(path.folder, "short.ld.locus.stats.tsv"),
+        x = ., file = file.path(path.folder, "short.ld.locus.stats.tsv"),
         append = FALSE, col_names = TRUE)
 
     if (nrow(locus.stats) > 1) {
@@ -480,7 +480,7 @@ filter_ld <- function(
               dplyr::filter(!MARKERS %in% one.snp$MARKERS)
             n.markers <- nrow(more.snp)
 
-            global_mac <- function(x) {
+            global_mac <- carrier::crate(function(x) {
               mac.data <- dplyr::group_by(x, MARKERS) %>%
                 dplyr::summarise(
                   PP = as.numeric(2 * length(GT_BIN[GT_BIN == 0])),
@@ -496,7 +496,7 @@ filter_ld <- function(
                   PP = NULL, QQ = NULL) %>%
                 dplyr::ungroup(.)
               return(mac.data)
-            }#End global_maf
+            })#End global_maf
 
             if (n.markers > 10000) {
               split.vec <- more.snp %>%
@@ -509,18 +509,20 @@ filter_ld <- function(
                 dplyr::filter(!is.na(GT_BIN)) %>%
                 dplyr::filter(!MARKERS %in% one.snp$MARKERS) %>%
                 dplyr::left_join(split.vec, by = "MARKERS") %>%
-                split(x = ., f = .$SPLIT_VEC) %>%
                 radiator_future(
-                  X = .,
-                  FUN = global_mac,
-                  parallel.core = parallel.core
-                  ) %>%
-                # radiator_parallel_mc(
-                #   X = .,
-                #   FUN = global_mac,
-                #   mc.cores = parallel.core
-                # ) %>%
-                dplyr::bind_rows(.)
+                  .x = .,
+                  .f = global_mac,
+                  parallel.core = parallel.core,
+                  split.with = "SPLIT_VEC",
+                  flat.future = "dfr"
+                )
+              # split(x = ., f = .$SPLIT_VEC) %>%
+              # radiator_parallel_mc(
+              #   X = .,
+              #   FUN = global_mac,
+              #   mc.cores = parallel.core
+              # ) %>%
+              # dplyr::bind_rows(.)
               more.snp <- split.vec <- NULL
             } else {
               mac.data <- global_mac(
@@ -600,7 +602,7 @@ filter_ld <- function(
 
       # Whitelist and Blacklist of markers
       readr::write_tsv(
-        x = wl, path = file.path(path.folder, "whitelist.short.ld.tsv"),
+        x = wl, file = file.path(path.folder, "whitelist.short.ld.tsv"),
         append = FALSE, col_names = TRUE)
 
       bl %<>%
@@ -610,7 +612,7 @@ filter_ld <- function(
 
       readr::write_tsv(
         x = bl,
-        path = file.path(path.folder, "blacklist.short.ld.tsv"),
+        file = file.path(path.folder, "blacklist.short.ld.tsv"),
         append = FALSE, col_names = TRUE)
       if (verbose) message("File written: whitelist.short.ld.tsv")
       if (verbose) message("File written: blacklist.short.ld.tsv")
@@ -1498,7 +1500,7 @@ ld_missing <- function(
 
     readr::write_tsv(
       x = chrom.stats,
-      path = file.path(path.folder, "snp.ld.chrom.stats.tsv"))
+      file = file.path(path.folder, "snp.ld.chrom.stats.tsv"))
   }
 
   # figure: distribution number of SNPs per scaffolds/chrom
@@ -1546,14 +1548,14 @@ ld_missing <- function(
         ld.t <- unique(bl.ld$LD_THRESHOLD)
         filename <- stringi::stri_join("whitelist.long.ld_", ld.t, ".tsv")
         readr::write_tsv(
-          x = wl, path = file.path(path.folder, filename),
+          x = wl, file = file.path(path.folder, filename),
           append = FALSE, col_names = TRUE)
 
         bl <- dplyr::setdiff(bl, wl)
         filename <- stringi::stri_join("blacklist.long.ld_", ld.t, ".tsv")
         readr::write_tsv(
           x = bl,
-          path = file.path(path.folder, filename),
+          file = file.path(path.folder, filename),
           append = FALSE, col_names = TRUE)
         res = list(wl = wl, bl = bl)
         return(res)

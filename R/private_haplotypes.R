@@ -92,7 +92,7 @@ private_haplotypes <- function(data, strata = NULL, verbose = TRUE) {
     dplyr::select(-n) %>%
     dplyr::left_join(data, by = c("MARKERS", "HAPLOTYPES")) %>%
     dplyr::select(MARKERS, STRATA, HAPLOTYPES) %>%
-    readr::write_tsv(x = ., path = "private.haplotypes.tsv")
+    readr::write_tsv(x = ., file = "private.haplotypes.tsv")
 
   res$private.haplotypes.summary <- res$private.haplotypes %>%
     dplyr::group_by(STRATA) %>%
@@ -100,7 +100,7 @@ private_haplotypes <- function(data, strata = NULL, verbose = TRUE) {
     dplyr::ungroup(.) %>%
     tibble::add_row(.data = ., STRATA = "OVERALL", n = sum(.$n)) %>%
     dplyr::mutate(PRIVATE_HAPLOTYPES = stringi::stri_join(STRATA, " = ", n)) %>%
-    readr::write_tsv(x = ., path = "private.haplotypes.summary.tsv")
+    readr::write_tsv(x = ., file = "private.haplotypes.summary.tsv")
 
   message("Number of private haplotypes = ", nrow(res$private.haplotypes))
   message("Strata with the highest number of private haplotypes = ", res$private.haplotypes.summary$STRATA[res$private.haplotypes.summary$n == max(res$private.haplotypes.summary$n)])

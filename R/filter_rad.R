@@ -535,7 +535,7 @@ filter_rad <- function(
   } else {
     set.seed(random.seed)
   }
-  readr::write_lines(x = random.seed, path = file.path(radiator.folder, "random.seed"))
+  readr::write_lines(x = random.seed, file = file.path(radiator.folder, "random.seed"))
   if (verbose) message("File written: random.seed (", random.seed,")")
 
   # Filter parameter file: generate --------------------------------------------
@@ -907,7 +907,7 @@ filter_rad <- function(
   #     dplyr::mutate(RANDOM_SEED = random.seed) %>%
   #     readr::write_tsv(
   #       x = .,
-  #       path = file.path(path.folder, subsample.filename))
+  #       file = file.path(path.folder, subsample.filename))
   #   markers.subsampled <- NULL
   # } else {
   #   variant.select <- NULL

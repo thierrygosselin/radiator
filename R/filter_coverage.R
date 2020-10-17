@@ -305,7 +305,7 @@ filter_coverage <- function(
       ) %>%
       readr::write_tsv(
         x = .,
-        path = file.path(path.folder, "coverage.low.helper.table.tsv"))
+        file = file.path(path.folder, "coverage.low.helper.table.tsv"))
 
     if (nrow(helper.table.low) > 1) {
       markers.plot.low <- ggplot2::ggplot(
@@ -349,7 +349,7 @@ filter_coverage <- function(
       ) %>%
       readr::write_tsv(
         x = .,
-        path = file.path(path.folder, "coverage.high.helper.table.tsv"))
+        file = file.path(path.folder, "coverage.high.helper.table.tsv"))
 
     if (nrow(helper.table.high) > 1) {
       markers.plot.high <- ggplot2::ggplot(

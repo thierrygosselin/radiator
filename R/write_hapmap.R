@@ -119,5 +119,5 @@ write_hapmap <- function(
   }
 
   # Write the prunned vcf to the file ------------------------------------------
-  suppressWarnings(readr::write_tsv(x = data, path = filename))
+  suppressWarnings(readr::write_tsv(x = data, file = filename))
 }# end write_vcf

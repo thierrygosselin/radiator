@@ -487,7 +487,7 @@ plot_upset <- function(
       ) %>%
       data.frame(.)#UpSetR requires data.frame
 
-    readr::write_tsv(x = plot.data, path = stringi::stri_join(plot.filename, ".tsv"))
+    readr::write_tsv(x = plot.data, file = stringi::stri_join(plot.filename, ".tsv"))
     SeqArray::seqSetFilter(
       object = x,
       sample.id = sample.bk,

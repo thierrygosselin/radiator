@@ -303,7 +303,7 @@ radiator_colony <- function(
 
   # Line 1 = Dataset name-------------------------------------------------------
   dataset.opt <- "`My first COLONY run`                ! Dataset name\n"
-  readr::write_file(x = dataset.opt, path = filename, append = FALSE)
+  readr::write_file(x = dataset.opt, file = filename, append = FALSE)
 
   # Line 2 = Output filename----------------------------------------------------
   colony.output.filename <- stringi::stri_replace_all_fixed(
@@ -311,51 +311,51 @@ radiator_colony <- function(
     pattern = ".dat",
     replacement = "")
   colony.output.filename <- paste(colony.output.filename, "         ! Output file name\n")
-  readr::write_file(x = colony.output.filename, path = filename, append = TRUE)
+  readr::write_file(x = colony.output.filename, file = filename, append = TRUE)
 
   # Line 3 = Offspring number---------------------------------------------------
   off.num.opt <- paste(nrow(data), "                                  ! Number of offspring in the sample\n", sep = "")
-  readr::write_file(x = off.num.opt, path = filename, append = TRUE)
+  readr::write_file(x = off.num.opt, file = filename, append = TRUE)
 
   # Line 4 = Number of loci-----------------------------------------------------
   marker.num.opt <- paste(marker.num, "                                 ! Number of loci\n", sep = "")
-  readr::write_file(x = marker.num.opt, path = filename, append = TRUE)
+  readr::write_file(x = marker.num.opt, file = filename, append = TRUE)
 
   # Line 5 = Seed random number generator  -------------------------------------
   seed.opt <- "1234                                 ! Seed for random number generator\n"
-  readr::write_file(x = seed.opt, path = filename, append = TRUE)
+  readr::write_file(x = seed.opt, file = filename, append = TRUE)
 
   # Line 6 = Updating allele frequency------------------------------------------
   update.allele.freq.opt <- "0                                    ! 0/1=Not updating/updating allele frequency\n"
-  readr::write_file(x = update.allele.freq.opt, path = filename, append = TRUE)
+  readr::write_file(x = update.allele.freq.opt, file = filename, append = TRUE)
 
   # Line 7 = Dioecious/Monoecious species---------------------------------------
   dioecious.opt <- "2                                    ! 2/1=Dioecious/Monoecious species\n"
-  readr::write_file(x = dioecious.opt, path = filename, append = TRUE)
+  readr::write_file(x = dioecious.opt, file = filename, append = TRUE)
 
   # Line 8 = inbreeding---------------------------------------------------------
   inbreeding.opt <- paste(inbreeding, "                                    ! 0/1=No inbreeding/inbreeding\n", sep = "")
-  readr::write_file(x = inbreeding.opt, path = filename, append = TRUE)
+  readr::write_file(x = inbreeding.opt, file = filename, append = TRUE)
 
   # Line 9 = Ploidy------------------------------------------------------------
   ploidy.opt <- "0                                    ! 0/1=Diploid species/HaploDiploid species\n"
-  readr::write_file(x = ploidy.opt, path = filename, append = TRUE)
+  readr::write_file(x = ploidy.opt, file = filename, append = TRUE)
 
   # Line 10 = Mating system (polygamous: 0, monogamous: 1).---------------------
   mating.opt <- paste(mating.sys.males,"  ", mating.sys.females, "                                 ! 0/1=Polygamy/Monogamy for males & females\n", sep = "")
-  readr::write_file(x = mating.opt, path = filename, append = TRUE)
+  readr::write_file(x = mating.opt, file = filename, append = TRUE)
 
   # Line 11 = Clone inference---------------------------------------------------
   clone.opt <- paste(clone, "                                    ! 0/1=Clone inference =No/Yes\n", sep = "")
-  readr::write_file(x = clone.opt, path = filename, append = TRUE)
+  readr::write_file(x = clone.opt, file = filename, append = TRUE)
 
   # Line 12 = Sibship size scaling----------------------------------------------
   sib.size.scal.opt <- "1                                    ! 0/1=Full sibship size scaling =No/Yes\n"
-  readr::write_file(x = sib.size.scal.opt, path = filename, append = TRUE)
+  readr::write_file(x = sib.size.scal.opt, file = filename, append = TRUE)
 
   # Line 13 = Sibship prior indicator (Integer), average paternal sibship size (Real, optional), average maternal sibship size (Real, optional)
   sib.prior.opt <- "0 0 0                                ! 0, 1, 2, 3 = No, weak, medium, strong sibship size prior; mean paternal & maternal sibship size\n"
-  readr::write_file(x = sib.prior.opt, path = filename, append = TRUE)
+  readr::write_file(x = sib.prior.opt, file = filename, append = TRUE)
 
   # Line 14 = Population allele frequency indicator-----------------------------
   if (is.null(allele.freq)) {
@@ -363,7 +363,7 @@ radiator_colony <- function(
   } else {
     allele.freq.ind.opt <- "1                                    ! 0/1=Unknown/Known population allele frequency\n"
   }
-  readr::write_file(x = allele.freq.ind.opt, path = filename, append = TRUE)
+  readr::write_file(x = allele.freq.ind.opt, file = filename, append = TRUE)
 
 
   # Line 15 and more------------------------------------------------------------
@@ -373,66 +373,66 @@ radiator_colony <- function(
   # If someone finds a beter to do all this, I'm all in!
 
   if (!is.null(allele.freq)) {
-    readr::write_file(x = paste0(paste0(allele.per.locus, collapse = " "), "  !Number of alleles per locus\n"), path = filename, append = TRUE)
+    readr::write_file(x = paste0(paste0(allele.per.locus, collapse = " "), "  !Number of alleles per locus\n"), file = filename, append = TRUE)
     utils::write.table(x = freq, file = filename, append = TRUE, quote = FALSE, row.names = FALSE, col.names = FALSE)
   }
 
   # Number of runs--------------------------------------------------------------
   num.run.opt <- "1                                    ! Number of runs\n"
-  readr::write_file(x = num.run.opt, path = filename, append = TRUE)
+  readr::write_file(x = num.run.opt, file = filename, append = TRUE)
 
   # Length of run --------------------------------------------------------------
   # give a value of 1, 2, 3, 4 to indicate short, medium, long, very long run
   run.length.opt <- paste(run.length, "                                    ! Length of run\n", sep = "")
-  readr::write_file(x = run.length.opt, path = filename, append = TRUE)
+  readr::write_file(x = run.length.opt, file = filename, append = TRUE)
 
   # Monitor method (Time in second)---------------------------------------------
   monitor.met.opt <- "0                                    ! 0/1=Monitor method by Iterate\n"
-  readr::write_file(x = monitor.met.opt, path = filename, append = TRUE)
+  readr::write_file(x = monitor.met.opt, file = filename, append = TRUE)
 
 
   # Monitor interval (Time in second)-------------------------------------------
   monitor.int.opt <- "10000                                ! Monitor interval in Iterate\n"
-  readr::write_file(x = monitor.int.opt, path = filename, append = TRUE)
+  readr::write_file(x = monitor.int.opt, file = filename, append = TRUE)
 
   # WindowsGUI/DOS, 0 when running Colony in DOS mode or on other platforms-----
   windows.gui.opt <- "0                                    ! non-Windows version\n"
-  readr::write_file(x = windows.gui.opt, path = filename, append = TRUE)
+  readr::write_file(x = windows.gui.opt, file = filename, append = TRUE)
 
   # Analysis method : ----------------------------------------------------------
   # 0, 1 or 2 for Pairwise-Likelihood score (PLS), full likelihood method (FL),
   # or the FL and PLS combined method (FPLS). More on these methods are explained
   # above in the Windows GUI data input section.
   analysis.opt <- paste(analysis, "                                    ! Analysis 0 (Pairwise-Likelihood Score), 1 (Full Likelihood), 2 (combined Pairwise-Likelihood Score and Full Likelihood)\n", sep = "")
-  readr::write_file(x = analysis.opt, path = filename, append = TRUE)
+  readr::write_file(x = analysis.opt, file = filename, append = TRUE)
 
   # Precision-------------------------------------------------------------------
   precision.opt <- "3                                    ! 1/2/3=low/medium/high Precision for Full likelihood\n"
-  readr::write_file(x = precision.opt, path = filename, append = TRUE)
+  readr::write_file(x = precision.opt, file = filename, append = TRUE)
 
   # Marker IDs/Names------------------------------------------------------------
   # snp.id <- seq(from = 1, to = marker.number, by = 1)
   # markers.name.opt <- as.character(c(markers.name, "        ! Marker IDs\n"))
-  # readr::write_file(x = markers.name.opt, path = filename, append = TRUE)
+  # readr::write_file(x = markers.name.opt, file = filename, append = TRUE)
   markers.name.opt <- stringi::stri_join(markers.name, collapse = " ")
   markers.name.opt <- stringi::stri_join(markers.name.opt, "! Marker IDs\n")
-  readr::write_file(x = markers.name.opt, path = filename, append = TRUE)
+  readr::write_file(x = markers.name.opt, file = filename, append = TRUE)
 
   # Marker types ---------------------------------------------------------------
   # marker.type (codominant/dominant)
   marker.type.opt <- stringi::stri_join(rep(0, marker.num), collapse = " ")
   marker.type.opt <- stringi::stri_join(marker.type.opt, "  ! Marker types, 0/1=Codominant/Dominant\n")
-  readr::write_file(x = marker.type.opt, path = filename, append = TRUE)
+  readr::write_file(x = marker.type.opt, file = filename, append = TRUE)
 
   # Allelic dropout rates-------------------------------------------------------
   dropout <- stringi::stri_join(rep(allelic.dropout, marker.num), collapse = " ")
   dropout <- stringi::stri_join(dropout, "     ! Allelic dropout rate at each locus\n")
-  readr::write_file(x = dropout, path = filename, append = TRUE)
+  readr::write_file(x = dropout, file = filename, append = TRUE)
 
   # Error rates-----------------------------------------------------------------
   error <- stringi::stri_join(rep(error.rate, marker.num), collapse = " ")
   error <- stringi::stri_join(error, "     ! False allele rate\n\n")
-  readr::write_file(x = error, path = filename, append = TRUE)
+  readr::write_file(x = error, file = filename, append = TRUE)
 
   # Offspring IDs and genotype--------------------------------------------------
   utils::write.table(x = data, file = filename, sep = " ", append = TRUE, col.names = FALSE, row.names = FALSE, quote = FALSE)
@@ -441,105 +441,105 @@ radiator_colony <- function(
   # in the candidate males and females. The two numbers must be provided even if
   # there are no candidate males or/and females.
   prob.opt <- "\n\n0  0                                 ! Prob. of dad/mum included in the candidates\n"
-  readr::write_file(x = prob.opt, path = filename, append = TRUE)
+  readr::write_file(x = prob.opt, file = filename, append = TRUE)
 
   # Numbers of candidate males and females--------------------------------------
   candidate.opt <- "0 0                                  ! Numbers of candidate males & females\n"
-  readr::write_file(x = candidate.opt, path = filename, append = TRUE)
+  readr::write_file(x = candidate.opt, file = filename, append = TRUE)
 
   # PRINT ALL REMAINING COLONY OPTIONS -----------------------------------------
   if (print.all.colony.opt) {
     message("Printing all COLONY options...")
     # Candidate male IDs/names and genotypes------------------------------------
     candidate.male.id.geno.opt <- "!Candidate male ID and genotypes\n"
-    readr::write_file(x = candidate.male.id.geno.opt, path = filename, append = TRUE)
+    readr::write_file(x = candidate.male.id.geno.opt, file = filename, append = TRUE)
     # Candidate female IDs/names and genotypes ----------------------------------
     candidate.female.id.geno.opt <- "!Candidate female ID and genotypes\n"
-    readr::write_file(x = candidate.female.id.geno.opt, path = filename, append = TRUE)
+    readr::write_file(x = candidate.female.id.geno.opt, file = filename, append = TRUE)
   }
 
   # Number of offspring with known paternity------------------------------------
   known.paternity.opt <- "0                                    ! Number of offspring with known father\n"
-  readr::write_file(x = known.paternity.opt, path = filename, append = TRUE)
+  readr::write_file(x = known.paternity.opt, file = filename, append = TRUE)
 
   # Known offspring-father dyad-------------------------------------------------
   if (print.all.colony.opt) {
     known.father.dyad.opt <- "! Offspring ID and known father ID (Known offspring-father dyad)\n"
-    readr::write_file(x = known.father.dyad.opt, path = filename, append = TRUE)
+    readr::write_file(x = known.father.dyad.opt, file = filename, append = TRUE)
   }
 
   # Number of offspring with known maternity------------------------------------
   known.maternity.opt <- "0                                    ! Number of offspring with known mother\n"
-  readr::write_file(x = known.maternity.opt, path = filename, append = TRUE)
+  readr::write_file(x = known.maternity.opt, file = filename, append = TRUE)
 
   # Known offspring-mother dyad-------------------------------------------------
   if (print.all.colony.opt) {
     known.mother.dyad.opt <- "! Offspring ID and known mother ID (Known offspring-mother dyad)\n"
-    readr::write_file(x = known.mother.dyad.opt, path = filename, append = TRUE)
+    readr::write_file(x = known.mother.dyad.opt, file = filename, append = TRUE)
   }
 
   # Number of known paternal sibships (Integer)---------------------------------
   known.paternal.sibships.opt <- "0                                    ! Number of known paternal sibships\n"
-  readr::write_file(x = known.paternal.sibships.opt, path = filename, append = TRUE)
+  readr::write_file(x = known.paternal.sibships.opt, file = filename, append = TRUE)
 
 
   # Paternal sibship size and members (Integer, String, optional).--------------
   if (print.all.colony.opt) {
     known.paternal.sibships.size.opt <- "! Paternal sibship size and members\n"
-    readr::write_file(x = known.paternal.sibships.size.opt, path = filename, append = TRUE)
+    readr::write_file(x = known.paternal.sibships.size.opt, file = filename, append = TRUE)
   }
 
   # Number of known maternal sibships (Integer)---------------------------------
   known.maternal.sibships.opt <- "0                                    ! Number of known maternal sibships\n"
-  readr::write_file(x = known.maternal.sibships.opt, path = filename, append = TRUE)
+  readr::write_file(x = known.maternal.sibships.opt, file = filename, append = TRUE)
 
 
   # Maternal sibship size and members (Integer, String, optional).--------------
   if (print.all.colony.opt) {
     known.maternal.sibships.size.opt <- "! Maternal sibship size and members\n"
-    readr::write_file(x = known.maternal.sibships.size.opt, path = filename, append = TRUE)
+    readr::write_file(x = known.maternal.sibships.size.opt, file = filename, append = TRUE)
   }
 
   # Number of offspring with known excluded paternity (Integer). ---------------
   offspring.known.excl.paternity.opt <- "0                                    ! Number of offspring with known excluded fathers\n"
-  readr::write_file(x = offspring.known.excl.paternity.opt, path = filename, append = TRUE)
+  readr::write_file(x = offspring.known.excl.paternity.opt, file = filename, append = TRUE)
 
 
   # Excluded paternity ---------------------------------------------------------
   if (print.all.colony.opt) {
     excl.paternity.opt <- "! Offspring ID, number of excluded fathers, and excluded father IDs\n"
-    readr::write_file(x = excl.paternity.opt, path = filename, append = TRUE)
+    readr::write_file(x = excl.paternity.opt, file = filename, append = TRUE)
   }
 
   # Number of offspring with known excluded maternity (Integer). ---------------
   offspring.known.excl.maternity.opt <- "0                                    ! Number of offspring with known excluded mothers\n"
-  readr::write_file(x = offspring.known.excl.maternity.opt, path = filename, append = TRUE)
+  readr::write_file(x = offspring.known.excl.maternity.opt, file = filename, append = TRUE)
 
 
   # Excluded maternity----------------------------------------------------------
   if (print.all.colony.opt) {
     excl.maternity.opt <- "! Offspring ID, number of excluded mothers, and excluded father IDs\n"
-    readr::write_file(x = excl.maternity.opt, path = filename, append = TRUE)
+    readr::write_file(x = excl.maternity.opt, file = filename, append = TRUE)
   }
 
   # Number of offspring with known excluded paternal sibships-------------------
   offspring.known.excl.paternal.sibships.opt <- "0                                    ! Number of offspring with known excluded paternal sibships\n"
-  readr::write_file(x = offspring.known.excl.paternal.sibships.opt, path = filename, append = TRUE)
+  readr::write_file(x = offspring.known.excl.paternal.sibships.opt, file = filename, append = TRUE)
 
   # Excluded paternal siblings--------------------------------------------------
   if (print.all.colony.opt) {
     excluded.paternal.siblings.opt <- "! Excluded paternal siblings\n"
-    readr::write_file(x = excluded.paternal.siblings.opt, path = filename, append = TRUE)
+    readr::write_file(x = excluded.paternal.siblings.opt, file = filename, append = TRUE)
   }
 
   # Number of offspring with known excluded maternal sibships-------------------
   offspring.known.excl.maternal.sibships.opt <- "0                                    ! Number of offspring with known excluded maternal sibships\n"
-  readr::write_file(x = offspring.known.excl.maternal.sibships.opt, path = filename, append = TRUE)
+  readr::write_file(x = offspring.known.excl.maternal.sibships.opt, file = filename, append = TRUE)
 
   # Excluded maternal siblings--------------------------------------------------
   if (print.all.colony.opt) {
     excluded.maternal.siblings.opt <- "! Excluded maternal siblings\n"
-    readr::write_file(x = excluded.maternal.siblings.opt, path = filename, append = TRUE)
+    readr::write_file(x = excluded.maternal.siblings.opt, file = filename, append = TRUE)
   }
 }# End radiator_colony
 

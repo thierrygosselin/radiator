@@ -33,7 +33,7 @@
 #'         INDIVIDUALS = "new id you want to give",
 #'         STRATA = "fill this"
 #'     ) %>%
-#'     readr::write_tsv(x = ., path = "my.new.dart.strata.tsv")
+#'     readr::write_tsv(x = ., file = "my.new.dart.strata.tsv")
 #' }
 
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com} and Peter Grewe \email{peter.grewe@csiro.au}
@@ -99,7 +99,7 @@ extract_dart_target_id <- function(data, write = TRUE) {
       TARGET_ID = clean_ind_names(x = TARGET_ID),
       TARGET_ID = stringi::stri_trans_toupper(TARGET_ID)
     )
-  if (write) readr::write_tsv(x = dart.target.id, path = "dart.target.id.tsv")
+  if (write) readr::write_tsv(x = dart.target.id, file = "dart.target.id.tsv")
 
   # Check that DArT file as good target id written -----------------------------
   if (nrow(dart.target.id) != length(unique(dart.target.id$TARGET_ID))) {
@@ -578,7 +578,7 @@ read_dart <- function(
       date = TRUE,
       extension = "tsv")
     strata <- extract_individuals_metadata(gds = data, whitelist = TRUE)
-    readr::write_tsv(x = strata, path = strata.filename$filename)
+    readr::write_tsv(x = strata, file = strata.filename$filename)
 
     if (!is.null(strata)) {
       if (rlang::has_name(tidy.data, "TARGET_ID")) {
@@ -716,7 +716,7 @@ import_dart <- function(
 
       readr::write_tsv(
         x = strata.id.check,
-        path = problem.filename$filename)
+        file = problem.filename$filename)
       rlang::abort("\nSome of the samples in the strata are not found in the DArT file.
                      For more info: ", problem.filename$filename.short)
     }
@@ -1881,7 +1881,7 @@ merge_dart <- function(
   radiator::write_rad(data = input, path = file.path(path.folder, filename))
 
   strata <- radiator::generate_strata(data = input, pop.id = FALSE)
-  readr::write_tsv(x = strata, path = file.path(path.folder, strata.filename))
+  readr::write_tsv(x = strata, file = file.path(path.folder, strata.filename))
 
   # results --------------------------------------------------------------------
   message("\nMerged DArT file and strata file generated:")

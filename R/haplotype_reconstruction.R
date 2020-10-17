@@ -56,10 +56,10 @@ haplotype_reconstruction <- function(
     return(data)
   }
   res <- radiator_future(
-    X = markers,
-    FUN = reconstruct,
+    .x = markers,
+    .f = reconstruct,
     parallel.core = parallel.core,
-    bind.rows = TRUE,
+    flat.future = "dfr",
     data = data
   )
   # res <- radiator_parallel(

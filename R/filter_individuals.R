@@ -296,7 +296,7 @@ The maximum amount of missingness you tolerate for a sample (e.g. 0.3): ", minma
       if (n.bl > 0) {
         filter.monomorphic <- TRUE
         bl.filename <- stringi::stri_join("blacklist.individuals.missing_", file.date, ".tsv")
-        readr::write_tsv(x = bl, path = file.path(path.folder, bl.filename))
+        readr::write_tsv(x = bl, file = file.path(path.folder, bl.filename))
       }
 
       # Filter parameter file: update
@@ -413,7 +413,7 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
 
         # if (verbose) message("    number of individuals blacklisted based on heterozygosity: ", n.bl)
         bl.filename <- stringi::stri_join("blacklist.individuals.heterozygosity_", file.date, ".tsv")
-        readr::write_tsv(x = bl, path = file.path(path.folder, bl.filename))
+        readr::write_tsv(x = bl, file = file.path(path.folder, bl.filename))
         # bl.i <- update_bl_individuals(gds = data, update = bl)
         id.stats$info  %<>%
           dplyr::filter(!INDIVIDUALS %in% bl$INDIVIDUALS)
@@ -596,7 +596,7 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
         if (n.bl > 0) {
           filter.monomorphic <- TRUE
           bl.filename <- stringi::stri_join("blacklist.individuals.coverate.total_", file.date, ".tsv")
-          readr::write_tsv(x = bl, path = file.path(path.folder, bl.filename))
+          readr::write_tsv(x = bl, file = file.path(path.folder, bl.filename))
         }
         # Filter parameter file: update
         filters.parameters <- radiator_parameters(
@@ -682,7 +682,7 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
         if (n.bl > 0) {
           filter.monomorphic <- TRUE
           bl.filename <- stringi::stri_join("blacklist.individuals.coverate.median_", file.date, ".tsv")
-          readr::write_tsv(x = bl, path = file.path(path.folder, bl.filename))
+          readr::write_tsv(x = bl, file = file.path(path.folder, bl.filename))
         }
         # Filter parameter file: update
         filters.parameters <- radiator_parameters(
@@ -768,7 +768,7 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
         if (n.bl > 0) {
           filter.monomorphic <- TRUE
           bl.filename <- stringi::stri_join("blacklist.individuals.coverate.iqr_", file.date, ".tsv")
-          readr::write_tsv(x = bl, path = file.path(path.folder, bl.filename))
+          readr::write_tsv(x = bl, file = file.path(path.folder, bl.filename))
         }
         # Filter parameter file: update
         filters.parameters <- radiator_parameters(

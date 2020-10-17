@@ -155,9 +155,9 @@ write_gsi_sim <- function(
   pop.string <- as.character(unique(pop))
   for (k in pop.string) {
     readr::write_delim(x = tibble::as_tibble(stringi::stri_join("pop", k, sep = " ")),
-                       path = filename, delim = "\n", append = TRUE, col_names = FALSE)
+                       file = filename, delim = "\n", append = TRUE, col_names = FALSE)
     readr::write_delim(x = gsi_sim.split[[k]],
-                       path = filename, delim = " ", append = TRUE, col_names = FALSE)
+                       file = filename, delim = " ", append = TRUE, col_names = FALSE)
   }
 
   gsi_sim.split <- data <-pop <- pop.string <- NULL

@@ -411,7 +411,7 @@ generate_whitelist <- function(x, t, path.folder = NULL) {
             , by = "MARKERS") %>%
           readr::write_tsv(
             x = .,
-            path = blacklist.filename)
+            file = blacklist.filename)
       )
 
 
@@ -425,7 +425,7 @@ generate_whitelist <- function(x, t, path.folder = NULL) {
             radiator::write_rad(data = ., path = rad.filename) %>%
             dplyr::select(dplyr::one_of(want)) %>%
             dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-            readr::write_tsv(x = ., path = whitelist.filename))
+            readr::write_tsv(x = ., file = whitelist.filename))
       } else {
         whitelist <- suppressWarnings(
           unfiltered.data %>%
@@ -433,7 +433,7 @@ generate_whitelist <- function(x, t, path.folder = NULL) {
             radiator::write_rad(data = ., path = rad.filename) %>%
             dplyr::select(dplyr::one_of(want)) %>%
             dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-            readr::write_tsv(x = ., path = whitelist.filename))
+            readr::write_tsv(x = ., file = whitelist.filename))
       }
 
       fil.param <- update_filter_parameter(

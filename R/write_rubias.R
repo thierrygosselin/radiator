@@ -278,6 +278,6 @@ write_rubias <- function(
   }
 
   # write to disk---------------------------------------------------------------
-  if (!is.null(filename)) readr::write_tsv(x = data, path = filename)
+  if (!is.null(filename)) readr::write_tsv(x = data, file = filename)
   return(data)
 } # End write_rubias function

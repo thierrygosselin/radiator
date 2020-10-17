@@ -277,7 +277,7 @@ calibrate_alleles <- function(
   #note to myself : why not use detect_all_missing ? longer ?
   if (anyNA(data$REF)) {
     all.missing <- dplyr::filter(data, is.na(REF)) %>% dplyr::distinct(MARKERS)
-    readr::write_tsv(x = all.missing, path = "markers.missing.all.id.tsv")
+    readr::write_tsv(x = all.missing, file = "markers.missing.all.id.tsv")
     message("    number of markers missing in all individuals and removed: ", nrow(all.missing))
     data <- dplyr::filter(data, !MARKERS %in% all.missing$MARKERS)
   }
@@ -295,7 +295,7 @@ calibrate_alleles <- function(
 #' @keywords internal
 #' @export
 ref_dictionary <- function(x, parallel.core = parallel::detectCores() - 1) {
-  generate_ref <- function(x) {
+  generate_ref <- carrier::crate(function(x) {
     nuc.info <- tibble::has_name(x, "GT_VCF_NUC")
     if (nuc.info) {
       x <- dplyr::select(x, MARKERS, GT_VCF_NUC) %>%
@@ -365,7 +365,7 @@ ref_dictionary <- function(x, parallel.core = parallel::detectCores() - 1) {
     ) %>%
       dplyr::arrange(MARKERS, INTEGERS)
     return(x)
-  }#End generate_ref
+  })#End generate_ref
 
   x <- dplyr::left_join(
     x,
@@ -373,11 +373,11 @@ ref_dictionary <- function(x, parallel.core = parallel::detectCores() - 1) {
       dplyr::mutate(SPLIT_VEC = split_vec_row(x = ., cpu.rounds = 3, parallel.core = parallel.core))
     , by = "MARKERS") %>%
     radiator_future(
-      X = .,
-      FUN = generate_ref,
+      .x = .,
+      .f = generate_ref,
       parallel.core = parallel.core,
-      split.tibble = .$SPLIT_VEC,
-      bind.rows = TRUE
+      split.with = "SPLIT_VEC",
+      flat.future = "dfr"
     )
     #
     # split(x = ., f = .$SPLIT_VEC) %>%
@@ -402,7 +402,7 @@ integrate_ref <- function(
   parallel.core = parallel::detectCores() - 1
 ) {
   # function needed
-  new_gt <- function(
+  new_gt <- carrier::crate(function(
     x,
     conversion.df = NULL,
     biallelic = TRUE,
@@ -501,7 +501,7 @@ integrate_ref <- function(
       }
     }
     return(x)
-  }#End new_gt
+  })#End new_gt
 
   nuc.info <- tibble::has_name(x, "GT_VCF_NUC")
   if (nuc.info) {
@@ -512,11 +512,11 @@ integrate_ref <- function(
   new.gt <- new.gt %>%
     dplyr::mutate(SPLIT_VEC = split_vec_row(x = ., cpu.rounds = 3, parallel.core = parallel.core)) %>%
     radiator_future(
-      X = .,
-      FUN = new_gt,
+      .x = .,
+      .f = new_gt,
       parallel.core = parallel.core,
-      split.tibble = .$SPLIT_VEC,
-      bind.rows = TRUE,
+      split.with = "SPLIT_VEC",
+      flat.future = "dfr",
       conversion.df = conversion.df,
       biallelic = biallelic
     )
@@ -555,23 +555,23 @@ integrate_ref <- function(
 #' @export
 
 generate_vcf_nuc <- function(x, parallel.core = parallel::detectCores() - 1) {
-  vcf_nuc <- function(x) {
+  vcf_nuc <- carrier::crate(function(x) {
     x <- dplyr::select(x, -SPLIT_VEC) %>%
       dplyr::mutate(
         GT_VCF_NUC = dplyr::if_else(
           GT_BIN == "0", stringi::stri_join(REF, REF, sep = "/"),
           dplyr::if_else(GT_BIN == "2", stringi::stri_join(ALT, ALT, sep = "/"),
                          stringi::stri_join(REF, ALT, sep = "/")), "./."))
-  }# End vcf_nuc
+  })# End vcf_nuc
 
   x <- x %>%
     dplyr::mutate(SPLIT_VEC = split_vec_row(x = ., cpu.rounds = 3, parallel.core = parallel.core)) %>%
     radiator_future(
-      X = .,
-      FUN = vcf_nuc,
+      .x = .,
+      .f = vcf_nuc,
       parallel.core = parallel.core,
-      split.tibble = .$SPLIT_VEC,
-      bind.rows = TRUE
+      split.with = "SPLIT_VEC",
+      flat.future = "dfr"
     )
     # split(x = ., f = .$SPLIT_VEC) %>%
     # radiator_parallel_mc(

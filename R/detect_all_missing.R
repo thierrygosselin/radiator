@@ -86,7 +86,7 @@ detect_all_missing <- function(data) {
     res$data <- dplyr::filter(data, !MARKERS %in% blacklist.markers$MARKERS)
     readr::write_tsv(
       x = blacklist.markers,
-      path = "blacklist.markers.all.missing.tsv"
+      file = "blacklist.markers.all.missing.tsv"
     )
     res$blacklist.markers.all.missing <- blacklist.markers
     res$marker.problem <- TRUE

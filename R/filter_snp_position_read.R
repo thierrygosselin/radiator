@@ -198,7 +198,7 @@ filter_snp_position_read <- function(
       message("\n\n", problem.data)
       readr::write_lines(
         x = problem.data,
-        path = file.path(path.folder, "README"))
+        file = file.path(path.folder, "README"))
       return(data)
     }
 
@@ -278,7 +278,7 @@ filter_snp_position_read <- function(
 
     readr::write_tsv(
       x = helper.table,
-      path = file.path(path.folder, "snp.position.read.helper.table.tsv"))
+      file = file.path(path.folder, "snp.position.read.helper.table.tsv"))
 
     # figures
     markers.plot <- ggplot2::ggplot(
@@ -343,7 +343,7 @@ filter_snp_position_read <- function(
     #   choices = c("outliers", "q75", "iqr", "all"),
     #   several.ok = FALSE)
 
-    # readr::write_tsv(x = stats, path = "testing.stats.tsv")
+    # readr::write_tsv(x = stats, file = "testing.stats.tsv")
 
     # Filtering ----------------------------------------------------------------
     # if (filter.snp.position.read == "all") not necessary wl already exists...
@@ -365,7 +365,7 @@ filter_snp_position_read <- function(
     # Whitelist and Blacklist of markers
     readr::write_tsv(
       x = wl,
-      path = file.path(path.folder, "whitelist.markers.snp.position.read.tsv"),
+      file = file.path(path.folder, "whitelist.markers.snp.position.read.tsv"),
       append = FALSE, col_names = TRUE)
 
     bl %<>% dplyr::filter(!MARKERS %in% wl$MARKERS) %>%
@@ -375,7 +375,7 @@ filter_snp_position_read <- function(
     if (nrow(bl) > 0) {
       readr::write_tsv(
         x = bl,
-        path = file.path(path.folder, "blacklist.markers.snp.position.read.tsv"),
+        file = file.path(path.folder, "blacklist.markers.snp.position.read.tsv"),
         append = FALSE, col_names = TRUE)
     }
 

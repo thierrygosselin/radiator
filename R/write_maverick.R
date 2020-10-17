@@ -162,41 +162,41 @@ write_maverick <- function(
   writeLines(text = maverick.header, con = filename.connection, sep = "\n")
   # writeLines(text = stringi::stri_join(markers, sep = "\t", collapse = "\t"), con = filename.connection, sep = "\n")
   close(filename.connection) # close the connection
-  readr::write_tsv(x = data, path = filename, append = TRUE, col_names = TRUE)
+  readr::write_tsv(x = data, file = filename, append = TRUE, col_names = TRUE)
 
   # Parameter file -------------------------------------------------------------
   message("Generating MavericK parameter file")
-  readr::write_lines(x = "\n#### Data properties", path = parameter.filename)
+  readr::write_lines(x = "\n#### Data properties", file = parameter.filename)
   tibble::tibble(KEY = c("headerRow_on", "popCol_on", "ploidyCol_on", "ploidy", "missingData", "dataFormat"),
                               VALUE = c("t", "t", "f", "2", "-9", "2")) %>%
-    readr::write_tsv(x = ., path = parameter.filename, append = TRUE, col_names = FALSE)
+    readr::write_tsv(x = ., file = parameter.filename, append = TRUE, col_names = FALSE)
 
-  readr::write_lines(x = "\n\n#### Model parameters", path = parameter.filename, append = TRUE)
+  readr::write_lines(x = "\n\n#### Model parameters", file = parameter.filename, append = TRUE)
   tibble::tibble(KEY = c("Kmin", "Kmax", "admix_on", "fixAlpha_on", "alpha", "alphaPropSD"),
                               VALUE = c("1", n.pop + 2, "t", "t", "1.0", "0.10")) %>%
-    readr::write_tsv(x = ., path = parameter.filename, append = TRUE, col_names = FALSE)
+    readr::write_tsv(x = ., file = parameter.filename, append = TRUE, col_names = FALSE)
 
-  readr::write_lines(x = "\n\n#### Simulation parameters", path = parameter.filename, append = TRUE)
+  readr::write_lines(x = "\n\n#### Simulation parameters", file = parameter.filename, append = TRUE)
   tibble::tibble(KEY = c("exhaustive_on", "mainRepeats", "mainBurnin", "mainSamples",
                          "thermodynamic_on", "thermodynamicRungs",
                          "thermodynamicBurnin", "thermodynamicSamples",
                          "EMalgorithm_on", "EMrepeats", "EMiterations"),
                  VALUE = c("f", "3", "500", "5000", "t", "20", "500", "1000", "t", "100", "100")) %>%
-    readr::write_tsv(x = ., path = parameter.filename, append = TRUE, col_names = FALSE)
+    readr::write_tsv(x = ., file = parameter.filename, append = TRUE, col_names = FALSE)
 
-  readr::write_lines(x = "\n\n#### Basic output properties", path = parameter.filename, append = TRUE)
+  readr::write_lines(x = "\n\n#### Basic output properties", file = parameter.filename, append = TRUE)
   tibble::tibble(KEY = c("outputLog_on", "outputLikelihood_on", "outputQmatrix_ind_on",
                          "outputQmatrix_pop_on",
                          "outputQmatrixError_ind_on", "outputQmatrixError_pop_on",
                          "outputEvidence_on", "outputEvidenceNormalised_on",
                          "outputEvidenceDetails_on"),
                  VALUE = c("t", "t", "t", "t", "t", "t", "t", "t", "t")) %>%
-    readr::write_tsv(x = ., path = parameter.filename, append = TRUE, col_names = FALSE)
+    readr::write_tsv(x = ., file = parameter.filename, append = TRUE, col_names = FALSE)
 
-  readr::write_lines(x = "\n\n#### Additional arguments", path = parameter.filename, append = TRUE)
+  readr::write_lines(x = "\n\n#### Additional arguments", file = parameter.filename, append = TRUE)
   # generate output folder
   tibble::tibble(KEY = c("outputRoot", "inputRoot"), VALUE = c(output.folder, input.folder)) %>%
-    readr::write_tsv(x = ., path = parameter.filename, append = TRUE, col_names = FALSE)
+    readr::write_tsv(x = ., file = parameter.filename, append = TRUE, col_names = FALSE)
 
 return(NULL)
 } # end write_maverick

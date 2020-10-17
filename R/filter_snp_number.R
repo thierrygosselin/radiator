@@ -195,7 +195,7 @@ filter_snp_number <- function(
       message("\n\n", problem.data)
       readr::write_lines(
         x = problem.data,
-        path = file.path(path.folder, "README"))
+        file = file.path(path.folder, "README"))
       return(data)
     }
 
@@ -302,7 +302,7 @@ filter_snp_number <- function(
       ) %>%
       readr::write_tsv(
         x = .,
-        path = file.path(path.folder, "snp.per.locus.helper.table.tsv"))
+        file = file.path(path.folder, "snp.per.locus.helper.table.tsv"))
 
     # figures
     markers.plot <- ggplot2::ggplot(
@@ -384,13 +384,13 @@ filter_snp_number <- function(
     }
     readr::write_tsv(
       x = wl,
-      path = file.path(path.folder, "whitelist.snp.per.locus.tsv"),
+      file = file.path(path.folder, "whitelist.snp.per.locus.tsv"),
       append = FALSE, col_names = TRUE)
     bl %<>% dplyr::setdiff(wl) %>% dplyr::mutate(FILTERS = "filter.snp.number")
 
     readr::write_tsv(
       x = bl,
-      path = file.path(path.folder, "blacklist.snp.per.locus.tsv"),
+      file = file.path(path.folder, "blacklist.snp.per.locus.tsv"),
       append = FALSE, col_names = TRUE)
     # saving whitelist and blacklist
     if (verbose) message("File written: whitelist.markers.genotyping.tsv")

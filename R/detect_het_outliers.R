@@ -259,7 +259,7 @@ res$m.post.means <- dplyr::filter(res$m.nreps, iter > burn.in) %>%
 tibble::tibble(
   OVERALL_GENOTYPING_ERROR_RATE = res$overall.genotyping.error.rate$overall.genotyping.error.rate,
   OVERALL_HETEROZYGOTES_MISCALL_RATE = res$m.post.means$POSTERIOR_MEAN) %>%
-  readr::write_tsv(x = ., path = file.path(path.folder, "overall_error_rate.tsv"))
+  readr::write_tsv(x = ., file = file.path(path.folder, "overall_error_rate.tsv"))
 
 message("\n    Overall genotyping error rate = ", round(res$overall.genotyping.error.rate, digits = 4))
 message("    Overall heterozygotes miscall rate = ", round(res$m.post.means, digits = 4))
@@ -382,7 +382,7 @@ summarise_genotypes <- function(data, path.folder = NULL) {
 
   rd <- NULL
 
-  readr::write_tsv(x = data, path = file.path(path.folder, "genotypes.summary.tsv"))
+  readr::write_tsv(x = data, file = file.path(path.folder, "genotypes.summary.tsv"))
   return(data)
 }#End summarise_genotypes
 

@@ -118,11 +118,11 @@ write_hzar <- function(
           SPLIT_VEC = dplyr::ntile(x = 1:nrow(.), n = parallel.core * 3))
       , by = "MARKERS") %>%
     radiator_future(
-      X = .,
-      FUN = generate_hzar,
+      .x = .,
+      .f = generate_hzar,
       parallel.core = parallel.core,
-      split.tibble = .$SPLIT_VEC,
-      bind.rows = TRUE
+      split.with = "SPLIT_VEC",
+      flat.future = "dfr"
     ) %>%
     # split(x = ., f = .$SPLIT_VEC) %>%
     # radiator_parallel(
@@ -162,8 +162,8 @@ write_hzar <- function(
     file.date
     )
   )
-  readr::write_lines(x = header.line, path = filename)
-  readr::write_csv(x = output, path = filename, append = TRUE, col_names = TRUE)
+  readr::write_lines(x = header.line, file = filename)
+  readr::write_csv(x = output, file = filename, append = TRUE, col_names = TRUE)
 
   message("writing HZAR file, (", filename,") with:
     Number of populations: ", n.pop, "\n    Number of individuals: ", n.ind,
@@ -181,7 +181,7 @@ write_hzar <- function(
 #' @keywords internal
 #' @export
 
-generate_hzar <- function(x) {
+generate_hzar <- carrier::crate(function(x) {
   freq.info <- x %>%
     dplyr::mutate(
       A1 = stringi::stri_sub(GT, 1, 3),
@@ -210,6 +210,6 @@ generate_hzar <- function(x) {
     dplyr::bind_rows(sample.n.info)
   sample.n.info <- NULL
   return(freq.info)
-}#End generate_hzar
+})#End generate_hzar
 
 

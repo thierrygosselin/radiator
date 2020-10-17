@@ -242,7 +242,7 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
 
     individuals <- dplyr::select(bad.id, INDIVIDUALS)
 
-    readr::write_tsv(x = bad.id, path = "radiator_genepop_id_conversion.tsv")
+    readr::write_tsv(x = bad.id, file = "radiator_genepop_id_conversion.tsv")
   }
 
   # isolate the genotypes
@@ -350,7 +350,7 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
 
   # writing to a file  ---------------------------------------------------------
   if (!is.null(filename)) {
-    readr::write_tsv(x = data, path = filename, col_names = TRUE)
+    readr::write_tsv(x = data, file = filename, col_names = TRUE)
   }
 
   return(data)
@@ -516,7 +516,7 @@ write_genepop <- function(
   }
   close(filename.connection) # close the connection
   for (i in 1:length(data)) {
-    readr::write_delim(x = as.data.frame("pop"), path = filename, delim = "\n", append = TRUE, col_names = FALSE)
-    readr::write_delim(x = data[[i]], path = filename, delim = " ", append = TRUE, col_names = FALSE)
+    readr::write_delim(x = as.data.frame("pop"), file = filename, delim = "\n", append = TRUE, col_names = FALSE)
+    readr::write_delim(x = data[[i]], file = filename, delim = " ", append = TRUE, col_names = FALSE)
   }
 }# End write_genepop

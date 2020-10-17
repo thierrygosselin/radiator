@@ -49,7 +49,7 @@ erase_genotypes <- function(tidy.vcf.file, haplotypes.file, read.depth.threshold
     dplyr::select(LOCUS, POS, POP_ID, INDIVIDUALS) %>%
     dplyr::arrange(LOCUS, POS, POP_ID, INDIVIDUALS)
 
-  readr::write_tsv(x = blacklist, path = "blacklist.genotypes.erased.txt", append = FALSE, col_names = T)
+  readr::write_tsv(x = blacklist, file = "blacklist.genotypes.erased.txt", append = FALSE, col_names = T)
 
   # interesting stats.
   erased.genotype.number <- length(blacklist$INDIVIDUALS)
@@ -93,7 +93,7 @@ erase_genotypes <- function(tidy.vcf.file, haplotypes.file, read.depth.threshold
     message("Saving the tidy vcf not selected")
   } else {
     message("Writing the file to your working directory, this may take some time...")
-    readr::write_tsv(x = tidy.vcf.file, path = filename, append = FALSE, col_names = TRUE)
+    readr::write_tsv(x = tidy.vcf.file, file = filename, append = FALSE, col_names = TRUE)
   }
 
   # Haplotype file -------------------------------------------------------------

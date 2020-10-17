@@ -140,8 +140,5 @@ parallel_core_opt <- function(parallel.core = NULL, max.core = NULL) {
   } else {
     parallel.core.opt <- min(parallel.core, floor(max.core / 2) * 2)
   }
-  parallel.core.opt
   return(parallel.core.opt)
 }#End parallel_core_opt
-
-

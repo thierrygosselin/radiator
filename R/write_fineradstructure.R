@@ -134,7 +134,7 @@ write_fineradstructure <- function(data, strata = NULL, filename = NULL) {
       # NEW_POP = LETTERS[NEW_POP],
       ID = stringi::stri_join(POP_ID, as.integer(factor(INDIVIDUALS)))
     ) %>%
-    readr::write_tsv(x = ., path = dic.filename)
+    readr::write_tsv(x = ., file = dic.filename)
 
   message("File written: ", dic.filename)
 
@@ -173,7 +173,7 @@ write_fineradstructure <- function(data, strata = NULL, filename = NULL) {
     ) %>%
     dplyr::arrange(LOCUS) %>%
     dplyr::select(-LOCUS)
-  readr::write_tsv(x = data, path = filename, na = "")
+  readr::write_tsv(x = data, file = filename, na = "")
   message("File written: ", filename)
   return(data)
 } # End write_fineradstructure

@@ -151,7 +151,7 @@ private_alleles <- function(data, strata = NULL, verbose = TRUE) {
     dplyr::ungroup(.) %>%
     dplyr::select(STRATA, MARKERS, ALLELE) %>%
     dplyr::arrange(STRATA, MARKERS, ALLELE) %>%
-    readr::write_tsv(x = ., path = "private.alleles.tsv")
+    readr::write_tsv(x = ., file = "private.alleles.tsv")
 
   private.summary <- private.search %>%
     dplyr::group_by(STRATA) %>%
@@ -159,7 +159,7 @@ private_alleles <- function(data, strata = NULL, verbose = TRUE) {
     dplyr::ungroup(.) %>%
     tibble::add_row(.data = ., STRATA = "OVERALL", n = sum(.$n)) %>%
     dplyr::rename(PRIVATE_ALLELES = n) %>%
-    readr::write_tsv(x = ., path = "private.alleles.summary.tsv")
+    readr::write_tsv(x = ., file = "private.alleles.summary.tsv")
 
   if(nrow(private.summary) > 0) {
     message("Number of private alleles per strata:")

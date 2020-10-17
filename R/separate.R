@@ -308,7 +308,7 @@ separate_gt <- function(
 ) {
   # sep <-  "/"
   # x <- input2
-  separate_genotype <- function(x, sep, gt, alleles.naming, gather, haplotypes, exclude){
+  separate_genotype <-  carrier::crate(function(x, sep, gt, alleles.naming, gather, haplotypes, exclude){
     res <- tidyr::separate(
       data = x,
       col = gt,
@@ -339,17 +339,17 @@ separate_gt <- function(
     }
 
     return(res)
-  }
+  })#End separate_genotype
 
   if (parallel.core > 1) {
     n.row <- nrow(x)
     split.vec <- as.integer(floor((parallel.core * cpu.rounds * (1:n.row - 1) / n.row) + 1))
     res <- radiator_future(
-      X = x,
-      FUN = separate_genotype,
+      .x = x,
+      .f = separate_genotype,
       parallel.core = parallel.core,
-      split.tibble = split.vec,
-      bind.rows = TRUE,
+      split.with = split.vec,
+      flat.future = "dfr",
       sep = sep,
       gt = gt,
       alleles.naming = alleles.naming,
@@ -394,24 +394,23 @@ separate_gt <- function(
 # required function that is identical to data.table::tstrsplit
 radiator_split_tibble <- function(x, parallel.core = parallel::detectCores() - 1) {
 
-  split_gt <- function(x) {
+  split_gt <- carrier::crate(function(x) {
     x %<>%
       as.character(x = .) %>%
       stringi::stri_split_fixed(str = ., pattern = "/") %>% # a bit faster than strsplit with large dataset
-      # strsplit(x = ., split = "/", fixed = TRUE) %>%
       stats::setNames(object = ., nm = paste0("V", seq_along(.))) %>%
       tibble::as_tibble(x = .) %>%
       t(x = .) %>%
       tibble::as_tibble(x = .)
-  }#End split_gt
+  })#End split_gt
 
   x %<>%
     tibble::as_tibble(x = .) %>%
     radiator_future(
-      X = .,
-      FUN = split_gt,
+      .x = .,
+      .f = split_gt,
       parallel.core = parallel.core,
-      bind.rows = TRUE
+      flat.future = "dfc"
     )
     # radiator_parallel_mc(
     #   X = .,

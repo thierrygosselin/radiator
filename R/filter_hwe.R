@@ -487,7 +487,7 @@ filter_hwe <- function(
           `HWD*****` = length(MARKERS[`****` & !is.na(`*****`)])
         ) %>%
         dplyr::ungroup(.) %>%
-        readr::write_tsv(x = ., path = file.path(path.folder, "hw.pop.sum.tsv"))
+        readr::write_tsv(x = ., file = file.path(path.folder, "hw.pop.sum.tsv"))
       if (verbose) message("File written: hw.pop.sum.tsv")
 
       hwd.markers.pop.sum <- data.sum %>%
@@ -554,7 +554,7 @@ filter_hwe <- function(
         tidyr::pivot_wider(data = ., names_from = "SIGNIFICANCE", values_from = "n") %>%
         dplyr::filter(N_POP_HWD != 0) %>%
         dplyr::ungroup(.) %>%
-        readr::write_tsv(x = ., path = file.path(path.folder, "hwd.helper.table.tsv"))
+        readr::write_tsv(x = ., file = file.path(path.folder, "hwd.helper.table.tsv"))
 
       hwd.helper.table.long <- hwd.helper.table.long %>%
         dplyr::rename(`Exact test mid p-value` = SIGNIFICANCE)
@@ -892,7 +892,7 @@ hwe_analysis <- function(x, parallel.core = parallel::detectCores() - 1) {
     pop <- as.character(unique(x$POP_ID))
     message("HWE analysis for pop: ", pop)
     if (tibble::has_name(x, "POP_ID")) x <- dplyr::select(x, -POP_ID)
-    hwe_radiator <- function(x) {
+    hwe_radiator <- carrier::crate(function(x) {
       if (tibble::has_name(x, "SPLIT_VEC")) x %<>% dplyr::select(-SPLIT_VEC)
       mono <- function(x) {
         mono <- length(x$AA[x$AA == 0]) + length(x$AB[x$AB == 0]) + length(x$BB[x$BB == 0])
@@ -942,16 +942,16 @@ hwe_analysis <- function(x, parallel.core = parallel::detectCores() - 1) {
         ) %>%
         tibble::add_column(.data = ., POP_ID = pop, .after = 1)
       return(hw.res)
-    }#hwe_radiator
+    })#hwe_radiator
     x <-  x %>%
       dplyr::mutate(SPLIT_VEC = split_vec_row(x = ., cpu.rounds = 10,
                                               parallel.core = parallel.core)) %>%
       radiator_future(
-        X = .,
-        FUN = hwe_radiator,
+        .x = .,
+        .f = hwe_radiator,
         parallel.core = parallel.core,
-        split.tibble = .$SPLIT_VEC,
-        bind.rows = TRUE
+        split.with = "SPLIT_VEC",
+        flat.future = "dfr"
       )
 
       # split(x = ., f = .$SPLIT_VEC) %>%
@@ -1031,7 +1031,7 @@ blacklist_hw <- function(
             , by = "MARKERS") %>%
           readr::write_tsv(
             x = .,
-            path = blacklist.filename)
+            file = blacklist.filename)
       )
 
 
@@ -1046,7 +1046,7 @@ blacklist_hw <- function(
           whitelist %>%
             dplyr::select(dplyr::one_of(want)) %>%
             dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-            readr::write_tsv(x = ., path = whitelist.filename)
+            readr::write_tsv(x = ., file = whitelist.filename)
       } else {
         whitelist <- suppressWarnings(
           unfiltered.data %>%
@@ -1055,7 +1055,7 @@ blacklist_hw <- function(
         radiator::write_rad(data = whitelist, path = rad.filename)
         whitelist %>% dplyr::select(dplyr::one_of(want)) %>%
             dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-            readr::write_tsv(x = ., path = whitelist.filename)
+            readr::write_tsv(x = ., file = whitelist.filename)
       }
     }
   }#End bl_map
@@ -1108,7 +1108,7 @@ update_filter_parameter <- function(filter, unfiltered,
     UNITS = c("SNP/LOCUS"),
     COMMENTS = c("")
   ) %>%
-    readr::write_tsv(x = ., path = param.path,
+    readr::write_tsv(x = ., file = param.path,
                      append = TRUE, col_names = FALSE)
   return(res = list(filters.parameters, markers.before, markers.blacklist, markers.after))
 }#End update_filter_parameter

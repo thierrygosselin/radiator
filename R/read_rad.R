@@ -254,7 +254,7 @@ write_rad <- function(
       } else {
         path.filename <- filename
       }
-      readr::write_tsv(x = data, path = path.filename, append = append, col_names = col.names)
+      readr::write_tsv(x = data, file = path.filename, append = append, col_names = col.names)
 
       if (!is.null(write.message) && verbose) {
         if (write.message == "standard") {

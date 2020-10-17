@@ -210,7 +210,7 @@ write_pcadapt <- function(
     Number of populations: ", n.pop, "\n    Number of individuals: ", n.ind,
           "\n    Number of markers: ", n.markers)
 
-  readr::write_delim(x = data, path = filename, col_names = FALSE,
+  readr::write_delim(x = data, file = filename, col_names = FALSE,
                      append = FALSE, delim = " ")
 
   data <- as.matrix(data)

@@ -182,7 +182,7 @@ filter_dart_reproducibility <- function(
 
     # Generating statistics ----------------------------------------------------
     rep.stats <- tibble_stats(x = markers.meta$REP_AVG, group = "reproducibility")
-    readr::write_tsv(x = rep.stats, path = file.path(path.folder, "dart_reproducibility_stats.tsv"))
+    readr::write_tsv(x = rep.stats, file = file.path(path.folder, "dart_reproducibility_stats.tsv"))
     if (verbose) message("File written: dart_reproducibility_stats.tsv")
 
     # Generate box plot ---------------------------------------------------------
@@ -213,7 +213,7 @@ filter_dart_reproducibility <- function(
       ) %>%
       readr::write_tsv(
         x = .,
-        path = file.path(path.folder, "dart.reproducibility.helper.table.tsv"))
+        file = file.path(path.folder, "dart.reproducibility.helper.table.tsv"))
 
     # figures
     markers.plot <- ggplot2::ggplot(
@@ -318,13 +318,13 @@ The minimum reproducibility tolerated:", minmax = c(0, 1))
       # Whitelist and Blacklist of markers
       readr::write_tsv(
         x = wl,
-        path = file.path(path.folder, "whitelist.dart.reproducibility.tsv"),
+        file = file.path(path.folder, "whitelist.dart.reproducibility.tsv"),
         append = FALSE, col_names = TRUE)
 
       bl %<>% dplyr::setdiff(wl) %>%
         readr::write_tsv(
           x = .,
-          path = file.path(path.folder, "blacklist.dart.reproducibility.tsv"),
+          file = file.path(path.folder, "blacklist.dart.reproducibility.tsv"),
           append = FALSE, col_names = TRUE)
       # saving whitelist and blacklist
       if (verbose) message("File written: whitelist.dart.reproducibility.tsv")

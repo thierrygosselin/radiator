@@ -307,7 +307,7 @@ read_plink <- function(
       if (verbose) message("Cleaning PLINK's sample names")
       clean.id.filename <- stringi::stri_join("cleaned.plink.id.info_", file.date, ".tsv")
       readr::write_tsv(x = individuals.plink,
-                       path = file.path(radiator.folder, clean.id.filename))
+                       file = file.path(radiator.folder, clean.id.filename))
 
       update_radiator_gds(gds = gds, node.name = "id.clean", value = individuals.plink)
     }
@@ -797,6 +797,6 @@ write_plink <- function(data, filename = NULL) {
     filename.tped <- stringi::stri_join(filename, ".tped")
     filename.tfam <- stringi::stri_join(filename, ".tfam")
   }
-  readr::write_delim(x = tped, path = filename.tped, col_names = FALSE, delim = " ")
-  readr::write_delim(x = tfam, path = filename.tfam, col_names = FALSE, delim = " ")
+  readr::write_delim(x = tped, file = filename.tped, col_names = FALSE, delim = " ")
+  readr::write_delim(x = tfam, file = filename.tfam, col_names = FALSE, delim = " ")
 } # end write_plink

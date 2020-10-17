@@ -199,11 +199,11 @@ pi <- function(
     .data = res$pi.populations,
     POP_ID = "OVERALL",
     PI_NEI = radiator_future(
-      X = data,
-      FUN = pi_rad,
+      .x = data,
+      .f = pi_rad,
       parallel.core = parallel.core,
-      split.tibble = .$MARKERS,
-      bind.rows = TRUE,
+      split.with = "MARKERS",
+      flat.future = "dfr",
       read.length = read.length
     ) %>%
       # split(x = ., f = .$MARKERS) %>%
@@ -264,7 +264,7 @@ pi <- function(
 #' @export
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
-pi_rad <- function(data, read.length) {
+pi_rad <- carrier::crate(function(data, read.length) {
   y <- dplyr::select(data, ALLELES) %>%
     purrr::flatten_chr(.)
 
@@ -288,7 +288,7 @@ pi_rad <- function(data, read.length) {
     pi <- tibble::tibble(PI = sum(pi * pairwise.mismatches) / read.length)
   }
   return(pi)
-}#End pi
+})#End pi
 
 
 # Pi pop ---------------------------------------------------------------------------
@@ -306,11 +306,11 @@ pi_pop <- function(data, read.length, parallel.core = parallel::detectCores() - 
   # data <- df.split.pop[["SKY"]]
 
   pi.pop <- radiator_future(
-    X = data,
-    FUN = pi_rad,
+    .x = data,
+    .f = pi_rad,
     parallel.core = parallel.core,
-    split.tibble = .$MARKERS,
-    bind.rows = TRUE,
+    split.with = "MARKERS",
+    flat.future = "dfr",
     read.length = read.length
   ) %>%
     # data %>%

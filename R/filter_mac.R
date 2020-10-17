@@ -301,7 +301,7 @@ filter_mac <- function(
                             markers.meta = markers.meta,
                             parallel.core = parallel.core)
 
-    readr::write_tsv(x = mac.data, path = file.path(path.folder, "mac.global.tsv"))
+    readr::write_tsv(x = mac.data, file = file.path(path.folder, "mac.global.tsv"))
     if (verbose) message("File written: maf.global.tsv")
     n.markers <- nrow(mac.data)
 
@@ -319,7 +319,7 @@ filter_mac <- function(
                                    levels = c("unfiltered", "below Q25"))) %>%
       dplyr::arrange(GROUP)
 
-    readr::write_tsv(x = mac.stats.data, path = file.path(path.folder, "mac.summary.stats.tsv"))
+    readr::write_tsv(x = mac.stats.data, file = file.path(path.folder, "mac.summary.stats.tsv"))
     if (verbose) message("File written: mac.summary.stats.tsv")
 
 
@@ -378,7 +378,7 @@ filter_mac <- function(
       ) %>%
       readr::write_tsv(
         x = .,
-        path = file.path(path.folder, "mac.helper.table.tsv"))
+        file = file.path(path.folder, "mac.helper.table.tsv"))
 
     if (verbose) message("File written: maf.helper.table.tsv")
 
@@ -450,11 +450,11 @@ filter_mac <- function(
     }
     readr::write_tsv(
       x = wl,
-      path = file.path(path.folder, "whitelist.markers.mac.tsv"),
+      file = file.path(path.folder, "whitelist.markers.mac.tsv"),
       append = FALSE, col_names = TRUE)
     readr::write_tsv(
       x = bl,
-      path = file.path(path.folder, "blacklist.markers.mac.tsv"),
+      file = file.path(path.folder, "blacklist.markers.mac.tsv"),
       append = FALSE, col_names = TRUE)
     if (verbose) message("File written: whitelist.markers.mac.tsv")
     if (verbose) message("File written: blacklist.markers.mac.tsv")
@@ -505,7 +505,7 @@ filter_mac <- function(
 #' @rdname compute_maf
 #' @keywords internal
 #' @export
-compute_maf <- function(x, biallelic) {
+compute_maf <- carrier::crate(function(x, biallelic) {
   if (tibble::has_name(x, "GT_BIN") && biallelic) {
     x <- x %>%
       dplyr::group_by(MARKERS, POP_ID) %>%
@@ -642,14 +642,14 @@ compute_maf <- function(x, biallelic) {
     }
   }
   return(x)
-}#End compute_maf
+})#End compute_maf
 
 #' @title compute_mac
 #' @description Compute global MAC (Minor Allele Count)
 #' @rdname compute_mac
 #' @export
 #' @keywords internal
-compute_mac <- function (
+compute_mac <- function(
   data,
   blacklist.markers = NULL,
   markers.meta = NULL,
@@ -677,12 +677,12 @@ compute_mac <- function (
               parallel.core = parallel.core))
           , by = "MARKERS") %>%
         radiator_future(
-          X = .,
-          FUN = mac_one,
+          .x = .,
+          .f = mac_one,
           parallel.core = parallel.core,
-          split.tibble = .$SPLIT_VEC,
-          bind.rows = TRUE
-        )
+          split.with = "SPLIT_VEC",
+          flat.future = "dfr"
+          )
       # split(x = ., f = .$SPLIT_VEC) %>%
       # radiator_parallel_mc(
       #   X = .,
@@ -777,7 +777,7 @@ compute_mac <- function (
 #' @rdname mac_one
 #' @keywords internal
 #' @export
-mac_one <- function(x) {
+mac_one <- carrier::crate(function(x) {
   if (tibble::has_name(x, "GT_BIN")) {
     mac.data <- x %>%
       dplyr::select(MARKERS, INDIVIDUALS, GT_BIN) %>%
@@ -819,5 +819,5 @@ mac_one <- function(x) {
   }
   mac.data$MAC_GLOBAL %<>% as.integer(.)
   return(mac.data)
-}#End mac_one
+})#End mac_one
 

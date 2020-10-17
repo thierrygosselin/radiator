@@ -89,5 +89,5 @@ write_related <- function(
       filename <- stringi::stri_join(filename, "_related", ".txt")
     }
   }
-  readr::write_delim(x = data, path = filename, delim = " ", col_names = FALSE)
+  readr::write_delim(x = data, file = filename, delim = " ", col_names = FALSE)
 }# End write_related
