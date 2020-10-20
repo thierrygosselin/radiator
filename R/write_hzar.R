@@ -112,25 +112,15 @@ write_hzar <- function(
   }
   message("Generating HZAR file...")
   output <- dplyr::filter(data, GT != "000000") %>%
-    dplyr::left_join(
-      dplyr::distinct(data, MARKERS) %>%
-        dplyr::mutate(
-          SPLIT_VEC = dplyr::ntile(x = 1:nrow(.), n = parallel.core * 3))
-      , by = "MARKERS") %>%
     radiator_future(
       .x = .,
       .f = generate_hzar,
-      parallel.core = parallel.core,
-      split.with = "SPLIT_VEC",
-      flat.future = "dfr"
+      flat.future = "dfr",
+      split.vec = TRUE,
+      split.with = "MARKERS",
+      split.chunks = 10L,
+      parallel.core = parallel.core
     ) %>%
-    # split(x = ., f = .$SPLIT_VEC) %>%
-    # radiator_parallel(
-    #   X = .,
-    #   FUN = generate_hzar,
-    #   mc.cores = parallel.core
-    # ) %>%
-    # dplyr::bind_rows(.) %>%
     dplyr::arrange(MARKERS, POP_ID, VALUE) %>%
     dplyr::select(-MARKERS) %>%
     dplyr::group_by(POP_ID) %>%

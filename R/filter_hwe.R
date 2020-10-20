@@ -893,7 +893,8 @@ hwe_analysis <- function(x, parallel.core = parallel::detectCores() - 1) {
     message("HWE analysis for pop: ", pop)
     if (tibble::has_name(x, "POP_ID")) x <- dplyr::select(x, -POP_ID)
     hwe_radiator <- carrier::crate(function(x) {
-      if (tibble::has_name(x, "SPLIT_VEC")) x %<>% dplyr::select(-SPLIT_VEC)
+      `%>%` <- magrittr::`%>%`
+      `%<>%` <- magrittr::`%<>%`
       mono <- function(x) {
         mono <- length(x$AA[x$AA == 0]) + length(x$AB[x$AB == 0]) + length(x$BB[x$BB == 0])
         if (mono >= 2) {
@@ -943,20 +944,16 @@ hwe_analysis <- function(x, parallel.core = parallel::detectCores() - 1) {
         tibble::add_column(.data = ., POP_ID = pop, .after = 1)
       return(hw.res)
     })#hwe_radiator
-    x <-  x %>%
-      dplyr::mutate(SPLIT_VEC = split_vec_row(x = ., cpu.rounds = 10,
-                                              parallel.core = parallel.core)) %>%
-      radiator_future(
-        .x = .,
-        .f = hwe_radiator,
-        parallel.core = parallel.core,
-        split.with = "SPLIT_VEC",
-        flat.future = "dfr"
-      )
 
-      # split(x = ., f = .$SPLIT_VEC) %>%
-      # radiator_parallel(X = ., FUN = hwe_radiator, mc.cores = parallel.core) %>%
-      # dplyr::bind_rows(.)
+    x <- radiator_future(
+      .x = x,
+      .f = hwe_radiator,
+      flat.future = "dfr",
+      split.vec = TRUE,
+      split.with = NULL,
+      split.chunks = 10L,
+      parallel.core = parallel.core
+    )
     return(x)
   }#hwe_map
 

@@ -507,9 +507,10 @@ filter_mac <- function(
 #' @export
 compute_maf <- carrier::crate(function(x, biallelic) {
   `%>%` <- magrittr::`%>%`
+  `%<>%` <- magrittr::`%<>%`
 
-  if (tibble::has_name(x, "GT_BIN") && biallelic) {
-    x <- x %>%
+  if (rlang::has_name(x, "GT_BIN") && biallelic) {
+    x %<>%
       dplyr::group_by(MARKERS, POP_ID) %>%
       dplyr::summarise(
         NN = as.numeric(2 * n()),
@@ -545,8 +546,8 @@ compute_maf <- carrier::crate(function(x, biallelic) {
       dplyr::ungroup(.) %>%
       dplyr::rename(ALT_LOCAL = QQ, ALT_GLOBAL = QQ_G)
   } else {
-    if (!tibble::has_name(x, "GT_VCF_NUC")) {
-      x <- x %>%
+    if (!rlang::has_name(x, "GT_VCF_NUC")) {
+      x %<>%
         dplyr::select(MARKERS,POP_ID, INDIVIDUALS, GT) %>%
         dplyr::mutate(
           A1 = stringi::stri_sub(GT, 1, 3),
@@ -573,21 +574,20 @@ compute_maf <- carrier::crate(function(x, biallelic) {
         dplyr::ungroup(.) %>%
         dplyr::select(MARKERS, POP_ID, MAF_LOCAL, ALT_LOCAL)
 
-      x <- x %>%
+      x %<>%
         dplyr::group_by(MARKERS, GT) %>%
         dplyr::tally(.) %>%
         dplyr::group_by(MARKERS) %>%
         dplyr::mutate(n.al.tot = sum(n)) %>%
         dplyr::filter(n == min(n)) %>%
         dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-        dplyr::summarise(MAF_GLOBAL = n / n.al.tot, ALT_GLOBAL = n) %>%
-        dplyr::ungroup(.) %>%
+        dplyr::summarise(MAF_GLOBAL = n / n.al.tot, ALT_GLOBAL = n, .groups = "drop") %>%
         dplyr::select(MARKERS, MAF_GLOBAL, ALT_GLOBAL) %>%
         dplyr::left_join(maf.local, by = c("MARKERS")) %>%
         dplyr::select(MARKERS, POP_ID, MAF_LOCAL, ALT_LOCAL, MAF_GLOBAL, ALT_GLOBAL)
       maf.local <- NULL
     } else {
-      x <- x %>%
+      x %<>%
         dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT_VCF_NUC) %>%
         tidyr::separate(
           data = .,
@@ -638,7 +638,7 @@ compute_maf <- carrier::crate(function(x, biallelic) {
             dplyr::mutate(REF = rep("MAF", n()), MAF_GLOBAL = NULL)
         )
 
-      x <- dplyr::left_join(x, ref.info, by = c("MARKERS", "HAPLOTYPES")) %>%
+      x %<>% dplyr::left_join(ref.info, by = c("MARKERS", "HAPLOTYPES")) %>%
         dplyr::mutate(REF = stringi::stri_replace_na(REF, replacement = "ALT"))
       ref.info <- NULL
     }
@@ -659,7 +659,7 @@ compute_mac <- function(
 ) {
   data.type <- detect_genomic_format(data) # gds or tbl_df
   if (data.type == "tbl_df") {
-    if (tibble::has_name(data, "GT_BIN")) {
+    if (rlang::has_name(data, "GT_BIN")) {
       data %<>% dplyr::filter(!is.na(GT_BIN))
     } else {
       data %<>% dplyr::filter(GT != "000000")
@@ -669,34 +669,22 @@ compute_mac <- function(
       markers.meta %<>% dplyr::filter(!MARKERS %in% blacklist.markers$MARKERS)
     }
     n.markers <- nrow(markers.meta)
-    if (n.markers > 10000) {
-      mac.data <- data %>%
-        dplyr::left_join(
-          markers.meta %>%
-            dplyr::mutate(SPLIT_VEC = split_vec_row(
-              markers.meta,
-              cpu.rounds = ceiling(n.markers/10000),
-              parallel.core = parallel.core))
-          , by = "MARKERS") %>%
-        radiator_future(
-          .x = .,
-          .f = mac_one,
-          parallel.core = parallel.core,
-          split.with = "SPLIT_VEC",
-          flat.future = "dfr"
-          )
-      # split(x = ., f = .$SPLIT_VEC) %>%
-      # radiator_parallel_mc(
-      #   X = .,
-      #   FUN = mac_one,
-      #   mc.cores = parallel.core
-      # ) %>%
-      # dplyr::bind_rows(.)
+    markers.meta <- NULL
+
+    if (n.markers > 30000) {
+      mac.data <- radiator_future(
+        .x = data,
+        .f = mac_one,
+        flat.future = "dfr",
+        split.vec = TRUE,
+        split.with = "MARKERS",
+        split.chunks = 10L,
+        parallel.core = parallel.core
+      )
     } else {
       mac.data <- mac_one(x = data)
     }
     mac.data %<>% dplyr::arrange(MARKERS)
-    markers.meta <- NULL
   } else {# GDS
     if (is.null(markers.meta)) {
       markers.meta <- extract_markers_metadata(
@@ -783,7 +771,7 @@ mac_one <- carrier::crate(function(x) {
   `%>%` <- magrittr::`%>%`
   `%<>%` <- magrittr::`%<>%`
 
-  if (tibble::has_name(x, "GT_BIN")) {
+  if (rlang::has_name(x, "GT_BIN")) {
     mac.data <- x %>%
       dplyr::select(MARKERS, INDIVIDUALS, GT_BIN) %>%
       dplyr::group_by(MARKERS) %>%

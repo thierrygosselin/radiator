@@ -10,10 +10,9 @@ haplotype_reconstruction <- function(
   parallel.core = parallel::detectCores() - 1
 ) {
   # data <- haplo.reconstruction
-  data <- dplyr::ungroup(data)
-  markers <- dplyr::distinct(data, MARKERS) %>% purrr::flatten_chr(.)
-
-  reconstruct <- function(m, data) {
+  reconstruct <- carrier::crate(function(m, data) {
+    `%>%` <- magrittr::`%>%`
+    `%<>%` <- magrittr::`%<>%`
     # m <- "102632"
     # data <- data
     data <- dplyr::filter(data, MARKERS %in% m)
@@ -54,20 +53,16 @@ haplotype_reconstruction <- function(
       dplyr::ungroup(.) %>%
       dplyr::select(MARKERS, HAPLOTYPES, HAPLOTYPES_NEW)
     return(data)
-  }
+  })#End reconstruct
+
   res <- radiator_future(
-    .x = markers,
+    .x = dplyr::ungroup(data),
     .f = reconstruct,
-    parallel.core = parallel.core,
     flat.future = "dfr",
-    data = data
+    split.vec = FALSE,
+    split.with = "MARKERS",
+    split.chunks = 4L,
+    parallel.core = parallel.core,
   )
-  # res <- radiator_parallel(
-  #   X = markers,
-  #   FUN = reconstruct,
-  #   mc.cores = parallel.core,
-  #   data = data
-  # ) %>%
-  #   dplyr::bind_rows(.)
   return(res)
 }#End haplotype_reconstruction

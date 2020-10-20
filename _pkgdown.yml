@@ -1,6 +1,6 @@
 reference:
 
-- title: Important functions
+- title: Basic
   contents:
   - read_strata
   - summary_strata
@@ -17,22 +17,23 @@ reference:
   - change_pop_names
   - generate_strata
 
-- title: Reading functions
+- title: Read
   contents:
   - starts_with("read_")
 
-- title: Tidying functions
+- title: Tidy
   contents:
   - tidy_genomic_data
   - starts_with("tidy_")
-- title: Filtering dataset
+
+- title: Filter
   contents:
   - starts_with("filter_")
   - reset_filters
   - list_filters
   - sync_gds
 
-- title: Detection
+- title: Detect
   contents:
   - starts_with("detect_")
 
@@ -40,15 +41,15 @@ reference:
   contents:
   - sexy_markers
 
-- title: Extraction
+- title: Extract
   contents:
   - starts_with("extract_")
 
-- title: Summary functions
+- title: Summarize
   contents:
   - starts_with("summary_")
 
-- title: Writing functions
+- title: Write
   contents:
   - starts_with("write_")
 

@@ -475,12 +475,11 @@ filter_ld <- function(
 
 
           # calculate GLOBAL mac per SNP/LOCUS
-          if (tibble::has_name(data, "GT_BIN")) {
-            more.snp <- dplyr::distinct(wl, MARKERS) %>%
-              dplyr::filter(!MARKERS %in% one.snp$MARKERS)
-            n.markers <- nrow(more.snp)
-
+          if (rlang::has_name(data, "GT_BIN")) {
             global_mac <- carrier::crate(function(x) {
+              `%>%` <- magrittr::`%>%`
+              `%<>%` <- magrittr::`%<>%`
+
               mac.data <- dplyr::group_by(x, MARKERS) %>%
                 dplyr::summarise(
                   PP = as.numeric(2 * length(GT_BIN[GT_BIN == 0])),
@@ -498,37 +497,22 @@ filter_ld <- function(
               return(mac.data)
             })#End global_maf
 
-            if (n.markers > 10000) {
-              split.vec <- more.snp %>%
-                dplyr::mutate(SPLIT_VEC = split_vec_row(
-                  more.snp,
-                  cpu.rounds = ceiling(n.markers/10000),
-                  parallel.core = parallel.core))
+            mac.data <- dplyr::filter(data, !is.na(GT_BIN)) %>%
+              dplyr::filter(!MARKERS %in% one.snp$MARKERS)
 
-              mac.data <- data %>%
-                dplyr::filter(!is.na(GT_BIN)) %>%
-                dplyr::filter(!MARKERS %in% one.snp$MARKERS) %>%
-                dplyr::left_join(split.vec, by = "MARKERS") %>%
-                radiator_future(
-                  .x = .,
-                  .f = global_mac,
-                  parallel.core = parallel.core,
-                  split.with = "SPLIT_VEC",
-                  flat.future = "dfr"
-                )
-              # split(x = ., f = .$SPLIT_VEC) %>%
-              # radiator_parallel_mc(
-              #   X = .,
-              #   FUN = global_mac,
-              #   mc.cores = parallel.core
-              # ) %>%
-              # dplyr::bind_rows(.)
-              more.snp <- split.vec <- NULL
-            } else {
-              mac.data <- global_mac(
-                x = dplyr::filter(data, !is.na(GT_BIN)) %>%
-                  dplyr::filter(!MARKERS %in% one.snp$MARKERS)
+            if (length(unique(mac.data$MARKERS)) > 30000) {
+              mac.data <- radiator_future(
+                .x = mac.data,
+                .f = global_mac,
+                flat.future = "dfr",
+                split.vec = TRUE,
+                split.with = "MARKERS",
+                split.chunks = NULL,
+                max.chunks = 10L,
+                parallel.core = parallel.core
               )
+            } else {
+              mac.data <- global_mac(x = mac.data)
             }
           } else {
             mac.data <- data %>%
@@ -537,22 +521,22 @@ filter_ld <- function(
               dplyr::select(MARKERS, INDIVIDUALS, GT) %>%
               dplyr::mutate(
                 A1 = stringi::stri_sub(GT, 1, 3),
-                A2 = stringi::stri_sub(GT, 4,6)
+                A2 = stringi::stri_sub(GT, 4, 6)
               ) %>%
               dplyr::select(MARKERS, INDIVIDUALS, A1, A2) %>%
-              tidyr::pivot_longer(
-                data = .,
-                cols = -c("MARKERS", "INDIVIDUALS"),
-                names_to = "ALLELES",
-                values_to = "GT"
+              data.table::melt.data.table(
+                data = data.table::as.data.table(x),
+                id.vars = c("MARKERS", "INDIVIDUALS"),
+                variable.name = "ALLELES",
+                value.name = "GT",
+                variable.factor = FALSE
               ) %>%
-              dplyr::group_by(MARKERS, GT) %>%
-              dplyr::tally(.) %>%
+              tibble::as_tibble(.) %>%
+              dplyr::count(MARKERS, GT) %>%
               dplyr::group_by(MARKERS) %>%
               dplyr::filter(n == min(n)) %>%
               dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-              dplyr::summarise(MAC_GLOBAL = n) %>%
-              dplyr::ungroup(.) %>%
+              dplyr::summarise(MAC_GLOBAL = n, .groups = "drop") %>%
               dplyr::select(MARKERS, MAC_GLOBAL)
           }
 
@@ -570,7 +554,7 @@ filter_ld <- function(
 
         } else {
           n.markers <- nrow(wl)
-          if (!tibble::has_name(wl, "MAC_GLOBAL")) {
+          if (!rlang::has_name(wl, "MAC_GLOBAL")) {
             wl  %<>%
               dplyr::bind_cols(
                 SeqArray::seqAlleleCount(

@@ -415,8 +415,6 @@ filter_maf <- function(
     # MAF calculation ------------------------------------------------------------
     if (verbose) message("Calculating global and local MAF")
     # Prepare for parallel computations
-    markers.df <- dplyr::distinct(input, MARKERS)
-    n.markers <- nrow(markers.df)
 
     if (tibble::has_name(input, "GT_BIN")) {
       maf.data <- dplyr::filter(input, !is.na(GT_BIN))
@@ -427,33 +425,17 @@ filter_maf <- function(
     # readr::write_tsv(x = input, file = "maf.temp.rad")
     input <- NULL
 
-    if (n.markers > 10000) {
-      split.vec <- markers.df %>%
-        dplyr::mutate(SPLIT_VEC = split_vec_row(
-          markers.df,
-          cpu.rounds = ceiling(n.markers/10000),
-          parallel.core = parallel.core))
-
-      maf.data %<>%
-        dplyr::left_join(split.vec, by = "MARKERS") %>%
-        radiator_future(
-          .x = .,
-          .f = compute_maf,
-          parallel.core = parallel.core,
-          split.with = "SPLIT_VEC",
-          flat.future = "dfr",
-          biallelic = biallelic
-        )
-
-        # split(x = ., f = .$SPLIT_VEC) %>%
-        # radiator_parallel_mc(
-        #   X = .,
-        #   FUN = compute_maf,
-        #   mc.cores = parallel.core,
-        #   biallelic = biallelic
-        # ) %>%
-        # dplyr::bind_rows(.)
-      markers.df <- split.vec <- NULL
+    if (length(unique(maf.data$MARKERS)) > 30000) {
+      maf.data <- radiator_future(
+        .x = maf.data,
+        .f = compute_maf,
+        flat.future = "dfr",
+        split.vec = TRUE,
+        split.with = "MARKERS",
+        split.chunks = 10L,
+        parallel.core = parallel.core,
+        biallelic = biallelic
+      )
     } else {
       maf.data <- compute_maf(x = maf.data, biallelic = biallelic)
     }

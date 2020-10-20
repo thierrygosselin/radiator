@@ -10,6 +10,16 @@
 #' Hw: Within population gene diversities
 #' Hb: Between populations gene diversities
 
+#' @references
+#' Weir, B., Goudet, J. (2017).
+#' A Unified Characterization of Population Structure and Relatedness
+#' Genetics 206(4), 2085-2103.
+#' https://dx.doi.org/10.1534/genetics.116.198424
+#'
+#' Goudet, J., Kay, T., Weir, B. (2018).
+#' How to estimate kinship
+#' Molecular Ecology  27(20), 4121-4135.
+#' https://dx.doi.org/10.1111/mec.14833
 
 #' @examples
 #' \dontrun{

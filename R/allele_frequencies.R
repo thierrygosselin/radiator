@@ -65,42 +65,24 @@ allele_frequencies <- function(data, verbose = TRUE, parallel.core = parallel::d
   }
 
   biallelic <- radiator::detect_biallelic_markers(input, verbose = verbose)
-  markers.df <- dplyr::distinct(input, MARKERS)
-  n.markers <- nrow(markers.df)
-  maf.data <- dplyr::filter(input, GT != "000000")
+  n.markers <- length(unique(input$MARKERS))
+  maf <- dplyr::filter(input, GT != "000000")
 
-  if (n.markers > 10000) {
-    split.vec <- markers.df %>%
-      dplyr::mutate(SPLIT_VEC = split_vec_row(
-        markers.df,
-        cpu.rounds = ceiling(n.markers/10000),
-        parallel.core = parallel::detectCores() - 1))
-
-    maf.data <- dplyr::left_join(maf.data, split.vec, by = "MARKERS") %>%
-      radiator_future(
-        .x = .,
-        .f = compute_maf,
-        parallel.core = parallel.core,
-        split.with = "SPLIT_VEC",
-        flat.future = "dfr",
-        biallelic = biallelic
-      )
-      #
-      # split(x = ., f = .$SPLIT_VEC) %>%
-      # radiator_parallel_mc(
-      #   X = .,
-      #   FUN = compute_maf,
-      #   mc.cores = parallel::detectCores() - 1,
-      #   biallelic = biallelic
-      # ) %>%
-      # dplyr::bind_rows(.)
-    markers.df <- split.vec <- NULL
+  if (n.markers > 30000) {
+    maf <- radiator_future(
+      .x = maf,
+      .f = compute_maf,
+      flat.future = "dfr",
+      split.vec = TRUE,
+      split.with = "MARKERS",
+      split.chunks = 10L,
+      parallel.core = parallel.core,
+      biallelic = biallelic
+    )
   } else {
-    maf.data <- compute_maf(x = maf.data, biallelic = biallelic)
+    maf <- compute_maf(x = maf, biallelic = biallelic)
   }
 
-  maf <- maf.data
-  maf.data <- NULL
   maf.local.wide <- dplyr::select(.data = maf, MARKERS, POP_ID, MAF_LOCAL) %>%
     tidyr::pivot_wider(data = ., names_from = "MARKERS", values_from = "MAF_LOCAL")
 

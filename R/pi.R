@@ -179,7 +179,8 @@ pi <- function(
 
   # Pi: by pop------------------------------------------------------------------
   message("    Pi calculations: populations...")
-  data %<>% dplyr::select(POP_ID, INDIVIDUALS, MARKERS, ALLELE1, ALLELE2) %>%
+  data %<>%
+    dplyr::select(POP_ID, INDIVIDUALS, MARKERS, ALLELE1, ALLELE2) %>%
     tidyr::pivot_longer(
       data = .,
       cols = -c("POP_ID", "INDIVIDUALS", "MARKERS"),
@@ -201,20 +202,13 @@ pi <- function(
     PI_NEI = radiator_future(
       .x = data,
       .f = pi_rad,
-      parallel.core = parallel.core,
-      split.with = "MARKERS",
       flat.future = "dfr",
+      split.vec = FALSE,
+      split.with = "MARKERS",
+      parallel.core = parallel.core,
       read.length = read.length
     ) %>%
-      # split(x = ., f = .$MARKERS) %>%
-      # radiator_parallel(
-      #   X = .,
-      #   FUN = pi_rad,
-      #   mc.cores = parallel.core,
-      #   read.length = read.length
-      # ) %>%
-      # dplyr::bind_rows(.) %>%
-      dplyr::summarise(PI_NEI = mean(PI)) %>%
+      dplyr::summarise(PI_NEI = mean(PI), .groups = "drop") %>%
       purrr::flatten_dbl(.)
   )
   write_rad(
@@ -266,6 +260,7 @@ pi <- function(
 
 pi_rad <- carrier::crate(function(data, read.length) {
   `%>%` <- magrittr::`%>%`
+
   y <- dplyr::select(data, ALLELES) %>%
     purrr::flatten_chr(.)
 
@@ -309,20 +304,12 @@ pi_pop <- function(data, read.length, parallel.core = parallel::detectCores() - 
   pi.pop <- radiator_future(
     .x = data,
     .f = pi_rad,
-    parallel.core = parallel.core,
-    split.with = "MARKERS",
     flat.future = "dfr",
+    split.vec = FALSE,
+    split.with = "MARKERS",
+    parallel.core = parallel.core,
     read.length = read.length
   ) %>%
-    # data %>%
-    # split(x = ., f = .$MARKERS) %>%
-    # radiator_parallel(
-    #   X = .,
-    #   FUN = pi_rad,
-    #   mc.cores = parallel.core,
-    #   read.length = read.length
-    # ) %>%
-    # dplyr::bind_rows(.) %>%
     dplyr::summarise(PI_NEI = mean(PI)) %>%
     tibble::add_column(.data = ., POP_ID = pop, .before = "PI_NEI")
 

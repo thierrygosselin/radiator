@@ -383,7 +383,7 @@ detect_duplicate_genomes <- function(
             REF = 2 - ALT,
             REF = as.integer(REF),
             ALT = as.integer(ALT)
-            ) %>%
+          ) %>%
           data.table::as.data.table(.) %>%
           data.table::melt.data.table(
             data = ., id.vars = c("MARKERS", "INDIVIDUALS"), variable.name = "ALLELES", value.name = "n",
@@ -404,32 +404,21 @@ detect_duplicate_genomes <- function(
 
         if (verbose) message("Preparing data: calculating allele count")
         input.prep <- dplyr::select(data, MARKERS, INDIVIDUALS, GT) %>%
-          dplyr::left_join(
-            dplyr::distinct(data, MARKERS) %>%
-              dplyr::mutate(
-                SPLIT_VEC = dplyr::ntile(x = 1:nrow(.), n = parallel.core * 3))
-            , by = "MARKERS") %>%
           radiator_future(
             .x = .,
             .f = allele_count,
-            parallel.core = parallel.core,
-            split.with = "SPLIT_VEC",
-            flat.future = "dfr"
-            )
-          #
-          # split(x = ., f = .$SPLIT_VEC) %>%
-          # radiator_parallel(
-          #   X = .,
-          #   FUN = allele_count,
-          #   mc.cores = parallel.core
-          # ) %>%
-          # dplyr::bind_rows(.)
+            flat.future = "dfr",
+            split.vec = TRUE,
+            split.with = "MARKERS",
+            split.chunks = 10L,
+            parallel.core = parallel.core
+          )
 
         if (nrow(missing.geno) > 0) {
-          input.prep <- dplyr::anti_join(input.prep, missing.geno, by = c("MARKERS", "INDIVIDUALS"))
+          input.prep %<>% dplyr::anti_join(missing.geno, by = c("MARKERS", "INDIVIDUALS"))
         }
 
-        input.prep <- input.prep %>%
+        input.prep %<>%
           dplyr::mutate(MARKERS_ALLELES = stringi::stri_join(MARKERS, GT, sep = ".")) %>%
           dplyr::select(-GT) %>%
           dplyr::arrange(MARKERS_ALLELES, INDIVIDUALS)
@@ -530,7 +519,7 @@ detect_duplicate_genomes <- function(
 
       # Stats
       message("Generating summary statistics")
-      res$distance.stats <- res$distance %>%
+      res$distance.stats %<>%
         dplyr::summarise(
           MEAN = mean(DISTANCE_RELATIVE, na.rm = TRUE),
           MEDIAN = stats::median(DISTANCE_RELATIVE, na.rm = TRUE),
@@ -578,7 +567,7 @@ detect_duplicate_genomes <- function(
         dpi = 200,
         units = "cm",
         useDingbats = FALSE
-        )
+      )
       ggplot2::ggsave(
         filename = file.path(path.folder, "violin.plot.distance.png"),
         plot = res$violin.plot.distance,
@@ -619,7 +608,7 @@ detect_duplicate_genomes <- function(
         dpi = 200,
         units = "cm",
         useDingbats = FALSE
-        )
+      )
 
       ggplot2::ggsave(
         filename = file.path(path.folder, "manhattan.plot.distance.png"),
@@ -641,14 +630,14 @@ detect_duplicate_genomes <- function(
       }
 
       # all combination of individual pair
-      all.pairs.colnames <- c("ID1", "ID2")
       all.pairs <- utils::combn(unique(input.prep$INDIVIDUALS), 2, simplify = TRUE) %>%
         t %>%
         tibble::as_tibble(.) %>%
-        `colnames<-`(all.pairs.colnames) %>%
+        magrittr::set_colnames(x = ., value = c("ID1", "ID2")) %>%
         dplyr::mutate(
           PAIRS = seq(from = 1, to = n(), by = 1),
-          MARKERS_TOTAL = rep(n.markers, n()))
+          MARKERS_TOTAL = rep(n.markers, n()) # just n.markers works
+          )
 
       # get the number of pairwise comp.
       number.pairwise <- nrow(all.pairs)
@@ -662,27 +651,6 @@ detect_duplicate_genomes <- function(
         if (verbose) message("    Time for coffee...")
         keep.data <- FALSE
       }
-
-      # number.pairwise <-  10
-      # number.pairwise <-  15
-      # number.pairwise <-  50
-      # number.pairwise <-  1000
-      # number.pairwise <-  2000
-      # number.pairwise <-  5000
-      # number.pairwise <-  20000
-      # parallel.core <- 10
-
-      # Optimizing cpu usage
-      if (number.pairwise > 200 * parallel.core) {
-        round.cpu <- floor(number.pairwise / (200 * parallel.core))
-        # round.cpu
-      } else {
-        round.cpu <- 1
-      }
-      # as.integer is usually twice as light as numeric vector...
-      all.pairs$SPLIT_VEC <- as.integer(floor((parallel.core * round.cpu * (1:number.pairwise - 1) / number.pairwise) + 1))
-      # length(unique(id.pairwise$SPLIT_VEC))
-      round.cpu <- NULL
 
       # generate the file to print into
       pairwise.filename <- file.path(path.folder, "individuals.pairwise.genome.similarity.tsv")
@@ -722,13 +690,27 @@ detect_duplicate_genomes <- function(
           col_names = TRUE)
 
 
-      res$pairwise.genome.similarity <- list()
+      # number.pairwise <-  10
+      # number.pairwise <-  1000
+      # number.pairwise <-  2000
+      # number.pairwise <-  5000
+      # number.pairwise <-  20000
+      # parallel.core <- 10
+
+      # Optimizing cpu usage
+      round.cpu <- 1
+      if (number.pairwise > 200 * parallel.core) {
+        round.cpu <- floor(number.pairwise / (200 * parallel.core))
+      }
+
       res$pairwise.genome.similarity <- radiator_future(
-        .x = unique(all.pairs$SPLIT_VEC),
+        .x = all.pairs,
         .f = genome_similarity,
-        parallel.core = parallel.core,
         flat.future = "dfr",
-        all.pairs = all.pairs,
+        split.vec = TRUE,
+        split.with = NULL,
+        split.chunks = parallel.core * round.cpu,
+        parallel.core = parallel.core,
         data = input.prep,
         threshold.common.markers = threshold.common.markers,
         keep.data = keep.data,
@@ -736,7 +718,8 @@ detect_duplicate_genomes <- function(
         blacklist.pairs.filename = blacklist.pairs.filename
       )
 
-
+      # as.integer is usually twice as light as numeric vector...
+      # all.pairs$SPLIT_VEC <- as.integer(floor((parallel.core * round.cpu * (seq_len(number.pairwise) - 1) / number.pairwise) + 1))
       # res$pairwise.genome.similarity <- radiator_parallel(
       #   X = unique(all.pairs$SPLIT_VEC),
       #   FUN = genome_similarity,
@@ -1130,18 +1113,20 @@ distance_individuals <- function(
 #' @export
 #' @keywords internal
 genome_similarity <- carrier::crate(function(
-  split.vec,
   all.pairs,
   data = NULL,
   threshold.common.markers = NULL,
   keep.data = TRUE,
   pairwise.filename = NULL,
   blacklist.pairs.filename = NULL
-  ) {
+) {
   `%>%` <- magrittr::`%>%`
+  `%<>%` <- magrittr::`%<>%`
+
   # split.vec <- 20 # test
-  all.pairs <- dplyr::filter(all.pairs, SPLIT_VEC == split.vec) %>%
-    dplyr::select(-SPLIT_VEC)
+  # all.pairs %<>%
+  #   dplyr::filter(SPLIT_VEC == split.vec) %>%
+  #   dplyr::select(-SPLIT_VEC)
 
   genome_similarity_map <- function(
     pair,
@@ -1150,6 +1135,7 @@ genome_similarity <- carrier::crate(function(
     threshold.common.markers = NULL
   ) {
     `%>%` <- magrittr::`%>%`
+    `%<>%` <- magrittr::`%<>%`
 
     # pair <- 1#test
     res <- list()
@@ -1211,10 +1197,7 @@ genome_similarity <- carrier::crate(function(
       }
 
     } else {#using GT
-      data <- dplyr::filter(
-        .data = data,
-        INDIVIDUALS %in% list.pair & n != 0
-      )
+      data %<>% dplyr::filter(INDIVIDUALS %in% list.pair & n != 0)
 
       # genotypes & markers
       id1.data <- dplyr::filter(.data = data, INDIVIDUALS %in% id1) %>%
@@ -1256,21 +1239,22 @@ genome_similarity <- carrier::crate(function(
     data = data,
     threshold.common.markers = threshold.common.markers)
   all.pairs <- NULL
-  blacklist.pairs.threshold <- genome.comparison %>% purrr::map_df("blacklist.pairs.threshold")
+
+  blacklist.pairs.threshold <- genome.comparison %>%
+    purrr::map_df("blacklist.pairs.threshold")
+
   if (nrow(blacklist.pairs.threshold) > 0) {
     readr::write_tsv(
       x = blacklist.pairs.threshold,
       file = blacklist.pairs.filename,
       append = TRUE, col_names = FALSE)
   }
-  genome.comparison <- genome.comparison %>%
-    purrr::map_df("genome.comparison") %>%
-    readr::write_tsv(
-      x = ., file = pairwise.filename, append = TRUE, col_names = FALSE)
 
-  if (!keep.data) {
-    genome.comparison <- NULL
-  }
+  genome.comparison %<>%
+    purrr::map_df("genome.comparison") %>%
+    readr::write_tsv( x = ., file = pairwise.filename, append = TRUE, col_names = FALSE)
+
+  if (!keep.data) genome.comparison <- NULL
   blacklist.pairs.threshold <- NULL
   return(genome.comparison)
 })#End genome_similarity
@@ -1283,7 +1267,9 @@ genome_similarity <- carrier::crate(function(
 #' @keywords internal
 allele_count <- carrier::crate(function(x) {
   `%>%` <- magrittr::`%>%`
-  res <- dplyr::ungroup(x) %>%
+  `%<>%` <- magrittr::`%<>%`
+  x %<>%
+    dplyr::ungroup(.) %>%
     dplyr::select(MARKERS, INDIVIDUALS, GT) %>%
     dplyr::filter(GT != "000000") %>%
     dplyr::mutate(
@@ -1302,7 +1288,7 @@ allele_count <- carrier::crate(function(x) {
     dplyr::ungroup(.) %>%
     tidyr::complete(
       data = ., INDIVIDUALS, tidyr::nesting(MARKERS, GT), fill = list(n = 0))
-  return(res)
+  return(x)
 })#End allele_count
 
 

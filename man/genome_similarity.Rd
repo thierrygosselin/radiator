@@ -5,7 +5,6 @@
 \title{genome_similarity}
 \usage{
 genome_similarity(
-  split.vec,
   all.pairs,
   data = NULL,
   threshold.common.markers = NULL,

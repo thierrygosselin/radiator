@@ -2034,42 +2034,11 @@ parse_gds_metadata <- function(
       ALLELE_ALT_DEPTH = res$AD[, column.vec %% 2 == 0] %>%
         as.matrix(.) %>%
         as.vector(.)
-      )
+    )
 
     res$AD$ALLELE_REF_DEPTH %<>% as.integer(replace_by_na(data = ., what = 0))
     res$AD$ALLELE_ALT_DEPTH %<>% as.integer(replace_by_na(data = ., what = 0))
-
-
-    # split.vec <- split_vec_row(x = res$AD, 3, parallel.core = parallel.core)
-    # res$AD$ALLELE_REF_DEPTH <- clean_ad(
-    #   x = res$AD$ALLELE_REF_DEPTH,
-    #   split.vec = split.vec,
-    #   parallel.core = parallel.core
-    #   )
-    #
-    # res$AD$ALLELE_ALT_DEPTH <- clean_ad(
-    #   x = res$AD$ALLELE_ALT_DEPTH,
-    #   split.vec = split.vec,
-    #   parallel.core = parallel.core)
-    # split.vec <- column.vec <- NULL
-    # test1 <- res$AD
-    #PLAN B:
-    # SeqArray::seqApply(
-    #   gdsfile = gds,
-    #   var.name = "annotation/format/AD",
-    #   FUN = function(x) {
-    #     ad.sum <- colSums(x, na.rm = TRUE)
-    #     ref.col <- which(ad.sum == max(ad.sum, na.rm = TRUE))
-    #     ref <- mean(x[, ref.col], na.rm = TRUE)
-    #     alt <- mean(x[, -ref.col], na.rm = TRUE)
-    #     # return(list(ad.ref = ref, ad.alt = alt))
-    #     return(tibble::tibble(ALLELE_REF_DEPTH = ref, ALLELE_ALT_DEPTH = alt))
-    #   },
-    #   margin = "by.variant", as.is = "list",
-    #   parallel = 12) %>%
-    #   dplyr::bind_rows(.)
-  } # End AD
-
+  }# End AD
 
   # Read depth
   if (format.name == "DP") {
@@ -2810,20 +2779,7 @@ split_vcf <- function(
 
   # Filename -------------------------------------------------------------------
   # Get date and time to have unique filenaming
-  file.date <- stringi::stri_replace_all_fixed(
-    Sys.time(),
-    pattern = " EDT",
-    replacement = "",
-    vectorize_all = FALSE
-  )
-  file.date <- stringi::stri_replace_all_fixed(
-    file.date,
-    pattern = c("-", " ", ":"),
-    replacement = c("", "@", ""),
-    vectorize_all = FALSE
-  )
-  file.date <- stringi::stri_sub(file.date, from = 1, to = 13)
-
+  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
   filename <- stringi::stri_join("radiator_split_vcf_", file.date)
 
   # import data ----------------------------------------------------------------
@@ -2881,19 +2837,19 @@ split_vcf <- function(
       whitelist.markers = whitelist.markers,
       filename = NULL,
       verbose = FALSE) %>%
-      dplyr::full_join(split, by = "INDIVIDUALS") %>%
-      split(x = ., f = .$SPLIT)
+      dplyr::full_join(split, by = "INDIVIDUALS")
   )
 
   split <- strata <- blacklist <- NULL
-  radiator_future(.x = input, .f = split_vcf, parallel.core = parallel.core, flat.future = "walk", filename = filename)
-  # radiator_parallel_mc(
-  #   X = input,
-  #   FUN = split_vcf,
-  #   mc.cores = parallel.core,
-  #   filename = filename#,max.vector.size = 1000000000000
-  # )
-
+  radiator_future(
+    .x = input,
+    .f = split_vcf,
+    split.vec = FALSE,
+    split.with = "SPLIT",
+    flat.future = "walk",
+    parallel.core = parallel.core,
+    filename = filename
+    )
   # results --------------------------------------------------------------------
   message("Split VCFs were written in the working directory")
   timing <- proc.time() - timing
