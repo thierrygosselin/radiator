@@ -20,16 +20,17 @@ haplotype_reconstruction <- function(
     data <- tidyr::separate(
       data = data,
       col = HAPLOTYPES,
-      into = as.character(seq(1, n.snp, 1)), sep = 1:(n.snp - 1), remove = FALSE) %>%
-      data.table::as.data.table(.) %>%
-      data.table::melt.data.table(
-        data = .,
-        id.vars = c("MARKERS", "HAPLOTYPES", "SNP_N"),
-        variable.name = "SNP",
-        value.name = "NUC",
-        variable.factor = FALSE
+      into = as.character(seq(1, n.snp, 1)),
+      sep = 1:(n.snp - 1),
+      remove = FALSE
+    ) %>%
+      rad_long(
+        x = .,
+        cols = c("MARKERS", "HAPLOTYPES", "SNP_N"),
+        names_to = "SNP",
+        values_to = "NUC",
+        variable_factor = FALSE
       ) %>%
-      tibble::as_tibble(.) %>%
       dplyr::mutate(SNP = as.integer(SNP)) %>%
       dplyr::group_by(SNP) %>%
       dplyr::mutate(
@@ -39,13 +40,11 @@ haplotype_reconstruction <- function(
       dplyr::filter(POLYMORPHIC == "polymorphic") %>%
       dplyr::select(-POLYMORPHIC) %>%
       dplyr::arrange(SNP, HAPLOTYPES) %>%
-      data.table::as.data.table(.) %>%
-      data.table::dcast.data.table(
-        data = .,
-        formula = MARKERS + HAPLOTYPES + SNP_N ~ SNP,
-        value.var = "NUC"
-      ) %>%
-      tibble::as_tibble(.) %>%
+      rad_wide(
+        x = .,
+        formula = "MARKERS + HAPLOTYPES + SNP_N ~ SNP",
+        values_from = "NUC"
+        ) %>%
       tidyr::unite(
         data = ., col = HAPLOTYPES_NEW,
         -c(MARKERS, HAPLOTYPES, SNP_N),

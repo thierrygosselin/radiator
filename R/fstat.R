@@ -82,16 +82,17 @@ tidy_fstat <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
   if (is.vector(data)) {
     data <- readr::read_delim(file = data, delim = "?", col_names = "data", col_types = "c")
   } else {
-    data <- dplyr::rename(data, data = V1)
+    data %<>% dplyr::rename(data = V1)
   }
 
   # replace potential white space character: [\t\n\f\r\p{Z}] -----------------------------
-  data$data = stringi::stri_replace_all_regex(
-    str = data$data,
-    pattern = "\\s+",
-    replacement = "\t",
-    vectorize_all = FALSE
-  )
+  data$data %<>%
+    stringi::stri_replace_all_regex(
+      str = .,
+      pattern = "\\s+",
+      replacement = "\t",
+      vectorize_all = FALSE
+    )
 
   # metadata -------------------------------------------------------------------
   fstat.first.line <- data %>%
@@ -106,7 +107,8 @@ tidy_fstat <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
     purrr::flatten_chr(.x = .)
 
   # Isolate the genotypes and pop column
-  data <- dplyr::slice(.data = data, -(1:(as.numeric(fstat.first.line$nl) + 1)))
+  data %<>%
+    dplyr::slice(-(1:(as.numeric(fstat.first.line$nl) + 1)))
 
   # separate the dataset by tab
   data <- tibble::as_tibble(
@@ -116,7 +118,7 @@ tidy_fstat <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
     magrittr::set_colnames(x = ., c("POP_ID", markers))
 
   # Create a string of id
-  id <- dplyr::data_frame(INDIVIDUALS = paste0("IND-", seq_along(1:length(data$POP_ID))))
+  id <- tibble::tibble(INDIVIDUALS = paste0("IND-", seq_along(1:length(data$POP_ID))))
 
   # bind with data
   data <- dplyr::bind_cols(id, data)
@@ -172,15 +174,14 @@ tidy_fstat <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
   # Tidy -------------------------------------------------------------------------
 
   # work on the genotype field
-  data <- data.table::as.data.table(data) %>%
-    data.table::melt.data.table(
-      data = .,
-      id.vars = c("POP_ID", "INDIVIDUALS"),
-      variable.name = "MARKERS",
-      value.name = "GENOTYPE",
-      variable.factor = FALSE
-    ) %>%
-    tibble::as_tibble(.) %>%
+  data %<>%
+    rad_long(
+      x = .,
+      cols = c("POP_ID", "INDIVIDUALS"),
+      names_to = "MARKERS",
+      values_to = "GENOTYPE",
+      variable_factor = FALSE
+      ) %>%
     tidyr::separate(
       col = GENOTYPE, into = c("A1", "A2"), sep = as.numeric(fstat.first.line$allele.coding)
     ) %>%
@@ -192,13 +193,12 @@ tidy_fstat <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
 
   # wide format
   if (!tidy) {
-    data <- data.table::as.data.table(data) %>%
-      data.table::dcast.data.table(
-        data = .,
-        formula = POP_ID + INDIVIDUALS ~ MARKERS,
-        value.var = "GENOTYPE"
+    data %<>%
+      rad_wide(
+        x = .,
+        formula = "POP_ID + INDIVIDUALS ~ MARKERS",
+        values_from = "GENOTYPE"
       ) %>%
-      tibble::as_tibble(.) %>%
       dplyr::arrange(POP_ID, INDIVIDUALS)
   }
 
@@ -250,12 +250,10 @@ write_hierfstat <- function(data, filename = NULL) {
   if (missing(data)) rlang::abort("Input file necessary to write the hierfstat file is missing")
 
   # Import data ---------------------------------------------------------------
-  if (is.vector(data)) {
-    data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-  }
+  if (is.vector(data)) data %<>% radiator::tidy_wide(data = ., import.metadata = TRUE)
 
   if (!rlang::has_name(data, "GT")) {
-    data <- calibrate_alleles(data = data, verbose = FALSE) %$% input
+    data %<>% calibrate_alleles(data = ., verbose = FALSE) %$% input
   }
 
   data <- dplyr::select(.data = data, POP_ID, INDIVIDUALS, MARKERS, GT) %>%
@@ -298,13 +296,11 @@ write_hierfstat <- function(data, filename = NULL) {
   data <- suppressWarnings(
     tidyr::unite(data = data, GT, A1, A2, sep = "") %>%
       dplyr::mutate(GT = as.numeric(GT)) %>%
-      data.table::as.data.table(.) %>%
-      data.table::dcast.data.table(
-        data = .,
-        formula = POP_ID + INDIVIDUALS ~ MARKERS,
-        value.var = "GT"
-      ) %>%
-      tibble::as_tibble(.) %>%
+      rad_wide(
+        x = .,
+        formula = "POP_ID + INDIVIDUALS ~ MARKERS",
+        values_from = "GT"
+        ) %<>%
       dplyr::arrange(POP_ID, INDIVIDUALS) %>%
       dplyr::mutate(POP_ID = as.integer(POP_ID), INDIVIDUALS = NULL)
   )

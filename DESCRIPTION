@@ -48,6 +48,7 @@ Suggests:
     stringi,
     tibble,
     tidyr (>= 1.1.0),
+    tidyselect,
     utils
 License: GPL-3
 LazyLoad: yes

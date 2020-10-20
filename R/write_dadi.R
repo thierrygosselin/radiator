@@ -133,7 +133,8 @@ write_dadi <- function(
         N = as.numeric(n()),
         PP = as.numeric(length(GT_BIN[GT_BIN == 0L])),
         PQ = as.numeric(length(GT_BIN[GT_BIN == 1L])),
-        QQ = as.numeric(length(GT_BIN[GT_BIN == 2L]))
+        QQ = as.numeric(length(GT_BIN[GT_BIN == 2L])),
+        .groups = "keep"
       ) %>%
       dplyr::mutate(MAF = ((QQ*2) + PQ)/(2*N)) %>%
       dplyr::ungroup(.) %>%
@@ -148,7 +149,8 @@ write_dadi <- function(
         N = as.numeric(n()),
         PP = as.numeric(length(GT_VCF[GT_VCF == "0/0"])),
         PQ = as.numeric(length(GT_VCF[GT_VCF == "1/0" | GT_VCF == "0/1"])),
-        QQ = as.numeric(length(GT_VCF[GT_VCF == "1/1"]))
+        QQ = as.numeric(length(GT_VCF[GT_VCF == "1/1"])),
+        .groups = "keep"
       ) %>%
       dplyr::mutate(MAF = ((QQ*2) + PQ)/(2*N)) %>%
       dplyr::ungroup(.) %>%
@@ -172,23 +174,15 @@ write_dadi <- function(
         ) %>%
         dplyr::ungroup(.) %>%
         dplyr::select(POP_ID, Allele1 = REF, A1, Allele2 = ALT, A2, MARKERS) %>%
-        data.table::as.data.table(.) %>%
-        data.table::melt.data.table(
-          data = .,
-          id.vars = c("POP_ID", "MARKERS", "Allele1", "Allele2"),
-          variable.name = "ALLELE_GROUP",
-          measure.vars = c("A1", "A2"),
-          value.name = "COUNT"
+        rad_long(
+          x = .,
+          cols = c("POP_ID", "MARKERS", "Allele1", "Allele2"),
+          measure_vars = c("A1", "A2"),
+          names_to = "ALLELE_GROUP",
+          values_to = "COUNT"
         ) %>%
-        tibble::as_tibble(.) %>%
         tidyr::unite(POP, POP_ID, ALLELE_GROUP, sep = "_") %>%
-        data.table::as.data.table(.) %>%
-        data.table::dcast.data.table(
-          data = .,
-          formula = MARKERS + Allele1 + Allele2 ~ POP,
-          value.var = "COUNT"
-        ) %>%
-        tibble::as_tibble(.) %>%
+        rad_wide(x = ., formula = "MARKERS + Allele1 + Allele2 ~ POP", values_from = "COUNT") %>%
         dplyr::mutate(
           IN_GROUP = rep("---", n()), #version 2
           OUT_GROUP = rep("---", n())
@@ -371,10 +365,6 @@ write_dadi <- function(
 
     ingroup <- dplyr::ungroup(ref.allele.vcf.ingroup.fasta) %>%
       dplyr::select(CHROM, LOCUS, POS, IN_GROUP) %>%
-      # dplyr::mutate(
-      #   POS = stringi::stri_pad_left(str = POS, width = 8, pad = "0"),
-      #   LOCUS = stringi::stri_pad_left(str = LOCUS, width = 8, pad = "0")
-      # ) %>%
       dplyr::arrange(CHROM, LOCUS, POS) %>%
       tidyr::unite(MARKERS, c(CHROM, LOCUS, POS), sep = "__")
 
@@ -437,10 +427,6 @@ write_dadi <- function(
         OUT_GROUP = ifelse(SNP_READ_POS == 1, stringi::stri_pad(OUT_GROUP, width = 3, side = "left", pad = "-"), OUT_GROUP)
       ) %>%
       dplyr::select(CHROM, LOCUS, POS, OUT_GROUP) %>%
-      # dplyr::mutate(
-      #   POS = stringi::stri_pad_left(str = POS, width = 8, pad = "0"),
-      #   LOCUS = stringi::stri_pad_left(str = LOCUS, width = 8, pad = "0")
-      # ) %>%
       dplyr::arrange(CHROM, LOCUS, POS) %>%
       tidyr::unite(MARKERS, c(CHROM, LOCUS, POS), sep = "__")
 
@@ -473,24 +459,14 @@ write_dadi <- function(
         ) %>%
         dplyr::ungroup(.) %>%
         dplyr::select(POP_ID, Allele1 = REF, A1, Allele2 = ALT, A2, MARKERS) %>%
-        data.table::as.data.table(.) %>%
-        data.table::melt.data.table(
-          data = .,
-          id.vars = c("POP_ID", "MARKERS", "Allele1", "Allele2"),
-          variable.name = "ALLELE_GROUP",
-          measure.vars = c("A1", "A2"),
-          value.name = "COUNT"
-        ) %>%
-        tibble::as_tibble(.) %>%
+        rad_long(x = .,
+                 cols = c("POP_ID", "MARKERS", "Allele1", "Allele2"),
+                 measure_vars = c("A1", "A2"),
+                 names_to = "ALLELE_GROUP",
+                 values_to = "COUNT"
+                 ) %>%
         tidyr::unite(POP, POP_ID, ALLELE_GROUP, sep = "_") %>%
-        dplyr::group_by(MARKERS, Allele1, Allele2) %>%
-        data.table::as.data.table(.) %>%
-        data.table::dcast.data.table(
-          data = .,
-          formula = MARKERS + Allele1 + Allele2 ~ POP,
-          value.var = "COUNT"
-        ) %>%
-        tibble::as_tibble(.) %>%
+        rad_wide(x = ., formula = "MARKERS + Allele1 + Allele2 ~ POP", values_from = "COUNT") %>%
         dplyr::select(
           Allele1,
           dplyr::contains("A1"),

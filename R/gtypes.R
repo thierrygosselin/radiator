@@ -132,18 +132,11 @@ write_gtypes <- function(data, write = FALSE, filename = NULL) {
 
   # Import data ----------------------------------------------------------------
   if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
-    # Check that SeqVarTools is installed (it requires automatically: SeqArray and gdsfmt)
-    if (!"SeqVarTools" %in% utils::installed.packages()[,"Package"]) {
-      rlang::abort('Please install SeqVarTools for this option:\n
-                   install.packages("BiocManager")
-                   BiocManager::install("SeqVarTools")
-                   ')
-    }
 
+    # Required package -----------------------------------------------------------
+    radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
 
-    if (data.type == "gds.file") {
-      data <- radiator::read_rad(data, verbose = FALSE)
-    }
+    if (data.type == "gds.file") data %<>% radiator::read_rad(data = .)
     # biallelic <- radiator::detect_biallelic_markers(data)# faster with GDS
     markers.meta <- extract_markers_metadata(gds = data, markers.meta.select = "MARKERS", whitelist = TRUE)
     strata <- extract_individuals_metadata(gds = data, ind.field.select = c("INDIVIDUALS", "STRATA"), whitelist = TRUE) %>%
@@ -152,33 +145,31 @@ write_gtypes <- function(data, write = FALSE, filename = NULL) {
       gdsfile = data, var.name = "$dosage_alt") %>%
       magrittr::set_colnames(x = ., value = markers.meta$MARKERS) %>%
       magrittr::set_rownames(x = ., value = strata$INDIVIDUALS) %>%
-      data.table::as.data.table(., keep.rownames = "INDIVIDUALS") %>%
-      data.table::melt.data.table(
-        data = .,
-        id.vars = "INDIVIDUALS",
-        variable.name = "MARKERS",
-        value.name = "GT_BIN"
-      ) %>%
+      rad_long(
+        x = .,
+        cols = "INDIVIDUALS",
+        names_to = "MARKERS",
+        values_to = "GT_BIN",
+        keep_rownames = "INDIVIDUALS"
+        ) %>%
       dplyr::left_join(strata, by = "INDIVIDUALS") %>%
       dplyr::mutate(
         `1` = dplyr::if_else(GT_BIN == 0L, 1L, GT_BIN),
         `2` = switch_genotypes(GT_BIN),
         GT_BIN = NULL
       ) %>%
-      data.table::as.data.table(.) %>%
-      data.table::melt.data.table(
-        data = .,
-        id.vars = c("INDIVIDUALS", "POP_ID", "MARKERS"),
-        variable.name = "ALLELES",
-        value.name = "GT"
-      ) %>%
-      data.table::dcast.data.table(
-        data = .,
-        formula = POP_ID + INDIVIDUALS ~ MARKERS + ALLELES,
-        value.var = "GT",
+      rad_long(
+        x = .,
+        cols = c("INDIVIDUALS", "POP_ID", "MARKERS"),
+        names_to = "ALLELES",
+        values_to = "GT"
+        ) %>%
+      rad_wide(
+        x = .,
+        formula = "POP_ID + INDIVIDUALS ~ MARKERS + ALLELES",
+        values_from = "GT",
         sep = "."
       ) %>%
-      tibble::as_tibble(.) %>%
       dplyr::arrange(POP_ID, INDIVIDUALS)
 
     markers.meta <- strata <- NULL
@@ -197,20 +188,18 @@ write_gtypes <- function(data, write = FALSE, filename = NULL) {
           `2` = switch_genotypes(GT_BIN),
           GT_BIN = NULL
         ) %>%
-        data.table::as.data.table(.) %>%
-        data.table::melt.data.table(
-          data = .,
-          id.vars = c("INDIVIDUALS", "POP_ID", "MARKERS"),
-          variable.name = "ALLELES",
-          value.name = "GT"
+        rad_long(
+          x = .,
+          cols = c("INDIVIDUALS", "POP_ID", "MARKERS"),
+          names_to = "ALLELES",
+          values_to = "GT"
         ) %>%
-        data.table::dcast.data.table(
-          data = .,
-          formula = POP_ID + INDIVIDUALS ~ MARKERS + ALLELES,
-          value.var = "GT",
+        rad_wide(
+          x = .,
+          formula = "POP_ID + INDIVIDUALS ~ MARKERS + ALLELES",
+          values_from = "GT",
           sep = "."
         ) %>%
-        tibble::as_tibble(.) %>%
         dplyr::arrange(POP_ID, INDIVIDUALS)
 
 
@@ -225,22 +214,19 @@ write_gtypes <- function(data, write = FALSE, filename = NULL) {
           `2` = stringi::stri_sub(str = GT, from = 4, to = 6)
         ) %>%
         dplyr::select(-GT) %>%
-        data.table::as.data.table(.) %>%
-        data.table::melt.data.table(
-          data = .,
-          id.vars = c("INDIVIDUALS", "POP_ID", "MARKERS"),
-          variable.name = "ALLELES",
-          value.name = "GT"
+        rad_long(
+          x = .,
+          cols = c("INDIVIDUALS", "POP_ID", "MARKERS"),
+          names_to = "ALLELES",
+          values_to = "GT"
         ) %>%
-        data.table::dcast.data.table(
-          data = .,
-          formula = POP_ID + INDIVIDUALS ~ MARKERS + ALLELES,
-          value.var = "GT",
+        rad_wide(
+          x = .,
+          formula = "POP_ID + INDIVIDUALS ~ MARKERS + ALLELES",
+          values_from = "GT",
           sep = "."
         ) %>%
-        tibble::as_tibble(.) %>%
         dplyr::arrange(POP_ID, INDIVIDUALS)
-
     }
   }
 

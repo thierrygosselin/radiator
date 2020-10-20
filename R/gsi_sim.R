@@ -87,7 +87,7 @@ write_gsi_sim <- function(
   # check <- NULL
 
   # Import data
-  data <- radiator::tidy_wide(data = data, import.metadata = FALSE)
+  data %<>% radiator::tidy_wide(data = .)
 
   # Info for gsi_sim input
   n.individuals <- dplyr::n_distinct(data$INDIVIDUALS)  # number of individuals
@@ -99,26 +99,18 @@ write_gsi_sim <- function(
   }
 
   # Spread/dcast in wide format
-  data %<>% dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT) %>%
-    tidyr::separate(data = ., col = GT, into = c("A1", "A2"), sep = 3, remove = TRUE) %>%
-    data.table::as.data.table(.) %>%
-    data.table::melt.data.table(
-      data = .,
-      id.vars = c("MARKERS", "INDIVIDUALS", "POP_ID"),
-      variable.name = "ALLELES",
-      value.name = "GT"
+  data %<>%
+    dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT) %>%
+    dplyr::mutate(
+      A1 = stringi::stri_sub(str = GT, from = 1, to = 3),
+      A2 = stringi::stri_sub(str = GT, from = 4, to = 6),
+      GT = NULL
     ) %>%
-    tibble::as_tibble(.) %>%
+    rad_long(x = ., cols = c("POP_ID", "INDIVIDUALS", "MARKERS"), names_to = "ALLELES", values_to = "GT") %>%
     dplyr::arrange(MARKERS) %>%
     tidyr::unite(col = MARKERS_ALLELES, MARKERS , ALLELES, sep = "_") %>%
     dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS_ALLELES) %>%
-    data.table::as.data.table(.) %>%
-    data.table::dcast.data.table(
-      data = .,
-      formula = POP_ID + INDIVIDUALS ~ MARKERS_ALLELES,
-      value.var = "GT"
-    ) %>%
-    tibble::as_tibble(.) %>%
+    rad_wide(x = ., formula = "POP_ID_ INDIVIDUALS ~ MARKERS_ALLELES", values_from = "GT") %>%
     dplyr::ungroup(.)
 
   # population levels and strata
@@ -160,7 +152,7 @@ write_gsi_sim <- function(
                        file = filename, delim = " ", append = TRUE, col_names = FALSE)
   }
 
-  gsi_sim.split <- data <-pop <- pop.string <- NULL
+  gsi_sim.split <- data <- pop <- pop.string <- NULL
   return(filename)
 } # End write_gsi function
 

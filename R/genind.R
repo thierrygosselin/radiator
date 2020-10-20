@@ -115,7 +115,7 @@ tidy_genind <- function(
           pattern = c("__A1", "__A2"),
           replacement = c("", ""),
           vectorize_all = FALSE
-          ),
+        ),
         VARIANT_ID = as.integer(factor(MARKERS))) %>%
       dplyr::arrange(VARIANT_ID)
 
@@ -320,9 +320,7 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
   # Import data ---------------------------------------------------------------
 
   if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
-    if (data.type == "gds.file") {
-      data <- radiator::read_rad(data, verbose = verbose)
-    }
+    if (data.type == "gds.file") data %<>% radiator::read_rad(data = ., verbose = verbose)
     data <- gds2tidy(gds = data, parallel.core = parallel::detectCores() - 1)
     data.type <- "tbl_df"
   } else {
@@ -368,52 +366,13 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
             ALT = NULL
           )
       ) %>%
-        data.table::as.data.table(.) %>%
-        data.table::dcast.data.table(
-          data = .,
-          formula = POP_ID + INDIVIDUALS ~ MARKERS_ALLELES,
-          value.var = "n"
+        rad_wide(
+          x = .,
+          formula = "POP_ID + INDIVIDUALS ~ MARKERS_ALLELES",
+          values_from = "n"
         ) %>%
-        tibble::as_tibble(.) %>%
         dplyr::mutate(POP_ID = factor(as.character(POP_ID), levels = pop.levels)) %>%# xvalDapc doesn't accept pop as ordered factor
         dplyr::arrange(POP_ID, INDIVIDUALS)
-
-      # Note to myself: the problem below is that alleles are not unique and it
-      # generates an identifier using the marker + the allele that is not unique...
-      # data <-
-      # # suppressWarnings(
-      # test <- dplyr::select(.data = data, MARKERS, POP_ID, INDIVIDUALS, REF, ALT, GT_BIN) %>%
-      #   dplyr::mutate(A1 = as.integer(abs(GT_BIN - 2))) %>%
-      #   dplyr::rename(A2 = GT_BIN) %>%
-      #   data.table::as.data.table(.) %>%
-      #   data.table::melt.data.table(
-      #     data = .,
-      #     id.vars = c("INDIVIDUALS", "POP_ID", "MARKERS", "REF", "ALT"),
-      #     variable.name = "ALLELES",
-      #     measure.vars = c("A1", "A2"),
-      #     value.name = "n"
-      #   ) %>%
-      #   tibble::as_tibble(.) %>%
-      #   dplyr::mutate(
-      #     ALLELES = dplyr::case_when(
-      #       ALLELES == "A1" ~ REF,
-      #       ALLELES == "A2" ~ ALT
-      #     ),
-      #     REF = NULL,
-      #     ALT = NULL,
-      #     MARKERS_ALLELES = stringi::stri_join(MARKERS, ALLELES, sep = ".")
-      #   ) %>%
-      #   dplyr::select(-MARKERS, -ALLELES) %>%
-      #   data.table::as.data.table(.) %>%
-      #   data.table::dcast.data.table(
-      #     data = .,
-      #     formula = POP_ID + INDIVIDUALS ~ MARKERS_ALLELES,
-      #     value.var = "n"#, fun.aggregate = length
-      #   ) %>%
-      #   tibble::as_tibble(.) %>%
-      #   dplyr::mutate(POP_ID = factor(as.character(POP_ID), levels = pop.levels)) %>%# xvalDapc doesn't accept pop as ordered factor
-      #   dplyr::arrange(POP_ID, INDIVIDUALS)
-      # # )
     } else {
       data <- dplyr::bind_rows(
         dplyr::select(data, MARKERS, POP_ID, INDIVIDUALS, n = GT_BIN) %>%
@@ -430,13 +389,11 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
             ALT = NULL
           )
       ) %>%
-        data.table::as.data.table(.) %>%
-        data.table::dcast.data.table(
-          data = .,
-          formula = POP_ID + INDIVIDUALS ~ MARKERS_ALLELES,
-          value.var = "n"
+        rad_wide(
+          x = .,
+          formula = "POP_ID + INDIVIDUALS ~ MARKERS_ALLELES",
+          values_from = "n"
         ) %>%
-        tibble::as_tibble(.) %>%
         dplyr::mutate(POP_ID = factor(as.character(POP_ID), levels = pop.levels)) %>%# xvalDapc doesn't accept pop as ordered factor
         dplyr::arrange(POP_ID, INDIVIDUALS)
     }
@@ -452,17 +409,15 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
         dplyr::filter(GT != "000000") %>%
         dplyr::mutate(
           A1 = stringi::stri_sub(str = GT, from = 1, to = 3),
-          A2 = stringi::stri_sub(str = GT, from = 4, to = 6)
+          A2 = stringi::stri_sub(str = GT, from = 4, to = 6),
+          GT = NULL
         ) %>%
-        dplyr::select(-GT) %>%
-        data.table::as.data.table(.) %>%
-        data.table::melt.data.table(
-          data = .,
-          id.vars = c("INDIVIDUALS", "POP_ID", "MARKERS"),
-          variable.name = "ALLELES",
-          value.name = "GT"
+        rad_long(
+          x = .,
+          cols = c("INDIVIDUALS", "POP_ID", "MARKERS"),
+          names_to = "ALLELES",
+          values_to = "GT"
         ) %>%
-        tibble::as_tibble(.) %>%
         dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS, GT) %>%
         dplyr::count(x = ., POP_ID, INDIVIDUALS, MARKERS, GT) %>%
         dplyr::ungroup(.) %>%
@@ -472,13 +427,7 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
         dplyr::select(-MARKERS, -GT) %>%
         dplyr::mutate(POP_ID = factor(as.character(POP_ID), levels = pop.levels)) %>%# xvalDapc doesn't accept pop as ordered factor
         dplyr::arrange(MARKERS_ALLELES, INDIVIDUALS) %>%
-        data.table::as.data.table(.) %>%
-        data.table::dcast.data.table(
-          data = .,
-          formula = POP_ID + INDIVIDUALS ~ MARKERS_ALLELES,
-          value.var = "n"
-        ) %>%
-        tibble::as_tibble(.) %>%
+        rad_wide(x = ., formula = "POP_ID + INDIVIDUALS ~ MARKERS_ALLELES", values_from = "n") %>%
         dplyr::arrange(POP_ID, INDIVIDUALS))
   }
 

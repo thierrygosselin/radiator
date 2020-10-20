@@ -112,10 +112,10 @@ write_colony <- function(
   filename = NULL,
   ...
 ) {
-  cat("#######################################################################\n")
-  cat("######################## radiator::write_colony #######################\n")
-  cat("#######################################################################\n")
-  timing <- proc.time()
+  radiator_function_header(f.name = "write_colony", verbose = verbose)
+  timing <- radiator_tic()
+  on.exit(radiator_toc(timing), add = TRUE)
+  on.exit(radiator_function_header(f.name = "write_colony", start = FALSE, verbose = verbose), add = TRUE)
 
   # Checking for missing and/or default arguments-------------------------------
   if (missing(data)) rlang::abort("Input file missing")
@@ -135,15 +135,11 @@ write_colony <- function(
   # Import data ---------------------------------------------------------------
 
   if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
-    if (data.type == "gds.file") {
-      data <- radiator::read_rad(data, verbose = FALSE)
-    }
-    data <- gds2tidy(gds = data, parallel.core = parallel::detectCores() - 1)
+    if (data.type == "gds.file") data %<>% radiator::read_rad(data = .)
+    data <- gds2tidy(gds = data, parallel.core = parallel.core)
     data.type <- "tbl_df"
   } else {
-    if (is.vector(data)) {
-      data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-    }
+    if (is.vector(data)) data %<>% radiator::tidy_wide(data = ., import.metadata = TRUE)
   }
 
   if (rlang::has_name(data, "STRATA") && !rlang::has_name(data, "POP_ID")) {
@@ -177,33 +173,8 @@ write_colony <- function(
   # Generate colony without imputations ----------------------------------------
   message("Generating COLONY file...\n")
   radiator_colony(data = data, filename = filename)
-
-  # Imputations-----------------------------------------------------------------
-  # if (!is.null(imputation.method)) {
-  #   message("\nMap-independent imputations...\n\n")
-  #   input.imp <- radiator::radiator_imputations_module(
-  #     data = dplyr::select(.data = input, MARKERS, POP_ID, INDIVIDUALS, GT),
-  #     imputation.method = imputation.method,
-  #     hierarchical.levels = hierarchical.levels,
-  #     num.tree = num.tree,
-  #     pred.mean.matching = pred.mean.matching,
-  #     random.seed = random.seed,
-  #     verbose = verbose,
-  #     parallel.core = parallel.core,
-  #     filename = NULL
-  #   )
-  #   message("\n\nGenerating COLONY file WITH imputations...\n")
-  #   radiator_colony(data = input.imp, filename = filename.imp)
-  #
-  # } # End imputations
-
-  res <- "COLONY file(s) written in the working directory"
-  message(res)
-  # Imputations: colony with imputed haplotypes using Random Forest ------------
-  timing <- proc.time() - timing
-  message(stringi::stri_join("Computation time: ", round(timing[[3]]), " sec"))
-  cat("############################## completed ##############################\n")
-  return(res)
+  message("COLONY file(s) written in the working directory")
+  return("COLONY file(s) written in the working directory")
 }
 
 # radiator_colony internal function ----------------------------------------------
@@ -226,18 +197,17 @@ radiator_colony <- function(
   error.rate = 0.02,
   print.all.colony.opt = FALSE,
   ...) {
-  # data <- input #test
-
   # Separate the alleles -------------------------------------------------------
-  data <- dplyr::select(.data = data, MARKERS, POP_ID, INDIVIDUALS, GT) %>%
+  data %<>%
+    dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT) %>%
     dplyr::mutate(
       A1 = stringi::stri_sub(GT, 1, 3),
       A2 = stringi::stri_sub(GT, 4, 6),
       GT = NULL
     ) %>%
-    tidyr::pivot_longer(
-      data = .,
-      cols = -c("POP_ID", "INDIVIDUALS", "MARKERS"),
+    rad_long(
+      x = .,
+      cols = c("POP_ID", "INDIVIDUALS", "MARKERS"),
       names_to = "ALLELE_GROUP",
       values_to = "ALLELES"
     ) %>%
@@ -270,17 +240,15 @@ radiator_colony <- function(
       dplyr::select(MARKERS, ALLELES, FREQ) %>%
       dplyr::arrange(MARKERS) %>%
       dplyr::mutate(GROUP = seq(1, n(), by = 1)) %>%
-      dplyr::mutate(dplyr::across(everything(), .fns = as.character)) %>%
-      tidyr::pivot_longer(
-        data = .,
-        cols = -c("GROUP", "MARKERS"),
+      dplyr::mutate(dplyr::across(tidyselect::everything(), .fns = as.character)) %>%
+      rad_long(
+        x = .,
+        cols = c("GROUP", "MARKERS"),
         names_to = "ALLELES_FREQ",
         values_to = "VALUE"
       ) %>%
       dplyr::mutate(ALLELES_FREQ = factor(ALLELES_FREQ, levels = c("ALLELES", "FREQ"), ordered = TRUE)) %>%
-      dplyr::group_by(MARKERS, ALLELES_FREQ) %>%
-      tidyr::pivot_wider(data = ., names_from = "GROUP", values_from = "VALUE") %>%
-      dplyr::ungroup(.) %>%
+      rad_wide(x = ., formula = "MARKERS + ALLELES_FREQ ~ GROUP", values_from = "VALUE") %>%
       tidyr::unite(data = ., col = INFO, -c(MARKERS, ALLELES_FREQ), sep = " ") %>%
       dplyr::mutate(
         INFO = stringi::stri_replace_all_regex(str = INFO, pattern = "NA", replacement = "", vectorize_all = FALSE),
@@ -290,16 +258,21 @@ radiator_colony <- function(
     input.alleles <- NULL
   }
 
-  markers.name <- tibble::as_tibble(t(dplyr::distinct(data, MARKERS) %>% dplyr::arrange(MARKERS)))
-  marker.num <- ncol(markers.name)
+  # markers.name <- tibble::as_tibble(
+  #   x = t(dplyr::distinct(data, MARKERS) %>% dplyr::arrange(MARKERS))
+  #   )
+  # marker.num <- ncol(markers.name)
+
+  markers.name <- dplyr::distinct(data, MARKERS) %>%
+    dplyr::arrange(MARKERS) %$%
+    MARKERS
+  marker.num <- length(markers.name)
 
   data <- tidyr::unite(data = data, col = MARKERS.ALLELE_GROUP, MARKERS, ALLELE_GROUP, sep = ".") %>%
-    dplyr::group_by(POP_ID, INDIVIDUALS) %>%
-    tidyr::pivot_wider(data = ., names_from = "MARKERS.ALLELE_GROUP", values_from = "ALLELES") %>%
+    rad_wide(x = ., formula = "POP_ID + INDIVIDUALS ~ MARKERS.ALLELE_GROUP", values_from = "ALLELES") %>%
     dplyr::arrange(POP_ID, INDIVIDUALS) %>%
-    dplyr::ungroup(.) %>%
     dplyr::select(-POP_ID) %>%
-    dplyr::mutate(dplyr::across(everything(), .fns = as.character))
+    dplyr::mutate(dplyr::across(tidyselect::everything(), .fns = as.character))
 
   # Line 1 = Dataset name-------------------------------------------------------
   dataset.opt <- "`My first COLONY run`                ! Dataset name\n"
@@ -415,7 +388,7 @@ radiator_colony <- function(
   # markers.name.opt <- as.character(c(markers.name, "        ! Marker IDs\n"))
   # readr::write_file(x = markers.name.opt, file = filename, append = TRUE)
   markers.name.opt <- stringi::stri_join(markers.name, collapse = " ")
-  markers.name.opt <- stringi::stri_join(markers.name.opt, "! Marker IDs\n")
+  markers.name.opt <- stringi::stri_join(markers.name.opt, " ! Marker IDs\n")
   readr::write_file(x = markers.name.opt, file = filename, append = TRUE)
 
   # Marker types ---------------------------------------------------------------

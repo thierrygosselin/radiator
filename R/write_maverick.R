@@ -55,16 +55,12 @@ write_maverick <- function(
   if (missing(data)) rlang::abort("Input file missing")
 
   # Import data ---------------------------------------------------------------
-  if (is.vector(data)) {
-    data <- radiator::tidy_wide(data = data, import.metadata = FALSE)
-  }
+  if (is.vector(data)) data %<>% radiator::tidy_wide(data = .)
 
   # necessary steps to make sure we work with unique markers and not duplicated LOCUS
   if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
-    data <- dplyr::rename(.data = data, MARKERS = LOCUS)
+    data %<>% dplyr::rename(MARKERS = LOCUS)
   }
-
-
 
   # Create a marker vector  ----------------------------------------------------
   markers <- dplyr::distinct(.data = data, MARKERS) %>%
@@ -96,34 +92,21 @@ write_maverick <- function(
   n.pop <- dplyr::n_distinct(data$POP_ID)
 
   # maverick format ------------------------------------------------------------
-  data <- dplyr::select(.data = data, POP_ID, INDIVIDUALS, MARKERS, GT) %>%
-    tidyr::separate(col = GT, into = c("A1", "A2"), sep = 3, extra = "drop", remove = TRUE) %>%
-    # tidyr::gather(data = ., key = ALLELES, value = GT, -c(POP_ID, INDIVIDUALS, MARKERS)) %>%
-    data.table::as.data.table(.) %>%
-      data.table::melt.data.table(
-        data = .,
-        id.vars = c("INDIVIDUALS", "POP_ID", "MARKERS"),
-        variable.name = "ALLELES",
-        value.name = "GT"
-      ) %>%
-      tibble::as_tibble(.) %>%
-      dplyr::mutate(
-        GT = stringi::stri_replace_all_fixed(
-          str = GT, pattern = "000", replacement = "-9", vectorize_all = FALSE),
-        GT = as.integer(GT)
-      ) %>%
-      dplyr::select(INDIVIDUALS, POP_ID, MARKERS, ALLELES, GT) %>%
-      dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS, ALLELES) %>%
-      # tidyr::spread(data = ., key = MARKERS, value = GT) %>%
-      data.table::as.data.table(.) %>%
-      data.table::dcast.data.table(
-        data = .,
-        formula = INDIVIDUALS + POP_ID ~ MARKERS + ALLELES,
-        value.var = "GT"
-      ) %>%
-      tibble::as_tibble(.) %>%
-      dplyr::mutate(POP_ID = as.integer(POP_ID)) %>%
-      dplyr::arrange(POP_ID, INDIVIDUALS)
+  data %<>%
+    dplyr::select(POP_ID, INDIVIDUALS, MARKERS, GT) %>%
+    dplyr::mutate(
+      A1 = stringi::stri_sub(str = GT, from = 1, to = 3),
+      A2 = stringi::stri_sub(str = GT, from = 4, to = 6),
+      GT = NULL
+    ) %>%
+    rad_long(x = ., cols = c("POP_ID", "INDIVIDUALS", "MARKERS"), names_to = "ALLELES", values_to = "GT") %>%
+    dplyr::mutate(
+      GT = stringi::stri_replace_all_fixed(str = GT, pattern = "000", replacement = "-9", vectorize_all = FALSE),
+      GT = as.integer(GT)
+    ) %>%
+    rad_wide(x = ., formula = "INDIVIDUALS + POP_ID ~ MARKERS + ALLELES", values_from = "GT") %>%
+    dplyr::mutate(POP_ID = as.integer(POP_ID)) %>%
+    dplyr::arrange(POP_ID, INDIVIDUALS)
 
   # markers <- colnames
   # Write the file in maverick format -----------------------------------------

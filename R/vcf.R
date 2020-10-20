@@ -2229,24 +2229,6 @@ parse_gds_metadata <- function(
   #   # test <- res$QA
   # }#End cleaning QA column
 
-
-
-  # test <- res$AD %>%
-  #   dplyr::bind_cols(READ_DEPTH = SeqArray::seqGetData(
-  #   gdsfile = gds,
-  #   var.name = "annotation/format/DP")$data %>% as.vector(.))
-
-  # if (gather.data) {
-  #   x <- dplyr::mutate(x, ID = seq(1, n()))
-  #   x <- data.table::melt.data.table(
-  #     data = data.table::as.data.table(x),
-  #     id.vars = "ID",
-  #     variable.name = "INDIVIDUALS",
-  #     value.name = format.name,
-  #     variable.factor = FALSE) %>%
-  #     tibble::as_tibble(.) %>%
-  #     dplyr::select(-ID, -INDIVIDUALS)
-  # }
   return(res)
 }#End parse_gds_metadata
 
@@ -2409,13 +2391,10 @@ write_vcf <- function(
           dplyr::select(MARKERS, CHROM, LOCUS, POS, REF, ALT, INFO, INDIVIDUALS, GT_VCF, POP_ID) %>%
           dplyr::mutate(GT_VCF_POP_ID = stringi::stri_join(GT_VCF, POP_ID, sep = ":")) %>%
           dplyr::select(-c(GT_VCF, POP_ID)) %>%
-          data.table::as.data.table(.) %>%
-          data.table::dcast.data.table(
-            data = .,
-            formula = MARKERS + CHROM + LOCUS + POS + INFO + REF + ALT ~ INDIVIDUALS,
-            value.var = "GT_VCF_POP_ID"
-          ) %>%
-          tibble::as_tibble(.) %>%
+          rad_wide(
+            x = .,
+            formula = "MARKERS + CHROM + LOCUS + POS + INFO + REF + ALT ~ INDIVIDUALS",
+            names_from = "GT_VCF_POP_ID") %>%
           dplyr::mutate(
             QUAL = rep(".", n()),
             FILTER = rep("PASS", n()),
@@ -2427,13 +2406,7 @@ write_vcf <- function(
       output <- suppressWarnings(
         dplyr::left_join(data, info.field, by = "MARKERS") %>%
           dplyr::select(MARKERS, CHROM, LOCUS, POS, REF, ALT, INDIVIDUALS, GT_VCF, INFO) %>%
-          data.table::as.data.table(.) %>%
-          data.table::dcast.data.table(
-            data = .,
-            formula = MARKERS + CHROM + LOCUS + POS + INFO + REF + ALT ~ INDIVIDUALS,
-            value.var = "GT_VCF"
-          ) %>%
-          tibble::as_tibble(.) %>%
+          rad_wide(x = ., formula = "MARKERS + CHROM + LOCUS + POS + INFO + REF + ALT ~ INDIVIDUALS", values_from = "GT_VCF") %>%
           dplyr::mutate(
             QUAL = rep(".", n()),
             FILTER = rep("PASS", n()),
@@ -2485,7 +2458,11 @@ write_vcf <- function(
   # File format ----------------------------------------------------------------
   readr::write_delim(
     x = tibble::tibble("##fileformat=VCFv4.3"),
-    file = filename, delim = " ", append = FALSE, col_names = FALSE)
+    file = filename,
+    delim = " ",
+    append = FALSE,
+    col_names = FALSE
+    )
 
   # File date ------------------------------------------------------------------
   x <- paste0("##fileDate=", file.date)
@@ -3068,14 +3045,14 @@ vcf_strata <- function(data, strata, filename = NULL) {
     tibble::as_tibble()
 
   # transform in long format
-  input <- data.table::melt.data.table(
-    data = data.table::as.data.table(input),
-    id.vars = c("#CHROM", "POS", "ID",  "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT"),
-    variable.name = "INDIVIDUALS",
-    variable.factor = FALSE,
-    value.name = "FORMAT_ID"
-  ) %>%
-    tibble::as_tibble() %>%
+  input  %<>%
+    rad_long(
+      x = .,
+      cols = c("#CHROM", "POS", "ID",  "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT"),
+      names_to = "INDIVIDUALS",
+      values_to = "FORMAT_ID",
+      variable_factor = FALSE
+    ) %>%
     dplyr::mutate(
       INDIVIDUALS = stringi::stri_replace_all_fixed(
         str = INDIVIDUALS,
@@ -3135,13 +3112,10 @@ vcf_strata <- function(data, strata, filename = NULL) {
       sep = ":",
       remove = TRUE
     ) %>%
-    data.table::as.data.table(.) %>%
-    data.table::dcast.data.table(
-      data = .,
-      formula = `#CHROM` + POS + ID +  REF + ALT + QUAL + FILTER + INFO + FORMAT ~ INDIVIDUALS,
-      value.var = "FORMAT_ID"
-    ) %>%
-    tibble::as_tibble(.) %>%
+    rad_wide(
+      x = .,
+      formula = "`#CHROM` + POS + ID +  REF + ALT + QUAL + FILTER + INFO + FORMAT ~ INDIVIDUALS",
+      values_from = "FORMAT_ID") %>%
     dplyr::mutate(
       FORMAT = stringi::stri_join(
         FORMAT,

@@ -391,23 +391,14 @@ read_dart <- function(
     suppressWarnings(
       data %<>%
         dplyr::select(dplyr::one_of(want)) %>%
-        tidyr::pivot_longer(
-          data = .,
-          cols = -c("CLONE_ID", "SEQUENCE"),
+        rad_long(
+          x = .,
+          cols = c("CLONE_ID", "SEQUENCE"),
           names_to = "INDIVIDUALS",
-          values_to = "VALUE"
+          values_to = "VALUE",
+          variable_factor = FALSE
         )
     )
-
-    # data.table::as.data.table(x = .) %>%
-    # data.table::melt.data.table(
-    #   data = .,
-    #   id.vars = c("CLONE_ID", "SEQUENCE"),
-    #   variable.name = "INDIVIDUALS",
-    #   variable.factor = FALSE,
-    #   value.name = "VALUE"
-    # ) %>%
-    # tibble::as_tibble(.)
 
     n.clone <- length(unique(data$CLONE_ID))
     data <- radiator::join_strata(data = data, strata = strata)
@@ -1189,41 +1180,23 @@ dart2gds <- function(
   }
 
   genotypes.meta <- suppressMessages(
-    tidyr::pivot_longer(
-      data = alt,
-      cols = -want,
+    rad_long(
+      x = alt,
+      cols = want,
       names_to = "INDIVIDUALS",
-      values_to = "ALLELE_ALT_DEPTH"
+      values_to = "ALLELE_ALT_DEPTH",
+      variable_factor = FALSE
     ) %>%
       dplyr::bind_cols(
-        tidyr::pivot_longer(
-          data = ref,
-          cols = -c("VARIANT_ID", "MARKERS"),
+        rad_long(
+          x = ref,
+          cols = c("VARIANT_ID", "MARKERS"),
           names_to = "INDIVIDUALS",
-          values_to = "ALLELE_REF_DEPTH"
+          values_to = "ALLELE_REF_DEPTH",
+          variable_factor = FALSE
         )
       )
   )
-
-  #   data.table::as.data.table(alt) %>%
-  #     data.table::melt.data.table(
-  #       data = .,
-  #       id.vars = want,
-  #       variable.name = "INDIVIDUALS",
-  #       value.name = "ALLELE_ALT_DEPTH",
-  #       variable.factor = FALSE) %>%
-  #     tibble::as_tibble(.) %>%
-  #     dplyr::bind_cols(
-  #       data.table::as.data.table(ref) %>%
-  #         data.table::melt.data.table(
-  #           data = .,
-  #           id.vars = c("VARIANT_ID", "MARKERS"),
-  #           variable.name = "INDIVIDUALS",
-  #           value.name = "ALLELE_REF_DEPTH",
-  #           variable.factor = FALSE) %>%
-  #         tibble::as_tibble(.)
-  #     )
-  # )
   ref <- alt <- NULL
 
   # Faster to check that the bind_cols worked by checking the variant id
@@ -1459,10 +1432,10 @@ tidy_dart_metadata <- function(
                "AVGCOUNTREF", "AVGCOUNTSNP", "REPAVG"),
       COL_TYPE = c("c", "c", "i", "d", "d", "d", "d"))
 
-    dart.col.type <- dart.col.type %>%
-      tidyr::pivot_longer(
-        data = .,
-        cols = everything(),
+    dart.col.type %<>%
+      rad_long(
+        x = .,
+        cols = tidyselect::everything(),
         names_to = "DELETE",
         values_to = "INFO"
       ) %>%

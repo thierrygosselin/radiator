@@ -383,9 +383,9 @@ filter_mac <- function(
     if (verbose) message("File written: maf.helper.table.tsv")
 
     mac.markers.plot <- ggplot2::ggplot(
-      data = tidyr::pivot_longer(
-        data = maf.helper.table[1:25, -2],
-        cols = -MAC,
+      data = rad_long(
+        x = maf.helper.table[1:25, -2],
+        cols = "MAC",
         names_to = "LIST",
         values_to = "MARKERS"
       ),
@@ -393,14 +393,14 @@ filter_mac <- function(
       ggplot2::geom_line() +
       ggplot2::geom_point(size = 2, shape = 21, fill = "white") +
       ggplot2::scale_x_continuous(name = "Minor Allele Count threshold (MAC)", breaks = seq(1, 25, by = 1)) +
-      ggplot2::scale_y_continuous(name = "Number of markers")+#, breaks = y.breaks, limits = c(0, y.breaks.max)) +
+      ggplot2::scale_y_continuous(name = "Number of markers") +#, breaks = y.breaks, limits = c(0, y.breaks.max)) +
       ggplot2::theme(
         axis.title.x = ggplot2::element_text(size = 10, face = "bold"),
         axis.title.y = ggplot2::element_text(size = 10, face = "bold"),
         axis.text.x = ggplot2::element_text(size = 8), #angle = 90, hjust = 1, vjust = 0.5),
         strip.text.x = ggplot2::element_text(size = 10, face = "bold")
       ) +
-      ggplot2::theme_bw()+
+      ggplot2::theme_bw() +
       ggplot2::facet_grid(LIST ~. , scales = "free", space = "free")
     print(mac.markers.plot)
     # save
@@ -551,15 +551,15 @@ compute_maf <- carrier::crate(function(x, biallelic) {
         dplyr::select(MARKERS,POP_ID, INDIVIDUALS, GT) %>%
         dplyr::mutate(
           A1 = stringi::stri_sub(GT, 1, 3),
-          A2 = stringi::stri_sub(GT, 4,6)
+          A2 = stringi::stri_sub(GT, 4,6),
+          GT = NULL
         ) %>%
-        dplyr::select(MARKERS, POP_ID, INDIVIDUALS, A1, A2) %>%
-        tidyr::pivot_longer(
-          data = .,
-          cols = -c("POP_ID", "INDIVIDUALS", "MARKERS"),
+        radiator::rad_long(
+          x = .,
+          cols = c("POP_ID", "INDIVIDUALS", "MARKERS"),
           names_to = "ALLELES",
           values_to = "GT"
-        )
+          )
 
       maf.local <- x %>%
         dplyr::group_by(MARKERS, POP_ID, GT) %>%
@@ -570,8 +570,7 @@ compute_maf <- carrier::crate(function(x, biallelic) {
         dplyr::mutate(n.al.tot = sum(n)) %>%
         dplyr::filter(n == min(n)) %>%
         dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-        dplyr::summarise(MAF_LOCAL = n / n.al.tot, ALT_LOCAL = n) %>%
-        dplyr::ungroup(.) %>%
+        dplyr::summarise(MAF_LOCAL = n / n.al.tot, ALT_LOCAL = n, .groups = "drop") %>%
         dplyr::select(MARKERS, POP_ID, MAF_LOCAL, ALT_LOCAL)
 
       x %<>%
@@ -595,12 +594,12 @@ compute_maf <- carrier::crate(function(x, biallelic) {
           sep = "/",
           extra = "drop", remove = TRUE
         ) %>%
-        tidyr::pivot_longer(
-          data = .,
-          cols = -dplyr::one_of(c("MARKERS", "INDIVIDUALS", "POP_ID")),
+        radiator::rad_long(
+          x = .,
+          cols = dplyr::one_of(c("MARKERS", "INDIVIDUALS", "POP_ID")),
           names_to = "ALLELE_GROUP",
           values_to = "HAPLOTYPES"
-        ) %>%
+          ) %>%
         dplyr::select(-ALLELE_GROUP) %>%
         dplyr::group_by(MARKERS, HAPLOTYPES, POP_ID) %>%
         dplyr::tally(.) %>%
@@ -792,12 +791,12 @@ mac_one <- carrier::crate(function(x) {
       dplyr::select(MARKERS, INDIVIDUALS, GT) %>%
       dplyr::mutate(
         A1 = stringi::stri_sub(GT, 1, 3),
-        A2 = stringi::stri_sub(GT, 4,6)
+        A2 = stringi::stri_sub(GT, 4,6),
+        GT = NULL
       ) %>%
-      dplyr::select(-GT) %>%
-      tidyr::pivot_longer(
-        data = .,
-        cols = -c("MARKERS", "INDIVIDUALS"),
+      radiator::rad_long(
+        x = .,
+        cols = c("MARKERS", "INDIVIDUALS"),
         names_to = "ALLELES",
         values_to = "GT"
       ) %>%
@@ -806,8 +805,7 @@ mac_one <- carrier::crate(function(x) {
       dplyr::group_by(MARKERS) %>%
       dplyr::filter(n == min(n)) %>%
       dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-      dplyr::summarise(MAC_GLOBAL = n) %>%
-      dplyr::ungroup(.) %>%
+      dplyr::summarise(MAC_GLOBAL = n, .groups = "drop") %>%
       dplyr::select(MARKERS, MAC_GLOBAL)
   }
   mac.data$MAC_GLOBAL %<>% as.integer(.)

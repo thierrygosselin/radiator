@@ -317,9 +317,9 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
       if (gt.coding == 2) {
         gt.sep <- 1
       }
-      data <- tidyr::pivot_longer(
-        data = data,
-        cols = -c("POP_ID", "INDIVIDUALS"),
+      data <- rad_long(
+        x = data,
+        cols = c("POP_ID", "INDIVIDUALS"),
         names_to = "MARKERS",
         values_to = "GT"
         ) %>%
@@ -335,15 +335,22 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
         dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
 
       if (!tidy) {
-        data <- tidyr::pivot_wider(data = data, names_from = "MARKERS", values_from = "GT")
+        data %<>%
+          rad_wide(
+            x = .,
+            formula = "POP_ID + NDIVIDUALS ~ MARKERS",
+            values_from = "GT"
+          )
       }
     } else {
       if (tidy) {
-        data <- tidyr::pivot_longer(
-          data = data,
-          cols = -c("POP_ID", "INDIVIDUALS"),
+        data %<>%
+          rad_long(
+          x = .,
+          cols = c("POP_ID", "INDIVIDUALS"),
           names_to = "MARKERS",
-          values_to = "GT")
+          values_to = "GT"
+          )
       }
     }
   }
@@ -433,15 +440,11 @@ write_genepop <- function(
   # Import data ---------------------------------------------------------------
 
   if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
-    if (data.type == "gds.file") {
-      data <- radiator::read_rad(data, verbose = FALSE)
-    }
+    if (data.type == "gds.file") data %<>% radiator::read_rad(data = .)
     data <- gds2tidy(gds = data, parallel.core = parallel::detectCores() - 1)
     data.type <- "tbl_df"
   } else {
-    if (is.vector(data)) {
-      data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-    }
+    if (is.vector(data)) data %<>% radiator::tidy_wide(data = ., import.metadata = TRUE)
   }
 
   if (rlang::has_name(data, "STRATA") && !rlang::has_name(data, "POP_ID")) {
@@ -449,7 +452,7 @@ write_genepop <- function(
   }
 
   if (!rlang::has_name(data, "GT")) {
-    data <- calibrate_alleles(data = data, verbose = FALSE) %$% input
+    data %<>% calibrate_alleles(data = ., verbose = FALSE) %$% input
   }
 
   data %<>% dplyr::select(POP_ID, INDIVIDUALS, MARKERS, GT)
@@ -463,7 +466,8 @@ write_genepop <- function(
       ) %>%
       dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS)
   } else {
-    data %<>% dplyr::mutate(POP_ID = factor(POP_ID)) %>%
+    data %<>%
+      dplyr::mutate(POP_ID = factor(POP_ID)) %>%
       dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS)
   }
 
@@ -473,13 +477,7 @@ write_genepop <- function(
   # Wide format ----------------------------------------------------------------
   data  %<>%
     dplyr::arrange(MARKERS) %>%
-    data.table::as.data.table(.) %>%
-    data.table::dcast.data.table(
-      data = .,
-      formula = POP_ID + INDIVIDUALS ~ MARKERS,
-      value.var = "GT"
-    ) %>%
-    tibble::as_tibble(.) %>%
+    rad_wide(x = ., formula = "POP_ID + INDIVIDUALS ~ MARKERS", values_from = "GT") %>%
     dplyr::arrange(POP_ID, INDIVIDUALS) %>%
     dplyr::mutate(INDIVIDUALS = paste(INDIVIDUALS, ",", sep = ""))
 
@@ -505,6 +503,8 @@ write_genepop <- function(
   }
 
   # genepop construction
+  # could probably use purrr here...
+
   pop <- data$POP_ID # Create a population vector
   data <- split(dplyr::select(.data = data, -POP_ID), pop) # split genepop by populations
   filename.connection <- file(filename, "w") # open the connection to the file

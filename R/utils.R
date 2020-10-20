@@ -728,4 +728,87 @@ radiator_future <- function(
     .x %<>% rad_map(.x = ., .f = .f, ..., .options = opts)
   }
   return(.x)
-}#End radiator_parallel
+}#End radiator_future
+
+
+# PIVOT-GATHER-CAST ------------------------------------------------------------
+# rationale for doing this is that i'm tired of using tidyverse or data.table semantics
+# tidyr changed from gather/spread to pivot_ functions but their are still very slow compared
+# to 1. the original gather/spread and data.table equivalent...
+
+#' @title rad_long
+#' @description Gather, melt and pivot_longer
+#' @rdname rad_long
+#' @keywords internal
+#' @export
+
+rad_long <- function(
+  x,
+  cols = NULL,
+  measure_vars = NULL,
+  names_to = NULL,
+  values_to = NULL,
+  variable_factor = TRUE,
+  keep_rownames = FALSE,
+  tidy = FALSE
+){
+
+
+  # tidyr
+  if (tidy) {
+    x %>%
+      tidyr::pivot_longer(
+        data = .,
+        cols = -cols,
+        names_to = names_to,
+        values_to = values_to
+      )
+  } else {# data.table
+    x %>%
+      data.table::as.data.table(., keep.rownames = keep_rownames) %>%
+      data.table::melt.data.table(
+        data = .,
+        id.vars = cols,
+        measure.vars = measure_vars,
+        variable.name = names_to,
+        value.name = values_to,
+        variable.factor = variable_factor
+      ) %>%
+      tibble::as_tibble(.)
+  }
+}#rad_long
+
+#' @title rad_wide
+#' @description Spread, dcast and pivot_wider
+#' @rdname rad_wide
+#' @keywords internal
+#' @export
+rad_wide <- function(
+  x ,
+  formula = NULL,
+  names_from = NULL,
+  values_from = NULL,
+  sep = "_",
+  tidy = FALSE
+
+  ){
+  # tidyr
+  if (tidy) {
+    x %<>%
+      tidyr::pivot_wider(
+        data = .,
+        names_from = names_from,
+        values_from = values_from
+        )
+  } else {# data.table
+    x  %>%
+      data.table::as.data.table(.) %>%
+      data.table::dcast.data.table(
+        data = .,
+        formula =  formula,
+        value.var = values_from,
+        sep = sep
+      ) %>%
+      tibble::as_tibble(.)
+  }
+}#rad_wide

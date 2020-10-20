@@ -420,7 +420,7 @@ run_bayescan <- function(
     ) %>%
       tidyr::pivot_longer(
         data = .,
-        cols = everything(),
+        cols = tidyselect::everything(),
         names_to = "ACCURACY_MARKERS",
         values_to = "N"
       ) %>%
@@ -1116,18 +1116,15 @@ write_bayescan <- function(
   if (missing(data)) rlang::abort("Input file is missing")
 
   # Import data ---------------------------------------------------------------
-  if (is.vector(data)) {
-    data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-  }
+  if (is.vector(data))  data %<>% radiator::tidy_wide(data = ., import.metadata = TRUE)
+
   # necessary steps to make sure we work with unique markers and not duplicated LOCUS
   if (rlang::has_name(data, "LOCUS") && !rlang::has_name(data, "MARKERS")) {
-    data <- dplyr::rename(.data = data, MARKERS = LOCUS)
+    data %<>% dplyr::rename(MARKERS = LOCUS)
   }
 
   # make sure we use POP_ID and not STRATA here...
-  if (rlang::has_name(data, "STRATA")) {
-    data %<>% dplyr::rename(POP_ID = STRATA)
-  }
+  if (rlang::has_name(data, "STRATA")) data %<>% dplyr::rename(POP_ID = STRATA)
 
   # pop.select -----------------------------------------------------------------
   if (!is.null(pop.select)) {
@@ -1137,10 +1134,10 @@ write_bayescan <- function(
   }
 
   # Keeping common markers -----------------------------------------------------
-  data <- radiator::filter_common_markers(data = data, verbose = TRUE, internal = TRUE)
+  data %<>% radiator::filter_common_markers(data = ., verbose = TRUE, internal = TRUE)
 
   # Removing monomorphic markers -----------------------------------------------
-  data <- radiator::filter_monomorphic(data = data, verbose = TRUE, internal = TRUE)
+  data %<>% radiator::filter_monomorphic(data = ., verbose = TRUE, internal = TRUE)
 
   # detect biallelic markers ---------------------------------------------------
   biallelic <- radiator::detect_biallelic_markers(data = data)
@@ -1159,9 +1156,10 @@ write_bayescan <- function(
     }
 
     data <- radiator::calibrate_alleles(
-      biallelic = FALSE,
       data = data,
-      parallel.core = parallel.core, verbose = TRUE)$input
+      biallelic = FALSE,
+      parallel.core = parallel.core,
+      verbose = TRUE)$input
   }
 
   # Biallelic and GT_BIN -------------------------------------------------------
@@ -1169,7 +1167,10 @@ write_bayescan <- function(
     data <- radiator::calibrate_alleles(
       data = data,
       biallelic = TRUE,
-      parallel.core = parallel.core, verbose = TRUE)$input %>%
+      parallel.core = parallel.core,
+      verbose = TRUE
+      ) %$%
+      input %>%
       dplyr::select(MARKERS, INDIVIDUALS, POP_ID, GT_BIN)
   }
 
@@ -1178,7 +1179,8 @@ write_bayescan <- function(
   n.pop <- dplyr::n_distinct(data$POP_ID)
   n.markers <- dplyr::n_distinct(data$MARKERS)
 
-  data <- dplyr::ungroup(data) %>%
+  data %<>%
+    dplyr::ungroup(.) %>%
     dplyr::mutate(
       BAYESCAN_POP = factor(POP_ID),
       BAYESCAN_POP = as.integer(BAYESCAN_POP),
@@ -1218,10 +1220,10 @@ write_bayescan <- function(
           "\n    Number of ", markers.type, " markers: ", n.markers)
 
   # Number of markers
-  readr::write_file(x = stringi::stri_join("[loci]=", n.markers, "\n\n"), path = filename, append = FALSE)
+  readr::write_file(x = stringi::stri_join("[loci]=", n.markers, "\n\n"), file = filename, append = FALSE)
 
   # Number of populations
-  readr::write_file(x = stringi::stri_join("[populations]=", n.pop, "\n\n"), path = filename, append = TRUE)
+  readr::write_file(x = stringi::stri_join("[populations]=", n.pop, "\n\n"), file = filename, append = TRUE)
   pop.string <- unique(data$BAYESCAN_POP)
   generate_bayescan_biallelic <- function(pop, data) {
     # pop <- "BEA"
@@ -1234,24 +1236,28 @@ write_bayescan <- function(
       ) %>%
       dplyr::mutate(GENE_N = REF + ALT, ALLELE_N = rep(2, n())) %>%
       dplyr::select(BAYESCAN_MARKERS, GENE_N, ALLELE_N, REF, ALT)
-    readr::write_file(x = stringi::stri_join("[pop]=", pop, "\n"), path = filename, append = TRUE)
-    readr::write_delim(x = data.pop, path = filename, append = TRUE, delim = "  ")
-    readr::write_file(x = stringi::stri_join("\n"), path = filename, append = TRUE)
+    readr::write_file(x = stringi::stri_join("[pop]=", pop, "\n"), file = filename, append = TRUE)
+    readr::write_delim(x = data.pop, file = filename, append = TRUE, delim = "  ")
+    readr::write_file(x = stringi::stri_join("\n"), file = filename, append = TRUE)
   }
   generate_bayescan_multiallelic <- function(data) {
     pop <- unique(data$BAYESCAN_POP)
     data.pop <- dplyr::select(data, -BAYESCAN_POP)
-    readr::write_file(x = stringi::stri_join("[pop]=", pop, "\n"), path = filename, append = TRUE)
-    # readr::write_delim(x = data.pop, path = filename, append = TRUE, delim = "  " )
+    readr::write_file(x = stringi::stri_join("[pop]=", pop, "\n"), file = filename, append = TRUE)
+    # readr::write_delim(x = data.pop, file = filename, append = TRUE, delim = "  " )
     utils::write.table(x = data.pop, file = filename, append = TRUE, quote = FALSE, row.names = FALSE, col.names = FALSE)
-    readr::write_file(x = stringi::stri_join("\n"), path = filename, append = TRUE)
+    readr::write_file(x = stringi::stri_join("\n"), file = filename, append = TRUE)
   }
 
   if (!biallelic) {
     data.prep <- data %>%
       dplyr::select(GT_VCF, BAYESCAN_MARKERS, BAYESCAN_POP) %>%
       dplyr::filter(GT_VCF != "./.") %>%
-      tidyr::separate(data = ., col = GT_VCF, into = c("A1", "A2"), sep = "/") %>%
+      dplyr::mutate(
+        A1 = stringi::stri_sub(str = GT_VCF, from = 1, to = 1),
+        A2 = stringi::stri_sub(str = GT_VCF, from = 3, to = 3),
+        GT_VCF = NULL
+      ) %>%
       tidyr::pivot_longer(
         data = .,
         cols = -c("BAYESCAN_MARKERS", "BAYESCAN_POP"),

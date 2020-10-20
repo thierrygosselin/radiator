@@ -41,34 +41,21 @@ write_structure <- function(
   if (missing(data)) rlang::abort("Input file missing")
 
   # Import data ---------------------------------------------------------------
-  if (is.vector(data)) {
-    data <- radiator::tidy_wide(data = data, import.metadata = FALSE)
-  }
-
-  # else {
-  #   data$INDIVIDUALS <- clean_ind_names(data$INDIVIDUALS)
-  #   data$POP_ID <- clean_pop_names(data$POP_ID)
-  #   data$MARKERS <- clean_markers_names(data$MARKERS)
-  # }
-
-  # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-  # if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
-  #   data <- dplyr::rename(.data = data, MARKERS = LOCUS)
-  # }
-
+  if (is.vector(data)) data %<>% radiator::tidy_wide(data = .)
 
   data %<>% dplyr::select(POP_ID, INDIVIDUALS, MARKERS, GT)
 
   # pop.levels -----------------------------------------------------------------
   if (!is.null(pop.levels)) {
-    data <- dplyr::mutate(
-      .data = data,
+    data %<>%
+      dplyr::mutate(
         POP_ID = factor(POP_ID, levels = pop.levels, ordered = TRUE),
         POP_ID = droplevels(POP_ID)
       ) %>%
       dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS)
   } else {
-    data <- dplyr::mutate(.data = data, POP_ID = factor(POP_ID)) %>%
+    data %<>%
+      dplyr::mutate(POP_ID = factor(POP_ID)) %>%
       dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS)
   }
 
@@ -79,21 +66,18 @@ write_structure <- function(
 
   # Structure format ----------------------------------------------------------------
   data %<>%
-    tidyr::separate(col = GT, into = c("A1", "A2"), sep = 3, extra = "drop", remove = TRUE) %>%
-    tidyr::pivot_longer(
-      data = .,
-      cols = -c("POP_ID", "INDIVIDUALS", "MARKERS"),
-      names_to = "ALLELES",
-      values_to = "GT"
+    dplyr::mutate(
+      A1 = stringi::stri_sub(str = GT, from = 1, to = 3),
+      A2 = stringi::stri_sub(str = GT, from = 4, to = 6),
+      GT = NULL
     ) %>%
+    rad_long(x = ., cols = c("POP_ID", "INDIVIDUALS", "MARKERS"), names_to = "ALLELES", values_to = "GT") %>%
     dplyr::mutate(
       GT = stringi::stri_replace_all_fixed(str = GT, pattern = "000", replacement = "-9", vectorize_all = FALSE),
       GT = as.integer(GT)
     ) %>%
-    dplyr::select(INDIVIDUALS, POP_ID, MARKERS, ALLELES, GT) %>%
-    tidyr::pivot_wider(data = ., names_from = "MARKERS", values_from = "GT") %>%
+    rad_wide(x = ., formula = "INDIVIDUALS + POP_ID ~ MARKERS + ALLELES", values_from = "GT") %>%
     dplyr::mutate(POP_ID = as.integer(POP_ID)) %>%
-    dplyr::select(-ALLELES) %>%
     dplyr::arrange(POP_ID, INDIVIDUALS)
 
   # Write the file in structure format -----------------------------------------

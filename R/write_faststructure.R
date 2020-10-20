@@ -61,9 +61,7 @@ write_faststructure <- function(
     # Import data ---------------------------------------------------------------
 
     if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
-      if (data.type == "gds.file") {
-        data <- radiator::read_rad(data, verbose = FALSE)
-      }
+      if (data.type == "gds.file") data %<>% radiator::read_rad(data = .)
     } else {
       rlang::abort("plink.bed option requires GDS file or object")
     }
@@ -83,23 +81,22 @@ write_faststructure <- function(
     file.remove(temp$filename)
   } else {
     # Import data ---------------------------------------------------------------
-    if (is.vector(data)) {
-      data <- radiator::tidy_wide(data = data, import.metadata = FALSE)
-    }
+    if (is.vector(data)) data %<>% radiator::tidy_wide(data = .)
 
     want <- c("INDIVIDUALS", "POP_ID", "MARKERS", "GT", "GT_BIN")
     suppressWarnings(data %<>% dplyr::select(dplyr::one_of(want)))
 
     # pop.levels -----------------------------------------------------------------
     if (!is.null(pop.levels)) {
-      data <- dplyr::mutate(
-        .data = data,
-        POP_ID = factor(POP_ID, levels = pop.levels, ordered = TRUE),
-        POP_ID = droplevels(POP_ID)
-      ) %>%
+      data %<>%
+        dplyr::mutate(
+          POP_ID = factor(POP_ID, levels = pop.levels, ordered = TRUE),
+          POP_ID = droplevels(POP_ID)
+        ) %>%
         dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS)
     } else {
-      data <- dplyr::mutate(.data = data, POP_ID = factor(POP_ID)) %>%
+      data %<>%
+        dplyr::mutate(POP_ID = factor(POP_ID)) %>%
         dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS)
     }
 
@@ -129,25 +126,19 @@ write_faststructure <- function(
             ),
             GT_BIN = NULL
           ) %>%
-        tidyr::pivot_longer(
-          data = .,
-          cols = -c("POP_ID", "INDIVIDUALS", "MARKERS"),
-          names_to = "ALLELES",
-          values_to = "GT"
-        )
+          rad_long(x = ., cols = c("POP_ID", "INDIVIDUALS", "MARKERS"), names_to = "ALLELES", values_to = "GT")
       )
     } else {
       want <- c("INDIVIDUALS", "POP_ID", "MARKERS", "GT")
       suppressWarnings(
         data %<>%
           dplyr::select(dplyr::one_of(want)) %>%
-          tidyr::separate(col = GT, into = c("A1", "A2"), sep = 3, extra = "drop", remove = TRUE) %>%
-          tidyr::pivot_longer(
-            data = .,
-            cols = -c("POP_ID", "INDIVIDUALS", "MARKERS"),
-            names_to = "ALLELES",
-            values_to = "GT"
+          dplyr::mutate(
+            A1 = stringi::stri_sub(str = GT, from = 1, to = 3),
+            A2 = stringi::stri_sub(str = GT, from = 4, to = 6),
+            GT = NULL
           ) %>%
+          rad_long(x = ., cols = c("POP_ID", "INDIVIDUALS", "MARKERS"), names_to = "ALLELES", values_to = "GT") %>%
           dplyr::mutate(
             GT = stringi::stri_replace_all_fixed(str = GT, pattern = "000", replacement = "-9", vectorize_all = FALSE),
             GT = as.integer(GT)
@@ -157,10 +148,8 @@ write_faststructure <- function(
 
     # common to both GT and GT_BIN
     data  %<>%
-      dplyr::select(INDIVIDUALS, POP_ID, MARKERS, ALLELES, GT) %>%
-      tidyr::pivot_wider(data = ., names_from = "MARKERS", values_from = "GT") %>%
-      dplyr::mutate(POP_ID = as.integer(POP_ID)) %>%
-      dplyr::select(-ALLELES)
+      rad_wide(x = ., formula = "INDIVIDUALS + POP_ID ~ MARKERS + ALLELES", values_from = "GT") %>%
+      dplyr::mutate(POP_ID = as.integer(POP_ID))
 
     markers.col <- purrr::keep(
       .x = colnames(data),
@@ -169,7 +158,7 @@ write_faststructure <- function(
 
     data %<>%
       dplyr::mutate(C3 = 1L, C4 = 1L, C5 = 1L, C6 = 1L) %>%
-      dplyr::select(INDIVIDUALS, POP_ID, C3, C4, C5, C6, everything(markers.col)) %>%
+      dplyr::select(INDIVIDUALS, POP_ID, C3, C4, C5, C6, tidyselect::everything(markers.col)) %>%
       dplyr::arrange(POP_ID, INDIVIDUALS)
 
     # Write the file in faststructure format -----------------------------------------

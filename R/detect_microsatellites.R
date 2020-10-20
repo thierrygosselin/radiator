@@ -190,14 +190,13 @@ detect_microsatellites <- function(data, gmata.dir = NULL, ...) {
       MARKERS = stringi::stri_join(">", MARKERS),
       ID = seq(from = 1, to = n(), by = 1)
     ) %>%
-    data.table::as.data.table(.) %>%
-    data.table::melt.data.table(
-      data = .,
-      id.vars = "ID",
-      variable.name = "MARKERS_SEQUENCE",
-      value.name = "MICROSATELLITES",
-      variable.factor = FALSE) %>%
-    tibble::as_tibble(.) %>%
+    rad_long(
+      x = .,
+      cols = "ID",
+      names_to = "MARKERS_SEQUENCE",
+      values_to = "MICROSATELLITES",
+      variable_factor = FALSE
+      ) %>%
     dplyr::arrange(ID) %>%
     dplyr::select(MICROSATELLITES) %>%
     readr::write_tsv(x = ., file = filename, col_names = FALSE)

@@ -163,12 +163,12 @@ read_plink <- function(
         NUMBER = seq(1, n()),
         ALLELE1 = rep("A1", n()), ALLELE2 = rep("A2", n())
       ) %>%
-      tidyr::pivot_longer(
-        data = .,
-        cols = -c("INDIVIDUALS", "NUMBER"),
+      rad_long(
+        x = .,
+        cols = c("INDIVIDUALS", "NUMBER"),
         names_to = "ALLELES_GROUP",
         values_to = "ALLELES"
-      ) %>%
+        ) %>%
       dplyr::arrange(NUMBER) %>%
       dplyr::select(-ALLELES_GROUP) %>%
       tidyr::unite(INDIVIDUALS_ALLELES, c(INDIVIDUALS, ALLELES), sep = "_", remove = FALSE) %>%
@@ -554,24 +554,12 @@ tidy_plink <- function(
     # Filling GT and new separating INDIVIDUALS from ALLELES
     # combining alleles
     strata <- data$strata
-    data  <- tidyr::pivot_longer(
-      data = data$data,
-      cols = -c("MARKERS", "CHROM", "LOCUS", "POS"),
+    data <- rad_long(
+      x = data$data,
+      cols = c("MARKERS", "CHROM", "LOCUS", "POS"),
       names_to = "INDIVIDUALS_ALLELES",
       values_to = "GT"
     )
-
-
-      # data.table::as.data.table(data$data) %>%
-      # data.table::melt.data.table(
-      #   data = .,
-      #   id.vars = "LOCUS",
-      #   variable.name = "INDIVIDUALS_ALLELES",
-      #   value.name = "GT",
-      #   variable.factor = FALSE
-      # ) %>%
-      # tibble::as_tibble(.)
-
 
     # detect GT coding
     detect.gt.coding <- unique(sample(x = data$GT, size = 100, replace = FALSE))
@@ -602,8 +590,11 @@ tidy_plink <- function(
         col = INDIVIDUALS_ALLELES,
         into = c("INDIVIDUALS", "ALLELES"),
         sep = "_") %>%
-      dplyr::group_by(MARKERS, CHROM, LOCUS, POS, INDIVIDUALS) %>%
-      tidyr::pivot_wider(data = ., names_from = "ALLELES", values_from = "GT") %>%
+      rad_wide(
+        x = .,
+        formula = "MARKERS + CHROM + LOCUS + POS + INDIVIDUALS ~ ALLELES",
+        values_from = "GT"
+        ) %>%
       dplyr::ungroup(.) %>%
       tidyr::unite(data = ., col = GT, A1, A2, sep = "") %>%
       dplyr::select(MARKERS, CHROM, LOCUS, POS, INDIVIDUALS, GT)
@@ -743,9 +734,7 @@ tidy_plink <- function(
 write_plink <- function(data, filename = NULL) {
 
   # Import data ---------------------------------------------------------------
-  if (is.vector(data)) {
-    data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-  }
+  if (is.vector(data)) data %<>% radiator::tidy_wide(data = ., import.metadata = TRUE)
 
   tped <- data %>%
     dplyr::arrange(INDIVIDUALS) %>%
@@ -760,20 +749,19 @@ write_plink <- function(data, filename = NULL) {
       A2 = stringi::stri_sub(str = GT, from = 4, to = 6)
     ) %>%
     dplyr::select(-GT) %>%
-    tidyr::pivot_longer(
-      data = .,
-      cols = -c("COL1", "MARKERS", "COL3", "COL4", "INDIVIDUALS"),
+    rad_long(
+      x = .,
+      cols = c("COL1", "MARKERS", "COL3", "COL4", "INDIVIDUALS"),
       names_to = "ALLELES",
       values_to = "GENOTYPE"
-    ) %>%
+      ) %>%
     dplyr::mutate(
       GENOTYPE = as.character(as.numeric(GENOTYPE)),
       GENOTYPE = stringi::stri_pad_left(GENOTYPE, width = 2, pad = "0")
     ) %>%
     dplyr::arrange(INDIVIDUALS, ALLELES) %>%
     tidyr::unite(INDIVIDUALS_ALLELES, INDIVIDUALS, ALLELES, sep = "_") %>%
-    dplyr::group_by(COL1, MARKERS, COL3, COL4) %>%
-    tidyr::pivot_wider(data = ., names_from = "INDIVIDUALS_ALLELES", values_from = "GENOTYPE") %>%
+    rad_wide(x = ., formula = "COL1 + MARKERS +COL3 + COL4 ~ INDIVIDUALS_ALLELES", values_from = "GENOTYPE") %>%
     dplyr::arrange(MARKERS)
 
   tfam <- dplyr::distinct(.data = data, POP_ID, INDIVIDUALS) %>%
