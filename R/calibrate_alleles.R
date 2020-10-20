@@ -172,6 +172,7 @@ calibrate_alleles <- function(
 
   conversion.df <- ref_dictionary(x = data, parallel.core = parallel.core)
 
+
   # if monomorphic markers, ALT column will have NA: check and tag
   if (anyNA(conversion.df)) {
     # fill ALT with REF
@@ -181,7 +182,8 @@ calibrate_alleles <- function(
           ALT = REF,
           POLYMORPHIC = rep(FALSE, n())),
       dplyr::filter(conversion.df, !is.na(ALT)) %>%
-        dplyr::mutate(POLYMORPHIC = rep(TRUE, n()))) %>%
+        dplyr::mutate(POLYMORPHIC = rep(TRUE, n()))
+    ) %>%
       dplyr::arrange(MARKERS, INTEGERS)
   }
   new.ref <- conversion.df %>%
@@ -215,6 +217,8 @@ calibrate_alleles <- function(
 
   if (verbose) message("    integrating genotypes codings...")
   if (rlang::has_name(data, "POLYMORPHIC")) data <- dplyr::select(data, -POLYMORPHIC)
+
+
   data <- integrate_ref(
     x = data,
     conversion.df = conversion.df,
@@ -282,7 +286,7 @@ calibrate_alleles <- function(
     data <- dplyr::filter(data, !MARKERS %in% all.missing$MARKERS)
   }
 
-  if (rlang::has_name(data, "GT_BIN")) data$GT_BIN <- rlang::as_integer(data$GT_BIN)
+  if (rlang::has_name(data, "GT_BIN")) data$GT_BIN <- as.integer(data$GT_BIN)
   # Results --------------------------------------------------------------------
   return(list(input = data, biallelic = biallelic))
 }#End calibrate_alleles
@@ -298,56 +302,46 @@ ref_dictionary <- function(x, parallel.core = parallel::detectCores() - 1) {
   generate_ref <- carrier::crate(function(x) {
     `%>%` <- magrittr::`%>%`
     `%<>%` <- magrittr::`%<>%`
+    # `n()` <- dplyr::`n`
 
     if (rlang::has_name(x, "GT_VCF_NUC")) {# with nuc.info
-      x <- dplyr::select(x, MARKERS, GT_VCF_NUC) %>%
+      x %<>%
+        dplyr::select(MARKERS, GT_VCF_NUC) %>%
         dplyr::filter(GT_VCF_NUC != "./.") %>%
-        tidyr::separate(col = GT_VCF_NUC, into = c("A1", "A2"), sep = "/") %>% # stri_sub might be faster here...
-        data.table::as.data.table(.) %>%
-        data.table::melt.data.table(
-          data = .,
-          id.vars = "MARKERS",
-          variable.name = "ALLELES_GROUP",
-          value.name = "ALLELES",
-          variable.factor = FALSE
-        ) %>%
-        tibble::as_tibble(.) %>%
-        dplyr::select(-ALLELES_GROUP) %>%
-        dplyr::group_by(MARKERS, ALLELES) %>%
-        dplyr::tally(.) %>%
-        dplyr::arrange(-n) %>%
-        dplyr::mutate(INTEGERS = seq(0, n() - 1)) %>%
-        dplyr::select(-n) %>%
-        dplyr::arrange(MARKERS, INTEGERS) %>%
-        dplyr::ungroup(.)
+        dplyr::mutate(
+          A1 = stringi::stri_sub(str = GT_VCF_NUC, from = 1, to = 1),
+          A2 = stringi::stri_sub(str = GT_VCF_NUC, from = 3, to = 3),
+          GT_VCF_NUC = NULL
+        )
     } else {
-      x <- suppressWarnings(
-        dplyr::select(x, MARKERS, GT) %>%
-          dplyr::filter(GT != "000000") %>%
-          dplyr::mutate(
-            A1 = stringi::stri_sub(str = GT, from = 1, to = 3),
-            A2 = stringi::stri_sub(str = GT, from = 4, to = 6)
-          ) %>%
-          dplyr::select(MARKERS, A1, A2) %>%
-          data.table::as.data.table(.) %>%
-          data.table::melt.data.table(
-            data = .,
-            id.vars = "MARKERS",
-            variable.name = "ALLELES_GROUP",
-            value.name = "ALLELES",
-            variable.factor = FALSE
-          ) %>%
-          tibble::as_tibble(.) %>%
-          dplyr::select(MARKERS, ALLELES) %>%
-          dplyr::filter(ALLELES != "000") %>%
-          dplyr::group_by(MARKERS, ALLELES) %>%
-          dplyr::tally(.) %>%
-          dplyr::arrange(-n) %>%
-          dplyr::mutate(INTEGERS = seq(0, n() - 1)) %>%
-          dplyr::select(-n) %>%
-          dplyr::arrange(MARKERS, INTEGERS) %>%
-          dplyr::ungroup(.))
+      x %<>% dplyr::select(MARKERS, GT) %>%
+        dplyr::filter(GT != "000000") %>%
+        dplyr::mutate(
+          A1 = stringi::stri_sub(str = GT, from = 1, to = 3),
+          A2 = stringi::stri_sub(str = GT, from = 4, to = 6),
+          GT = NULL
+        )
     }
+
+    x %<>%
+      data.table::as.data.table(.) %>%
+      data.table::melt.data.table(
+        data = .,
+        id.vars = "MARKERS",
+        variable.name = "ALLELES_GROUP",
+        value.name = "ALLELES",
+        variable.factor = FALSE
+      ) %>%
+      tibble::as_tibble(.) %>%
+      dplyr::select(-ALLELES_GROUP) %>%
+      dplyr::group_by(MARKERS, ALLELES) %>%
+      dplyr::tally(.) %>%
+      dplyr::arrange(-n) %>%
+      dplyr::mutate(INTEGERS = seq(0, dplyr::n() - 1)) %>%
+      dplyr::select(-n) %>%
+      dplyr::arrange(MARKERS, INTEGERS) %>%
+      dplyr::ungroup(.)
+
     ref.alleles <- x %>%
       dplyr::filter(INTEGERS == 0) %>%
       dplyr::mutate(REF = ALLELES) %>%
@@ -369,15 +363,26 @@ ref_dictionary <- function(x, parallel.core = parallel::detectCores() - 1) {
     return(x)
   })#End generate_ref
 
-  x <- radiator_future(
-    .x = x,
-    .f = generate_ref,
-    flat.future = "dfr",
-    split.vec = TRUE,
-    split.with = "MARKERS",
-    split.chunks = 10L,
-    parallel.core = parallel.core
-  )
+  n.markers <- length(unique(x$MARKERS))
+
+  if (n.markers <= 40000) {
+    x <- generate_ref(x)
+  } else {
+
+    if (n.markers > 40000) split.chunks <- 2L
+    if (n.markers > 100000) split.chunks <- 5L
+    if (n.markers > 200000) split.chunks <- 10L
+
+    x <- radiator_future(
+      .x = x,
+      .f = generate_ref,
+      flat.future = "dfr",
+      split.vec = TRUE,
+      split.with = "MARKERS",
+      split.chunks = split.chunks,
+      parallel.core = parallel.core
+    )
+  }
   return(x)
 }
 
@@ -407,11 +412,15 @@ integrate_ref <- function(
     if (nuc.info) {
       x %<>%
         dplyr::select(MARKERS, GT_VCF_NUC) %>%
-        tidyr::separate(data = ., col = GT_VCF_NUC, into = c("A1", "A2"), sep = "/", remove = FALSE) %>%
+        dplyr::mutate(
+          A1 = stringi::stri_sub(str = GT_VCF_NUC, from = 1, to = 1),
+          A2 = stringi::stri_sub(str = GT_VCF_NUC, from = 3, to = 3)
+        ) %>%
+        # tidyr::separate(data = ., col = GT_VCF_NUC, into = c("A1", "A2"), sep = "/", remove = FALSE) %>%
         dplyr::left_join(dplyr::rename(conversion.df, A1 = ALLELES), by = c("MARKERS", "A1")) %>%
         dplyr::rename(A1_NUC = INTEGERS)
 
-      if (rlang::has_name(x, "POLYMORPHIC")) x <- dplyr::select(x, -POLYMORPHIC)
+      if (rlang::has_name(x, "POLYMORPHIC")) x %<>% dplyr::select(-POLYMORPHIC)
 
       x %<>%
         dplyr::left_join(dplyr::rename(conversion.df, A2 = ALLELES), by = c("MARKERS", "A2")) %>%
@@ -504,18 +513,28 @@ integrate_ref <- function(
     new.gt <- dplyr::distinct(x, MARKERS, GT)
   }
 
+  n.markers <- length(unique(new.gt$MARKERS))
 
-  new.gt <- radiator_future(
-    .x = new.gt,
-    .f = new_gt,
-    flat.future = "dfr",
-    split.vec = TRUE,
-    split.with = NULL,
-    split.chunks = 10L,
-    parallel.core = parallel.core,
-    conversion.df = conversion.df,
-    biallelic = biallelic
-  )
+  if (n.markers <= 40000) {
+    new.gt <- new_gt(x = new.gt, conversion.df = conversion.df, biallelic = biallelic)
+  } else {
+
+    if (n.markers > 40000) split.chunks <- 2L
+    if (n.markers > 100000) split.chunks <- 5L
+    if (n.markers > 200000) split.chunks <- 10L
+
+    new.gt <- radiator_future(
+      .x = new.gt,
+      .f = new_gt,
+      flat.future = "dfr",
+      split.vec = TRUE,
+      split.with = NULL,
+      split.chunks = split.chunks,
+      parallel.core = parallel.core,
+      conversion.df = conversion.df,
+      biallelic = biallelic
+    )
+  }
 
   if (nuc.info) {
     if (rlang::has_name(x, "GT_VCF")) x <- dplyr::select(x, -GT_VCF)
@@ -559,14 +578,27 @@ generate_vcf_nuc <- function(x, parallel.core = parallel::detectCores() - 1) {
     #   dplyr::if_else(GT_BIN == "2", stringi::stri_join(ALT, ALT, sep = "/"),
     #                  stringi::stri_join(REF, ALT, sep = "/")), "./.")
   })# End vcf_nuc
-  x <- radiator_future(
-    .x = x,
-    .f = vcf_nuc,
-    flat.future = "dfr",
-    split.vec = TRUE,
-    split.with = NULL,
-    split.chunks = 10L,# this could be tailored to length of tibble...
-    parallel.core = parallel.core
-  )
+
+  n.markers <- length(unique(x$MARKERS))
+
+  if (n.markers <= 100000) {
+    x <- vcf_nuc(x)
+  } else {
+
+    if (n.markers > 100000) split.chunks <- 2L
+    if (n.markers > 200000) split.chunks <- 5L
+
+    x <- radiator_future(
+      .x = x,
+      .f = vcf_nuc,
+      flat.future = "dfr",
+      split.vec = TRUE,
+      split.with = NULL,
+      split.chunks = split.chunks,
+      parallel.core = parallel.core
+    )
+  }
+
+
   return(x)
 }#End generate_vcf_nuc
