@@ -778,10 +778,9 @@ rad_long <- function(
       tibble::as_tibble(.)
   }
 }#rad_long
-
+#' @rdname rad_wide
 #' @title rad_wide
 #' @description Spread, dcast and pivot_wider
-#' @rdname rad_wide
 #' @keywords internal
 #' @export
 rad_wide <- function(
@@ -818,9 +817,17 @@ rad_wide <- function(
 }#rad_wide
 
 
+# strip_rad --------------------------------------------------------------------
+#' @rdname strip_rad
 #' @title strip_rad
-#' @description Strip a tidy data set of it's strata and markers meta.
-#' @noRd
+#' @description Strip a tidy data set of it's strata and markers meta. Used internally.
+#' @param x The data
+#' @param m (character, string) The variables part of the markers metadata.
+#' @param env.arg You want to redirect \code{rlang::current_env()} to this argument.
+#' @param keep.strata (logical) Keep the strata in the dataset or remove the info
+#' and keep only the sample ids.
+#' @param verbose (logical) The function will chat more when allowed.
+# @noRd
 # @keywords internal
 #' @export
 strip_rad <- function(
@@ -830,16 +837,25 @@ strip_rad <- function(
   keep.strata = TRUE,
   verbose = TRUE
 ) {
-  objs <- object.size(x)
+  objs <- utils::object.size(x)
 
   # STRATA ----------
   strata.n <- intersect(colnames(x), c("STRATA", "POP_ID"))
-  pop.id <- rlang::has_name(x, "POP_ID")
-  strata <- radiator::generate_strata(data = x, pop.id = pop.id) %>%
+
+if (rlang::has_name(x, "POP_ID")) {
+  strata <- radiator::generate_strata(data = x, pop.id = TRUE) %>%
     dplyr::mutate(
       ID_SEQ = seq_len(length.out = dplyr::n()),
-      STRATA_SEQ = as.integer(factor(x = .data[[strata.n]], levels = unique(.data[[strata.n]])))
+      STRATA_SEQ = as.integer(factor(x = POP_ID, levels = unique(POP_ID)))
     )
+} else {#STRATA
+  strata <- radiator::generate_strata(data = x, pop.id = FALSE) %>%
+    dplyr::mutate(
+      ID_SEQ = seq_len(length.out = dplyr::n()),
+      STRATA_SEQ = as.integer(factor(x = STRATA, levels = unique(STRATA)))
+    )
+}
+
 
   cm <- intersect(colnames(strata), colnames(x))
   x %<>%
@@ -906,16 +922,22 @@ strip_rad <- function(
   )
   g <- want <- genotypes.meta <- NULL
 
-  if (verbose) message("Proportion of size reduction: ", round(1 - (object.size(x) / objs), 2))
+  if (verbose) message("Proportion of size reduction: ", round(1 - (utils::object.size(x) / objs), 2))
   return(x)
   # return(list(data = x, markers.meta = markers.meta, genotypes.meta = genotypes.meta))
 }# End strip_rad
 
 
-
+# join_rad ---------------------------------------------------------------------
+#' @rdname join_rad
 #' @title join_rad
-#' @description Joing back the parts stripped in strip_rad.
-#' @noRd
+#' @description Join  back the parts stripped in strip_rad. Used internally.
+#' @param x The data
+#' @param s The strata metadata.
+#' @param m The markers metadata.
+#' @param g The genotypes metadata.
+#' @param env.arg You want to redirect \code{rlang::current_env()} to this argument.
+# @noRd
 # @keywords internal
 #' @export
 join_rad <- function(x, s, m, g, env.arg = NULL) {
