@@ -297,15 +297,13 @@ detect_mixed_genomes <- function(
       het.ind.overall <- dplyr::mutate(.data = het.ind, POP_ID = as.character(POP_ID)) %>%
         dplyr::bind_rows(dplyr::mutate(.data = het.ind, POP_ID = rep("OVERALL", n()))) %>%
         dplyr::mutate(POP_ID = factor(POP_ID, levels = c(pop.levels, "OVERALL"))) %>%
-        data.table::as.data.table(.) %>%
-        data.table::melt.data.table(
-          data = .,
-          id.vars = c("POP_ID", "INDIVIDUALS", "GENOTYPED", "HET_NUMBER", "HET_PROP"),
-          variable.name = "MISSING_GROUP",
-          value.name = "MISSING_PROP",
-          variable.factor = FALSE
+        radiator::rad_long(
+          x = .,
+          cols = c("POP_ID", "INDIVIDUALS", "GENOTYPED", "HET_NUMBER", "HET_PROP"),
+          names_to = "MISSING_GROUP",
+          values_to = "MISSING_PROP",
+          variable_factor = FALSE
         ) %>%
-        tibble::as_tibble(.) %>%
         dplyr::mutate(MISSING_GROUP = factor(MISSING_GROUP, levels = c("MISSING_PROP_POP", "MISSING_PROP_OVERALL"))) %>%
         dplyr::arrange(POP_ID, MISSING_GROUP)
 
@@ -359,9 +357,9 @@ detect_mixed_genomes <- function(
       het.ind.overall <- dplyr::mutate(.data = het.ind, POP_ID = as.character(POP_ID)) %>%
         dplyr::bind_rows(dplyr::mutate(.data = het.ind, POP_ID = rep("OVERALL", n()))) %>%
         dplyr::mutate(POP_ID = factor(POP_ID, levels = c(pop.levels, "OVERALL"), ordered = TRUE)) %>%
-        tidyr::pivot_longer(
-          data = .,
-          cols = -c("POP_ID", "INDIVIDUALS", "HET_PROP"),
+        radiator::rad_long(
+          x = .,
+          cols = c("POP_ID", "INDIVIDUALS", "HET_PROP"),
           names_to = "MISSING_GROUP",
           values_to = "MISSING_PROP"
         ) %>%
@@ -476,7 +474,7 @@ detect_mixed_genomes <- function(
       dpi = 200,
       units = "cm",
       limitsize = FALSE
-      )
+    )
 
     het.bp <- ggplot2::ggplot(data = het.ind.overall,
                               ggplot2::aes(x = POP_ID, y = HET_PROP, colour = POP_ID)) +

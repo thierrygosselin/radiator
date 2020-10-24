@@ -148,7 +148,8 @@ if (getRversion() >= "2.15.1") {
       "VARIANT_ID...5", "THRESHOLDS", "THRESHOLD_OUTLIERS_HIGH",
       "THRESHOLD_OUTLIERS_LOW", "A_SUM", "N_ALLELES",
       "filter.individuals.coverage.iqr",
-      "filter.individuals.coverage.median", "COMMON_META", "where", "everything"
+      "filter.individuals.coverage.median", "COMMON_META", "where", "everything",
+      "M_SEQ", "ID_SEQ", "1", "2"
     )
   )
 }

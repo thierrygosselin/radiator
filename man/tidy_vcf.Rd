@@ -139,8 +139,8 @@ still want to continue with the tidying or stop and keep the GDS file/object.
 
 This behavior can be annoying, \emph{if the user knows what he's doing}, to turn off
 use: \code{tidy.check = FALSE}.
-\item \code{ref.calibration: } (optional, logical)
-Default: \code{ref.calibration = FALSE}.
+\item \code{calibrate.alleles: } (optional, logical)
+Default: \code{calibrate.alleles = FALSE}.
 Documented in \code{\link[radiator]{calibrate_alleles}}.
 \item \code{vcf.stats: } (optional, logical) Generates individuals and
 markers statistics helpful for filtering.

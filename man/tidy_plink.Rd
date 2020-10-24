@@ -48,11 +48,11 @@ and might be of interest for users.
 
 \emph{dots-dots-dots ...} allows to pass several arguments for fine-tuning the function:
 \enumerate{
-\item \code{ref.calibration}: logical. For \code{tped} files, if
-\code{ref.calibration = FALSE} the function runs faster
+\item \code{calibrate.alleles}: logical. For \code{tped} files, if
+\code{calibrate.alleles = FALSE} the function runs faster
 but REF/ALT alleles may not be calibrated. The default assumes the users or
 sotware producing the PLINK file calibrated the alleles.
-Default: \code{ref.calibration = FALSE}.
+Default: \code{calibrate.alleles = FALSE}.
 }
 }
 

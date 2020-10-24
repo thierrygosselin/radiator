@@ -96,25 +96,23 @@ tidy_wide <- function(data, import.metadata = FALSE) {
   # Determine long (tidy) or wide dataset
   if (!"MARKERS" %in% colnames(data) && !"LOCUS" %in% colnames(data)) {
     if (rlang::has_name(data, "POP_ID")) {
-      data <- data.table::as.data.table(data) %>%
-        data.table::melt.data.table(
-          data = .,
-          id.vars = c("POP_ID", "INDIVIDUALS"),
-          variable.name = "MARKERS",
-          value.name = "GT",
-          variable.factor = FALSE
-        ) %>%
-        tibble::as_tibble(.)
+      data %<>%
+        radiator::rad_long(
+          x = .,
+          cols = c("POP_ID", "INDIVIDUALS"),
+          names_to = "MARKERS",
+          values_to = "GT",
+          variable_factor = FALSE
+          )
     } else {
-      data <- data.table::as.data.table(data) %>%
-        data.table::melt.data.table(
-          data = .,
-          id.vars = "INDIVIDUALS",
-          variable.name = "MARKERS",
-          value.name = "GT",
-          variable.factor = FALSE
-        ) %>%
-        tibble::as_tibble(.)
+      data %<>%
+        radiator::rad_long(
+          x = .,
+          cols = "INDIVIDUALS",
+          names_to = "MARKERS",
+          values_to = "GT",
+          variable_factor = FALSE
+        )
     }
   }
 
@@ -208,14 +206,14 @@ tidy2wide <- function(
     ) %>%
       magrittr::set_colnames(x = ., value = individuals) %>%
       magrittr::set_rownames(x = ., value = markers) %>%
-      data.table::as.data.table(x = ., keep.rownames = "MARKERS") %>%
-      data.table::melt.data.table(
-        data = .,
-        id.vars = "MARKERS",
-        variable.name = "INDIVIDUALS",
-        value.name = "GT",
-        variable.factor = FALSE) %>%
-      tibble::as_tibble(.) %>%
+      radiator::rad_long(
+        x = .,
+        keep_rownames = "MARKERS",
+        cols = "MARKERS",
+        names_to = "INDIVIDUALS",
+        values_to = "GT",
+        variable_factor = FALSE
+      ) %>%
       dplyr::select(-GT) %>%
       dplyr::mutate(
         MARKERS = factor(x = MARKERS,
@@ -229,21 +227,17 @@ tidy2wide <- function(
 
   if (wide) {
     if (wide.markers) {
-      res$data.wide <- data.table::as.data.table(res$data.tidy) %>%
-        data.table::dcast.data.table(
-          data = .,
-          formula = INDIVIDUALS ~ MARKERS,
-          value.var = names(x)
-        ) %>%
-        tibble::as_tibble(.)
+      res$data.wide <- radiator::rad_wide(
+        x = res$data.tidy,
+        formula = "INDIVIDUALS ~ MARKERS",
+        values_from = names(x)
+      )
     } else {
-      res$data.wide <- data.table::as.data.table(res$data.tidy) %>%
-        data.table::dcast.data.table(
-          data = .,
-          formula = MARKERS ~ INDIVIDUALS,
-          value.var = names(x)
-        ) %>%
-        tibble::as_tibble(.)
+      res$data.wide <- radiator::rad_wide(
+        x = res$data.tidy,
+        formula = "MARKERS ~ INDIVIDUALS",
+        values_from = names(x)
+      )
     }
   }
   if (!tidy) res$data.tidy <- NULL
@@ -568,21 +562,12 @@ tidy_genomic_data <- function(
       col_names = FALSE,
       col_types = readr::cols(.default = readr::col_character())
     ) %>%
-      # TODO... conversion to data.table with an example to double check...
-      # data.table::as.data.table(.) %>%
-      # data.table::melt.data.table(
-      # data = .,
-      # id.vars = "MARKERS",
-      # variable.name = "ALLELES_GROUP",
-      # value.name = "ALLELES",
-      # variable.factor = FALSE
-      # ) %>%
-      # tibble::as_tibble(.) %>%
-      tidyr::pivot_longer(
-        data = .,
-        cols = everything(),
+      radiator::rad_long(
+        x = .,
+        cols = tidyselect::everything(),
         names_to = "DELETE",
-        values_to = "DELETE"
+        values_to = "DELETE",
+        variable_factor = FALSE
       ) %>%
       dplyr::mutate(INFO = clean_ind_names(INFO)) %>%
       dplyr::select(-DELETE) %>%
@@ -614,16 +599,15 @@ tidy_genomic_data <- function(
 
     message("\nNumber of loci in catalog: ", n.catalog.locus)
     message("Number of individuals: ", n.individuals)
-    input <- data.table::as.data.table(input) %>%
-      data.table::melt.data.table(
-        data = .,
-        id.vars = "LOCUS",
-        variable.name = "INDIVIDUALS",
-        value.name = "GT_VCF_NUC",
-        variable.factor = FALSE
-      ) %>%
-      tibble::as_tibble(.)
 
+    input %<>%
+      radiator::rad_long(
+        x = .,
+        cols = "LOCUS",
+        names_to = "INDIVIDUALS",
+        values_to =  "GT_VCF_NUC",
+        variable_factor = FALSE
+      )
 
     input$INDIVIDUALS <- radiator::clean_ind_names(input$INDIVIDUALS)
 

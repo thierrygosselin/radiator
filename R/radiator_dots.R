@@ -24,7 +24,7 @@
 #' "blacklist.genotypes", "erase.genotypes",
 #' "gt", "gt.bin", "gt.vcf", "gt.vcf.nuc",
 #' "pop.levels", "pop.labels", "pop.select", "blacklist.id",
-#' "markers.info", "keep.allele.names", "keep.gds", "ref.calibration",
+#' "markers.info", "keep.allele.names", "keep.gds", "calibrate.alleles",
 #' "vcf.metadata", "vcf.stats", "id.stats", "dp",
 #' "whitelist.markers",
 #' "write.tidy",
@@ -35,7 +35,7 @@
 #' Default: \code{deprecated = c("maf.thresholds", "common.markers",
 #' "max.marker","monomorphic.out", "snp.ld", "filter.call.rate",
 #' "filter.markers.coverage", "filter.markers.missing", "number.snp.reads",
-#' "mixed.genomes.analysis", "duplicate.genomes.analysis", "maf.data")}.
+#' "mixed.genomes.analysis", "duplicate.genomes.analysis", "maf.data", "ref.calibration")}.
 # @keywords internal
 #' @inheritParams radiator_common_arguments
 #'
@@ -71,7 +71,7 @@ radiator_dots <- function(
     "blacklist.genotypes", "erase.genotypes",
     "gt", "gt.bin", "gt.vcf", "gt.vcf.nuc",
     "pop.levels", "pop.labels", "pop.select", "blacklist.id",
-    "markers.info", "keep.allele.names", "keep.gds", "ref.calibration",
+    "markers.info", "keep.allele.names", "keep.gds", "calibrate.alleles",
     "vcf.metadata", "vcf.stats", "wide",
     "whitelist.markers",
     "write.tidy",
@@ -92,7 +92,8 @@ radiator_dots <- function(
     "filter.markers.missing",
     "number.snp.reads",
     "mixed.genomes.analysis",
-    "duplicate.genomes.analysis"
+    "duplicate.genomes.analysis",
+    "ref.calibration"
     ),
   verbose = TRUE
 ) {
@@ -274,7 +275,7 @@ assign_defaults <- function(n, env.arg, verbose = TRUE) {
                  # "filter.hwe"
                  )
   # Arguments that default value is FALSE
-  dots.false <- c("keep.allele.names", "ref.calibration", "long.ld.missing",
+  dots.false <- c("keep.allele.names", "calibrate.alleles", "long.ld.missing",
                   "detect.mixed.genomes", "detect.duplicate.genomes",
                   "dp", "internal", "heatmap.fst", "wide", "filter.hwe")
   if (n %in% dots.true) v <- TRUE

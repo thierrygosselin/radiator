@@ -11,7 +11,7 @@ write_dadi(
   sumstats.ingroup = NULL,
   sumstats.outgroup = NULL,
   dadi.input.filename = NULL,
-  ref.calibration = FALSE
+  calibrate.alleles = FALSE
 )
 }
 \arguments{
@@ -43,10 +43,10 @@ Default use date and time to make the file. If used, the file extension
 need to finish with \code{.tsv or .txt}.
 Default: \code{dadi.input.filename = NULL}.}
 
-\item{ref.calibration}{(optional, logical) To re-calibrate REF an ALT alleles.
+\item{calibrate.alleles}{(optional, logical) To re-calibrate REF an ALT alleles.
 Will be done automatically to the dataset if the required genomic format is
 not found. Please use if you have removed individuals.
-Default: \code{ref.calibration = FALSE}.}
+Default: \code{calibrate.alleles = FALSE}.}
 }
 \value{
 The function returns tibble and the dadi input file in the working

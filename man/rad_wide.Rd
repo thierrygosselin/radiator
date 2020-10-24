@@ -9,6 +9,7 @@ rad_wide(
   formula = NULL,
   names_from = NULL,
   values_from = NULL,
+  values_fill = NULL,
   sep = "_",
   tidy = FALSE
 )

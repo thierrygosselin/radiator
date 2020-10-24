@@ -1977,7 +1977,6 @@ summarize_sex <- function (data, silicodata, data.source, coverage.thresholds = 
       data.table::dcast.data.table(
         data = .,
         formula = MARKERS ~ STRATA,
-
         value.var = c("PRESENCE_ABSENCE", "MEAN_READ_DEPTH", "MEAN_HET")
       ) %>%
       tibble::as_tibble(.) %>%

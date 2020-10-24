@@ -521,17 +521,16 @@ filter_ld <- function(
               dplyr::select(MARKERS, INDIVIDUALS, GT) %>%
               dplyr::mutate(
                 A1 = stringi::stri_sub(GT, 1, 3),
-                A2 = stringi::stri_sub(GT, 4, 6)
+                A2 = stringi::stri_sub(GT, 4, 6),
+                GT = NULL
               ) %>%
-              dplyr::select(MARKERS, INDIVIDUALS, A1, A2) %>%
-              data.table::melt.data.table(
-                data = data.table::as.data.table(x),
-                id.vars = c("MARKERS", "INDIVIDUALS"),
-                variable.name = "ALLELES",
-                value.name = "GT",
-                variable.factor = FALSE
-              ) %>%
-              tibble::as_tibble(.) %>%
+              radiator::rad_long(
+                x = .,
+                cols = c("MARKERS", "INDIVIDUALS"),
+                names_to = "ALLELES",
+                values_to = "GT",
+                variable_factor = FALSE
+                ) %>%
               dplyr::count(MARKERS, GT) %>%
               dplyr::group_by(MARKERS) %>%
               dplyr::filter(n == min(n)) %>%
@@ -1119,15 +1118,13 @@ ld2df <- function(x) {
   x <- as.matrix(x)
   x <- dplyr::bind_cols(tibble::tibble(MARKERS_A = rownames(x)),
                         tibble::as_tibble(x)) %>%
-    data.table::as.data.table(.) %>%
-    data.table::melt.data.table(
-      data = .,
-      id.vars = "MARKERS_A",
-      variable.name = "MARKERS_B",
-      value.name = "LD",
-      variable.factor = FALSE
-    ) %>%
-    tibble::as_tibble(.) %>%
+    radiator::rad_long(
+      x = .,
+      cols = "MARKERS_A",
+      names_to = "MARKERS_B",
+      values_to = "LD",
+      variable_factor = FALSE
+      ) %>%
     dplyr::filter(!is.na(LD)) %>%
     dplyr::arrange(dplyr::desc(LD))
   return(x)

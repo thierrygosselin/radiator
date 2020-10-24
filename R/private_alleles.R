@@ -23,27 +23,22 @@
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 private_alleles <- function(data, strata = NULL, verbose = TRUE) {
-  if (verbose) {
-    cat("################################################################################\n")
-    cat("########################## radiator::private_alleles ###########################\n")
-    cat("################################################################################\n")
-  }
-
 
   # Cleanup---------------------------------------------------------------------
+  radiator_function_header(f.name = "private_alleles", verbose = verbose)
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
   if (verbose) message("Execution date@time: ", file.date)
   old.dir <- getwd()
   opt.change <- getOption("width")
   options(width = 70)
-  timing <- proc.time()# for timing
+  timing <- radiator_tic()
   res <- list()
   #back to the original directory and options
   on.exit(setwd(old.dir), add = TRUE)
   on.exit(options(width = opt.change), add = TRUE)
-  on.exit(timing <- proc.time() - timing, add = TRUE)
-  on.exit(if (verbose) message("\nComputation time, overall: ", round(timing[[3]]), " sec"), add = TRUE)
-  on.exit(if (verbose) cat("########################## completed private_alleles ###########################\n"), add = TRUE)
+  on.exit(radiator_toc(timing), add = TRUE)
+  on.exit(radiator_function_header(f.name = "private_alleles", start = FALSE, verbose = verbose), add = TRUE)
+
 
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("Input file missing")
@@ -125,14 +120,13 @@ private_alleles <- function(data, strata = NULL, verbose = TRUE) {
           MARKERS
       ) %>%
       tibble::as_tibble(x = ., rownames = "INDIVIDUALS") %>%
-      data.table::as.data.table(.) %>%
-      data.table::melt.data.table(
-        data = .,
-        id.vars = "INDIVIDUALS",
-        variable.name = "MARKERS",
-        value.name = "GT_VCF_NUC",
-        variable.factor = FALSE) %>%
-      tibble::as_tibble(.) %>%
+      radiator::rad_long(
+        x = .,
+        cols = "INDIVIDUALS",
+        names_to = "MARKERS",
+        values_to = "GT_VCF_NUC",
+        variable_factor = FALSE
+      ) %>%
       separate_gt(x = ., exclude = c("MARKERS", "INDIVIDUALS")) %>%
       dplyr::select(-ALLELE_GROUP, ALLELE = HAPLOTYPES)
 

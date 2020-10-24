@@ -38,10 +38,10 @@
 #' need to finish with \code{.tsv or .txt}.
 #' Default: \code{dadi.input.filename = NULL}.
 
-#' @param ref.calibration (optional, logical) To re-calibrate REF an ALT alleles.
+#' @param calibrate.alleles (optional, logical) To re-calibrate REF an ALT alleles.
 #' Will be done automatically to the dataset if the required genomic format is
 #' not found. Please use if you have removed individuals.
-#' Default: \code{ref.calibration = FALSE}.
+#' Default: \code{calibrate.alleles = FALSE}.
 
 #' @export
 #' @rdname write_dadi
@@ -81,7 +81,7 @@ write_dadi <- function(
   sumstats.ingroup = NULL,
   sumstats.outgroup = NULL,
   dadi.input.filename = NULL,
-  ref.calibration = FALSE
+  calibrate.alleles = FALSE
 ){
   message("Preparing \u2202a\u2202i input SNP data format")
 
@@ -112,15 +112,15 @@ write_dadi <- function(
 
   # Check if the genotype format required is there, if not generate
   if (!tibble::has_name(data, "GT_VCF") && !tibble::has_name(data, "GT_BIN")) {
-    ref.calibration <- TRUE
+    calibrate.alleles <- TRUE
   }
 
   if (!tibble::has_name(data, "REF") || !tibble::has_name(data, "ALT")) {
-    ref.calibration <- TRUE
+    calibrate.alleles <- TRUE
   }
 
   # re-calibrate REF/ALT and/or generate the format...
-  if (ref.calibration) {
+  if (calibrate.alleles) {
     data <- radiator::calibrate_alleles(data = data)$input
   }
 
@@ -174,7 +174,7 @@ write_dadi <- function(
         ) %>%
         dplyr::ungroup(.) %>%
         dplyr::select(POP_ID, Allele1 = REF, A1, Allele2 = ALT, A2, MARKERS) %>%
-        rad_long(
+        radiator::rad_long(
           x = .,
           cols = c("POP_ID", "MARKERS", "Allele1", "Allele2"),
           measure_vars = c("A1", "A2"),
@@ -182,7 +182,7 @@ write_dadi <- function(
           values_to = "COUNT"
         ) %>%
         tidyr::unite(POP, POP_ID, ALLELE_GROUP, sep = "_") %>%
-        rad_wide(x = ., formula = "MARKERS + Allele1 + Allele2 ~ POP", values_from = "COUNT") %>%
+        radiator::rad_wide(x = ., formula = "MARKERS + Allele1 + Allele2 ~ POP", values_from = "COUNT") %>%
         dplyr::mutate(
           IN_GROUP = rep("---", n()), #version 2
           OUT_GROUP = rep("---", n())
@@ -459,14 +459,14 @@ write_dadi <- function(
         ) %>%
         dplyr::ungroup(.) %>%
         dplyr::select(POP_ID, Allele1 = REF, A1, Allele2 = ALT, A2, MARKERS) %>%
-        rad_long(x = .,
+        radiator::rad_long(x = .,
                  cols = c("POP_ID", "MARKERS", "Allele1", "Allele2"),
                  measure_vars = c("A1", "A2"),
                  names_to = "ALLELE_GROUP",
                  values_to = "COUNT"
                  ) %>%
         tidyr::unite(POP, POP_ID, ALLELE_GROUP, sep = "_") %>%
-        rad_wide(x = ., formula = "MARKERS + Allele1 + Allele2 ~ POP", values_from = "COUNT") %>%
+        radiator::rad_wide(x = ., formula = "MARKERS + Allele1 + Allele2 ~ POP", values_from = "COUNT") %>%
         dplyr::select(
           Allele1,
           dplyr::contains("A1"),

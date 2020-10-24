@@ -151,13 +151,14 @@
     <span class='st'>"filter.hwe"</span>, <span class='st'>"filter.strands"</span>, <span class='st'>"random.seed"</span>, <span class='st'>"path.folder"</span>, <span class='st'>"filename"</span>,
     <span class='st'>"parameters"</span>, <span class='st'>"blacklist.genotypes"</span>, <span class='st'>"erase.genotypes"</span>, <span class='st'>"gt"</span>, <span class='st'>"gt.bin"</span>, <span class='st'>"gt.vcf"</span>,
     <span class='st'>"gt.vcf.nuc"</span>, <span class='st'>"pop.levels"</span>, <span class='st'>"pop.labels"</span>, <span class='st'>"pop.select"</span>, <span class='st'>"blacklist.id"</span>,
-    <span class='st'>"markers.info"</span>, <span class='st'>"keep.allele.names"</span>, <span class='st'>"keep.gds"</span>, <span class='st'>"ref.calibration"</span>, <span class='st'>"vcf.metadata"</span>,
+    <span class='st'>"markers.info"</span>, <span class='st'>"keep.allele.names"</span>, <span class='st'>"keep.gds"</span>, <span class='st'>"calibrate.alleles"</span>, <span class='st'>"vcf.metadata"</span>,
     <span class='st'>"vcf.stats"</span>, <span class='st'>"wide"</span>, <span class='st'>"whitelist.markers"</span>, <span class='st'>"write.tidy"</span>, <span class='st'>"missing.memory"</span>,
     <span class='st'>"dart.sequence"</span>, <span class='st'>"internal"</span>,      <span class='st'>"heatmap.fst"</span>, <span class='st'>"tidy.check"</span>, <span class='st'>"tidy.vcf"</span>,
     <span class='st'>"tidy.dart"</span><span class='op'>)</span>,
   deprecated <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"maf.thresholds"</span>, <span class='st'>"common.markers"</span>, <span class='st'>"max.marker"</span>, <span class='st'>"monomorphic.out"</span>,
     <span class='st'>"snp.ld"</span>, <span class='st'>"filter.call.rate"</span>, <span class='st'>"filter.markers.coverage"</span>, <span class='st'>"filter.markers.missing"</span>,
-    <span class='st'>"number.snp.reads"</span>, <span class='st'>"mixed.genomes.analysis"</span>, <span class='st'>"duplicate.genomes.analysis"</span><span class='op'>)</span>,
+    <span class='st'>"number.snp.reads"</span>, <span class='st'>"mixed.genomes.analysis"</span>, <span class='st'>"duplicate.genomes.analysis"</span>,
+    <span class='st'>"ref.calibration"</span><span class='op'>)</span>,
   verbose <span class='op'>=</span> <span class='cn'>TRUE</span>
 <span class='op'>)</span></pre>
 
@@ -199,7 +200,7 @@ Default: <code>keepers = c(
 "blacklist.genotypes", "erase.genotypes",
 "gt", "gt.bin", "gt.vcf", "gt.vcf.nuc",
 "pop.levels", "pop.labels", "pop.select", "blacklist.id",
-"markers.info", "keep.allele.names", "keep.gds", "ref.calibration",
+"markers.info", "keep.allele.names", "keep.gds", "calibrate.alleles",
 "vcf.metadata", "vcf.stats", "id.stats", "dp",
 "whitelist.markers",
 "write.tidy",
@@ -213,7 +214,7 @@ Default: <code>keepers = c(
 Default: <code>deprecated = c("maf.thresholds", "common.markers",
 "max.marker","monomorphic.out", "snp.ld", "filter.call.rate",
 "filter.markers.coverage", "filter.markers.missing", "number.snp.reads",
-"mixed.genomes.analysis", "duplicate.genomes.analysis", "maf.data")</code>.</p></td>
+"mixed.genomes.analysis", "duplicate.genomes.analysis", "maf.data", "ref.calibration")</code>.</p></td>
     </tr>
     <tr>
       <th>verbose</th>

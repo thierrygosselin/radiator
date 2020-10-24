@@ -96,13 +96,7 @@ tidy_genind <- function(
     # any(unique(c("A", "DD", "G")) %in% c("A", "C", "G", "T"))
 
     ref.alt <- dplyr::select(alt.alleles, MARKERS, REF, ALLELES) %>%
-      data.table::as.data.table(.) %>%
-      data.table::dcast.data.table(
-        data = .,
-        formula = MARKERS ~ REF,
-        value.var = "ALLELES"
-      ) %>%
-      tibble::as_tibble(.)
+      radiator::rad_wide(x = ., formula = "MARKERS ~ REF", values_from = "ALLELES")
 
     alt.alleles %<>% dplyr::filter(REF == "ALT") %$% MARKERS_ALLELES
 
@@ -161,14 +155,12 @@ tidy_genind <- function(
         tibble::add_column(.data = ., INDIVIDUALS = rownames(data@tab), .before = 1) %>%
         tibble::add_column(.data = ., POP_ID = data@pop) %>%
         dplyr::select(POP_ID, INDIVIDUALS, dplyr::ends_with(match = ".A2")) %>%
-        data.table::as.data.table(.) %>%
-        data.table::melt.data.table(
-          data = .,
-          id.vars = c("INDIVIDUALS", "POP_ID"),
-          variable.name = "MARKERS",
-          value.name = "GT_BIN"
+        radiator::rad_long(
+          x = .,
+          cols = c("INDIVIDUALS", "POP_ID"),
+          names_to = "MARKERS",
+          values_to = "GT_BIN"
         ) %>%
-        tibble::as_tibble(.) %>%
         dplyr::mutate(
           MARKERS = stringi::stri_replace_all_fixed(
             str = MARKERS, pattern = ".A2", replacement = "", vectorize_all = FALSE),
@@ -183,14 +175,12 @@ tidy_genind <- function(
         data <- tibble::as_tibble(data@tab) %>%
           tibble::add_column(.data = ., INDIVIDUALS = rownames(data@tab), .before = 1) %>%
           tibble::add_column(.data = ., POP_ID = data@pop) %>%
-          data.table::as.data.table(.) %>%
-          data.table::melt.data.table(
-            data = .,
-            id.vars = c("INDIVIDUALS", "POP_ID"),
-            variable.name = "MARKERS_ALLELES",
-            value.name = "COUNT"
+          radiator::rad_long(
+            x = .,
+            cols = c("INDIVIDUALS", "POP_ID"),
+            names_to = "MARKERS_ALLELES",
+            values_to = "COUNT"
           ) %>%
-          tibble::as_tibble(.) %>%
           dplyr::filter(COUNT > 0 | is.na(COUNT)) %>%
           tidyr::separate(data = ., col = MARKERS_ALLELES, into = c("MARKERS", "ALLELES"), sep = "\\.") %>%
           dplyr::mutate(
@@ -218,14 +208,12 @@ tidy_genind <- function(
         data <- tibble::as_tibble(data@tab) %>%
           tibble::add_column(.data = ., INDIVIDUALS = rownames(data@tab), .before = 1) %>%
           tibble::add_column(.data = ., POP_ID = data@pop) %>%
-          data.table::as.data.table(.) %>%
-          data.table::melt.data.table(
-            data = .,
-            id.vars = c("INDIVIDUALS", "POP_ID"),
-            variable.name = "MARKERS_ALLELES",
-            value.name = "COUNT"
+          radiator::rad_long(
+            x = .,
+            cols = c("INDIVIDUALS", "POP_ID"),
+            names_to = "MARKERS_ALLELES",
+            values_to = "COUNT"
           ) %>%
-          tibble::as_tibble(.) %>%
           dplyr::filter(COUNT > 0 | is.na(COUNT)) %>%
           tidyr::separate(data = ., col = MARKERS_ALLELES, into = c("MARKERS", "ALLELES"), sep = "\\.") %>%
           dplyr::mutate(
@@ -366,7 +354,7 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
             ALT = NULL
           )
       ) %>%
-        rad_wide(
+        radiator::rad_wide(
           x = .,
           formula = "POP_ID + INDIVIDUALS ~ MARKERS_ALLELES",
           values_from = "n"
@@ -389,7 +377,7 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
             ALT = NULL
           )
       ) %>%
-        rad_wide(
+        radiator::rad_wide(
           x = .,
           formula = "POP_ID + INDIVIDUALS ~ MARKERS_ALLELES",
           values_from = "n"
@@ -412,7 +400,7 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
           A2 = stringi::stri_sub(str = GT, from = 4, to = 6),
           GT = NULL
         ) %>%
-        rad_long(
+        radiator::rad_long(
           x = .,
           cols = c("INDIVIDUALS", "POP_ID", "MARKERS"),
           names_to = "ALLELES",
@@ -427,7 +415,7 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
         dplyr::select(-MARKERS, -GT) %>%
         dplyr::mutate(POP_ID = factor(as.character(POP_ID), levels = pop.levels)) %>%# xvalDapc doesn't accept pop as ordered factor
         dplyr::arrange(MARKERS_ALLELES, INDIVIDUALS) %>%
-        rad_wide(x = ., formula = "POP_ID + INDIVIDUALS ~ MARKERS_ALLELES", values_from = "n") %>%
+        radiator::rad_wide(x = ., formula = "POP_ID + INDIVIDUALS ~ MARKERS_ALLELES", values_from = "n") %>%
         dplyr::arrange(POP_ID, INDIVIDUALS))
   }
 

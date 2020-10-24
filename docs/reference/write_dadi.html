@@ -154,7 +154,7 @@ of missingness, and one with imputed genotypes
   sumstats.ingroup <span class='op'>=</span> <span class='cn'>NULL</span>,
   sumstats.outgroup <span class='op'>=</span> <span class='cn'>NULL</span>,
   dadi.input.filename <span class='op'>=</span> <span class='cn'>NULL</span>,
-  ref.calibration <span class='op'>=</span> <span class='cn'>FALSE</span>
+  calibrate.alleles <span class='op'>=</span> <span class='cn'>FALSE</span>
 <span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -201,11 +201,11 @@ need to finish with <code>.tsv or .txt</code>.
 Default: <code>dadi.input.filename = NULL</code>.</p></td>
     </tr>
     <tr>
-      <th>ref.calibration</th>
+      <th>calibrate.alleles</th>
       <td><p>(optional, logical) To re-calibrate REF an ALT alleles.
 Will be done automatically to the dataset if the required genomic format is
 not found. Please use if you have removed individuals.
-Default: <code>ref.calibration = FALSE</code>.</p></td>
+Default: <code>calibrate.alleles = FALSE</code>.</p></td>
     </tr>
     </table>
 

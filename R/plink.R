@@ -163,7 +163,7 @@ read_plink <- function(
         NUMBER = seq(1, n()),
         ALLELE1 = rep("A1", n()), ALLELE2 = rep("A2", n())
       ) %>%
-      rad_long(
+      radiator::rad_long(
         x = .,
         cols = c("INDIVIDUALS", "NUMBER"),
         names_to = "ALLELES_GROUP",
@@ -452,11 +452,11 @@ read_plink <- function(
 #'
 #' \emph{dots-dots-dots ...} allows to pass several arguments for fine-tuning the function:
 #' \enumerate{
-#' \item \code{ref.calibration}: logical. For \code{tped} files, if
-#' \code{ref.calibration = FALSE} the function runs faster
+#' \item \code{calibrate.alleles}: logical. For \code{tped} files, if
+#' \code{calibrate.alleles = FALSE} the function runs faster
 #' but REF/ALT alleles may not be calibrated. The default assumes the users or
 #' sotware producing the PLINK file calibrated the alleles.
-#' Default: \code{ref.calibration = FALSE}.
+#' Default: \code{calibrate.alleles = FALSE}.
 #' }
 
 
@@ -502,7 +502,7 @@ tidy_plink <- function(
   # Test
   # verbose = TRUE
   # strata = NULL
-  # ref.calibration = TRUE
+  # calibrate.alleles = TRUE
   # parallel.core = parallel::detectCores() - 1
 
   # Cleanup---------------------------------------------------------------------
@@ -524,14 +524,14 @@ tidy_plink <- function(
   if (missing(data)) rlang::abort("PLINK file missing")
 
   # Function call and dotslist -------------------------------------------------
-  path.folder <- filename <- ref.calibration <- NULL
+  path.folder <- filename <- calibrate.alleles <- NULL
   rad.dots <- radiator_dots(
     func.name = as.list(sys.call())[[1]],
     fd = rlang::fn_fmls_names(),
     args.list = as.list(environment()),
     dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
     deprecated = c("blacklist.id", "pop.select", "pop.levels", "pop.labels"),
-    keepers = c("ref.calibration", "filename", "internal", "path.folder", "parameters"),
+    keepers = c("calibrate.alleles", "filename", "internal", "path.folder", "parameters"),
     verbose = FALSE
   )
 
@@ -554,7 +554,7 @@ tidy_plink <- function(
     # Filling GT and new separating INDIVIDUALS from ALLELES
     # combining alleles
     strata <- data$strata
-    data <- rad_long(
+    data <- radiator::rad_long(
       x = data$data,
       cols = c("MARKERS", "CHROM", "LOCUS", "POS"),
       names_to = "INDIVIDUALS_ALLELES",
@@ -590,7 +590,7 @@ tidy_plink <- function(
         col = INDIVIDUALS_ALLELES,
         into = c("INDIVIDUALS", "ALLELES"),
         sep = "_") %>%
-      rad_wide(
+      radiator::rad_wide(
         x = .,
         formula = "MARKERS + CHROM + LOCUS + POS + INDIVIDUALS ~ ALLELES",
         values_from = "GT"
@@ -626,10 +626,10 @@ tidy_plink <- function(
 
     # detect if biallelic give vcf style genotypes
     # biallelic <- radiator::detect_biallelic_markers(input)
-    # filename <- internal <- parameters <- path.folder <- ref.calibration <- NULL
-    # rm(filename, internal, parameters, path.folder, ref.calibration)
+    # filename <- internal <- parameters <- path.folder <- calibrate.alleles <- NULL
+    # rm(filename, internal, parameters, path.folder, calibrate.alleles)
 
-    if (ref.calibration) {
+    if (calibrate.alleles) {
       data %<>%
         radiator::calibrate_alleles(
           data = .,
@@ -692,8 +692,8 @@ tidy_plink <- function(
     # checks
     # dplyr::n_distinct(tidy.data$INDIVIDUALS)
     # dplyr::n_distinct(tidy.data$MARKERS)
-    # filename <- internal <- parameters <- path.folder <- ref.calibration <- NULL
-    # rm(filename, internal, parameters, path.folder, ref.calibration)
+    # filename <- internal <- parameters <- path.folder <- calibrate.alleles <- NULL
+    # rm(filename, internal, parameters, path.folder, calibrate.alleles)
     return(res = list(input = tidy.data, biallelic = "biallelic"))
   }#End tidy bed
 
@@ -749,7 +749,7 @@ write_plink <- function(data, filename = NULL) {
       A2 = stringi::stri_sub(str = GT, from = 4, to = 6)
     ) %>%
     dplyr::select(-GT) %>%
-    rad_long(
+    radiator::rad_long(
       x = .,
       cols = c("COL1", "MARKERS", "COL3", "COL4", "INDIVIDUALS"),
       names_to = "ALLELES",
@@ -761,7 +761,7 @@ write_plink <- function(data, filename = NULL) {
     ) %>%
     dplyr::arrange(INDIVIDUALS, ALLELES) %>%
     tidyr::unite(INDIVIDUALS_ALLELES, INDIVIDUALS, ALLELES, sep = "_") %>%
-    rad_wide(x = ., formula = "COL1 + MARKERS +COL3 + COL4 ~ INDIVIDUALS_ALLELES", values_from = "GENOTYPE") %>%
+    radiator::rad_wide(x = ., formula = "COL1 + MARKERS +COL3 + COL4 ~ INDIVIDUALS_ALLELES", values_from = "GENOTYPE") %>%
     dplyr::arrange(MARKERS)
 
   tfam <- dplyr::distinct(.data = data, POP_ID, INDIVIDUALS) %>%

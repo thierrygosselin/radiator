@@ -145,7 +145,7 @@ write_gtypes <- function(data, write = FALSE, filename = NULL) {
       gdsfile = data, var.name = "$dosage_alt") %>%
       magrittr::set_colnames(x = ., value = markers.meta$MARKERS) %>%
       magrittr::set_rownames(x = ., value = strata$INDIVIDUALS) %>%
-      rad_long(
+      radiator::rad_long(
         x = .,
         cols = "INDIVIDUALS",
         names_to = "MARKERS",
@@ -158,13 +158,13 @@ write_gtypes <- function(data, write = FALSE, filename = NULL) {
         `2` = switch_genotypes(GT_BIN),
         GT_BIN = NULL
       ) %>%
-      rad_long(
+      radiator::rad_long(
         x = .,
         cols = c("INDIVIDUALS", "POP_ID", "MARKERS"),
         names_to = "ALLELES",
         values_to = "GT"
         ) %>%
-      rad_wide(
+      radiator::rad_wide(
         x = .,
         formula = "POP_ID + INDIVIDUALS ~ MARKERS + ALLELES",
         values_from = "GT",
@@ -188,13 +188,13 @@ write_gtypes <- function(data, write = FALSE, filename = NULL) {
           `2` = switch_genotypes(GT_BIN),
           GT_BIN = NULL
         ) %>%
-        rad_long(
+        radiator::rad_long(
           x = .,
           cols = c("INDIVIDUALS", "POP_ID", "MARKERS"),
           names_to = "ALLELES",
           values_to = "GT"
         ) %>%
-        rad_wide(
+        radiator::rad_wide(
           x = .,
           formula = "POP_ID + INDIVIDUALS ~ MARKERS + ALLELES",
           values_from = "GT",
@@ -214,13 +214,13 @@ write_gtypes <- function(data, write = FALSE, filename = NULL) {
           `2` = stringi::stri_sub(str = GT, from = 4, to = 6)
         ) %>%
         dplyr::select(-GT) %>%
-        rad_long(
+        radiator::rad_long(
           x = .,
           cols = c("INDIVIDUALS", "POP_ID", "MARKERS"),
           names_to = "ALLELES",
           values_to = "GT"
         ) %>%
-        rad_wide(
+        radiator::rad_wide(
           x = .,
           formula = "POP_ID + INDIVIDUALS ~ MARKERS + ALLELES",
           values_from = "GT",

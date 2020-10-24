@@ -20,13 +20,14 @@ radiator_dots(
     "filter.hwe", "filter.strands", "random.seed", "path.folder", "filename",
     "parameters", "blacklist.genotypes", "erase.genotypes", "gt", "gt.bin", "gt.vcf",
     "gt.vcf.nuc", "pop.levels", "pop.labels", "pop.select", "blacklist.id",
-    "markers.info", "keep.allele.names", "keep.gds", "ref.calibration", "vcf.metadata",
+    "markers.info", "keep.allele.names", "keep.gds", "calibrate.alleles", "vcf.metadata",
     "vcf.stats", "wide", "whitelist.markers", "write.tidy", "missing.memory",
     "dart.sequence", "internal",      "heatmap.fst", "tidy.check", "tidy.vcf",
     "tidy.dart"),
   deprecated = c("maf.thresholds", "common.markers", "max.marker", "monomorphic.out",
     "snp.ld", "filter.call.rate", "filter.markers.coverage", "filter.markers.missing",
-    "number.snp.reads", "mixed.genomes.analysis", "duplicate.genomes.analysis"),
+    "number.snp.reads", "mixed.genomes.analysis", "duplicate.genomes.analysis",
+    "ref.calibration"),
   verbose = TRUE
 )
 }
@@ -56,7 +57,7 @@ Default: \code{keepers = c(
 "blacklist.genotypes", "erase.genotypes",
 "gt", "gt.bin", "gt.vcf", "gt.vcf.nuc",
 "pop.levels", "pop.labels", "pop.select", "blacklist.id",
-"markers.info", "keep.allele.names", "keep.gds", "ref.calibration",
+"markers.info", "keep.allele.names", "keep.gds", "calibrate.alleles",
 "vcf.metadata", "vcf.stats", "id.stats", "dp",
 "whitelist.markers",
 "write.tidy",
@@ -68,7 +69,7 @@ Default: \code{keepers = c(
 Default: \code{deprecated = c("maf.thresholds", "common.markers",
 "max.marker","monomorphic.out", "snp.ld", "filter.call.rate",
 "filter.markers.coverage", "filter.markers.missing", "number.snp.reads",
-"mixed.genomes.analysis", "duplicate.genomes.analysis", "maf.data")}.}
+"mixed.genomes.analysis", "duplicate.genomes.analysis", "maf.data", "ref.calibration")}.}
 
 \item{verbose}{(optional, logical) When \code{verbose = TRUE}
 the function is a little more chatty during execution.

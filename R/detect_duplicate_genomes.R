@@ -212,6 +212,7 @@ detect_duplicate_genomes <- function(
   # random.seed = NULL
   # path.folder = NULL
   # parameters = NULL
+  # internal <- FALSE
   # obj.keeper <- c(ls(envir = globalenv()), "data")
 
   if (interactive.filter || detect.duplicate.genomes) {
@@ -282,12 +283,8 @@ detect_duplicate_genomes <- function(
     )
 
     # Random seed ----------------------------------------------------------------
-    if (is.null(random.seed)) {
-      random.seed <- sample(x = 1:1000000, size = 1)
-      set.seed(random.seed)
-    } else {
-      set.seed(random.seed)
-    }
+    if (is.null(random.seed)) random.seed <- sample(x = 1:1000000, size = 1)
+    set.seed(random.seed)
     readr::write_lines(x = random.seed, file = file.path(path.folder, "random.seed"))
     if (verbose) message("File written: random.seed (", random.seed,")")
 
@@ -384,11 +381,13 @@ detect_duplicate_genomes <- function(
             REF = as.integer(REF),
             ALT = as.integer(ALT)
           ) %>%
-          data.table::as.data.table(.) %>%
-          data.table::melt.data.table(
-            data = ., id.vars = c("MARKERS", "INDIVIDUALS"), variable.name = "ALLELES", value.name = "n",
-            variable.factor = FALSE) %>%
-          tibble::as_tibble(.) %>%
+          rad_long(
+            x = .,
+            cols = c("MARKERS", "INDIVIDUALS"),
+            names_to = "ALLELES",
+            values_to = "n",
+            variable_factor = FALSE
+          ) %>%
           dplyr::mutate(MARKERS_ALLELES = stringi::stri_join(MARKERS, ALLELES, sep = ".")) %>%
           dplyr::select(-ALLELES) %>%
           dplyr::arrange(MARKERS_ALLELES, INDIVIDUALS)
@@ -491,13 +490,13 @@ detect_duplicate_genomes <- function(
           dplyr::select(res$distance, ID1, ID2, PAIRS) %>%
             dplyr::left_join(dplyr::rename(geno.stats, ID1 = INDIVIDUALS, ID1_G = GENOTYPED_PROP), by = "ID1") %>%
             dplyr::left_join(dplyr::rename(geno.stats, ID2 = INDIVIDUALS, ID2_G = GENOTYPED_PROP), by = "ID2") %>%
-            data.table::as.data.table(.) %>%
-            data.table::melt.data.table(
-              data = ., id.vars = c("ID1", "ID2", "PAIRS"),
-              variable.name = "GENOTYPED_MAX",
-              value.name = "GENOTYPED_PROP",
-              variable.factor = FALSE) %>%
-            tibble::as_tibble(.) %>%
+            rad_long(
+              x = .,
+              cols = c("ID1", "ID2", "PAIRS"),
+              names_to = "GENOTYPED_MAX",
+              values_to = "GENOTYPED_PROP",
+              variable_factor = FALSE
+            ) %>%
             dplyr::group_by(PAIRS) %>%
             dplyr::filter(GENOTYPED_PROP == max(GENOTYPED_PROP)) %>%
             dplyr::ungroup(.) %>%
@@ -519,7 +518,7 @@ detect_duplicate_genomes <- function(
 
       # Stats
       message("Generating summary statistics")
-      res$distance.stats %<>%
+      res$distance.stats <- res$distance %>%
         dplyr::summarise(
           MEAN = mean(DISTANCE_RELATIVE, na.rm = TRUE),
           MEDIAN = stats::median(DISTANCE_RELATIVE, na.rm = TRUE),
@@ -637,7 +636,7 @@ detect_duplicate_genomes <- function(
         dplyr::mutate(
           PAIRS = seq(from = 1, to = n(), by = 1),
           MARKERS_TOTAL = rep(n.markers, n()) # just n.markers works
-          )
+        )
 
       # get the number of pairwise comp.
       number.pairwise <- nrow(all.pairs)
@@ -1035,15 +1034,11 @@ distance_individuals <- function(
     n.ind <- dplyr::n_distinct(x$INDIVIDUALS)
     x <- suppressWarnings(
       dplyr::ungroup(x) %>%
-        # dplyr::mutate(
-        #   n = as.numeric(stringi::stri_replace_na(str = n, replacement = 999))) %>% # missing data dummy variable
-        data.table::as.data.table(.) %>%
-        data.table::dcast.data.table(
-          data = .,
-          formula = INDIVIDUALS ~ MARKERS_ALLELES,
-          value.var = "n"
+        radiator::rad_wide(
+          x = .,
+          formula = "INDIVIDUALS ~ MARKERS_ALLELES",
+          values_from = "n"
         ) %>%
-        tibble::as_tibble(.) %>%
         tibble::remove_rownames(.data = .) %>%
         tibble::column_to_rownames(.data = ., var = "INDIVIDUALS"))
 
@@ -1277,9 +1272,9 @@ allele_count <- carrier::crate(function(x) {
       A2 = stringi::stri_sub(str = GT, from = 4, to = 6)
     ) %>%
     dplyr::select(-GT) %>%
-    tidyr::pivot_longer(
-      data = .,
-      cols = -c("INDIVIDUALS", "MARKERS"),
+    radiator::rad_long(
+      x = .,
+      cols = c("INDIVIDUALS", "MARKERS"),
       names_to = "ALLELES",
       values_to = "GT"
     ) %>%

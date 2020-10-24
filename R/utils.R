@@ -46,6 +46,8 @@ distance2tibble <- function(
   if (relative) {
     x  %<>% dplyr::mutate(DISTANCE_RELATIVE = DISTANCE / max(DISTANCE))
   }
+  x %<>% dplyr::mutate(dplyr::across(.cols = c("ID1", "ID2"), .fns = as.character))
+
   if (!is.null(pop.levels)) {
     x  %<>% dplyr::mutate(
       ID1 = factor(x = ID1, levels = pop.levels, ordered = TRUE),
@@ -429,16 +431,15 @@ separate_gt <- function(
     )
 
     if (gather) {
-      res <- data.table::melt.data.table(
-        data = data.table::as.data.table(res),
-        id.vars = exclude,
-        variable.name = "ALLELE_GROUP",
-        value.name = "HAPLOTYPES",
-        variable.factor = FALSE
-      ) %>%
-        tibble::as_tibble(.)
-
-      if (!haplotypes) res %<>% dplyr::rename(ALLELES = HAPLOTYPES)
+      res %<>%
+        radiator::rad_long(
+          x = .,
+          cols = exclude,
+          names_to = "ALLELE_GROUP",
+          values_to = "ALLELES",
+          variable_factor = FALSE
+        )
+      if (haplotypes) res %<>% dplyr::rename(HAPLOTYPES = ALLELES)
     }
 
     return(res)
@@ -498,11 +499,11 @@ radiator_split_tibble <- function(x, parallel.core = parallel::detectCores() - 1
   })#End split_gt
 
   x  <- radiator_future(
-      .x = x,
-      .f = split_gt,
-      flat.future = "dfc",
-      parallel.core = parallel.core
-    )
+    .x = x,
+    .f = split_gt,
+    flat.future = "dfc",
+    parallel.core = parallel.core
+  )
   return(x)
 }#End radiator_split_tibble
 
@@ -616,7 +617,7 @@ parallel_core_opt <- function(parallel.core = NULL, max.core = NULL) {
 }#End parallel_core_opt
 
 
-# using future and future.apply -------------------------------------------------
+# radiator_future --------------------------------------------------------------
 #' @name radiator_future
 #' @title radiator parallel function
 #' @description Updating radiator to use future
@@ -721,7 +722,7 @@ radiator_future <- function(
                     drop = {furrr::future_map}
   )
 
-  opts <- furrr::furrr_options(globals = FALSE)
+  opts <- furrr::furrr_options(globals = FALSE, seed = TRUE)
   if (length(list(...)) == 0) {
     .x %<>% rad_map(.x = ., .f = .f, .options = opts)
   } else {
@@ -788,18 +789,20 @@ rad_wide <- function(
   formula = NULL,
   names_from = NULL,
   values_from = NULL,
+  values_fill = NULL,
   sep = "_",
   tidy = FALSE
 
-  ){
+){
   # tidyr
   if (tidy) {
     x %<>%
       tidyr::pivot_wider(
         data = .,
         names_from = names_from,
-        values_from = values_from
-        )
+        values_from = values_from,
+        values_fill = values_fill
+      )
   } else {# data.table
     x  %>%
       data.table::as.data.table(.) %>%
@@ -807,8 +810,130 @@ rad_wide <- function(
         data = .,
         formula =  formula,
         value.var = values_from,
-        sep = sep
+        sep = sep,
+        fill = values_fill
       ) %>%
       tibble::as_tibble(.)
   }
 }#rad_wide
+
+
+#' @title strip_rad
+#' @description Strip a tidy data set of it's strata and markers meta.
+#' @noRd
+# @keywords internal
+#' @export
+strip_rad <- function(
+  x,
+  m = c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF", "ALT"),
+  env.arg = NULL,
+  keep.strata = TRUE,
+  verbose = TRUE
+) {
+  objs <- object.size(x)
+
+  # STRATA ----------
+  strata.n <- intersect(colnames(x), c("STRATA", "POP_ID"))
+  pop.id <- rlang::has_name(x, "POP_ID")
+  strata <- radiator::generate_strata(data = x, pop.id = pop.id) %>%
+    dplyr::mutate(
+      ID_SEQ = seq_len(length.out = dplyr::n()),
+      STRATA_SEQ = as.integer(factor(x = .data[[strata.n]], levels = unique(.data[[strata.n]])))
+    )
+
+  cm <- intersect(colnames(strata), colnames(x))
+  x %<>%
+    dplyr::left_join(strata, by = cm) %>%
+    dplyr::select(-tidyselect::any_of(cm))
+
+  if (!keep.strata) x %<>% dplyr::select(-STRATA_SEQ)
+
+  # Note to myself: maybe write using vroom and read back when necessary ?
+  assign(
+    x = "strata.bk",
+    value = strata,
+    pos = env.arg,
+    envir = env.arg
+  )
+  cm <- keep.strata <- pop.id <- strata.n <- strata <- NULL
+
+  # MARKERS ---------
+  x %<>%
+    dplyr::mutate(
+      M_SEQ = as.integer(factor(x = MARKERS, levels = unique(MARKERS)))
+    )
+  m <- c("M_SEQ", m)
+  markers.meta <- x %>%
+    dplyr::select(tidyselect::any_of(m)) %>%
+    dplyr::distinct(M_SEQ, .keep_all = TRUE)
+
+  cm <- intersect(colnames(markers.meta), colnames(x)) %>%
+    purrr::discard(.x = ., .p = . %in% "M_SEQ")
+
+  # remove markers meta
+  x %<>%
+    dplyr::select(-tidyselect::any_of(cm))
+
+  # Note to myself: maybe write using vroom and read back when necessary ?
+  assign(
+    x = "markers.meta.bk",
+    value = markers.meta,
+    pos = env.arg,
+    envir = env.arg
+  )
+  markers.meta <- cm <- m <- NULL
+
+  # GENOTYPE META ---------
+  # g <- c("READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH",
+  # "GL", "CATG", "PL", "HQ", "GQ", "GOF","NR", "NV")
+  want <- c("GT", "GT_VCF_NUC", "GT_VCF", "GT_BIN", "REF", "ALT")
+  g <- purrr::keep(.x = colnames(x), .p = !colnames(x) %in% want) %>%
+    purrr::discard(.x = ., .p = . %in% c("ID_SEQ", "STRATA_SEQ", "M_SEQ"))
+
+  genotypes.meta <- NULL # default
+
+  if (length(g) != 0L) {
+    genotypes.meta <- x %>% dplyr::select(tidyselect::any_of(g))
+    want <- c("ID_SEQ","M_SEQ", "GT", "GT_VCF_NUC", "GT_VCF", "GT_BIN", "REF", "ALT")
+    x %<>% dplyr::select(tidyselect::any_of(want))
+  }
+
+  assign(
+    x = "genotypes.meta.bk",
+    value = genotypes.meta,
+    pos = env.arg,
+    envir = env.arg
+  )
+  g <- want <- genotypes.meta <- NULL
+
+  if (verbose) message("Proportion of size reduction: ", round(1 - (object.size(x) / objs), 2))
+  return(x)
+  # return(list(data = x, markers.meta = markers.meta, genotypes.meta = genotypes.meta))
+}# End strip_rad
+
+
+
+#' @title join_rad
+#' @description Joing back the parts stripped in strip_rad.
+#' @noRd
+# @keywords internal
+#' @export
+join_rad <- function(x, s, m, g, env.arg = NULL) {
+  if (!is.null(g)) {
+    data %<>%
+      dplyr::left_join(g, by = c("ID_SEQ", "M_SEQ"))
+    env.arg$genotypes.meta.bk <- NULL
+  }
+
+  want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS",
+            "COL", "REF", "ALT", "POP_ID", "STRATA","INDIVIDUALS")
+  x %<>%
+    dplyr::left_join(s, by = "ID_SEQ") %>%
+    dplyr::select(-tidyselect::any_of(c("ID_SEQ", "STRATA_SEQ"))) %>%
+    dplyr::left_join(m, by = "M_SEQ") %>%
+    dplyr::select(-M_SEQ) %>%
+    dplyr::select(tidyselect::any_of(want), tidyselect::everything())
+
+  env.arg$strata.bk <- env.arg$markers.meta.bk <- NULL
+  return(x)
+}#End join_rad

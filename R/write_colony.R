@@ -205,7 +205,7 @@ radiator_colony <- function(
       A2 = stringi::stri_sub(GT, 4, 6),
       GT = NULL
     ) %>%
-    rad_long(
+    radiator::rad_long(
       x = .,
       cols = c("POP_ID", "INDIVIDUALS", "MARKERS"),
       names_to = "ALLELE_GROUP",
@@ -241,14 +241,14 @@ radiator_colony <- function(
       dplyr::arrange(MARKERS) %>%
       dplyr::mutate(GROUP = seq(1, n(), by = 1)) %>%
       dplyr::mutate(dplyr::across(tidyselect::everything(), .fns = as.character)) %>%
-      rad_long(
+      radiator::rad_long(
         x = .,
         cols = c("GROUP", "MARKERS"),
         names_to = "ALLELES_FREQ",
         values_to = "VALUE"
       ) %>%
       dplyr::mutate(ALLELES_FREQ = factor(ALLELES_FREQ, levels = c("ALLELES", "FREQ"), ordered = TRUE)) %>%
-      rad_wide(x = ., formula = "MARKERS + ALLELES_FREQ ~ GROUP", values_from = "VALUE") %>%
+      radiator::rad_wide(x = ., formula = "MARKERS + ALLELES_FREQ ~ GROUP", values_from = "VALUE") %>%
       tidyr::unite(data = ., col = INFO, -c(MARKERS, ALLELES_FREQ), sep = " ") %>%
       dplyr::mutate(
         INFO = stringi::stri_replace_all_regex(str = INFO, pattern = "NA", replacement = "", vectorize_all = FALSE),
@@ -269,7 +269,7 @@ radiator_colony <- function(
   marker.num <- length(markers.name)
 
   data <- tidyr::unite(data = data, col = MARKERS.ALLELE_GROUP, MARKERS, ALLELE_GROUP, sep = ".") %>%
-    rad_wide(x = ., formula = "POP_ID + INDIVIDUALS ~ MARKERS.ALLELE_GROUP", values_from = "ALLELES") %>%
+    radiator::rad_wide(x = ., formula = "POP_ID + INDIVIDUALS ~ MARKERS.ALLELE_GROUP", values_from = "ALLELES") %>%
     dplyr::arrange(POP_ID, INDIVIDUALS) %>%
     dplyr::select(-POP_ID) %>%
     dplyr::mutate(dplyr::across(tidyselect::everything(), .fns = as.character))

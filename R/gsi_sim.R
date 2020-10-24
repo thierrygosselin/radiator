@@ -106,11 +106,11 @@ write_gsi_sim <- function(
       A2 = stringi::stri_sub(str = GT, from = 4, to = 6),
       GT = NULL
     ) %>%
-    rad_long(x = ., cols = c("POP_ID", "INDIVIDUALS", "MARKERS"), names_to = "ALLELES", values_to = "GT") %>%
+    radiator::rad_long(x = ., cols = c("POP_ID", "INDIVIDUALS", "MARKERS"), names_to = "ALLELES", values_to = "GT") %>%
     dplyr::arrange(MARKERS) %>%
     tidyr::unite(col = MARKERS_ALLELES, MARKERS , ALLELES, sep = "_") %>%
     dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS_ALLELES) %>%
-    rad_wide(x = ., formula = "POP_ID_ INDIVIDUALS ~ MARKERS_ALLELES", values_from = "GT") %>%
+    radiator::rad_wide(x = ., formula = "POP_ID_ INDIVIDUALS ~ MARKERS_ALLELES", values_from = "GT") %>%
     dplyr::ungroup(.)
 
   # population levels and strata

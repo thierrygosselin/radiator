@@ -175,7 +175,7 @@ tidy_fstat <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
 
   # work on the genotype field
   data %<>%
-    rad_long(
+    radiator::rad_long(
       x = .,
       cols = c("POP_ID", "INDIVIDUALS"),
       names_to = "MARKERS",
@@ -194,7 +194,7 @@ tidy_fstat <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
   # wide format
   if (!tidy) {
     data %<>%
-      rad_wide(
+      radiator::rad_wide(
         x = .,
         formula = "POP_ID + INDIVIDUALS ~ MARKERS",
         values_from = "GENOTYPE"
@@ -296,7 +296,7 @@ write_hierfstat <- function(data, filename = NULL) {
   data <- suppressWarnings(
     tidyr::unite(data = data, GT, A1, A2, sep = "") %>%
       dplyr::mutate(GT = as.numeric(GT)) %>%
-      rad_wide(
+      radiator::rad_wide(
         x = .,
         formula = "POP_ID + INDIVIDUALS ~ MARKERS",
         values_from = "GT"

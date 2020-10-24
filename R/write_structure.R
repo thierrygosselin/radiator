@@ -71,12 +71,12 @@ write_structure <- function(
       A2 = stringi::stri_sub(str = GT, from = 4, to = 6),
       GT = NULL
     ) %>%
-    rad_long(x = ., cols = c("POP_ID", "INDIVIDUALS", "MARKERS"), names_to = "ALLELES", values_to = "GT") %>%
+    radiator::rad_long(x = ., cols = c("POP_ID", "INDIVIDUALS", "MARKERS"), names_to = "ALLELES", values_to = "GT") %>%
     dplyr::mutate(
       GT = stringi::stri_replace_all_fixed(str = GT, pattern = "000", replacement = "-9", vectorize_all = FALSE),
       GT = as.integer(GT)
     ) %>%
-    rad_wide(x = ., formula = "INDIVIDUALS + POP_ID ~ MARKERS + ALLELES", values_from = "GT") %>%
+    radiator::rad_wide(x = ., formula = "INDIVIDUALS + POP_ID ~ MARKERS + ALLELES", values_from = "GT") %>%
     dplyr::mutate(POP_ID = as.integer(POP_ID)) %>%
     dplyr::arrange(POP_ID, INDIVIDUALS)
 

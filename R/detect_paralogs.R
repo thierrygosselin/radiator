@@ -341,13 +341,12 @@ detect_paralogs <- function(
   # prepare the summary for the figure
   markers.het.summary %<>%
     dplyr::select(VARIANT_ID, MISSING_PROP, HET_PROP, Z_SCORE, RATIO) %>%
-    data.table::as.data.table(.) %>%
-    data.table::melt.data.table(
-      data = .,
-      id.vars = c("VARIANT_ID", "HET_PROP", "MISSING_PROP"),
-      measure.vars = c("Z_SCORE", "RATIO"),
-      variable.name = "GROUP",
-      value.name = "VALUE"
+    radiator::rad_long(
+      x = .,
+      cols = c("VARIANT_ID", "HET_PROP", "MISSING_PROP"),
+      measure_vars = c("Z_SCORE", "RATIO"),
+      names_to = "GROUP",
+      values_to = "VALUE"
     )
 
   facet_names <- ggplot2::as_labeller(

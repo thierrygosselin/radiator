@@ -24,7 +24,7 @@ haplotype_reconstruction <- function(
       sep = 1:(n.snp - 1),
       remove = FALSE
     ) %>%
-      rad_long(
+      radiator::rad_long(
         x = .,
         cols = c("MARKERS", "HAPLOTYPES", "SNP_N"),
         names_to = "SNP",
@@ -40,7 +40,7 @@ haplotype_reconstruction <- function(
       dplyr::filter(POLYMORPHIC == "polymorphic") %>%
       dplyr::select(-POLYMORPHIC) %>%
       dplyr::arrange(SNP, HAPLOTYPES) %>%
-      rad_wide(
+      radiator::rad_wide(
         x = .,
         formula = "MARKERS + HAPLOTYPES + SNP_N ~ SNP",
         values_from = "NUC"

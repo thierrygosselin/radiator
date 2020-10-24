@@ -165,14 +165,12 @@ tidy_genlight <- function(
       data.frame(data) %>%
         magrittr::set_colnames(x = ., value = markers$MARKERS) %>%
         tibble::add_column(.data = ., INDIVIDUALS = rownames(.), .before = 1) %>%
-        data.table::as.data.table(.) %>%
-        data.table::melt.data.table(
-          data = .,
-          id.vars = "INDIVIDUALS",
-          variable.name = "MARKERS",
-          value.name = "GT_BIN"
+        radiator::rad_long(
+          x = .,
+          cols = "INDIVIDUALS",
+          names_to = "MARKERS",
+          values_to = "GT_BIN"
         ) %>%
-        tibble::as_tibble(.) %>%
         dplyr::full_join(markers, by = "MARKERS") %>%
         dplyr::full_join(strata, by =  "INDIVIDUALS") %>%
         dplyr::mutate(
@@ -449,13 +447,11 @@ write_genlight <- function(
       data %<>%
         dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT_BIN) %>%
         dplyr::mutate(GT_BIN = as.integer(GT_BIN)) %>%
-        data.table::as.data.table(.) %>%
-        data.table::dcast.data.table(
-          data = .,
-          formula = POP_ID + INDIVIDUALS ~ MARKERS,
-          value.var = "GT_BIN"
-        ) %>%
-        tibble::as_tibble(.)
+        radiator::rad_wide(
+          x = .,
+          formula = "POP_ID + INDIVIDUALS ~ MARKERS",
+          values_from = "GT_BIN"
+        )
     }#End dartr
 
     data.type <- "tbl_df"
@@ -502,21 +498,16 @@ write_genlight <- function(
     data %<>%
       dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT_BIN) %>%
       dplyr::mutate(GT_BIN = as.integer(GT_BIN)) %>%
-      data.table::as.data.table(.) %>%
-      data.table::dcast.data.table(
-        data = .,
-        formula = POP_ID + INDIVIDUALS ~ MARKERS,
-        value.var = "GT_BIN"
-      ) %>%
-      tibble::as_tibble(.)
+      radiator::rad_wide(
+        x = .,
+        formula = "POP_ID + INDIVIDUALS ~ MARKERS",
+        values_from = "GT_BIN"
+      )
   }# End tidy data
 
   # Generate genlight
-  if (length(markers.meta$MARKERS) > 10000) {
-    parallel.core.temp <- parallel.core
-  } else {
-    parallel.core.temp <- FALSE
-  }
+  parallel.core.temp <- FALSE
+  if (length(markers.meta$MARKERS) > 10000) parallel.core.temp <- parallel.core
 
   # longer
   # gl.obj2 <- methods::new(

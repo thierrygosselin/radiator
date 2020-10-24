@@ -317,7 +317,7 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
       if (gt.coding == 2) {
         gt.sep <- 1
       }
-      data <- rad_long(
+      data <- radiator::rad_long(
         x = data,
         cols = c("POP_ID", "INDIVIDUALS"),
         names_to = "MARKERS",
@@ -336,7 +336,7 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
 
       if (!tidy) {
         data %<>%
-          rad_wide(
+          radiator::rad_wide(
             x = .,
             formula = "POP_ID + NDIVIDUALS ~ MARKERS",
             values_from = "GT"
@@ -345,7 +345,7 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
     } else {
       if (tidy) {
         data %<>%
-          rad_long(
+          radiator::rad_long(
           x = .,
           cols = c("POP_ID", "INDIVIDUALS"),
           names_to = "MARKERS",
@@ -477,7 +477,7 @@ write_genepop <- function(
   # Wide format ----------------------------------------------------------------
   data  %<>%
     dplyr::arrange(MARKERS) %>%
-    rad_wide(x = ., formula = "POP_ID + INDIVIDUALS ~ MARKERS", values_from = "GT") %>%
+    radiator::rad_wide(x = ., formula = "POP_ID + INDIVIDUALS ~ MARKERS", values_from = "GT") %>%
     dplyr::arrange(POP_ID, INDIVIDUALS) %>%
     dplyr::mutate(INDIVIDUALS = paste(INDIVIDUALS, ",", sep = ""))
 

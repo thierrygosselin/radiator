@@ -391,7 +391,7 @@ read_dart <- function(
     suppressWarnings(
       data %<>%
         dplyr::select(dplyr::one_of(want)) %>%
-        rad_long(
+        radiator::rad_long(
           x = .,
           cols = c("CLONE_ID", "SEQUENCE"),
           names_to = "INDIVIDUALS",
@@ -1180,7 +1180,7 @@ dart2gds <- function(
   }
 
   genotypes.meta <- suppressMessages(
-    rad_long(
+    radiator::rad_long(
       x = alt,
       cols = want,
       names_to = "INDIVIDUALS",
@@ -1188,7 +1188,7 @@ dart2gds <- function(
       variable_factor = FALSE
     ) %>%
       dplyr::bind_cols(
-        rad_long(
+        radiator::rad_long(
           x = ref,
           cols = c("VARIANT_ID", "MARKERS"),
           names_to = "INDIVIDUALS",
@@ -1433,7 +1433,7 @@ tidy_dart_metadata <- function(
       COL_TYPE = c("c", "c", "i", "d", "d", "d", "d"))
 
     dart.col.type %<>%
-      rad_long(
+      radiator::rad_long(
         x = .,
         cols = tidyselect::everything(),
         names_to = "DELETE",

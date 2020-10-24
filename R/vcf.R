@@ -1330,8 +1330,8 @@ read_vcf <- function(
 #'
 #' This behavior can be annoying, \emph{if the user knows what he's doing}, to turn off
 #' use: \code{tidy.check = FALSE}.
-#' \item \code{ref.calibration: } (optional, logical)
-#' Default: \code{ref.calibration = FALSE}.
+#' \item \code{calibrate.alleles: } (optional, logical)
+#' Default: \code{calibrate.alleles = FALSE}.
 #' Documented in \code{\link[radiator]{calibrate_alleles}}.
 #' \item \code{vcf.stats: } (optional, logical) Generates individuals and
 #' markers statistics helpful for filtering.
@@ -1464,7 +1464,7 @@ tidy_vcf <- function(
   # gt = TRUE
   # gt.bin = TRUE
   # wide = FALSE
-  # ref.calibration = FALSE
+  # calibrate.alleles = FALSE
   # random.seed = NULL
   # parameters = NULL
 
@@ -1511,7 +1511,7 @@ tidy_vcf <- function(
       "path.folder",
       "parameters",
       "gt", "gt.bin", "gt.vcf", "gt.vcf.nuc",
-      "ref.calibration",
+      "calibrate.alleles",
       "vcf.metadata", "vcf.stats",
       "whitelist.markers",
       "internal",
@@ -1671,7 +1671,7 @@ tidy_vcf <- function(
     }
     # gt.vcf.nuc is genotype coding in the VCF but with nucleotides: A/C, ./.
     if (is.null(gt.vcf.nuc)) {
-      if (ref.calibration) {
+      if (calibrate.alleles) {
         gt.vcf.nuc <- TRUE
       } else {
         if (n.markers < 5000) gt.vcf.nuc <- TRUE
@@ -1686,7 +1686,7 @@ tidy_vcf <- function(
       if (n.markers >= 30000) gt <- FALSE
     }
 
-    if (gt || gt.vcf.nuc || gt.vcf) ref.calibration <- TRUE
+    if (gt || gt.vcf.nuc || gt.vcf) calibrate.alleles <- TRUE
 
     # check
     # gt.bin
@@ -1731,7 +1731,7 @@ tidy_vcf <- function(
     # Tidying TRUE  ------------------------------------------------------------
     if (tidy.vcf) {
       if (!is.null(blacklist.id)) {
-        ref.calibration <- TRUE
+        calibrate.alleles <- TRUE
         if (verbose) message("\nRe-calibration of REF/ALT alleles: TRUE")
       }
 
@@ -1915,7 +1915,7 @@ tidy_vcf <- function(
       }
 
       # re-calibration of ref/alt alleles ------------------------------------------
-      if (ref.calibration) {
+      if (calibrate.alleles) {
         if (verbose) message("\nCalculating REF/ALT alleles...")
         tidy.data <- radiator::calibrate_alleles(
           data = tidy.data,
@@ -2391,7 +2391,7 @@ write_vcf <- function(
           dplyr::select(MARKERS, CHROM, LOCUS, POS, REF, ALT, INFO, INDIVIDUALS, GT_VCF, POP_ID) %>%
           dplyr::mutate(GT_VCF_POP_ID = stringi::stri_join(GT_VCF, POP_ID, sep = ":")) %>%
           dplyr::select(-c(GT_VCF, POP_ID)) %>%
-          rad_wide(
+          radiator::rad_wide(
             x = .,
             formula = "MARKERS + CHROM + LOCUS + POS + INFO + REF + ALT ~ INDIVIDUALS",
             names_from = "GT_VCF_POP_ID") %>%
@@ -2406,7 +2406,7 @@ write_vcf <- function(
       output <- suppressWarnings(
         dplyr::left_join(data, info.field, by = "MARKERS") %>%
           dplyr::select(MARKERS, CHROM, LOCUS, POS, REF, ALT, INDIVIDUALS, GT_VCF, INFO) %>%
-          rad_wide(x = ., formula = "MARKERS + CHROM + LOCUS + POS + INFO + REF + ALT ~ INDIVIDUALS", values_from = "GT_VCF") %>%
+          radiator::rad_wide(x = ., formula = "MARKERS + CHROM + LOCUS + POS + INFO + REF + ALT ~ INDIVIDUALS", values_from = "GT_VCF") %>%
           dplyr::mutate(
             QUAL = rep(".", n()),
             FILTER = rep("PASS", n()),
@@ -3046,7 +3046,7 @@ vcf_strata <- function(data, strata, filename = NULL) {
 
   # transform in long format
   input  %<>%
-    rad_long(
+    radiator::rad_long(
       x = .,
       cols = c("#CHROM", "POS", "ID",  "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT"),
       names_to = "INDIVIDUALS",
@@ -3112,7 +3112,7 @@ vcf_strata <- function(data, strata, filename = NULL) {
       sep = ":",
       remove = TRUE
     ) %>%
-    rad_wide(
+    radiator::rad_wide(
       x = .,
       formula = "`#CHROM` + POS + ID +  REF + ALT + QUAL + FILTER + INFO + FORMAT ~ INDIVIDUALS",
       values_from = "FORMAT_ID") %>%

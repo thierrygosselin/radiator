@@ -190,7 +190,7 @@ detect_microsatellites <- function(data, gmata.dir = NULL, ...) {
       MARKERS = stringi::stri_join(">", MARKERS),
       ID = seq(from = 1, to = n(), by = 1)
     ) %>%
-    rad_long(
+    radiator::rad_long(
       x = .,
       cols = "ID",
       names_to = "MARKERS_SEQUENCE",

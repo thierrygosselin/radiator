@@ -139,24 +139,21 @@ write_rubias <- function(
           ),
           GT_BIN = NULL
         ) %>%
-        data.table::as.data.table(.) %>%
-        data.table::melt.data.table(
-          data = .,
-          id.vars = c("MARKERS", "POP_ID", "INDIVIDUALS"),
-          measure.vars = c("A1", "A2"),
-          variable.name = "ALLELE_GROUP",
-          value.name = "ALLELES",
-          variable.factor = FALSE) %>%
-        tibble::as_tibble(.) %>%
+        radiator::rad_long(
+          x = .,
+          cols = c("MARKERS", "POP_ID", "INDIVIDUALS"),
+          measure_vars = c("A1", "A2"),
+          names_to = "ALLELE_GROUP",
+          values_to = "ALLELES",
+          variable_factor = FALSE
+        ) %>%
         tidyr::unite(col = MARKERS_ALLELES, MARKERS , ALLELE_GROUP, sep = ".") %>%
         dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS_ALLELES) %>%
-        data.table::as.data.table(.) %>%
-        data.table::dcast.data.table(
-          data = .,
-          formula = POP_ID + INDIVIDUALS ~ MARKERS_ALLELES,
-          value.var = "ALLELES"
+        radiator::rad_wide(
+          x = .,
+          formula = "POP_ID + INDIVIDUALS ~ MARKERS_ALLELES",
+          values_from = "ALLELES"
         ) %>%
-        tibble::as_tibble(.) %>%
         dplyr::ungroup(.)
     } else {
       if (!rlang::has_name(data, "GT")) {
@@ -192,13 +189,11 @@ write_rubias <- function(
         tidyr::unite(col = MARKERS_ALLELES, MARKERS , ALLELE_GROUP, sep = ".") %>%
         dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS_ALLELES) %>%
         dplyr::mutate(ALLELES = as.character(ALLELES)) %>%
-        data.table::as.data.table(.) %>%
-        data.table::dcast.data.table(
-          data = .,
-          formula = POP_ID + INDIVIDUALS ~ MARKERS_ALLELES,
-          value.var = "ALLELES"
+        radiator::rad_wide(
+          x = .,
+          formula = "POP_ID + INDIVIDUALS ~ MARKERS_ALLELES",
+          values_from = "ALLELES"
         ) %>%
-        tibble::as_tibble(.) %>%
         dplyr::ungroup(.)
     }
 

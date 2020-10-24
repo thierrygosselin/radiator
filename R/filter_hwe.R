@@ -261,7 +261,7 @@ filter_hwe <- function(
 ) {
   # obj.keeper <- c(ls(envir = globalenv()), "data")
 
-    if (interactive.filter || filter.hwe) {
+  if (interactive.filter || filter.hwe) {
     if (interactive.filter) verbose <- TRUE
     # # Testing
     # interactive.filter = TRUE
@@ -493,12 +493,13 @@ filter_hwe <- function(
       hwd.markers.pop.sum <- data.sum %>%
         dplyr::filter(!HWE, POP_ID != "OVERALL") %>%
         dplyr::select(POP_ID, MARKERS, `*`, `**`, `***`, `****`, `*****`) %>%
-        data.table::as.data.table(.) %>%
-        data.table::melt.data.table(
-          data = ., id.vars = c("MARKERS", "POP_ID"),
-          variable.name = "SIGNIFICANCE", value.name = "VALUE",
-          variable.factor = FALSE) %>%
-        tibble::as_tibble(.) %>%
+        radiator::rad_long(
+          x = .,
+          cols = c("MARKERS", "POP_ID"),
+          names_to = "SIGNIFICANCE",
+          values_to = "VALUE",
+          variable_factor = FALSE
+        ) %>%
         dplyr::mutate(
           SIGNIFICANCE = factor(SIGNIFICANCE,
                                 levels = c("*", "**", "***", "****", "*****"))) %>%
@@ -514,12 +515,13 @@ filter_hwe <- function(
       overall <- data.sum %>%
         dplyr::filter(!HWE, POP_ID == "OVERALL") %>%
         dplyr::select(POP_ID, MARKERS, `*`, `**`, `***`, `****`, `*****`) %>%
-        data.table::as.data.table(.) %>%
-        data.table::melt.data.table(
-          data = ., id.vars = c("MARKERS", "POP_ID"),
-          variable.name = "SIGNIFICANCE", value.name = "VALUE",
-          variable.factor = FALSE) %>%
-        tibble::as_tibble(.) %>%
+        radiator::rad_long(
+          x = .,
+          cols = c("MARKERS", "POP_ID"),
+          names_to = "SIGNIFICANCE",
+          values_to = "VALUE",
+          variable_factor = FALSE
+        ) %>%
         dplyr::mutate(SIGNIFICANCE = factor(
           x = SIGNIFICANCE,
           levels = c("*", "**", "***", "****", "*****"))) %>%
@@ -549,11 +551,12 @@ filter_hwe <- function(
 
       overall <- NULL
 
-      hwd.helper.table <- hwd.helper.table.long %>%
-        dplyr::group_by(N_POP_HWD) %>%
-        tidyr::pivot_wider(data = ., names_from = "SIGNIFICANCE", values_from = "n") %>%
+      hwd.helper.table <- radiator::rad_wide(
+        x = hwd.helper.table.long,
+        formula = "N_POP_HWD ~ SIGNIFICANCE",
+        values_from = "n"
+      ) %>%
         dplyr::filter(N_POP_HWD != 0) %>%
-        dplyr::ungroup(.) %>%
         readr::write_tsv(x = ., file = file.path(path.folder, "hwd.helper.table.tsv"))
 
       hwd.helper.table.long <- hwd.helper.table.long %>%
@@ -788,7 +791,7 @@ filter_hwe <- function(
             midp.threshold <- radiator_question(
               x = "   select the mid p-value threshold (5 options):\n1: 0.05 *\n2: 0.01 **\n3: 0.001 ***\n4: 0.0001 ****\n5: 0.00001 *****",
               minmax = c(1, 5)
-              )
+            )
           }
           midp.threshold <- dplyr::case_when(
             midp.threshold == 5 ~ 0.00001,
@@ -824,13 +827,13 @@ filter_hwe <- function(
       if (!is.null(gds.bk)) {
         # convert back or filter the gds....
 
-         markers.meta <- extract_markers_metadata(gds = gds.bk)
-         bl <- markers.meta %>%
-           dplyr::filter(FILTERS == "whitelist") %>%
-           dplyr::filter(!MARKERS %in% unique(data$MARKERS))
-         markers.meta %<>%
-           dplyr::mutate(
-             FILTERS = dplyr::if_else(MARKERS %in% bl$MARKERS, "filter.hwe", FILTERS)
+        markers.meta <- extract_markers_metadata(gds = gds.bk)
+        bl <- markers.meta %>%
+          dplyr::filter(FILTERS == "whitelist") %>%
+          dplyr::filter(!MARKERS %in% unique(data$MARKERS))
+        markers.meta %<>%
+          dplyr::mutate(
+            FILTERS = dplyr::if_else(MARKERS %in% bl$MARKERS, "filter.hwe", FILTERS)
           )
         data <- gds.bk
         gds.bk <- bl <- NULL
@@ -1039,11 +1042,11 @@ blacklist_hw <- function(
             dplyr::bind_rows(data.temp) %>%
             dplyr::mutate(POP_ID = factor(POP_ID, levels = pop.id.levels)) %>%
             dplyr::filter(!MARKERS %in% blacklist$MARKERS))
-          radiator::write_rad(data = whitelist, path = rad.filename)
-          whitelist %>%
-            dplyr::select(dplyr::one_of(want)) %>%
-            dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-            readr::write_tsv(x = ., file = whitelist.filename)
+        radiator::write_rad(data = whitelist, path = rad.filename)
+        whitelist %>%
+          dplyr::select(dplyr::one_of(want)) %>%
+          dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
+          readr::write_tsv(x = ., file = whitelist.filename)
       } else {
         whitelist <- suppressWarnings(
           unfiltered.data %>%
@@ -1051,8 +1054,8 @@ blacklist_hw <- function(
 
         radiator::write_rad(data = whitelist, path = rad.filename)
         whitelist %>% dplyr::select(dplyr::one_of(want)) %>%
-            dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-            readr::write_tsv(x = ., file = whitelist.filename)
+          dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
+          readr::write_tsv(x = ., file = whitelist.filename)
       }
     }
   }#End bl_map
