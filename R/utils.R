@@ -842,19 +842,19 @@ strip_rad <- function(
   # STRATA ----------
   strata.n <- intersect(colnames(x), c("STRATA", "POP_ID"))
 
-if (rlang::has_name(x, "POP_ID")) {
-  strata <- radiator::generate_strata(data = x, pop.id = TRUE) %>%
-    dplyr::mutate(
-      ID_SEQ = seq_len(length.out = dplyr::n()),
-      STRATA_SEQ = as.integer(factor(x = POP_ID, levels = unique(POP_ID)))
-    )
-} else {#STRATA
-  strata <- radiator::generate_strata(data = x, pop.id = FALSE) %>%
-    dplyr::mutate(
-      ID_SEQ = seq_len(length.out = dplyr::n()),
-      STRATA_SEQ = as.integer(factor(x = STRATA, levels = unique(STRATA)))
-    )
-}
+  if (rlang::has_name(x, "POP_ID")) {
+    strata <- radiator::generate_strata(data = x, pop.id = TRUE) %>%
+      dplyr::mutate(
+        ID_SEQ = seq_len(length.out = dplyr::n()),
+        STRATA_SEQ = as.integer(factor(x = POP_ID, levels = unique(POP_ID)))
+      )
+  } else {#STRATA
+    strata <- radiator::generate_strata(data = x, pop.id = FALSE) %>%
+      dplyr::mutate(
+        ID_SEQ = seq_len(length.out = dplyr::n()),
+        STRATA_SEQ = as.integer(factor(x = STRATA, levels = unique(STRATA)))
+      )
+  }
 
 
   cm <- intersect(colnames(strata), colnames(x))
@@ -902,15 +902,18 @@ if (rlang::has_name(x, "POP_ID")) {
   # GENOTYPE META ---------
   # g <- c("READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH",
   # "GL", "CATG", "PL", "HQ", "GQ", "GOF","NR", "NV")
-  want <- c("GT", "GT_VCF_NUC", "GT_VCF", "GT_BIN", "REF", "ALT")
+  want <- c("GT", "GT_VCF_NUC", "GT_VCF", "GT_BIN", "REF", "ALT", "MARKERS",
+            "CHROM", "LOCUS", "POS", "INDIVIDUALS", "POP_ID"
+  )
   g <- purrr::keep(.x = colnames(x), .p = !colnames(x) %in% want) %>%
-    purrr::discard(.x = ., .p = . %in% c("ID_SEQ", "STRATA_SEQ", "M_SEQ"))
-
+    purrr::discard(.x = ., .p = . %in% c("STRATA_SEQ"))
+  # purrr::discard(.x = ., .p = . %in% c("ID_SEQ", "STRATA_SEQ", "M_SEQ"))
+  # g
   genotypes.meta <- NULL # default
 
   if (length(g) != 0L) {
     genotypes.meta <- x %>% dplyr::select(tidyselect::any_of(g))
-    want <- c("ID_SEQ","M_SEQ", "GT", "GT_VCF_NUC", "GT_VCF", "GT_BIN", "REF", "ALT")
+    want <- c("ID_SEQ", "STRATA_SEQ", "M_SEQ", "GT", "GT_VCF_NUC", "GT_VCF", "GT_BIN", "REF", "ALT")
     x %<>% dplyr::select(tidyselect::any_of(want))
   }
 
@@ -942,8 +945,7 @@ if (rlang::has_name(x, "POP_ID")) {
 #' @export
 join_rad <- function(x, s, m, g, env.arg = NULL) {
   if (!is.null(g)) {
-    data %<>%
-      dplyr::left_join(g, by = c("ID_SEQ", "M_SEQ"))
+    x %<>% dplyr::left_join(g, by = c("ID_SEQ", "M_SEQ"))
     env.arg$genotypes.meta.bk <- NULL
   }
 

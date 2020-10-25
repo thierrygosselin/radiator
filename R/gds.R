@@ -400,11 +400,13 @@ gds2tidy <- function(
   # should make this optional --------------------------------------------------
   if (pop.id) {
     # include strata
-    colnames(individuals) <- stringi::stri_replace_all_fixed(
-      str = colnames(individuals),
-      pattern = "STRATA",
-      replacement = "POP_ID",
-      vectorize_all = FALSE)
+    colnames(individuals) %<>%
+      stringi::stri_replace_all_fixed(
+        str = .,
+        pattern = "STRATA",
+        replacement = "POP_ID",
+        vectorize_all = FALSE)
+
     if (rlang::has_name(individuals, "POP_ID")) {
       suppressWarnings(
         tidy.data %<>%
@@ -417,11 +419,12 @@ gds2tidy <- function(
     tidy.data %<>% dplyr::arrange(POP_ID, INDIVIDUALS)
   } else {
     # include strata
-    colnames(individuals) <- stringi::stri_replace_all_fixed(
-      str = colnames(individuals),
-      pattern = "POP_ID",
-      replacement = "STRATA",
-      vectorize_all = FALSE)
+    colnames(individuals) %<>%
+      stringi::stri_replace_all_fixed(
+        str = .,
+        pattern = "POP_ID",
+        replacement = "STRATA",
+        vectorize_all = FALSE)
     if (rlang::has_name(individuals, "STRATA")) {
       suppressWarnings(
         tidy.data %<>%
@@ -437,13 +440,12 @@ gds2tidy <- function(
     # Note to myself: maybe this should be done on the GDS before conversion...
     # for small dataset, it won't matter, but for large ones, this could be the bottleneck
     if (calibrate.alleles && !wide) {
-      tidy.data <- radiator::calibrate_alleles(
-        data = tidy.data,
-        # biallelic = TRUE,
-        parallel.core = parallel.core,
-        verbose = FALSE,
-        gt = FALSE, gt.vcf = FALSE
-      ) %$% input
+      tidy.data %<>%
+        radiator::calibrate_alleles(
+          data = .,
+          parallel.core = parallel.core,
+          verbose = FALSE
+        ) %$% input
     }
     tidy.data %<>% dplyr::arrange(STRATA, INDIVIDUALS)
   }

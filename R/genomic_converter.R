@@ -318,7 +318,7 @@ genomic_converter <- function(
   # blacklist.id <- NULL
   # blacklist.genotypes <- NULL
   # parameters <- NULL
-
+  # filters.parameters=NULL
 
   # Check for specific format vs package required-----------------------------
   # if ("gtypes" %in% output) radiator_packages_dep(package = "strataG")
@@ -422,7 +422,7 @@ genomic_converter <- function(
 
 
   if (verbose) message("\nImporting data\n")
-  input <- tidy_genomic_data(
+  input <- radiator::tidy_genomic_data(
     data = data,
     strata = strata.bk,
     filename = filename,

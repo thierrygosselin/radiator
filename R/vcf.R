@@ -1657,37 +1657,8 @@ tidy_vcf <- function(
     # All this can be overwritten in ... argument
     # gt.bin is the dosage of ALT allele: 0, 1, 2 NA
     if (is.null(gt.bin)) gt.bin <- TRUE
-    #
-    #   {
-    #   if (n.markers < 5000) gt.bin <- TRUE
-    #   if (n.markers >= 5000 && n.markers < 30000) gt.bin <- TRUE
-    #   if (n.markers >= 30000) gt.bin <- TRUE
-    # }
+
     # gt.vcf is genotype coding in the VCF: 0/0, 0/1, 1/1, ./.
-    if (is.null(gt.vcf)) {
-      if (n.markers < 5000) gt.vcf <- TRUE
-      if (n.markers >= 5000 && n.markers < 30000) gt.vcf <- TRUE
-      if (n.markers >= 30000) gt.vcf <- FALSE
-    }
-    # gt.vcf.nuc is genotype coding in the VCF but with nucleotides: A/C, ./.
-    if (is.null(gt.vcf.nuc)) {
-      if (calibrate.alleles) {
-        gt.vcf.nuc <- TRUE
-      } else {
-        if (n.markers < 5000) gt.vcf.nuc <- TRUE
-        if (n.markers >= 5000 && n.markers < 30000) gt.vcf.nuc <- FALSE
-        if (n.markers >= 30000) gt.vcf.nuc <- FALSE
-      }
-    }
-    # gt is genotype coding a la genepop: 001002, 000000
-    if (is.null(gt)) {
-      if (n.markers < 5000) gt <- TRUE
-      if (n.markers >= 5000 && n.markers < 30000) gt <- FALSE
-      if (n.markers >= 30000) gt <- FALSE
-    }
-
-    if (gt || gt.vcf.nuc || gt.vcf) calibrate.alleles <- TRUE
-
     # check
     # gt.bin
     # gt.vcf
@@ -1921,11 +1892,7 @@ tidy_vcf <- function(
           data = tidy.data,
           biallelic = biallelic,
           parallel.core = parallel.core,
-          verbose = verbose,
-          gt.vcf.nuc = gt.vcf.nuc,
-          gt = gt,
-          gt.vcf = gt.vcf,
-          gt.bin = gt.bin
+          verbose = verbose
         ) %$% input
       }
 
