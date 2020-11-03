@@ -6,13 +6,14 @@
 \usage{
 separate_gt(
   x,
-  sep = "/",
   gt = "GT_VCF_NUC",
   gather = TRUE,
-  haplotypes = TRUE,
+  haplotypes = FALSE,
   exclude = c("LOCUS", "INDIVIDUALS", "POP_ID"),
-  alleles.naming = c("ALLELE1", "ALLELE2"),
-  cpu.rounds = 10,
+  alleles.naming = c("A1", "A2"),
+  remove = TRUE,
+  filter.missing = FALSE,
+  split.chunks = 3,
   parallel.core = parallel::detectCores() - 1
 )
 }

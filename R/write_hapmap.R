@@ -31,43 +31,32 @@ write_hapmap <- function(
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
 
   # Import data ---------------------------------------------------------------
-  if (is.vector(data)) {
-    data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-  }
+  if (is.vector(data)) data %<>% radiator::tidy_wide(data = ., import.metadata = TRUE)
 
   # REF/ALT Alleles and VCF genotype format ------------------------------------
   if (!tibble::has_name(data, "GT_VCF_NUC")) {
-    ref.change <- radiator::calibrate_alleles(data = data)$input
-    data <- dplyr::left_join(data, ref.change, by = c("MARKERS", "INDIVIDUALS"))
-  }
-
-  # remove duplicate REF/ALT column
-  if (tibble::has_name(data, "REF.x")) {
-    data <- dplyr::select(.data = data, -c(REF.x, ALT.x)) %>%
-      dplyr::rename(REF = REF.y, ALT = ALT.y)
+    data %<>% radiator::calibrate_alleles(data = ., gt.vcf.nuc = TRUE) %$% input
   }
 
   # Include CHROM, LOCUS, POS --------------------------------------------------
   if (!tibble::has_name(data, "CHROM")) {
-    data <- dplyr::mutate(
-      .data = data,
-      CHROM = rep("1", n()),
-      LOCUS = MARKERS,
-      POS = MARKERS
-    )
+    data  %<>%
+      dplyr::mutate(
+        CHROM = rep("1", n()),
+        LOCUS = MARKERS,
+        POS = MARKERS
+      )
   }
 
   # Order/sort by pop and ind --------------------------------------------------
   if (tibble::has_name(data, "POP_ID")) {
-    data <- dplyr::arrange(data, POP_ID, INDIVIDUALS)
+    data %<>% dplyr::arrange(POP_ID, INDIVIDUALS)
   } else {
-    data <- dplyr::arrange(data, INDIVIDUALS)
+    data %<>% dplyr::arrange(INDIVIDUALS)
   }
 
   # Remove the POP_ID column ---------------------------------------------------
-  if (tibble::has_name(data, "POP_ID")) {
-    data <- dplyr::select(.data = data, -POP_ID)
-  }
+  if (tibble::has_name(data, "POP_ID")) data %<>% dplyr::select(-POP_ID)
 
   # hapmap body  ------------------------------------------------------------------
   data %<>%
@@ -90,25 +79,19 @@ write_hapmap <- function(
         vectorize_all = FALSE
       )
     ) %>%
-    data.table::as.data.table(.) %>%
-    data.table::dcast.data.table(
-      data = .,
-      formula = MARKERS + alleles + CHROM + POS ~ INDIVIDUALS,
-      value.var = "GT_VCF_NUC"
-    ) %>%
-    tibble::as_tibble(.) %>%
-    dplyr::mutate(
-      strand = "+",
-      'assembly#' = NA_character_,
-      center = "radiator",
-      protLSID = NA_character_,
-      assayLSID = NA_character_,
-      panelLSID = NA_character_,
-      QCcode = NA_character_
-    ) %>%
+    rad_wide(x = ., formula = "MARKERS + alleles + CHROM + POS ~ INDIVIDUALS", values_from = "GT_VCF_NUC")
+  dplyr::mutate(
+    strand = "+",
+    'assembly#' = NA_character_,
+    center = "radiator",
+    protLSID = NA_character_,
+    assayLSID = NA_character_,
+    panelLSID = NA_character_,
+    QCcode = NA_character_
+  ) %>%
     dplyr::select('rs#' = MARKERS, alleles, chrom = CHROM, pos = POS, strand,
                   'assembly#', center, protLSID, assayLSID, panelLSID, QCcode,
-                  everything(.))
+                  tidyselect::everything(.))
 
   # Filename ------------------------------------------------------------------
   if (is.null(filename)) {

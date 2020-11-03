@@ -99,30 +99,26 @@ detect_biallelic_markers <- function(data, verbose = FALSE, parallel.core = para
 
   } else {
     # Import data ---------------------------------------------------------------
-    if (is.vector(data)) {
-      data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-    }
+    if (is.vector(data)) data %<>% radiator::tidy_wide(data = ., import.metadata = TRUE)
 
-    if (tibble::has_name(data, "GT_BIN")) {
+    if (rlang::has_name(data, "GT_BIN")) {
       data <- TRUE
       if (verbose) message("Data is bi-allelic")
     } else {
       # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-      if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
-        data <- dplyr::rename(.data = data, MARKERS = LOCUS)
+      if (rlang::has_name(data, "LOCUS") && !rlang::has_name(data, "MARKERS")) {
+        data %<>% dplyr::rename(MARKERS = LOCUS)
       }
 
       # markers with all missing... yes I've seen it... breaks code...
       # data <- detect_all_missing(data = data)
       marker.problem <- radiator::detect_all_missing(data = data)
-      if (marker.problem$marker.problem) {
-        data <- marker.problem$data
-      }
+      if (marker.problem$marker.problem) data <- marker.problem$data
       marker.problem <- NULL
 
       # Detecting biallelic markers-------------------------------------------------
       if (verbose) message("Scanning for number of alleles per marker...")
-      if (tibble::has_name(data, "ALT")) {
+      if (rlang::has_name(data, "ALT")) {
         alt.num <- max(unique(
           stringi::stri_count_fixed(str = unique(data$ALT), pattern = ","))) + 1
 
@@ -141,43 +137,49 @@ detect_biallelic_markers <- function(data, verbose = FALSE, parallel.core = para
         if (!n.markers < 100) {
           # otherwise 30% of the markers are randomly sampled
           # small.panel <- FALSE
-          sampled.markers <- sample(x = sampled.markers,
-                                    size = length(sampled.markers) * 0.30,
-                                    replace = FALSE)
+          sampled.markers <- sample(
+            x = sampled.markers,
+            size = length(sampled.markers) * 0.30,
+            replace = FALSE)
           n.markers <- length(sampled.markers)
         }
 
         # Allows to have either GT, GT_VCF_NUC, GT_VCF or GT_BIN
         # If more than 1 is discovered in data, keep 1 randomly.
-        detect.gt <- purrr::keep(.x = colnames(data), .p = colnames(data) %in% c("GT", "GT_VCF_NUC", "GT_VCF","GT_BIN"))
-        if (length(detect.gt) > 1) detect.gt <- sample(x = detect.gt, size = 1)
+        detect.gt <- detect_gt(x = data) #utils
         want <- c("MARKERS", detect.gt)
-        data <- suppressWarnings(dplyr::select(data, dplyr::one_of(want)))
+        data %<>% dplyr::select(dplyr::any_of(want))
 
-        if (tibble::has_name(data, "GT")) {
-          data <- dplyr::filter(data, GT != "000000") %>%
+        if (rlang::has_name(data, "GT")) {
+          data %<>%
+            dplyr::select(MARKERS, GT) %>%
+            dplyr::filter(GT != "000000") %>%
             dplyr::filter(MARKERS %in% sampled.markers) %>%
             dplyr::distinct(MARKERS, GT) %>%
-            separate_gt(x = ., gt = "GT", sep = 3, exclude = "MARKERS", parallel.core = parallel.core) %>%
-            dplyr::distinct(MARKERS, HAPLOTYPES) %>%
-            dplyr::count(x = ., MARKERS) #%>% dplyr::select(n)
+            separate_gt(x = ., gt = "GT", exclude = "MARKERS", split.chunks = 1L) %>%
+            dplyr::distinct(MARKERS, ALLELES) %>%
+            dplyr::count(x = ., MARKERS)
         }
 
-        if (tibble::has_name(data, "GT_VCF")) {
-          data <- dplyr::filter(data, GT_VCF != "./.") %>%
+        if (rlang::has_name(data, "GT_VCF")) {
+          data %<>%
+            dplyr::select(MARKERS, GT_VCF) %>%
             dplyr::filter(MARKERS %in% sampled.markers) %>%
+            dplyr::filter(GT_VCF != "./.") %>%
             dplyr::distinct(MARKERS, GT_VCF) %>%
-            separate_gt(x = ., gt = "GT_VCF", exclude = "MARKERS", parallel.core = parallel.core) %>%
-            dplyr::distinct(MARKERS, HAPLOTYPES) %>% # Here read alleles, not haplotypes
-            dplyr::count(x = ., MARKERS) #%>% dplyr::select(n)
+            separate_gt(x = ., gt = "GT_VCF", exclude = "MARKERS", split.chunks = 1L) %>%
+            dplyr::distinct(MARKERS, ALLELES) %>% # Here read alleles, not haplotypes
+            dplyr::count(x = ., MARKERS)
         }
 
-        if (tibble::has_name(data, "GT_VCF_NUC")) {
-          data <- dplyr::filter(data, GT_VCF_NUC != "./.") %>%
+        if (rlang::has_name(data, "GT_VCF_NUC")) {
+          data %<>%
+            dplyr::select(MARKERS, GT_VCF_NUC) %>%
+            dplyr::filter(GT_VCF_NUC != "./.") %>%
             dplyr::filter(MARKERS %in% sampled.markers) %>%
             dplyr::distinct(MARKERS, GT_VCF_NUC) %>%
-            separate_gt(x = ., exclude = "MARKERS", parallel.core = parallel.core) %>%
-            dplyr::distinct(MARKERS, HAPLOTYPES) %>%
+            separate_gt(x = ., gt = "GT_VCF_NUC", exclude = "MARKERS", split.chunks = 1L) %>%
+            dplyr::distinct(MARKERS, ALLELES) %>%
             dplyr::count(x = ., MARKERS)
         }
 
@@ -194,19 +196,6 @@ detect_biallelic_markers <- function(data, verbose = FALSE, parallel.core = para
           }
           data <- TRUE
         }
-        # #} else {
-        #   if (max(biallelic$n) > 4) {
-        #     biallelic <- FALSE
-        #     if (verbose) message("    Data is multi-allelic")
-        #   } else {
-        #     biallelic <- TRUE
-        #     if (verbose) message("    Data is bi-allelic")
-        #     if (max(biallelic$n) > 2) {
-        #       message("\nNote: more than 2 types of alleles/nucleotides detected")
-        #       message("artifact/biological ? run radiator::detect_biallelic_problem for more details")
-        #     }
-        #   }
-        # }#
       }
     }
   }

@@ -57,22 +57,24 @@ write_related <- function(
   }
 
   # Format for related package -------------------------------------------------
-  data <- dplyr::select(.data = data, INDIVIDUALS, MARKERS, GT) %>%
-    separate_gt(x = .,
-    sep = 3, gt = "GT", gather = TRUE,
-    exclude = c("MARKERS", "INDIVIDUALS"),
-    cpu.rounds = 10, parallel.core = parallel.core) %>%
-    tidyr::unite(
-      data = ., MARKERS_ALLELES, MARKERS, ALLELE_GROUP,
-      sep = ".", remove = TRUE) %>%
-    dplyr::arrange(MARKERS_ALLELES, INDIVIDUALS) %>%
-    data.table::as.data.table(.) %>%
-    data.table::dcast.data.table(
-      data = .,
-      formula = INDIVIDUALS ~ MARKERS_ALLELES,
-      value.var = "HAPLOTYPES"
+  split.chunks <- 1L
+  if (parallel.core > 1) split.chunks <- 3L
+
+  data %<>%
+    dplyr::select(INDIVIDUALS, MARKERS, GT) %>%
+    separate_gt(
+      x = .,
+      gt = "GT",
+      gather = TRUE,
+      exclude = c("MARKERS", "INDIVIDUALS"),
+      split.chunks = split.chunks
+      ) %>%
+    dplyr::mutate(
+      MARKERS_ALLELES = stringi::stri_join(MARKERS, ALLELES_GROUP, sep = "."),
+      MARKERS = NULL, ALLELES_GROUP = NULL
     ) %>%
-    tibble::as_tibble(.)
+    # dplyr::arrange(MARKERS_ALLELES, INDIVIDUALS) %>%
+    rad_wide(x = ., formula = "INDIVIDUALS ~ MARKERS_ALLELES", values_from = "ALLELES")
 
   # Write the file in related format -------------------------------------------
   # Date and time

@@ -253,7 +253,7 @@ write_hierfstat <- function(data, filename = NULL) {
   if (is.vector(data)) data %<>% radiator::tidy_wide(data = ., import.metadata = TRUE)
 
   if (!rlang::has_name(data, "GT")) {
-    data %<>% calibrate_alleles(data = ., verbose = FALSE) %$% input
+    data %<>% calibrate_alleles(data = ., verbose = FALSE, gt = TRUE) %$% input
   }
 
   data <- dplyr::select(.data = data, POP_ID, INDIVIDUALS, MARKERS, GT) %>%
@@ -293,17 +293,20 @@ write_hierfstat <- function(data, filename = NULL) {
   message(nu.message)
 
   # prep the data  -------------------------------------------------------------
-  data <- suppressWarnings(
-    tidyr::unite(data = data, GT, A1, A2, sep = "") %>%
-      dplyr::mutate(GT = as.numeric(GT)) %>%
-      radiator::rad_wide(
-        x = .,
-        formula = "POP_ID + INDIVIDUALS ~ MARKERS",
-        values_from = "GT"
+  data  %<>%
+      dplyr::mutate(
+        GT = stringi::stri_join(A1, A2, sep = ""),
+        A1 = NULL,
+        A2 = NULL,
+        GT = as.numeric(GT)
+      ) %>%
+        radiator::rad_wide(
+          x = .,
+          formula = "POP_ID + INDIVIDUALS ~ MARKERS",
+          values_from = "GT"
         ) %<>%
-      dplyr::arrange(POP_ID, INDIVIDUALS) %>%
-      dplyr::mutate(POP_ID = as.integer(POP_ID), INDIVIDUALS = NULL)
-  )
+        dplyr::arrange(POP_ID, INDIVIDUALS) %>%
+        dplyr::mutate(POP_ID = as.integer(POP_ID), INDIVIDUALS = NULL)
 
   # allele coding --------------------------------------------------------------
   allele.coding <- 1

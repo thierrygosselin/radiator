@@ -115,13 +115,13 @@ write_dadi <- function(
     calibrate.alleles <- TRUE
   }
 
-  if (!tibble::has_name(data, "REF") || !tibble::has_name(data, "ALT")) {
-    calibrate.alleles <- TRUE
+  if (!tibble::has_name(data, "REF")) {
+    rlang::abort("REF/ALT alleles required")
   }
 
   # re-calibrate REF/ALT and/or generate the format...
   if (calibrate.alleles) {
-    data <- radiator::calibrate_alleles(data = data)$input
+    data %<>% radiator::calibrate_alleles(data = ., gt.bin = TRUE) %$% input
   }
 
   message("Computing the Allele Frequency Spectrum...")
@@ -137,11 +137,7 @@ write_dadi <- function(
         .groups = "keep"
       ) %>%
       dplyr::mutate(MAF = ((QQ*2) + PQ)/(2*N)) %>%
-      dplyr::ungroup(.) %>%
-      dplyr::mutate(
-        REF = stringi::stri_replace_all_fixed(str = REF, pattern = c("001", "002", "003", "004"), replacement = c("A", "C", "G", "T"), vectorize_all = FALSE),
-        ALT = stringi::stri_replace_all_fixed(str = ALT, pattern = c("001", "002", "003", "004"), replacement = c("A", "C", "G", "T"), vectorize_all = FALSE)
-      )
+      dplyr::ungroup(.)
   } else {
     input.count <- data %>%
       dplyr::group_by(MARKERS, POP_ID, REF, ALT) %>%
@@ -153,12 +149,14 @@ write_dadi <- function(
         .groups = "keep"
       ) %>%
       dplyr::mutate(MAF = ((QQ*2) + PQ)/(2*N)) %>%
-      dplyr::ungroup(.) %>%
-      dplyr::mutate(
-        REF = stringi::stri_replace_all_fixed(str = REF, pattern = c("001", "002", "003", "004"), replacement = c("A", "C", "G", "T"), vectorize_all = FALSE),
-        ALT = stringi::stri_replace_all_fixed(str = ALT, pattern = c("001", "002", "003", "004"), replacement = c("A", "C", "G", "T"), vectorize_all = FALSE)
-      )
+      dplyr::ungroup(.)
   }
+
+  input.count %<>%
+    dplyr::mutate(
+      REF = dplyr::recode(REF, "A" = "001", "C" = "002", "G" = "003", "T" = "004"),
+      ALT = dplyr::recode(ALT, "A" = "001", "C" = "002", "G" = "003", "T" = "004")
+    )
 
   # Function to make dadi input  data format ***********************************
 

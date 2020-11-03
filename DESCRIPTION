@@ -2,7 +2,7 @@ Package: radiator
 Type: Package
 Title: RADseq Data Exploration, Manipulation and Visualization using R
 Version: 1.1.8
-Date: 2020-10-24
+Date: 2020-11-03
 Encoding: UTF-8
 Authors@R: c(
   person("Thierry", "Gosselin", email = "thierrygosselin@icloud.com", role = c("aut", "cre")),
@@ -37,6 +37,7 @@ Suggests:
     methods,
     quantreg,
     parallel,
+    progressr,
     purrr,
     readr (>= 1.4.0),
     rlang,

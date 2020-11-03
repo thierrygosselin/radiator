@@ -291,8 +291,7 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
 
   } else {
     # add pop based on internal genepop: integer and reorder the columns
-    individuals %<>%
-      dplyr::mutate(POP_ID = pop)
+    individuals %<>% dplyr::mutate(POP_ID = pop)
   }
 
   # combine the individuals back to the dataset
@@ -311,12 +310,10 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
   use 1, 2 or 3 characters/numbers for alleles")
   } else {
     if (gt.coding != 6) {
-      if (gt.coding == 4) {
-        gt.sep <- 2
-      }
-      if (gt.coding == 2) {
-        gt.sep <- 1
-      }
+      if (gt.coding == 4) gt.sep <- 2
+      if (gt.coding == 2) gt.sep <- 1
+
+
       data <- radiator::rad_long(
         x = data,
         cols = c("POP_ID", "INDIVIDUALS"),
@@ -329,9 +326,10 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
         ) %>%
         dplyr::mutate(
           A1 = stringi::stri_pad_left(str = A1, pad = "0", width = 3),
-          A2 = stringi::stri_pad_left(str = A2, pad = "0", width = 3)
+          A2 = stringi::stri_pad_left(str = A2, pad = "0", width = 3),
+          GT = stringi::stri_join(A1, A2, sep = ""),
+          A1 = NULL, A2 = NULL
         ) %>%
-        tidyr::unite(data = ., col = GT, A1, A2, sep = "") %>%
         dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
 
       if (!tidy) {
@@ -356,9 +354,7 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
   }
 
   # writing to a file  ---------------------------------------------------------
-  if (!is.null(filename)) {
-    readr::write_tsv(x = data, file = filename, col_names = TRUE)
-  }
+  if (!is.null(filename)) readr::write_tsv(x = data, file = filename, col_names = TRUE)
 
   return(data)
 } # end tidy_genepop

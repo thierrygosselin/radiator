@@ -60,16 +60,7 @@ write_genepopedit <- function(data) {
     }
   }
 
-  if (!rlang::has_name(data, "GT")) {
-    data <- calibrate_alleles(
-      data = data,
-      verbose = FALSE,
-      gt = TRUE,
-      gt.vcf.nuc = FALSE,
-      gt.vcf = FALSE,
-      gt.bin = FALSE
-    ) %$% input
-  }
+  if (!rlang::has_name(data, "GT")) data %<>% calibrate_alleles(data = ., gt = TRUE) %$% input
 
   if (!rlang::has_name(data, "STRATA") && rlang::has_name(data, "POP_ID")) {
     data %<>% dplyr::rename(STRATA = POP_ID)
@@ -79,13 +70,6 @@ write_genepopedit <- function(data) {
   data %<>%
     dplyr::mutate(SampleNum = INDIVIDUALS) %>%
     dplyr::select(SampleID = INDIVIDUALS, Population = STRATA, SampleNum, MARKERS, GT) %>%
-    data.table::as.data.table(.) %>%
-    data.table::dcast.data.table(
-      data = .,
-      formula = SampleID + Population + SampleNum ~ MARKERS,
-      value.var = "GT"
-    ) %>%
-    tibble::as_tibble(.)
-
+    rad_wide(x = ., formula = "SampleID + Population + SampleNum ~ MARKERS", values_from = "GT")
   return(data)
 }# End write_genepopedit

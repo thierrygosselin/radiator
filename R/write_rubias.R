@@ -75,9 +75,8 @@ write_rubias <- function(
   # Import data ---------------------------------------------------------------
 
   if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
-    if (data.type == "gds.file") {
-      data <- radiator::read_rad(data, verbose = FALSE)
-    }
+    if (data.type == "gds.file") data %<>% radiator::read_rad(data = ., verbose = FALSE)
+
     strata.id <- radiator::extract_individuals_metadata(
       gds = data,
       ind.field.select = c("STRATA", "INDIVIDUALS"),
@@ -90,6 +89,7 @@ write_rubias <- function(
       markers.meta.select = "MARKERS",
       whitelist = TRUE
     ) %$% MARKERS
+
     data <- SeqVarTools::getGenotypeAlleles(gdsobj = data)
     id <- rownames(data)
 
@@ -118,85 +118,37 @@ write_rubias <- function(
     markers <- strata.id <- NULL
 
   } else {
-    if (is.vector(data)) {
-      data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-    }
+    if (is.vector(data)) data %<>% radiator::tidy_wide(data = ., import.metadata = TRUE)
+    split.chunks <- 1L
+    if (parallel.core > 1) split.chunks <- 3L
 
     if (rlang::has_name(data, "GT_BIN")) {
-      # if REF and ALT present use it
-      data %<>%
-        dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT_BIN) %>%
-        dplyr::mutate(
-          A1 = dplyr::case_when(
-            GT_BIN == 0L ~ 1L,
-            GT_BIN == 1L ~ 1L,
-            GT_BIN == 2L ~ 2L
-          ),
-          A2 = dplyr::case_when(
-            GT_BIN == 0L ~ 1L,
-            GT_BIN == 1L ~ 2L,
-            GT_BIN == 2L ~ 2L
-          ),
-          GT_BIN = NULL
-        ) %>%
-        radiator::rad_long(
-          x = .,
-          cols = c("MARKERS", "POP_ID", "INDIVIDUALS"),
-          measure_vars = c("A1", "A2"),
-          names_to = "ALLELE_GROUP",
-          values_to = "ALLELES",
-          variable_factor = FALSE
-        ) %>%
-        tidyr::unite(col = MARKERS_ALLELES, MARKERS , ALLELE_GROUP, sep = ".") %>%
-        dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS_ALLELES) %>%
-        radiator::rad_wide(
-          x = .,
-          formula = "POP_ID + INDIVIDUALS ~ MARKERS_ALLELES",
-          values_from = "ALLELES"
-        ) %>%
-        dplyr::ungroup(.)
+      want <- c("MARKERS", "POP_ID", "INDIVIDUALS", "GT_BIN")
+      gt.format <- "GT_BIN"
     } else {
       if (!rlang::has_name(data, "GT")) {
-        data <- calibrate_alleles(
-          data = data,
-          verbose = FALSE,
-          gt = TRUE,
-          gt.vcf.nuc = FALSE,
-          gt.vcf = FALSE,
-          gt.bin = FALSE
-        ) %$% input
+        data %<>% calibrate_alleles(data = ., verbose = FALSE, gt = TRUE) %$% input
+        want <- c("MARKERS", "POP_ID", "INDIVIDUALS", "GT")
+        gt.format <- "GT"
       }
-
-      # Spread/dcast in wide format
-      data %<>%
-        dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT) %>%
-        radiator::separate_gt(
-          x = .,
-          sep = 3,
-          gather = TRUE,
-          haplotypes = FALSE,
-          exclude = c("MARKERS", "INDIVIDUALS", "POP_ID"),
-          gt = "GT",
-          parallel.core = parallel.core) %>%
-        dplyr::mutate(
-          ALLELE_GROUP = stringi::stri_replace_all_fixed(
-            str = ALLELE_GROUP,
-            pattern = "ALLELE",
-            replacement = "A",
-            vectorize_all = FALSE),
-          ALLELES = replace(x = ALLELES, which(ALLELES == "000"), NA)
-        ) %>%
-        tidyr::unite(col = MARKERS_ALLELES, MARKERS , ALLELE_GROUP, sep = ".") %>%
-        dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS_ALLELES) %>%
-        dplyr::mutate(ALLELES = as.character(ALLELES)) %>%
-        radiator::rad_wide(
-          x = .,
-          formula = "POP_ID + INDIVIDUALS ~ MARKERS_ALLELES",
-          values_from = "ALLELES"
-        ) %>%
-        dplyr::ungroup(.)
     }
 
+    data %<>%
+      dplyr::select(tidyselect::any_of(want)) %>%
+      separate_gt(
+        x = .,
+        gt = gt.format,
+        gather = TRUE,
+        exclude = c("MARKERS", "POP_ID", "INDIVIDUALS"),
+        remove = TRUE,
+        split.chunks = split.chunks
+      ) %>%
+      dplyr::mutate(
+        MARKERS_ALLELES = stringi::stri_join(MARKERS, ALLELES_GROUP, sep = "."),
+        MARKERS = NULL, ALLELES_GROUP = NULL
+      ) %>%
+      {if (gt.format == "GT") dplyr::mutate(.data = ., ALLELES = replace(x = ALLELES, which(ALLELES == "000"), NA)) else .} %>%
+      rad_wide(x = ., formula = "POP_ID + INDIVIDUALS ~ MARKERS_ALLELES", values_from = "ALLELES")
   }
 
   # individuals metadata -------------------------------------------------------
@@ -268,7 +220,7 @@ write_rubias <- function(
   if ("mixture" %in% unique(data$sample_type)) {
     data %<>%
       dplyr::mutate(
-        repunit = dplyr::if_else(sample_type == "mixture", NA_character, repunit)
+        repunit = dplyr::if_else(sample_type == "mixture", NA_character_, repunit)
       )
   }
 

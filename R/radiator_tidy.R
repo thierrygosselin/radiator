@@ -677,7 +677,6 @@ tidy_genomic_data <- function(
     input.temp <- radiator::calibrate_alleles(
       data = input,
       biallelic = FALSE,
-      parallel.core = parallel.core,
       verbose = verbose)
     input <- input.temp$input
     input.temp <- NULL

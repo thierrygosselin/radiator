@@ -68,8 +68,8 @@ detect_biallelic_problems <- function(
     data <- radiator::calibrate_alleles(
       data = data,
       biallelic = TRUE,
-      parallel.core = parallel.core,
-      verbose = TRUE
+      verbose = TRUE,
+      gt.vcf.nuc = TRUE
     ) %$%
       input
   }
@@ -93,9 +93,9 @@ detect_biallelic_problems <- function(
   blacklist.markers <- dplyr::select(data, dplyr::one_of(want)) %>%
     dplyr::filter(GT_VCF_NUC != "./.") %>%
     dplyr::distinct(MARKERS, GT_VCF_NUC, .keep_all = TRUE) %>%
-    separate_gt(x = ., exclude = markers.metadata, parallel.core = parallel.core) %>%
+    separate_gt(x = ., gt = "GT_VCF_NUC", exclude = markers.metadata, split.chunks = 3L, haplotypes = TRUE) %>%
     dplyr::distinct(MARKERS, HAPLOTYPES, .keep_all = TRUE) %>%
-    dplyr::group_by_at(dplyr::vars(markers.metadata)) %>%
+    dplyr::group_by(dplyr::across(markers.metadata)) %>%
     dplyr::tally(.) %>%
     dplyr::filter(n > 2) %>%
     dplyr::rename(N_ALLELES = n)
@@ -130,10 +130,9 @@ detect_biallelic_problems <- function(
 
     # Blacklist additionnal info -----------------------------------------------
     blacklist.info <- dplyr::filter(res$multiallelic.data, GT_VCF_NUC != "./.") %>%
-      separate_gt(x = ., exclude = exclude.vars, parallel.core = parallel.core) %>%
-      dplyr::rename(ALLELES = HAPLOTYPES) %>%
-      dplyr::select(-ALLELE_GROUP) %>%
-      dplyr::group_by_at(dplyr::vars(c(group.vars, "ALLELES"))) %>%
+      separate_gt(x = ., gt = "GT_VCF_NUC", exclude = exclude.vars, split.chunks = 3L) %>%
+      dplyr::select(-ALLELES_GROUP) %>%
+      dplyr::group_by(dplyr::across(c(group.vars, "ALLELES"))) %>%
       dplyr::summarise(N = n()) %>%
       dplyr::ungroup(.) %>%
       dplyr::group_by_at(dplyr::vars(c(markers.metadata, "ALLELES"))) %>%
@@ -142,7 +141,7 @@ detect_biallelic_problems <- function(
       dplyr::arrange(MARKERS, ALLELES)
 
     markers.low.mac <- blacklist.info %>%
-      dplyr::group_by_at(dplyr::vars(markers.metadata)) %>%
+      dplyr::group_by(dplyr::across(markers.metadata)) %>%
       dplyr::filter(REF == min(REF)) %>%
       dplyr::distinct(MARKERS, REF, .keep_all = TRUE) %>%
       dplyr::filter(REF <=1) %>%
@@ -151,10 +150,10 @@ detect_biallelic_problems <- function(
 
     blacklist.info.filename <- stringi::stri_join("blacklist.markers.not.biallelic.info_", file.date, ".tsv")
     blacklist.info <- blacklist.info %>%
-      dplyr::group_by_at(dplyr::vars(markers.metadata)) %>%
+      dplyr::group_by(dplyr::across(markers.metadata)) %>%
       dplyr::mutate(REF = dplyr::if_else(REF == max(REF), "REF", "ALT")) %>%
       dplyr::ungroup(.) %>%
-      dplyr::group_by_at(dplyr::vars(c(markers.metadata, "ALLELES", "REF"))) %>%
+      dplyr::group_by(dplyr::across(c(markers.metadata, "ALLELES", "REF"))) %>%
       tidyr::pivot_wider(data = ., names_from = "POP_ID", values_from = "N") %>%
       readr::write_tsv(x = ., file = blacklist.info.filename, na = "-")
     res$blacklist.info <- blacklist.info

@@ -60,9 +60,7 @@ write_fineradstructure <- function(data, strata = NULL, filename = NULL) {
   if (missing(data)) rlang::abort("Input file missing")
 
   # Import data ---------------------------------------------------------------
-  if (is.vector(data)) {
-    data <- radiator::tidy_wide(data = data, import.metadata = FALSE)
-  }
+  if (is.vector(data)) data <- radiator::tidy_wide(data = data, import.metadata = FALSE)
 
   # Strata checks --------------------------------------------------------------
   if (is.null(strata)) {
@@ -144,19 +142,19 @@ write_fineradstructure <- function(data, strata = NULL, filename = NULL) {
       dplyr::left_join(dplyr::select(dictionary, ID, INDIVIDUALS), by = "INDIVIDUALS")) %>%
     dplyr::mutate(
       INDIVIDUALS = NULL,
-      GT_VCF_NUC = stringi::stri_replace_all_fixed(
-        str = GT_VCF_NUC,
-        pattern = "./.",
-        replacement = NA,
-        vectorize_all = FALSE)
+      GT_VCF_NUC = replace(x = GT_VCF_NUC, which(GT_VCF_NUC == "./."), NA)
     ) %>%
-    separate_gt(x = ., sep = "/", gt = "GT_VCF_NUC",
-                gather = TRUE, exclude = c("LOCUS", "MARKERS", "ID")) %>%
-    dplyr::group_by(LOCUS, ID, ALLELE_GROUP) %>%
-    dplyr::summarise(HAPLOTYPES = stringi::stri_join(HAPLOTYPES, collapse = "")) %>%
+    separate_gt(
+      x = .,
+      gt = "GT_VCF_NUC",
+      gather = TRUE,
+      exclude = c("LOCUS", "MARKERS", "ID")
+    ) %>%
+    dplyr::group_by(LOCUS, ID, ALLELES_GROUP) %>%
+    dplyr::summarise(ALLELES = stringi::stri_join(ALLELES, collapse = "")) %>%
     dplyr::mutate(
-      HAPLOTYPES = stringi::stri_replace_all_fixed(
-        str = HAPLOTYPES,
+      ALLELES = stringi::stri_replace_all_fixed(
+        str = ALLELES,
         pattern = ".",
         replacement = "N",
         vectorize_all = FALSE
@@ -164,13 +162,9 @@ write_fineradstructure <- function(data, strata = NULL, filename = NULL) {
     ) %>%
     dplyr::arrange(LOCUS, ID, ALLELE_GROUP) %>%
     dplyr::group_by(LOCUS, ID) %>%
-    dplyr::summarise(HAPLOTYPES = stringi::stri_join(HAPLOTYPES, collapse = "/")) %>%
+    dplyr::summarise(ALLELES = stringi::stri_join(ALLELES, collapse = "/")) %>%
     dplyr::ungroup(.) %>%
-    data.table::as.data.table(.) %>%
-    data.table::dcast.data.table(
-      data = .,
-      formula = LOCUS ~ ID, value.var = "HAPLOTYPES"
-    ) %>%
+    rad_wide(x = ., formula = "LOCUS ~ ID", values_from = "ALLELES") %>%
     dplyr::arrange(LOCUS) %>%
     dplyr::select(-LOCUS)
   readr::write_tsv(x = data, file = filename, na = "")

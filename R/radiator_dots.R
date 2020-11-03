@@ -267,17 +267,18 @@ assign_defaults <- function(n, env.arg, verbose = TRUE) {
 
   # Specifics...
   # Arguments that default value is TRUE
-  dots.true <- c("keep.gds",
-                 "vcf.stats", "vcf.metadata",
-                 "filter.common.markers", "filter.monomorphic",
-                 "ld.figures", "dart.sequence",
-                 "force.stats"#,
-                 # "filter.hwe"
-                 )
+  dots.true <- c(
+    "keep.gds", "vcf.stats", "vcf.metadata",
+    "filter.common.markers", "filter.monomorphic",
+    "ld.figures", "dart.sequence", "force.stats"
+  )
   # Arguments that default value is FALSE
-  dots.false <- c("keep.allele.names", "calibrate.alleles", "long.ld.missing",
-                  "detect.mixed.genomes", "detect.duplicate.genomes",
-                  "dp", "internal", "heatmap.fst", "wide", "filter.hwe")
+  dots.false <- c(
+    "keep.allele.names", "calibrate.alleles", "long.ld.missing",
+    "detect.mixed.genomes", "detect.duplicate.genomes",
+    "dp", "internal", "heatmap.fst", "wide", "filter.hwe",
+    "gt", "gt.bin", "gt.vcf", "gt.vcf.nuc"
+  )
   if (n %in% dots.true) v <- TRUE
   if (n %in% dots.false) v <- FALSE
 

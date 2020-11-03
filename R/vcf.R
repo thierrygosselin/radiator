@@ -507,7 +507,8 @@ read_vcf <- function(
 
   # VCF: Summary ----------------------------------------------------------------
   summary_gds(gds, verbose = TRUE)
-  message("done! timing: ", round((proc.time() - timing.vcf)[[3]]), " sec\n")
+  message("\nRead time: ", round((proc.time() - timing.vcf)[[3]]), " sec\n")
+
   if (verbose) message("\nGDS file written: ", filename.short)
   parallel.temp <- check.header <- detect.source <- NULL #no longer used
 
@@ -669,7 +670,6 @@ read_vcf <- function(
         data = markers.meta,
         col = LOCUS, into = c("LOCUS", "COL", "STRANDS"),
         sep = locus.sep,
-        # sep = "",
         extra = "drop", fill = "warn",
         remove = TRUE, convert = TRUE)
     )
@@ -830,12 +830,10 @@ read_vcf <- function(
         sync_gds(gds = gds, variant.id = variant.bk, verbose = FALSE)
       }# End best stats
 
-      if (filter.strands == "blacklist") {
-        blacklist.strands %<>% dplyr::distinct(MARKERS)
-      }
+      if (filter.strands == "blacklist") blacklist.strands %<>% dplyr::distinct(MARKERS)
 
       if (filter.strands != "keep.both") {
-        # Folders---------------------------------------------------------------------
+        # Folders
         path.folder.strands <- generate_folder(
           f = path.folder,
           rad.folder = "filter_duplicated_markers",
@@ -891,7 +889,7 @@ read_vcf <- function(
           file.date = file.date,
           internal = internal,
           verbose = verbose)
-        # results ------------------------------------------------------------------
+        # results
         radiator_results_message(
           rad.message = stringi::stri_join("\nFilter duplicated markers on different strands: ",
                                            filter.strands),
@@ -899,7 +897,7 @@ read_vcf <- function(
           internal,
           verbose
         )
-      }
+      }#End filter.strands
     }
   }#Here
   blacklist.strands <- path.folder.strands <- NULL
@@ -1161,7 +1159,7 @@ read_vcf <- function(
     }
 
     # Individuals stats
-    message("Generating individual stats...")
+    message("\nGenerating individual stats...")
     id.stats <- generate_id_stats(
       gds = gds,
       subsample = variant.select,
@@ -1185,14 +1183,8 @@ read_vcf <- function(
     ind.missing <- round(mean(id.stats$MISSING_PROP, na.rm = TRUE), 2)
     if (dp) ind.cov.total <- round(mean(id.stats$COVERAGE_TOTAL, na.rm = TRUE), 0)
     if (dp) ind.cov.mean <- round(mean(id.stats$COVERAGE_MEAN, na.rm = TRUE), 0)
-
-    # if (!is.null(stats.sub)) {
     markers.missing <- round(mean(markers.stats$MISSING_PROP, na.rm = TRUE), 2)
     if (dp) markers.cov <- round(mean(markers.stats$COVERAGE_MEAN, na.rm = TRUE), 0) # same as above because NA...
-    # } else {
-    # markers.missing <- round(mean(markers.stats$MISSING_PROP, na.rm = TRUE), 2)
-    # if (dp) markers.cov <- round(mean(markers.stats$COVERAGE_MEAN, na.rm = TRUE), 0) # same as above because NA...
-    # }
   }#End stats
 
   #RESULTS --------------------------------------------------------------------
@@ -1209,7 +1201,7 @@ read_vcf <- function(
       if (dp) message("    markers mean coverage: ", markers.cov)
     }
   }
-  message("\n\nNumber of chromosome/contig/scaffold: ", length(unique(markers.meta$CHROM)))
+  message("\nNumber of chromosome/contig/scaffold: ", length(unique(markers.meta$CHROM)))
   message("Number of locus: ", length(unique(markers.meta$LOCUS)))
   message("Number of markers: ", length(number.info$variant.sel[number.info$variant.sel]))
   summary_strata(strata)
@@ -1652,20 +1644,7 @@ tidy_vcf <- function(
     n.markers <- nrow(markers.meta)
     n.individuals <- nrow(individuals)
 
-    # STRATEGY tidy vcf  ---------------------------------------------------------
-    # Depending on the number of markers ...
-    # All this can be overwritten in ... argument
-    # gt.bin is the dosage of ALT allele: 0, 1, 2 NA
-    if (is.null(gt.bin)) gt.bin <- TRUE
-
-    # gt.vcf is genotype coding in the VCF: 0/0, 0/1, 1/1, ./.
-    # check
-    # gt.bin
-    # gt.vcf
-    # gt.vcf.nuc
-    # gt
-
-    # Tidy check ----------  ---------------------------------------------------
+    # STRATEGY -----------------------------------------------------------------
     if (tidy.check && n.markers > 20000) {
       cat("\n\n################################## IMPORTANT ###################################\n")
       message("Tidying vcf with ", n.markers, " SNPs is not optimal:")
@@ -1693,6 +1672,7 @@ tidy_vcf <- function(
     }
 
     # Print genotypes tidying
+    gt.bin <- TRUE
     message("\nGenotypes formats generated with ", n.markers, " SNPs: ")
     message("    GT_BIN (the dosage of ALT allele: 0, 1, 2 NA): ", gt.bin)
     message("    GT_VCF (the genotype coding VCFs: 0/0, 0/1, 1/1, ./.): ", gt.vcf)
@@ -1887,13 +1867,7 @@ tidy_vcf <- function(
 
       # re-calibration of ref/alt alleles ------------------------------------------
       if (calibrate.alleles) {
-        if (verbose) message("\nCalculating REF/ALT alleles...")
-        tidy.data <- radiator::calibrate_alleles(
-          data = tidy.data,
-          biallelic = biallelic,
-          parallel.core = parallel.core,
-          verbose = verbose
-        ) %$% input
+        tidy.data %<>% radiator::calibrate_alleles(data = ., biallelic = biallelic, verbose = verbose) %$% input
       }
 
       # include strata ---------------------------------------------------------
@@ -2010,9 +1984,13 @@ parse_gds_metadata <- function(
   # Read depth
   if (format.name == "DP") {
     if (verbose) message("DP column: cleaning and renaming to READ_DEPTH")
-    res$DP <- tibble::tibble(READ_DEPTH = SeqArray::seqGetData(
-      gdsfile = gds,
-      var.name = "annotation/format/DP") %>% as.vector(.))
+    res$DP <- tibble::tibble(
+      READ_DEPTH = SeqArray::seqGetData(
+        gdsfile = gds,
+        var.name = "annotation/format/DP"
+      ) %>%
+        as.vector(.)
+    )
 
     # as of SeqArray version 1.28.1 the $data is no longer necessary...
     # res$DP <- tibble::tibble(READ_DEPTH = SeqArray::seqGetData(
@@ -2053,14 +2031,13 @@ parse_gds_metadata <- function(
   # Cleaning GQ: Genotype quality as phred score
   if (format.name == "GQ") {
     if (verbose) message("GQ column: Genotype Quality")
-    res$GQ <- tibble::tibble(GQ = SeqArray::seqGetData(
-      gdsfile = gds,
-      var.name = "annotation/format/GQ") %>% as.vector(.))
-    # as of SeqArray version 1.28.0 breaking change
-    # res$GQ <- tibble::tibble(GQ = SeqArray::seqGetData(
-    #   gdsfile = gds,
-    #   var.name = "annotation/format/GQ")$data %>% as.vector(.))
-    # test <- res$GQ
+    res$GQ <- tibble::tibble(
+      GQ = SeqArray::seqGetData(
+        gdsfile = gds,
+        var.name = "annotation/format/GQ"
+      ) %>%
+        as.vector(.)
+    )
   } # End GQ
 
   # GL cleaning
@@ -2074,15 +2051,17 @@ parse_gds_metadata <- function(
         tibble::as_tibble(.)
 
       column.vec <- seq_along(res$GL)
-      res$GL <- tibble::tibble(GL_HOM_REF = res$GL[, column.vec %% 3 == 1] %>%
-                                 as.matrix(.) %>%
-                                 as.vector(.),
-                               GL_HET = res$GL[, column.vec %% 3 == 2] %>%
-                                 as.matrix(.) %>%
-                                 as.vector(.),
-                               GL_HOM_ALT = res$GL[, column.vec %% 3 == 0] %>%
-                                 as.matrix(.) %>%
-                                 as.vector(.))
+      res$GL <- tibble::tibble(
+        GL_HOM_REF = res$GL[, column.vec %% 3 == 1] %>%
+          as.matrix(.) %>%
+          as.vector(.),
+        GL_HET = res$GL[, column.vec %% 3 == 2] %>%
+          as.matrix(.) %>%
+          as.vector(.),
+        GL_HOM_ALT = res$GL[, column.vec %% 3 == 0] %>%
+          as.matrix(.) %>%
+          as.vector(.)
+      )
       res$GL[res$GL == "NaN"] <- NA
       column.vec <- NULL
     }
@@ -2091,42 +2070,37 @@ parse_gds_metadata <- function(
   # Cleaning GOF: Goodness of fit value
   if (format.name == "GOF") {
     if (verbose) message("GOF column: Goodness of fit value")
-    res$GOF <- tibble::tibble(GOF = SeqArray::seqGetData(
-      gdsfile = gds,
-      var.name = "annotation/format/GOF") %>% as.vector(.))
-    # as of SeqArray version 1.28.0 breaking change
-    # res$GOF <- tibble::tibble(GOF = SeqArray::seqGetData(
-    #   gdsfile = gds,
-    #   var.name = "annotation/format/GOF")$data %>% as.vector(.))
-
-
-    # test <- res$GOF
+    res$GOF <- tibble::tibble(
+      GOF = SeqArray::seqGetData(
+        gdsfile = gds,
+        var.name = "annotation/format/GOF"
+      ) %>%
+        as.vector(.)
+    )
   } # End GOF
 
   # Cleaning NR: Number of reads covering variant location in this sample
   if (format.name == "NR") {
     if (verbose) message("NR column: splitting column into the number of variant")
-    res$NR <- tibble::tibble(NR = SeqArray::seqGetData(
-      gdsfile = gds,
-      var.name = "annotation/format/NR") %>% as.vector(.))
-    # as of SeqArray version 1.28.0 breaking change
-    # res$NR <- tibble::tibble(NR = SeqArray::seqGetData(
-    #   gdsfile = gds,
-    #   var.name = "annotation/format/NR")$data %>% as.vector(.))
-    # test <- res$NR
+    res$NR <- tibble::tibble(
+      NR = SeqArray::seqGetData(
+        gdsfile = gds,
+        var.name = "annotation/format/NR"
+      ) %>%
+        as.vector(.)
+    )
   }#End cleaning NR column
 
   # Cleaning NV: Number of reads containing variant in this sample
   if (format.name == "NV") {
     if (verbose) message("NV column: splitting column into the number of variant")
-    res$NR <- tibble::tibble(NV = SeqArray::seqGetData(
-      gdsfile = gds,
-      var.name = "annotation/format/NV") %>% as.vector(.))
-    # as of SeqArray version 1.28.0 breaking change
-    # res$NR <- tibble::tibble(NV = SeqArray::seqGetData(
-    #   gdsfile = gds,
-    #   var.name = "annotation/format/NV")$data %>% as.vector(.))
-    # test <- res$NV
+    res$NR <- tibble::tibble(
+      NV = SeqArray::seqGetData(
+        gdsfile = gds,
+        var.name = "annotation/format/NV"
+      ) %>%
+        as.vector(.)
+    )
   }#End cleaning NV column
 
 
@@ -2155,47 +2129,6 @@ parse_gds_metadata <- function(
     )
     column.vec <- NULL
   } # End CATG
-
-
-
-  # RO
-  # Cleaning RO: Reference allele observation count
-  # if (format.name == "RO") {
-  #   if (verbose) message("RO column: splitting column into the number of variant")
-  #   res$RO <- tibble::tibble(RO = SeqArray::seqGetData(
-  #     gdsfile = gds,
-  #     var.name = "annotation/format/RO")$data %>% as.vector(.))
-  #   # test <- res$RO
-  # }#End cleaning RO column
-
-  # # Cleaning QR: Sum of quality of the reference observations
-  # if (format.name == "QR") {
-  #   if (verbose) message("QR column: splitting column into the number of variant")
-  #   res$QR <- tibble::tibble(QR = SeqArray::seqGetData(
-  #     gdsfile = gds,
-  #     var.name = "annotation/format/QR")$data %>% as.vector(.))
-  #   # test <- res$QR
-  # }#End cleaning QR column
-
-
-  # # Cleaning AO: Alternate allele observation count
-  # if (format.name == "AO") {
-  #   if (verbose) message("AO column: splitting column into the number of variant")
-  #   res$AO <- tibble::tibble(AO = SeqArray::seqGetData(
-  #     gdsfile = gds,
-  #     var.name = "annotation/format/AO")$data %>% as.vector(.))
-  #   # test <- res$AO
-  # }#End cleaning AO column
-
-  # # Cleaning QA: Sum of quality of the alternate observations
-  # if (format.name == "QA") {
-  #   if (verbose) message("QA column: splitting column into the number of variant")
-  #   res$QA <- tibble::tibble(QA = SeqArray::seqGetData(
-  #     gdsfile = gds,
-  #     var.name = "annotation/format/QA")$data %>% as.vector(.))
-  #   # test <- res$QA
-  # }#End cleaning QA column
-
   return(res)
 }#End parse_gds_metadata
 
@@ -2282,20 +2215,6 @@ write_vcf <- function(
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
 
   if (empty) {
-    # output <- tibble::tibble(
-    #   '#CHROM' = c("chrom_1", "chrom_1"),
-    #   POS = c(50L, 100L),
-    #   ID = c(1000299L, 1000299L),
-    #   REF = c("A", "G"),
-    #   ALT = c("T", "C"),
-    #   QUAL = c(".", "."),
-    #   FILTER = c("PASS", "PASS"),
-    #   INFO = c("NS=3", "NS=3"),
-    #   FORMAT = c("GT:DP:AD:GL", "GT:DP:AD:GL"),
-    #   ID1 = c("./.:50:30,20:-0.00,-3.97,-17.8", "1/1:50:30,20:-0.00,-3.97,-17.8"),
-    #   ID2 = c("0/1:50:30,20:-0.00,-3.97,-17.8", "0/1:50:30,20:-0.00,-3.97,-17.8"),
-    #   ID3 = c("1/1:50:30,20:-0.00,-3.97,-17.8", "0/0:50:30,20:-0.00,-3.97,-17.8")
-    # )
     output <- tibble::tibble(
       '#CHROM' = character(0),
       POS = integer(0),
@@ -2315,31 +2234,29 @@ write_vcf <- function(
 
     # REF/ALT Alleles and VCF genotype format ------------------------------------
     if (!tibble::has_name(data, "GT_VCF")) {
-      data <- radiator::calibrate_alleles(data = data)$input
+      data %<>% radiator::calibrate_alleles(data = ., gt.vcf.nuc = TRUE) %$% input
     }
 
     # Include CHROM, LOCUS, POS --------------------------------------------------
     if (!tibble::has_name(data, "CHROM")) {
-      data <- dplyr::mutate(
-        .data = data,
-        CHROM = rep("1", n()),
-        LOCUS = MARKERS,
-        POS = MARKERS
-      )
+      data %<>%
+        dplyr::mutate(
+          CHROM = rep("1", n()),
+          LOCUS = MARKERS,
+          POS = MARKERS
+        )
     }
 
     # Order/sort by pop and ind --------------------------------------------------
     if (tibble::has_name(data, "POP_ID")) {
-      data <- dplyr::arrange(data, POP_ID, INDIVIDUALS)
+      data %<>% dplyr::arrange(POP_ID, INDIVIDUALS)
     } else {
-      data <- dplyr::arrange(data, INDIVIDUALS)
+      data %<>% dplyr::arrange(INDIVIDUALS)
     }
 
     id.string <- unique(data$INDIVIDUALS)# keep to sort vcf columns
     # Remove the POP_ID column ---------------------------------------------------
-    if (tibble::has_name(data, "POP_ID") && (!pop.info)) {
-      data <- dplyr::select(.data = data, -POP_ID)
-    }
+    if (tibble::has_name(data, "POP_ID") && (!pop.info)) data %<>% dplyr::select(-POP_ID)
 
     # Info field -----------------------------------------------------------------
     info.field <- suppressWarnings(
@@ -2386,29 +2303,21 @@ write_vcf <- function(
     ref.change <- TRUE %in% unique(c("001", "002", "003", "004") %in% unique(output$REF))
 
     if (ref.change) {
-      output <- output %>%
+      output %<>%
         dplyr::mutate(
-          REF = stringi::stri_replace_all_fixed(
-            str = REF,
-            pattern = c("001", "002", "003", "004"),
-            replacement = c("A", "C", "G", "T"),
-            vectorize_all = FALSE),
-          ALT = stringi::stri_replace_all_fixed(
-            str = ALT,
-            pattern = c("001", "002", "003", "004"),
-            replacement = c("A", "C", "G", "T"),
-            vectorize_all = FALSE)
+          REF = dplyr::recode(REF, "A" = "001", "C" = "002", "G" = "003", "T" = "004"),
+          ALT = dplyr::recode(ALT, "A" = "001", "C" = "002", "G" = "003", "T" = "004")
         )
     }
 
     if (tibble::has_name(output, "COL")) {
-      output <- output %>% dplyr::mutate(LOCUS = stringi::stri_join(LOCUS, COL, sep = "_"))
+      output %<>% dplyr::mutate(LOCUS = stringi::stri_join(LOCUS, COL, sep = "_"))
     } else {
-      output <- output %>% dplyr::mutate(LOCUS = stringi::stri_join(LOCUS, as.numeric(POS) - 1, sep = "_"))
+      output %<>% dplyr::mutate(LOCUS = stringi::stri_join(LOCUS, as.numeric(POS) - 1, sep = "_"))
     }
 
     # Keep the required columns
-    output <- dplyr::ungroup(output) %>%
+    output %<>%
       dplyr::arrange(CHROM, LOCUS, POS) %>%
       dplyr::select(-MARKERS) %>%
       dplyr::select('#CHROM' = CHROM, POS, ID = LOCUS, REF, ALT, QUAL, FILTER, INFO, FORMAT, id.string)
@@ -2429,7 +2338,7 @@ write_vcf <- function(
     delim = " ",
     append = FALSE,
     col_names = FALSE
-    )
+  )
 
   # File date ------------------------------------------------------------------
   x <- paste0("##fileDate=", file.date)
@@ -2479,38 +2388,6 @@ write_vcf <- function(
     format2 <- as.data.frame('##FORMAT=<ID=POP_ID,Number=1,Type=Character,Description="Population identification of Sample">')
     utils::write.table(x = format2, file = filename, sep = " ", append = TRUE, col.names = FALSE, row.names = FALSE, quote = FALSE)
   }
-  # Format field DP ---------------------------------------------------------------
-  # if (empty) {
-  #   format3 <- as.data.frame('##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read Depth">')
-  #   utils::write.table(x = format3, file = filename, sep = " ", append = TRUE, col.names = FALSE, row.names = FALSE, quote = FALSE)
-  # }
-
-  # Format field AD ---------------------------------------------------------------
-  # if (empty) {
-  #   format4 <- as.data.frame('##FORMAT=<ID=AD,Number=.,Type=String,Description="Allele Depth">')
-  #   utils::write.table(x = format4, file = filename, sep = " ", append = TRUE, col.names = FALSE, row.names = FALSE, quote = FALSE)
-  # }
-
-  # Format field GL ---------------------------------------------------------------
-  # if (empty) {
-  #   format5 <- as.data.frame('##FORMAT=<ID=GL,Number=.,Type=String,Description="Genotype Likelihood">')
-  #   utils::write.table(x = format5, file = filename, sep = " ", append = TRUE, col.names = FALSE, row.names = FALSE, quote = FALSE)
-  # }
-
-  #else {
-  #   # Empty VCF-----------------------------------------------------------------
-  #   output <- tibble::tibble(
-  #     `#CHROM` = character(0),
-  #     POS = character(0),
-  #     ID = character(0),
-  #     REF = character(0),
-  #     ALT = character(0),
-  #     QUAL = character(0),
-  #     FILTER = character(0),
-  #     INFO = character(0),
-  #     FORMAT = character(0)
-  #   )
-  # }
 
   # Write the prunned vcf to the file ------------------------------------------
   suppressWarnings(readr::write_tsv(x = output, file = filename, append = TRUE, col_names = TRUE))
@@ -2523,7 +2400,7 @@ write_vcf <- function(
 #' @description Function that returns the individuals present in a vcf file.
 #' Useful to create a strata file or
 #' to make sure you have the right individuals in your VCF.
-#' @param data (character) The path to the vcf file.
+#' @param vcf (character, path) The path to the vcf file.
 #' @rdname extract_individuals_vcf
 #' @export
 #' @return A tibble with a column: \code{INDIVIDUALS}.
@@ -2538,40 +2415,12 @@ write_vcf <- function(
 #'     readr::write_tsv(x = ., file = "my.new.vcf.strata.tsv")
 #' }
 
-extract_individuals_vcf <- function(data) {
-  # OLD CODE and SLOW...
-  # temp.file <-
-  #   suppressWarnings(suppressMessages(
-  #     readr::read_table(file = data, n_max = 200, col_names = "HEADER")
-  #   ))
-  # skip.number <- which(stringi::stri_detect_fixed(str = temp.file$HEADER,
-  #                                                 pattern = "#CHROM")) - 1
-  # # for some VCF file that put all the markers (usually contigs info) in the header...
-  # if (length(skip.number) == 0L) {
-  #   temp.file <-
-  #     suppressWarnings(suppressMessages(
-  #       readr::read_table(file = data, col_names = "HEADER")
-  #     ))
-  #   skip.number <- which(stringi::stri_detect_fixed(str = temp.file$HEADER,
-  #                                                   pattern = "#CHROM")) - 1
-  # }
-  # temp.file <- NULL
-  # remove <- c("#CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT")
-  # id <- tibble::tibble(INDIVIDUALS = colnames(readr::read_tsv(
-  #   file = data,
-  #   n_max = 1,
-  #   skip = skip.number,
-  #   col_types = readr::cols(.default = readr::col_character())) %>%
-  #     dplyr::select(-dplyr::one_of(remove))))
-
+extract_individuals_vcf <- function(vcf) {
   id <- tibble::tibble(
-    INDIVIDUALS = SeqArray::seqVCF_Header(vcf.fn = data, getnum = TRUE)$sample.id
+    INDIVIDUALS = SeqArray::seqVCF_Header(vcf.fn = vcf, getnum = TRUE)$sample.id
   )
-
   return(id)
 }#End extract_individuals_vcf
-
-
 
 
 # extract_info_vcf-------------------------------------------------------
@@ -2793,7 +2642,7 @@ split_vcf <- function(
     flat.future = "walk",
     parallel.core = parallel.core,
     filename = filename
-    )
+  )
   # results --------------------------------------------------------------------
   message("Split VCFs were written in the working directory")
   timing <- proc.time() - timing

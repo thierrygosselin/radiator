@@ -4,10 +4,10 @@
 \alias{extract_individuals_vcf}
 \title{Extract individuals from vcf file}
 \usage{
-extract_individuals_vcf(data)
+extract_individuals_vcf(vcf)
 }
 \arguments{
-\item{data}{(character) The path to the vcf file.}
+\item{vcf}{(character, path) The path to the vcf file.}
 }
 \value{
 A tibble with a column: \code{INDIVIDUALS}.

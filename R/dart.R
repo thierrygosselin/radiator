@@ -1807,17 +1807,6 @@ merge_dart <- function(
       dplyr::ungroup(.)
   }
 
-  # message("Adjusting REF/ALT alleles...")
-  # Thats done in the section above: Remove weird markers
-
-  # input <- radiator::calibrate_alleles(
-  #   data = input,
-  #   biallelic = NULL,
-  #   parallel.core = parallel.core,
-  #   verbose = TRUE
-  # ) %$%
-  #   input
-
   if (rlang::has_name(input, "AVG_COUNT_REF")) {
     message("Averaging across markers the coverage for the REF allele")
     input %<>%

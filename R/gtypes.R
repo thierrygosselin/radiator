@@ -204,16 +204,17 @@ write_gtypes <- function(data, write = FALSE, filename = NULL) {
 
 
     } else {
-      if (!rlang::has_name(data, "GT")) data <- calibrate_alleles(data = data) %$% input
-      data <- dplyr::select(.data = data, POP_ID, INDIVIDUALS, MARKERS, GT) %>%
+      if (!rlang::has_name(data, "GT")) data %<>% calibrate_alleles(data = ., gt = TRUE) %$% input
+      data %<>%
+        dplyr::select(POP_ID, INDIVIDUALS, MARKERS, GT) %>%
         dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS) %>%
         dplyr::mutate(
           GT = replace(GT, which(GT == "000000"), NA),
           POP_ID = as.character(POP_ID),
           `1` = stringi::stri_sub(str = GT, from = 1, to = 3), # most of the time: faster than tidyr::separate
-          `2` = stringi::stri_sub(str = GT, from = 4, to = 6)
+          `2` = stringi::stri_sub(str = GT, from = 4, to = 6),
+          GT = NULL
         ) %>%
-        dplyr::select(-GT) %>%
         radiator::rad_long(
           x = .,
           cols = c("INDIVIDUALS", "POP_ID", "MARKERS"),

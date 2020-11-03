@@ -183,7 +183,6 @@ tidy_genlight <- function(
       radiator::calibrate_alleles(
         data = .,
         biallelic = TRUE,
-        parallel.core = parallel.core,
         verbose = verbose
       ) %$%
       input
@@ -329,7 +328,6 @@ write_genlight <- function(
       }
       data <- gds2tidy(gds = data.bk,
                        wide = FALSE,
-                       # markers.meta.select = "MARKERS",
                        parallel.core = parallel.core,
                        calibrate.alleles = FALSE)
       markers.levels <- unique(data$MARKERS)

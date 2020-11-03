@@ -120,7 +120,8 @@ if (getRversion() >= "2.15.1") {
       "whitelist.markers", "whitelist.markers.coverage",
       "whitelist.markers.genotyping", "whitelist.markers.mac",
       "whitelist.markers.snp.position.read", "write.tidy", "ibs", "info",
-      "vcf.stats", "keep.allele.names", "blacklist.genotypes", "gt", "gt.vcf.nuc",
+      "vcf.stats", "keep.allele.names", "blacklist.genotypes",
+      "gt", "gt.vcf.nuc", "gt.vcf",
       "internal", "ALT_DEPTH_MEAN", "ALT_DEPTH_TOTAL", "REF_DEPTH_MEAN",
       "REF_DEPTH_TOTAL", "MARKERS1", "SWITCH", "TARGET_ID1", "VARIANT_ID.x",
       "VARIANT_ID.y", "variant.id", "problem.filename", "FILTER_VCF", "fig.upsetr",
@@ -149,7 +150,8 @@ if (getRversion() >= "2.15.1") {
       "THRESHOLD_OUTLIERS_LOW", "A_SUM", "N_ALLELES",
       "filter.individuals.coverage.iqr",
       "filter.individuals.coverage.median", "COMMON_META", "where", "everything",
-      "M_SEQ", "ID_SEQ", "1", "2", "ORIG_GT_BIN", "STRATA_SEQ"
+      "M_SEQ", "ID_SEQ", "1", "2", "ORIG_GT_BIN", "STRATA_SEQ", "IDTEMP", ".data",
+      "EQUAL_COUNTS"
     )
   )
 }

@@ -112,14 +112,12 @@ write_pcadapt <- function(
   }
 
   # Import data ---------------------------------------------------------------
-  if (is.vector(data)) {
-    data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-  }
+  if (is.vector(data)) data %<>% radiator::tidy_wide(data = ., import.metadata = TRUE)
 
   # pop.select -----------------------------------------------------------------
   if (!is.null(pop.select)) {
     message("pop.select: ")
-    data <- dplyr::filter(data, POP_ID %in% pop.select)
+    data %<>% dplyr::filter(POP_ID %in% pop.select)
     if (is.factor(data$POP_ID)) data$POP_ID <- droplevels(data$POP_ID)
   }
 
@@ -134,9 +132,7 @@ write_pcadapt <- function(
   # detect biallelic markers ---------------------------------------------------
   biallelic <- radiator::detect_biallelic_markers(data = data)
 
-  if (!biallelic) {
-    rlang::abort("\npcadapt only work with biallelic dataset")
-  }
+  if (!biallelic) rlang::abort("\npcadapt only work with biallelic dataset")
 
   # MAC ------------------------------------------------------------------------
   if (!is.null(filter.mac)) { # with MAF
@@ -156,7 +152,7 @@ write_pcadapt <- function(
       filter.short.ld = filter.short.ld,
       filter.long.ld = filter.long.ld,
       long.ld.missing = long.ld.missing,
-      ld.method =ld.method
+      ld.method = ld.method
     )
   }
 
@@ -168,12 +164,11 @@ write_pcadapt <- function(
 
 
   if (!rlang::has_name(data, "GT_BIN")) {
-    data <- radiator::calibrate_alleles(
-      data = dplyr::select(data, MARKERS, INDIVIDUALS, POP_ID, GT),
-      biallelic = TRUE,
-      parallel.core = parallel.core, verbose = TRUE) %$% input
+    data %<>% radiator::calibrate_alleles(
+      data = ., biallelic = TRUE, gt.bin = TRUE) %$% input
   }
 
+  data  %<>% dplyr::select(MARKERS, INDIVIDUALS, POP_ID, GT_BIN)
 
   pop.string <- data %>%
     dplyr::distinct(POP_ID, INDIVIDUALS) %>%
@@ -182,13 +177,12 @@ write_pcadapt <- function(
 
   pop.string <- pop.string$POP_ID
 
-  data <- dplyr::select(data, MARKERS, INDIVIDUALS, POP_ID, GT_BIN) %>%
+  data %<>%
+    dplyr::select(MARKERS, INDIVIDUALS, POP_ID, GT_BIN) %>%
     dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS) %>%
     dplyr::select(-POP_ID) %>%
     dplyr::mutate(GT_BIN = replace(GT_BIN, which(is.na(GT_BIN)), 9)) %>%
-    dplyr::group_by(INDIVIDUALS) %>%
-    tidyr::spread(data = ., key = INDIVIDUALS, value = GT_BIN) %>%
-    dplyr::ungroup(.) %>%
+    rad_wide(x = ., formula = "MARKERS ~ INDIVIDUALS", values_from = "GT_BIN") %>% # could be the other way ...
     dplyr::select(-MARKERS)
 
   # writing file to directory  ------------------------------------------------

@@ -407,71 +407,119 @@ generate_markers_metadata <- function(
 #' @export
 separate_gt <- function(
   x,
-  sep = "/",
   gt = "GT_VCF_NUC",
   gather = TRUE,
-  haplotypes = TRUE,
+  haplotypes = FALSE,
   exclude = c("LOCUS", "INDIVIDUALS", "POP_ID"),
-  alleles.naming = c("ALLELE1", "ALLELE2"),
-  cpu.rounds = 10,
+  alleles.naming = c("A1", "A2"),
+  remove = TRUE,
+  filter.missing = FALSE,
+  split.chunks = 3,
   parallel.core = parallel::detectCores() - 1
 ) {
-  # sep <-  "/"
-  # x <- input2
-  separate_genotype <-  carrier::crate(function(x, sep, gt, alleles.naming, gather, haplotypes, exclude){
+
+  ## TEST
+  # gather = TRUE
+  # haplotypes = FALSE
+  # exclude = c("LOCUS", "INDIVIDUALS", "POP_ID")
+  # alleles.naming = c("A1", "A2")
+  # remove = TRUE
+  # filter.missing = FALSE
+  # split.chunks = 3
+
+
+  separate_genotype <-  carrier::crate(function(x, gt, alleles.naming, remove, filter.missing, gather, haplotypes, exclude){
     `%>%` <- magrittr::`%>%`
     `%<>%` <- magrittr::`%<>%`
 
-    res <- tidyr::separate(
-      data = x,
-      col = gt,
-      into = alleles.naming,
-      sep = sep,
-      extra = "drop", remove = TRUE
-    )
+    # discard the other gt format
+    gt.format <- c("GT", "GT_BIN", "GT_VCF", "GT_VCF_NUC")
+    not.wanted <- setdiff(gt.format, gt)
+    x %<>% dplyr::select(-tidyselect::any_of(not.wanted))
+
+    if (gt == "GT_VCF_NUC") {
+      if (filter.missing) x  %<>% dplyr::filter(GT_VCF_NUC != "./.")
+      x %<>%
+        dplyr::bind_cols(
+          stringi::stri_split_fixed(str = x$GT_VCF_NUC, pattern = "/", simplify = TRUE) %>%
+            magrittr::set_colnames(x = ., value = alleles.naming) %>%
+            tibble::as_tibble()
+        )
+    }
+    if (gt == "GT_VCF") {
+      if (filter.missing) x  %<>% dplyr::filter(GT_VCF != "./.")
+      x %<>%
+        dplyr::mutate(
+          A1 = stringi::stri_sub(str = GT_VCF, from = 1, to = 1),
+          A2 = stringi::stri_sub(str = GT_VCF, from = 3, to = 3)
+        )
+    }
+    if (gt == "GT_BIN") {
+      if (filter.missing) x  %<>% dplyr::filter(!is.na(GT_BIN))
+      x %<>%
+        dplyr::mutate(
+          A1 = dplyr::if_else(GT_BIN == 0L, 1L, GT_BIN),
+          A2 = dplyr::if_else(GT_BIN != 2L, GT_BIN + 1L, GT_BIN)
+        )
+    }
+    if (gt == "GT") {
+      if (filter.missing) x  %<>% dplyr::filter(GT != "000000")
+      x %<>%
+        dplyr::mutate(
+          A1 = stringi::stri_sub(str = GT, from = 1, to = 3),
+          A2 = stringi::stri_sub(str = GT, from = 4, to = 6)
+        )
+    }
+
+    if (remove) x %<>% dplyr::select(-tidyselect::any_of(gt.format))
 
     if (gather) {
-      res %<>%
+      x %<>%
         radiator::rad_long(
           x = .,
           cols = exclude,
-          names_to = "ALLELE_GROUP",
+          names_to = "ALLELES_GROUP",
           values_to = "ALLELES",
           variable_factor = FALSE
         )
-      if (haplotypes) res %<>% dplyr::rename(HAPLOTYPES = ALLELES)
+      if (haplotypes) x %<>% dplyr::rename(HAPLOTYPES = ALLELES)
     }
 
-    return(res)
+    return(x)
   })#End separate_genotype
 
-  if (parallel.core > 1) {
-    res <- radiator_future(
-      .x = x,
-      .f = separate_genotype,
-      flat.future = "dfr",
-      split.vec = TRUE,
-      split.with = NULL,
-      split.chunks = 10L,
-      parallel.core = parallel.core,
-      sep = sep,
-      gt = gt,
-      alleles.naming = alleles.naming,
-      gather = gather,
-      haplotypes = haplotypes,
-      exclude = exclude
-    )
+
+  if (split.chunks > 1) {
+    x %<>%
+      radiator_future(
+        .x = .,
+        .f = separate_genotype,
+        flat.future = "dfr",
+        split.vec = TRUE,
+        split.with = NULL,
+        split.chunks = split.chunks,
+        parallel.core = split.chunks,
+        gt = gt,
+        alleles.naming = alleles.naming,
+        remove = remove,
+        filter.missing = filter.missing,
+        gather = gather,
+        haplotypes = haplotypes,
+        exclude = exclude
+      )
   } else {
-    res <- separate_genotype(
-      x = x,
-      sep = sep,
-      gt = gt,
-      alleles.naming = alleles.naming,
-      gather = gather,
-      haplotypes = haplotypes,
-      exclude = exclude)
+    x %<>%
+      separate_genotype(
+        x = .,
+        gt = gt,
+        alleles.naming = alleles.naming,
+        remove = remove,
+        filter.missing = filter.missing,
+        gather = gather,
+        haplotypes = haplotypes,
+        exclude = exclude)
   }
-  return(res)
+  return(x)
 }#End separate_gt
 
 # radiator_split_tibble ------------------------------------------------------------------
@@ -634,12 +682,16 @@ radiator_future <- function(
   split.with = NULL,
   split.chunks = 4L,
   parallel.core = parallel::detectCores() - 1,
+  forking = FALSE,
   ...
 ) {
+  os <- Sys.info()[['sysname']]
+  if (os == "Windows") forking <- FALSE
+
   opt.change <- getOption("width")
   options(width = 70)
   on.exit(options(width = opt.change), add = TRUE)
-  on.exit(if (parallel.core > 1L) future::plan(strategy = "sequential"), add = TRUE)
+  on.exit(if (parallel.core > 1L && !forking) future::plan(strategy = "sequential"), add = TRUE)
 
   # argument for flattening the results
   flat.future <- match.arg(
@@ -692,7 +744,6 @@ radiator_future <- function(
   }
 
 
-
   if (parallel.core == 1L) {
     future::plan(strategy = "sequential")
   } else {
@@ -701,32 +752,87 @@ radiator_future <- function(
     if (lx < parallel.core) {
       future::plan(strategy = "multisession", workers = lx)
     } else {
-      future::plan(strategy = "multisession", workers = parallel.core)
+      if (!forking) future::plan(strategy = "multisession", workers = parallel.core)
     }
   }
 
-  # .x <- future.apply::future_apply(X = .x, FUN = .f, ...)
-  # capture dots
-  # d <- rlang::dots_list(..., .ignore_empty = "all", .preserve_empty = TRUE, .homonyms = "first")
-  # if (bind.rows) .x %<>% dplyr::bind_rows(.)
-
-
-
   # Run the function in parallel and account for dots-dots-dots argument
-  rad_map <- switch(flat.future,
-                    int = {furrr::future_map_int},
-                    chr = {furrr::future_map_chr},
-                    dfr = {furrr::future_map_dfr},
-                    dfc = {furrr::future_map_dfc},
-                    walk = {furrr::future_walk},
-                    drop = {furrr::future_map}
-  )
 
-  opts <- furrr::furrr_options(globals = FALSE, seed = TRUE)
-  if (length(list(...)) == 0) {
-    .x %<>% rad_map(.x = ., .f = .f, .options = opts)
+  if (forking) {
+    if (length(list(...)) == 0) {
+      rad_map <- switch(
+        flat.future,
+        int = {
+          .x %<>%
+            parallel::mclapply(X = ., FUN = .f, mc.cores = parallel.core) %>%
+            purrr::flatten_int(.)
+        },
+        chr = {.x %<>%
+            parallel::mclapply(X = ., FUN = .f, mc.cores = parallel.core) %>%
+            purrr::flatten_chr(.)
+        },
+        dfr = {
+          .x %<>%
+            parallel::mclapply(X = ., FUN = .f, mc.cores = parallel.core) %>%
+            purrr::flatten_dfr(.)
+        },
+        dfc = {
+          .x %<>%
+            parallel::mclapply(X = ., FUN = .f, mc.cores = parallel.core) %>%
+            purrr::flatten_dfc(.)
+        },
+        walk = {furrr::future_walk},
+        drop = {
+          .x %<>%
+            parallel::mclapply(X = ., FUN = .f, mc.cores = parallel.core)
+        }
+      )
+    } else {
+      rad_map <- switch(
+        flat.future,
+        int = {
+          .x %<>%
+            parallel::mclapply(X = ., FUN = .f, ..., mc.cores = parallel.core) %>%
+            purrr::flatten_int(.)
+        },
+        chr = {.x %<>%
+            parallel::mclapply(X = ., FUN = .f, ..., mc.cores = parallel.core) %>%
+            purrr::flatten_chr(.)
+        },
+        dfr = {
+          .x %<>%
+            parallel::mclapply(X = ., FUN = .f, ..., mc.cores = parallel.core) %>%
+            purrr::flatten_dfr(.)
+        },
+        dfc = {
+          .x %<>%
+            parallel::mclapply(X = ., FUN = .f, ..., mc.cores = parallel.core) %>%
+            purrr::flatten_dfc(.)
+        },
+        walk = {furrr::future_walk},
+        drop = {
+          .x %<>%
+            parallel::mclapply(X = ., FUN = .f, ..., mc.cores = parallel.core)
+        }
+      )
+    }
   } else {
-    .x %<>% rad_map(.x = ., .f = .f, ..., .options = opts)
+    rad_map <- switch(flat.future,
+                      int = {furrr::future_map_int},
+                      chr = {furrr::future_map_chr},
+                      dfr = {furrr::future_map_dfr},
+                      dfc = {furrr::future_map_dfc},
+                      walk = {furrr::future_walk},
+                      drop = {furrr::future_map}
+    )
+    p <- NULL
+    p <- progressr::progressor(along = .x)
+    opts <- furrr::furrr_options(globals = FALSE, seed = TRUE)
+    if (length(list(...)) == 0) {
+      .x %<>% rad_map(.x = ., .f = .f, .options = opts)
+    } else {
+      .x %<>% rad_map(.x = ., .f = .f, ..., .options = opts)
+    }
   }
   return(.x)
 }#End radiator_future
@@ -961,3 +1067,168 @@ join_rad <- function(x, s, m, g, env.arg = NULL) {
   env.arg$strata.bk <- env.arg$markers.meta.bk <- NULL
   return(x)
 }#End join_rad
+
+
+# detect_gt ---------------------------------------------------------------------
+#' @rdname detect_gt
+#' @title detect_gt
+#' @description Detect the genotype format used in the data set. Sample one if multiple are present.
+#' @param x The data
+#' @param gt.format (character)
+#' Default: \code{gt.format = c("GT", "GT_BIN", "GT_VCF", "GT_VCF_NUC")}.
+#' @param keep.one (logical) Will return only one format if \code{keep.one = TRUE}.
+#' Default: \code{keep.one = TRUE}.
+#' @param favorite If more than one format is present and \code{keep.one = TRUE},
+#' the favorite will be returned, if present. Sample one if not present.
+#' Default: \code{favorite = "GT_BIN"}.
+#' @keywords internal
+#' @export
+detect_gt <- function(x, gt.format = c("GT", "GT_BIN", "GT_VCF", "GT_VCF_NUC"), keep.one = TRUE, favorite = "GT_BIN") {
+
+  detect.gt <- purrr::keep(.x = colnames(x), .p = colnames(x) %in% gt.format)
+
+  if (keep.one) {
+    if (length(detect.gt) > 1) {
+      if (favorite %in% detect.gt) {
+        detect.gt <- favorite
+      } else {
+        detect.gt %<>% sample(x = ., size = 1)
+      }
+    }
+  }
+  return(detect.gt)
+}#End detect_gt
+
+
+
+# gt_recoding ---------------------------------------------------------------------
+#' @rdname gt_recoding
+#' @title gt_recoding
+#' @description Detect the genotype format used in the data set. Sample one if than one is present.
+# @noRd
+#' @keywords internal
+#' @export
+gt_recoding <- function(x, gt = TRUE, gt.bin = TRUE, gt.vcf = TRUE, gt.vcf.nuc = TRUE, arrange = TRUE) {
+
+  # conditions and checks
+  if (arrange) x %<>% dplyr::mutate(IDTEMP = seq_len(dplyr::n()))
+  if (gt.vcf.nuc && !rlang::has_name(x, "REF")) gt.vcf.nuc <- FALSE
+
+
+  # what genotype format we have
+  detect.gt <- detect_gt(x = data) #utils
+  remove.extra <- FALSE
+  if (gt) {
+    if (!rlang::has_name(x, "A1")) {
+      if (rlang::has_name(x, "REF")) {
+        x  %<>%
+          dplyr::mutate(
+            A1 = dplyr::recode(REF, "A" = "001", "C" = "002", "G" = "003", "T" = "004"),
+            A2 = dplyr::recode(ALT, "A" = "001", "C" = "002", "G" = "003", "T" = "004")
+          )
+        remove.extra <- TRUE
+      } else {# if no REF
+        gt <- FALSE
+      }
+    }
+  }
+
+
+
+  gt_map <- function(
+    x,
+    gt.format = c("GT", "GT_BIN", "GT_VCF", "GT_VCF_NUC"),
+    gt = TRUE,
+    gt.bin = TRUE,
+    gt.vcf = TRUE,
+    gt.vcf.nuc = TRUE
+  ) {
+
+    gt.format <- match.arg(
+      arg = gt.format,
+      choices = c("GT", "GT_BIN", "GT_VCF", "GT_VCF_NUC"),
+      several.ok = FALSE
+    )
+
+    #start with missing genotypes
+    if (gt.format == "GT_BIN") {
+      gt.bin <- unique(x$GT_BIN)
+      if (is.na(gt.bin)) {
+        x %<>%
+          {if (gt.vcf) dplyr::mutate(.data = ., GT_VCF = "./.") else .} %>%
+          {if (gt.vcf.nuc) dplyr::mutate(.data = ., GT_VCF_NUC = "./.") else .} %>%
+          {if (gt) dplyr::mutate(.data = ., GT = "000000") else .}
+      } else {
+        if (gt.bin == 0L) {
+          x %<>%
+            {if (gt.vcf) dplyr::mutate(.data = ., GT_VCF = "0/0") else .} %>%
+            {if (gt.vcf.nuc) dplyr::mutate(.data = ., GT_VCF_NUC = stringi::stri_join(REF, REF, sep = "/")) else .} %>%
+            {if (gt) dplyr::mutate(.data = ., GT = stringi::stri_join(A1, A1)) else .}
+        }
+        if (gt.bin == 1L) {
+          x %<>%
+            {if (gt.vcf) dplyr::mutate(.data = ., GT_VCF = "0/1") else .} %>%
+            {if (gt.vcf.nuc) dplyr::mutate(.data = ., GT_VCF_NUC = stringi::stri_join(REF, ALT, sep = "/")) else .} %>%
+            {if (gt) dplyr::mutate(.data = ., GT = stringi::stri_join(A1, A2)) else .}
+        }
+        if (gt.bin == 2L) {
+          x %<>%
+            {if (gt.vcf) dplyr::mutate(.data = ., GT_VCF = "1/1") else .} %>%
+            {if (gt.vcf.nuc) dplyr::mutate(.data = ., GT_VCF_NUC = stringi::stri_join(ALT, ALT, sep = "/")) else .} %>%
+            {if (gt) dplyr::mutate(.data = ., GT = stringi::stri_join(A2, A2)) else .}
+        }
+      }
+    }#End GT_BIN
+
+
+    if (gt.format == "GT_VCF") {
+      gt.vcf <- unique(x$GT_VCF)
+      if (gt.vcf == "./.") {
+        x %<>%
+          {if (gt.bin) dplyr::mutate(.data = ., GT_BIN = NA_integer_) else .} %>%
+          {if (gt.vcf.nuc) dplyr::mutate(.data = ., GT_VCF_NUC = "./.") else .} %>%
+          {if (gt) dplyr::mutate(.data = ., GT = "000000") else .}
+      } else {
+        if (gt.vcf == "0/0") {
+          x %<>%
+            {if (gt.bin) dplyr::mutate(.data = ., GT_BIN = 0L) else .} %>%
+            {if (gt.vcf.nuc) dplyr::mutate(.data = ., GT_VCF_NUC = stringi::stri_join(REF, REF, sep = "/")) else .} %>%
+            {if (gt) dplyr::mutate(.data = ., GT = stringi::stri_join(A1, A1)) else .}
+        }
+        if (gt.vcf == "1/0") {
+          x %<>%
+            {if (gt.bin) dplyr::mutate(.data = ., GT_BIN = 1L) else .} %>%
+            {if (gt.vcf.nuc) dplyr::mutate(.data = ., GT_VCF_NUC = stringi::stri_join(REF, ALT, sep = "/")) else .} %>%
+            {if (gt) dplyr::mutate(.data = ., GT = stringi::stri_join(A1, A2)) else .}
+        }
+        if (gt.vcf == "0/1") {
+          x %<>%
+            {if (gt.bin) dplyr::mutate(.data = ., GT_BIN = 1L) else .} %>%
+            {if (gt.vcf.nuc) dplyr::mutate(.data = ., GT_VCF_NUC = stringi::stri_join(REF, ALT, sep = "/")) else .} %>%
+            {if (gt) dplyr::mutate(.data = ., GT = stringi::stri_join(A1, A2)) else .}
+        }
+        if (gt.vcf == "1/1") {
+          x %<>%
+            {if (gt.bin) dplyr::mutate(.data = ., GT_BIN = 2L) else .} %>%
+            {if (gt.vcf.nuc) dplyr::mutate(.data = ., GT_VCF_NUC = stringi::stri_join(ALT, ALT, sep = "/")) else .} %>%
+            {if (gt) dplyr::mutate(.data = ., GT = stringi::stri_join(A2, A2)) else .}
+        }
+      }
+    }#End GT_VCF
+
+    if (gt.format %in% c("GT", "GT_VCF_NUC")) {
+      message("Not implemented yet...")
+    }
+    return(x)
+  }#End gt_map
+
+
+  # split the data
+  x %<>%
+    dplyr::group_split(.data[[detect.gt]]) %>%
+    purrr::map_dfr(.x = ., .f = gt_map, gt.format = detect.gt, gt = gt, gt.bin = gt.bin, gt.vcf = gt.vcf, gt.vcf.nuc = gt.vcf.nuc)
+
+  if (remove.extra) x  %<>% dplyr::select(-c(A1, A2))
+  if (arrange) x  %<>% dplyr::arrange(IDTEMP) %>% dplyr::select(-IDTEMP)
+  return(x)
+}#End gt_recoding

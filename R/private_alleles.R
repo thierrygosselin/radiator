@@ -70,30 +70,35 @@ private_alleles <- function(data, strata = NULL, verbose = TRUE) {
     if (rlang::has_name(data, "GT_VCF_NUC")) {
       private <- dplyr::filter(data, GT_VCF_NUC != "./.") %>%
         dplyr::distinct(STRATA, MARKERS, GT_VCF_NUC) %>%
-        separate_gt(x = ., exclude = c("MARKERS", "STRATA")) %>%
-        dplyr::select(-ALLELE_GROUP, ALLELE = HAPLOTYPES) %>%
-        dplyr::distinct(MARKERS, STRATA, ALLELE)
+        separate_gt(x = ., gt = "GT_VCF_NUC", exclude = c("MARKERS", "STRATA"), split.chunks = 1L) %>%
+        dplyr::select(-ALLELES_GROUP) %>%
+        dplyr::distinct(MARKERS, STRATA, ALLELES)
     } else if (rlang::has_name(data, "GT")) {
       private <- dplyr::filter(data, GT != "000000") %>%
         dplyr::distinct(STRATA, MARKERS, GT) %>%
-        separate_gt(x = ., sep = 3, gt = "GT",exclude = c("MARKERS", "STRATA")) %>%
-        dplyr::select(-ALLELE_GROUP, ALLELE = HAPLOTYPES) %>%
-        dplyr::distinct(MARKERS, STRATA, ALLELE)
+        separate_gt(x = ., gt = "GT",exclude = c("MARKERS", "STRATA"), split.chunks = 1L) %>%
+        dplyr::select(-ALLELES_GROUP) %>%
+        dplyr::distinct(MARKERS, STRATA, ALLELES)
     } else {
       # work with GT_BIN
       private <- dplyr::filter(data, !is.na(GT_BIN)) %>%
         dplyr::distinct(STRATA, MARKERS, GT_BIN) %>%
-        dplyr::mutate(
-          ALLELE = dplyr::case_when(
-            GT_BIN == 0 ~ "REFREF",
-            GT_BIN == 1 ~ "REFALT",
-            GT_BIN == 2 ~ "ALTALT"
-          ),
-          GT_BIN = NULL
-        ) %>%
-        separate_gt(x = ., sep = 3, gt = "ALLELE", exclude = c("MARKERS", "STRATA")) %>%
-        dplyr::select(-ALLELE_GROUP, ALLELE = HAPLOTYPES) %>%
-        dplyr::distinct(MARKERS, STRATA, ALLELE)
+        separate_gt(x = ., gt = "GT_BIN",exclude = c("MARKERS", "STRATA"), split.chunks = 1L) %>%
+        dplyr::select(-ALLELES_GROUP) %>%
+        dplyr::distinct(MARKERS, STRATA, ALLELES)
+
+        #
+        # dplyr::mutate(
+        #   ALLELE = dplyr::case_when(
+        #     GT_BIN == 0 ~ "REFREF",
+        #     GT_BIN == 1 ~ "REFALT",
+        #     GT_BIN == 2 ~ "ALTALT"
+        #   ),
+        #   GT_BIN = NULL
+        # ) %>%
+        # separate_gt(x = ., gt = "ALLELE", exclude = c("MARKERS", "STRATA")) %>%
+        # dplyr::select(-ALLELE_GROUP, ALLELE = HAPLOTYPES) %>%
+        # dplyr::distinct(MARKERS, STRATA, ALLELE)
     }
   }
 
@@ -127,24 +132,24 @@ private_alleles <- function(data, strata = NULL, verbose = TRUE) {
         values_to = "GT_VCF_NUC",
         variable_factor = FALSE
       ) %>%
-      separate_gt(x = ., exclude = c("MARKERS", "INDIVIDUALS")) %>%
-      dplyr::select(-ALLELE_GROUP, ALLELE = HAPLOTYPES)
+      separate_gt(x = ., gt = "GT_VCF_NUC", exclude = c("MARKERS", "STRATA"), split.chunks = 1L) %>%
+      dplyr::select(-ALLELES_GROUP)
 
     private %<>%
       join_strata(data = ., strata = strata, verbose = FALSE) %>%
-      dplyr::distinct(MARKERS, STRATA, ALLELE)
+      dplyr::distinct(MARKERS, STRATA, ALLELES)
   }
 
   data <- NULL
   private.search <- private %>%
-    dplyr::group_by(MARKERS, ALLELE) %>%
+    dplyr::group_by(MARKERS, ALLELES) %>%
     dplyr::tally(.) %>%
     dplyr::filter(n == 1) %>%
-    dplyr::distinct(MARKERS, ALLELE) %>%
-    dplyr::left_join(private, by = c("MARKERS", "ALLELE")) %>%
+    dplyr::distinct(MARKERS, ALLELES) %>%
+    dplyr::left_join(private, by = c("MARKERS", "ALLELES")) %>%
     dplyr::ungroup(.) %>%
-    dplyr::select(STRATA, MARKERS, ALLELE) %>%
-    dplyr::arrange(STRATA, MARKERS, ALLELE) %>%
+    dplyr::select(STRATA, MARKERS, ALLELES) %>%
+    dplyr::arrange(STRATA, MARKERS, ALLELES) %>%
     readr::write_tsv(x = ., file = "private.alleles.tsv")
 
   private.summary <- private.search %>%
@@ -155,7 +160,7 @@ private_alleles <- function(data, strata = NULL, verbose = TRUE) {
     dplyr::rename(PRIVATE_ALLELES = n) %>%
     readr::write_tsv(x = ., file = "private.alleles.summary.tsv")
 
-  if(nrow(private.summary) > 0) {
+  if (nrow(private.summary) > 0) {
     message("Number of private alleles per strata:")
     priv.message <- dplyr::mutate(private.summary, PRIVATE = stringi::stri_join(STRATA, PRIVATE_ALLELES, sep = " = "))
     message(stringi::stri_join(priv.message$PRIVATE, collapse = "\n"))

@@ -18,12 +18,11 @@ See details for more info.}
 
 \item{biallelic}{(optional) If \code{biallelic = TRUE/FALSE} will be use
 during multiallelic REF/ALT decision and speed up computations.
-Used internally in
-\href{https://github.com/thierrygosselin/radiator}{radiator}.
 Default: \code{biallelic = NULL}.}
 
 \item{parallel.core}{(optional) The number of core used for parallel
-execution.
+execution. This is no longer used. The code is as fast as it can. Using
+more cores will reduce the speed.
 Default: \code{parallel.core = parallel::detectCores() - 1}.}
 
 \item{verbose}{(optional, logical) \code{verbose = TRUE} to be chatty

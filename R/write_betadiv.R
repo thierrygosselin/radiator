@@ -33,9 +33,7 @@
 write_betadiv <- function(data) {
 
   # Import data ---------------------------------------------------------------
-  if (is.vector(data)) {
-    data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-  }
+  if (is.vector(data)) data %<>% radiator::tidy_wide(data = ., import.metadata = TRUE)
 
   # necessary steps to make sure we work with unique markers and not duplicated LOCUS
   if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
@@ -44,10 +42,9 @@ write_betadiv <- function(data) {
 
   # Compute count and Minor Allele Frequency -----------------------------------
   # We split the alleles here to prep for MAF
-  # need to compute REF/ALT allele for non VCF file
   if (!tibble::has_name(data, "GT_VCF")) {
-    ref.change <- radiator::calibrate_alleles(data = data)$input
-    data <- dplyr::left_join(data, ref.change, by = c("MARKERS", "INDIVIDUALS"))
+    ref.change <- radiator::calibrate_alleles(data = data, gt.vcf = TRUE) %$% input
+    data %<>% dplyr::left_join(ref.change, by = c("MARKERS", "INDIVIDUALS"))
   }
 
   # MAF
@@ -57,16 +54,14 @@ write_betadiv <- function(data) {
     dplyr::summarise(
       N = as.numeric(n()),
       PQ = as.numeric(length(GT_VCF[GT_VCF == "1/0" | GT_VCF == "0/1"])),
-      QQ = as.numeric(length(GT_VCF[GT_VCF == "1/1"]))
+      QQ = as.numeric(length(GT_VCF[GT_VCF == "1/1"])),
+      .groups = "keep"
     ) %>%
     dplyr::mutate(MAF = ((QQ * 2) + PQ) / (2 * N)) %>%
     dplyr::ungroup(.) %>%
     dplyr::select(POP_ID, MARKERS, MAF) %>%
-    dplyr::group_by(POP_ID) %>%
-    tidyr::spread(data = ., key = MARKERS, value = MAF) %>%
-    dplyr::ungroup(.) %>%
+    rad_wide(x = ., formula = "POP_ID ~ MARKERS", values_from = "MAF")
     dplyr::mutate(POP_ID = as.integer(POP_ID))
-
   return(betadiv)
 } # end write_betadiv
 

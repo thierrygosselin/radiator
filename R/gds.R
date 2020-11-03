@@ -443,7 +443,6 @@ gds2tidy <- function(
       tidy.data %<>%
         radiator::calibrate_alleles(
           data = .,
-          parallel.core = parallel.core,
           verbose = FALSE
         ) %$% input
     }

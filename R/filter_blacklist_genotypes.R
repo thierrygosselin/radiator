@@ -296,7 +296,7 @@ filter_blacklist_genotypes <- function(
 
         # TODO and optimize...
         # required because REF/ALT might change after deleting genotypes...
-        data  %<>% radiator::calibrate_alleles(data = data)$input
+        data  %<>% radiator::calibrate_alleles(data = .) %$% input
 
         # GDS
         if (data.type == "SeqVarGDSClass") {

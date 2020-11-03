@@ -630,11 +630,7 @@ tidy_plink <- function(
     # rm(filename, internal, parameters, path.folder, calibrate.alleles)
 
     if (calibrate.alleles) {
-      data %<>%
-        radiator::calibrate_alleles(
-          data = .,
-          verbose = verbose
-        )
+      data %<>% radiator::calibrate_alleles(data = ., verbose = verbose)
       return(res = list(input = data$input, biallelic = data$biallelic))
     } else {
       return(res = list(input = data, biallelic = radiator::detect_biallelic_markers(data)))

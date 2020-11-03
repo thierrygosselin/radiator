@@ -75,8 +75,8 @@ private_haplotypes <- function(data, strata = NULL, verbose = TRUE) {
     data <- dplyr::ungroup(data) %>%
       dplyr::filter(GT_VCF_NUC != "./.") %>%
       dplyr::distinct(MARKERS, STRATA, GT_VCF_NUC) %>%
-      separate_gt(x = ., sep = "/", gt = "GT_VCF_NUC", exclude = c("MARKERS", "STRATA")) %>%
-      dplyr::select(-ALLELE_GROUP) %>%
+      separate_gt(x = ., gt = "GT_VCF_NUC", exclude = c("MARKERS", "STRATA"), haplotypes = TRUE) %>%
+      dplyr::select(-ALLELES_GROUP) %>%
       dplyr::distinct(MARKERS, STRATA, HAPLOTYPES)
   } else {
     data <- dplyr::filter(data, MAF_LOCAL > 0)

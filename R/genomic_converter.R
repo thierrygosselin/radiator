@@ -461,13 +461,9 @@ genomic_converter <- function(
   # GT requirement -------------------------------------------------------------
   if (TRUE %in% (c("genepop", "hierfstat", "structure", "hzar", "gsi_sim",
                    "genepopedit", "arlequin", "bayescan") %in% output)) {
-    input <- calibrate_alleles(
-      data = input,
-      biallelic = biallelic,
-      verbose = FALSE,
-      gt = TRUE
-    ) %$%
-      input
+    if (!rlang::has_name(input, "GT")) {
+      input %<>% calibrate_alleles(data = ., biallelic = biallelic, gt = TRUE) %$% input
+    }
   }
 
   # overide genind when marker number > 20K ------------------------------------

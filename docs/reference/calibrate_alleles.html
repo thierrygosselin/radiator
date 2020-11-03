@@ -169,14 +169,13 @@ See details for more info.</p></td>
       <th>biallelic</th>
       <td><p>(optional) If <code>biallelic = TRUE/FALSE</code> will be use
 during multiallelic REF/ALT decision and speed up computations.
-Used internally in
-<a href='https://github.com/thierrygosselin/radiator'>radiator</a>.
 Default: <code>biallelic = NULL</code>.</p></td>
     </tr>
     <tr>
       <th>parallel.core</th>
       <td><p>(optional) The number of core used for parallel
-execution.
+execution. This is no longer used. The code is as fast as it can. Using
+more cores will reduce the speed.
 Default: <code>parallel.core = parallel::detectCores() - 1</code>.</p></td>
     </tr>
     <tr>

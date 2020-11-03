@@ -95,7 +95,7 @@ write_gsi_sim <- function(
   list.markers <- sort(unique(data$MARKERS))           # list of markers
 
   if (!rlang::has_name(data, "GT")) {
-    data <- radiator::calibrate_alleles(data = data, verbose = FALSE) %$% input
+    data %<>% radiator::calibrate_alleles(data = ., gt = TRUE) %$% input
   }
 
   # Spread/dcast in wide format
@@ -108,7 +108,10 @@ write_gsi_sim <- function(
     ) %>%
     radiator::rad_long(x = ., cols = c("POP_ID", "INDIVIDUALS", "MARKERS"), names_to = "ALLELES", values_to = "GT") %>%
     dplyr::arrange(MARKERS) %>%
-    tidyr::unite(col = MARKERS_ALLELES, MARKERS , ALLELES, sep = "_") %>%
+    dplyr::mutate(
+      MARKERS_ALLELES = stringi::stri_join(MARKERS , ALLELES, sep = "_"),
+      MARKERS = NULL, ALLELES = NULL
+      ) %>%
     dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS_ALLELES) %>%
     radiator::rad_wide(x = ., formula = "POP_ID_ INDIVIDUALS ~ MARKERS_ALLELES", values_from = "GT") %>%
     dplyr::ungroup(.)

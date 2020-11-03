@@ -857,20 +857,22 @@ because LOCUS and POS (SNP) info is not available")
             dplyr::filter(MARKERS %in% haplo.reconstruction$MARKERS) %>%
             separate_gt(
               x = .,
-              sep = "/", gt = "GT_VCF_NUC",
+              gt = "GT_VCF_NUC",
               exclude = c("MARKERS", "INDIVIDUALS", "POP_ID"),
-              cpu.rounds = 10, parallel.core = parallel.core) %>%
+              haplotypes = TRUE,
+              split.chunks = 3L
+              ) %>%
             dplyr::left_join(haplo.reconstruction, by = c("MARKERS", "HAPLOTYPES"))
           haplo.reconstruction <- NULL
-          filter <- filter %>%
+
+          filter %<>%
             dplyr::select(-HAPLOTYPES, HAPLOTYPES = HAPLOTYPES_NEW) %>%
             dplyr::group_by(MARKERS, INDIVIDUALS, POP_ID) %>%
             dplyr::summarise(GT_VCF_NUC = stringi::stri_join(HAPLOTYPES, collapse = "/")) %>%
             dplyr::mutate(GT_VCF_NUC = stringi::stri_replace_na(str = GT_VCF_NUC, replacement = "./.")) %>%
             dplyr::ungroup(.) %>%
-            calibrate_alleles(data = ., biallelic = FALSE, parallel.core = parallel.core)
-
-          filter <- filter$input %>%
+            # calibrate_alleles(data = ., biallelic = FALSE) %$%
+            # input %>%
             dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT_VCF_NUC, REF, ALT, GT, GT_VCF) %>%
             dplyr::bind_rows(read_rad(data = file.path(path.folder, "temp.rad")))
           file.remove(file.path(path.folder, "temp.rad"))

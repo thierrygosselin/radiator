@@ -82,9 +82,7 @@ write_hzar <- function(
     data %<>% dplyr::rename(MARKERS = LOCUS)
   }
 
-  if (!rlang::has_name(data, "GT")) {
-    data <- calibrate_alleles(data = data, verbose = FALSE) %$% input
-  }
+  if (!rlang::has_name(data, "GT")) data %<>% calibrate_alleles(data = ., gt = TRUE) %$% input
 
   # Keeping common markers -----------------------------------------------------
   data <- radiator::filter_common_markers(data = data, verbose = FALSE, internal = TRUE)
@@ -123,9 +121,7 @@ write_hzar <- function(
     ) %>%
     dplyr::arrange(MARKERS, POP_ID, VALUE) %>%
     dplyr::select(-MARKERS) %>%
-    dplyr::group_by(POP_ID) %>%
-    tidyr::spread(data = ., key = GROUP, value = VALUE, fill = 0) %>%
-    dplyr::ungroup(.) %>%
+    rad_wide(x = ., formula = "MARKERS + POP_ID ~ GROUP", values_from = "VALUE", values_fill = 0)
     dplyr::left_join(distances, by = "POP_ID") %>%
     dplyr::select(POP_ID, Distance, everything(.)) %>%
     dplyr::rename(Population = POP_ID)

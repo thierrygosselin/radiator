@@ -146,12 +146,11 @@ write_colony <- function(
     data %<>% dplyr::rename(POP_ID = STRATA)
   }
 
-  if (!is.null(strata)) {
-    data <- join_strata(data = data, strata = strata, pop.id = TRUE)
-  }
+  if (!is.null(strata)) data %<>% join_strata(data = ., strata = strata, pop.id = TRUE)
+
 
   if (!rlang::has_name(data, "GT")) {
-    data <- calibrate_alleles(data = data, verbose = FALSE) %$% input
+    data %<>% calibrate_alleles(data = ., gt = TRUE) %$% input
   }
 
   if (!is.null(pop.select)) {

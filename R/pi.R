@@ -126,8 +126,8 @@ pi <- function(
     SeqArray::seqClose(data)
     data <- tidy.data
     tidy.data <- NULL
-  } else { #tidy.data
-    if (is.vector(data)) data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
+  } else {#tidy.data
+    if (is.vector(data)) data %<>% radiator::tidy_wide(data = ., import.metadata = TRUE)
   }
 
   # Nei & Li 1979 Nucleotide Diversity -----------------------------------------
@@ -141,19 +141,16 @@ pi <- function(
   message("    Read length used: ", read.length)
   # Pi: by individuals----------------------------------------------------------
   message("    Pi calculations: individuals...")
-  # data <- radiator::calibrate_alleles(data = data, biallelic = TRUE, verbose = TRUE) %$% input
   data %<>%
     dplyr::filter(!is.na(GT_BIN)) %>%
     dplyr::mutate(
       ALLELE1 = dplyr::case_when(
-        GT_BIN == 0 ~ "1",
-        GT_BIN == 1 ~ "1",
-        GT_BIN == 2 ~ "2"
+        GT_BIN == 2L ~ "2",
+        GT_BIN != 2L ~ "1"
       ),
       ALLELE2 = dplyr::case_when(
-        GT_BIN == 0 ~ "1",
-        GT_BIN == 1 ~ "2",
-        GT_BIN == 2 ~ "2"
+        GT_BIN == 0L ~ "1",
+        GT_BIN != 0L ~ "2"
       )
     )
 
