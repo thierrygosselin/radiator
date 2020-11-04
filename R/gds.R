@@ -394,6 +394,8 @@ gds2tidy <- function(
                                ordered = TRUE)) %>%
         dplyr::arrange(MARKERS, INDIVIDUALS)
     )
+
+    tidy.data$MARKERS <- as.character(tidy.data$MARKERS)
   }
 
 

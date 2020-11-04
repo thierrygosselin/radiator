@@ -757,6 +757,8 @@ radiator_snakecase <- function(x) {
 #' @keywords internal
 #' @export
 radiator_packages_dep <- function(package, cran = TRUE, bioc = FALSE) {
+  installer <- "devtools::install_github"
+
   if (cran) {
     installer <- "install.packages"
   }

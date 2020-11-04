@@ -300,7 +300,6 @@ genomic_converter <- function(
 ) {
 
   ## Testing
-  # data
   # strata = NULL
   # output = "genind"
   # filename = NULL
@@ -321,10 +320,10 @@ genomic_converter <- function(
   # filters.parameters=NULL
 
   # Check for specific format vs package required-----------------------------
-  # if ("gtypes" %in% output) radiator_packages_dep(package = "strataG")
+  if ("gtypes" %in% output) radiator_packages_dep(package = "strataG")
   if ("genlight" %in% output) radiator_packages_dep(package = "adegenet")
   if ("seqarray" %in% output) {
-    radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
+    radiator_packages_dep(package = "SeqArray", cran = FALSE, bioc = TRUE)
   }
   if ("snprelate" %in% output) {
     radiator_packages_dep(package = "SNPRelate", cran = FALSE, bioc = TRUE)
@@ -348,7 +347,7 @@ genomic_converter <- function(
   res <- list()
 
   # Function call and dotslist -------------------------------------------------
-  rad.dots <- radiator_dots(
+  rad.dots <- radiator::radiator_dots(
     func.name = as.list(sys.call())[[1]],
     fd = rlang::fn_fmls_names(),
     args.list = as.list(environment()),
@@ -413,15 +412,15 @@ genomic_converter <- function(
     internal = FALSE,
     verbose = verbose)
 
-  # File type detection --------------------------------------------------------
-  data.type <- detect_genomic_format(data = data)
 
   # Import----------------------------------------------------------------------
   # back.up strata
   strata.bk <- strata
 
+  # File type detection
+  data.type <- detect_genomic_format(data = data)
+  if (verbose) message("\nImporting data: ", data.type)
 
-  if (verbose) message("\nImporting data\n")
   input <- radiator::tidy_genomic_data(
     data = data,
     strata = strata.bk,
@@ -462,7 +461,7 @@ genomic_converter <- function(
   if (TRUE %in% (c("genepop", "hierfstat", "structure", "hzar", "gsi_sim",
                    "genepopedit", "arlequin", "bayescan") %in% output)) {
     if (!rlang::has_name(input, "GT")) {
-      input %<>% calibrate_alleles(data = ., biallelic = biallelic, gt = TRUE) %$% input
+      input %<>% radiator::calibrate_alleles(data = ., biallelic = biallelic, gt = TRUE) %$% input
     }
   }
 
@@ -500,22 +499,6 @@ genomic_converter <- function(
       }
     }
   }
-
-  # Imputations-----------------------------------------------------------------
-  # if (!is.null(imputation.method)) {
-  #   input.imp <- radiator::radiator_imputations_module(
-  #     data = input,
-  #     imputation.method = imputation.method,
-  #     hierarchical.levels = hierarchical.levels,
-  #     num.tree = num.tree,
-  #     pred.mean.matching = pred.mean.matching,
-  #     random.seed = random.seed,
-  #     verbose = verbose,
-  #     parallel.core = parallel.core,
-  #     filename = NULL
-  #   ) %>%
-  #     dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS)
-  # } # End imputations
 
   # OUTPUT ---------------------------------------------------------------------
   setwd(path.folder)
@@ -576,10 +559,6 @@ genomic_converter <- function(
 
   # strataG --------------------------------------------------------------------
   if ("gtypes" %in% output) {
-    # if (!requireNamespace("strataG", quietly = TRUE)) {
-      # rlang::abort("strataG needed for this function to work
-                 # Install with install.packages('strataG')")
-    # }
     if (verbose) message("Generating strataG gtypes object")
     res$gtypes <- radiator::write_gtypes(
       data = input,

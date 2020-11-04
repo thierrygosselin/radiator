@@ -116,13 +116,12 @@ tidy_gtypes <- function(data) {
 #' turtle <- radiator::write_gtypes(data = "my.radiator.rad")
 #' }
 
-
-
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 write_gtypes <- function(data, write = FALSE, filename = NULL) {
   # Check that strataG is installed --------------------------------------------
-  # radiator_packages_dep(package = "strataG", cran = FALSE, bioc = TRUE)
+  radiator_packages_dep(package = "strataG", cran = FALSE, bioc = FALSE)
+  requireNamespace("strataG")
 
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("Input file missing")
@@ -134,7 +133,7 @@ write_gtypes <- function(data, write = FALSE, filename = NULL) {
   if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
 
     # Required package -----------------------------------------------------------
-    radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
+    radiator_packages_dep(package = "SeqArray", cran = FALSE, bioc = TRUE)
 
     if (data.type == "gds.file") data %<>% radiator::read_rad(data = .)
     # biallelic <- radiator::detect_biallelic_markers(data)# faster with GDS
@@ -155,7 +154,7 @@ write_gtypes <- function(data, write = FALSE, filename = NULL) {
       dplyr::left_join(strata, by = "INDIVIDUALS") %>%
       dplyr::mutate(
         `1` = dplyr::if_else(GT_BIN == 0L, 1L, GT_BIN),
-        `2` = switch_genotypes(GT_BIN),
+        `2` = dplyr::recode(.x = GT_BIN, `1` = 2L, `0` = 1L),
         GT_BIN = NULL
       ) %>%
       radiator::rad_long(
@@ -176,16 +175,14 @@ write_gtypes <- function(data, write = FALSE, filename = NULL) {
 
 
   } else {#Tidy data
-    data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-    # data <- data.bk
-    # data.bk <- data
+    data %<>% radiator::tidy_wide(data = ., import.metadata = TRUE)
+
     if (rlang::has_name(data, "GT_BIN")) {
-      data$GT_BIN <- rlang::as_integer(data$GT_BIN)
       data  %<>%
         dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT_BIN) %>%
         dplyr::mutate(
           `1` = dplyr::if_else(GT_BIN == 0L, 1L, GT_BIN),
-          `2` = switch_genotypes(GT_BIN),
+          `2` = dplyr::recode(.x = GT_BIN, `1` = 2L, `0` = 1L),
           GT_BIN = NULL
         ) %>%
         radiator::rad_long(
@@ -201,8 +198,6 @@ write_gtypes <- function(data, write = FALSE, filename = NULL) {
           sep = "."
         ) %>%
         dplyr::arrange(POP_ID, INDIVIDUALS)
-
-
     } else {
       if (!rlang::has_name(data, "GT")) data %<>% calibrate_alleles(data = ., gt = TRUE) %$% input
       data %<>%
@@ -273,7 +268,6 @@ write_gtypes <- function(data, write = FALSE, filename = NULL) {
 #' @keywords internal
 #' @export
 switch_genotypes <- function(x) {
-  x <- rlang::as_integer(x)
   x <- dplyr::case_when(
     x == 1L ~ 2L,
     x == 2L ~ 2L,

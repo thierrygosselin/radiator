@@ -103,7 +103,8 @@ radiator_dots <- function(
   res <- tibble::tibble(
     ARGUMENTS = character(0),
     VALUES = character(0),
-    GROUPS = character(0))
+    GROUPS = character(0)
+    )
 
   # function call --------------------------------------------------------------
   args.list <- purrr::map(.x = args.list, .f = check_args_class)

@@ -6,8 +6,8 @@ Date: 2020-11-03
 Encoding: UTF-8
 Authors@R: c(
   person("Thierry", "Gosselin", email = "thierrygosselin@icloud.com", role = c("aut", "cre")),
-  person("Manuel", "Lamothe", role = c("ctb", "aut")),
-  person("Floriaan", "Devloo-Delva", role = c("ctb", "aut"))
+  person("Manuel", "Lamothe", role = c("ctb")),
+  person("Floriaan", "Devloo-Delva", role = c("ctb"))
   )
 Maintainer: Thierry Gosselin <thierrygosselin@icloud.com>
 Description: RADseq Data Exploration, Manipulation and Visualization using R.
@@ -45,6 +45,7 @@ Suggests:
     SeqArray (>= 1.28.1),
     SNPRelate,
     stats,
+    strataG,
     stringdist,
     stringi,
     tibble,

@@ -402,8 +402,6 @@ tidy_genomic_data <- function(
   ...
 ) {
 
-
-
   # Cleanup-------------------------------------------------------------------
   radiator_function_header(f.name = "tidy_genomic_data", verbose = verbose)
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
@@ -415,7 +413,7 @@ tidy_genomic_data <- function(
   #back to the original directory and options
   on.exit(setwd(old.dir), add = TRUE)
   on.exit(options(width = opt.change), add = TRUE)
-  on.exit(radiator_toc(timing), add = TRUE)
+  on.exit(radiator_toc(timing, verbose = verbose), add = TRUE)
   on.exit(radiator_function_header(f.name = "tidy_genomic_data", start = FALSE, verbose = verbose), add = TRUE)
   res <- list()
 
@@ -916,7 +914,7 @@ tidy_genomic_data <- function(
     n.chromosome <- "no chromosome info"
   }
   n.individuals <- length(unique(input$INDIVIDUALS))
-  if(!is.null(strata)) n.pop <- length(unique(input$POP_ID))
+  if (!is.null(strata)) n.pop <- length(unique(input$POP_ID))
 
   if (verbose) {
     cat("################################### RESULTS ####################################\n")

@@ -86,15 +86,18 @@ calibrate_alleles <- function(
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("Input file missing")
 
-  # Function call and dotslist -------------------------------------------------
-  rad.dots <- radiator_dots(
-    func.name = as.list(sys.call())[[1]],
-    fd = rlang::fn_fmls_names(),
-    args.list = as.list(environment()),
-    dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
-    keepers = c("gt", "gt.bin", "gt.vcf", "gt.vcf.nuc"),
-    verbose = FALSE
-  )
+  # dotslist -------------------------------------------------------------------
+  rad.dots <- rlang::list2(...)
+  gt <- rad.dots[["gt"]]
+  gt.vcf.nuc <- rad.dots[["gt.vcf.nuc"]]
+  gt.vcf <- rad.dots[["gt.vcf"]]
+  gt.bin <- rad.dots[["gt.bin"]]
+  if (is.null(gt.vcf.nuc)) gt.vcf.nuc <- FALSE
+  if (is.null(gt.vcf)) gt.vcf <- FALSE
+  if (is.null(gt)) gt <- FALSE
+  if (is.null(gt.bin)) gt.bin <- FALSE
+
+
 
   # Detecting biallelic markers and removing monomorphic markers ---------------
   if (is.null(biallelic)) biallelic <- radiator::detect_biallelic_markers(data, verbose = FALSE)
@@ -262,6 +265,8 @@ calibrate_alleles <- function(
       dplyr::distinct(MARKERS) %>%
       dplyr::pull()
   }
+
+  if (is.factor(switch.ref)) switch.ref %<>% as.character(.)
 
 
   # Strategies -----------------------------------------------------------------

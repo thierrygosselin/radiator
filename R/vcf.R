@@ -324,10 +324,10 @@ read_vcf <- function(
   #back to the original directory and options
   on.exit(setwd(old.dir), add = TRUE)
   on.exit(options(width = opt.change), add = TRUE)
-  on.exit(radiator_toc(timing), add = TRUE)
+  on.exit(radiator_toc(timing, verbose = verbose), add = TRUE)
   on.exit(radiator_function_header(f.name = "read_vcf", start = FALSE, verbose = verbose), add = TRUE)
   # Required package -----------------------------------------------------------
-  radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
+  radiator_packages_dep(package = "SeqArray", cran = FALSE, bioc = TRUE)
 
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("vcf file missing")
@@ -1475,7 +1475,7 @@ tidy_vcf <- function(
   on.exit(radiator_function_header(f.name = "tidy_vcf", start = FALSE, verbose = verbose), add = TRUE)
 
   # Required package -----------------------------------------------------------
-  radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
+  radiator_packages_dep(package = "SeqArray", cran = FALSE, bioc = TRUE)
 
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("vcf file missing")

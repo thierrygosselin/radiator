@@ -1105,7 +1105,6 @@ detect_gt <- function(x, gt.format = c("GT", "GT_BIN", "GT_VCF", "GT_VCF_NUC"), 
 #' @rdname gt_recoding
 #' @title gt_recoding
 #' @description Detect the genotype format used in the data set. Sample one if than one is present.
-# @noRd
 #' @keywords internal
 #' @export
 gt_recoding <- function(x, gt = TRUE, gt.bin = TRUE, gt.vcf = TRUE, gt.vcf.nuc = TRUE, arrange = TRUE) {
@@ -1116,7 +1115,7 @@ gt_recoding <- function(x, gt = TRUE, gt.bin = TRUE, gt.vcf = TRUE, gt.vcf.nuc =
 
 
   # what genotype format we have
-  detect.gt <- detect_gt(x = data) #utils
+  detect.gt <- detect_gt(x) #utils
   remove.extra <- FALSE
   if (gt) {
     if (!rlang::has_name(x, "A1")) {
