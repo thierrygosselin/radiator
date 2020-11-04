@@ -120,8 +120,8 @@ tidy_gtypes <- function(data) {
 
 write_gtypes <- function(data, write = FALSE, filename = NULL) {
   # Check that strataG is installed --------------------------------------------
-  radiator_packages_dep(package = "strataG", cran = FALSE, bioc = FALSE)
-  requireNamespace("strataG")
+  # radiator_packages_dep(package = "strataG", cran = FALSE, bioc = FALSE)
+  # requireNamespace("strataG")
 
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("Input file missing")

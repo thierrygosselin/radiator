@@ -185,10 +185,10 @@
 #' radiator::detect_genomic_format(data = "populations.snps.vcf")
 #'
 #' # The simplest form of the function:
-#' require(SeqVarTools) # when using vcf as input file
+#' require(strataG) # for the gtypes format...
 #' snowcrab <- genomic_converter(
 #'                    data = "populations.snps.vcf", strata = "snowcrab.strata.tsv",
-#'                    output = c("genlight", "genepop"))
+#'                    output = c("genlight", "genepop", "gtypes"))
 #'
 #' #Get the content of the object created using:
 #' names(snowcrab)
@@ -320,7 +320,7 @@ genomic_converter <- function(
   # filters.parameters=NULL
 
   # Check for specific format vs package required-----------------------------
-  if ("gtypes" %in% output) radiator_packages_dep(package = "strataG")
+  # if ("gtypes" %in% output) radiator_packages_dep(package = "strataG")
   if ("genlight" %in% output) radiator_packages_dep(package = "adegenet")
   if ("seqarray" %in% output) {
     radiator_packages_dep(package = "SeqArray", cran = FALSE, bioc = TRUE)

@@ -422,10 +422,10 @@ Bioinformatics.</p>
 <span class='fu'>radiator</span><span class='fu'>::</span><span class='fu'><a href='detect_genomic_format.html'>detect_genomic_format</a></span><span class='op'>(</span>data <span class='op'>=</span> <span class='st'>"populations.snps.vcf"</span><span class='op'>)</span>
 
 <span class='co'># The simplest form of the function:</span>
-<span class='kw'><a href='https://rdrr.io/r/base/library.html'>require</a></span><span class='op'>(</span><span class='va'><a href='https://github.com/smgogarten/SeqVarTools'>SeqVarTools</a></span><span class='op'>)</span> <span class='co'># when using vcf as input file</span>
+<span class='kw'><a href='https://rdrr.io/r/base/library.html'>require</a></span><span class='op'>(</span><span class='va'><a href='https://github.com/EricArcher/strataG'>strataG</a></span><span class='op'>)</span> <span class='co'># for the gtypes format...</span>
 <span class='va'>snowcrab</span> <span class='op'>&lt;-</span> <span class='fu'>genomic_converter</span><span class='op'>(</span>
                    data <span class='op'>=</span> <span class='st'>"populations.snps.vcf"</span>, strata <span class='op'>=</span> <span class='st'>"snowcrab.strata.tsv"</span>,
-                   output <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"genlight"</span>, <span class='st'>"genepop"</span><span class='op'>)</span><span class='op'>)</span>
+                   output <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"genlight"</span>, <span class='st'>"genepop"</span>, <span class='st'>"gtypes"</span><span class='op'>)</span><span class='op'>)</span>
 
 <span class='co'>#Get the content of the object created using:</span>
 <span class='fu'><a href='https://rdrr.io/r/base/names.html'>names</a></span><span class='op'>(</span><span class='va'>snowcrab</span><span class='op'>)</span>
@@ -444,7 +444,7 @@ Bioinformatics.</p>
 
       <footer>
       <div class="copyright">
-  <p>Developed by Thierry Gosselin, Manuel Lamothe, Floriaan Devloo-Delva.</p>
+  <p>Developed by Thierry Gosselin.</p>
 </div>
 
 <div class="pkgdown">

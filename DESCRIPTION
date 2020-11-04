@@ -45,7 +45,6 @@ Suggests:
     SeqArray (>= 1.28.1),
     SNPRelate,
     stats,
-    strataG,
     stringdist,
     stringi,
     tibble,
