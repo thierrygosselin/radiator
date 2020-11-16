@@ -44,7 +44,7 @@ detect_ref_genome <- function(chromosome = NULL, data = NULL, verbose = TRUE) {
       if (!data.type %in% c("SeqVarGDSClass", "gds.file")) {
         rlang::abort("Input not supported for this function: read function documentation")
       }
-      radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
+      radiator_packages_dep(package = "SeqArray", cran = FALSE, bioc = TRUE)
 
       if (data.type == "gds.file") {
         data <- radiator::read_rad(data, verbose = verbose)

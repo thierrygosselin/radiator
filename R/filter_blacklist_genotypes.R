@@ -75,7 +75,7 @@ read_blacklist_genotypes <- function(
     if (is.vector(blacklist.genotypes)) {
       blacklist.genotypes <- suppressMessages(
         readr::read_tsv(blacklist.genotypes, col_names = TRUE) %>%
-          dplyr::mutate(dplyr::across(everything(), .fns = as.character))
+          dplyr::mutate(dplyr::across(tidyselect::everything(), .fns = as.character))
       )
     }
     nrow.before <- nrow(blacklist.genotypes)
@@ -213,7 +213,7 @@ filter_blacklist_genotypes <- function(
     }
 
     if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
-      radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
+      radiator_packages_dep(package = "SeqArray", cran = FALSE, bioc = TRUE)
 
       if (data.type == "gds.file") {
         data <- radiator::read_rad(data, verbose = verbose)
@@ -349,7 +349,7 @@ filter_blacklist_genotypes <- function(
 #   suppressWarnings(suppressMessages(
 #     blacklist.genotype <- blacklist.genotype %>%
 #       dplyr::mutate(dplyr::across(.cols = "INDIVIDUALS", .fns = clean_ind_names)) %>%dplyr::mutate(dplyr::across(everything(), .fns = as.character))
-#       dplyr::select(dplyr::one_of(want)) %>%
+#       dplyr::select(tidyselect::any_of(want)) %>%
 # dplyr::mutate(dplyr::across(everything(), .fns = as.character, exclude = NA))
 #   columns.names.blacklist.genotype <- colnames(blacklist.genotype)
 #

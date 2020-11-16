@@ -388,17 +388,15 @@ read_dart <- function(
   # Silico DArT ----------------------------------------------------------------
   if ("silico.dart" %in% dart.format) {
     want <- c("CLONE_ID", "SEQUENCE", strata$INDIVIDUALS)
-    suppressWarnings(
-      data %<>%
-        dplyr::select(dplyr::one_of(want)) %>%
-        radiator::rad_long(
-          x = .,
-          cols = c("CLONE_ID", "SEQUENCE"),
-          names_to = "INDIVIDUALS",
-          values_to = "VALUE",
-          variable_factor = FALSE
-        )
-    )
+    data %<>%
+      dplyr::select(tidyselect::any_of(want)) %>%
+      radiator::rad_long(
+        x = .,
+        cols = c("CLONE_ID", "SEQUENCE"),
+        names_to = "INDIVIDUALS",
+        values_to = "VALUE",
+        variable_factor = FALSE
+      )
 
     n.clone <- length(unique(data$CLONE_ID))
     data <- radiator::join_strata(data = data, strata = strata)
@@ -460,18 +458,16 @@ read_dart <- function(
   }
 
   # Markers meta
-  markers.meta <- suppressWarnings(
-    dplyr::ungroup(data) %>%
-      dplyr::select(-dplyr::one_of(strata$INDIVIDUALS)) %>%
-      dplyr::filter(!is.na(REF) | !is.na(ALT)) %>%
-      dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-      dplyr::arrange(VARIANT_ID) %>%
-      dplyr::mutate(FILTERS = "whitelist") %>%
-      dplyr::select(
-        FILTERS, VARIANT_ID, MARKERS, CHROM, LOCUS, POS, COL, REF, ALT,
-        everything(.)
-      )
-  )
+  markers.meta <- dplyr::ungroup(data) %>%
+    dplyr::select(-tidyselect::any_of(strata$INDIVIDUALS)) %>%
+    dplyr::filter(!is.na(REF) | !is.na(ALT)) %>%
+    dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
+    dplyr::arrange(VARIANT_ID) %>%
+    dplyr::mutate(FILTERS = "whitelist") %>%
+    dplyr::select(
+      FILTERS, VARIANT_ID, MARKERS, CHROM, LOCUS, POS, COL, REF, ALT,
+      tidyselect::everything(.)
+    )
 
   write_rad(
     data = markers.meta,
@@ -541,14 +537,12 @@ read_dart <- function(
 
   if (tidy.dart) {
     notwanted <- c("REF", "ALT")
-    tidy.data <- suppressWarnings(
-      markers.meta %>%
-        dplyr::left_join(
-          extract_genotypes_metadata(gds = data, whitelist = TRUE) %>%
-            dplyr::select(-dplyr::one_of(notwanted))
-          , by = "MARKERS"
-        )
-    )
+    tidy.data <- markers.meta %>%
+      dplyr::left_join(
+        extract_genotypes_metadata(gds = data, whitelist = TRUE) %>%
+          dplyr::select(-tidyselect::any_of(notwanted))
+        , by = "MARKERS"
+      )
 
     # Check that merging was successful
     if (!identical(tidy.data$VARIANT_ID.x, tidy.data$VARIANT_ID.y)) {
@@ -903,7 +897,7 @@ clean_dart_locus <- function(x, fast = TRUE) {
         VARIANT_ID = as.integer(factor(MARKERS)),
         SNP = NULL
       ) %>%
-      dplyr::select(dplyr::one_of(want), dplyr::everything()) %>%
+      dplyr::select(tidyselect::any_of(want), tidyselect::everything()) %>%
       dplyr::mutate(
         dplyr::across(
           .cols = c(MARKERS, CHROM, LOCUS, POS),
@@ -916,33 +910,31 @@ clean_dart_locus <- function(x, fast = TRUE) {
     want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS", "COL",
               "REF", "ALT", "SEQUENCE",
               "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")
-    suppressWarnings(
-      x %<>%
-        tidyr::separate(col = LOCUS,
-                        into = c("LOCUS", NA),
-                        sep = "\\|",
-                        extra = "drop"
-        ) %>%
-        tidyr::separate(col = SNP,
-                        into = c(NA, "KEEPER"),
-                        sep = ":",
-                        extra = "drop") %>%
-        tidyr::separate(col = KEEPER, into = c("REF", "ALT"), sep = ">") %>%
-        dplyr::mutate(
-          CHROM = rep("CHROM_1", n()),
-          MARKERS = stringi::stri_join(CHROM, LOCUS, POS, sep = "__"),
-          VARIANT_ID = as.integer(factor(MARKERS)),
-          COL = POS
-        ) %>%
-        dplyr::select(dplyr::one_of(want), everything()) %>%
-        dplyr::mutate(
-          dplyr::across(
-            .cols = c(MARKERS, CHROM, LOCUS, POS),
-            .fns = as.character
-          )
-        ) %>%
-        dplyr::arrange(CHROM, LOCUS, POS, REF)
-    )
+    x %<>%
+      tidyr::separate(col = LOCUS,
+                      into = c("LOCUS", NA),
+                      sep = "\\|",
+                      extra = "drop"
+      ) %>%
+      tidyr::separate(col = SNP,
+                      into = c(NA, "KEEPER"),
+                      sep = ":",
+                      extra = "drop") %>%
+      tidyr::separate(col = KEEPER, into = c("REF", "ALT"), sep = ">") %>%
+      dplyr::mutate(
+        CHROM = rep("CHROM_1", n()),
+        MARKERS = stringi::stri_join(CHROM, LOCUS, POS, sep = "__"),
+        VARIANT_ID = as.integer(factor(MARKERS)),
+        COL = POS
+      ) %>%
+      dplyr::select(tidyselect::any_of(want), tidyselect::everything()) %>%
+      dplyr::mutate(
+        dplyr::across(
+          .cols = c(MARKERS, CHROM, LOCUS, POS),
+          .fns = as.character
+        )
+      ) %>%
+      dplyr::arrange(CHROM, LOCUS, POS, REF)
   }
 }#End clean_dart_locus
 
@@ -972,11 +964,11 @@ detect_dart_format <- function(x = NULL, target.id = NULL, verbose = TRUE) {
     } else {
       count.data <- x %>%
         dplyr::select(
-          dplyr::one_of(
+          tidyselect::any_of(
             sample(x = target.id, size = min(10, floor(0.1 * length(target.id))))
           )
         ) %>%
-        dplyr::mutate(dplyr::across(everything(), .fns = as.numeric)) %>%
+        dplyr::mutate(dplyr::across(tidyselect::everything(), .fns = as.numeric)) %>%
         purrr::flatten_dbl(.) %>%
         unique(.)
 
@@ -1067,11 +1059,9 @@ dart2gds <- function(
   dp <- gl <- NULL
 
   want <- c("VARIANT_ID", "MARKERS", "REF", "ALT", strata$INDIVIDUALS)
-  suppressWarnings(
-    data %<>%
-      dplyr::select(dplyr::one_of(want)) %>%
-      dplyr::arrange(MARKERS, REF)
-  )
+  data %<>%
+    dplyr::select(tidyselect::any_of(want)) %>%
+    dplyr::arrange(MARKERS, REF)
 
   if (gt.vcf.nuc || gt) {
     ref.alt <- TRUE
@@ -1158,12 +1148,10 @@ dart2gds <- function(
       str = colnames(switch.alt), pattern = "SNP",
       replacement = "REF", vectorize_all = FALSE
     )
-    suppressWarnings(
-      markers.meta.s %<>%
-        dplyr::select(-dplyr::one_of(unique(c(colnames(switch.ref), colnames(switch.alt))))) %>%
-        dplyr::bind_cols(switch.ref) %>%
-        dplyr::bind_cols(switch.alt)
-    )
+    markers.meta.s %<>%
+      dplyr::select(-tidyselect::any_of(unique(c(colnames(switch.ref), colnames(switch.alt))))) %>%
+      dplyr::bind_cols(switch.ref) %>%
+      dplyr::bind_cols(switch.alt)
     switch.alt <- switch.ref <- NULL
 
     markers.meta %<>%
@@ -1234,7 +1222,7 @@ dart2gds <- function(
       dplyr::mutate(
         dplyr::across(
           .cols = c(READ_DEPTH, ALLELE_REF_DEPTH, ALLELE_ALT_DEPTH),
-          .fns = replace_by_na, what = 0
+          .fns = replace_by_na, what = 0L
         )
       )
   } else {
@@ -1481,8 +1469,7 @@ tidy_dart_metadata <- function(
     want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "CALL_RATE",
               "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")
 
-    input <- suppressWarnings(
-      input %>%
+    input %<>%
         tidyr::separate(col = LOCUS, into = c("LOCUS", "NOT_USEFUL"), sep = "\\|", extra = "drop") %>%
         dplyr::select(-NOT_USEFUL) %>%
         tidyr::separate(col = SNP, into = c("NOT_USEFUL", "KEEPER"), sep = ":", extra = "drop") %>%
@@ -1491,7 +1478,7 @@ tidy_dart_metadata <- function(
         dplyr::mutate(
           CHROM = rep("CHROM_1", n()),
           MARKERS = stringi::stri_join(CHROM, LOCUS, POS, sep = "__")) %>%
-        dplyr::select(dplyr::one_of(want), everything()) %>%
+        dplyr::select(tidyselect::any_of(want), tidyselect::everything()) %>%
         dplyr::mutate(
           dplyr::across(
             .cols = c(MARKERS, CHROM, LOCUS, POS),
@@ -1501,16 +1488,15 @@ tidy_dart_metadata <- function(
         dplyr::arrange(CHROM, LOCUS, POS, REF) %>%
         dplyr::filter(!is.na(REF) | !is.na(ALT)) %>%
         dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-        dplyr::arrange(MARKERS))
+        dplyr::arrange(MARKERS)
   }
 
   if (data.type == "fst.file") {
     want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT", "CALL_RATE",
               "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")
-    input <- suppressWarnings(
-      radiator::read_rad(data) %>%
-        dplyr::select(dplyr::one_of(want)) %>%
-        dplyr::distinct(MARKERS, .keep_all = TRUE))
+    input <- radiator::read_rad(data) %>%
+      dplyr::select(tidyselect::any_of(want)) %>%
+      dplyr::distinct(MARKERS, .keep_all = TRUE)
   }
 
   if (!is.null(filename)) {
@@ -1565,7 +1551,7 @@ clean_dart_colnames <- function(data, blacklist.id = NULL, dart.col.num = NULL, 
   )
 
   if (!is.null(blacklist.id)) {
-    data %<>% dplyr::select(-dplyr::one_of(blacklist.id))
+    data %<>% dplyr::select(-tidyselect::any_of(blacklist.id))
   }
 
   colnames(data) <- tibble::tibble(TARGET_ID = colnames(data)) %>%
@@ -1767,10 +1753,9 @@ merge_dart <- function(
   # we keep common column
   dart.col <- dplyr::intersect(colnames(input), colnames(dart2))
 
-  input <- suppressWarnings(
-    dplyr::select(input, dplyr::one_of(dart.col)) %>%
-      dplyr::bind_rows(dplyr::select(dart2, dplyr::one_of(dart.col)))
-  )
+  input %<>%
+    dplyr::select(tidyselect::any_of(dart.col)) %>%
+    dplyr::bind_rows(dplyr::select(dart2, tidyselect::any_of(dart.col)))
   dart2 <- NULL
 
 

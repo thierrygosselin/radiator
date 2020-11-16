@@ -285,9 +285,9 @@ summary_strata <- function(strata) {
 
   duplicate.id <- nrow(strata) - length(unique(strata$INDIVIDUALS))
 
-  message("Number of populations: ", length(unique(strata$STRATA)))
+  message("Number of strata: ", length(unique(strata$STRATA)))
   message("Number of individuals: ", length(unique(strata$INDIVIDUALS)))
-  message("\nNumber of ind/pop:\n", stringi::stri_join(strata.stats$POP_IND, collapse ="\n"))
+  message("\nNumber of ind/strata:\n", stringi::stri_join(strata.stats$POP_IND, collapse = "\n"))
   message("\nNumber of duplicate id: ", duplicate.id)
 }#End summary_strata
 
@@ -414,16 +414,13 @@ change_pop_names <- function(data, pop.levels = NULL, pop.labels = NULL) {
   if (missing(data)) rlang::abort("Input file missing")
 
   # POP_ID in gsi_sim does not like spaces, we need to remove space in everything touching POP_ID...
-
-  if (rlang::has_name(data, "STRATA") & !rlang::has_name(data, "POP_ID")) {
-    data %<>% dplyr::rename(POP_ID = STRATA)
-  }
+  data %<>% dplyr::rename(POP_ID = tidyselect::contains("STRATA"))
 
 
   # removing spaces in data$POP_ID, pop.levels and pop.labels
   if (!is.null(pop.levels)) {
     if (is.null(pop.labels)) {
-      pop.labels <-pop.levels <- clean_pop_names(pop.levels)
+      pop.labels <- pop.levels <- clean_pop_names(pop.levels)
     }
     if (dplyr::n_distinct(data$POP_ID) != length(pop.levels)) {
       rlang::abort("The number of strata/POP_ID in the data is different than the number of pop.levels: check argument and data")
@@ -437,17 +434,17 @@ change_pop_names <- function(data, pop.levels = NULL, pop.labels = NULL) {
   }
 
   # in the data
-  data$POP_ID <- clean_pop_names(data$POP_ID)
+  data$POP_ID %<>% clean_pop_names(x = .)
 
   # convert POP_ID to factor and change names-----------------------------------
 
   if (is.null(pop.levels)) { # no pop.levels
-    data$POP_ID <- factor(data$POP_ID)
+    data$POP_ID %<>% factor(x = .)
   } else {# with pop.levels
-    data$POP_ID <- factor(x = data$POP_ID, levels = pop.levels, ordered = FALSE)
+    data$POP_ID %<>% factor(x = ., levels = pop.levels, ordered = FALSE)
     levels(data$POP_ID) <- pop.labels
   }
-  data <- dplyr::arrange(data, POP_ID, INDIVIDUALS)
+  data %<>% dplyr::arrange(POP_ID, INDIVIDUALS)
   return(data)
 }# end function change_pop_names
 
@@ -479,7 +476,7 @@ check_pop_levels <- function(
   # checks ---------------------------------------------------------------------
   # removing spaces in data$POP_ID, pop.levels and pop.labels
   if (!is.null(pop.levels) && is.null(pop.labels)) {
-    pop.labels <-pop.levels <- clean_pop_names(pop.levels)
+    pop.labels <- pop.levels <- clean_pop_names(pop.levels)
   }
 
   if (!is.null(pop.labels)) {
@@ -529,8 +526,7 @@ check_pop_levels <- function(
 join_strata <- function(data, strata = NULL, pop.id = FALSE, verbose = TRUE) {
   if (is.null(strata)) return(data)
   if (verbose) message("Synchronizing data and strata...")
-  if (rlang::has_name(data, "POP_ID")) data %<>% dplyr::select(-POP_ID)
-  if (rlang::has_name(data, "STRATA")) data %<>% dplyr::select(-STRATA)
+  data %<>% dplyr::select(-tidyselect::any_of(c("POP_ID", "STRATA")))
   strata %<>% dplyr::filter(INDIVIDUALS %in% data$INDIVIDUALS)
   if (nrow(strata) == 0) {
     rlang::abort("No more individuals in your data, check data and strata ID names...")
@@ -545,11 +541,11 @@ join_strata <- function(data, strata = NULL, pop.id = FALSE, verbose = TRUE) {
   if (verbose) {
     if (rlang::has_name(data, "POP_ID")) {
       message("    Number of strata: ", length(unique(data$POP_ID)))
-      data %<>% dplyr::select(POP_ID, INDIVIDUALS, everything())
+      data %<>% dplyr::select(POP_ID, INDIVIDUALS, tidyselect::everything())
     }
     if (rlang::has_name(data, "STRATA")) {
       message("    Number of strata: ", length(unique(data$STRATA)))
-      data %<>% dplyr::select(STRATA, INDIVIDUALS, everything())
+      data %<>% dplyr::select(STRATA, INDIVIDUALS, tidyselect::everything())
     }
     message("    Number of individuals: ", length(unique(data$INDIVIDUALS)))
   }
@@ -620,7 +616,7 @@ strata_haplo <- function(strata = NULL, data = NULL, blacklist.id = NULL) {
       col_types = readr::cols(.default = readr::col_character())) %>%
       tidyr::pivot_longer(
         data = .,
-        cols = everything(),
+        cols = tidyselect::everything(),
         names_to = "DELETE",
         values_to = "INDIVIDUALS"
       ) %>%
@@ -700,7 +696,7 @@ read_blacklist_id <- function(blacklist.id = NULL, verbose = TRUE) {
       }
       blacklist.id <- dplyr::mutate(
         .data = blacklist.id,
-        dplyr::across(everything(), .fns = as.character)
+        dplyr::across(tidyselect::everything(), .fns = as.character)
         )
     }
     blacklist.id$INDIVIDUALS <- radiator::clean_ind_names(blacklist.id$INDIVIDUALS)
@@ -708,7 +704,7 @@ read_blacklist_id <- function(blacklist.id = NULL, verbose = TRUE) {
     # remove potential duplicate id
     dup <- dplyr::distinct(.data = blacklist.id, INDIVIDUALS)
     blacklist.id.dup <- nrow(blacklist.id) - nrow(dup)
-    if (blacklist.id.dup >1) {
+    if (blacklist.id.dup > 1) {
       if (verbose) message("Duplicate id's in blacklist: ", blacklist.id.dup)
       blacklist.id <- dup
     }

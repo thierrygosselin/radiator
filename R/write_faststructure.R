@@ -84,7 +84,7 @@ write_faststructure <- function(
     if (is.vector(data)) data %<>% radiator::tidy_wide(data = .)
 
     want <- c("INDIVIDUALS", "POP_ID", "MARKERS", "GT", "GT_BIN")
-    suppressWarnings(data %<>% dplyr::select(dplyr::one_of(want)))
+    data %<>% dplyr::select(tidyselect::any_of(want))
 
     # pop.levels -----------------------------------------------------------------
     if (!is.null(pop.levels)) {
@@ -108,9 +108,8 @@ write_faststructure <- function(
     # faststructure format ----------------------------------------------------------------
     if (rlang::has_name(data, "GT_BIN")) {
       want <- c("INDIVIDUALS", "POP_ID", "MARKERS", "GT_BIN")
-      suppressWarnings(
         data %<>%
-          dplyr::select(dplyr::one_of(want)) %>%
+          dplyr::select(tidyselect::any_of(want)) %>%
           dplyr::mutate(
             A1 = dplyr::case_when(
               GT_BIN == 0 ~ 1L,
@@ -127,12 +126,10 @@ write_faststructure <- function(
             GT_BIN = NULL
           ) %>%
           radiator::rad_long(x = ., cols = c("POP_ID", "INDIVIDUALS", "MARKERS"), names_to = "ALLELES", values_to = "GT")
-      )
     } else {
       want <- c("INDIVIDUALS", "POP_ID", "MARKERS", "GT")
-      suppressWarnings(
         data %<>%
-          dplyr::select(dplyr::one_of(want)) %>%
+          dplyr::select(tidyselect::any_of(want)) %>%
           dplyr::mutate(
             A1 = stringi::stri_sub(str = GT, from = 1, to = 3),
             A2 = stringi::stri_sub(str = GT, from = 4, to = 6),
@@ -143,7 +140,6 @@ write_faststructure <- function(
             GT = stringi::stri_replace_all_fixed(str = GT, pattern = "000", replacement = "-9", vectorize_all = FALSE),
             GT = as.integer(GT)
           )
-      )
     }
 
     # common to both GT and GT_BIN

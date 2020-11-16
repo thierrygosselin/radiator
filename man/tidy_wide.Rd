@@ -38,14 +38,14 @@ The data frame is tab delimitted.
 \strong{Wide format:}
 The wide format cannot store metadata info.
 The wide format starts with these 2 id columns:
-\code{INDIVIDUALS}, \code{POP_ID} (that refers to any grouping of individuals),
+\code{INDIVIDUALS}, \code{STRATA} (that refers to any grouping of individuals),
 the remaining columns are the markers in separate columns storing genotypes.
 
 \strong{Long/Tidy format:}
 The long format is considered to be a tidy data frame and can store metadata info.
 (e.g. from a VCF see \pkg{radiator} \code{\link{tidy_genomic_data}}).
 A minimum of 4 columns
-are required in the long format: \code{INDIVIDUALS}, \code{POP_ID},
+are required in the long format: \code{INDIVIDUALS}, \code{STRATA},
 \code{MARKERS} and \code{GT} for the genotypes.
 The remaining columns are considered metadata info.
 
@@ -59,13 +59,13 @@ The separator can be any of these: \code{"/", ":", "_", "-", "."}, and will
 be removed.
 
 
-\strong{separators in POP_ID, INDIVIDUALS and MARKERS:}
+\strong{separators in STRATA, INDIVIDUALS and MARKERS:}
 Some separators can interfere with packages or codes and are cleaned by radiator.
 \itemize{
 \item MARKERS: \code{/}, \code{:}, \code{-} and \code{.} are changed to an
 underscore
 \code{_}.
-\item POP_ID: white spaces in population names are replaced by underscore.
+\item STRATA: white spaces in population names are replaced by underscore.
 \item INDIVIDUALS: \code{_} and \code{:} are changed to a dash \code{-}
 }
 

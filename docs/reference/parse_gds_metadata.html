@@ -127,7 +127,7 @@
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>parse_gds_metadata</h1>
-    <small class="dont-index">Source: <a href='https://github.com/thierrygosselin/radiator/blob/master/R/vcf.R'><code>R/vcf.R</code></a></small>
+    <small class="dont-index">Source: <a href='https://github.com/thierrygosselin/radiator/blob/master/R/gds.R'><code>R/gds.R</code></a></small>
     <div class="hidden name"><code>parse_gds_metadata.Rd</code></div>
     </div>
 
@@ -135,12 +135,7 @@
     <p>function to parse the format field and tidy the results of VCF</p>
     </div>
 
-    <pre class="usage"><span class='fu'>parse_gds_metadata</span><span class='op'>(</span>
-  <span class='va'>x</span>,
-  gds <span class='op'>=</span> <span class='cn'>NULL</span>,
-  verbose <span class='op'>=</span> <span class='cn'>TRUE</span>,
-  parallel.core <span class='op'>=</span> <span class='fu'>parallel</span><span class='fu'>::</span><span class='fu'><a href='https://rdrr.io/r/parallel/detectCores.html'>detectCores</a></span><span class='op'>(</span><span class='op'>)</span> <span class='op'>-</span> <span class='fl'>1</span>
-<span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>parse_gds_metadata</span><span class='op'>(</span><span class='va'>x</span>, gds <span class='op'>=</span> <span class='cn'>NULL</span>, verbose <span class='op'>=</span> <span class='cn'>TRUE</span>, strip.rad <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span></pre>
 
 
 

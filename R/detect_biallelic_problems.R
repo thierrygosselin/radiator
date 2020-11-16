@@ -82,15 +82,11 @@ detect_biallelic_problems <- function(
 
   # Check data ----------------------------------------------------------
   message("Generating statistics...")
-  # want <- c("MARKERS", "CHROM", "LOCUS", "POS", "POP_ID", "GT_VCF_NUC",
-            # "AVG_COUNT_REF", "AVG_COUNT_SNP", "ALLELE_REF_DEPTH",
-            # "ALLELE_ALT_DEPTH")
-  # data <- suppressWarnings(dplyr::select(data, dplyr::one_of(want)))
   markers.metadata <- purrr::keep(
     .x = colnames(data),
     .p = colnames(data) %in% c("MARKERS", "CHROM", "LOCUS", "POS"))
   want <- c("MARKERS", "CHROM", "LOCUS", "POS", "GT_VCF_NUC")
-  blacklist.markers <- dplyr::select(data, dplyr::one_of(want)) %>%
+  blacklist.markers <- dplyr::select(data, tidyselect::any_of(want)) %>%
     dplyr::filter(GT_VCF_NUC != "./.") %>%
     dplyr::distinct(MARKERS, GT_VCF_NUC, .keep_all = TRUE) %>%
     separate_gt(x = ., gt = "GT_VCF_NUC", exclude = markers.metadata, split.chunks = 3L, haplotypes = TRUE) %>%

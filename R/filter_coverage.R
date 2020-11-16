@@ -163,7 +163,7 @@ filter_coverage <- function(
     }
 
     # Detect format --------------------------------------------------------------
-    radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
+    radiator_packages_dep(package = "SeqArray", cran = FALSE, bioc = TRUE)
     data.type <- radiator::detect_genomic_format(data)
     if (!data.type %in% c("SeqVarGDSClass", "gds.file")) {
       rlang::abort("Input not supported for this function: read function documentation")

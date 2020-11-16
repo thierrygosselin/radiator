@@ -40,7 +40,7 @@ detect_all_missing <- function(data) {
   detect.gt <- purrr::keep(.x = colnames(data), .p = colnames(data) %in% c("GT", "GT_VCF_NUC", "GT_VCF","GT_BIN"))
   if (length(detect.gt) > 1) detect.gt <- sample(x = detect.gt, size = 1)
   want <- c("MARKERS", detect.gt)
-  blacklist.markers <- suppressWarnings(dplyr::select(data, dplyr::one_of(want)))
+  blacklist.markers <- dplyr::select(data, tidyselect::any_of(want))
 
   # markers with all missing... yes I've seen it... breaks code...
   if (tibble::has_name(blacklist.markers, "GT")) {

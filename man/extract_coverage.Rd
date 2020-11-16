@@ -17,11 +17,11 @@ extract_coverage(
 \arguments{
 \item{gds}{The gds object.}
 
-\item{markers}{(optional, logical) Default:\code{markers = TRUE}.}
+\item{markers}{(optional, logical) Default: \code{markers = TRUE}.}
 
-\item{ind}{(optional, logical) Default:\code{ind = TRUE}.}
+\item{ind}{(optional, logical) Default: \code{ind = TRUE}.}
 
-\item{update.gds}{(optional, logical) Default:\code{update.gds = FALSE}.}
+\item{update.gds}{(optional, logical) Default: \code{update.gds = FALSE}.}
 
 \item{depth.tibble}{(optional, logical) Returns the depth info in a tibble instead of list
 with total and mean coverage info.

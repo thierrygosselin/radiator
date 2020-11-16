@@ -105,7 +105,7 @@ markers_genotyped_helper <- function(x, y, overall.only = FALSE) {
     ) %>%
     tidyr::pivot_longer(
       data = .,
-      cols = everything(),
+      cols = tidyselect::everything(),
       names_to = "GENOTYPED_THRESHOLD",
       values_to = "NUMBER_MARKERS"
     ) %>%
@@ -648,7 +648,7 @@ plot_density_distribution_het <- function(data, pop.levels, het.group, aes.colou
     dplyr::group_by(LOCUS, POP_ID) %>%
     tidyr::pivot_longer(
       data = .,
-      cols = everything(),
+      cols = tidyselect::everything(),
       names_to = "HET_GROUP",
       values_to = "VALUE"
     )

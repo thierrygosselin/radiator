@@ -165,7 +165,7 @@ detect_mixed_genomes <- function(
     #back to the original directory and options
     on.exit(setwd(old.dir), add = TRUE)
     on.exit(options(width = opt.change), add = TRUE)
-    on.exit(radiator_toc(timing), add = TRUE)
+    on.exit(radiator_toc(timing, verbose = verbose), add = TRUE)
     on.exit(radiator_function_header(f.name = "detect_mixed_genomes", start = FALSE, verbose = verbose), add = TRUE)
 
     # Function call and dotslist -------------------------------------------------
@@ -175,7 +175,7 @@ detect_mixed_genomes <- function(
       args.list = as.list(environment()),
       dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
       keepers = c("path.folder", "parameters", "internal"),
-      verbose = verbose
+      verbose = FALSE
     )
 
     # Checking for missing and/or default arguments ------------------------------
@@ -312,7 +312,7 @@ detect_mixed_genomes <- function(
         data <- radiator::read_rad(data, verbose = verbose)
         data.type <- "SeqVarGDSClass"
       }
-      radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
+      radiator_packages_dep(package = "SeqArray", cran = FALSE, bioc = TRUE)
 
 
       # Filter parameter file: generate and initiate -------------------------------

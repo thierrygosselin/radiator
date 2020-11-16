@@ -10,7 +10,7 @@ clean_ind_names(x)
 \item{x}{(character string) Individuals character string.}
 }
 \description{
-function to clean individual's name
+Function to clean individual's name
 that interfere with some packages
 or codes. \code{_} and \code{:} are changed to a dash \code{-}.
 Whitespaces are removed.

@@ -18,7 +18,7 @@ clean_markers_names <- function(x) {
 }#End clean_markers_names
 
 #' @title Clean individual's names for radiator and other packages
-#' @description function to clean individual's name
+#' @description Function to clean individual's name
 #' that interfere with some packages
 #' or codes. \code{_} and \code{:} are changed to a dash \code{-}.
 #' Whitespaces are removed.
@@ -51,13 +51,13 @@ clean_ind_names <- function(x) {
 #' @rdname clean_pop_names
 #' @export
 clean_pop_names <- function(x) {
-clean_pop <- function(x) {
-  stringi::stri_replace_all_fixed(
-    str = as.character(x),
-    pattern = " ",
-    replacement = "_",
-    vectorize_all = FALSE)
-}
+  clean_pop <- function(x) {
+    stringi::stri_replace_all_fixed(
+      str = as.character(x),
+      pattern = " ",
+      replacement = "_",
+      vectorize_all = FALSE)
+  }
 
   if (is.factor(x)) {
     pop.levels <- clean_pop(as.character(levels(x)))

@@ -259,20 +259,17 @@ radiator_parameters <- function(
   }#End update
 
   # messages
-  if (initiate && update) {
-    # if (verbose && verbose.on) message("Filters parameters file: initiated and updated")
-    if (verbose) message("Filters parameters file: initiated and updated")
-  }
+  # if (initiate && update) {
+  #   if (verbose) message("Filters parameters file: initiated and updated")
+  # }
 
-  if (initiate && !update) {
-    # if (verbose && verbose.on) message("Filters parameters file: initiated")
-    if (verbose) message("Filters parameters file: initiated")
-  }
+  # if (initiate && !update) {
+  #   if (verbose) message("Filters parameters file: initiated")
+  # }
 
-  if (!initiate && update) {
-    # if (verbose && verbose.on) message("Filters parameters file: updated")
-    if (verbose) message("Filters parameters file: updated")
-  }
+  # if (!initiate && update) {
+  #   if (verbose) message("Filters parameters file: updated")
+  # }
 
   return(res)
 }#End radiator_parameters
@@ -350,7 +347,7 @@ data_info <- function(x, verbose = FALSE) {
     message("Number of chrom: ", res$n.chrom)
     message("Number of locus: ", res$n.locus)
     message("Number of SNPs: ", res$n.snp)
-    message("Number of populations: ", res$n.pop)
+    message("Number of strata: ", res$n.pop)
     message("Number of individuals: ", res$n.ind)
   }
   return(res)
@@ -770,7 +767,7 @@ radiator_packages_dep <- function(package, cran = TRUE, bioc = FALSE) {
 
   if (suppressPackageStartupMessages(!requireNamespace(package, quietly = TRUE))) {
     # Alternative way:
-    # if (!"SeqVarTools" %in% utils::installed.packages()[,"Package"]) {
+    # if (!"SeqArray" %in% utils::installed.packages()[,"Package"]) {
     rlang::abort(
       paste0(paste0("Package required: ", package),
              paste0("\n       Install with: ", how.to))
@@ -779,7 +776,7 @@ radiator_packages_dep <- function(package, cran = TRUE, bioc = FALSE) {
 
 }#End radiator_packages_dep
 
-# radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
+# radiator_packages_dep(package = "SeqArray", cran = FALSE, bioc = TRUE)
 # requireNamespace
 # installed.packages
 

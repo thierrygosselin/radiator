@@ -41,22 +41,21 @@ write_structure <- function(
   if (missing(data)) rlang::abort("Input file missing")
 
   # Import data ---------------------------------------------------------------
-  if (is.vector(data)) data %<>% radiator::tidy_wide(data = .)
-
-  data %<>% dplyr::select(POP_ID, INDIVIDUALS, MARKERS, GT)
+  data %<>% radiator::tidy_wide(data = .) %>%
+    dplyr::select(STRATA, INDIVIDUALS, MARKERS, GT)
 
   # pop.levels -----------------------------------------------------------------
   if (!is.null(pop.levels)) {
     data %<>%
       dplyr::mutate(
-        POP_ID = factor(POP_ID, levels = pop.levels, ordered = TRUE),
-        POP_ID = droplevels(POP_ID)
+        STRATA = factor(STRATA, levels = pop.levels, ordered = TRUE),
+        STRATA = droplevels(STRATA)
       ) %>%
-      dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS)
+      dplyr::arrange(STRATA, INDIVIDUALS, MARKERS)
   } else {
     data %<>%
-      dplyr::mutate(POP_ID = factor(POP_ID)) %>%
-      dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS)
+      dplyr::mutate(STRATA = factor(STRATA)) %>%
+      dplyr::arrange(STRATA, INDIVIDUALS, MARKERS)
   }
 
   # Create a marker vector  ------------------------------------------------
@@ -66,19 +65,14 @@ write_structure <- function(
 
   # Structure format ----------------------------------------------------------------
   data %<>%
+    separate_gt(x = ., gt = "GT", exclude = c("STRATA", "INDIVIDUALS", "MARKERS")) %>%
     dplyr::mutate(
-      A1 = stringi::stri_sub(str = GT, from = 1, to = 3),
-      A2 = stringi::stri_sub(str = GT, from = 4, to = 6),
-      GT = NULL
+      ALLELES = dplyr::recode(.x = ALLELES, "000" = "-9"),
+      ALLELES = as.integer(ALLELES)
     ) %>%
-    radiator::rad_long(x = ., cols = c("POP_ID", "INDIVIDUALS", "MARKERS"), names_to = "ALLELES", values_to = "GT") %>%
-    dplyr::mutate(
-      GT = stringi::stri_replace_all_fixed(str = GT, pattern = "000", replacement = "-9", vectorize_all = FALSE),
-      GT = as.integer(GT)
-    ) %>%
-    radiator::rad_wide(x = ., formula = "INDIVIDUALS + POP_ID ~ MARKERS + ALLELES", values_from = "GT") %>%
-    dplyr::mutate(POP_ID = as.integer(POP_ID)) %>%
-    dplyr::arrange(POP_ID, INDIVIDUALS)
+    radiator::rad_wide(x = ., formula = "INDIVIDUALS + STRATA ~ MARKERS + ALLELES_GROUP", values_from = "ALLELES") %>%
+    dplyr::mutate(STRATA = as.integer(STRATA)) %>%
+    dplyr::arrange(STRATA, INDIVIDUALS)
 
   # Write the file in structure format -----------------------------------------
 

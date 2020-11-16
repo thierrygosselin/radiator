@@ -58,11 +58,10 @@ private_haplotypes <- function(data, strata = NULL, verbose = TRUE) {
     # clean ids
     strata$INDIVIDUALS <- radiator::clean_ind_names(strata$INDIVIDUALS)
 
-    data <- suppressWarnings(
-      dplyr::ungroup(data) %>%
-        dplyr::select(-dplyr::one_of(c("POP_ID", "STRATA"))) %>%
-        dplyr::left_join(strata, by = "INDIVIDUALS")
-    )
+    data %<>%
+      dplyr::ungroup() %>%
+      dplyr::select(-tidyselect::any_of(c("POP_ID", "STRATA"))) %>%
+      dplyr::left_join(strata, by = "INDIVIDUALS")
   } else {
     colnames(data) <- stringi::stri_replace_all_fixed(
       str = colnames(data),

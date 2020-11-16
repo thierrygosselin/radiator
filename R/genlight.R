@@ -133,8 +133,8 @@ tidy_genlight <- function(
     LOCUS = data@loc.names,#adegenet::locNames(data),
     POS = data@position#adegenet::position(data)
   ) %>%
-    dplyr::mutate(dplyr::across(everything(), .fns = as.character)) %>%
-    dplyr::mutate(dplyr::across(everything(), .fns = radiator::clean_markers_names)) %>%
+    dplyr::mutate(dplyr::across(tidyselect::everything(), .fns = as.character)) %>%
+    dplyr::mutate(dplyr::across(tidyselect::everything(), .fns = radiator::clean_markers_names)) %>%
     tidyr::unite(data = ., col = MARKERS, CHROM, LOCUS, POS, sep = "__", remove = FALSE) %>%
     dplyr::select(MARKERS, CHROM, LOCUS, POS)
 
@@ -161,25 +161,23 @@ tidy_genlight <- function(
               "GT_VCF", "GT_BIN", "GT")
 
     if (verbose) message("Generating tidy data...")
-    tidy.data <- suppressWarnings(
-      data.frame(data) %>%
-        magrittr::set_colnames(x = ., value = markers$MARKERS) %>%
-        tibble::add_column(.data = ., INDIVIDUALS = rownames(.), .before = 1) %>%
-        radiator::rad_long(
-          x = .,
-          cols = "INDIVIDUALS",
-          names_to = "MARKERS",
-          values_to = "GT_BIN"
-        ) %>%
-        dplyr::full_join(markers, by = "MARKERS") %>%
-        dplyr::full_join(strata, by =  "INDIVIDUALS") %>%
-        dplyr::mutate(
-          INDIVIDUALS = radiator::clean_ind_names(INDIVIDUALS),
-          POP_ID = radiator::clean_pop_names(POP_ID)
-        ) %>%
-        dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS) %>%
-        dplyr::select(dplyr::one_of(want))
-    ) %>%
+    tidy.data <- data.frame(data) %>%
+      magrittr::set_colnames(x = ., value = markers$MARKERS) %>%
+      tibble::add_column(.data = ., INDIVIDUALS = rownames(.), .before = 1) %>%
+      radiator::rad_long(
+        x = .,
+        cols = "INDIVIDUALS",
+        names_to = "MARKERS",
+        values_to = "GT_BIN"
+      ) %>%
+      dplyr::full_join(markers, by = "MARKERS") %>%
+      dplyr::full_join(strata, by =  "INDIVIDUALS") %>%
+      dplyr::mutate(
+        INDIVIDUALS = radiator::clean_ind_names(INDIVIDUALS),
+        POP_ID = radiator::clean_pop_names(POP_ID)
+      ) %>%
+      dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS) %>%
+      dplyr::select(tidyselect::any_of(want)) %>%
       radiator::calibrate_alleles(
         data = .,
         biallelic = TRUE,
@@ -306,8 +304,8 @@ write_genlight <- function(
 
   # Import data ---------------------------------------------------------------
   if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
-    # Check that SeqVarTools is installed (it requires automatically: SeqArray and gdsfmt)
-    radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
+    # Check that SeqArray is installed (it requires automatically: SeqArray and gdsfmt)
+    radiator_packages_dep(package = "SeqArray", cran = FALSE, bioc = TRUE)
 
     if (data.type == "gds.file") {
       data <- radiator::read_rad(data, verbose = verbose)
@@ -351,11 +349,9 @@ write_genlight <- function(
                 "REF", "ALT",
                 "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG",
                 "ONE_RATIO_REF", "ONE_RATIO_SNP")
-      suppressWarnings(
-        markers.meta <- data %>%
-          dplyr::select(dplyr::one_of(want)) %>%
-          dplyr::distinct(MARKERS, .keep_all = TRUE)
-      )
+      markers.meta <- data %>%
+        dplyr::select(tidyselect::any_of(want)) %>%
+        dplyr::distinct(MARKERS, .keep_all = TRUE)
     } else {
       data <- radiator::extract_individuals_metadata(
         gds = data, ind.field.select = c("INDIVIDUALS", "STRATA"), whitelist = TRUE) %>%
@@ -400,7 +396,7 @@ write_genlight <- function(
             if ("counts" %in% data.source) rep.avg <- markers.meta$REP_AVG
             not.wanted <- c("CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP",
                             "REP_AVG", "ONE_RATIO_REF", "ONE_RATIO_SNP")
-            markers.meta %<>% dplyr::select(-dplyr::one_of(not.wanted))
+            markers.meta %<>% dplyr::select(-tidyselect::any_of(not.wanted))
           }
 
           suppressWarnings(
@@ -460,11 +456,10 @@ write_genlight <- function(
               "REF", "ALT", "GT_VCF", "GT_BIN",
               "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG",
               "ONE_RATIO_REF", "ONE_RATIO_SNP")
-    data <- suppressWarnings(
-      radiator::tidy_wide(data = data, import.metadata = TRUE) %>%
-        dplyr::select(dplyr::one_of(want)) %>%
-        dplyr::arrange(POP_ID, INDIVIDUALS)
-    )
+    data %<>%
+      radiator::tidy_wide(data = ., import.metadata = TRUE) %>%
+      dplyr::select(tidyselect::any_of(want)) %>%
+      dplyr::arrange(POP_ID, INDIVIDUALS)
 
     # Detect if biallelic data ---------------------------------------------------
     if (is.null(biallelic)) biallelic <- radiator::detect_biallelic_markers(data)
@@ -473,16 +468,14 @@ write_genlight <- function(
               "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG",
               "ONE_RATIO_REF", "ONE_RATIO_SNP")
     data %<>% dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
-    markers.meta <- suppressWarnings(
-      dplyr::select(data, dplyr::one_of(want)) %>%
-        dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-        separate_markers(
-          data = .,
-          sep = "__",
-          markers.meta.all.only = TRUE,
-          biallelic = TRUE,
-          verbose = verbose)
-    )
+    markers.meta <- dplyr::select(data, tidyselect::any_of(want)) %>%
+      dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
+      separate_markers(
+        data = .,
+        sep = "__",
+        markers.meta.all.only = TRUE,
+        biallelic = TRUE,
+        verbose = verbose)
 
     if (!rlang::has_name(data, "GT_BIN") && rlang::has_name(data, "GT_VCF")) {
       data$GT_BIN <- stringi::stri_replace_all_fixed(

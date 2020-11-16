@@ -153,10 +153,8 @@ detect_het_outliers <- function(
     want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS", "POP_ID", "REF", "ALT", "GT", "GT_BIN")
     message("    using tidy data frame of genotypes as input")
     message("    skipping all filters except removal of monomorphic markers")
-    res$input <- suppressWarnings(
-      radiator::tidy_wide(data = data, import.metadata = TRUE) %>%
-        dplyr::select(dplyr::one_of(want))
-    )
+    res$input <- radiator::tidy_wide(data = data, import.metadata = TRUE) %>%
+        dplyr::select(tidyselect::any_of(want))
 
   # Keeping common markers -----------------------------------------------------
   res$input <- radiator::filter_common_markers(data = res$input, verbose = TRUE)
@@ -203,7 +201,7 @@ res$summary.alt.allele <-  dplyr::ungroup(res$outlier.summary$het.summary) %>%
   ) %>%
   tidyr::pivot_longer(
     data = .,
-    cols = everything(),
+    cols = tidyselect::everything(),
     names_to = "MARKERS",
     values_to = "NUMBERS"
   ) %>%
@@ -276,12 +274,12 @@ return(res)
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 summarise_genotypes <- function(data, path.folder = NULL) {
-  if(is.null(path.folder)) path.folder <- getwd()
+  if (is.null(path.folder)) path.folder <- getwd()
 
   # data.bk <- data
   # data <- data.bk
   want <- c("MARKERS", "POP_ID", "INDIVIDUALS", "GT_BIN", "READ_DEPTH")
-  data <- suppressWarnings(dplyr::select(data, dplyr::one_of(want)))
+  data %<>% dplyr::select(tidyselect::any_of(want))
 
   n.pop <- length(unique(data$POP_ID))
   if (is.factor(data$POP_ID)) {
@@ -354,7 +352,7 @@ summarise_genotypes <- function(data, path.folder = NULL) {
     pop,
     dplyr::mutate(pop, POP_ID = "OVERALL") %>%
       dplyr::group_by(MARKERS, POP_ID) %>%
-      dplyr::summarise(dplyr::across(.cols = everything(), .fns = sum))
+      dplyr::summarise(dplyr::across(.cols = tidyselect::everything(), .fns = sum))
     ) %>%
     dplyr::arrange(MARKERS, POP_ID)
   pop <- NULL

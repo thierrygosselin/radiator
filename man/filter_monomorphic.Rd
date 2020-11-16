@@ -62,7 +62,7 @@ their dataset.
 }
 \examples{
 \dontrun{
-require(SeqVarTools) # when using gds
+require(SeqArray) # when using gds
 mono <- radiator::filter_monomorphic(data = "my.radiator.gds.rad", verbose = TRUE)
 }
 }

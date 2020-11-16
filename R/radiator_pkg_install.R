@@ -21,7 +21,7 @@ radiator_pkg_install <- function(
     "adegenet", "BiocManager", "UpSetR",
     "ggtern", "HardyWeinberg",
     "knitr", "rmarkdown", "stringdist", "quantreg",
-    "gdsfmt", "SeqArray", "SeqVarTools", "SNPRelate",
+    "gdsfmt", "SeqArray", "SNPRelate",
     "radiator"
   )
 
@@ -69,8 +69,8 @@ radiator_pkg_install <- function(
 
     # BiocManager packages -----------------------------------------------------
     if ("BiocManager" %in% pm) utils::install.packages("BiocManager")
-    if (any(c("gdsfmt", "SeqArray", "SeqVarTools") %in% pm)) {
-      BiocManager::install("SeqVarTools")
+    if (any(c("gdsfmt", "SeqArray") %in% pm)) {
+      BiocManager::install("SeqArray")
     }
     if ("SNPRelate" %in% pm) BiocManager::install("SNPRelate")
 

@@ -133,7 +133,7 @@ detect_paralogs <- function(
   on.exit(rm(list = setdiff(ls(envir = sys.frame(-1L)), obj.keeper), envir = sys.frame(-1L)))
 
   # required package -----------------------------------------------------------
-  radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
+  radiator_packages_dep(package = "SeqArray", cran = FALSE, bioc = TRUE)
 
   # Function call and dotslist -------------------------------------------------
   rad.dots <- radiator_dots(

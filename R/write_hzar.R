@@ -123,7 +123,7 @@ write_hzar <- function(
     dplyr::select(-MARKERS) %>%
     rad_wide(x = ., formula = "MARKERS + POP_ID ~ GROUP", values_from = "VALUE", values_fill = 0)
     dplyr::left_join(distances, by = "POP_ID") %>%
-    dplyr::select(POP_ID, Distance, everything(.)) %>%
+    dplyr::select(POP_ID, Distance, tidyselect::everything(.)) %>%
     dplyr::rename(Population = POP_ID)
 
   data <- NULL

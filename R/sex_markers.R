@@ -328,7 +328,7 @@ sexy_markers <- function(data,
 
   # * GDS file and object --------------------------------------------------------
   if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
-    radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
+    radiator_packages_dep(package = "SeqArray", cran = FALSE, bioc = TRUE)
 
     if (data.type == "gds.file") {
       data <- radiator::read_rad(data, verbose = verbose)

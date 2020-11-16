@@ -36,14 +36,14 @@
 #' \strong{Wide format:}
 #' The wide format cannot store metadata info.
 #' The wide format starts with these 2 id columns:
-#' \code{INDIVIDUALS}, \code{POP_ID} (that refers to any grouping of individuals),
+#' \code{INDIVIDUALS}, \code{STRATA} (that refers to any grouping of individuals),
 #' the remaining columns are the markers in separate columns storing genotypes.
 #'
 #' \strong{Long/Tidy format:}
 #' The long format is considered to be a tidy data frame and can store metadata info.
 #' (e.g. from a VCF see \pkg{radiator} \code{\link{tidy_genomic_data}}).
 #' A minimum of 4 columns
-#' are required in the long format: \code{INDIVIDUALS}, \code{POP_ID},
+#' are required in the long format: \code{INDIVIDUALS}, \code{STRATA},
 #' \code{MARKERS} and \code{GT} for the genotypes.
 #' The remaining columns are considered metadata info.
 #'
@@ -57,13 +57,13 @@
 #' be removed.
 #'
 #'
-#' \strong{separators in POP_ID, INDIVIDUALS and MARKERS:}
+#' \strong{separators in STRATA, INDIVIDUALS and MARKERS:}
 #' Some separators can interfere with packages or codes and are cleaned by radiator.
 #' \itemize{
 #' \item MARKERS: \code{/}, \code{:}, \code{-} and \code{.} are changed to an
 #' underscore
 #' \code{_}.
-#' \item POP_ID: white spaces in population names are replaced by underscore.
+#' \item STRATA: white spaces in population names are replaced by underscore.
 #' \item INDIVIDUALS: \code{_} and \code{:} are changed to a dash \code{-}
 #' }
 #'
@@ -83,86 +83,47 @@ tidy_wide <- function(data, import.metadata = FALSE) {
     if (stringi::stri_detect_fixed(
       str = stringi::stri_sub(str = data, from = -4, to = -1),
       pattern = ".tsv")) {
-      data <- readr::read_tsv(file = data, col_types = readr::cols(.default = readr::col_character()))
+      data %<>% readr::read_tsv(file = ., col_types = readr::cols(.default = readr::col_character()))
     } else if (radiator::detect_genomic_format(data) == "fst.file") {
-      data <- radiator::read_rad(data = data)
+      data %<>% radiator::read_rad(data = .)
     }
   }
 
-  # STRATA vs POP_ID
-  if (!rlang::has_name(data, "POP_ID") && rlang::has_name(data, "STRATA")) data %<>% dplyr::rename(POP_ID = STRATA)
-
+  # No longer supported, remove POP_ID
+  strata %<>% dplyr::rename(STRATA = tidyselect::any_of("POP_ID"))
 
   # Determine long (tidy) or wide dataset
-  if (!"MARKERS" %in% colnames(data) && !"LOCUS" %in% colnames(data)) {
-    if (rlang::has_name(data, "POP_ID")) {
-      data %<>%
-        radiator::rad_long(
-          x = .,
-          cols = c("POP_ID", "INDIVIDUALS"),
-          names_to = "MARKERS",
-          values_to = "GT",
-          variable_factor = FALSE
-          )
-    } else {
-      data %<>%
-        radiator::rad_long(
-          x = .,
-          cols = "INDIVIDUALS",
-          names_to = "MARKERS",
-          values_to = "GT",
-          variable_factor = FALSE
-        )
-    }
-  }
-
-  # necessary steps to make sure we work with unique markers and not duplicated LOCUS
   if (rlang::has_name(data, "LOCUS") && !rlang::has_name(data, "MARKERS")) {
-    data <- dplyr::rename(.data = data, MARKERS = LOCUS)
+    data %<>% dplyr::rename(MARKERS = LOCUS)
   }
 
-  # reproducibility for old format
-  if (rlang::has_name(data, "GENOTYPE")) {
-    colnames(data) <- stringi::stri_replace_all_fixed(
-      str = colnames(data),
-      pattern = "GENOTYPE",
-      replacement = "GT",
-      vectorize_all = FALSE
-    )
+  if (!"MARKERS" %in% colnames(data) && !"LOCUS" %in% colnames(data)) {
+
+    grouping.cols <- "INDIVIDUALS"
+    if (rlang::has_name(data, "STRATA")) grouping.cols <- c("STRATA", "INDIVIDUALS")
+    data %<>%
+      radiator::rad_long(
+        x = .,
+        cols = grouping.cols,
+        names_to = "MARKERS",
+        values_to = "GT",
+        variable_factor = FALSE
+      )
   }
+
   if (!import.metadata) {
-    want <- c("POP_ID", "INDIVIDUALS", "MARKERS", "CHROM", "LOCUS", "POS", "GT",
+    want <- c("STRATA", "INDIVIDUALS", "MARKERS", "CHROM", "LOCUS", "POS", "GT",
               "GT_VCF_NUC", "GT_VCF", "GT_BIN")
-    data <- suppressWarnings(dplyr::select(data, dplyr::one_of(want)))
+    data %<>% dplyr::select(tidyselect::any_of(want))
   }
 
-  # Remove unwanted sep in the genotypes (if found)
-  if (rlang::has_name(data, "GT")) {
-    gt.sep <- unique(
-      stringi::stri_detect_fixed(
-        str = sample(x = data$GT, size = 5, replace = FALSE),
-        pattern = c("/", ":", "_", "-", ".")))
-    if (length(gt.sep) > 1) gt.sep <- TRUE
-    if (gt.sep) {
-      data <- data %>%
-        dplyr::mutate(
-          GT = stringi::stri_replace_all_fixed(
-            str = as.character(GT),
-            pattern = c("/", ":", "_", "-", "."),
-            replacement = "",
-            vectorize_all = FALSE),
-          GT = stringi::stri_pad_left(str = as.character(GT), pad = "0", width = 6))
-    }
-  }
+  # cleaning...
+  if (rlang::has_name(data, "MARKERS")) data$MARKERS %<>% clean_markers_names(.)
+  data$INDIVIDUALS %<>% clean_ind_names(.)
+  if (rlang::has_name(data, "STRATA")) data$STRATA %<>% clean_pop_names(.)
 
-  # clean markers names
-  if (rlang::has_name(data, "MARKERS")) {
-    data$MARKERS <- clean_markers_names(data$MARKERS)
-  }
-
-  data$INDIVIDUALS <- clean_ind_names(data$INDIVIDUALS)# clean id names
-  if (rlang::has_name(data, "POP_ID"))   data$POP_ID <- clean_pop_names(data$POP_ID)# clean pop id
-  data <- dplyr::ungroup(data) # Make sure no data groupings exists
+  # Make sure no data groupings exists
+  data %<>% dplyr::ungroup(.)
   return(data)
 }#End tidy_wide
 
@@ -183,46 +144,30 @@ tidy2wide <- function(
 ) {
   res <- list()
   if (is.null(markers) && !is.null(gds)) {
-    markers <- extract_markers_metadata(
+    markers <- radiator::extract_markers_metadata(
       gds = gds,
       markers.meta.select = "MARKERS",
       whitelist = TRUE
-    ) %$% MARKERS
+    ) %>%
+      dplyr::pull()
   }
   if (is.null(individuals) && !is.null(gds)) {
-    individuals <- extract_individuals_metadata(
+    individuals <- radiator::extract_individuals_metadata(
       gds = gds,
       ind.field.select = "INDIVIDUALS",
       whitelist = TRUE
-    ) %$% INDIVIDUALS
+    ) %>%
+      dplyr::pull()
   }
 
   n.markers <- length(markers)
   n.ind <- length(individuals)
 
-  res$data.tidy <- suppressWarnings(
-    tibble::as_tibble(
-      matrix(data = NA, nrow = n.markers, ncol = n.ind)
-    ) %>%
-      magrittr::set_colnames(x = ., value = individuals) %>%
-      magrittr::set_rownames(x = ., value = markers) %>%
-      radiator::rad_long(
-        x = .,
-        keep_rownames = "MARKERS",
-        cols = "MARKERS",
-        names_to = "INDIVIDUALS",
-        values_to = "GT",
-        variable_factor = FALSE
-      ) %>%
-      dplyr::select(-GT) %>%
-      dplyr::mutate(
-        MARKERS = factor(x = MARKERS,
-                         levels = markers, ordered = TRUE),
-        INDIVIDUALS = factor(x = INDIVIDUALS,
-                             levels = individuals,
-                             ordered = TRUE)) %>%
-      dplyr::arrange(MARKERS, INDIVIDUALS) %>%
-      dplyr::bind_cols(x)
+
+  # sample and markers in long format...
+  res$data.tidy <- tibble::tibble(
+    INDIVIDUALS = rep(individuals, n.markers),
+    MARKERS = sort(rep(markers, n.ind)),
   )
 
   if (wide) {
@@ -385,7 +330,7 @@ tidy2wide <- function(
 #'
 #'
 #' # using VCF file as input
-#' require(SeqVarTools)
+#' require(SeqArray)
 #' tidy.vcf <- tidy_genomic_data(
 #'    data = "populations.snps.vcf", strata = "strata.treefrog.tsv",
 #'    whitelist.markers = "whitelist.vcf.txt")
@@ -427,16 +372,7 @@ tidy_genomic_data <- function(
                 "whitelist.markers", "filter.common.markers",
                 "filter.monomorphic", "vcf.metadata", "vcf.stats",
                 "blacklist.genotypes", "internal"),
-    deprecated = c("maf.thresholds", "common.markers",
-                   "max.marker","monomorphic.out", "snp.ld", "filter.call.rate",
-                   "filter.markers.coverage", "filter.markers.missing",
-                   "number.snp.reads",
-                   "mixed.genomes.analysis", "duplicate.genomes.analysis",
-                   "maf.data",
-                   "hierarchical.levels", "imputation.method",
-                   "pred.mean.matching", "num.tree",
-                   "pop.levels", "pop.labels", "pop.select"
-    ),    verbose = FALSE
+    verbose = FALSE
   )
 
   # Checking for missing and/or default arguments ------------------------------
@@ -466,10 +402,10 @@ tidy_genomic_data <- function(
   data.type <- radiator::detect_genomic_format(data)
 
   # Import whitelist of markers-------------------------------------------------
-  whitelist.markers <- read_whitelist(whitelist.markers, verbose)
+  whitelist.markers %<>% read_whitelist(whitelist.markers = ., verbose)
 
   # Import blacklist id --------------------------------------------------------
-  blacklist.id <- read_blacklist_id(blacklist.id, verbose)
+  blacklist.id %<>% read_blacklist_id(blacklist.id = ., verbose)
 
   # Strata----------------------------------------------------------------------
   strata.df <- read_strata(
@@ -483,12 +419,10 @@ tidy_genomic_data <- function(
 
   # GDS file -------------------------------------------------------------------
   if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
-    radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
+    radiator_packages_dep(package = "SeqArray", cran = FALSE, bioc = TRUE)
 
-    if (data.type == "gds.file") {
-      data <- radiator::read_rad(data, verbose = verbose)
-    }
-    data <- gds2tidy(gds = data, parallel.core = parallel.core)
+    if (data.type == "gds.file") data %<>% radiator::read_rad(data = ., verbose = verbose)
+    data %<>% gds2tidy(gds = ., parallel.core = parallel.core)
     data.type <- "tbl_df"
   }
   # Import VCF------------------------------------------------------------------
@@ -586,11 +520,11 @@ tidy_genomic_data <- function(
     colnames(input) <- stringi::stri_replace_all_fixed(
       str = colnames(input),
       pattern = c("# Catalog ID", "Catalog ID", "# Catalog Locus ID", "Catalog.ID"),
-      replacement = c("LOCUS", "LOCUS", "LOCUS", "LOCUS"), vectorize_all = FALSE)
+      replacement = c("LOCUS", "LOCUS", "LOCUS", "LOCUS"),
+      vectorize_all = FALSE
+      )
 
-    if (rlang::has_name(input, "Seg Dist")) {
-      input <- dplyr::select(.data = input, -`Seg Dist`)
-    }
+    if (rlang::has_name(input, "Seg Dist")) input %<>% dplyr::select(-`Seg Dist`)
 
     n.catalog.locus <- dplyr::n_distinct(input$LOCUS)
     n.individuals <- ncol(input) - 1
@@ -607,12 +541,12 @@ tidy_genomic_data <- function(
         variable_factor = FALSE
       )
 
-    input$INDIVIDUALS <- radiator::clean_ind_names(input$INDIVIDUALS)
+    input$INDIVIDUALS %<>% radiator::clean_ind_names(.)
 
     # Filter with whitelist of markers
     if (!is.null(whitelist.markers)) {
-      input <- filter_whitelist(
-        data = input, whitelist.markers = whitelist.markers)
+      input %<>%
+        filter_whitelist(data = ., whitelist.markers = whitelist.markers)
     }
 
     # remove consensus markers
@@ -632,14 +566,6 @@ tidy_genomic_data <- function(
       input %<>% join_strata(strata = strata.df)
       check.ref <- TRUE
     }
-    # # using pop.levels and pop.labels info if present
-    # input <- change_pop_names(data = input, pop.levels = pop.levels, pop.labels = pop.labels)
-
-    # # Pop select
-    # if (!is.null(pop.select)) {
-    #   if (verbose) message(stringi::stri_join(length(pop.select), "population(s) selected", sep = " "))
-    #   input <- suppressWarnings(input %>% dplyr::filter(POP_ID %in% pop.select))
-    # }
 
     # removing errors and potential paralogs (GT with > 2 alleles)
     if (verbose) message("Scanning for artifactual genotypes...")
@@ -716,19 +642,9 @@ tidy_genomic_data <- function(
                                    keep.allele.names = keep.allele.names)
     data <- NULL
     # remove unwanted sep in id and pop.id names
-    input <- input %>%
-      dplyr::mutate(
-        dplyr::across(
-          .cols = "INDIVIDUALS",
-          .fns = clean_ind_names
-        )
-      ) %>%
-      dplyr::mutate(
-        dplyr::across(
-          .cols = "POP_ID",
-          .fns = clean_pop_names
-        )
-      )
+    input %<>%
+      dplyr::mutate(dplyr::across(.cols = "INDIVIDUALS", .fns = clean_ind_names)) %>%
+      dplyr::mutate(dplyr::across(.cols = "STRATA", .fns = clean_pop_names))
     skip.tidy.wide <- TRUE
   } # End tidy genind
 
@@ -738,19 +654,9 @@ tidy_genomic_data <- function(
     input <- radiator::tidy_genlight(data = data, gds = FALSE)
     data <- NULL
     # remove unwanted sep in id and pop.id names
-    input <- input %>%
-      dplyr::mutate(
-        dplyr::across(
-          .cols = "INDIVIDUALS",
-          .fns = clean_ind_names
-        )
-      ) %>%
-      dplyr::mutate(
-        dplyr::across(
-          .cols = "POP_ID",
-          .fns = clean_pop_names
-        )
-      )
+    input %<>%
+      dplyr::mutate(dplyr::across(.cols = "INDIVIDUALS", .fns = clean_ind_names)) %>%
+      dplyr::mutate(dplyr::across(.cols = "STRATA", .fns = clean_pop_names))
     biallelic <- TRUE
     skip.tidy.wide <- TRUE
   } # End tidy genlight
@@ -759,18 +665,8 @@ tidy_genomic_data <- function(
   if (data.type == "gtypes") { # DATA FRAME OF GENOTYPES
     if (verbose) message("Tidying the gtypes object ...")
     input <- tidy_gtypes(data) %>%
-      dplyr::mutate(
-        dplyr::across(
-          .cols = "INDIVIDUALS",
-          .fns = clean_ind_names
-        )
-      ) %>%
-      dplyr::mutate(
-        dplyr::across(
-          .cols = "POP_ID",
-          .fns = clean_pop_names
-        )
-      )
+      dplyr::mutate(dplyr::across(.cols = "INDIVIDUALS", .fns = clean_ind_names)) %>%
+      dplyr::mutate(dplyr::across(.cols = "STRATA", .fns = clean_pop_names))
     data <- NULL
     skip.tidy.wide <- TRUE
   } # End tidy gtypes
@@ -792,8 +688,7 @@ tidy_genomic_data <- function(
     }
 
     if (!is.null(whitelist.markers)) {
-      input <- filter_whitelist(
-        data = input, whitelist.markers = whitelist.markers)
+      input %<>% filter_whitelist(data = ., whitelist.markers = whitelist.markers)
     }
 
     # Filter with blacklist of individuals
@@ -832,7 +727,7 @@ tidy_genomic_data <- function(
 
   # strata integration ---------------------------------------------------------
   if (!is.null(strata)) {
-    strata.df <-generate_strata(input, pop.id = TRUE)
+    strata.df <- generate_strata(input, pop.id = TRUE)
   } else {
     filter.common.markers <- FALSE # by default
   }
@@ -841,27 +736,17 @@ tidy_genomic_data <- function(
   if (is.null(blacklist.genotypes)) { # no Whitelist
     if (verbose) message("Erasing genotype: no")
   } else {
-    input <- filter_blacklist_genotypes(
-      data = input,
-      blacklist.genotypes = blacklist.genotypes,
-      verbose = verbose)
+    input %<>%
+      filter_blacklist_genotypes(
+        data = .,
+        blacklist.genotypes = blacklist.genotypes,
+        verbose = verbose
+        )
   } # End erase genotypes
 
   # dump unused object
   blacklist.id <- whitelist.markers <- whitelist.markers.ind <- NULL
   want <- blacklist.genotypes <- NULL
-
-
-  # Unique markers id ----------------------------------------------------------
-  # we want to keep LOCUS in the vcf, but not in the other type of input file
-  # if (rlang::has_name(input, "LOCUS") && !rlang::has_name(input, "MARKERS")) {
-  #   colnames(input) <- stringi::stri_replace_all_fixed(
-  #     str = colnames(input),
-  #     pattern = "LOCUS",
-  #     replacement = "MARKERS",
-  #     vectorize_all = FALSE
-  #   )
-  # }
 
   # radiator_parameters-----------------------------------------------------------
   filters.parameters <- radiator_parameters(
@@ -896,7 +781,7 @@ tidy_genomic_data <- function(
 
   # Results --------------------------------------------------------------------
   if (!is.null(strata)) {
-    input %<>% dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS)
+    input %<>% dplyr::arrange(STRATA, INDIVIDUALS, MARKERS)
   } else {
     input %<>% dplyr::arrange(INDIVIDUALS, MARKERS)
   }
@@ -914,7 +799,7 @@ tidy_genomic_data <- function(
     n.chromosome <- "no chromosome info"
   }
   n.individuals <- length(unique(input$INDIVIDUALS))
-  if (!is.null(strata)) n.pop <- length(unique(input$POP_ID))
+  if (!is.null(strata)) n.pop <- length(unique(input$STRATA))
 
   if (verbose) {
     cat("################################### RESULTS ####################################\n")

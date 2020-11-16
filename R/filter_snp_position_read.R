@@ -151,7 +151,7 @@ filter_snp_position_read <- function(
 
 
     if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
-      radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
+      radiator_packages_dep(package = "SeqArray", cran = FALSE, bioc = TRUE)
 
       if (data.type == "gds.file") {
         data <- radiator::read_rad(data, verbose = verbose)
@@ -186,7 +186,7 @@ filter_snp_position_read <- function(
       }
       if (!is.numeric(wl$COL)) wl$COL <- as.numeric(wl$COL)
     } else {
-      wl <- bl <- dplyr::select(data, dplyr::one_of(want))
+      wl <- bl <- dplyr::select(data, tidyselect::any_of(want))
     }
 
     # Check that required info is present in data: snp and locus----------------

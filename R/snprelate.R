@@ -93,14 +93,14 @@ write_snprelate <- function(data, biallelic = TRUE, filename = NULL, verbose = T
   n.markers <- nrow(markers.meta)
 
   notwanted <- c("MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF", "ALT")
-  suppressWarnings(data %<>% dplyr::select(-dplyr::one_of(notwanted)))
+  data %<>% dplyr::select(-tidyselect::any_of(notwanted))
 
   # genotypes metadata
   want <- c("ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH", "READ_DEPTH", "GL_HOM_REF",
             "GL_HET", "GL_HOM_ALT", "GQ", "DP", "AD", "GL", "PL", "GQ", "HQ", "GOF", "NR", "NV")
   if (TRUE %in% rlang::has_name(data, want)) {
-    genotypes.meta <- suppressWarnings(data %>% dplyr::select(dplyr::one_of(want)))
-    suppressWarnings(data %<>% dplyr::select(-dplyr::one_of(want)))
+    genotypes.meta <- data %>% dplyr::select(tidyselect::any_of(want))
+    data %<>% dplyr::select(-tidyselect::any_of(want))
   } else {
     genotypes.meta <- NULL
   }

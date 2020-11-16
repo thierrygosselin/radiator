@@ -361,7 +361,7 @@ filter_maf <- function(
     if (skip.import) {
       want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS", "POP_ID", "REF", "ALT", "GT", "GT_VCF", "GT_VCF_NUC", "GT_BIN")
       if (data.type == "tbl_df") {
-        input <- suppressWarnings(dplyr::select(data, dplyr::one_of(want)))
+        input <- dplyr::select(data, tidyselect::any_of(want))
       }
       if (data.type == "fst.file") {
         import.col <- colnames(fst::read.fst(path = data, from = 1, to = 1))
@@ -391,11 +391,10 @@ filter_maf <- function(
     data <- NULL
 
     # keeping markers meta -------------------------------------------------------
-    markers.meta <- suppressWarnings(
-      dplyr::select(input, dplyr::one_of(c("MARKERS", "CHROM", "LOCUS", "POS"))) %>%
+    markers.meta <- input %>%
+      dplyr::select(tidyselect::any_of(c("MARKERS", "CHROM", "LOCUS", "POS"))) %>%
         dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
         dplyr::mutate(dplyr::across(everything(), .fns = as.character))
-    )
 
     # strata ---------------------------------------------------------------------
     strata.df <- input %>%
@@ -568,7 +567,7 @@ filter_maf <- function(
         dplyr::filter(POP_ID != "TOTAL/GLOBAL") %>%
         dplyr::summarise_if(.tbl = ., .predicate = is.numeric, .funs = min ) %>%
         dplyr::mutate(POP_ID = "MIN_LOCAL", n = NA) %>%
-        dplyr::select(POP_ID, n, everything())
+        dplyr::select(POP_ID, n, tidyselect::everything())
 
       sort.pop <- c(levels(input$POP_ID), "MIN_LOCAL", "TOTAL/GLOBAL")
 
@@ -742,15 +741,10 @@ because LOCUS and POS (SNP) info is not available")
 
       if (ncol(markers.meta) > 1) {
         markers.meta.col <- colnames(markers.meta)
-        # maf.data.thresholds <- suppressWarnings(
-        #   maf.data.thresholds %>%
-        #     dplyr::left_join(markers.meta, by = "MARKERS") %>%
-        #     dplyr::select(dplyr::one_of(markers.meta.col), everything(.)))
 
-        maf.data <- suppressWarnings(
-          maf.data %>%
+        maf.data %<>%
             dplyr::left_join(markers.meta, by = "MARKERS") %>%
-            dplyr::select(dplyr::one_of(markers.meta.col), everything(.)))
+            dplyr::select(tidyselect::any_of(markers.meta.col), tidyselect::everything(.))
       }
 
       readr::write_tsv(
@@ -934,11 +928,11 @@ because LOCUS and POS (SNP) info is not available")
     if (tibble::has_name(filter, "CHROM")) {
       whitelist.markers <- dplyr::ungroup(filter) %>%
         dplyr::distinct(CHROM, LOCUS, POS) %>%
-        dplyr::mutate(dplyr::across(everything(), .fns = as.character))
+        dplyr::mutate(dplyr::across(tidyselect::everything(), .fns = as.character))
     } else {
       whitelist.markers <- dplyr::ungroup(filter) %>%
         dplyr::distinct(MARKERS) %>%
-        dplyr::mutate(dplyr::across(everything(), .fns = as.character))
+        dplyr::mutate(dplyr::across(tidyselect::everything(), .fns = as.character))
     }
     readr::write_tsv(whitelist.markers, file.path(path.folder, "whitelist.markers.maf.tsv"), append = FALSE, col_names = TRUE)
 

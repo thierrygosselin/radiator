@@ -35,7 +35,7 @@
 
 #' @examples
 #' \dontrun{
-#' require(SeqVarTools) # when using gds
+#' require(SeqArray) # when using gds
 #' mono <- radiator::filter_monomorphic(data = "my.radiator.gds.rad", verbose = TRUE)
 #' }
 
@@ -118,7 +118,7 @@ filter_monomorphic <- function(
 
     # GDS
     if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
-      radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
+      radiator_packages_dep(package = "SeqArray", cran = FALSE, bioc = TRUE)
 
       if (data.type == "gds.file") {
         data <- radiator::read_rad(data, verbose = verbose)
@@ -146,13 +146,9 @@ filter_monomorphic <- function(
 
       if (n.markers.removed > 0) {
         n.markers.after <- n.markers.before - n.markers.removed
-        # suppressWarnings(bl <- wl %>% dplyr::filter(VARIANT_ID %in% bl) %>%
-        #                    dplyr::select(dplyr::one_of(want)))
         markers.meta %<>%
           dplyr::mutate(
-            FILTERS = dplyr::if_else(
-              VARIANT_ID %in% bl, "filter.monomorphic", FILTERS
-            )
+            FILTERS = dplyr::if_else(VARIANT_ID %in% bl, "filter.monomorphic", FILTERS)
           )
 
         write_rad(

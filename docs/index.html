@@ -95,21 +95,21 @@
 <h2 class="hasAnchor">
 <a href="#installation" class="anchor"></a>Installation</h2>
 <p>To try out the dev version of <strong>radiator</strong>, copy/paste the code below:</p>
-<div class="sourceCode" id="cb1"><pre class="downlit">
-<span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="kw"><a href="https://rdrr.io/r/base/library.html">require</a></span><span class="op">(</span><span class="st"><a href="https://devtools.r-lib.org/">"devtools"</a></span><span class="op">)</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span><span class="op">(</span><span class="st">"devtools"</span><span class="op">)</span>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="kw"><a href="https://rdrr.io/r/base/library.html">require</a></span><span class="op">(</span><span class="st"><a href="https://devtools.r-lib.org/">"devtools"</a></span><span class="op">)</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span><span class="op">(</span><span class="st">"devtools"</span><span class="op">)</span>
 <span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org//reference/remote-reexports.html">install_github</a></span><span class="op">(</span><span class="st">"thierrygosselin/radiator"</span><span class="op">)</span>
-<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://thierrygosselin.github.io/radiator/">radiator</a></span><span class="op">)</span></pre></div>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://thierrygosselin.github.io/radiator/">radiator</a></span><span class="op">)</span></code></pre></div>
 <p><strong>Note</strong></p>
 <p>Some Windows OS and Linux OS recently experienced some problems during installations, linked to CRAN &amp; Bioconductor tango problems:</p>
 <ul>
 <li><p>If you’re experiencing problems with radiator installation see <a href="https://thierrygosselin.github.io/radiator/articles/rad_genomics_computer_setup.html">troubleshooting section</a> and try the lines below.</p></li>
 <li><p>Verify that installing <strong>radiator</strong> also installed the <a href="https://www.bioconductor.org/packages/release/bioc/html/SeqArray.html">Bioconductor</a> packages: <code>gdsfmt</code> and <a href="https://github.com/zhengxwen/SeqArray">SeqArray</a> with version &gt;= 1.28.1.</p></li>
 </ul>
-<!-- end list --><div class="sourceCode" id="cb2"><pre class="downlit">
-<span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/sessioninfo/man/package_info.html">package_info</a></span><span class="op">(</span>pkgs <span class="op">=</span> <span class="st">"SeqArray"</span><span class="op">)</span> <span class="co"># to verify version</span>
+<!-- end list --><div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/sessioninfo/man/package_info.html">package_info</a></span><span class="op">(</span>pkgs <span class="op">=</span> <span class="st">"SeqArray"</span><span class="op">)</span> <span class="co"># to verify version</span>
 
 <span class="co"># If manually installing SeqArray is necessary</span>
-<span class="fu">BiocManager</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/BiocManager/man/install.html">install</a></span><span class="op">(</span><span class="st">"SeqArray"</span><span class="op">)</span></pre></div>
+<span class="fu">BiocManager</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/BiocManager/man/install.html">install</a></span><span class="op">(</span><span class="st">"SeqArray"</span><span class="op">)</span></code></pre></div>
 <p>Web site with additional info: <a href="https://thierrygosselin.github.io/radiator/" class="uri">https://thierrygosselin.github.io/radiator/</a></p>
 <ul>
 <li><a href="https://thierrygosselin.github.io/radiator/articles/rad_genomics_computer_setup.html">Computer setup and troubleshooting</a></li>
@@ -174,7 +174,7 @@
 <li><a href="http://www.repostatus.org/#active"><img src="http://www.repostatus.org/badges/latest/active.svg" alt="Project Status: Active – The project has reached a stable, usable state and is being actively developed."></a></li>
 <li><a href="https://cran.r-project.org/"><img src="https://img.shields.io/badge/R%3E%3D-3.5.0-6666ff.svg" alt="minimal R version"></a></li>
 <li><a href="commits/master"><img src="https://img.shields.io/badge/Package%20version-1.1.8-orange.svg" alt="packageversion"></a></li>
-<li><a href="/commits/master"><img src="https://img.shields.io/badge/last%20change-2020--11--03-brightgreen.svg" alt="Last-changedate"></a></li>
+<li><a href="/commits/master"><img src="https://img.shields.io/badge/last%20change-2020--11--16-brightgreen.svg" alt="Last-changedate"></a></li>
 <li><a href="https://github.com/thierrygosselin/radiator/actions"><img src="https://github.com/thierrygosselin/radiator/workflows/R-CMD-check/badge.svg" alt="R-CMD-check"></a></li>
 <li><a href="https://doi.org/10.5281/zenodo.3687060"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.3687060.svg" alt="DOI"></a></li>
 </ul>

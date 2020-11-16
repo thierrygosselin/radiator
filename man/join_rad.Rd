@@ -18,5 +18,5 @@ join_rad(x, s, m, g, env.arg = NULL)
 \item{env.arg}{You want to redirect \code{rlang::current_env()} to this argument.}
 }
 \description{
-Join  back the parts stripped in strip_rad. Used internally.
+Join back the parts stripped in strip_rad. Used internally.
 }

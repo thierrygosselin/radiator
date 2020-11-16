@@ -314,9 +314,10 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
   } else {
     if (rlang::has_name(data, "STRATA")) data %<>% dplyr::rename(POP_ID = STRATA)
     want <- c("MARKERS", "POP_ID", "INDIVIDUALS", "REF", "ALT", "GT", "GT_BIN")
-    data <- suppressWarnings(radiator::tidy_wide(data = data, import.metadata = TRUE) %>%
-                               dplyr::select(dplyr::one_of(want)) %>%
-                               dplyr::arrange(POP_ID, INDIVIDUALS))
+    data %<>%
+      radiator::tidy_wide(data = ., import.metadata = TRUE) %>%
+      dplyr::select(tidyselect::any_of(want)) %>%
+      dplyr::arrange(POP_ID, INDIVIDUALS)
   }
 
 

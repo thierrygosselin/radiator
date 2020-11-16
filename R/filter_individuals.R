@@ -196,7 +196,7 @@ filter_individuals <- function(
       data <- radiator::read_rad(data, verbose = verbose)
       data.type <- "SeqVarGDSClass"
     }
-    radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
+    radiator_packages_dep(package = "SeqArray", cran = FALSE, bioc = TRUE)
 
     # Filter parameter file: generate and initiate -----------------------------
     filters.parameters <- radiator_parameters(

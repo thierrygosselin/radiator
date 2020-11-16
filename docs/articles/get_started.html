@@ -89,7 +89,7 @@
       <h1 data-toc-skip>Get Started</h1>
                         <h4 class="author">Thierry Gosselin</h4>
             
-            <h4 class="date">2020-11-03</h4>
+            <h4 class="date">2020-11-16</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/thierrygosselin/radiator/blob/master/vignettes/get_started.Rmd"><code>vignettes/get_started.Rmd</code></a></small>
       <div class="hidden name"><code>get_started.Rmd</code></div>
@@ -113,9 +113,9 @@
 <li>DArT users: the strata requires 3 columns and is described in <code>??radiator::readr_dart</code> <a href="https://www.dropbox.com/s/utq2h6o00v55kep/example.dart.strata.tsv?dl=0">example.dart.strata.tsv</a>.</li>
 </ul>
 <p>To make sure it’s going to work properly, try:</p>
-<div class="sourceCode" id="cb1"><pre class="downlit">
-<span class="fu">radiator</span><span class="fu">::</span><span class="fu"><a href="../reference/summary_strata.html">summary_strata</a></span><span class="op">(</span><span class="st">"my.strata.tsv"</span><span class="op">)</span>
-<span class="co"># more details in with `??radiator::summary_strata`</span></pre></div>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu">radiator</span><span class="fu">::</span><span class="fu"><a href="../reference/summary_strata.html">summary_strata</a></span><span class="op">(</span><span class="st">"my.strata.tsv"</span><span class="op">)</span>
+<span class="co"># more details in with `??radiator::summary_strata`</span></code></pre></div>
 </div>
 <div id="filter-your-radseq-data" class="section level2">
 <h2 class="hasAnchor">
@@ -127,12 +127,12 @@
 <li>The function is made of filtering modules that user’s can also access separately or in combination.</li>
 <li>For 95% of users, <code>filter_rad</code> will be enough to start exploring the biology!</li>
 </ul>
-<div class="sourceCode" id="cb2"><pre class="downlit">
-<span class="va">data</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu"><a href="../reference/filter_rad.html">filter_rad</a></span><span class="op">(</span>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu"><a href="../reference/filter_rad.html">filter_rad</a></span><span class="op">(</span>
     data <span class="op">=</span> <span class="st">"my.vcf"</span>,
     strata <span class="op">=</span> <span class="st">"my.strata.tsv"</span>, 
     output <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"genind"</span>, <span class="st">"stockr"</span><span class="op">)</span>
-    <span class="op">)</span></pre></div>
+    <span class="op">)</span></code></pre></div>
 <p><strong>To cite radiator</strong>, inside R type <code><a href="https://rdrr.io/r/utils/citation.html">citation("radiator")</a></code></p>
 </div>
 </div>

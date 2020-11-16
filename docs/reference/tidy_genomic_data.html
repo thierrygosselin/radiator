@@ -291,7 +291,7 @@ Documented in <code><a href='filter_monomorphic.html'>filter_monomorphic</a></co
 
 
 <span class='co'># using VCF file as input</span>
-<span class='kw'><a href='https://rdrr.io/r/base/library.html'>require</a></span><span class='op'>(</span><span class='va'><a href='https://github.com/smgogarten/SeqVarTools'>SeqVarTools</a></span><span class='op'>)</span>
+<span class='kw'><a href='https://rdrr.io/r/base/library.html'>require</a></span><span class='op'>(</span><span class='va'><a href='http://github.com/zhengxwen/SeqArray'>SeqArray</a></span><span class='op'>)</span>
 <span class='va'>tidy.vcf</span> <span class='op'>&lt;-</span> <span class='fu'>tidy_genomic_data</span><span class='op'>(</span>
    data <span class='op'>=</span> <span class='st'>"populations.snps.vcf"</span>, strata <span class='op'>=</span> <span class='st'>"strata.treefrog.tsv"</span>,
    whitelist.markers <span class='op'>=</span> <span class='st'>"whitelist.vcf.txt"</span><span class='op'>)</span>

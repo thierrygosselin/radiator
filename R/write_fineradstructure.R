@@ -137,9 +137,9 @@ write_fineradstructure <- function(data, strata = NULL, filename = NULL) {
   message("File written: ", dic.filename)
 
   want <- c("LOCUS", "MARKERS", "INDIVIDUALS", "GT_VCF_NUC")
-  data <- suppressWarnings(
-    dplyr::select(data, dplyr::one_of(want)) %>%
-      dplyr::left_join(dplyr::select(dictionary, ID, INDIVIDUALS), by = "INDIVIDUALS")) %>%
+  data %<>%
+    dplyr::select(tidyselect::any_of(want)) %>%
+    dplyr::left_join(dplyr::select(dictionary, ID, INDIVIDUALS), by = "INDIVIDUALS") %>%
     dplyr::mutate(
       INDIVIDUALS = NULL,
       GT_VCF_NUC = replace(x = GT_VCF_NUC, which(GT_VCF_NUC == "./."), NA)

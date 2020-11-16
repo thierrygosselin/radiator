@@ -46,7 +46,7 @@ detect_biallelic_markers <- function(data, verbose = FALSE, parallel.core = para
   }
 
   if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
-    radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
+    radiator_packages_dep(package = "SeqArray", cran = FALSE, bioc = TRUE)
 
 
     if (data.type == "gds.file") {

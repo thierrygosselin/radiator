@@ -229,12 +229,10 @@ detect_duplicate_genomes <- function(
     opt.change <- getOption("width")
     options(width = 70)
     timing <- radiator_tic()
-    #back to the original directory and options
     on.exit(setwd(old.dir), add = TRUE)
     on.exit(options(width = opt.change), add = TRUE)
-    on.exit(radiator_toc(timing), add = TRUE)
+    on.exit(radiator_toc(timing, verbose = verbose), add = TRUE)
     on.exit(radiator_function_header(f.name = "detect_duplicate_genomes", start = FALSE, verbose = verbose), add = TRUE)
-    # on.exit(rm(list = setdiff(ls(envir = sys.frame(-1L)), obj.keeper), envir = sys.frame(-1L)))
     res <- list() # New list to prepare for results
 
     # Function call and dotslist -------------------------------------------------
@@ -244,19 +242,6 @@ detect_duplicate_genomes <- function(
       args.list = as.list(environment()),
       dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
       keepers = c("path.folder", "parameters", "random.seed", "internal"),
-      deprecated = c(
-        "maf.thresholds",
-        "common.markers",
-        "max.marker",
-        "monomorphic.out",
-        "snp.ld",
-        "filter.call.rate",
-        "filter.markers.coverage",
-        "filter.markers.missing",
-        "number.snp.reads",
-        "mixed.genomes.analysis",
-        "duplicate.genomes.analysis",
-        "subsample.markers"),
       verbose = FALSE
     )
 
@@ -319,7 +304,7 @@ detect_duplicate_genomes <- function(
       }
 
       want <- c("MARKERS", "CHROM", "LOCUS", "POS", "POP_ID", "INDIVIDUALS", gt.field)#, "REF", "ALT")
-      data <- suppressWarnings(dplyr::select(data, dplyr::one_of(want)))
+      data %<>% dplyr::select(tidyselect::any_of(want))
 
       # necessary steps to make sure we work with unique markers and not duplicated LOCUS
       if (rlang::has_name(data, "LOCUS") && !rlang::has_name(data, "MARKERS")) {
@@ -430,7 +415,7 @@ detect_duplicate_genomes <- function(
         data.type <- "SeqVarGDSClass"
       }
 
-      radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
+      radiator_packages_dep(package = "SeqArray", cran = FALSE, bioc = TRUE)
 
 
       # Filter parameter file: generate and initiate

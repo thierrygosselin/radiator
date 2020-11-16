@@ -12,6 +12,7 @@ gds2tidy(
   individuals = NULL,
   pop.id = TRUE,
   calibrate.alleles = TRUE,
+  strip.rad = FALSE,
   parallel.core = parallel::detectCores() - 1,
   ...
 )

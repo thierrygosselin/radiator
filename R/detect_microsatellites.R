@@ -185,7 +185,7 @@ detect_microsatellites <- function(data, gmata.dir = NULL, ...) {
 
   whitelist <- data
   data %>%
-    dplyr::select(dplyr::one_of(want)) %>%
+    dplyr::select(tidyselect::any_of(want)) %>%
     dplyr::mutate(
       MARKERS = stringi::stri_join(">", MARKERS),
       ID = seq(from = 1, to = n(), by = 1)

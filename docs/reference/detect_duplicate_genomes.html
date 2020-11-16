@@ -199,7 +199,7 @@ Default: <code>detect.duplicate.genomes = TRUE</code>.</p></td>
 are used (give similar results):</p><ul>
 <li><p>gds data The calculation is fast it's <code><a href='https://rdrr.io/pkg/SNPRelate/man/snpgdsIBS.html'>SNPRelate::snpgdsIBS</a></code> under
 the hood.</p></li>
-<li><p>tidy data The distance measure uses <code><a href='https://rdrr.io/pkg/amap/man/dist.html'>amap::Dist</a></code>.
+<li><p>tidy data The distance measure uses <code>amap::Dist</code>.
 This must be one of "euclidean", "maximum", "manhattan", "canberra", "binary".</p></li>
 </ul><p>Using <code>distance.method = NULL</code> will not run this method.
 Default: <code>distance.method = "manhattan"</code>. This is very fast

@@ -1,11 +1,11 @@
 # replace_by_na ----------------------------------------------------------------
 #' @title replace_by_na
-#' @description Fast removal of NA
+#' @description Fast replacement of values by NA
 #' @rdname replace_by_na
 #' @keywords internal
 #' @export
 replace_by_na <- function(data, what = ".") {
-  replace(data, which(data == what), NA)
+  data  %<>% dplyr::na_if(x = ., y = what)
 }#End replace_by_na
 
 # distance2tibble---------------------------------------------------------------
@@ -216,8 +216,9 @@ separate_markers <- function(
 
   if (markers.meta.lists.only) {
     want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS")
-    suppressWarnings(data %<>% dplyr::select(dplyr::one_of(want)) %>%
-                       dplyr::distinct(MARKERS, .keep_all = TRUE))
+    data %<>%
+      dplyr::select(tidyselect::any_of(want)) %>%
+      dplyr::distinct(MARKERS, .keep_all = TRUE)
     generate.ref.alt <- FALSE
     generate.markers.metadata <- FALSE
   }
@@ -225,12 +226,9 @@ separate_markers <- function(
   if (markers.meta.all.only) {
     notwanted <- c("GT_BIN", "GT", "GT_VCF", "GT_VCF_NUC", "DP", "AD", "GL",
                    "PL", "GQ", "HQ", "GOF", "NR", "NV", "CATG")
-    # want <- c("FILTERS", "VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS",
-    #           "COL", "REF", "ALT", "CALL_RATE", "AVG_COUNT_REF",
-    #           "AVG_COUNT_SNP", "REP_AVG", "ONE_RATIO_REF", "ONE_RATIO_SNP",
-    #           "SEQUENCE")
-    suppressWarnings(data %<>% dplyr::select(-dplyr::one_of(notwanted)) %>%
-                       dplyr::distinct(MARKERS, .keep_all = TRUE))
+    data %<>%
+      dplyr::select(-tidyselect::any_of(notwanted)) %>%
+      dplyr::distinct(MARKERS, .keep_all = TRUE)
     generate.markers.metadata <- generate.ref.alt <- TRUE
   }
 
@@ -255,22 +253,20 @@ separate_markers <- function(
         want <- c("CHROM", "LOCUS", "POS")
 
         if (unique.markers) {
-          data <- suppressWarnings(
-            data %>%
-              dplyr::select(-dplyr::one_of(want)) %>%
-              tidyr::separate(data = ., col = "MARKERS",
-                              into = want, sep = sep, remove = FALSE))
+          data %<>%
+              dplyr::select(-tidyselect::any_of(want)) %>%
+              tidyr::separate(data = ., col = "MARKERS", into = want, sep = sep, remove = FALSE)
         } else {# for datasets
-          temp <- suppressWarnings(tidyr::separate(
+          temp <- tidyr::separate(
             data = dplyr::distinct(data, MARKERS),
             col = "MARKERS",
             into = want,
             sep = sep,
-            remove = FALSE))
+            remove = FALSE)
 
-          suppressWarnings(data %<>% dplyr::select(-dplyr::one_of(want)))
-          data %<>% dplyr::left_join(temp, by = intersect(colnames(data),
-                                                          colnames(temp)))
+          data %<>%
+            dplyr::select(-tidyselect::any_of(want)) %>%
+            dplyr::left_join(temp, by = intersect(colnames(data), colnames(temp)))
           temp <- NULL
         }
       }
@@ -342,13 +338,11 @@ generate_markers_metadata <- function(
     notwanted <- c("GT_BIN", "GT", "GT_VCF", "GT_VCF_NUC", "DP", "AD", "GL",
                    "PL", "GQ", "HQ", "GOF", "NR", "NV", "CATG")
     if (!unique.markers) {
-      suppressWarnings(
-        markers.meta <- data %>%
-          # dplyr::select(dplyr::one_of(want)) %>%
-          dplyr::select(-dplyr::one_of(notwanted)) %>%
-          dplyr::distinct(MARKERS, .keep_all = TRUE))
+      markers.meta <- data %>%
+        dplyr::select(-tidyselect::any_of(notwanted)) %>%
+        dplyr::distinct(MARKERS, .keep_all = TRUE)
     } else {
-      markers.meta <- suppressWarnings(dplyr::select(data, -dplyr::one_of(notwanted)))
+      markers.meta <- dplyr::select(data, -tidyselect::any_of(notwanted))
       data <- NULL
     }
 
@@ -499,6 +493,7 @@ separate_gt <- function(
         split.with = NULL,
         split.chunks = split.chunks,
         parallel.core = split.chunks,
+        forking = TRUE,
         gt = gt,
         alleles.naming = alleles.naming,
         remove = remove,
@@ -860,10 +855,9 @@ rad_long <- function(
   tidy = FALSE
 ){
 
-
   # tidyr
   if (tidy) {
-    x %>%
+    x %<>%
       tidyr::pivot_longer(
         data = .,
         cols = -cols,
@@ -871,7 +865,7 @@ rad_long <- function(
         values_to = values_to
       )
   } else {# data.table
-    x %>%
+    x %<>%
       data.table::as.data.table(., keep.rownames = keep_rownames) %>%
       data.table::melt.data.table(
         data = .,
@@ -883,7 +877,14 @@ rad_long <- function(
       ) %>%
       tibble::as_tibble(.)
   }
+
+  if (names_to == "M_SEQ") x$M_SEQ %<>% as.integer
+  if (names_to == "ID_SEQ") x$ID_SEQ %<>% as.integer
+  return(x)
 }#rad_long
+
+
+
 #' @rdname rad_wide
 #' @title rad_wide
 #' @description Spread, dcast and pivot_wider
@@ -993,8 +994,7 @@ strip_rad <- function(
     purrr::discard(.x = ., .p = . %in% "M_SEQ")
 
   # remove markers meta
-  x %<>%
-    dplyr::select(-tidyselect::any_of(cm))
+  x %<>% dplyr::select(-tidyselect::any_of(cm))
 
   # Note to myself: maybe write using vroom and read back when necessary ?
   assign(
@@ -1040,7 +1040,7 @@ strip_rad <- function(
 # join_rad ---------------------------------------------------------------------
 #' @rdname join_rad
 #' @title join_rad
-#' @description Join  back the parts stripped in strip_rad. Used internally.
+#' @description Join back the parts stripped in strip_rad. Used internally.
 #' @param x The data
 #' @param s The strata metadata.
 #' @param m The markers metadata.
@@ -1051,16 +1051,20 @@ strip_rad <- function(
 #' @export
 join_rad <- function(x, s, m, g, env.arg = NULL) {
   if (!is.null(g)) {
-    x %<>% dplyr::left_join(g, by = c("ID_SEQ", "M_SEQ"))
+    g.by <- intersect(colnames(x), colnames(g))
+    x %<>% dplyr::left_join(g, by = g.by)
     env.arg$genotypes.meta.bk <- NULL
   }
 
   want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS",
-            "COL", "REF", "ALT", "POP_ID", "STRATA","INDIVIDUALS")
+            "COL", "REF", "ALT", "INDIVIDUALS", "POP_ID", "STRATA",
+            "GT_VCF", "GT_VCF_NUC", "GT", "GT_BIN")
+  s.by <- intersect(colnames(x), colnames(s))
+  m.by <- intersect(colnames(x), colnames(m))
   x %<>%
-    dplyr::left_join(s, by = "ID_SEQ") %>%
+    dplyr::left_join(s, by = s.by) %>%
     dplyr::select(-tidyselect::any_of(c("ID_SEQ", "STRATA_SEQ"))) %>%
-    dplyr::left_join(m, by = "M_SEQ") %>%
+    dplyr::left_join(m, by = m.by) %>%
     dplyr::select(-M_SEQ) %>%
     dplyr::select(tidyselect::any_of(want), tidyselect::everything())
 

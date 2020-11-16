@@ -162,7 +162,7 @@ ibdg_fh <- function(
   }
 
   if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
-    radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
+    radiator_packages_dep(package = "SeqArray", cran = FALSE, bioc = TRUE)
 
 
     message("Importing gds file...")

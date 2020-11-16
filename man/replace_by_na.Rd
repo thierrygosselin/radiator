@@ -7,6 +7,6 @@
 replace_by_na(data, what = ".")
 }
 \description{
-Fast removal of NA
+Fast replacement of values by NA
 }
 \keyword{internal}

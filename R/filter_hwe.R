@@ -442,10 +442,9 @@ filter_hwe <- function(
       if (verbose) message("Summarizing data")
       sample.size <- length(unique(data$INDIVIDUALS))
       want <- c("MARKERS", "POP_ID", "N", "MISSING", "HOM_REF", "HET", "HOM_ALT", "READ_DEPTH")
-      data.sum <- suppressWarnings(
-        summarise_genotypes(data, path.folder = path.folder) %>%
-          dplyr::select(dplyr::one_of(want)) %>%
-          dplyr::rename(AA = HOM_REF, AB = HET, BB = HOM_ALT))
+      data.sum <- summarise_genotypes(data, path.folder = path.folder) %>%
+        dplyr::select(tidyselect::any_of(want)) %>%
+        dplyr::rename(AA = HOM_REF, AB = HET, BB = HOM_ALT)
       if (is.factor(data.sum$POP_ID)) {
         pop.levels <- levels(data.sum$POP_ID)
       } else {
@@ -1023,17 +1022,14 @@ blacklist_hw <- function(
 
       # Generate the blacklist
       want <- c("MARKERS", "CHROM", "LOCUS", "POS")
-      blacklist <- suppressWarnings(
-        dplyr::distinct(x, MARKERS) %>%
-          dplyr::left_join(
-            dplyr::select(unfiltered.data, dplyr::one_of(want)) %>%
-              dplyr::distinct(MARKERS, .keep_all = TRUE)
-            , by = "MARKERS") %>%
-          readr::write_tsv(
-            x = .,
-            file = blacklist.filename)
-      )
-
+      blacklist <- dplyr::distinct(x, MARKERS) %>%
+        dplyr::left_join(
+          dplyr::select(unfiltered.data, tidyselect::any_of(want)) %>%
+            dplyr::distinct(MARKERS, .keep_all = TRUE)
+          , by = "MARKERS") %>%
+        readr::write_tsv(
+          x = .,
+          file = blacklist.filename)
 
       # Generate the rad data + the whitelist
       if (!is.null(data.temp)) {
@@ -1044,7 +1040,7 @@ blacklist_hw <- function(
             dplyr::filter(!MARKERS %in% blacklist$MARKERS))
         radiator::write_rad(data = whitelist, path = rad.filename)
         whitelist %>%
-          dplyr::select(dplyr::one_of(want)) %>%
+          dplyr::select(tidyselect::any_of(want)) %>%
           dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
           readr::write_tsv(x = ., file = whitelist.filename)
       } else {
@@ -1053,7 +1049,8 @@ blacklist_hw <- function(
             dplyr::filter(!MARKERS %in% blacklist$MARKERS))
 
         radiator::write_rad(data = whitelist, path = rad.filename)
-        whitelist %>% dplyr::select(dplyr::one_of(want)) %>%
+        whitelist %>%
+          dplyr::select(tidyselect::any_of(want)) %>%
           dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
           readr::write_tsv(x = ., file = whitelist.filename)
       }

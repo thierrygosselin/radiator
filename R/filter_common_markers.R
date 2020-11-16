@@ -47,7 +47,7 @@
 
 #' @examples
 #' \dontrun{
-#' require(SeqVarTools) # when using gds
+#' require(SeqArray) # when using gds
 #' common <- radiator::filter_common_markers(data = "my.radiator.gds.rad", verbose = TRUE)
 #' }
 
@@ -139,7 +139,7 @@ filter_common_markers <- function(
 
     # GDS
     if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
-      radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
+      radiator_packages_dep(package = "SeqArray", cran = FALSE, bioc = TRUE)
 
 
       if (data.type == "gds.file") {
@@ -170,7 +170,7 @@ filter_common_markers <- function(
       n.pop <- length(unique(strata$STRATA))
 
       if (n.pop == 1) {
-        message("Only 1 strata...returning data")
+        message("Filter common markers: only 1 strata, returning data")
         return(data)
       }
       check.strata <- strata %>% dplyr::count(STRATA) %>% dplyr::filter(n <= 1)

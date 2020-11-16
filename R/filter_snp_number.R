@@ -159,7 +159,7 @@ filter_snp_number <- function(
 
 
     if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
-      radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
+      radiator_packages_dep(package = "SeqArray", cran = FALSE, bioc = TRUE)
 
       if (data.type == "gds.file") {
         data <- radiator::read_rad(data, verbose = verbose)
@@ -187,7 +187,7 @@ filter_snp_number <- function(
     if (data.type == "SeqVarGDSClass") {
       wl <- extract_markers_metadata(gds = data, whitelist = TRUE) # not optimal, currently used just to get locus info
     } else {
-      wl <- bl <- dplyr::select(data, dplyr::one_of(want))
+      wl <- bl <- dplyr::select(data, tidyselect::any_of(want))
     }
     # Check that required info is present in data: snp and locus
     if (!tibble::has_name(wl, "LOCUS") || !tibble::has_name(wl, "POS")) {

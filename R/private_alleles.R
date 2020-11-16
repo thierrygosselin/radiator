@@ -103,7 +103,6 @@ private_alleles <- function(data, strata = NULL, verbose = TRUE) {
   }
 
   if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
-    radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
     if (data.type == "gds.file") {
       data <- radiator::read_rad(data, verbose = verbose)
       data.type <- "SeqVarGDSClass"
@@ -113,8 +112,8 @@ private_alleles <- function(data, strata = NULL, verbose = TRUE) {
       ind.field.select = c("INDIVIDUALS", "STRATA"),
       whitelist = TRUE
     )
-    private <- SeqVarTools::getGenotypeAlleles(
-      gdsobj = data, use.names = TRUE) %>%
+    private <- generate_gt_vcf_nuc(data) %>%
+      magrittr::set_rownames(x = ., value = SeqArray::seqGetData(gdsobj = data, "sample.id")) %>%
       magrittr::set_colnames(
         x = .,
         value = extract_markers_metadata(

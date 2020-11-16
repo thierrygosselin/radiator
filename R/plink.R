@@ -208,7 +208,7 @@ read_plink <- function(
     message("Reading PLINK bed file...")
 
     # Required package -----------------------------------------------------------
-    radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
+    radiator_packages_dep(package = "SeqArray", cran = FALSE, bioc = TRUE)
 
     # Function call and dotslist -------------------------------------------------
     rad.dots <- radiator_dots(

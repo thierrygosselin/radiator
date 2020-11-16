@@ -43,7 +43,7 @@ read_whitelist <- function(whitelist.markers = NULL, verbose = FALSE) {
     if (is.vector(whitelist.markers)) {
       whitelist.markers <- suppressMessages(
         readr::read_tsv(whitelist.markers, col_names = TRUE) %>%
-          dplyr::mutate(dplyr::across(everything(), .fns = as.character))
+          dplyr::mutate(dplyr::across(tidyselect::everything(), .fns = as.character))
       )
     }
     nrow.before <- nrow(whitelist.markers)
@@ -60,8 +60,8 @@ read_whitelist <- function(whitelist.markers = NULL, verbose = FALSE) {
     # cleaning names of markers
     whitelist.markers <- dplyr::mutate(
       .data = whitelist.markers,
-      dplyr::across(everything(), .fns = clean_markers_names)
-      )
+      dplyr::across(tidyselect::everything(), .fns = clean_markers_names)
+    )
 
     if (tibble::has_name(whitelist.markers, "VARIANT_ID")) {
       whitelist.markers$VARIANT_ID <- as.integer(whitelist.markers$VARIANT_ID)
@@ -178,7 +178,7 @@ filter_whitelist <- function(
   }
 
   if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
-    radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
+    radiator_packages_dep(package = "SeqArray", cran = FALSE, bioc = TRUE)
 
     if (data.type == "gds.file") {
       data <- radiator::read_rad(data, verbose = verbose)
@@ -293,13 +293,13 @@ filter_whitelist <- function(
         dplyr::filter(COMMON_META %in% whitelist.markers$COMMON_META)
 
       #   FILTERS = dplyr::if_else(
-        #     !COMMON_META %in% whitelist.markers$COMMON_META &
-        #       FILTERS == "whitelist",
-        #     "filter.whitelist",
-        #     FILTERS
-        #   )
-        #   # COMMON_META = NULL
-        # )
+      #     !COMMON_META %in% whitelist.markers$COMMON_META &
+      #       FILTERS == "whitelist",
+      #     "filter.whitelist",
+      #     FILTERS
+      #   )
+      #   # COMMON_META = NULL
+      # )
       common.meta <- NULL
     }
 
@@ -403,37 +403,33 @@ generate_whitelist <- function(x, t, path.folder = NULL) {
 
       # Generate the blacklist
       want <- c("MARKERS", "CHROM", "LOCUS", "POS")
-      blacklist <- suppressWarnings(
-        dplyr::distinct(x, MARKERS) %>%
-          dplyr::left_join(
-            dplyr::select(unfiltered.data, dplyr::one_of(want)) %>%
-              dplyr::distinct(MARKERS, .keep_all = TRUE)
-            , by = "MARKERS") %>%
-          readr::write_tsv(
-            x = .,
-            file = blacklist.filename)
-      )
+      blacklist <- dplyr::distinct(x, MARKERS) %>%
+        dplyr::left_join(
+          dplyr::select(unfiltered.data, tidyselect::any_of(want)) %>%
+            dplyr::distinct(MARKERS, .keep_all = TRUE)
+          , by = "MARKERS") %>%
+        readr::write_tsv(
+          x = .,
+          file = blacklist.filename)
 
 
       # Generate the rad data + the whitelist
       if (!is.null(data.temp)) {
-        whitelist <- suppressWarnings(
-          unfiltered.data %>%
+        whitelist <- unfiltered.data %>%
             dplyr::bind_rows(data.temp) %>%
             dplyr::mutate(POP_ID = factor(POP_ID, levels = pop.id.levels)) %>%
             dplyr::filter(!MARKERS %in% blacklist$MARKERS) %>%
             radiator::write_rad(data = ., path = rad.filename) %>%
-            dplyr::select(dplyr::one_of(want)) %>%
+            dplyr::select(tidyselect::any_of(want)) %>%
             dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-            readr::write_tsv(x = ., file = whitelist.filename))
+            readr::write_tsv(x = ., file = whitelist.filename)
       } else {
-        whitelist <- suppressWarnings(
-          unfiltered.data %>%
-            dplyr::filter(!MARKERS %in% blacklist$MARKERS) %>%
-            radiator::write_rad(data = ., path = rad.filename) %>%
-            dplyr::select(dplyr::one_of(want)) %>%
-            dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-            readr::write_tsv(x = ., file = whitelist.filename))
+        whitelist <- unfiltered.data %>%
+          dplyr::filter(!MARKERS %in% blacklist$MARKERS) %>%
+          radiator::write_rad(data = ., path = rad.filename) %>%
+          dplyr::select(tidyselect::any_of(want)) %>%
+          dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
+          readr::write_tsv(x = ., file = whitelist.filename)
       }
 
       fil.param <- update_filter_parameter(

@@ -149,7 +149,7 @@ radiator::detect_genomic_format(data = "populations.snps.vcf")
 
 
 # using VCF file as input
-require(SeqVarTools)
+require(SeqArray)
 tidy.vcf <- tidy_genomic_data(
    data = "populations.snps.vcf", strata = "strata.treefrog.tsv",
    whitelist.markers = "whitelist.vcf.txt")

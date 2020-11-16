@@ -76,7 +76,6 @@ write_rubias <- function(
 
   if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
     if (data.type == "gds.file") data %<>% radiator::read_rad(data = ., verbose = FALSE)
-
     strata.id <- radiator::extract_individuals_metadata(
       gds = data,
       ind.field.select = c("STRATA", "INDIVIDUALS"),
@@ -90,15 +89,15 @@ write_rubias <- function(
       whitelist = TRUE
     ) %$% MARKERS
 
-    data <- SeqVarTools::getGenotypeAlleles(gdsobj = data)
-    id <- rownames(data)
 
+    id <- SeqArray::seqGetData(gdsfile = data, var.name = "sample.id")
     # checks
     if (!identical(id, strata.id$INDIVIDUALS)) {
       rlang::abort("Problem with GDS, contact author")
     }
     id <- NULL
 
+    data <- generate_gt_vcf_nuc(data)
     if (length(markers) != ncol(data)) {
       rlang::abort("Problem with function conversion, contact author")
     }

@@ -49,7 +49,6 @@ and might be of interest for users.
 }
 \examples{
 \dontrun{
-require(SeqVarTools)
 data.gds <- radiator::write_gds(data = "shark.rad")
 }
 }

@@ -110,9 +110,7 @@ radiator_gds <- function(
   # MARKERS META ---------------------------------------------------------------
   # rare case (usually DArT) where some IDs are still in the metadata...
   if (!is.null(strata)) {
-    suppressWarnings(
-      markers.meta %<>% dplyr::select(-dplyr::one_of(strata$INDIVIDUALS))
-    )
+      markers.meta %<>% dplyr::select(-dplyr::any_of(strata$INDIVIDUALS))
   }
 
   # check <- markers.meta$MARKERS
@@ -240,7 +238,7 @@ radiator_gds <- function(
   message("File written: ", folder_short(filename))
   data.gds <- radiator::write_rad(data = data.gds)
   if (open) data.gds <- radiator::read_rad(data = data.gds)
-  return (data.gds)
+  return(data.gds)
 } # End rad_gds
 
 
@@ -272,7 +270,7 @@ gt2array <- function(gt.bin, n.ind, n.snp) {
   genotypes <- aperm(a = genotypes, c(3,2,1))
 
   # dimension names
-  dimnames(genotypes) <- list(allele=NULL, sample=NULL, variant=NULL)
+  dimnames(genotypes) <- list(allele = NULL, sample = NULL, variant = NULL)
 
   return(genotypes)
 }# End gt2array
@@ -295,15 +293,15 @@ tidy2gds <- function(x) {
   }
   want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF",
             "ALT")
-  markers.meta <- suppressWarnings(
-    x %>%
-      dplyr::select(dplyr::one_of(want)) %>%
+  markers.meta <- x %>%
+      dplyr::select(dplyr::any_of(want)) %>%
       dplyr::distinct(.) %>%
       dplyr::arrange(VARIANT_ID)
-  )
+
   notwanted <- c("MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF","ALT")
-  x <- suppressWarnings(x %>% dplyr::select(-dplyr::one_of(notwanted)))
-  if (rlang::has_name(x, "POP_ID")) x %<>% dplyr::rename(STRATA = POP_ID)
+  x %<>%
+    dplyr::select(-dplyr::any_of(notwanted)) %>%
+    dplyr::rename(STRATA = tidyselect::any_of("POP_ID"))
 
   # the genotypes array is sorted by individuals and then by variant...
   x %<>% dplyr::arrange(STRATA, INDIVIDUALS, VARIANT_ID)
@@ -338,117 +336,87 @@ gds2tidy <- function(
   individuals = NULL,
   pop.id = TRUE,
   calibrate.alleles = TRUE,
+  strip.rad = FALSE,
   parallel.core = parallel::detectCores() - 1,
   ...
 ) {
   if (is.null(individuals)) {
     individuals <- extract_individuals_metadata(gds = gds, whitelist = TRUE, verbose = FALSE)
   }
-
-  if (wide) markers.meta.select <- c("MARKERS")
-  if (is.null(markers.meta)) {
-    if (is.null(markers.meta.select)) {
-      markers.meta <- extract_markers_metadata(
-        gds = gds,
-        whitelist = TRUE,
-        verbose = TRUE
-      )
+  if (!rlang::has_name(individuals, "STRATA") && !rlang::has_name(individuals, "POP_ID")) {
+    if (strip.rad) {
+      individuals %<>% dplyr::mutate(STRATA_SEQ = 1L)
     } else {
-      markers.meta <- extract_markers_metadata(
-        gds = gds,
-        markers.meta.select = markers.meta.select,
-        whitelist = TRUE,
-        verbose = TRUE
-      )
+      individuals %<>% dplyr::mutate(STRATA = 1L)
     }
   }
-  want <- intersect(
-    c("MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF", "ALT", "COL",
-      "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG",
-      "ONE_RATIO_REF", "ONE_RATIO_SNP"),
-    names(markers.meta))
+  if (pop.id) individuals %<>% dplyr::rename(POP_ID = tidyselect::any_of("STRATA"))
+
+
+  if (wide) markers.meta.select <- "MARKERS"
+  if (is.null(markers.meta.select) && strip.rad) markers.meta.select <- "M_SEQ"
+
+  if (is.null(markers.meta)) {
+    markers.meta <- extract_markers_metadata(
+      gds = gds,
+      markers.meta.select = markers.meta.select,
+      whitelist = TRUE,
+      verbose = TRUE
+    )
+  }
+
+  # colnames and "id" tidy data...
+  if (rlang::has_name(markers.meta, "M_SEQ")) {
+    cn <- markers.meta %>% dplyr::pull(M_SEQ)
+    want.m <- "M_SEQ"
+  } else {
+    cn <- markers.meta %>% dplyr::pull(MARKERS)
+    want.m <- "MARKERS"
+  }
+
+  if (rlang::has_name(individuals, "ID_SEQ")) {
+    want.id <- "ID_SEQ"
+  } else {
+    want.id <- "INDIVIDUALS"
+  }
+  id <- individuals %>% dplyr::select(tidyselect::any_of(want.id))
+
 
   # summary_gds(gds)
-  tidy.data <-
-    SeqArray::seqGetData(
-      gdsfile = gds, var.name = "$dosage_alt") %>%
-    magrittr::set_colnames(x = ., value = markers.meta$MARKERS) %>%
-    magrittr::set_rownames(x = ., value = individuals$INDIVIDUALS) %>%
-    tibble::as_tibble(x = ., rownames = "INDIVIDUALS")
+  tidy.data <- SeqArray::seqGetData(gdsfile = gds, var.name = "$dosage_alt") %>%
+    magrittr::set_colnames(x = ., value = cn) %>%
+    tibble::as_tibble(x = .) %>%
+    tibble::add_column(id, .before = 1)
 
   if (!wide) {
-    tidy.data <- suppressWarnings(
+    tidy.data %<>%
       radiator::rad_long(
-        x = tidy.data,
-        cols = "INDIVIDUALS",
-        names_to = "MARKERS",
+        x = .,
+        cols = want.id,
+        names_to = want.m,
         values_to = "GT_BIN",
         variable_factor = FALSE
-      ) %>%
-        dplyr::left_join(dplyr::select(markers.meta, dplyr::one_of(want)), by = "MARKERS") %>%
-        dplyr::mutate(
-          MARKERS = factor(x = MARKERS,
-                           levels = markers.meta$MARKERS, ordered = TRUE),
-          INDIVIDUALS = factor(x = INDIVIDUALS,
-                               levels = individuals$INDIVIDUALS,
-                               ordered = TRUE)) %>%
-        dplyr::arrange(MARKERS, INDIVIDUALS)
-    )
+      )
 
-    tidy.data$MARKERS <- as.character(tidy.data$MARKERS)
+    if (strip.rad) {
+      tidy.data %<>% dplyr::left_join(individuals %>% dplyr::select(ID_SEQ, STRATA_SEQ), by = "ID_SEQ")
+    } else {
+      want <- intersect(colnames(tidy.data), colnames(markers.meta))
+      tidy.data %<>% dplyr::left_join(markers.meta, by = want)
+      want <- intersect(colnames(tidy.data), colnames(individuals))
+      tidy.data %<>% dplyr::left_join(individuals, by = want)
+    }
   }
 
-
-  # should make this optional --------------------------------------------------
-  if (pop.id) {
-    # include strata
-    colnames(individuals) %<>%
-      stringi::stri_replace_all_fixed(
-        str = .,
-        pattern = "STRATA",
-        replacement = "POP_ID",
-        vectorize_all = FALSE)
-
-    if (rlang::has_name(individuals, "POP_ID")) {
-      suppressWarnings(
-        tidy.data %<>%
-          dplyr::left_join(
-            dplyr::select(individuals, INDIVIDUALS, POP_ID)
-            , by = "INDIVIDUALS"
-          )
-      )
-    }
-    tidy.data %<>% dplyr::arrange(POP_ID, INDIVIDUALS)
-  } else {
-    # include strata
-    colnames(individuals) %<>%
-      stringi::stri_replace_all_fixed(
-        str = .,
-        pattern = "POP_ID",
-        replacement = "STRATA",
-        vectorize_all = FALSE)
-    if (rlang::has_name(individuals, "STRATA")) {
-      suppressWarnings(
-        tidy.data %<>%
-          dplyr::left_join(dplyr::select(individuals, INDIVIDUALS, STRATA), by = "INDIVIDUALS")
-      )
-    }
-    if (!rlang::has_name(tidy.data, "STRATA") && !rlang::has_name(tidy.data, "POP_ID")) {
-      tidy.data %<>% dplyr::mutate(POP_ID = 1L)
-    }
-    # re-calibration of ref/alt alleles ------------------------------------------
-    # if (verbose) message("\nCalculating REF/ALT alleles...")
-
-    # Note to myself: maybe this should be done on the GDS before conversion...
-    # for small dataset, it won't matter, but for large ones, this could be the bottleneck
-    if (calibrate.alleles && !wide) {
-      tidy.data %<>%
-        radiator::calibrate_alleles(
-          data = .,
-          verbose = FALSE
-        ) %$% input
-    }
-    tidy.data %<>% dplyr::arrange(STRATA, INDIVIDUALS)
+  # re-calibration of ref/alt alleles
+  # Note to myself: maybe this should be done on the GDS before conversion...
+  # for small dataset, it won't matter, but for large ones, this could be the bottleneck
+  if (calibrate.alleles && !wide) {
+    tidy.data %<>%
+      radiator::calibrate_alleles(
+        data = .,
+        verbose = FALSE
+      ) %$% input
   }
   return(tidy.data)
 } #End tidy gds
@@ -747,8 +715,8 @@ extract_markers_metadata <- function(
     markers.index %<>% magrittr::set_names(x = ., value = .)
   } else {
     if (!is.null(markers.meta.select)) {
-      markers.meta.select %<>% intersect(
-        c("VARIANT_ID", "CHROM", "LOCUS", "POS")) %>%
+      markers.meta.select %<>%
+        intersect(c("VARIANT_ID", "CHROM", "LOCUS", "POS")) %>%
         stringi::stri_replace_all_fixed(
           str = .,
           pattern = c("VARIANT_ID", "CHROM", "LOCUS", "POS"),
@@ -792,21 +760,18 @@ extract_markers_metadata <- function(
     )
 
   mk.col <- dplyr::intersect(colnames(markers.meta), c("CHROM", "LOCUS", "POS"))
-  markers.meta  %<>%
-    dplyr::mutate(dplyr::across(.cols = mk.col, .fns = as.character))
+  markers.meta  %<>% dplyr::mutate(dplyr::across(.cols = mk.col, .fns = as.character))
 
   if (!whitelist && !blacklist && !rlang::has_name(markers.meta, "FILTERS")) {
     markers.meta %<>% dplyr::mutate(FILTERS = "whitelist")
   }
-  if (whitelist && rlang::has_name(markers.meta, "FILTERS")){
+  if (whitelist && rlang::has_name(markers.meta, "FILTERS")) {
     markers.meta %<>%
       dplyr::filter(FILTERS == "whitelist") %>%
       dplyr::select(-FILTERS)
   }
-  if (blacklist && rlang::has_name(markers.meta, "FILTERS")){
-    markers.meta %<>%
-      dplyr::filter(FILTERS != "whitelist")# %>%
-    # dplyr::select(-FILTERS)
+  if (blacklist && rlang::has_name(markers.meta, "FILTERS")) {
+    markers.meta %<>% dplyr::filter(FILTERS != "whitelist")# %>%
   }
   return(markers.meta)
 }#End import_metadata
@@ -921,9 +886,9 @@ extract_genotypes_metadata <- function(
 #' @description Extract coverage information from a GDS file
 #' @rdname extract_coverage
 #' @param gds The gds object.
-#' @param markers (optional, logical) Default:\code{markers = TRUE}.
-#' @param ind (optional, logical) Default:\code{ind = TRUE}.
-#' @param update.gds (optional, logical) Default:\code{update.gds = FALSE}.
+#' @param markers (optional, logical) Default: \code{markers = TRUE}.
+#' @param ind (optional, logical) Default: \code{ind = TRUE}.
+#' @param update.gds (optional, logical) Default: \code{update.gds = FALSE}.
 #' @param depth.tibble (optional, logical) Returns the depth info in a tibble instead of list
 #' with total and mean coverage info.
 #' Used internally.
@@ -958,7 +923,7 @@ extract_coverage <- function(
   if (!"dart" %in% data.source || "counts" %in% data.source) {
     depth <- extract_genotypes_metadata(
       gds,
-      genotypes.meta.select = c("MARKERS", "INDIVIDUALS", "READ_DEPTH",
+      genotypes.meta.select = c("ID_SEQ", "M_SEQ", "READ_DEPTH",
                                 "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH"),
       sync.markers.individuals = TRUE,
       whitelist = TRUE
@@ -989,21 +954,7 @@ extract_coverage <- function(
         if (length(parse.format.list) > 0) {
           if (verbose) message("Extracting ", paste0(parse.format.list, collapse = ", "), " information...")
           # work on parallelization of this part
-          depth <- tidy2wide(
-            x = purrr::map(
-              .x = parse.format.list,
-              .f = parse_gds_metadata,
-              gds = gds,
-              verbose = FALSE,
-              parallel.core = parallel.core
-            ) %>%
-              purrr::flatten(.) %>%
-              purrr::flatten_df(.),
-            gds = gds,
-            tidy = TRUE,
-            wide = FALSE
-          ) %$%
-            data.tidy
+          depth <- parse_gds_metadata(x = parse.format.list, gds = gds, strip.rad = TRUE, verbose = FALSE)
         }
         parse.format.list <- want <- NULL
       } else {
@@ -1016,16 +967,14 @@ extract_coverage <- function(
 
     if (!is.null(depth)) {
       # detect.catg
-      catg.depth <- rlang::has_name(depth, "C_DEPTH")
-      if (catg.depth) {
+      if (rlang::has_name(depth, "C_DEPTH")) {
         depth %<>%
-          dplyr::mutate(MARKERS = as.character(MARKERS)) %>%
           dplyr::left_join(
             extract_markers_metadata(
               gds = gds,
-              markers.meta.select = c("MARKERS", "REF", "ALT"),
+              markers.meta.select = c("M_SEQ", "REF", "ALT"),
               whitelist = TRUE
-            ), by = "MARKERS") %>%
+            ), by = "M_SEQ") %>%
           dplyr::mutate(
             ALLELE_REF_DEPTH = dplyr::case_when(
               REF == "C" ~ C_DEPTH,
@@ -1050,19 +999,22 @@ extract_coverage <- function(
 
       # required functions -----------------------------------------------------
       colnames_rep <- function(x, total = FALSE, mean = FALSE, median = FALSE, iqr = FALSE) {
+        depth.pattern <- c("READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH")
+        replace.pattern <- c("COVERAGE_", "REF_DEPTH_", "ALT_DEPTH_")
+
         if (total) {
           x <- stringi::stri_replace_all_fixed(
             str = x,
-            pattern = c("READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH"),
-            replacement = c("COVERAGE_TOTAL", "REF_DEPTH_TOTAL", "ALT_DEPTH_TOTAL"),
+            pattern = depth.pattern,
+            replacement = paste0(replace.pattern, "TOTAL"),
             vectorize_all = FALSE
           )
         }
         if (mean) {
           x <- stringi::stri_replace_all_fixed(
             str = x,
-            pattern = c("READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH"),
-            replacement = c("COVERAGE_MEAN", "REF_DEPTH_MEAN", "ALT_DEPTH_MEAN"),
+            pattern = depth.pattern,
+            replacement = paste0(replace.pattern, "MEAN"),
             vectorize_all = FALSE
           )
         }
@@ -1070,8 +1022,8 @@ extract_coverage <- function(
         if (median) {
           x <- stringi::stri_replace_all_fixed(
             str = x,
-            pattern = c("READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH"),
-            replacement = c("COVERAGE_MEDIAN", "REF_DEPTH_MEDIAN", "ALT_DEPTH_MEDIAN"),
+            pattern = depth.pattern,
+            replacement = paste0(replace.pattern, "MEDIAN"),
             vectorize_all = FALSE
           )
         }
@@ -1079,8 +1031,8 @@ extract_coverage <- function(
         if (iqr) {
           x <- stringi::stri_replace_all_fixed(
             str = x,
-            pattern = c("READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH"),
-            replacement = c("COVERAGE_IQR", "REF_DEPTH_IQR", "ALT_DEPTH_IQR"),
+            pattern = depth.pattern,
+            replacement = paste0(replace.pattern, "IQR"),
             vectorize_all = FALSE
           )
         }
@@ -1094,111 +1046,73 @@ extract_coverage <- function(
       }#End iqr_radiator
 
       if (markers) {
-        m <- dplyr::group_by(depth, MARKERS) %>%
-          dplyr::summarise(
-            .data = .,
-            dplyr::across(
-              .cols = want,
-              .fns = sum, na.rm = TRUE
-            ),
-            .groups = "keep"
-          ) %>%
-          dplyr::mutate(dplyr::across(.cols = want, .fns = round, digits = 0)) %>%
-          dplyr::mutate(dplyr::across(.cols = want, .fns = as.integer)) %>%
+        m <- dplyr::group_by(depth, M_SEQ) %>%
+          dplyr::summarise(dplyr::across(.cols = tidyselect::all_of(want), .fns = sum, na.rm = TRUE), .groups = "keep") %>%
+          dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = round, digits = 0)) %>%
+          dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = as.integer)) %>%
           dplyr::ungroup(.) %>%
           dplyr::rename_all(.funs = list(colnames_rep), total = TRUE) %>%
           dplyr::bind_cols(
-            dplyr::group_by(depth, MARKERS) %>%
-              dplyr::summarise(
-                .data = .,
-                dplyr::across(
-                  .cols = want,
-                  .fns = mean, na.rm = TRUE
-                ),
-                .groups = "keep"
-              ) %>%
-              dplyr::mutate(dplyr::across(.cols = want, .fns = round, digits = 0)) %>%
-              dplyr::mutate(dplyr::across(.cols = want, .fns = as.integer)) %>%
+            dplyr::group_by(depth, M_SEQ) %>%
+              dplyr::summarise(dplyr::across(.cols = tidyselect::all_of(want), .fns = mean, na.rm = TRUE), .groups = "keep") %>%
+              dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = round, digits = 0)) %>%
+              dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = as.integer)) %>%
               dplyr::ungroup(.) %>%
               dplyr::rename_all(.funs = list(colnames_rep), mean = TRUE) %>%
-              dplyr::select(-MARKERS)
+              dplyr::select(-M_SEQ)
           ) %>%
           dplyr::bind_cols(
-            dplyr::group_by(depth, MARKERS) %>%
-              dplyr::summarise(
-                .data = .,
-                dplyr::across(.cols = want, .fns = stats::median, na.rm = TRUE),
-                .groups = "keep"
-              ) %>%
-              dplyr::mutate(dplyr::across(.cols = want, .fns = round, digits = 0)) %>%
-              dplyr::mutate(dplyr::across(.cols = want, .fns = as.integer)) %>%
+            dplyr::group_by(depth, M_SEQ) %>%
+              dplyr::summarise(dplyr::across(.cols = tidyselect::all_of(want), .fns = stats::median, na.rm = TRUE), .groups = "keep") %>%
+              dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = round, digits = 0)) %>%
+              dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = as.integer)) %>%
               dplyr::ungroup(.) %>%
               dplyr::rename_all(.funs = list(colnames_rep), median = TRUE) %>%
-              dplyr::select(-MARKERS)
+              dplyr::select(-M_SEQ)
           ) %>%
           dplyr::bind_cols(
-            dplyr::group_by(depth, MARKERS) %>%
-              dplyr::summarise(
-                .data = .,
-                dplyr::across(.cols = want, .fns = iqr_radiator),
-                .groups = "keep"
-              ) %>%
-              dplyr::mutate(dplyr::across(.cols = want, .fns = round, digits = 0)) %>%
-              dplyr::mutate(dplyr::across(.cols = want, .fns = as.integer)) %>%
+            dplyr::group_by(depth, M_SEQ) %>%
+              dplyr::summarise(dplyr::across(.cols = tidyselect::all_of(want), .fns = iqr_radiator), .groups = "keep") %>%
+              dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = round, digits = 0)) %>%
+              dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = as.integer)) %>%
               dplyr::ungroup(.) %>%
               dplyr::rename_all(.funs = list(colnames_rep), iqr = TRUE) %>%
-              dplyr::select(-MARKERS)
+              dplyr::select(-M_SEQ)
           )
       }
       if (ind) {
-        i <- dplyr::group_by(depth, INDIVIDUALS) %>%
-          dplyr::summarise(
-            .data = .,
-            dplyr::across(.cols = want, .fns = sum, na.rm = TRUE),
-            .groups = "keep"
-          ) %>%
-          dplyr::mutate(dplyr::across(.cols = want, .fns = round, digits = 0)) %>%
-          dplyr::mutate(dplyr::across(.cols = want, .fns = as.integer)) %>%
+        i <- dplyr::group_by(depth, ID_SEQ) %>%
+          dplyr::summarise(dplyr::across(.cols = tidyselect::all_of(want), .fns = sum, na.rm = TRUE), .groups = "keep") %>%
+          dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = round, digits = 0)) %>%
+          dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = as.integer)) %>%
           dplyr::ungroup(.) %>%
           dplyr::rename_all(.funs = list(colnames_rep), total = TRUE) %>%
           dplyr::bind_cols(
-            dplyr::group_by(depth, INDIVIDUALS) %>%
-              dplyr::summarise(
-                .data = .,
-                dplyr::across(.cols = want, .fns = mean, na.rm = TRUE),
-                .groups = "keep"
-              ) %>%
-              dplyr::mutate(dplyr::across(.cols = want, .fns = round, digits = 0)) %>%
-              dplyr::mutate(dplyr::across(.cols = want, .fns = as.integer)) %>%
+            dplyr::group_by(depth, ID_SEQ) %>%
+              dplyr::summarise(dplyr::across(.cols = tidyselect::all_of(want), .fns = mean, na.rm = TRUE), .groups = "keep") %>%
+              dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = round, digits = 0)) %>%
+              dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = as.integer)) %>%
               dplyr::ungroup(.) %>%
               dplyr::rename_all(.funs = list(colnames_rep), mean = TRUE) %>%
-              dplyr::select(-INDIVIDUALS)
+              dplyr::select(-ID_SEQ)
           ) %>%
           dplyr::bind_cols(
-            dplyr::group_by(depth, INDIVIDUALS) %>%
-              dplyr::summarise(
-                .data = .,
-                dplyr::across(.cols = want, .fns = stats::median, na.rm = TRUE),
-                .groups = "keep"
-              ) %>%
-              dplyr::mutate(dplyr::across(.cols = want, .fns = round, digits = 0)) %>%
-              dplyr::mutate(dplyr::across(.cols = want, .fns = as.integer)) %>%
+            dplyr::group_by(depth, ID_SEQ) %>%
+              dplyr::summarise(dplyr::across(.cols = tidyselect::all_of(want), .fns = stats::median, na.rm = TRUE), .groups = "keep") %>%
+              dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = round, digits = 0)) %>%
+              dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = as.integer)) %>%
               dplyr::ungroup(.) %>%
               dplyr::rename_all(.funs = list(colnames_rep), median = TRUE) %>%
-              dplyr::select(-INDIVIDUALS)
+              dplyr::select(-ID_SEQ)
           ) %>%
           dplyr::bind_cols(
-            dplyr::group_by(depth, INDIVIDUALS) %>%
-              dplyr::summarise(
-                .data = .,
-                dplyr::across(.cols = want, .fns = iqr_radiator),
-                .groups = "keep"
-              ) %>%
-              dplyr::mutate(dplyr::across(.cols = want, .fns = round, digits = 0)) %>%
-              dplyr::mutate(dplyr::across(.cols = want, .fns = as.integer)) %>%
+            dplyr::group_by(depth, ID_SEQ) %>%
+              dplyr::summarise(dplyr::across(.cols = tidyselect::all_of(want), .fns = iqr_radiator), .groups = "keep") %>%
+              dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = round, digits = 0)) %>%
+              dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = as.integer)) %>%
               dplyr::ungroup(.) %>%
               dplyr::rename_all(.funs = list(colnames_rep), iqr = TRUE) %>%
-              dplyr::select(-INDIVIDUALS)
+              dplyr::select(-ID_SEQ)
           )
       }
     }
@@ -1214,16 +1128,14 @@ extract_coverage <- function(
     )
     markers <- ind <- FALSE
 
-    if (!is.null(depth)) {
-      coverage.info$markers.mean <- as.integer(
-        round(depth$AVG_COUNT_REF + depth$AVG_COUNT_SNP, 0))
-      coverage.info$ref.mean <- as.integer(round(depth$AVG_COUNT_REF, 0))
-      coverage.info$alt.mean <- as.integer(round(depth$AVG_COUNT_SNP, 0))
-      depth <- NULL
-    } else {
-      coverage.info <- NULL
-      return(NULL)
-    }
+    if (is.null(depth)) return(NULL)
+
+    coverage.info$markers.mean <- as.integer(
+      round(depth$AVG_COUNT_REF + depth$AVG_COUNT_SNP, 0))
+    coverage.info$ref.mean <- as.integer(round(depth$AVG_COUNT_REF, 0))
+    coverage.info$alt.mean <- as.integer(round(depth$AVG_COUNT_SNP, 0))
+    depth <- NULL
+
 
   }#End DART 1row and 2 rows
 
@@ -1238,7 +1150,7 @@ extract_coverage <- function(
                     "COVERAGE_IQR", "REF_DEPTH_IQR", "ALT_DEPTH_IQR"
     )
     if (any(not.wanted %in% colnames(markers.meta))) {
-      suppressWarnings(markers.meta %<>% dplyr::select(-dplyr::one_of(not.wanted)))
+      markers.meta %<>% dplyr::select(-dplyr::any_of(not.wanted))
     }
     common.col <- intersect(colnames(m), colnames(markers.meta))
     suppressWarnings(markers.meta %<>% dplyr::left_join(m, by = common.col))
@@ -1254,7 +1166,7 @@ extract_coverage <- function(
   }
 
   if (markers) {
-    m %<>% dplyr::select(-MARKERS)
+    m %<>% dplyr::select(-M_SEQ)
     colnames(m) <- stringi::stri_replace_all_fixed(
       str = colnames(m),
       pattern = c("COVERAGE", "TOTAL", "_DEPTH", "_"),
@@ -1275,7 +1187,7 @@ extract_coverage <- function(
                     "COVERAGE_IQR", "REF_DEPTH_IQR", "ALT_DEPTH_IQR"
     )
     if (any(not.wanted %in% colnames(strata))) {
-      suppressWarnings(strata %<>% dplyr::select(-dplyr::one_of(not.wanted)))
+      strata %<>% dplyr::select(-dplyr::any_of(not.wanted))
     }
     common.col <- intersect(colnames(i), colnames(strata))
     suppressWarnings(strata %<>% dplyr::left_join(i, by = common.col))
@@ -1290,7 +1202,7 @@ extract_coverage <- function(
     strata <- NULL
   }
   if (ind) {
-    i %<>% dplyr::select(-INDIVIDUALS)
+    i %<>% dplyr::select(-ID_SEQ)
     colnames(i) <- stringi::stri_replace_all_fixed(
       str = colnames(i),
       pattern = c("COVERAGE", "TOTAL", "_DEPTH", "REF", "ALT", "_"),
@@ -1304,6 +1216,228 @@ extract_coverage <- function(
   }
   return(coverage.info)
 }#End extract_coverage
+
+# parse_gds_metadata -----------------------------------------------------------
+#' @title parse_gds_metadata
+#' @description function to parse the format field and tidy the results of VCF
+#' @rdname parse_gds_metadata
+#' @keywords internal
+#' @export
+parse_gds_metadata <- function(
+  x,
+  gds = NULL,
+  verbose = TRUE,
+  strip.rad = FALSE
+) {
+
+  # x <- parse.format.list
+  # format.name <- x <- "DP"
+  # format.name <- x <- "AD"
+  # format.name <- x <- "GL"
+  # format.name <- x <- "PL"
+  # format.name <- x <- "HQ"
+  # format.name <- x <- "GQ"
+  # format.name <- x <- "GOF"
+  # format.name <- x <- "NR"
+  # format.name <- x <- "NV"
+  # format.name <- x <- "RO" # not yet implemented
+  # format.name <- x <- "QR" # not yet implemented
+  # format.name <- x <- "AO" # not yet implemented
+  # format.name <- x <- "QA" # not yet implemented
+  res <- list()
+  format.name <- x
+  if (verbose) message("\nParsing and tidying genotypes metadata: ", stringi::stri_join(x, collapse = ", "))
+
+  # sample and markers in long format...
+  if (strip.rad) {
+    i <- "ID_SEQ"
+    m <- "M_SEQ"
+  } else {
+    i <- "INDIVIDUALS"
+    m <- "VARIANT_ID"
+  }
+
+
+  i <- radiator::extract_individuals_metadata(
+    gds = gds,
+    ind.field.select = i,
+    whitelist = TRUE
+  ) %>%
+    dplyr::pull()
+  n.ind <- length(i)
+  m <- radiator::extract_markers_metadata(
+    gds = gds,
+    markers.meta.select = m,
+    whitelist = TRUE
+  ) %>%
+    dplyr::pull()
+  n.markers <- length(m)
+
+  res$info <- tibble::tibble(
+    C1 = rep(i, n.markers),
+    C2 = rep(m, n.ind)
+  )
+
+  if (strip.rad) {
+    res$info %<>%
+      magrittr::set_colnames(x = ., value = c("ID_SEQ", "M_SEQ")) %>%
+      dplyr::arrange(M_SEQ, ID_SEQ)
+  } else {
+    res$info %<>%
+      magrittr::set_colnames(x = ., value = c("INDIVIDUALS", "VARIANT_ID")) %>%
+      dplyr::mutate(INDIVIDUALS = factor(x = INDIVIDUALS, levels = i)) %>%
+      dplyr::arrange(VARIANT_ID, INDIVIDUALS)
+  }
+  m <- i <- NULL
+
+
+
+  # Allele Depth
+  if ("AD" %in% format.name) {
+    # NOTE TO MYSELF: THIS SHOULD BE DONE FOR BIALLELIC DATA ONLY...
+    if (verbose) message("AD column: splitting into ALLELE_REF_DEPTH and ALLELE_ALT_DEPTH")
+    # PLAN A:
+    res$AD <- SeqArray::seqGetData(
+      gdsfile = gds,
+      var.name = "annotation/format/AD"
+    ) %$%
+      data
+
+    column.vec <- seq_len(length.out = dim(res$AD)[2])
+
+    res$AD <- tibble::tibble(
+      ALLELE_REF_DEPTH = res$AD[, column.vec %% 2 == 1] %>%
+        as.vector(.) %>% replace_by_na(data = ., what = 0L),
+      ALLELE_ALT_DEPTH = res$AD[, column.vec %% 2 == 0] %>%
+        as.vector(.) %>% replace_by_na(data = ., what = 0L)
+    )
+  }# End AD
+
+  # Read depth
+  if ("DP" %in% format.name) {
+    if (verbose) message("DP column: cleaning and renaming to READ_DEPTH")
+    res$DP <- tibble::tibble(
+      READ_DEPTH = SeqArray::seqGetData(
+        gdsfile = gds,
+        var.name = "annotation/format/DP"
+      ) %>%
+        as.vector(.)
+    )
+  } # End DP
+
+  # Cleaning HQ: Haplotype quality as phred score
+  if ("HQ" %in% format.name) {
+    res$HQ <- tibble::tibble(HQ = SeqArray::seqGetData(
+      gdsfile = gds,
+      var.name = "annotation/format/HQ")$data %>% as.vector(.))
+
+    # test <- res$HQ
+
+    # check HQ and new stacks version with no HQ
+    all.missing <- nrow(res$HQ)
+    if (all.missing != 0) {
+      if (verbose) message("HQ column: Haplotype Quality")
+    } else {
+      message("HQ values are all missing: removing column")
+      res$HQ <- NULL
+    }
+  } # End HQ
+
+  # Cleaning GQ: Genotype quality as phred score
+  if ("GQ" %in% format.name) {
+    if (verbose) message("GQ column: Genotype Quality")
+    res$GQ <- tibble::tibble(
+      GQ = SeqArray::seqGetData(
+        gdsfile = gds,
+        var.name = "annotation/format/GQ"
+      ) %>%
+        as.vector(.)
+    )
+  } # End GQ
+
+  # GL cleaning
+  if ("GL" %in% format.name) {
+    if (verbose) message("GL column: cleaning Genotype Likelihood column")
+    gl <- unique(SeqArray::seqGetData(gdsfile = gds,
+                                      var.name = "annotation/format/GL")$length)
+    if (gl > 0) {
+      res$GL <- SeqArray::seqGetData(
+        gdsfile = gds,
+        var.name = "annotation/format/GL")$data
+
+      column.vec <- seq_len(length.out = dim(res$GL)[2])
+      res$GL <- tibble::tibble(
+        GL_HOM_REF = res$GL[, column.vec %% 3 == 1] %>%
+          as.vector(.),
+        GL_HET = res$GL[, column.vec %% 3 == 2] %>%
+          as.vector(.),
+        GL_HOM_ALT = res$GL[, column.vec %% 3 == 0] %>%
+          as.vector(.)
+      )
+      res$GL[res$GL == "NaN"] <- NA
+      column.vec <- NULL
+    }
+  } # End GL
+
+  # Cleaning GOF: Goodness of fit value
+  if ("GOF" %in% format.name) {
+    if (verbose) message("GOF column: Goodness of fit value")
+    res$GOF <- tibble::tibble(
+      GOF = SeqArray::seqGetData(
+        gdsfile = gds,
+        var.name = "annotation/format/GOF"
+      ) %>%
+        as.vector(.)
+    )
+  } # End GOF
+
+  # Cleaning NR: Number of reads covering variant location in this sample
+  if ("NR" %in% format.name) {
+    if (verbose) message("NR column: splitting column into the number of variant")
+    res$NR <- tibble::tibble(
+      NR = SeqArray::seqGetData(
+        gdsfile = gds,
+        var.name = "annotation/format/NR"
+      ) %>%
+        as.vector(.)
+    )
+  }#End cleaning NR column
+
+  # Cleaning NV: Number of reads containing variant in this sample
+  if ("NV" %in% format.name) {
+    if (verbose) message("NV column: splitting column into the number of variant")
+    res$NR <- tibble::tibble(
+      NV = SeqArray::seqGetData(
+        gdsfile = gds,
+        var.name = "annotation/format/NV"
+      ) %>%
+        as.vector(.)
+    )
+  }#End cleaning NV column
+
+  # CATG from ipyrad...
+  if ("CATG" %in% format.name) {
+    if (verbose) message("CATG columns: cleaning and renaming C_DEPTH, A_DEPTH, T_DEPTH, G_DEPTH")
+    res$CATG <- SeqArray::seqGetData(gdsfile = gds,var.name = "annotation/format/CATG")$data
+
+    column.vec <- seq_len(length.out = dim(res$CATG)[2])
+
+    res$CATG <- tibble::tibble(
+      C_DEPTH =  res$CATG[, column.vec %% 4 == 1] %>%
+        as.integer(.),
+      A_DEPTH =  res$CATG[, column.vec %% 4 == 2] %>%
+        as.integer(.),
+      T_DEPTH =  res$CATG[, column.vec %% 4 == 3] %>%
+        as.integer(.),
+      G_DEPTH =  res$CATG[, column.vec %% 4 == 0] %>%
+        as.integer(.)
+    )
+    column.vec <- NULL
+  } # End CATG
+  res %<>% purrr::flatten_dfc(.)
+  return(res)
+}#End parse_gds_metadata
+
 
 # sync GDS----------------------------------------------------------------------
 #' @title sync_gds
@@ -1386,7 +1520,7 @@ sync_gds <- function(
         verbose = verbose
       ) %$% INDIVIDUALS
     } else {
-      if (verbose) message("synchronizing GDS with provided samples")
+      if (verbose) message("synchronizing GDS with samples provided")
     }
 
     SeqArray::seqSetFilter(
@@ -1411,7 +1545,7 @@ sync_gds <- function(
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 list_filters <- function(gds) {
-  radiator_packages_dep("SeqVarTools", cran = FALSE, bioc = TRUE)
+  radiator_packages_dep("SeqArray", cran = FALSE, bioc = TRUE)
 
   data.type <- radiator::detect_genomic_format(gds)
 
@@ -1524,7 +1658,7 @@ reset_filters <- function(
   filter.hwe = FALSE,
   filter.whitelist = FALSE
 ) {
-  radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
+  radiator_packages_dep(package = "SeqArray", cran = FALSE, bioc = TRUE)
   data.type <- radiator::detect_genomic_format(gds)
 
   if (!data.type %in% c("SeqVarGDSClass", "gds.file")) {
@@ -1659,7 +1793,7 @@ summary_gds <- function(gds, check.sync = FALSE, verbose = TRUE) {
     gds <- radiator::read_rad(gds, verbose = FALSE)
     data.type <- "SeqVarGDSClass"
   }
-  if (verbose) message("Data summary: ")
+  if (verbose) message("\nData summary: ")
   check <- SeqArray::seqGetFilter(gds)
   n.ind <- length(check$sample.sel[check$sample.sel])
   n.markers <- length(check$variant.sel[check$variant.sel])
@@ -1867,7 +2001,7 @@ generate_id_stats <- function(
                            verbose = FALSE)
   }
 
-  id.info <- extract_individuals_metadata(gds, whitelist = TRUE)
+  id.info <- extract_individuals_metadata(gds, ind.field.select = c("INDIVIDUALS", "STRATA"), whitelist = TRUE)
 
   # by defaults
   id.stats.m <- id.stats.h <- id.stats.c <- NULL
@@ -1881,7 +2015,6 @@ generate_id_stats <- function(
           SeqArray::seqMissing(
             gdsfile = gds,
             per.variant = FALSE,
-            .progress = TRUE,
             parallel = parallel.core
           )
           , digits
@@ -1898,16 +2031,7 @@ generate_id_stats <- function(
   if (heterozygosity) {
     # info
     id.info %<>%
-      dplyr::mutate(
-        HETEROZYGOSITY = round(
-          SeqVarTools::heterozygosity(
-            gdsobj = gds,
-            margin = "by.sample",
-            use.names = FALSE
-          )
-          , digits
-        )
-      )
+      dplyr::mutate(HETEROZYGOSITY = round(individual_het(gds), digits))
 
     id.info$HETEROZYGOSITY[is.na(id.info$HETEROZYGOSITY)] <- 0
 
@@ -2249,7 +2373,7 @@ generate_markers_stats <- function(
         wanted.info <- c("VARIANT_ID", "CHROM", "LOCUS", "POS", "MARKERS", "REF", "ALT", "N_ALLELES")
         info %>%
           dplyr::filter(N_ALLELES > 2) %>%
-          dplyr::select(dplyr::one_of(wanted.info)) %>%
+          dplyr::select(dplyr::any_of(wanted.info)) %>%
           write_rad(
             data = .,
             path = path.folder,
@@ -2379,10 +2503,8 @@ generate_markers_stats <- function(
     if (!rlang::has_name(info, "HET_OBS") || force.stats) {
       info %<>%
         dplyr::mutate(
-          HET_OBS = round(SeqVarTools::heterozygosity(
-            gdsobj = gds, margin = "by.variant", use.names = FALSE
-          ), 6),
-          FIS = SeqVarTools::inbreedCoeff(gdsobj = gds, margin = "by.variant")
+          HET_OBS = round(markers_het(gds), 6),
+          FIS = round(markers_fis(gds), 6)
         )
     }
     stats.h <- tibble_stats(
@@ -2556,6 +2678,127 @@ generate_markers_stats <- function(
   return(list(info = info, stats = stats, fig = fig))
 }#End generate_markers_stats
 
+# Calculate individual het------------------------------------------------------
+#' @title individual_het
+#' @description Calculate individual het
+#' @rdname individual_het
+#' @keywords internal
+#' @export
+individual_het <- function(gds) {
+
+  # PLAN A
+  info <- summary_gds(gds = gds, check.sync = TRUE, verbose = FALSE)
+  nonmiss <- het <- integer(info$n.ind)
+  #
+  SeqArray::seqApply(
+    gdsfile = gds,
+    var.name = "genotype",
+    FUN = function(x) {
+      nm <- !is.na(x[1,]) & !is.na(x[2,])
+      het <<- het + (x[1,] != x[2,] & nm)
+      nonmiss <<- nonmiss + nm
+    },
+    margin="by.variant",
+    as.is = "none",
+    parallel = FALSE
+  )
+  return(het / nonmiss)
+
+
+  # PLAN B
+  # need to test if faster...
+  # da <- SeqArray::seqGetData(gdsfile = gds, var.name = "$dosage_alt")
+  # return(rowSums(da == 1L, na.rm = TRUE) / rowSums(!is.na(da), na.rm = FALSE))
+
+}#End individual_het
+
+
+# Calculate markers het------------------------------------------------------
+#' @title markers_het
+#' @description Calculate markers het
+#' @rdname markers_het
+#' @keywords internal
+#' @export
+markers_het <- function(gds) {
+  # PLAN A
+  SeqArray::seqApply(
+    gdsfile = gds,
+    var.name = "$dosage_alt",
+    FUN = function(x) sum(x == 1, na.rm = TRUE) / sum(!is.na(x)),
+    margin = "by.variant",
+    as.is = "double",
+    parallel = FALSE
+  )
+  # PLAN B
+  # need to test if faster...
+  # da <- SeqArray::seqGetData(gdsfile = gds, var.name = "$dosage_alt")
+  # return(colSums(da == 1L, na.rm = TRUE) / colSums(!is.na(da), na.rm = FALSE))
+}#End markers_het
+
+# Calculate markers FIS------------------------------------------------------
+#' @title markers_fis
+#' @description Calculate markers FIS
+#' @rdname markers_fis
+#' @keywords internal
+#' @export
+markers_fis <- function(gds) {
+  fis <- SeqArray::seqApply(
+    gdsfile = gds,
+    var.name = "$dosage_alt",
+    FUN = function(x) {
+      c(
+        REF = sum(x == 0L, na.rm = TRUE),
+        HET = sum(x == 1L, na.rm = TRUE),
+        ALT = sum(x > 1L, na.rm = TRUE)
+      )
+    },
+    margin = "by.variant",
+    as.is = "list",
+    parallel = FALSE
+  ) %>%
+    dplyr::bind_rows(.) %>%
+    dplyr::mutate(
+      N = REF + HET + ALT,
+      ALT = NULL,
+      FREQ_REF = ((2 * REF) + HET) / (2 * N),
+      HET_EXP = 2 * FREQ_REF * (1 - FREQ_REF) * N,
+      FREQ_REF = NULL,
+      FIS = 1 - (HET / HET_EXP)
+    ) %>%
+    dplyr::pull(FIS)
+  return(fis)
+}# End markers_fis
+
+
+# Generate gt_vcf_nuc ----------------------------------------------------------
+#' @title generate_gt_vcf_nuc
+#' @description Generate gt_vcf_nuc
+#' @rdname generate_gt_vcf_nuc
+#' @keywords internal
+#' @export
+generate_gt_vcf_nuc <- function(gds) {
+  gt.vcf.nuc <- SeqArray::seqApply(
+    gdsfile = gds,
+    var.name = c(geno = "genotype", phase = "phase", allele = "allele"),
+    FUN = function(x) {
+      alleles <- unlist(strsplit(x$allele, ",", fixed = TRUE), use.names = FALSE)
+      names(alleles) <- 0:(length(alleles) - 1)
+      a <- alleles[as.character(x$geno[1,])]
+      b <- alleles[as.character(x$geno[2,])]
+      sep = ifelse(x$phase, "|", "/")
+      paste0(a, sep, b)
+    },
+    margin = "by.variant",
+    as.is = "list",
+    parallel = FALSE
+  )
+
+  gt.vcf.nuc <- matrix(unlist(gt.vcf.nuc, use.names = FALSE), ncol = length(gt.vcf.nuc))
+  gt.vcf.nuc[gt.vcf.nuc == "NA/NA"] <- NA
+}#End generate_gt_vcf_nuc
+
+
+
 # missingness per markers per pop-----------------------------------------------
 #' @title missing_per_pop
 #' @description Generate missingness per markers per pop helper table
@@ -2693,7 +2936,6 @@ missing_per_pop <- function(
 
 #' @examples
 #' \dontrun{
-#' require(SeqVarTools)
 #' data.gds <- radiator::write_gds(data = "shark.rad")
 #' }
 
@@ -2713,8 +2955,8 @@ write_gds <- function(
   # filename = NULL
   # verbose = TRUE
 
-  # Check that SeqVarTools is installed (it requires automatically: SeqArray and gdsfmt)
-  radiator_packages_dep(package = "SeqVarTools", cran = FALSE, bioc = TRUE)
+  # Check that SeqArray is installed
+  radiator_packages_dep(package = "SeqArray", cran = FALSE, bioc = TRUE)
 
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("Input file missing")
@@ -2732,22 +2974,14 @@ write_gds <- function(
   n.markers <- length(unique(data$MARKERS))
   n.ind <- length(unique(data$INDIVIDUALS))
 
-  strata <-
-    suppressWarnings(
-      data %>%
-        dplyr::select(INDIVIDUALS, dplyr::one_of(c("STRATA", "POP_ID", "TARGET_ID")))
-    )
-  if (tibble::has_name(strata, "POP_ID")) strata  %<>% dplyr::rename(STRATA = POP_ID)
+  strata <- data %>%
+    dplyr::select(INDIVIDUALS, dplyr::any_of(c("STRATA", "POP_ID", "TARGET_ID"))) %>%
+    dplyr::rename(STRATA = tidyselect::any_of("POP_ID"))
 
   want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF",
             "ALT", "CALL_RATE", "REP_AVG", "AVG_COUNT_REF",
             "AVG_COUNT_SNP", "ONE_RATIO_REF", "ONE_RATIO_SNP", "SEQUENCE")
-  markers.meta <-
-    suppressWarnings(
-      data %>%
-        dplyr::select(
-          dplyr::one_of(want))
-    )
+  markers.meta <- dplyr::select(data, dplyr::any_of(want))
   if (ncol(markers.meta) == 0) markers.meta <- NULL
 
   want <- c(
@@ -2756,12 +2990,7 @@ write_gds <- function(
     "GQ",
     "GL_HOM_REF", "GL_HET", "GL_HOM_ALT",
     "DP", "AD", "GL", "PL", "HQ", "GOF", "NR", "NV", "RO", "QR", "AO", "QA")
-  genotypes.meta <-
-    suppressWarnings(
-      data %>%
-        dplyr::select(
-          dplyr::one_of(want))
-    )
+  genotypes.meta <- dplyr::select(data, dplyr::any_of(want))
   want <- NULL
   if (ncol(genotypes.meta) == 0) genotypes.meta <- NULL
 

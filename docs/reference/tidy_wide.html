@@ -177,13 +177,13 @@ The data frame is tab delimitted.
 <strong>Wide format:</strong>
 The wide format cannot store metadata info.
 The wide format starts with these 2 id columns:
-<code>INDIVIDUALS</code>, <code>POP_ID</code> (that refers to any grouping of individuals),
+<code>INDIVIDUALS</code>, <code>STRATA</code> (that refers to any grouping of individuals),
 the remaining columns are the markers in separate columns storing genotypes.</p>
 <p><strong>Long/Tidy format:</strong>
 The long format is considered to be a tidy data frame and can store metadata info.
 (e.g. from a VCF see <span class="pkg">radiator</span> <code><a href='tidy_genomic_data.html'>tidy_genomic_data</a></code>).
 A minimum of 4 columns
-are required in the long format: <code>INDIVIDUALS</code>, <code>POP_ID</code>,
+are required in the long format: <code>INDIVIDUALS</code>, <code>STRATA</code>,
 <code>MARKERS</code> and <code>GT</code> for the genotypes.
 The remaining columns are considered metadata info.</p>
 <p><strong>Genotypes with separators:</strong>
@@ -195,12 +195,12 @@ e.g. <code>001002 or 111333</code> (for heterozygote individual).
 The separator can be any of these: <code>"/", ":", "_", "-", "."</code>, and will
 be removed.</p>
 
-<p><strong>separators in POP_ID, INDIVIDUALS and MARKERS:</strong>
+<p><strong>separators in STRATA, INDIVIDUALS and MARKERS:</strong>
 Some separators can interfere with packages or codes and are cleaned by radiator.</p><ul>
 <li><p>MARKERS: <code><a href='https://rdrr.io/r/base/Arithmetic.html'>/</a></code>, <code><a href='https://rdrr.io/r/base/Colon.html'>:</a></code>, <code><a href='https://rdrr.io/r/base/Arithmetic.html'>-</a></code> and <code>.</code> are changed to an
 underscore
 <code>_</code>.</p></li>
-<li><p>POP_ID: white spaces in population names are replaced by underscore.</p></li>
+<li><p>STRATA: white spaces in population names are replaced by underscore.</p></li>
 <li><p>INDIVIDUALS: <code>_</code> and <code><a href='https://rdrr.io/r/base/Colon.html'>:</a></code> are changed to a dash <code><a href='https://rdrr.io/r/base/Arithmetic.html'>-</a></code></p></li>
 </ul>
 

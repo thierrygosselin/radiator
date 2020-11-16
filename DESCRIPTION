@@ -2,7 +2,7 @@ Package: radiator
 Type: Package
 Title: RADseq Data Exploration, Manipulation and Visualization using R
 Version: 1.1.8
-Date: 2020-11-03
+Date: 2020-11-16
 Encoding: UTF-8
 Authors@R: c(
   person("Thierry", "Gosselin", email = "thierrygosselin@icloud.com", role = c("aut", "cre")),
@@ -23,7 +23,7 @@ Imports:
     HardyWeinberg,
     magrittr,
     tidyverse,
-    SeqVarTools,
+    SeqArray (>= 1.28.1),
     UpSetR
 Suggests:
     adegenet,
@@ -42,7 +42,6 @@ Suggests:
     readr (>= 1.4.0),
     rlang,
     rmarkdown,
-    SeqArray (>= 1.28.1),
     SNPRelate,
     stats,
     stringdist,
@@ -53,7 +52,7 @@ Suggests:
     utils
 License: GPL-3
 LazyLoad: yes
-VignetteBuilder: 
+VignetteBuilder:
     knitr
 RoxygenNote: 7.1.1
 ByteCompile: TRUE

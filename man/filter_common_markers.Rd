@@ -62,7 +62,7 @@ and might be of interest for users who wants to keep only markers in common.
 }
 \examples{
 \dontrun{
-require(SeqVarTools) # when using gds
+require(SeqArray) # when using gds
 common <- radiator::filter_common_markers(data = "my.radiator.gds.rad", verbose = TRUE)
 }
 }
