@@ -50,7 +50,7 @@ A list with the filtered input, whitelist and blacklist of markers..
 \description{
 The function will filter the markers by keeping only those
 in common between all strata
-(population or any groupings defined in \code{STRATA/POP_ID} column).
+(population or any groupings defined in \code{STRATA} column).
 
 \strong{Filter targets}: SNPs
 

@@ -153,11 +153,11 @@ tidy_genind <- function(
       # changed adegenet::indNames to rownames(data@tab) to lower dependencies
       data <- tibble::as_tibble(data@tab) %>%
         tibble::add_column(.data = ., INDIVIDUALS = rownames(data@tab), .before = 1) %>%
-        tibble::add_column(.data = ., POP_ID = data@pop) %>%
-        dplyr::select(POP_ID, INDIVIDUALS, dplyr::ends_with(match = ".A2")) %>%
+        tibble::add_column(.data = ., STRATA = data@pop) %>%
+        dplyr::select(STRATA, INDIVIDUALS, dplyr::ends_with(match = ".A2")) %>%
         radiator::rad_long(
           x = .,
-          cols = c("INDIVIDUALS", "POP_ID"),
+          cols = c("INDIVIDUALS", "STRATA"),
           names_to = "MARKERS",
           values_to = "GT_BIN"
         ) %>%
@@ -174,10 +174,10 @@ tidy_genind <- function(
         message("Alleles names are kept if all numeric and padded with 0 if length < 3")
         data <- tibble::as_tibble(data@tab) %>%
           tibble::add_column(.data = ., INDIVIDUALS = rownames(data@tab), .before = 1) %>%
-          tibble::add_column(.data = ., POP_ID = data@pop) %>%
+          tibble::add_column(.data = ., STRATA = data@pop) %>%
           radiator::rad_long(
             x = .,
-            cols = c("INDIVIDUALS", "POP_ID"),
+            cols = c("INDIVIDUALS", "STRATA"),
             names_to = "MARKERS_ALLELES",
             values_to = "COUNT"
           ) %>%
@@ -207,10 +207,10 @@ tidy_genind <- function(
         message("Alleles names for each markers will be converted to factors and padded with 0")
         data <- tibble::as_tibble(data@tab) %>%
           tibble::add_column(.data = ., INDIVIDUALS = rownames(data@tab), .before = 1) %>%
-          tibble::add_column(.data = ., POP_ID = data@pop) %>%
+          tibble::add_column(.data = ., STRATA = data@pop) %>%
           radiator::rad_long(
             x = .,
-            cols = c("INDIVIDUALS", "POP_ID"),
+            cols = c("INDIVIDUALS", "STRATA"),
             names_to = "MARKERS_ALLELES",
             values_to = "COUNT"
           ) %>%
@@ -230,20 +230,20 @@ tidy_genind <- function(
 
       #Isolate missing genotype
       missing.hom <- dplyr::filter(data, is.na(COUNT)) %>%
-        dplyr::distinct(POP_ID, INDIVIDUALS, MARKERS) %>%
+        dplyr::distinct(STRATA, INDIVIDUALS, MARKERS) %>%
         dplyr::mutate(GT = rep("000000", n())) %>%
         dplyr::ungroup(.)
 
       #Isolate all Homozygote genotypes and combine with the missings
       missing.hom <- dplyr::filter(data, COUNT == 2) %>%
-        dplyr::group_by(POP_ID, INDIVIDUALS, MARKERS) %>%
+        dplyr::group_by(STRATA, INDIVIDUALS, MARKERS) %>%
         dplyr::summarise(GT = stringi::stri_join(ALLELES, ALLELES, sep = "")) %>%
         dplyr::ungroup(.) %>%
         dplyr::bind_rows(missing.hom)
 
       #Isolate all Het genotypes and combine
       data <- dplyr::filter(data, COUNT != 2) %>%#this will also remove the missing
-        dplyr::group_by(POP_ID, INDIVIDUALS, MARKERS) %>%
+        dplyr::group_by(STRATA, INDIVIDUALS, MARKERS) %>%
         dplyr::summarise(GT = stringi::stri_join(ALLELES, collapse = "")) %>%
         dplyr::ungroup(.) %>%
         dplyr::bind_rows(missing.hom)
@@ -312,26 +312,24 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
     data <- gds2tidy(gds = data, parallel.core = parallel::detectCores() - 1)
     data.type <- "tbl_df"
   } else {
-    if (rlang::has_name(data, "STRATA")) data %<>% dplyr::rename(POP_ID = STRATA)
-    want <- c("MARKERS", "POP_ID", "INDIVIDUALS", "REF", "ALT", "GT", "GT_BIN")
+    want <- c("MARKERS", "STRATA", "INDIVIDUALS", "REF", "ALT", "GT", "GT_BIN")
     data %<>%
       radiator::tidy_wide(data = ., import.metadata = TRUE) %>%
-      dplyr::select(tidyselect::any_of(want)) %>%
-      dplyr::arrange(POP_ID, INDIVIDUALS)
+      dplyr::select(tidyselect::any_of(want))
   }
 
 
-  if (is.factor(data$POP_ID)) {
-    pop.levels <- levels(data$POP_ID)
+  if (is.factor(data$STRATA)) {
+    pop.levels <- levels(data$STRATA)
   } else {
-    pop.levels <- unique(data$POP_ID)
+    pop.levels <- unique(data$STRATA)
   }
-  # Make sure that POP_ID and INDIVIDUALS are character
+  # Make sure that STRATA and INDIVIDUALS are character
   data$INDIVIDUALS <- as.character(data$INDIVIDUALS)
-  data$POP_ID <- as.character(data$POP_ID)
+  data$STRATA <- as.character(data$STRATA)
 
   # Isolate the strata
-  # we convert pop_id to factor because adegenet does it automatically...
+  # we convert STRATA to factor because adegenet does it automatically...
   pop.num <- unique(stringi::stri_detect_regex(str = pop.levels, pattern = "^[0-9]+$"))
   if (length(pop.num) == 1 && pop.num) pop.levels <- as.character(sort(as.numeric(pop.levels)))
 
@@ -339,7 +337,7 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
   if (rlang::has_name(data, "GT_BIN")) {
     if (rlang::has_name(data, "REF")) {
       data <- dplyr::bind_rows(
-        dplyr::select(data, MARKERS, POP_ID, INDIVIDUALS, REF, n = GT_BIN) %>%
+        dplyr::select(data, MARKERS, STRATA, INDIVIDUALS, REF, n = GT_BIN) %>%
           dplyr::mutate(
             REF = stringi::stri_join("A1", REF, sep = "__"),
             MARKERS_ALLELES = stringi::stri_join(MARKERS, REF, sep = "."),
@@ -347,7 +345,7 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
             REF = NULL,
             n = as.integer(abs(n - 2))
           ),
-        dplyr::select(data, MARKERS, POP_ID, INDIVIDUALS, ALT, n = GT_BIN) %>%
+        dplyr::select(data, MARKERS, STRATA, INDIVIDUALS, ALT, n = GT_BIN) %>%
           dplyr::mutate(
             ALT = stringi::stri_join("A2", ALT, sep = "__"),
             MARKERS_ALLELES = stringi::stri_join(MARKERS, ALT, sep = "."),
@@ -357,21 +355,21 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
       ) %>%
         radiator::rad_wide(
           x = .,
-          formula = "POP_ID + INDIVIDUALS ~ MARKERS_ALLELES",
+          formula = "STRATA + INDIVIDUALS ~ MARKERS_ALLELES",
           values_from = "n"
         ) %>%
-        dplyr::mutate(POP_ID = factor(as.character(POP_ID), levels = pop.levels)) %>%# xvalDapc doesn't accept pop as ordered factor
-        dplyr::arrange(POP_ID, INDIVIDUALS)
+        dplyr::mutate(STRATA = factor(as.character(STRATA), levels = pop.levels)) %>%# xvalDapc doesn't accept pop as ordered factor
+        dplyr::arrange(STRATA, INDIVIDUALS)
     } else {
       data <- dplyr::bind_rows(
-        dplyr::select(data, MARKERS, POP_ID, INDIVIDUALS, n = GT_BIN) %>%
+        dplyr::select(data, MARKERS, STRATA, INDIVIDUALS, n = GT_BIN) %>%
           dplyr::mutate(
             MARKERS_ALLELES = stringi::stri_join(MARKERS, "A1", sep = "."),
             MARKERS = NULL,
             REF = NULL,
             n = as.integer(abs(n - 2))
           ),
-        dplyr::select(data, MARKERS, POP_ID, INDIVIDUALS, n = GT_BIN) %>%
+        dplyr::select(data, MARKERS, STRATA, INDIVIDUALS, n = GT_BIN) %>%
           dplyr::mutate(
             MARKERS_ALLELES = stringi::stri_join(MARKERS, "A2", sep = "."),
             MARKERS = NULL,
@@ -380,11 +378,11 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
       ) %>%
         radiator::rad_wide(
           x = .,
-          formula = "POP_ID + INDIVIDUALS ~ MARKERS_ALLELES",
+          formula = "STRATA + INDIVIDUALS ~ MARKERS_ALLELES",
           values_from = "n"
         ) %>%
-        dplyr::mutate(POP_ID = factor(as.character(POP_ID), levels = pop.levels)) %>%# xvalDapc doesn't accept pop as ordered factor
-        dplyr::arrange(POP_ID, INDIVIDUALS)
+        dplyr::mutate(STRATA = factor(as.character(STRATA), levels = pop.levels)) %>%# xvalDapc doesn't accept pop as ordered factor
+        dplyr::arrange(STRATA, INDIVIDUALS)
     }
   } else {
     missing.geno <- dplyr::ungroup(data) %>%
@@ -394,7 +392,7 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
 
     data <- suppressWarnings(
       dplyr::ungroup(data) %>%
-        dplyr::select(MARKERS, INDIVIDUALS, GT, POP_ID) %>%
+        dplyr::select(MARKERS, INDIVIDUALS, GT, STRATA) %>%
         dplyr::filter(GT != "000000") %>%
         dplyr::mutate(
           A1 = stringi::stri_sub(str = GT, from = 1, to = 3),
@@ -403,31 +401,31 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
         ) %>%
         radiator::rad_long(
           x = .,
-          cols = c("INDIVIDUALS", "POP_ID", "MARKERS"),
+          cols = c("INDIVIDUALS", "STRATA", "MARKERS"),
           names_to = "ALLELES",
           values_to = "GT"
         ) %>%
-        dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS, GT) %>%
-        dplyr::count(x = ., POP_ID, INDIVIDUALS, MARKERS, GT) %>%
+        dplyr::arrange(MARKERS, STRATA, INDIVIDUALS, GT) %>%
+        dplyr::count(x = ., STRATA, INDIVIDUALS, MARKERS, GT) %>%
         dplyr::ungroup(.) %>%
-        tidyr::complete(data = ., tidyr::nesting(INDIVIDUALS, POP_ID), tidyr::nesting(MARKERS, GT), fill = list(n = 0)) %>%
+        tidyr::complete(data = ., tidyr::nesting(INDIVIDUALS, STRATA), tidyr::nesting(MARKERS, GT), fill = list(n = 0)) %>%
         dplyr::mutate(MARKERS_ALLELES = stringi::stri_join(MARKERS, GT, sep = ".")) %>%
         dplyr::anti_join(missing.geno, by = c("MARKERS", "INDIVIDUALS")) %>%
         dplyr::select(-MARKERS, -GT) %>%
-        dplyr::mutate(POP_ID = factor(as.character(POP_ID), levels = pop.levels)) %>%# xvalDapc doesn't accept pop as ordered factor
+        dplyr::mutate(STRATA = factor(as.character(STRATA), levels = pop.levels)) %>%# xvalDapc doesn't accept pop as ordered factor
         dplyr::arrange(MARKERS_ALLELES, INDIVIDUALS) %>%
-        radiator::rad_wide(x = ., formula = "POP_ID + INDIVIDUALS ~ MARKERS_ALLELES", values_from = "n") %>%
-        dplyr::arrange(POP_ID, INDIVIDUALS))
+        radiator::rad_wide(x = ., formula = "STRATA + INDIVIDUALS ~ MARKERS_ALLELES", values_from = "n") %>%
+        dplyr::arrange(STRATA, INDIVIDUALS))
   }
 
-  strata.genind <- dplyr::distinct(.data = data, INDIVIDUALS, POP_ID) %>%
+  strata.genind <- dplyr::distinct(.data = data, INDIVIDUALS, STRATA) %>%
     dplyr::mutate(INDIVIDUALS = factor(INDIVIDUALS, levels = unique(data$INDIVIDUALS)))
 
   # genind arguments common to all data.type
   ind <- data$INDIVIDUALS
-  pop <- data$POP_ID
+  pop <- data$STRATA
   data <-  dplyr::ungroup(data) %>%
-    dplyr::select(-c(INDIVIDUALS, POP_ID))
+    dplyr::select(-c(INDIVIDUALS, STRATA))
   suppressWarnings(rownames(data) <- ind)
 
   # genind constructor

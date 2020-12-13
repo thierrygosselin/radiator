@@ -1,3 +1,10 @@
+# radiator 1.1.9 2020-12-12
+
+* bug fix using plink files and future 
+* continue to test future backend and carrier
+
+
+
 # radiator 1.1.8 2020-10-17
 
 * No longer using Travis CI and AppVeyor to test the package

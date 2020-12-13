@@ -2127,7 +2127,7 @@ check_header_source_vcf <- function(vcf) {
   # samtools problem encountered 20200918: PL now set to .
 
   check.header <- SeqArray::seqVCF_Header(vcf.fn = vcf)
-  problematic.id <- c("AD", "AO", "QA", "GL", "CATG", "RO", "QR", "MIN_DP", "PL")
+  problematic.id <- c("AD", "AO", "QA", "GL", "CATG", "RO", "QR", "MIN_DP", "PL", "DPR")
   problematic.id <-
     purrr::keep(
       .x = problematic.id,

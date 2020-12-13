@@ -1051,14 +1051,14 @@ extract_coverage <- function(
           dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = round, digits = 0)) %>%
           dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = as.integer)) %>%
           dplyr::ungroup(.) %>%
-          dplyr::rename_all(.funs = list(colnames_rep), total = TRUE) %>%
+          dplyr::rename_with(.fn = colnames_rep, total = TRUE) %>%
           dplyr::bind_cols(
             dplyr::group_by(depth, M_SEQ) %>%
               dplyr::summarise(dplyr::across(.cols = tidyselect::all_of(want), .fns = mean, na.rm = TRUE), .groups = "keep") %>%
               dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = round, digits = 0)) %>%
               dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = as.integer)) %>%
               dplyr::ungroup(.) %>%
-              dplyr::rename_all(.funs = list(colnames_rep), mean = TRUE) %>%
+              dplyr::rename_with(.fn = colnames_rep, mean = TRUE) %>%
               dplyr::select(-M_SEQ)
           ) %>%
           dplyr::bind_cols(
@@ -1067,7 +1067,7 @@ extract_coverage <- function(
               dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = round, digits = 0)) %>%
               dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = as.integer)) %>%
               dplyr::ungroup(.) %>%
-              dplyr::rename_all(.funs = list(colnames_rep), median = TRUE) %>%
+              dplyr::rename_with(.fn = colnames_rep, median = TRUE) %>%
               dplyr::select(-M_SEQ)
           ) %>%
           dplyr::bind_cols(
@@ -1076,7 +1076,7 @@ extract_coverage <- function(
               dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = round, digits = 0)) %>%
               dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = as.integer)) %>%
               dplyr::ungroup(.) %>%
-              dplyr::rename_all(.funs = list(colnames_rep), iqr = TRUE) %>%
+              dplyr::rename_with(.fn = colnames_rep, iqr = TRUE) %>%
               dplyr::select(-M_SEQ)
           )
       }
@@ -1086,14 +1086,14 @@ extract_coverage <- function(
           dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = round, digits = 0)) %>%
           dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = as.integer)) %>%
           dplyr::ungroup(.) %>%
-          dplyr::rename_all(.funs = list(colnames_rep), total = TRUE) %>%
+          dplyr::rename_with(.fn = colnames_rep, total = TRUE) %>%
           dplyr::bind_cols(
             dplyr::group_by(depth, ID_SEQ) %>%
               dplyr::summarise(dplyr::across(.cols = tidyselect::all_of(want), .fns = mean, na.rm = TRUE), .groups = "keep") %>%
               dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = round, digits = 0)) %>%
               dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = as.integer)) %>%
               dplyr::ungroup(.) %>%
-              dplyr::rename_all(.funs = list(colnames_rep), mean = TRUE) %>%
+              dplyr::rename_with(.fn = colnames_rep, mean = TRUE) %>%
               dplyr::select(-ID_SEQ)
           ) %>%
           dplyr::bind_cols(
@@ -1102,7 +1102,7 @@ extract_coverage <- function(
               dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = round, digits = 0)) %>%
               dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = as.integer)) %>%
               dplyr::ungroup(.) %>%
-              dplyr::rename_all(.funs = list(colnames_rep), median = TRUE) %>%
+              dplyr::rename_with(.fn = colnames_rep, median = TRUE) %>%
               dplyr::select(-ID_SEQ)
           ) %>%
           dplyr::bind_cols(
@@ -1111,7 +1111,7 @@ extract_coverage <- function(
               dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = round, digits = 0)) %>%
               dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = as.integer)) %>%
               dplyr::ungroup(.) %>%
-              dplyr::rename_all(.funs = list(colnames_rep), iqr = TRUE) %>%
+              dplyr::rename_with(.fn = colnames_rep, iqr = TRUE) %>%
               dplyr::select(-ID_SEQ)
           )
       }

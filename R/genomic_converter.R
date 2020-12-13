@@ -441,11 +441,12 @@ genomic_converter <- function(
 
   if (verbose) message("\nPreparing data for output\n")
 
-  if (!is.null(strata.bk) || rlang::has_name(input, "POP_ID")) {
-    if (is.factor(input$POP_ID)) {
-      pop.levels <- levels(input$POP_ID)
+  if (!is.null(strata.bk) || rlang::has_name(input, "STRATA")) {
+    pop.levels <- NULL
+    if (is.factor(input$STRATA)) {
+      pop.levels <- levels(input$STRATA)
     } else {
-      pop.levels <- unique(input$POP_ID)
+      pop.levels <- unique(input$STRATA)
     }
   }
 
@@ -493,8 +494,6 @@ genomic_converter <- function(
             replacement = "genlight",
             vectorize_all = FALSE
           )
-        } else {
-          message("Continue working on genind object")
         }
       }
     }
@@ -759,7 +758,7 @@ genomic_converter <- function(
     res$stockr <- radiator::write_stockr(data = input, verbose = verbose)
   }
 
-  # structure --------------------------------------------------------------------
+  # maverick --------------------------------------------------------------------
   if ("maverick" %in% output) {
     if (verbose) message("Generating MavericK files")
     radiator::write_maverick(
@@ -801,7 +800,7 @@ genomic_converter <- function(
       n.chromosome <- "no chromosome info"
     }
     n.individuals <- length(unique(input$INDIVIDUALS))
-    if (!is.null(strata.bk)) n.pop <- length(unique(input$POP_ID))
+    if (!is.null(strata.bk)) n.pop <- length(unique(input$STRATA))
 
     cat("################################### RESULTS ####################################\n")
     message("Data format of input: ", data.type)

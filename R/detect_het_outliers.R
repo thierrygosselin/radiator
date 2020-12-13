@@ -278,6 +278,7 @@ summarise_genotypes <- function(data, path.folder = NULL) {
 
   # data.bk <- data
   # data <- data.bk
+  data %<>% dplyr::rename(POP_ID = tidyselect::any_of("STRATA"))
   want <- c("MARKERS", "POP_ID", "INDIVIDUALS", "GT_BIN", "READ_DEPTH")
   data %<>% dplyr::select(tidyselect::any_of(want))
 

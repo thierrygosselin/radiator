@@ -90,7 +90,7 @@ tidy_wide <- function(data, import.metadata = FALSE) {
   }
 
   # No longer supported, remove POP_ID
-  strata %<>% dplyr::rename(STRATA = tidyselect::any_of("POP_ID"))
+  data %<>% dplyr::rename(STRATA = tidyselect::any_of("POP_ID"))
 
   # Determine long (tidy) or wide dataset
   if (rlang::has_name(data, "LOCUS") && !rlang::has_name(data, "MARKERS")) {
@@ -454,7 +454,7 @@ tidy_genomic_data <- function(
   if (data.type %in% c("plink.tped.file", "plink.bed.file")) { # PLINK
     if (verbose) message("Importing the PLINK file...")
 
-    input <- tidy_plink(
+    input <- radiator::tidy_plink(
       data = data,
       parallel.core = parallel.core,
       verbose = verbose
@@ -462,8 +462,7 @@ tidy_genomic_data <- function(
 
     biallelic <- input$biallelic
     input <- input$input
-
-
+    strata <- "not.null" # to trigger
 
   } # End import PLINK
 
@@ -522,7 +521,7 @@ tidy_genomic_data <- function(
       pattern = c("# Catalog ID", "Catalog ID", "# Catalog Locus ID", "Catalog.ID"),
       replacement = c("LOCUS", "LOCUS", "LOCUS", "LOCUS"),
       vectorize_all = FALSE
-      )
+    )
 
     if (rlang::has_name(input, "Seg Dist")) input %<>% dplyr::select(-`Seg Dist`)
 
@@ -634,7 +633,6 @@ tidy_genomic_data <- function(
     skip.tidy.wide <- TRUE
   }# End dart
 
-
   # Import GENIND--------------------------------------------------------------
   if (data.type == "genind") { # DATA FRAME OF GENOTYPES
     if (verbose) message("Tidying the genind object ...")
@@ -726,11 +724,7 @@ tidy_genomic_data <- function(
   # END IMPORT DATA-------------------------------------------------------------
 
   # strata integration ---------------------------------------------------------
-  if (!is.null(strata)) {
-    strata.df <- generate_strata(input, pop.id = TRUE)
-  } else {
-    filter.common.markers <- FALSE # by default
-  }
+  if (is.null(strata)) filter.common.markers <- FALSE
 
   # Blacklist genotypes --------------------------------------------------------
   if (is.null(blacklist.genotypes)) { # no Whitelist
@@ -741,7 +735,7 @@ tidy_genomic_data <- function(
         data = .,
         blacklist.genotypes = blacklist.genotypes,
         verbose = verbose
-        )
+      )
   } # End erase genotypes
 
   # dump unused object
@@ -761,30 +755,34 @@ tidy_genomic_data <- function(
     verbose = verbose)
 
   # filter_common_markers ------------------------------------------------------
-  input <- filter_common_markers(
-    data = input,
-    filter.common.markers = filter.common.markers,
-    verbose = verbose,
-    path.folder = path.folder,
-    parameters = filters.parameters,
-    internal = TRUE)
+  input %<>%
+    filter_common_markers(
+      data = .,
+      filter.common.markers = filter.common.markers,
+      verbose = verbose,
+      path.folder = path.folder,
+      parameters = filters.parameters,
+      internal = TRUE)
 
   # filter_monomorphic----------------------------------------------------------
-  input <- filter_monomorphic(
-    data = input,
-    filter.monomorphic = filter.monomorphic,
-    verbose = verbose,
-    path.folder = path.folder,
-    parameters = filters.parameters,
-    internal = TRUE)
+  input %<>%
+    filter_monomorphic(
+      data = .,
+      filter.monomorphic = filter.monomorphic,
+      verbose = verbose,
+      path.folder = path.folder,
+      parameters = filters.parameters,
+      internal = TRUE)
 
 
   # Results --------------------------------------------------------------------
-  if (!is.null(strata)) {
-    input %<>% dplyr::arrange(STRATA, INDIVIDUALS, MARKERS)
-  } else {
-    input %<>% dplyr::arrange(INDIVIDUALS, MARKERS)
-  }
+  # is this really necessary ? Very long with huge dataset... (bottleneck even)
+  # turned off 20201212
+  # if (!is.null(strata)) {
+  #   input %<>% dplyr::arrange(STRATA, INDIVIDUALS, MARKERS)
+  # } else {
+  #   input %<>% dplyr::arrange(INDIVIDUALS, MARKERS)
+  # }
 
   # Write to working directory -------------------------------------------------
   if (!is.null(filename)) {

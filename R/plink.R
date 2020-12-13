@@ -504,6 +504,10 @@ tidy_plink <- function(
   # strata = NULL
   # calibrate.alleles = TRUE
   # parallel.core = parallel::detectCores() - 1
+  # parameters <- NULL
+  # filename=NULL
+  # internal = FALSE
+  # path.folder = getwd()
 
   # Cleanup---------------------------------------------------------------------
   radiator_function_header(f.name = "tidy_plink", verbose = verbose)
@@ -638,32 +642,8 @@ tidy_plink <- function(
   } #End tidy tped
 
   if (plink.format == "plink.bed.file") {
-    # tidy_plink folder ------------------------------------------------------------
-    # tidy.folder <- generate_folder(
-    #   f = path.folder,
-    #   rad.folder = "tidy_plink",
-    #   prefix_int = TRUE,
-    #   internal = FALSE,
-    #   file.date = file.date,
-    #   verbose = verbose)
-
-    # write the dots file: after the GDS import...
-    # write_rad(
-    #   data = rad.dots,
-    #   path = tidy.folder,
-    #   filename = stringi::stri_join("radiator_tidy_plink_args_", file.date, ".tsv"),
-    #   tsv = TRUE,
-    #   internal = internal,
-    #   verbose = verbose
-    # )
     # Get info markers and individuals -----------------------------------------
     gds.info <- radiator::summary_gds(gds = data, verbose = FALSE)
-    # markers.meta <- extract_markers_metadata(gds = data, whitelist = TRUE)
-    # individuals <- extract_individuals_metadata(
-    #   gds = data,
-    #   ind.field.select = "INDIVIDUALS",
-    #   whitelist = TRUE
-    # )
     n.markers <- gds.info$n.markers
     n.individuals <- gds.info$n.ind
 
@@ -683,18 +663,12 @@ tidy_plink <- function(
     tidy.data <- gds2tidy(
       gds = data,
       markers.meta = NULL,
-      calibrate.alleles = FALSE
+      pop.id = FALSE,
+      calibrate.alleles = calibrate.alleles
     )
-    # checks
-    # dplyr::n_distinct(tidy.data$INDIVIDUALS)
-    # dplyr::n_distinct(tidy.data$MARKERS)
-    # filename <- internal <- parameters <- path.folder <- calibrate.alleles <- NULL
-    # rm(filename, internal, parameters, path.folder, calibrate.alleles)
-    return(res = list(input = tidy.data, biallelic = "biallelic"))
+    return(res = list(input = tidy.data, biallelic = radiator::detect_biallelic_markers(data)))
   }#End tidy bed
-
-
-} # End import PLINK
+} # End tidy_plink
 
 
 # write_plink ------------------------------------------------------------------
@@ -760,7 +734,7 @@ write_plink <- function(data, filename = NULL) {
     radiator::rad_wide(x = ., formula = "COL1 + MARKERS +COL3 + COL4 ~ INDIVIDUALS_ALLELES", values_from = "GENOTYPE") %>%
     dplyr::arrange(MARKERS)
 
-  tfam <- dplyr::distinct(.data = data, POP_ID, INDIVIDUALS) %>%
+  tfam <- dplyr::distinct(.data = data, STRATA, INDIVIDUALS) %>%
     dplyr::arrange(INDIVIDUALS) %>%
     dplyr::mutate(
       COL3 = rep("0",n()),

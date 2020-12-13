@@ -79,7 +79,7 @@ pairwise genome similarity
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.8</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.9</span>
       </span>
     </div>
 
@@ -199,7 +199,7 @@ Default: <code>detect.duplicate.genomes = TRUE</code>.</p></td>
 are used (give similar results):</p><ul>
 <li><p>gds data The calculation is fast it's <code><a href='https://rdrr.io/pkg/SNPRelate/man/snpgdsIBS.html'>SNPRelate::snpgdsIBS</a></code> under
 the hood.</p></li>
-<li><p>tidy data The distance measure uses <code>amap::Dist</code>.
+<li><p>tidy data The distance measure uses <code><a href='https://rdrr.io/pkg/amap/man/dist.html'>amap::Dist</a></code>.
 This must be one of "euclidean", "maximum", "manhattan", "canberra", "binary".</p></li>
 </ul><p>Using <code>distance.method = NULL</code> will not run this method.
 Default: <code>distance.method = "manhattan"</code>. This is very fast

@@ -26,17 +26,27 @@ tidy_gtypes <- function(data) {
   if (class(data) != "gtypes") stop("Input is not a genlight object")
 
   # import ---------------------------------------------------------------------
-  input <- suppressWarnings(
-    tibble::as_tibble(data@data) %>%
-      dplyr::rename(INDIVIDUALS = ids, POP_ID = strata) %>%
-      dplyr::mutate(ALLELES = rep(c("A1", "A2"), n() / 2)) %>%
-      tidyr::pivot_longer(
-        data = .,
-        cols = -c("POP_ID", "INDIVIDUALS", "ALLELES"),
-        names_to = "MARKERS",
-        values_to = "GT"
+  # lots of changes with gtypes so some stuff might be broken...
+
+  input <- tibble::as_tibble(data@data) %>%
+    dplyr::rename(
+      INDIVIDUALS = id,
+      STRATA = stratum,
+      MARKERS = tidyselect::any_of("locus"),
+      GT = tidyselect::any_of("allele")
       )
-  )
+
+  # input <- suppressWarnings(
+  #   tibble::as_tibble(data@data) %>%
+  #     dplyr::rename(INDIVIDUALS = id, POP_ID = stratum) %>% # ids and strata before
+  #     dplyr::mutate(ALLELES = rep(c("A1", "A2"), n() / 2)) %>%
+  #     tidyr::pivot_longer(
+  #       data = .,
+  #       cols = -c("POP_ID", "INDIVIDUALS", "ALLELES"),
+  #       names_to = "MARKERS",
+  #       values_to = "GT"
+  #     )
+  # )
   # detect stratg genotype coding ----------------------------------------------
   # For GT = c("A", "C", "G", "T")
   gt.format <- sort(unique(input$GT))
@@ -60,15 +70,25 @@ tidy_gtypes <- function(data) {
   # unique(stringi::stri_count_boundaries(str = test))
 
   # prep tidy ------------------------------------------------------------------
-  input <- input %>%
+  input %<>%
     dplyr::mutate(
       GT = replace(GT, which(is.na(GT)), "000"),
-      POP_ID = as.character(POP_ID)) %>%
-    dplyr::group_by(POP_ID, INDIVIDUALS, MARKERS) %>%
-    tidyr::pivot_wider(data = ., names_from = "ALLELES", values_from = "GT") %>%
-    dplyr::ungroup(.) %>%
-    tidyr::unite(data = ., col = GT, A1, A2, sep = "") %>%
-    dplyr::select(POP_ID, INDIVIDUALS, MARKERS, GT)
+      STRATA = as.character(STRATA)
+    ) %>%
+    dplyr::group_by(STRATA, INDIVIDUALS, MARKERS) %>%
+    dplyr::summarise(GT = stringi::stri_join(GT, collapse = ""), .groups = "drop")
+
+  ## before
+  # input %<>%
+  #   dplyr::mutate(
+  #     GT = replace(GT, which(is.na(GT)), "000"),
+  #     POP_ID = as.character(POP_ID)
+  #     ) %>%
+  #   dplyr::group_by(POP_ID, INDIVIDUALS, MARKERS) %>%
+  #   tidyr::pivot_wider(data = ., names_from = "ALLELES", values_from = "GT") %>%
+  #   dplyr::ungroup(.) %>%
+  #   tidyr::unite(data = ., col = GT, A1, A2, sep = "") %>%
+  #   dplyr::select(POP_ID, INDIVIDUALS, MARKERS, GT)
   return(input)
 }#End tidy_gtypes
 
@@ -138,8 +158,8 @@ write_gtypes <- function(data, write = FALSE, filename = NULL) {
     if (data.type == "gds.file") data %<>% radiator::read_rad(data = .)
     # biallelic <- radiator::detect_biallelic_markers(data)# faster with GDS
     markers.meta <- extract_markers_metadata(gds = data, markers.meta.select = "MARKERS", whitelist = TRUE)
-    strata <- extract_individuals_metadata(gds = data, ind.field.select = c("INDIVIDUALS", "STRATA"), whitelist = TRUE) %>%
-      dplyr::rename(POP_ID = STRATA)
+    strata <- extract_individuals_metadata(gds = data, ind.field.select = c("INDIVIDUALS", "STRATA"), whitelist = TRUE)
+
     data <- SeqArray::seqGetData(
       gdsfile = data, var.name = "$dosage_alt") %>%
       magrittr::set_colnames(x = ., value = markers.meta$MARKERS) %>%
@@ -159,17 +179,17 @@ write_gtypes <- function(data, write = FALSE, filename = NULL) {
       ) %>%
       radiator::rad_long(
         x = .,
-        cols = c("INDIVIDUALS", "POP_ID", "MARKERS"),
+        cols = c("INDIVIDUALS", "STRATA", "MARKERS"),
         names_to = "ALLELES",
         values_to = "GT"
         ) %>%
       radiator::rad_wide(
         x = .,
-        formula = "POP_ID + INDIVIDUALS ~ MARKERS + ALLELES",
+        formula = "STRATA + INDIVIDUALS ~ MARKERS + ALLELES",
         values_from = "GT",
         sep = "."
       ) %>%
-      dplyr::arrange(POP_ID, INDIVIDUALS)
+      dplyr::arrange(STRATA, INDIVIDUALS)
 
     markers.meta <- strata <- NULL
 
@@ -179,7 +199,7 @@ write_gtypes <- function(data, write = FALSE, filename = NULL) {
 
     if (rlang::has_name(data, "GT_BIN")) {
       data  %<>%
-        dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT_BIN) %>%
+        dplyr::select(MARKERS, STRATA, INDIVIDUALS, GT_BIN) %>%
         dplyr::mutate(
           `1` = dplyr::if_else(GT_BIN == 0L, 1L, GT_BIN),
           `2` = dplyr::recode(.x = GT_BIN, `1` = 2L, `0` = 1L),
@@ -187,42 +207,42 @@ write_gtypes <- function(data, write = FALSE, filename = NULL) {
         ) %>%
         radiator::rad_long(
           x = .,
-          cols = c("INDIVIDUALS", "POP_ID", "MARKERS"),
+          cols = c("INDIVIDUALS", "STRATA", "MARKERS"),
           names_to = "ALLELES",
           values_to = "GT"
         ) %>%
         radiator::rad_wide(
           x = .,
-          formula = "POP_ID + INDIVIDUALS ~ MARKERS + ALLELES",
+          formula = "STRATA + INDIVIDUALS ~ MARKERS + ALLELES",
           values_from = "GT",
           sep = "."
         ) %>%
-        dplyr::arrange(POP_ID, INDIVIDUALS)
+        dplyr::arrange(STRATA, INDIVIDUALS)
     } else {
       if (!rlang::has_name(data, "GT")) data %<>% calibrate_alleles(data = ., gt = TRUE) %$% input
       data %<>%
-        dplyr::select(POP_ID, INDIVIDUALS, MARKERS, GT) %>%
-        dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS) %>%
+        dplyr::select(STRATA, INDIVIDUALS, MARKERS, GT) %>%
+        dplyr::arrange(MARKERS, STRATA, INDIVIDUALS) %>%
         dplyr::mutate(
           GT = replace(GT, which(GT == "000000"), NA),
-          POP_ID = as.character(POP_ID),
+          STRATA = as.character(STRATA),
           `1` = stringi::stri_sub(str = GT, from = 1, to = 3), # most of the time: faster than tidyr::separate
           `2` = stringi::stri_sub(str = GT, from = 4, to = 6),
           GT = NULL
         ) %>%
         radiator::rad_long(
           x = .,
-          cols = c("INDIVIDUALS", "POP_ID", "MARKERS"),
+          cols = c("INDIVIDUALS", "STRATA", "MARKERS"),
           names_to = "ALLELES",
           values_to = "GT"
         ) %>%
         radiator::rad_wide(
           x = .,
-          formula = "POP_ID + INDIVIDUALS ~ MARKERS + ALLELES",
+          formula = "STRATA + INDIVIDUALS ~ MARKERS + ALLELES",
           values_from = "GT",
           sep = "."
         ) %>%
-        dplyr::arrange(POP_ID, INDIVIDUALS)
+        dplyr::arrange(STRATA, INDIVIDUALS)
     }
   }
 
@@ -235,7 +255,7 @@ write_gtypes <- function(data, write = FALSE, filename = NULL) {
       gen.data = data[,-c(1,2)],
       ploidy = 2,
       ind.names = data$INDIVIDUALS,
-      strata = data$POP_ID,
+      strata = data$STRATA,
       schemes = NULL,
       sequences = NULL,
       description = NULL,

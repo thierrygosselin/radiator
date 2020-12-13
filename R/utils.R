@@ -714,7 +714,7 @@ radiator_future <- function(
     # split
     if (df) {
       .x$SPLIT_VEC <- sv
-      .x %<>% dplyr::group_split(.tbl = ., "SPLIT_VEC", .keep = FALSE)
+      .x %<>% dplyr::ungroup(.) %>% dplyr::group_split(.tbl = ., "SPLIT_VEC", .keep = FALSE)
     } else {
       .x %<>% split(x = ., f = sv)
     }
@@ -732,9 +732,10 @@ radiator_future <- function(
       sv$SPLIT_VEC <- as.integer(floor((split.chunks * (seq_len(d) - 1) / d) + 1))
       .x %<>%
         dplyr::left_join(sv, by = split.with) %>%
+        dplyr::ungroup(.) %>%
         dplyr::group_split(.tbl = ., "SPLIT_VEC", .keep = FALSE)
     } else {
-      .x %<>% dplyr::group_split(.tbl = ., .data[[split.with]], .keep = TRUE)
+      .x %<>% dplyr::ungroup(.) %>% dplyr::group_split(.tbl = ., .data[[split.with]], .keep = TRUE)
     }
   }
 

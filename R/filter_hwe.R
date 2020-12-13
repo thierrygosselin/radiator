@@ -187,7 +187,7 @@
 #' Written in the folder:
 #' \enumerate{
 #' \item genotypes.summary.tsv: A tibble with these columns:
-#' \code{MARKERS, POP_ID, HET, HOM_ALT, HOM_REF, MISSING, N,
+#' \code{MARKERS, STRATA, HET, HOM_ALT, HOM_REF, MISSING, N,
 #' FREQ_ALT, FREQ_REF, FREQ_HET, FREQ_HOM_REF_O, FREQ_HET_O, FREQ_HOM_ALT_O,
 #' FREQ_HOM_REF_E, FREQ_HET_E, FREQ_HOM_ALT_E, N_HOM_REF_EXP,
 #' N_HET_EXP, N_HOM_ALT_EXP, HOM_REF_Z_SCORE, HOM_HET_Z_SCORE,
@@ -263,18 +263,18 @@ filter_hwe <- function(
 
   if (interactive.filter || filter.hwe) {
     if (interactive.filter) verbose <- TRUE
-    # # Testing
+    ##Testing
     # interactive.filter = TRUE
     # filter.hwe <- TRUE
-    # data <- gds
+    # # data <- gds
     # strata = NULL
     # hw.pop.threshold = NULL
     # midp.threshold = 4L
     # filename = NULL
     # parallel.core = parallel::detectCores() - 1
     # verbose = TRUE
-    # path.folder <- wf
-    # parameters = filters.parameters
+    # path.folder <- getwd()
+    # parameters = NULL
     # internal <- FALSE
 
     # required package
@@ -347,10 +347,8 @@ filter_hwe <- function(
         data <- radiator::read_rad(data, verbose = verbose)
       }
       gds.bk <- data
-      data <- gds2tidy(gds = data, parallel.core = parallel.core)
-      if (rlang::has_name(data, "STRATA") && !rlang::has_name(data, "POP_ID")) {
-        data %<>% dplyr::rename(POP_ID = STRATA)
-      }
+      data <- gds2tidy(gds = data, pop.id = FALSE, parallel.core = parallel.core)
+      data %<>% dplyr::rename(STRATA = tidyselect::any_of("POP_ID"))
       data.type <- "tbl_df"
     } else {
       data.bk <- data
@@ -390,20 +388,20 @@ filter_hwe <- function(
       verbose = verbose)
 
     # create a strata.df
-    strata <- radiator::generate_strata(data = data, pop.id = TRUE)
+    strata <- radiator::generate_strata(data = data, pop.id = FALSE)
 
-    if (is.factor(strata$POP_ID)) {
-      pop.id.levels <- levels(strata$POP_ID)
+    if (is.factor(strata$STRATA)) {
+      pop.id.levels <- levels(strata$STRATA)
     } else {
-      pop.id.levels <- unique(strata$POP_ID)
+      pop.id.levels <- unique(strata$STRATA)
     }
 
     # Check that at least 10 ind/pop ---------------------------------------------
-    pop.removed <- dplyr::group_by(strata, POP_ID) %>%
+    pop.removed <- dplyr::group_by(strata, STRATA) %>%
       dplyr::tally(.) %>%
       dplyr::filter(n < 10) %>%
-      dplyr::distinct(POP_ID) %>%
-      dplyr::mutate(POP_ID = as.character(POP_ID)) %>%
+      dplyr::distinct(STRATA) %>%
+      dplyr::mutate(STRATA = as.character(STRATA)) %>%
       purrr::flatten_chr(.)
 
     if (length(pop.removed) > 0) {
@@ -421,10 +419,10 @@ filter_hwe <- function(
       } else {
         run.analysis <- TRUE
         message("    Note: removed strata are included back in datasets at the end\n\n")
-        data.temp <- dplyr::filter(data, POP_ID %in% pop.removed)
-        data <- dplyr::filter(data, !POP_ID %in% pop.removed)
-        if (is.factor(data$POP_ID)) data$POP_ID <- droplevels(data$POP_ID)
-        strata <- dplyr::filter(strata, !POP_ID %in% pop.removed)
+        data.temp <- dplyr::filter(data, STRATA %in% pop.removed)
+        data <- dplyr::filter(data, !STRATA %in% pop.removed)
+        if (is.factor(data$STRATA)) data$STRATA <- droplevels(data$STRATA)
+        strata <- dplyr::filter(strata, !STRATA %in% pop.removed)
       }
 
     } else {
@@ -441,14 +439,15 @@ filter_hwe <- function(
       # prepare filter, table and figure------------------------------------------
       if (verbose) message("Summarizing data")
       sample.size <- length(unique(data$INDIVIDUALS))
-      want <- c("MARKERS", "POP_ID", "N", "MISSING", "HOM_REF", "HET", "HOM_ALT", "READ_DEPTH")
+      want <- c("MARKERS", "STRATA", "N", "MISSING", "HOM_REF", "HET", "HOM_ALT", "READ_DEPTH")
       data.sum <- summarise_genotypes(data, path.folder = path.folder) %>%
+        dplyr::rename(STRATA = tidyselect::any_of("POP_ID")) %>%
         dplyr::select(tidyselect::any_of(want)) %>%
         dplyr::rename(AA = HOM_REF, AB = HET, BB = HOM_ALT)
-      if (is.factor(data.sum$POP_ID)) {
-        pop.levels <- levels(data.sum$POP_ID)
+      if (is.factor(data.sum$STRATA)) {
+        pop.levels <- levels(data.sum$STRATA)
       } else {
-        pop.levels <- unique(data.sum$POP_ID)
+        pop.levels <- unique(data.sum$STRATA)
       }
       n.pop <- length(pop.levels)
       if (verbose) message("File written: genotypes.summary.tsv")
@@ -456,7 +455,7 @@ filter_hwe <- function(
       # HWE analysis -------------------------------------------------------------
       data.sum <- hwe_analysis(x = data.sum, parallel.core = 1) %>%
         dplyr::mutate(
-          POP_ID = factor(POP_ID, levels = pop.levels),
+          STRATA = factor(STRATA, levels = pop.levels),
           GROUPINGS = factor(
             x = GROUPINGS,
             levels = c("monomorphic", "hwe", "*", "**", "***", "****", "*****"),
@@ -474,7 +473,7 @@ filter_hwe <- function(
       }
 
       hwe.pop.sum <- data.sum %>%
-        dplyr::group_by(POP_ID) %>%
+        dplyr::group_by(STRATA) %>%
         dplyr::summarise(
           MARKERS_TOTAL = length(MARKERS),
           MONOMORPHIC = length(MARKERS[MONO]),
@@ -490,11 +489,11 @@ filter_hwe <- function(
       if (verbose) message("File written: hw.pop.sum.tsv")
 
       hwd.markers.pop.sum <- data.sum %>%
-        dplyr::filter(!HWE, POP_ID != "OVERALL") %>%
-        dplyr::select(POP_ID, MARKERS, `*`, `**`, `***`, `****`, `*****`) %>%
+        dplyr::filter(!HWE, STRATA != "OVERALL") %>%
+        dplyr::select(STRATA, MARKERS, `*`, `**`, `***`, `****`, `*****`) %>%
         radiator::rad_long(
           x = .,
-          cols = c("MARKERS", "POP_ID"),
+          cols = c("MARKERS", "STRATA"),
           names_to = "SIGNIFICANCE",
           values_to = "VALUE",
           variable_factor = FALSE
@@ -512,11 +511,11 @@ filter_hwe <- function(
       `Exact test mid p-value` <- NULL
 
       overall <- data.sum %>%
-        dplyr::filter(!HWE, POP_ID == "OVERALL") %>%
-        dplyr::select(POP_ID, MARKERS, `*`, `**`, `***`, `****`, `*****`) %>%
+        dplyr::filter(!HWE, STRATA == "OVERALL") %>%
+        dplyr::select(STRATA, MARKERS, `*`, `**`, `***`, `****`, `*****`) %>%
         radiator::rad_long(
           x = .,
-          cols = c("MARKERS", "POP_ID"),
+          cols = c("MARKERS", "STRATA"),
           names_to = "SIGNIFICANCE",
           values_to = "VALUE",
           variable_factor = FALSE
@@ -611,7 +610,7 @@ filter_hwe <- function(
       #   message("Step 1. Ternary plot visualization")
       # }
       # HardyWeinberg::HWTernaryPlot(
-      # X = dplyr::filter(data, POP_ID == "ATL") %>%
+      # X = dplyr::filter(data, STRATA == "ATL") %>%
       # dplyr::select(AA, AB, BB) %>% as.matrix, n = sample.size,
       # region = 1,
       # hwcurve = TRUE,
@@ -638,15 +637,15 @@ filter_hwe <- function(
       # # HW Parabola
       # parabola <- tibble::tibble(p = seq(0, 1, by = 0.005)) %>%
       #   dplyr::mutate(AA = p^2, AB = 2 * p * (1 - p), BB = (1 - p)^2, p = NULL)
-      # sample.size <- data.sum %>% dplyr::group_by(POP_ID) %>%
+      # sample.size <- data.sum %>% dplyr::group_by(STRATA) %>%
       #   dplyr::summarise(NN = 2* max(N, na.rm = TRUE))
       #
       # hw_parabola <- function(x, sample.size, parabola) {
       #   pop <- unique(x)
-      #   pop.size <- sample.size$NN[sample.size$POP_ID == pop]
+      #   pop.size <- sample.size$NN[sample.size$STRATA == pop]
       #   parabola <- parabola %>%
       #     dplyr::mutate(
-      #       POP_ID = pop,
+      #       STRATA = pop,
       #       NN = pop.size,
       #       AA = AA * NN,
       #       AB = AB * NN,
@@ -659,7 +658,7 @@ filter_hwe <- function(
 
       # hw.parabola <- purrr::map_df(.x = pop.levels, .f = hw_parabola,
       #                              sample.size = sample.size, parabola = parabola) %>%
-      #   dplyr::mutate(POP_ID = factor(POP_ID, pop.levels))
+      #   dplyr::mutate(STRATA = factor(STRATA, pop.levels))
       # parabola <- sample.size <- NULL
 
       # plot.tern <- ggtern::ggtern(
@@ -682,7 +681,7 @@ filter_hwe <- function(
       #   ggtern::theme_rgbw() +
       #   ggtern::theme_nogrid_minor() +
       #   ggtern::theme_nogrid_major() +
-      #   ggplot2::facet_wrap(~ POP_ID)
+      #   ggplot2::facet_wrap(~ STRATA)
       # plot.tern
       # ggtern::ggsave(
       #   limitsize = FALSE,
@@ -736,7 +735,7 @@ filter_hwe <- function(
           axis.title.y = ggplot2::element_text(size = 10, face = "bold"),
           axis.text.y = ggplot2::element_text(size = 8)
         ) +
-        ggplot2::facet_grid(GROUPINGS ~ POP_ID, scales = "free")
+        ggplot2::facet_grid(GROUPINGS ~ STRATA, scales = "free")
 
       # if (interactive.filter) print(hw.manhattan)
       ggplot2::ggsave(
@@ -891,10 +890,10 @@ filter_hwe <- function(
 
 hwe_analysis <- function(x, parallel.core = parallel::detectCores() - 1) {
   hwe_map <- function(x, parallel.core) {
-    pop <- as.character(unique(x$POP_ID))
+    pop <- as.character(unique(x$STRATA))
     message("HWE analysis for pop: ", pop)
-    if (tibble::has_name(x, "POP_ID")) x <- dplyr::select(x, -POP_ID)
-    hwe_radiator <- carrier::crate(function(x) {
+    if (tibble::has_name(x, "STRATA")) x <- dplyr::select(x, -STRATA)
+    hwe_radiator <- carrier::crate(function(x, pop = NULL) {
       `%>%` <- magrittr::`%>%`
       `%<>%` <- magrittr::`%<>%`
       mono <- function(x) {
@@ -943,24 +942,26 @@ hwe_analysis <- function(x, parallel.core = parallel::detectCores() - 1) {
             MONO, "monomorphic",
             dplyr::if_else(HWE, "hwe", GROUPINGS))
         ) %>%
-        tibble::add_column(.data = ., POP_ID = pop, .after = 1)
+        tibble::add_column(.data = ., STRATA = pop, .after = 1)
       return(hw.res)
     })#hwe_radiator
 
     x <- radiator_future(
       .x = x,
       .f = hwe_radiator,
+      pop = pop,
       flat.future = "dfr",
       split.vec = TRUE,
       split.with = NULL,
       split.chunks = 10L,
-      parallel.core = parallel.core
+      parallel.core = parallel.core,
+      forking = TRUE
     )
     return(x)
   }#hwe_map
 
-  x <- x %>%
-    split(x = ., f = .$POP_ID) %>%
+  x %<>%
+    dplyr::group_split(.tbl = ., STRATA, .keep = TRUE) %>%
     purrr::map_df(.x = ., .f = hwe_map, parallel.core = parallel.core)
 }#hwe_analysis
 
@@ -1036,7 +1037,7 @@ blacklist_hw <- function(
         whitelist <- suppressWarnings(
           unfiltered.data %>%
             dplyr::bind_rows(data.temp) %>%
-            dplyr::mutate(POP_ID = factor(POP_ID, levels = pop.id.levels)) %>%
+            dplyr::mutate(STRATA = factor(STRATA, levels = pop.id.levels)) %>%
             dplyr::filter(!MARKERS %in% blacklist$MARKERS))
         radiator::write_rad(data = whitelist, path = rad.filename)
         whitelist %>%
@@ -1112,9 +1113,9 @@ update_filter_parameter <- function(filter, unfiltered,
 
 # testing
 # test using nest and purrr map
-# test <- data %>% dplyr::group_by(POP_ID) %>%
+# test <- data %>% dplyr::group_by(STRATA) %>%
 #   tidyr::nest(data = ., .key = "DATA") %>%
-#   dplyr::filter(POP_ID %in% c("ATL", "MAL")) %>%
+#   dplyr::filter(STRATA %in% c("ATL", "MAL")) %>%
 #   dplyr::mutate(ANALYSIS = purrr::map(.x = .$DATA, .f = hwe_analysis)) %>%
 #   dplyr::select(-DATA) %>%
 #   tidyr::unnest(.)
@@ -1124,7 +1125,7 @@ update_filter_parameter <- function(filter, unfiltered,
 # oplan <- future::plan()
 # future::plan(multiprocess(workers = parallel.core))
 #
-# if (dplyr::n_distinct(data$POP_ID) > 2 * parallel.core) {
+# if (dplyr::n_distinct(data$STRATA) > 2 * parallel.core) {
 #   future.scheduling <- 2L
 # } else {
 #   future.scheduling <- 1L
@@ -1132,8 +1133,8 @@ update_filter_parameter <- function(filter, unfiltered,
 #
 # system.time(
 #   test <- data %>%
-#     dplyr::filter(!POP_ID %in% c("OVERALL")) %>%
-#     dplyr::group_by(POP_ID) %>%
+#     dplyr::filter(!STRATA %in% c("OVERALL")) %>%
+#     dplyr::group_by(STRATA) %>%
 #     tidyr::nest(data = ., .key = "DATA") %>%
 #     dplyr::mutate(ANALYSIS = furrr::future_map(
 #       .x = .$DATA,

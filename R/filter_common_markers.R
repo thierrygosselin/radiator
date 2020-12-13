@@ -6,7 +6,7 @@
 
 #' @description The function will filter the markers by keeping only those
 #' in common between all strata
-#' (population or any groupings defined in \code{STRATA/POP_ID} column).
+#' (population or any groupings defined in \code{STRATA} column).
 #'
 #' \strong{Filter targets}: SNPs
 #'
@@ -272,17 +272,20 @@ filter_common_markers <- function(
 
       if (verbose) message("Scanning for common markers...")
 
+      data %<>% dplyr::rename(STRATA = tidyselect::any_of("POP_ID"))
+
+
       if (tibble::has_name(data, "GT_BIN")) {
-        bl <- dplyr::select(.data = data, MARKERS, POP_ID, GT_BIN) %>%
+        bl <- dplyr::select(.data = data, MARKERS, STRATA, GT_BIN) %>%
           dplyr::filter(!is.na(GT_BIN))
       } else {
-        bl <- dplyr::select(.data = data, MARKERS, POP_ID, GT) %>%
+        bl <- dplyr::select(.data = data, MARKERS, STRATA, GT) %>%
           dplyr::filter(GT != "000000")
       }
 
-      bl <- dplyr::distinct(bl, MARKERS, POP_ID) %>%
+      bl <- dplyr::distinct(bl, MARKERS, STRATA) %>%
         dplyr::count(x = ., MARKERS) %>%
-        dplyr::filter(n != length(unique(data$POP_ID))) %>%
+        dplyr::filter(n != length(unique(data$STRATA))) %>%
         dplyr::distinct(MARKERS) %>%
         dplyr::arrange(MARKERS)
 
@@ -494,19 +497,19 @@ plot_upset <- function(
       action = "set",
       verbose = FALSE)
   } else {
-    n.pop = length(unique(x$POP_ID))
+    n.pop = length(unique(x$STRATA))
     if (tibble::has_name(x, "GT_BIN")) {
       plot.data <- dplyr::filter(x, !is.na(GT_BIN))
     } else {
       plot.data <- dplyr::filter(x, GT != "000000")
     }
 
-    plot.data <- dplyr::distinct(plot.data, MARKERS, POP_ID) %>%
+    plot.data <- dplyr::distinct(plot.data, MARKERS, STRATA) %>%
       dplyr::mutate(
         n = rep(1, n()),
-        POP_ID = stringi::stri_join("POP_", POP_ID)
+        STRATA = stringi::stri_join("POP_", STRATA)
       ) %>%
-      tidyr::pivot_wider(data = ., names_from = "POP_ID", values_from = "n", values_fill = 0) %>%
+      tidyr::pivot_wider(data = ., names_from = "STRATA", values_from = "n", values_fill = 0) %>%
       data.frame(.)#UpSetR requires data.frame
   }
 

@@ -103,7 +103,7 @@ are generated automatically by the function, check the folder)
 Written in the folder:
 \enumerate{
 \item genotypes.summary.tsv: A tibble with these columns:
-\code{MARKERS, POP_ID, HET, HOM_ALT, HOM_REF, MISSING, N,
+\code{MARKERS, STRATA, HET, HOM_ALT, HOM_REF, MISSING, N,
 FREQ_ALT, FREQ_REF, FREQ_HET, FREQ_HOM_REF_O, FREQ_HET_O, FREQ_HOM_ALT_O,
 FREQ_HOM_REF_E, FREQ_HET_E, FREQ_HOM_ALT_E, N_HOM_REF_EXP,
 N_HET_EXP, N_HOM_ALT_EXP, HOM_REF_Z_SCORE, HOM_HET_Z_SCORE,
