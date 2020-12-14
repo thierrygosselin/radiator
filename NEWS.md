@@ -1,7 +1,8 @@
-# radiator 1.1.9 2020-12-12
+# radiator 1.1.9 2020-12-14
 
 * bug fix using plink files and future 
 * continue to test future backend and carrier
+* bug fix when using microsatellites as input and some specific output format
 
 
 

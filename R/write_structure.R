@@ -65,7 +65,7 @@ write_structure <- function(
 
   # Structure format ----------------------------------------------------------------
   data %<>%
-    separate_gt(x = ., gt = "GT", exclude = c("STRATA", "INDIVIDUALS", "MARKERS")) %>%
+    radiator::separate_gt(x = ., gt = "GT", gather = TRUE, exclude = c("STRATA", "INDIVIDUALS", "MARKERS"), split.chunks = 1L) %>%
     dplyr::mutate(
       ALLELES = dplyr::recode(.x = ALLELES, "000" = "-9"),
       ALLELES = as.integer(ALLELES)

@@ -73,6 +73,7 @@ tidy_gtypes <- function(data) {
   input %<>%
     dplyr::mutate(
       GT = replace(GT, which(is.na(GT)), "000"),
+      GT = stringi::stri_pad_left(str = GT, pad = "0", width = 3),
       STRATA = as.character(STRATA)
     ) %>%
     dplyr::group_by(STRATA, INDIVIDUALS, MARKERS) %>%
