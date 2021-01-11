@@ -665,7 +665,7 @@ So far, I haven't found the cure to this computer-specific problem.
 ## `rmetasim`
 
 ### Download
-Download the latest github release of Allan Strand's **rmetasim**
+Download the latest github release of Allan Strand's [rmetasim](https://github.com/stranda/rmetasim)
 ```{bash eval=FALSE}
 cd ~/Downloads
 curl -L -O https://github.com/stranda/rmetasim/archive/master.zip

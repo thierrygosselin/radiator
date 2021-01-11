@@ -2156,6 +2156,18 @@ check_header_source_vcf <- function(vcf) {
       stringi::stri_detect_fixed(str = check.source, pattern = "dirty")) {
     message("\n\nIMPORTANT: VCF from freeBayes Dirty version: only GT and DP fields will be kept...\n\n")
     check.header$format <- dplyr::filter(check.header$format, ID %in% c("GT", "DP"))
+
+
+    # Add this for problematic freeBayes...
+    prob.info <- c("AN", "DP", "DPB", "EPPR", "GTI", "MQMR", "NS", "NUMALT", "ODDS", "PAIREDR", "PQR", "PRO", "QR", "RO", "RPPR", "SRF", "SRP", "SRR")
+    prob.info <-
+      purrr::keep(
+        .x = prob.info,
+        .p = prob.info %in% check.header$info$ID
+      )
+    for (p in prob.info) {
+      check.header$info[check.header$info$ID == p, "Number"] <- "."
+    }
   }
 
   if (is.stacks) {
