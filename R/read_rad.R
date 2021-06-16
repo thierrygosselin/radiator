@@ -123,11 +123,35 @@ read_rad <- function(
 
     # if (!is.character(gds)) data <- data$filename
 
-    if (allow.dup) {
-      data <- SeqArray::seqOpen(gds.fn = data, readonly = TRUE, allow.duplicate = TRUE)
+
+    seq_open_temp <- function(data, allow.dup) {
+      SeqArray::seqOpen(gds.fn = data, readonly = allow.dup, allow.duplicate = allow.dup)
+    }#End seq_open_temp
+
+    safe_seq_open <- purrr::safely(.f = seq_open_temp)
+
+    data.safe <- safe_seq_open(data, allow.dup)
+
+    if (is.null(data.safe$error)) {
+      data <- data.safe$result
     } else {
-      data <- SeqArray::seqOpen(gds.fn = data, readonly = FALSE)
+      temp <- gdsfmt::openfn.gds(filename = data, readonly = FALSE, allow.fork = FALSE, allow.duplicate = TRUE)
+      if (gdsfmt::get.attr.gdsn(temp$root)$FileFormat == "SNP_ARRAY") {
+        gdsfmt::closefn.gds(gdsfile = temp)
+        radiator_packages_dep(package = "SeqArray", cran = FALSE, bioc = TRUE)
+        temp.name <- stringi::stri_join("radiator_temp_", data)
+        message("The input file is a SNP GDS file, conversion using SeqArray::seqSNP2GDS")
+        SeqArray::seqSNP2GDS(data, temp.name)
+        data <- SeqArray::seqOpen(gds.fn = temp.name, readonly = allow.dup, allow.duplicate = allow.dup)
+        message("SeqArray GDS file generated: ", temp.name)
+      }
     }
+
+    # if (allow.dup) {
+    #   data <- SeqArray::seqOpen(gds.fn = data, readonly = TRUE, allow.duplicate = TRUE)
+    # } else {
+    #   data <- SeqArray::seqOpen(gds.fn = data, readonly = FALSE)
+    # }
 
     s <- extract_individuals_metadata(
       gds = data,

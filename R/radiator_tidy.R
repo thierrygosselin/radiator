@@ -441,6 +441,7 @@ tidy_genomic_data <- function(
     data %<>% gds2tidy(gds = ., parallel.core = parallel.core)
     data.type <- "tbl_df"
   }
+
   # Import VCF------------------------------------------------------------------
   if (data.type == "vcf.file") { # VCF
     if (verbose) message("Importing and tidying the VCF...")

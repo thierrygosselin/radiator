@@ -81,10 +81,10 @@ tidy_genlight <- function(
   if (is.null(data@pop)) {
     if (verbose) message("    strata: no")
     if (verbose) message("    'pop' will be added")
-    strata %<>% dplyr::mutate(POP_ID = "pop")
+    strata %<>% dplyr::mutate(STRATA = "pop")
   } else {
     if (verbose) message("    strata: yes")
-    strata$POP_ID = data@pop
+    strata$STRATA = data@pop
   }
 
   n.markers <- dim(data)[2]
@@ -157,7 +157,7 @@ tidy_genlight <- function(
       filename.genlight <- filename.temp$filename
     }
 
-    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT","POP_ID", "INDIVIDUALS",
+    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT","STRATA", "INDIVIDUALS",
               "GT_VCF", "GT_BIN", "GT")
 
     if (verbose) message("Generating tidy data...")
@@ -174,9 +174,9 @@ tidy_genlight <- function(
       dplyr::full_join(strata, by =  "INDIVIDUALS") %>%
       dplyr::mutate(
         INDIVIDUALS = radiator::clean_ind_names(INDIVIDUALS),
-        POP_ID = radiator::clean_pop_names(POP_ID)
+        STRATA = radiator::clean_pop_names(STRATA)
       ) %>%
-      dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS) %>%
+      dplyr::arrange(MARKERS, STRATA, INDIVIDUALS) %>%
       dplyr::select(tidyselect::any_of(want)) %>%
       radiator::calibrate_alleles(
         data = .,
@@ -204,7 +204,7 @@ tidy_genlight <- function(
       #   tibble::add_column(.data = ., MARKERS = markers$MARKERS, .before = 1) %>%
       #   dplyr::arrange(MARKERS) %>%
       #   tibble::column_to_rownames(.data = ., var = "MARKERS"),
-      strata = dplyr::rename(strata, STRATA = POP_ID),
+      strata = strata,
       biallelic = TRUE,
       markers.meta = markers,
       filename = NULL,

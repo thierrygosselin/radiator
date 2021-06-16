@@ -365,15 +365,33 @@ gds2tidy <- function(
     )
   }
 
+  # added 20210616
+  weird.locus <- length(unique(markers.meta$LOCUS)) <= 1
+  if (weird.locus) {
+    message("LOCUS field empty... adding unique id instead")
+    markers.meta$LOCUS <- markers.meta$VARIANT_ID
+  }
+
   # colnames and "id" tidy data...
   if (rlang::has_name(markers.meta, "M_SEQ")) {
     cn <- markers.meta %>% dplyr::pull(M_SEQ)
     want.m <- "M_SEQ"
   } else {
+    if (!rlang::has_name(markers.meta, "MARKERS")) {
+      markers.meta %<>%
+        dplyr::mutate(
+          dplyr::across(
+            .cols = c(CHROM, LOCUS, POS),
+            .fns = radiator::clean_markers_names
+          )
+        ) %>%
+        dplyr::mutate(
+          MARKERS = stringi::stri_join(CHROM, LOCUS, POS, sep = "__")
+        )
+    }
     cn <- markers.meta %>% dplyr::pull(MARKERS)
     want.m <- "MARKERS"
-  }
-
+}
   if (rlang::has_name(individuals, "ID_SEQ")) {
     want.id <- "ID_SEQ"
   } else {
@@ -607,9 +625,12 @@ extract_individuals_metadata <- function(
   } else {
     # will switch radiator.mode to FALSE if returns null
     if (radiator.node) {
-      id.index <- gdsfmt::ls.gdsn(gdsfmt::index.gdsn(
-        node = gds, path = "radiator/individuals.meta", silent = TRUE))
-      if (is.null(id.index)) radiator.node <- FALSE
+      id.index <- gdsfmt::index.gdsn(node = gds, path = "radiator/individuals.meta", silent = TRUE)
+      if (is.null(id.index)) {
+        radiator.node <- FALSE
+      } else {
+        id.index <- gdsfmt::ls.gdsn(id.index)
+      }
     }
 
     if (radiator.node) {
@@ -692,10 +713,15 @@ extract_markers_metadata <- function(
   if (blacklist) whitelist <- FALSE
 
   if (radiator.node) {
-    markers.index <- gdsfmt::ls.gdsn(gdsfmt::index.gdsn(
-      node = gds, path = "radiator/markers.meta", silent = TRUE))
-    if (is.null(markers.index) || length(markers.index) == 0) radiator.node <- FALSE
+    markers.index <- gdsfmt::index.gdsn(node = gds, path = "radiator/markers.meta", silent = TRUE)
+
+    if (is.null(markers.index) || length(markers.index) == 0) {
+      radiator.node <- FALSE
+    } else {
+      markers.index <- gdsfmt::ls.gdsn(markers.index)
+    }
   }
+
 
   if (!is.null(markers.meta.select)) {
 

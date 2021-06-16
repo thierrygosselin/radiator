@@ -416,7 +416,7 @@ radiator_colony <- function(
   readr::write_file(x = prob.opt, file = filename, append = TRUE)
 
   # Numbers of candidate males and females--------------------------------------
-  candidate.opt <- "0 0                                  ! Numbers of candidate males & females\n"
+  candidate.opt <- "0  0                                ! Numbers of candidate males & females\n"
   readr::write_file(x = candidate.opt, file = filename, append = TRUE)
 
   # PRINT ALL REMAINING COLONY OPTIONS -----------------------------------------
@@ -431,7 +431,7 @@ radiator_colony <- function(
   }
 
   # Number of offspring with known paternity------------------------------------
-  known.paternity.opt <- "0                                    ! Number of offspring with known father\n"
+  known.paternity.opt <- "0  0                                 ! Number of offspring with known father\n"
   readr::write_file(x = known.paternity.opt, file = filename, append = TRUE)
 
   # Known offspring-father dyad-------------------------------------------------
@@ -441,7 +441,7 @@ radiator_colony <- function(
   }
 
   # Number of offspring with known maternity------------------------------------
-  known.maternity.opt <- "0                                    ! Number of offspring with known mother\n"
+  known.maternity.opt <- "0  0                                 ! Number of offspring with known mother\n"
   readr::write_file(x = known.maternity.opt, file = filename, append = TRUE)
 
   # Known offspring-mother dyad-------------------------------------------------
