@@ -347,6 +347,22 @@ tidy_genomic_data <- function(
   ...
 ) {
 
+  # test
+  # filename = NULL
+  # parallel.core = parallel::detectCores() - 1
+  # verbose = TRUE
+  # path.folder = NULL
+  # parameters = NULL
+  # keep.allele.names = NULL
+  # blacklist.id = NULL
+  # whitelist.markers = NULL
+  # filter.common.markers = TRUE
+  # filter.monomorphic = TRUE
+  # vcf.metadata = TRUE
+  # vcf.stats = TRUE
+  # blacklist.genotypes = NULL
+  # internal = FALSE
+
   # Cleanup-------------------------------------------------------------------
   radiator_function_header(f.name = "tidy_genomic_data", verbose = verbose)
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")

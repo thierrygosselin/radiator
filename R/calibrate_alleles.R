@@ -295,19 +295,18 @@ calibrate_alleles <- function(
         {if (detect.gt == "GT_BIN") dplyr::mutate(.data = .,GT_BIN = dplyr::recode(GT_BIN, '2' = 0L, '0' = 2L, .missing = NULL)) else .} %>%
         {if (detect.gt == "GT_VCF") dplyr::mutate(.data = .,GT_VCF = dplyr::recode(GT_VCF, "1/1" = "0/0", "0/0" = "1/1", .missing = NULL)) else .}
     )
-
-    if (recoding.todo > 0L) {
-      if (verbose) message("Generating new genotypes coding")
-      data %<>%
-        radiator::gt_recoding(
-          x = .,
-          gt = gt,
-          gt.bin = gt.bin,
-          gt.vcf = gt.vcf,
-          gt.vcf.nuc = gt.vcf.nuc,
-          arrange = FALSE
-        )
-    }
+  }
+  if (recoding.todo > 0L) {
+    if (verbose) message("Generating new genotypes coding")
+    data %<>%
+      radiator::gt_recoding(
+        x = .,
+        gt = gt,
+        gt.bin = gt.bin,
+        gt.vcf = gt.vcf,
+        gt.vcf.nuc = gt.vcf.nuc,
+        arrange = FALSE
+      )
   }
   # Results --------------------------------------------------------------------
   return(list(input = data, biallelic = biallelic))

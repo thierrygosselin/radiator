@@ -493,7 +493,12 @@ read_vcf <- function(
 
 
   # generate the GDS
-  gds <- suppressWarnings(
+
+  # changed 20210615
+  # safe read
+
+  vcf_read_temp <- function(
+    data, filename, parallel.temp, check.header, markers.info, overwrite.metadata) {
     SeqArray::seqVCF2GDS(
       vcf.fn = data,
       out.fn = filename,
@@ -503,9 +508,46 @@ read_vcf <- function(
       header = check.header,
       info.import = markers.info, # characters, the variable name(s) in the INFO field for import; or NULL for all variables
       fmt.import = overwrite.metadata# characters, the variable name(s) in the FORMAT field for import; or NULL for all variables#
+    )
+  }#End vcf_read_temp
+
+
+  safe_vcf_read <- purrr::safely(.f = vcf_read_temp)
+
+  data.safe <- safe_vcf_read(data, filename, parallel.temp, check.header, markers.info, overwrite.metadata)
+
+  if (is.null(data.safe$error)) {
+    gds <- SeqArray::seqVCF2GDS(
+      vcf.fn = data,
+      out.fn = filename,
+      parallel = FALSE,
+      storage.option = "ZIP_RA",
+      verbose = FALSE,
+      header = check.header,
+      info.import = markers.info, # characters, the variable name(s) in the INFO field for import; or NULL for all variables
+      fmt.import = overwrite.metadata# characters, the variable name(s) in the FORMAT field for import; or NULL for all variables#
     ) %>%
       SeqArray::seqOpen(gds.fn = ., readonly = FALSE)
-  )
+  } else {
+    gds <- SeqArray::seqOpen(gds.fn = data.safe$result, readonly = FALSE)
+  }
+
+  vcf_read_temp <- data.safe <- safe_vcf_read <- NULL
+
+  # previously, the code caused some problems with PC
+  # gds <- suppressWarnings(
+  #   SeqArray::seqVCF2GDS(
+  #     vcf.fn = data,
+  #     out.fn = filename,
+  #     parallel = parallel.temp,
+  #     storage.option = "ZIP_RA",
+  #     verbose = FALSE,
+  #     header = check.header,
+  #     info.import = markers.info, # characters, the variable name(s) in the INFO field for import; or NULL for all variables
+  #     fmt.import = overwrite.metadata# characters, the variable name(s) in the FORMAT field for import; or NULL for all variables#
+  #   ) %>%
+  #     SeqArray::seqOpen(gds.fn = ., readonly = FALSE)
+  # )
 
   # VCF: Summary ----------------------------------------------------------------
   summary_gds(gds, verbose = TRUE)
@@ -1852,7 +1894,7 @@ tidy_vcf <- function(
 #' Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.
 
 #' @param source source of vcf
-#' @param empty empty generate empty vcf
+#' @param empty generate an empty vcf
 #' @param pop.info (optional, logical) Should the population information be
 #' included in the FORMAT field (along the GT info for each samples ?). To make
 #' the VCF population-ready use \code{pop.info = TRUE}. The population information
@@ -1903,13 +1945,11 @@ write_vcf <- function(
     )
   } else {
     # Import data ---------------------------------------------------------------
-    if (is.vector(data)) {
-      data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-    }
+    if (is.vector(data)) data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
 
     # REF/ALT Alleles and VCF genotype format ------------------------------------
     if (!tibble::has_name(data, "GT_VCF")) {
-      data %<>% radiator::calibrate_alleles(data = ., gt.vcf.nuc = TRUE) %$% input
+      data %<>% radiator::calibrate_alleles(data = ., gt.vcf = TRUE, gt.vcf.nuc = TRUE) %$% input
     }
 
     # Include CHROM, LOCUS, POS --------------------------------------------------

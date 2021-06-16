@@ -30,7 +30,7 @@ the date and time is appended to \code{radiator_vcf_file_}.}
 
 \item{source}{source of vcf}
 
-\item{empty}{empty generate empty vcf}
+\item{empty}{generate an empty vcf}
 }
 \description{
 Write a vcf file (file format version 4.3, see details below)

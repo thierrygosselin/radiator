@@ -349,7 +349,7 @@ filter_snp_position_read <- function(
     # if (filter.snp.position.read == "all") not necessary wl already exists...
 
     if (length(filter.snp.position.read) == 2) {
-      wl %<>% dplyr::filter(COL >= filter.snp.position.read[1] & COL <= filter.snp.position.read[2])
+      wl %<>% dplyr::filter(COL >= as.numeric(filter.snp.position.read[1]) & COL <= as.numeric(filter.snp.position.read[2]))
     } else {
       if (filter.snp.position.read == "outliers") {
         wl %<>% dplyr::filter(COL <= stats[[9]])

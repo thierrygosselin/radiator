@@ -1,3 +1,9 @@
+# radiator 1.2.0 2021-06-16
+
+* updated to work with R 4.1.0
+* bug fix with some format during conversion when necessary genotype format wasn't found
+* more safe results when importing VCF files with windows and parallel processing
+
 # radiator 1.1.9 2020-12-14
 
 * bug fix using plink files and future 
