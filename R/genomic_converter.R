@@ -441,6 +441,10 @@ genomic_converter <- function(
 
   if (verbose) message("\nPreparing data for output\n")
 
+  if (is.null(strata) && is.null(strata.bk)) {
+    strata.bk <- strata <- radiator::generate_strata(data = input)
+  }
+
   if (!is.null(strata.bk) || rlang::has_name(input, "STRATA")) {
     pop.levels <- NULL
     if (is.factor(input$STRATA)) {
@@ -458,13 +462,28 @@ genomic_converter <- function(
   }
 
 
-  # GT requirement -------------------------------------------------------------
+
+  # Genotypes formats required -------------------------------------------------
+  # GT requirement
   if (TRUE %in% (c("genepop", "hierfstat", "structure", "hzar", "gsi_sim",
                    "genepopedit", "arlequin", "bayescan") %in% output)) {
     if (!rlang::has_name(input, "GT")) {
       input %<>% radiator::calibrate_alleles(data = ., biallelic = biallelic, gt = TRUE) %$% input
     }
   }
+
+  if (data.type == "genepop.file") {
+    if (length(output) > 1 || !"genepop" %in% output) {
+      input %<>%
+        radiator::calibrate_alleles(
+          data = .,
+          biallelic = biallelic,
+          gt.vcf = TRUE
+          ) %$%
+        input
+    }
+}
+
 
   # overide genind when marker number > 20K ------------------------------------
   if ("genind" %in% output && biallelic) {

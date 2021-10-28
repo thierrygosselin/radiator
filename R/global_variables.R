@@ -151,7 +151,8 @@ if (getRversion() >= "2.15.1") {
       "filter.individuals.coverage.iqr",
       "filter.individuals.coverage.median", "COMMON_META", "where", "everything",
       "M_SEQ", "ID_SEQ", "1", "2", "ORIG_GT_BIN", "STRATA_SEQ", "IDTEMP", ".data",
-      "EQUAL_COUNTS", "strataG", "HET_EXP", "id", "stratum"
+      "EQUAL_COUNTS", "strataG", "HET_EXP", "id", "stratum", "DOS_ALT",
+      "ALLELES_ALT_A2", "ALLELES_REF_A1", "NUC_ALT_A2", "NUC_REF_A1"
     )
   )
 }

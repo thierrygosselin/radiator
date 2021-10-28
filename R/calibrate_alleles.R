@@ -81,7 +81,6 @@ calibrate_alleles <- function(
   # gt.vcf <- FALSE
   # gt.vcf.nuc <- FALSE
 
-  message("Calibrating REF/ALT alleles...")
 
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("Input file missing")
@@ -112,8 +111,8 @@ calibrate_alleles <- function(
   # not possible to have that format if no REF/ALT info
   if (!ref.info) gt.vcf.nuc <- FALSE
 
-  #Remove markers with REF = NA
-  #note to myself : why not use detect_all_missing ? longer ?
+  # Remove markers with REF = NA
+  # note to myself : why not use detect_all_missing ? longer ?
   if (ref.info && anyNA(data$REF)) {
     all.missing <- dplyr::filter(data, is.na(REF)) %>% dplyr::distinct(MARKERS)
     readr::write_tsv(x = all.missing, file = "markers.missing.all.id.tsv")
@@ -121,21 +120,34 @@ calibrate_alleles <- function(
     data %<>% dplyr::filter(!MARKERS %in% all.missing$MARKERS)
   }
 
-  # original genotypes format we have
-  original.gt <- radiator::detect_gt(
-    x = data,
-    gt.format = c("GT", "GT_BIN", "GT_VCF", "GT_VCF_NUC"),
-    keep.one = FALSE
-  )
+  # original genotype format we have
+  original.gt <- radiator::detect_gt(x = data, keep.one = FALSE)
+
+  # No need to go through all the code if just GT...
+  if (all(length(original.gt) == 1, original.gt == "GT")) {
+
+    if (all(!gt.bin, !gt.vcf, !gt.vcf.nuc)) {
+      return(list(input = data, biallelic = biallelic))
+    } else {
+      if (verbose) message("Generating new genotypes coding with calibrated alleles")
+      data %<>%
+        radiator::gt_recoding(
+          x = .,
+          gt = TRUE,
+          gt.bin = gt.bin,
+          gt.vcf = gt.vcf,
+          gt.vcf.nuc = gt.vcf.nuc,
+          arrange = FALSE
+        )
+      return(list(input = data, biallelic = biallelic))
+    }
+  }
+
+  message("Calibrating REF/ALT alleles...")
+
 
   # what we need to make the switch
-  detect.gt <- radiator::detect_gt(
-    x = data,
-    gt.format = c("GT_BIN", "GT_VCF", "GT_VCF_NUC"),
-    keep.one = TRUE,
-    favorite = "GT_BIN"
-  )
-
+  detect.gt <- radiator::detect_gt(x = data, keep.one = TRUE, favorite = "GT_BIN")
 
   # format we want at the end is the original + the ones chosen in ...
   if ("GT" %in% original.gt) gt <- TRUE
@@ -183,7 +195,6 @@ calibrate_alleles <- function(
   #   )
 
   if (!rlang::has_name(data, "MARKERS")) rlang::abort("Contact developer")
-
 
   # Generating REF/ALT dictionary  ---------------------------------------------
   n.markers <- length(unique(data$MARKERS))

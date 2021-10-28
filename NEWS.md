@@ -1,3 +1,7 @@
+# radiator 1.2.1 2021-10-28
+
+* bug fix when using genepop file and `genomic_converter`
+
 # radiator 1.2.0 2021-06-16
 
 * updated to work with R 4.1.0
@@ -9,7 +13,6 @@
 * bug fix using plink files and future 
 * continue to test future backend and carrier
 * bug fix when using microsatellites as input and some specific output format
-
 
 
 # radiator 1.1.8 2020-10-17

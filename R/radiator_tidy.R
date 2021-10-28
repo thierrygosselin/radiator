@@ -636,6 +636,9 @@ tidy_genomic_data <- function(
     if (verbose) message("Tidying the genepop file ...")
     input <- radiator::tidy_genepop(data = data, tidy = TRUE)
     skip.tidy.wide <- TRUE
+    if (is.null(strata) && is.null(strata.df)) {
+      strata.df <- strata <- radiator::generate_strata(data = input)
+    }
   }
 
   # Import DArT ----------------------------------------------------------------

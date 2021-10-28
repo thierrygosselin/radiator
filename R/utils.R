@@ -254,8 +254,8 @@ separate_markers <- function(
 
         if (unique.markers) {
           data %<>%
-              dplyr::select(-tidyselect::any_of(want)) %>%
-              tidyr::separate(data = ., col = "MARKERS", into = want, sep = sep, remove = FALSE)
+            dplyr::select(-tidyselect::any_of(want)) %>%
+            tidyr::separate(data = ., col = "MARKERS", into = want, sep = sep, remove = FALSE)
         } else {# for datasets
           temp <- tidyr::separate(
             data = dplyr::distinct(data, MARKERS),
@@ -425,6 +425,13 @@ separate_gt <- function(
   separate_genotype <-  carrier::crate(function(x, gt, alleles.naming, remove, filter.missing, gather, haplotypes, exclude){
     `%>%` <- magrittr::`%>%`
     `%<>%` <- magrittr::`%<>%`
+
+    # remove SPLIT_VEC from exclude if detected
+    if (rlang::has_name(x, "SPLIT_VEC")) {
+      exclude <- c(exclude, "SPLIT_VEC")
+    }
+
+
 
     # discard the other gt format
     gt.format <- c("GT", "GT_BIN", "GT_VCF", "GT_VCF_NUC")
@@ -1092,6 +1099,8 @@ detect_gt <- function(x, gt.format = c("GT", "GT_BIN", "GT_VCF", "GT_VCF_NUC"), 
 
   detect.gt <- purrr::keep(.x = colnames(x), .p = colnames(x) %in% gt.format)
 
+  if (length(detect.gt) == 0L) detect.gt <- NULL
+
   if (keep.one) {
     if (length(detect.gt) > 1) {
       if (favorite %in% detect.gt) {
@@ -1113,126 +1122,286 @@ detect_gt <- function(x, gt.format = c("GT", "GT_BIN", "GT_VCF", "GT_VCF_NUC"), 
 #' @keywords internal
 #' @export
 gt_recoding <- function(x, gt = TRUE, gt.bin = TRUE, gt.vcf = TRUE, gt.vcf.nuc = TRUE, arrange = TRUE) {
+  # what genotype format we have
+  detect.gt <- detect_gt(x) #utils
+
+  # if it's just GT no need to calibrate or generate other genotypes formats
+  if (all(length(detect.gt) == 1, detect.gt == "GT", !any(gt.bin, gt.vcf, gt.vcf.nuc))) return(x)
 
   # conditions and checks
   if (arrange) x %<>% dplyr::mutate(IDTEMP = seq_len(dplyr::n()))
-  if (gt.vcf.nuc && !rlang::has_name(x, "REF")) gt.vcf.nuc <- FALSE
+
+  # if (gt.vcf.nuc && !rlang::has_name(x, "REF")) gt.vcf.nuc <- FALSE
+  # e.g. if we have GT and we want GT_BIN or any other format that requires nucleotide info
+  # we could issue a message...
+
+  if (all(detect.gt == "GT") && !rlang::has_name(x, "REF") && any(gt.bin, gt.vcf, gt.vcf.nuc)) {
+    message("\n\nGenerating automatically 3 new genotypes formats, see doc...")
+    message("Format(s) chosen requires nucleotide information not found in the data")
+    message("001 converted to A")
+    message("002 converted to C")
+    message("003 converted to G")
+    message("004 converted to T")
+
+    # generate all the other format from GT
+    if (all(!rlang::has_name(x, "A1"), rlang::has_name(x, "REF"))) {
+      x  %<>%
+        dplyr::mutate(
+          A1 = dplyr::recode(REF, "A" = "001", "C" = "002", "G" = "003", "T" = "004"),
+          A2 = dplyr::recode(ALT, "A" = "001", "C" = "002", "G" = "003", "T" = "004")
+        )
+      remove.extra <- TRUE
+    } else {# if no REF
+      x1 <- dplyr::select(x, -tidyselect::any_of(c("POP_ID", "IDTEMP")))
+      gt.col <- purrr::discard(.x = colnames(x1), .p = colnames(x1) %in% c("GT", "GT_VCF", "GT_BIN", "GT_VCF_NUC"))
+
+      # need to do it in 2 steps to get the het genotypes
+      x1 %<>%
+        radiator::separate_gt(x = ., gt = "GT", gather = FALSE, exclude = gt.col) %>%
+        dplyr::mutate(
+          HET = dplyr::case_when(
+            A1 == "000" ~ NA_integer_,
+            A1 == A2 ~ 0L,
+            A1 != A2 ~ 1L
+          ),
+          SPLIT_VEC = NULL
+        ) %>%
+        # gather the results at this stage
+        radiator::rad_long(
+          x = .,
+          cols = c(gt.col, "HET"),
+          names_to = "ALLELES_GROUP",
+          values_to = "ALLELES",
+          variable_factor = FALSE
+        )
 
 
-  # what genotype format we have
-  detect.gt <- detect_gt(x) #utils
-  remove.extra <- FALSE
-  if (gt) {
-    if (!rlang::has_name(x, "A1")) {
-      if (rlang::has_name(x, "REF")) {
-        x  %<>%
-          dplyr::mutate(
-            A1 = dplyr::recode(REF, "A" = "001", "C" = "002", "G" = "003", "T" = "004"),
-            A2 = dplyr::recode(ALT, "A" = "001", "C" = "002", "G" = "003", "T" = "004")
-          )
-        remove.extra <- TRUE
-      } else {# if no REF
-        gt <- FALSE
+      # checking what type of GT format... inspired by the codes in gtypes.R
+      gt.wanted <- sort(unique(x1$ALLELES))
+      gt.wanted <- purrr::keep(.x = gt.wanted, .p = gt.wanted %in% c("001", "002", "003", "004"))
+      if (length(gt.wanted) != 4L) rlang::abort("Contact author problem with genotype format used")
+
+      missing <- x1 %>%
+        dplyr::filter(ALLELES == "000") %>%
+        dplyr::distinct(MARKERS, ALLELES) %>%
+        dplyr::mutate(DOS_ALT = NA_integer_)
+
+      x2 <- x1 %>%
+        dplyr::filter(ALLELES != "000") %>%
+        dplyr::count(MARKERS, ALLELES) %>%
+        dplyr::group_by(MARKERS) %>%
+        dplyr::mutate(ALLELES_GROUP = dplyr::if_else(n == max(n, na.rm = TRUE), "REF", "ALT", "EQUAL")) %>%
+        dplyr::group_by(MARKERS, ALLELES_GROUP) %>%
+        dplyr::mutate(EQUAL_COUNTS = dplyr::n()) %>%
+        dplyr::ungroup(.)
+
+
+      equal.ref <- x2 %>%
+        dplyr::filter(EQUAL_COUNTS == 2L)
+
+      x2 %<>%
+        dplyr::filter(EQUAL_COUNTS == 1L) %>%
+        dplyr::select(MARKERS, ALLELES, ALLELES_GROUP)
+
+      if (nrow(equal.ref) > 0) {
+        equal.ref %<>%
+          dplyr::group_by(MARKERS) %>%
+          dplyr::mutate(ALLELES_GROUP = c("REF", "ALT")) %>%
+          dplyr::select(MARKERS, ALLELES, ALLELES_GROUP)
+
+        x2 %<>% dplyr::bind_rows(equal.ref)
+        equal.ref <- NULL
       }
+
+      x2 %<>%
+        dplyr::mutate(
+          NUC = dplyr::case_when(
+            ALLELES == "001" ~ "A",
+            ALLELES == "002" ~ "C",
+            ALLELES == "003" ~ "G",
+            ALLELES == "004" ~ "T"),
+          GROUP = dplyr::case_when(
+            ALLELES_GROUP == "REF" ~ "A1",
+            ALLELES_GROUP == "ALT" ~ "A2"),
+          DOS_ALT = dplyr::case_when(
+            ALLELES_GROUP == "REF" ~ 0L,
+            ALLELES_GROUP == "ALT" ~ 1L)
+        )
+
+      missing %<>%
+        dplyr::bind_rows(
+          x2 %>%
+            dplyr::select(MARKERS, ALLELES, DOS_ALT)
+        )
+
+      x2 %<>%
+        dplyr::select(-DOS_ALT) %>%
+        radiator::rad_wide(x = ., formula = MARKERS ~ ALLELES_GROUP + GROUP, values_from = c("NUC", "ALLELES")) %>%
+        dplyr::rename(REF = NUC_REF_A1, ALT = NUC_ALT_A2, A1 = ALLELES_REF_A1, A2 = ALLELES_ALT_A2)
+
+      x1 %<>%
+        dplyr::select(-ALLELES_GROUP) %>%
+        dplyr::left_join(x2, by = "MARKERS") %>%
+        dplyr::left_join(missing, by = c("MARKERS", "ALLELES")) %>%
+        dplyr::select(-ALLELES, -A1, -A2)
+
+      x %<>%
+        dplyr::left_join(dplyr::distinct(x2, MARKERS, REF, ALT), by = "MARKERS")
+
+      x2 <- missing <- NULL
+
+      het <- x1 %>%
+        dplyr::filter(HET == 1L) %>%
+        dplyr::distinct(MARKERS, INDIVIDUALS, ALT, REF) %>%
+        dplyr::mutate(
+          GT_VCF = "0/1",
+          GT_BIN = 1L,
+          GT_VCF_NUC = stringi::stri_join(REF, ALT, sep = "/"),
+          ALT = NULL, REF = NULL
+        )
+
+      missing <- x1 %>%
+        dplyr::filter(is.na(HET)) %>%
+        dplyr::distinct(MARKERS, INDIVIDUALS) %>%
+        dplyr::mutate(
+          GT_VCF = "./.",
+          GT_BIN = NA_integer_,
+          GT_VCF_NUC = "./."
+        )
+
+      hom <- x1 %>%
+        dplyr::filter(HET != 1L & !is.na(HET)) %>%
+        dplyr::select(INDIVIDUALS, MARKERS, ALT, REF, DOS_ALT) %>%
+        dplyr::group_by(MARKERS, INDIVIDUALS, ALT, REF) %>%
+        dplyr::summarise(
+          GT_BIN = sum(DOS_ALT, na.rm = TRUE), .groups = "drop"
+        )
+
+      hom <- dplyr::bind_rows(
+        hom %>%
+          dplyr::filter(GT_BIN == 0L) %>%
+          dplyr::mutate(
+            GT_VCF = "0/0",
+            GT_VCF_NUC = stringi::stri_join(REF, REF, sep = "/"),
+            ALT = NULL, REF = NULL
+          ),
+        hom %>%
+          dplyr::filter(GT_BIN == 2L) %>%
+          dplyr::mutate(
+            GT_VCF = "1/1",
+            GT_VCF_NUC = stringi::stri_join(ALT, ALT, sep = "/"),
+            ALT = NULL, REF = NULL
+          )
+      )
+      x1 <- NULL
+      hom %<>% dplyr::bind_rows(het, missing)
+      het <- missing <- NULL
+
+      x %<>%
+        dplyr::left_join(hom, by = c("MARKERS", "INDIVIDUALS"))
+      hom <- NULL
+      gt <- FALSE
+      remove.extra <- FALSE
+
+      # complete tidy dataset with calibrated alleles...
     }
+  } else {
+
+    gt_map <- function(
+      x,
+      gt.format = c("GT", "GT_BIN", "GT_VCF", "GT_VCF_NUC"),
+      gt = TRUE,
+      gt.bin = TRUE,
+      gt.vcf = TRUE,
+      gt.vcf.nuc = TRUE
+    ) {
+
+      gt.format <- match.arg(
+        arg = gt.format,
+        choices = c("GT", "GT_BIN", "GT_VCF", "GT_VCF_NUC"),
+        several.ok = FALSE
+      )
+
+      #start with missing genotypes
+      if (gt.format == "GT_BIN") {
+        gt.bin <- unique(x$GT_BIN)
+        if (is.na(gt.bin)) {
+          x %<>%
+            {if (gt.vcf) dplyr::mutate(.data = ., GT_VCF = "./.") else .} %>%
+            {if (gt.vcf.nuc) dplyr::mutate(.data = ., GT_VCF_NUC = "./.") else .} %>%
+            {if (gt) dplyr::mutate(.data = ., GT = "000000") else .}
+        } else {
+          if (gt.bin == 0L) {
+            x %<>%
+              {if (gt.vcf) dplyr::mutate(.data = ., GT_VCF = "0/0") else .} %>%
+              {if (gt.vcf.nuc) dplyr::mutate(.data = ., GT_VCF_NUC = stringi::stri_join(REF, REF, sep = "/")) else .} %>%
+              {if (gt) dplyr::mutate(.data = ., GT = stringi::stri_join(A1, A1)) else .}
+          }
+          if (gt.bin == 1L) {
+            x %<>%
+              {if (gt.vcf) dplyr::mutate(.data = ., GT_VCF = "0/1") else .} %>%
+              {if (gt.vcf.nuc) dplyr::mutate(.data = ., GT_VCF_NUC = stringi::stri_join(REF, ALT, sep = "/")) else .} %>%
+              {if (gt) dplyr::mutate(.data = ., GT = stringi::stri_join(A1, A2)) else .}
+          }
+          if (gt.bin == 2L) {
+            x %<>%
+              {if (gt.vcf) dplyr::mutate(.data = ., GT_VCF = "1/1") else .} %>%
+              {if (gt.vcf.nuc) dplyr::mutate(.data = ., GT_VCF_NUC = stringi::stri_join(ALT, ALT, sep = "/")) else .} %>%
+              {if (gt) dplyr::mutate(.data = ., GT = stringi::stri_join(A2, A2)) else .}
+          }
+        }
+      }#End GT_BIN
+
+      if (gt.format == "GT_VCF") {
+        gt.vcf <- unique(x$GT_VCF)
+        if (gt.vcf == "./.") {
+          x %<>%
+            {if (gt.bin) dplyr::mutate(.data = ., GT_BIN = NA_integer_) else .} %>%
+            {if (gt.vcf.nuc) dplyr::mutate(.data = ., GT_VCF_NUC = "./.") else .} %>%
+            {if (gt) dplyr::mutate(.data = ., GT = "000000") else .}
+        } else {
+          if (gt.vcf == "0/0") {
+            x %<>%
+              {if (gt.bin) dplyr::mutate(.data = ., GT_BIN = 0L) else .} %>%
+              {if (gt.vcf.nuc) dplyr::mutate(.data = ., GT_VCF_NUC = stringi::stri_join(REF, REF, sep = "/")) else .} %>%
+              {if (gt) dplyr::mutate(.data = ., GT = stringi::stri_join(A1, A1)) else .}
+          }
+          if (gt.vcf == "1/0") {
+            x %<>%
+              {if (gt.bin) dplyr::mutate(.data = ., GT_BIN = 1L) else .} %>%
+              {if (gt.vcf.nuc) dplyr::mutate(.data = ., GT_VCF_NUC = stringi::stri_join(REF, ALT, sep = "/")) else .} %>%
+              {if (gt) dplyr::mutate(.data = ., GT = stringi::stri_join(A1, A2)) else .}
+          }
+          if (gt.vcf == "0/1") {
+            x %<>%
+              {if (gt.bin) dplyr::mutate(.data = ., GT_BIN = 1L) else .} %>%
+              {if (gt.vcf.nuc) dplyr::mutate(.data = ., GT_VCF_NUC = stringi::stri_join(REF, ALT, sep = "/")) else .} %>%
+              {if (gt) dplyr::mutate(.data = ., GT = stringi::stri_join(A1, A2)) else .}
+          }
+          if (gt.vcf == "1/1") {
+            x %<>%
+              {if (gt.bin) dplyr::mutate(.data = ., GT_BIN = 2L) else .} %>%
+              {if (gt.vcf.nuc) dplyr::mutate(.data = ., GT_VCF_NUC = stringi::stri_join(ALT, ALT, sep = "/")) else .} %>%
+              {if (gt) dplyr::mutate(.data = ., GT = stringi::stri_join(A2, A2)) else .}
+          }
+        }
+      }#End GT_VCF
+
+      if (gt.format == "GT_VCF_NUC") {
+        message("Not implemented, yet...")
+      }
+      return(x)
+    }#End gt_map
+
+
+    # split the data
+    x %<>%
+      dplyr::group_split(.data[[detect.gt]]) %>%
+      purrr::map_dfr(.x = ., .f = gt_map, gt.format = detect.gt, gt = gt, gt.bin = gt.bin, gt.vcf = gt.vcf, gt.vcf.nuc = gt.vcf.nuc)
+
   }
 
-
-
-  gt_map <- function(
-    x,
-    gt.format = c("GT", "GT_BIN", "GT_VCF", "GT_VCF_NUC"),
-    gt = TRUE,
-    gt.bin = TRUE,
-    gt.vcf = TRUE,
-    gt.vcf.nuc = TRUE
-  ) {
-
-    gt.format <- match.arg(
-      arg = gt.format,
-      choices = c("GT", "GT_BIN", "GT_VCF", "GT_VCF_NUC"),
-      several.ok = FALSE
-    )
-
-    #start with missing genotypes
-    if (gt.format == "GT_BIN") {
-      gt.bin <- unique(x$GT_BIN)
-      if (is.na(gt.bin)) {
-        x %<>%
-          {if (gt.vcf) dplyr::mutate(.data = ., GT_VCF = "./.") else .} %>%
-          {if (gt.vcf.nuc) dplyr::mutate(.data = ., GT_VCF_NUC = "./.") else .} %>%
-          {if (gt) dplyr::mutate(.data = ., GT = "000000") else .}
-      } else {
-        if (gt.bin == 0L) {
-          x %<>%
-            {if (gt.vcf) dplyr::mutate(.data = ., GT_VCF = "0/0") else .} %>%
-            {if (gt.vcf.nuc) dplyr::mutate(.data = ., GT_VCF_NUC = stringi::stri_join(REF, REF, sep = "/")) else .} %>%
-            {if (gt) dplyr::mutate(.data = ., GT = stringi::stri_join(A1, A1)) else .}
-        }
-        if (gt.bin == 1L) {
-          x %<>%
-            {if (gt.vcf) dplyr::mutate(.data = ., GT_VCF = "0/1") else .} %>%
-            {if (gt.vcf.nuc) dplyr::mutate(.data = ., GT_VCF_NUC = stringi::stri_join(REF, ALT, sep = "/")) else .} %>%
-            {if (gt) dplyr::mutate(.data = ., GT = stringi::stri_join(A1, A2)) else .}
-        }
-        if (gt.bin == 2L) {
-          x %<>%
-            {if (gt.vcf) dplyr::mutate(.data = ., GT_VCF = "1/1") else .} %>%
-            {if (gt.vcf.nuc) dplyr::mutate(.data = ., GT_VCF_NUC = stringi::stri_join(ALT, ALT, sep = "/")) else .} %>%
-            {if (gt) dplyr::mutate(.data = ., GT = stringi::stri_join(A2, A2)) else .}
-        }
-      }
-    }#End GT_BIN
-
-
-    if (gt.format == "GT_VCF") {
-      gt.vcf <- unique(x$GT_VCF)
-      if (gt.vcf == "./.") {
-        x %<>%
-          {if (gt.bin) dplyr::mutate(.data = ., GT_BIN = NA_integer_) else .} %>%
-          {if (gt.vcf.nuc) dplyr::mutate(.data = ., GT_VCF_NUC = "./.") else .} %>%
-          {if (gt) dplyr::mutate(.data = ., GT = "000000") else .}
-      } else {
-        if (gt.vcf == "0/0") {
-          x %<>%
-            {if (gt.bin) dplyr::mutate(.data = ., GT_BIN = 0L) else .} %>%
-            {if (gt.vcf.nuc) dplyr::mutate(.data = ., GT_VCF_NUC = stringi::stri_join(REF, REF, sep = "/")) else .} %>%
-            {if (gt) dplyr::mutate(.data = ., GT = stringi::stri_join(A1, A1)) else .}
-        }
-        if (gt.vcf == "1/0") {
-          x %<>%
-            {if (gt.bin) dplyr::mutate(.data = ., GT_BIN = 1L) else .} %>%
-            {if (gt.vcf.nuc) dplyr::mutate(.data = ., GT_VCF_NUC = stringi::stri_join(REF, ALT, sep = "/")) else .} %>%
-            {if (gt) dplyr::mutate(.data = ., GT = stringi::stri_join(A1, A2)) else .}
-        }
-        if (gt.vcf == "0/1") {
-          x %<>%
-            {if (gt.bin) dplyr::mutate(.data = ., GT_BIN = 1L) else .} %>%
-            {if (gt.vcf.nuc) dplyr::mutate(.data = ., GT_VCF_NUC = stringi::stri_join(REF, ALT, sep = "/")) else .} %>%
-            {if (gt) dplyr::mutate(.data = ., GT = stringi::stri_join(A1, A2)) else .}
-        }
-        if (gt.vcf == "1/1") {
-          x %<>%
-            {if (gt.bin) dplyr::mutate(.data = ., GT_BIN = 2L) else .} %>%
-            {if (gt.vcf.nuc) dplyr::mutate(.data = ., GT_VCF_NUC = stringi::stri_join(ALT, ALT, sep = "/")) else .} %>%
-            {if (gt) dplyr::mutate(.data = ., GT = stringi::stri_join(A2, A2)) else .}
-        }
-      }
-    }#End GT_VCF
-
-    if (gt.format %in% c("GT", "GT_VCF_NUC")) {
-      message("Not implemented yet...")
-    }
-    return(x)
-  }#End gt_map
-
-
-  # split the data
-  x %<>%
-    dplyr::group_split(.data[[detect.gt]]) %>%
-    purrr::map_dfr(.x = ., .f = gt_map, gt.format = detect.gt, gt = gt, gt.bin = gt.bin, gt.vcf = gt.vcf, gt.vcf.nuc = gt.vcf.nuc)
-
-  if (remove.extra) x  %<>% dplyr::select(-c(A1, A2))
-  if (arrange) x  %<>% dplyr::arrange(IDTEMP) %>% dplyr::select(-IDTEMP)
+  if (remove.extra) x %<>% dplyr::select(-c(A1, A2))
+  if (arrange) x %<>% dplyr::arrange(IDTEMP) %>% dplyr::select(-IDTEMP)
   return(x)
 }#End gt_recoding

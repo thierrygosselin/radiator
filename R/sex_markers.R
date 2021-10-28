@@ -391,7 +391,7 @@ sexy_markers <- function(data,
 
   # Filters----------------------------------------------------------------------
   if (filters) {
-    if ("counts" %in% data.source | "vcf.file" %in% data.type){
+    if ("counts" %in% data.source | "vcf.file" %in% data.type) {
       count.data <- TRUE
     } else {count.data <- FALSE}
     data <- radiator::filter_individuals(
