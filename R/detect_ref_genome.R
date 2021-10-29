@@ -135,6 +135,15 @@ detect_ref_genome <- function(chromosome = NULL, data = NULL, verbose = TRUE) {
             if (!locus.missing && locus.strands) ref.genome <- TRUE
           }
         }
+
+        # GATK related
+        if (!is.null(data)) {
+          data.source <- radiator::extract_data_source(gds = data)
+          if (TRUE %in% stringi::stri_detect_fixed(str = data.source, pattern = "GATK")) {
+            ref.genome <- any(stringi::stri_detect_fixed(str = unique(chromosome), pattern = "contig"))
+          }
+        }
+
       }
     }
     chrom.unique <- chrom.alpha <- chrom.sep <- chrom.unique.radiator <- NULL

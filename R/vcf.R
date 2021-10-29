@@ -491,7 +491,6 @@ read_vcf <- function(
   if (!is.null(detect.source$markers.info)) markers.info <- detect.source$markers.info
   if (!is.null(detect.source$overwrite.metadata)) overwrite.metadata <- detect.source$overwrite.metadata
 
-
   # generate the GDS
   # changed 20210615
   # safe read
@@ -700,9 +699,9 @@ read_vcf <- function(
     markers.meta$LOCUS <- markers.meta$VARIANT_ID
   }
 
-  if (stringi::stri_detect_fixed(str = data.source, pattern = "GATK") && !biallelic) {
-    vcf.stats <- FALSE
-  }
+  # if (stringi::stri_detect_fixed(str = data.source, pattern = "GATK") && !biallelic) {
+  #   vcf.stats <- FALSE
+  # }
 
   # VCF: LOCUS cleaning and Strands detection ----------------------------------
   if (isTRUE(unique(stringi::stri_detect_fixed(

@@ -77,6 +77,7 @@ the LOCUS information is all contained along the linkage group in the
 \code{CHROM} column. To make it work with
 \href{https://github.com/thierrygosselin/radiator}{radiator},
 the \code{ID} column is filled with the \code{POS} column info.
+GATK with a mix of multi- and bi-allelic dataset won't generate VCF stats.
 
 \strong{platypus:} Some VCF files don't have an ID filed with values,
 here the same thing is done as GATK VCF files above.

@@ -1322,20 +1322,30 @@ parse_gds_metadata <- function(
     # NOTE TO MYSELF: THIS SHOULD BE DONE FOR BIALLELIC DATA ONLY...
     if (verbose) message("AD column: splitting into ALLELE_REF_DEPTH and ALLELE_ALT_DEPTH")
     # PLAN A:
-    res$AD <- SeqArray::seqGetData(
+    temp.ad <- SeqArray::seqGetData(
       gdsfile = gds,
       var.name = "annotation/format/AD"
     ) %$%
       data
 
-    column.vec <- seq_len(length.out = dim(res$AD)[2])
+    column.vec <- seq_len(length.out = dim(temp.ad)[2])
 
-    res$AD <- tibble::tibble(
-      ALLELE_REF_DEPTH = res$AD[, column.vec %% 2 == 1] %>%
+    make_tibble <- function(...) tibble::tibble(...)
+    safe_make_tibble <- purrr::safely(.f = make_tibble)
+    safe.ad <- safe_make_tibble(
+      ALLELE_REF_DEPTH = temp.ad[, column.vec %% 2 == 1] %>%
         as.vector(.) %>% replace_by_na(data = ., what = 0L),
-      ALLELE_ALT_DEPTH = res$AD[, column.vec %% 2 == 0] %>%
+      ALLELE_ALT_DEPTH = temp.ad[, column.vec %% 2 == 0] %>%
         as.vector(.) %>% replace_by_na(data = ., what = 0L)
     )
+
+    if (is.null(safe.ad$error)) {
+      res$AD <- safe.ad$result
+      safe.ad <- temp.ad <- NULL
+    } else {
+      message("\n\nCaution: something is wrong with the dataset AD")
+      message("Probable cause: missing information for some sample(s)")
+    }
   }# End AD
 
   # Read depth
@@ -2007,9 +2017,10 @@ generate_id_stats <- function(
   # heterozygosity = TRUE
   # coverage = TRUE
   # subsample = NULL
-  # path.folder = NULL
   # plot = TRUE
   # digits = 6
+
+  # path.folder = NULL
   # file.date = NULL
   # parallel.core = parallel::detectCores() - 1
   # verbose = TRUE

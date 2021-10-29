@@ -2,6 +2,7 @@
 
 * bug fix when using genepop file and `genomic_converter`
 * bug fix in `genomic_converter` when using genlight as input and PLINK as output file
+* More GATK VCF problems detections and warnings
 
 # radiator 1.2.0 2021-06-16
 
