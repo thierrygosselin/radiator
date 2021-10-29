@@ -1306,6 +1306,19 @@ gt_recoding <- function(x, gt = TRUE, gt.bin = TRUE, gt.vcf = TRUE, gt.vcf.nuc =
       # complete tidy dataset with calibrated alleles...
     }
   } else {
+    remove.extra <- FALSE
+
+    if (gt) {
+      if (all(!rlang::has_name(x, "A1"), rlang::has_name(x, "REF"))) {
+      x  %<>%
+        dplyr::mutate(
+          A1 = dplyr::recode(REF, "A" = "001", "C" = "002", "G" = "003", "T" = "004"),
+          A2 = dplyr::recode(ALT, "A" = "001", "C" = "002", "G" = "003", "T" = "004")
+        )
+      remove.extra <- TRUE
+      }
+    }
+
 
     gt_map <- function(
       x,

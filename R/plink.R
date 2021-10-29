@@ -168,7 +168,7 @@ read_plink <- function(
         cols = c("INDIVIDUALS", "NUMBER"),
         names_to = "ALLELES_GROUP",
         values_to = "ALLELES"
-        ) %>%
+      ) %>%
       dplyr::arrange(NUMBER) %>%
       dplyr::select(-ALLELES_GROUP) %>%
       tidyr::unite(INDIVIDUALS_ALLELES, c(INDIVIDUALS, ALLELES), sep = "_", remove = FALSE) %>%
@@ -195,7 +195,7 @@ read_plink <- function(
         CHROM = as.character(CHROM),
         LOCUS = as.character(LOCUS),
         POS = as.character(POS)
-        ) %>%
+      ) %>%
       tidyr::unite(data = ., col = "MARKERS", c("CHROM", "LOCUS", "POS"), remove = FALSE, sep = "__")
 
     # Unused objects
@@ -598,7 +598,7 @@ tidy_plink <- function(
         x = .,
         formula = "MARKERS + CHROM + LOCUS + POS + INDIVIDUALS ~ ALLELES",
         values_from = "GT"
-        ) %>%
+      ) %>%
       dplyr::ungroup(.) %>%
       tidyr::unite(data = ., col = GT, A1, A2, sep = "") %>%
       dplyr::select(MARKERS, CHROM, LOCUS, POS, INDIVIDUALS, GT)
@@ -705,31 +705,61 @@ write_plink <- function(data, filename = NULL) {
 
   # Import data ---------------------------------------------------------------
   if (is.vector(data)) data %<>% radiator::tidy_wide(data = ., import.metadata = TRUE)
-
   tped <- data %>%
     dplyr::arrange(INDIVIDUALS) %>%
     dplyr::mutate(
       COL1 = rep("0", n()),
       COL3 = rep("0", n()),
       COL4 = rep("0", n())
-    ) %>%
-    dplyr::select(COL1, MARKERS, COL3, COL4, INDIVIDUALS, GT) %>%
-    dplyr::mutate(
-      A1 = stringi::stri_sub(str = GT, from = 1, to = 3),
-      A2 = stringi::stri_sub(str = GT, from = 4, to = 6)
-    ) %>%
-    dplyr::select(-GT) %>%
-    radiator::rad_long(
-      x = .,
-      cols = c("COL1", "MARKERS", "COL3", "COL4", "INDIVIDUALS"),
-      names_to = "ALLELES",
-      values_to = "GENOTYPE"
+    )
+  if (rlang::has_name(data, "GT")) {
+    tped %<>%
+      dplyr::select(COL1, MARKERS, COL3, COL4, INDIVIDUALS, GT) %>%
+      dplyr::mutate(
+        A1 = stringi::stri_sub(str = GT, from = 1, to = 3),
+        A2 = stringi::stri_sub(str = GT, from = 4, to = 6)
       ) %>%
-    dplyr::mutate(
-      GENOTYPE = as.character(as.numeric(GENOTYPE)),
-      GENOTYPE = stringi::stri_pad_left(GENOTYPE, width = 2, pad = "0")
-    ) %>%
-    dplyr::arrange(INDIVIDUALS, ALLELES) %>%
+      dplyr::select(-GT) %>%
+      radiator::rad_long(
+        x = .,
+        cols = c("COL1", "MARKERS", "COL3", "COL4", "INDIVIDUALS"),
+        names_to = "ALLELES",
+        values_to = "GENOTYPE"
+      ) %>%
+      dplyr::mutate(
+        GENOTYPE = as.character(as.numeric(GENOTYPE)),
+        GENOTYPE = stringi::stri_pad_left(GENOTYPE, width = 2, pad = "0")
+      ) %>%
+      dplyr::arrange(INDIVIDUALS, ALLELES)
+  }
+
+  if (rlang::has_name(data, "GT_BIN")) {
+    tped %<>%
+      dplyr::select(COL1, MARKERS, COL3, COL4, INDIVIDUALS, GT_BIN) %>%
+      dplyr::mutate(
+        A1 = dplyr::case_when(
+          GT_BIN == 0 ~ "01",
+          GT_BIN == 1 ~ "01",
+          GT_BIN == 2 ~ "00",
+          is.na(GT_BIN) ~ "00"
+        ),
+        A2 = dplyr::case_when(
+          GT_BIN == 0 ~ "00",
+          GT_BIN == 1 ~ "01",
+          GT_BIN == 2 ~ "01",
+          is.na(GT_BIN) ~ "00"
+        )
+      ) %>%
+      dplyr::select(-GT_BIN) %>%
+      radiator::rad_long(
+        x = .,
+        cols = c("COL1", "MARKERS", "COL3", "COL4", "INDIVIDUALS"),
+        names_to = "ALLELES",
+        values_to = "GENOTYPE"
+      )
+  }
+
+  tped %<>%
     tidyr::unite(INDIVIDUALS_ALLELES, INDIVIDUALS, ALLELES, sep = "_") %>%
     radiator::rad_wide(x = ., formula = "COL1 + MARKERS +COL3 + COL4 ~ INDIVIDUALS_ALLELES", values_from = "GENOTYPE") %>%
     dplyr::arrange(MARKERS)
