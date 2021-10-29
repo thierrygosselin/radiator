@@ -493,7 +493,6 @@ read_vcf <- function(
 
 
   # generate the GDS
-
   # changed 20210615
   # safe read
 
@@ -644,6 +643,7 @@ read_vcf <- function(
 
   # generate integers for individuals and strata -------------------------------
   # this makes it easier to sort and play with data (integers takes less mem...)
+  if (!is.factor(individuals$STRATA)) individuals$STRATA <- factor(individuals$STRATA)
   individuals %<>%
     dplyr::mutate(
       ID_SEQ = seq_len(length.out = dplyr::n()),
@@ -698,6 +698,10 @@ read_vcf <- function(
   if (weird.locus && !stacks.2) {
     if (verbose) message("LOCUS field empty... adding unique id instead")
     markers.meta$LOCUS <- markers.meta$VARIANT_ID
+  }
+
+  if (stringi::stri_detect_fixed(str = data.source, pattern = "GATK") && !biallelic) {
+    vcf.stats <- FALSE
   }
 
   # VCF: LOCUS cleaning and Strands detection ----------------------------------
@@ -1319,6 +1323,7 @@ read_vcf <- function(
 #' \code{CHROM} column. To make it work with
 #' \href{https://github.com/thierrygosselin/radiator}{radiator},
 #' the \code{ID} column is filled with the \code{POS} column info.
+#' GATK with a mix of multi- and bi-allelic dataset won't generate VCF stats.
 #'
 #' \strong{platypus:} Some VCF files don't have an ID filed with values,
 #' here the same thing is done as GATK VCF files above.

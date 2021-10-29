@@ -706,7 +706,7 @@ extract_markers_metadata <- function(
   verbose = FALSE
 ) {
 
-  # will switch radiator.mode to FALSE if returns null
+  # will switch radiator.node to FALSE if returns null
   keep.one <- FALSE
 
   if (whitelist) blacklist <- FALSE
@@ -715,13 +715,12 @@ extract_markers_metadata <- function(
   if (radiator.node) {
     markers.index <- gdsfmt::index.gdsn(node = gds, path = "radiator/markers.meta", silent = TRUE)
 
-    if (is.null(markers.index) || length(markers.index) == 0) {
+    if (is.null(markers.index) || length(markers.index) == 0 || length(gdsfmt::ls.gdsn(markers.index)) == 0) {
       radiator.node <- FALSE
     } else {
       markers.index <- gdsfmt::ls.gdsn(markers.index)
     }
   }
-
 
   if (!is.null(markers.meta.select)) {
 
@@ -800,7 +799,7 @@ extract_markers_metadata <- function(
     markers.meta %<>% dplyr::filter(FILTERS != "whitelist")# %>%
   }
   return(markers.meta)
-}#End import_metadata
+}#End extract_markers_metadata
 
 
 # extract_genotypes_metadata----------------------------------------------------
