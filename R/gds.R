@@ -2734,7 +2734,7 @@ individual_het <- function(gds) {
       het <<- het + (x[1,] != x[2,] & nm)
       nonmiss <<- nonmiss + nm
     },
-    margin="by.variant",
+    margin = "by.variant",
     as.is = "none",
     parallel = FALSE
   )

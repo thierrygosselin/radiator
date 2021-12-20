@@ -17,7 +17,7 @@
 
 #' @param filename (optional) The file name prefix for the arlequin file
 #' written to the working directory. With default: \code{filename = NULL},
-#' the date and time is appended to \code{radiator_arlequin_}.
+#' the filename generated follow this \code{radiator_arlequin_DATE@TIME.csv}.
 
 #' @param ... other parameters passed to the function.
 
@@ -43,35 +43,34 @@ write_arlequin <- function(
   if (missing(data)) rlang::abort("Input file missing")
 
   # Import data ---------------------------------------------------------------
-  if (is.vector(data)) data  %<>% radiator::tidy_wide(data = .)
+  data %<>% radiator::tidy_wide(data = .)
 
-  # necessary steps to make sure we work with unique markers and not duplicated LOCUS
-  if (tibble::has_name(data, "LOCUS") && !tibble::has_name(data, "MARKERS")) {
-    data %<>% dplyr::rename(MARKERS = LOCUS)
+  if (!rlang::has_name(data, "GT")) {
+    data %<>% calibrate_alleles(data = ., verbose = FALSE) %$% input
   }
 
-  data %<>% dplyr::select(POP_ID, INDIVIDUALS, MARKERS, GT)
+  data %<>% dplyr::select(STRATA, INDIVIDUALS, MARKERS, GT)
 
 
   # pop.levels -----------------------------------------------------------------
   if (!is.null(pop.levels)) {
     data %<>%
       dplyr::mutate(
-      POP_ID = factor(POP_ID, levels = pop.levels, ordered = TRUE),
-      POP_ID = droplevels(POP_ID)
+      STRATA = factor(STRATA, levels = pop.levels, ordered = TRUE),
+      STRATA = droplevels(STRATA)
     ) %>%
-      dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS)
+      dplyr::arrange(STRATA, INDIVIDUALS, MARKERS)
   } else {
     data %<>%
-      dplyr::mutate(POP_ID = factor(POP_ID)) %>%
-      dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS)
+      dplyr::mutate(STRATA = factor(STRATA)) %>%
+      dplyr::arrange(STRATA, INDIVIDUALS, MARKERS)
   }
 
   # Create a marker vector  ------------------------------------------------
   markers <- dplyr::distinct(.data = data, MARKERS) %>%
     dplyr::arrange(MARKERS) %>%
     purrr::flatten_chr(.)
-  npop <- length(unique(data$POP_ID))
+  npop <- length(unique(data$STRATA))
 
   # arlequin format ----------------------------------------------------------------
   data %<>%
@@ -80,28 +79,38 @@ write_arlequin <- function(
       A2 = stringi::stri_sub(str = GT, from = 4, to = 6),
       GT = NULL
     ) %>%
-    radiator::rad_long(x = ., cols = c("POP_ID", "INDIVIDUALS", "MARKERS"), names_to = "ALLELES", values_to = "GT") %>%
+    radiator::rad_long(x = ., cols = c("STRATA", "INDIVIDUALS", "MARKERS"), names_to = "ALLELES", values_to = "GT") %>%
     dplyr::mutate(
       GT = stringi::stri_replace_all_fixed(str = GT, pattern = "000", replacement = "-9", vectorize_all = FALSE)
     ) %>%
-    radiator::rad_wide(x = ., formula = "INDIVIDUALS + POP_ID ~ MARKERS + ALLELES", values_from = "GT") %>%
-    dplyr::arrange(POP_ID, INDIVIDUALS)
+    radiator::rad_wide(x = ., formula = "INDIVIDUALS + STRATA  + ALLELES ~ MARKERS", values_from = "GT") %>%
+    dplyr::arrange(STRATA, INDIVIDUALS) %>%
+    dplyr::select(-ALLELES)
 
   # Write the file in arlequin format -----------------------------------------
+
   # date & time
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
 
   # Filename
   if (is.null(filename)) {
-    filename <- stringi::stri_join("radiator_arlequin_", file.date, ".csv")
+    filename.temp <- generate_filename(extension = "arlequin")
+    filename.short <- filename.temp$filename.short
+    filename <- filename.temp$filename
   } else {
+    filename <- stringi::stri_join(filename, "_arlequin.csv")
     filename.problem <- file.exists(filename)
     if (filename.problem) {
-      filename <- stringi::stri_join(filename, "_arlequin_", file.date, ".csv")
-    } else {
-      filename <- stringi::stri_join(filename, "_arlequin", ".csv")
+      filename.temp <- generate_filename(extension = "arlequin")
+      filename.short <- filename.temp$filename.short
+      filename <- filename.temp$filename
     }
+    filename.short <- filename
   }
+
+
+  message("File written: ", filename.short)
+
 
   filename.connection <- file(filename, "w") # open the connection to the file
   # Profile section
@@ -116,12 +125,12 @@ write_arlequin <- function(
   write(paste("[Data]"), file = filename.connection, append = TRUE)
   write(paste("[[Samples]]"), file = filename.connection, append = TRUE)
 
-  pop <- data$POP_ID # Create a population vector
-  data.split <- split(data, pop) # split genepop by populations
+  pop <- as.character(data$STRATA) # Create a population vector
+  data.split <- split(data, pop) # split data by populations
   for (i in 1:length(data.split)) {
     # i <- 1
     pop.data <- data.split[[i]]
-    pop.name <- unique(pop.data$POP_ID)
+    pop.name <- unique(as.character(pop.data$STRATA))
     n.ind <- dplyr::n_distinct(pop.data$INDIVIDUALS)
     write(paste("SampleName = ", pop.name), file = filename.connection, append = TRUE)
     write(paste("SampleSize = ", n.ind), file = filename.connection, append = TRUE)
@@ -129,7 +138,7 @@ write_arlequin <- function(
     pop.data$INDIVIDUALS[seq(from = 2, to = n.ind * 2, by = 2)] <- ""
     # test <- data.frame(data.split[[i]])
     # close(filename.connection) # close the connection
-    pop.data <- dplyr::select(.data = pop.data, -POP_ID)
+    pop.data <- dplyr::select(.data = pop.data, -STRATA)
     ncol.data <- ncol(pop.data)
     pop.data <- as.matrix(pop.data)
     write(x = t(pop.data), ncolumns = ncol.data, sep = "\t", append = TRUE, file = filename.connection)
@@ -142,7 +151,7 @@ write_arlequin <- function(
   write(paste("Group = {"), file = filename.connection, append = TRUE)
   for (i in 1:length(data.split)) {
     pop.data <- data.split[[i]]
-    pop.name <- unique(pop.data$POP_ID)
+    pop.name <- unique(pop.data$STRATA)
     write(paste("\"", pop.name, "\"", sep = ""), file = filename.connection, append = TRUE)
   }
   write(paste("}"), file = filename.connection, append = TRUE)

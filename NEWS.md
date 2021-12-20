@@ -1,3 +1,8 @@
+# radiator 1.2.2 2021-12-20
+
+* bug fix when using *arlequin* output file
+
+
 # radiator 1.2.1 2021-10-28
 
 * bug fix when using genepop file and `genomic_converter`

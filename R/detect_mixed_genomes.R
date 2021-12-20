@@ -141,12 +141,11 @@ detect_mixed_genomes <- function(
 
   ## Test
   # interactive.filter = TRUE
-  # data <- tidy.data
   # detect.mixed.genomes = TRUE
   # ind.heterozygosity.threshold = NULL
   # verbose = TRUE
-  # path.folder <- fp$detect_mixed_genomes
-  # parameters = filters.parameters
+  # path.folder <- NULL
+  # parameters = NULL
   # parallel.core = parallel::detectCores() - 1
   # by.strata = FALSE
   # internal <- FALSE
@@ -206,7 +205,7 @@ detect_mixed_genomes <- function(
 
       # Tidy data
       data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
-      n.pop <- dplyr::n_distinct(data$POP_ID)
+      n.pop <- dplyr::n_distinct(data$STRATA)
 
       # Filter parameter file: generate and initiate -------------------------------
       filters.parameters <- radiator_parameters(
@@ -230,8 +229,8 @@ detect_mixed_genomes <- function(
         n.markers.pop <- dplyr::filter(data, GT != "000000")
         n.markers.overall <- dplyr::n_distinct(data$MARKERS[data$GT != "000000"])
       }
-      n.markers.pop <- dplyr::distinct(n.markers.pop, MARKERS, POP_ID) %>%
-        dplyr::count(x = ., POP_ID)
+      n.markers.pop <- dplyr::distinct(n.markers.pop, MARKERS, STRATA) %>%
+        dplyr::count(x = ., STRATA)
 
       # For figure het and missingness:
       # 1 or 2 facets that include missingness computed by pop or overall
@@ -265,20 +264,20 @@ detect_mixed_genomes <- function(
 
       # Create a new df with heterozygote info
 
-      if (is.factor(het.summary$POP_ID)) {
-        pop.levels <- levels(het.summary$POP_ID)
+      if (is.factor(het.summary$STRATA)) {
+        pop.levels <- levels(het.summary$STRATA)
       } else {
-        pop.levels <- unique(het.summary$POP_ID)
+        pop.levels <- unique(het.summary$STRATA)
       }
 
-      het.ind <- dplyr::select(.data = het.summary, POP_ID, INDIVIDUALS, HET, GENOTYPED) %>%
-        dplyr::full_join(n.markers.pop, by = "POP_ID") %>%
+      het.ind <- dplyr::select(.data = het.summary, STRATA, INDIVIDUALS, HET, GENOTYPED) %>%
+        dplyr::full_join(n.markers.pop, by = "STRATA") %>%
         dplyr::group_by(INDIVIDUALS) %>%
         dplyr::mutate(
           MISSING_PROP_POP = (n - GENOTYPED) / n,
           MISSING_PROP_OVERALL = (n.markers.overall - GENOTYPED) / n.markers.overall
         ) %>%
-        dplyr::group_by(INDIVIDUALS, POP_ID) %>%
+        dplyr::group_by(INDIVIDUALS, STRATA) %>%
         dplyr::summarise(
           GENOTYPED = unique(GENOTYPED),
           MISSING_PROP_POP = unique(MISSING_PROP_POP),
@@ -287,25 +286,25 @@ detect_mixed_genomes <- function(
           HET_PROP = HET_NUMBER / GENOTYPED,
           .groups = "keep"
         ) %>%
-        dplyr::arrange(POP_ID, HET_PROP) %>%
+        dplyr::arrange(STRATA, HET_PROP) %>%
         dplyr::ungroup(.) %>%
         readr::write_tsv(
           x = .,
           file = file.path(path.folder, "individual.heterozygosity.tsv"),
           col_names = TRUE)
 
-      het.ind.overall <- dplyr::mutate(.data = het.ind, POP_ID = as.character(POP_ID)) %>%
-        dplyr::bind_rows(dplyr::mutate(.data = het.ind, POP_ID = rep("OVERALL", n()))) %>%
-        dplyr::mutate(POP_ID = factor(POP_ID, levels = c(pop.levels, "OVERALL"))) %>%
+      het.ind.overall <- dplyr::mutate(.data = het.ind, STRATA = as.character(STRATA)) %>%
+        dplyr::bind_rows(dplyr::mutate(.data = het.ind, STRATA = rep("OVERALL", n()))) %>%
+        dplyr::mutate(STRATA = factor(STRATA, levels = c(pop.levels, "OVERALL"))) %>%
         radiator::rad_long(
           x = .,
-          cols = c("POP_ID", "INDIVIDUALS", "GENOTYPED", "HET_NUMBER", "HET_PROP"),
+          cols = c("STRATA", "INDIVIDUALS", "GENOTYPED", "HET_NUMBER", "HET_PROP"),
           names_to = "MISSING_GROUP",
           values_to = "MISSING_PROP",
           variable_factor = FALSE
         ) %>%
         dplyr::mutate(MISSING_GROUP = factor(MISSING_GROUP, levels = c("MISSING_PROP_POP", "MISSING_PROP_OVERALL"))) %>%
-        dplyr::arrange(POP_ID, MISSING_GROUP)
+        dplyr::arrange(STRATA, MISSING_GROUP)
 
     } else {
       if (data.type == "gds.file") {
@@ -342,24 +341,24 @@ detect_mixed_genomes <- function(
         verbose = FALSE)
 
       het.ind <- id.stats$info %>%
-        dplyr::select(INDIVIDUALS, POP_ID = STRATA, HET_PROP = HETEROZYGOSITY, MISSING_PROP_OVERALL = MISSING_PROP) %>%
+        dplyr::select(INDIVIDUALS, STRATA, HET_PROP = HETEROZYGOSITY, MISSING_PROP_OVERALL = MISSING_PROP) %>%
         dplyr::mutate(MISSING_PROP_POP = MISSING_PROP_OVERALL)
 
       # Need the equivalent for this:
-      if (is.factor(het.ind$POP_ID)) {
-        pop.levels <- levels(het.ind$POP_ID)
+      if (is.factor(het.ind$STRATA)) {
+        pop.levels <- levels(het.ind$STRATA)
       } else {
-        pop.levels <- unique(het.ind$POP_ID)
+        pop.levels <- unique(het.ind$STRATA)
       }
       n.pop <- length(pop.levels)
       id.stats <- NULL
 
-      het.ind.overall <- dplyr::mutate(.data = het.ind, POP_ID = as.character(POP_ID)) %>%
-        dplyr::bind_rows(dplyr::mutate(.data = het.ind, POP_ID = rep("OVERALL", n()))) %>%
-        dplyr::mutate(POP_ID = factor(POP_ID, levels = c(pop.levels, "OVERALL"), ordered = TRUE)) %>%
+      het.ind.overall <- dplyr::mutate(.data = het.ind, STRATA = as.character(STRATA)) %>%
+        dplyr::bind_rows(dplyr::mutate(.data = het.ind, STRATA = rep("OVERALL", n()))) %>%
+        dplyr::mutate(STRATA = factor(STRATA, levels = c(pop.levels, "OVERALL"), ordered = TRUE)) %>%
         radiator::rad_long(
           x = .,
-          cols = c("POP_ID", "INDIVIDUALS", "HET_PROP"),
+          cols = c("STRATA", "INDIVIDUALS", "HET_PROP"),
           names_to = "MISSING_GROUP",
           values_to = "MISSING_PROP"
         ) %>%
@@ -367,7 +366,7 @@ detect_mixed_genomes <- function(
           MISSING_GROUP = factor(MISSING_GROUP,
                                  levels = c("MISSING_PROP_POP", "MISSING_PROP_OVERALL")),
           MISSING_PROP = as.numeric(MISSING_PROP)) %>%
-        dplyr::arrange(POP_ID, MISSING_GROUP)
+        dplyr::arrange(STRATA, MISSING_GROUP)
     }
 
     #Stats------------------------------------------------------------------------
@@ -375,7 +374,7 @@ detect_mixed_genomes <- function(
 
     het.ind.stats <- dplyr::filter(het.ind.overall,
                                    MISSING_GROUP != "MISSING_PROP_POP") %>%
-      dplyr::group_by(POP_ID) %>%
+      dplyr::group_by(STRATA) %>%
       dplyr::summarise(
         MEAN = mean(HET_PROP, na.rm = TRUE),
         MEDIAN = stats::median(HET_PROP, na.rm = TRUE),
@@ -393,7 +392,7 @@ detect_mixed_genomes <- function(
         OUTLIERS_PROP = round(OUTLIERS_TOTAL / length(HET_PROP), 3)) %>%
       dplyr::mutate(dplyr::across(where(is.numeric), .fns = round, digits = 6)) %>%
       tidyr::unite(data = ., HET_RANGE, MIN, MAX, sep = " - ") %>%
-      dplyr::arrange(POP_ID) %>%
+      dplyr::arrange(STRATA) %>%
       readr::write_tsv(
         x = .,
         file = file.path(path.folder, "heterozygosity.statistics.tsv"),
@@ -404,8 +403,8 @@ detect_mixed_genomes <- function(
     message("Generating plots")
 
     # outlier info
-    overall.outlier.low <- het.ind.stats$OUTLIERS_LOW[het.ind.stats$POP_ID == "OVERALL"]
-    overall.outlier.high <- het.ind.stats$OUTLIERS_HIGH[het.ind.stats$POP_ID == "OVERALL"]
+    overall.outlier.low <- het.ind.stats$OUTLIERS_LOW[het.ind.stats$STRATA == "OVERALL"]
+    overall.outlier.high <- het.ind.stats$OUTLIERS_HIGH[het.ind.stats$STRATA == "OVERALL"]
 
     rounder <- function(x, accuracy, f = round) {
       f(x / accuracy) * accuracy
@@ -426,7 +425,7 @@ detect_mixed_genomes <- function(
     # manhattan ----------------------------------------------------------------
     het.manhattan <- ggplot2::ggplot(
       data = het.ind.overall,
-      ggplot2::aes(x = POP_ID, y = HET_PROP, size = as.numeric(MISSING_PROP), colour = POP_ID)) +
+      ggplot2::aes(x = STRATA, y = HET_PROP, size = as.numeric(MISSING_PROP), colour = STRATA)) +
       ggplot2::geom_jitter(alpha = 0.6) +
       ggplot2::scale_y_continuous(name = "Mean Observed Heterozygosity (proportion)",
                                   breaks = y.breaks, labels = y.breaks, limits = c(y.breaks.min, y.breaks.max)) + #y.breaks
@@ -455,7 +454,7 @@ detect_mixed_genomes <- function(
                           het.ind.stats, linetype = "dotted", size = 0.6) +#mean
       ggplot2::geom_hline(mapping = ggplot2::aes(yintercept = OUTLIERS_HIGH),
                           het.ind.stats, linetype = "dashed", size = 0.6) + #high
-      ggplot2::facet_grid(MISSING_GROUP ~ factor(POP_ID), switch = "x", scales = "free",
+      ggplot2::facet_grid(MISSING_GROUP ~ factor(STRATA), switch = "x", scales = "free",
                           labeller = ggplot2::labeller(MISSING_GROUP = facet_names))
     # het.manhattan
 
@@ -477,7 +476,7 @@ detect_mixed_genomes <- function(
     )
 
     het.bp <- ggplot2::ggplot(data = het.ind.overall,
-                              ggplot2::aes(x = POP_ID, y = HET_PROP, colour = POP_ID)) +
+                              ggplot2::aes(x = STRATA, y = HET_PROP, colour = STRATA)) +
       ggplot2::geom_boxplot() +
       ggplot2::labs(
         x = "Populations",
@@ -532,11 +531,11 @@ to notice what we never expected to see.
         if (by.strata) {
           ind.het.thresholds.by.strata <- het.ind.stats %>%
             dplyr::select(
-              POP_ID,
+              STRATA,
               THRESHOLD_OUTLIERS_LOW = OUTLIERS_LOW,
               THRESHOLD_OUTLIERS_HIGH = OUTLIERS_HIGH
             ) %>%
-            dplyr::filter(POP_ID != "OVERALL")
+            dplyr::filter(STRATA != "OVERALL")
 
           readr::write_tsv(
             x = ind.het.thresholds.by.strata,
@@ -581,7 +580,7 @@ to notice what we never expected to see.
 
       if (by.strata) {
         blacklist.ind.het <- dplyr::ungroup(het.ind) %>%
-          dplyr::right_join(ind.het.thresholds.by.strata, by = "POP_ID") %>%
+          dplyr::right_join(ind.het.thresholds.by.strata, by = "STRATA") %>%
           dplyr::filter(HET_PROP > THRESHOLD_OUTLIERS_HIGH | HET_PROP < THRESHOLD_OUTLIERS_LOW) %>%
           dplyr::distinct(INDIVIDUALS)
       } else {
@@ -629,7 +628,7 @@ to notice what we never expected to see.
       ind.het.thresholds.by.strata %<>%
         dplyr::mutate(
           THRESHOLDS = stringi::stri_join(THRESHOLD_OUTLIERS_LOW, THRESHOLD_OUTLIERS_HIGH, sep = "/"),
-          VALUES = stringi::stri_join(POP_ID, THRESHOLDS, sep = ": ")
+          VALUES = stringi::stri_join(STRATA, THRESHOLDS, sep = ": ")
         )
       filters.parameters <- radiator_parameters(
         generate = FALSE,

@@ -230,6 +230,8 @@ read_strata <- function(
     if (isTRUE(pop.id)) strata %<>% dplyr::rename(POP_ID = STRATA)
 
 
+
+
     if (!is.null(blacklist.id) || !is.null(pop.select)) {
       if (is.null(filename)) {
         filename <- generate_filename(
@@ -238,6 +240,9 @@ read_strata <- function(
           date = TRUE,
           extension = "tsv")$filename
       }
+    }
+
+    if (!is.null(filename)) {
       write_rad(data = strata, filename = filename, tsv = TRUE, verbose = TRUE)
     }
 

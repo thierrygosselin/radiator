@@ -303,7 +303,7 @@ detect_duplicate_genomes <- function(
         gt.field <- "GT"
       }
 
-      want <- c("MARKERS", "CHROM", "LOCUS", "POS", "POP_ID", "INDIVIDUALS", gt.field)#, "REF", "ALT")
+      want <- c("MARKERS", "CHROM", "LOCUS", "POS", "STRATA", "INDIVIDUALS", gt.field)#, "REF", "ALT")
       data %<>% dplyr::select(tidyselect::any_of(want))
 
       # necessary steps to make sure we work with unique markers and not duplicated LOCUS
@@ -331,7 +331,7 @@ detect_duplicate_genomes <- function(
 
       # strata
       strata <- dplyr::ungroup(data) %>%
-        dplyr::distinct(POP_ID, INDIVIDUALS)
+        dplyr::distinct(STRATA, INDIVIDUALS)
 
       # Preparing data for comparisons ---------------------------------------------
       if (verbose) message("Preparing data for analysis")
@@ -440,9 +440,8 @@ detect_duplicate_genomes <- function(
         parallel.core = parallel.core,
         verbose = FALSE,
         path.folder = path.folder) %$% info %>%
-        dplyr::mutate(GENOTYPED_PROP = 1 - MISSING_PROP, MISSING_PROP = NULL) %>%
-        dplyr::rename(POP_ID = STRATA)
-      strata <- dplyr::distinct(geno.stats, INDIVIDUALS, POP_ID)
+        dplyr::mutate(GENOTYPED_PROP = 1 - MISSING_PROP, MISSING_PROP = NULL) #%>% dplyr::rename(POP_ID = STRATA)
+      strata <- dplyr::distinct(geno.stats, INDIVIDUALS, STRATA)
 
       geno.stats %<>% dplyr::select(INDIVIDUALS, GENOTYPED_PROP )
       readr::write_tsv(
@@ -1067,12 +1066,12 @@ distance_individuals <- function(
   ID1.pop <- suppressWarnings(
     dplyr::select(.data = x, INDIVIDUALS = ID1) %>%
       dplyr::inner_join(strata, by = "INDIVIDUALS") %>%
-      dplyr::select(ID1_POP = POP_ID))
+      dplyr::select(ID1_POP = STRATA))
 
   ID2.pop <- suppressWarnings(
     dplyr::select(.data = x, INDIVIDUALS = ID2) %>%
       dplyr::inner_join(strata, by = "INDIVIDUALS") %>%
-      dplyr::select(ID2_POP = POP_ID))
+      dplyr::select(ID2_POP = STRATA))
 
   x <- dplyr::bind_cols(x, ID1.pop, ID2.pop) %>%
     dplyr::mutate(
@@ -1121,16 +1120,16 @@ genome_similarity <- carrier::crate(function(
     res <- list()
     res$genome.comparison <- dplyr::filter(some.pairs, PAIRS == pair) %>%
       dplyr::mutate(
-        ID1_STRATA = unique(data$POP_ID[data$INDIVIDUALS == ID1]),
-        ID2_STRATA = unique(data$POP_ID[data$INDIVIDUALS == ID2])
+        ID1_STRATA = unique(data$STRATA[data$INDIVIDUALS == ID1]),
+        ID2_STRATA = unique(data$STRATA[data$INDIVIDUALS == ID2])
       )
 
     if (rlang::has_name(data, "GT_BIN")) {
       # genotypes & markers
       id1.data <- dplyr::filter(.data = data, INDIVIDUALS %in% res$genome.comparison$ID1) %>%
-        dplyr::select(-INDIVIDUALS, -POP_ID) %>% dplyr::arrange(MARKERS)
+        dplyr::select(-INDIVIDUALS, -STRATA) %>% dplyr::arrange(MARKERS)
       id2.data <- dplyr::filter(.data = data, INDIVIDUALS %in% res$genome.comparison$ID2) %>%
-        dplyr::select(-INDIVIDUALS, -POP_ID) %>% dplyr::arrange(MARKERS)
+        dplyr::select(-INDIVIDUALS, -STRATA) %>% dplyr::arrange(MARKERS)
       id1.n.geno <- nrow(id1.data)
       id2.n.geno <- nrow(id2.data)
       n.markers <- dplyr::n_distinct(data$MARKERS)

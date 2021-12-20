@@ -19,6 +19,8 @@
 <![endif]-->
 </head>
 <body data-spy="scroll" data-target="#toc">
+    
+
     <div class="container template-home">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -31,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.2.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
       </span>
     </div>
 
@@ -67,7 +69,7 @@
       </ul>
 <ul class="nav navbar-nav navbar-right">
 <li>
-  <a href="https://github.com/thierrygosselin/radiator">
+  <a href="https://github.com/thierrygosselin/radiator" class="external-link">
     <span class="fa fa-github fa-lg"></span>
      
   </a>
@@ -86,50 +88,50 @@
   <div class="contents col-md-9">
 
 
-<div id="radiator-an-r-package-for-radseq-data-exploration-manipulation-and-visualization" class="section level1">
-<div class="page-header"><h1 class="hasAnchor">
-<a href="#radiator-an-r-package-for-radseq-data-exploration-manipulation-and-visualization" class="anchor"></a>radiator: an R package for RADseq Data Exploration, Manipulation and Visualization</h1></div>
+<div class="section level1">
+<div class="page-header"><h1 id="radiator-an-r-package-for-radseq-data-exploration-manipulation-and-visualization">radiator: an R package for RADseq Data Exploration, Manipulation and Visualization<a class="anchor" aria-label="anchor" href="#radiator-an-r-package-for-radseq-data-exploration-manipulation-and-visualization"></a>
+</h1></div>
 <p>Most genomic analysis look for patterns and trends with various statistics. Bias, noise and outliers can have bounded influence on estimators and interfere with polymorphism discovery. Avoid bad data exploration and control the impact of filters on your downstream genetic analysis. Use radiator to: import, explore, manipulate, visualize, filter, impute and export your GBS/RADseq data.</p>
-<p><strong>radiator</strong> is designed and optimized for fast computations of diploid data using Genomic Data Structure <a href="https://github.com/zhengxwen/gdsfmt">GDS</a> file format and data science packages in <a href="https://www.tidyverse.org">tidyverse</a>. <strong>radiator</strong> handles VCF files with millions of SNPs and files of several GB.</p>
-<div id="installation" class="section level2">
-<h2 class="hasAnchor">
-<a href="#installation" class="anchor"></a>Installation</h2>
+<p><strong>radiator</strong> is designed and optimized for fast computations of diploid data using Genomic Data Structure <a href="https://github.com/zhengxwen/gdsfmt" class="external-link">GDS</a> file format and data science packages in <a href="https://www.tidyverse.org" class="external-link">tidyverse</a>. <strong>radiator</strong> handles VCF files with millions of SNPs and files of several GB.</p>
+<div class="section level2">
+<h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
+</h2>
 <p>To try out the dev version of <strong>radiator</strong>, copy/paste the code below:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="kw"><a href="https://rdrr.io/r/base/library.html">require</a></span><span class="op">(</span><span class="st"><a href="https://devtools.r-lib.org/">"devtools"</a></span><span class="op">)</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span><span class="op">(</span><span class="st">"devtools"</span><span class="op">)</span>
-<span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org//reference/remote-reexports.html">install_github</a></span><span class="op">(</span><span class="st">"thierrygosselin/radiator"</span><span class="op">)</span>
-<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://thierrygosselin.github.io/radiator/">radiator</a></span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="st"><a href="https://devtools.r-lib.org/" class="external-link">"devtools"</a></span><span class="op">)</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"devtools"</span><span class="op">)</span>
+<span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/remote-reexports.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"thierrygosselin/radiator"</span><span class="op">)</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://thierrygosselin.github.io/radiator/" class="external-link">radiator</a></span><span class="op">)</span></code></pre></div>
 <p><strong>Note</strong></p>
 <p>Some Windows OS and Linux OS recently experienced some problems during installations, linked to CRAN &amp; Bioconductor tango problems:</p>
 <ul>
-<li><p>If you’re experiencing problems with radiator installation see <a href="https://thierrygosselin.github.io/radiator/articles/rad_genomics_computer_setup.html">troubleshooting section</a> and try the lines below.</p></li>
-<li><p>Verify that installing <strong>radiator</strong> also installed the <a href="https://www.bioconductor.org/packages/release/bioc/html/SeqArray.html">Bioconductor</a> packages: <code>gdsfmt</code> and <a href="https://github.com/zhengxwen/SeqArray">SeqArray</a> with version &gt;= 1.28.1.</p></li>
+<li><p>If you’re experiencing problems with radiator installation see <a href="https://thierrygosselin.github.io/radiator/articles/rad_genomics_computer_setup.html" class="external-link">troubleshooting section</a> and try the lines below.</p></li>
+<li><p>Verify that installing <strong>radiator</strong> also installed the <a href="https://www.bioconductor.org/packages/release/bioc/html/SeqArray.html" class="external-link">Bioconductor</a> packages: <code>gdsfmt</code> and <a href="https://github.com/zhengxwen/SeqArray" class="external-link">SeqArray</a> with version &gt;= 1.28.1.</p></li>
 </ul>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/sessioninfo/man/package_info.html">package_info</a></span><span class="op">(</span>pkgs <span class="op">=</span> <span class="st">"SeqArray"</span><span class="op">)</span> <span class="co"># to verify version</span>
+<code class="sourceCode R"><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://r-lib.github.io/sessioninfo/reference/package_info.html" class="external-link">package_info</a></span><span class="op">(</span>pkgs <span class="op">=</span> <span class="st">"SeqArray"</span><span class="op">)</span> <span class="co"># to verify version</span>
 
 <span class="co"># If manually installing SeqArray is necessary</span>
-<span class="fu">BiocManager</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/BiocManager/man/install.html">install</a></span><span class="op">(</span><span class="st">"SeqArray"</span><span class="op">)</span></code></pre></div>
-<p>Web site with additional info: <a href="https://thierrygosselin.github.io/radiator/" class="uri">https://thierrygosselin.github.io/radiator/</a></p>
+<span class="fu">BiocManager</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/BiocManager/man/install.html" class="external-link">install</a></span><span class="op">(</span><span class="st">"SeqArray"</span><span class="op">)</span></code></pre></div>
+<p>Web site with additional info: <a href="https://thierrygosselin.github.io/radiator/" class="external-link uri">https://thierrygosselin.github.io/radiator/</a></p>
 <ul>
-<li><a href="https://thierrygosselin.github.io/radiator/articles/rad_genomics_computer_setup.html">Computer setup and troubleshooting</a></li>
+<li><a href="https://thierrygosselin.github.io/radiator/articles/rad_genomics_computer_setup.html" class="external-link">Computer setup and troubleshooting</a></li>
 <li>
-<a href="https://thierrygosselin.github.io/radiator/articles/get_started.html">Learning radiator</a> and <a href="https://thierrygosselin.github.io/radiator/articles/get_started.html#overview">Overview of features</a>
+<a href="https://thierrygosselin.github.io/radiator/articles/get_started.html" class="external-link">Learning radiator</a> and <a href="https://thierrygosselin.github.io/radiator/articles/get_started.html#overview" class="external-link">Overview of features</a>
 </li>
-<li><a href="https://thierrygosselin.github.io/radiator/articles/index.html">Vignettes</a></li>
+<li><a href="https://thierrygosselin.github.io/radiator/articles/index.html" class="external-link">Vignettes</a></li>
 </ul>
 </div>
-<div id="life-cycle" class="section level2">
-<h2 class="hasAnchor">
-<a href="#life-cycle" class="anchor"></a><a href="https://thierrygosselin.github.io/radiator/articles/life_cycle.html">Life cycle</a>
+<div class="section level2">
+<h2 id="life-cycle">
+<a href="https://thierrygosselin.github.io/radiator/articles/life_cycle.html" class="external-link">Life cycle</a><a class="anchor" aria-label="anchor" href="#life-cycle"></a>
 </h2>
 <p>radiator is maturing, but in order to make the package better, changes are inevitable. Experimental functions will change, argument names will change. Your codes and workflows might break from time to time until radiator is stable. Consequently, depending on your tolerance to change, radiator might not be for you. Avoid using radiator if you suffer from the Semmelweis reflex. Philosophy, major changes and deprecated functions/arguments are documented in life cycle section of functions.</p>
 <ul>
-<li>The latest changes are documented (<a href="https://thierrygosselin.github.io/radiator/articles/life_cycle.html">here</a>) and in <a href="https://thierrygosselin.github.io/radiator/news/index.html">changelog, versions, new features and bug history</a>
+<li>The latest changes are documented (<a href="https://thierrygosselin.github.io/radiator/articles/life_cycle.html" class="external-link">here</a>) and in <a href="https://thierrygosselin.github.io/radiator/news/index.html" class="external-link">changelog, versions, new features and bug history</a>
 </li>
-<li>Question(s) or problem(s) with radiator, open an <a href="https://github.com/thierrygosselin/radiator/issues/new/choose">issue</a>
+<li>Question(s) or problem(s) with radiator, open an <a href="https://github.com/thierrygosselin/radiator/issues/new/choose" class="external-link">issue</a>
 </li>
-<li><a href="https://github.com/thierrygosselin/radiator/issues/new/choose">Contributions are welcomed</a></li>
+<li><a href="https://github.com/thierrygosselin/radiator/issues/new/choose" class="external-link">Contributions are welcomed</a></li>
 </ul>
 </div>
 </div>
@@ -138,57 +140,62 @@
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <div class="links">
-<h2>Links</h2>
+<h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
-<li>Browse source code at <br><a href="https://github.com/thierrygosselin/radiator/">https://​github.com/​thierrygosselin/​radiator/​</a>
-</li>
-<li>Report a bug at <br><a href="https://github.com/thierrygosselin/radiator/issues">https://​github.com/​thierrygosselin/​radiator/​issues</a>
-</li>
-</ul>
-</div>
-<div class="license">
-<h2>License</h2>
-<ul class="list-unstyled">
-<li><a href="LICENSE.html">Full license</a></li>
-<li><small><a href="https://www.r-project.org/Licenses/GPL-3">GPL-3</a></small></li>
-</ul>
-</div>
-<div class="citation">
-<h2>Citation</h2>
-<ul class="list-unstyled">
-<li><a href="authors.html">Citing radiator</a></li>
-</ul>
-</div>
-<div class="developers">
-<h2>Developers</h2>
-<ul class="list-unstyled">
-<li>Thierry Gosselin <br><small class="roles"> Author, maintainer </small>  </li>
-<li><a href="authors.html">All authors...</a></li>
+<li><a href="https://github.com/thierrygosselin/radiator/" class="external-link">Browse source code</a></li>
+<li><a href="https://github.com/thierrygosselin/radiator/issues" class="external-link">Report a bug</a></li>
 </ul>
 </div>
 
-  <div class="dev-status">
-<h2>Dev status</h2>
+<div class="license">
+<h2 data-toc-skip>License</h2>
 <ul class="list-unstyled">
-<li><a href="https://tidyverse.org/lifecycle/#maturing"><img src="https://img.shields.io/badge/lifecycle-maturing-blue.svg" alt="lifecycle"></a></li>
-<li><a href="http://www.repostatus.org/#active"><img src="http://www.repostatus.org/badges/latest/active.svg" alt="Project Status: Active – The project has reached a stable, usable state and is being actively developed."></a></li>
-<li><a href="https://cran.r-project.org/"><img src="https://img.shields.io/badge/R%3E%3D-3.5.0-6666ff.svg" alt="minimal R version"></a></li>
-<li><a href="commits/master"><img src="https://img.shields.io/badge/Package%20version-1.2.1-orange.svg" alt="packageversion"></a></li>
-<li><a href="/commits/master"><img src="https://img.shields.io/badge/last%20change-2021--10--29-brightgreen.svg" alt="Last-changedate"></a></li>
-<li><a href="https://github.com/thierrygosselin/radiator/actions"><img src="https://github.com/thierrygosselin/radiator/workflows/R-CMD-check/badge.svg" alt="R-CMD-check"></a></li>
-<li><a href="https://doi.org/10.5281/zenodo.3687060"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.3687060.svg" alt="DOI"></a></li>
+<li><a href="LICENSE.html">Full license</a></li>
+<li><small><a href="https://www.r-project.org/Licenses/GPL-3" class="external-link">GPL-3</a></small></li>
 </ul>
 </div>
+
+
+<div class="citation">
+<h2 data-toc-skip>Citation</h2>
+<ul class="list-unstyled">
+<li><a href="authors.html#citation">Citing radiator</a></li>
+</ul>
 </div>
+
+<div class="developers">
+<h2 data-toc-skip>Developers</h2>
+<ul class="list-unstyled">
+<li>Thierry Gosselin <br><small class="roles"> Author, maintainer </small>  </li>
+<li><a href="authors.html">More about authors...</a></li>
+</ul>
+</div>
+
+<div class="dev-status">
+<h2 data-toc-skip>Dev status</h2>
+<ul class="list-unstyled">
+<li><a href="https://tidyverse.org/lifecycle/#maturing" class="external-link"><img src="https://img.shields.io/badge/lifecycle-maturing-blue.svg" alt="lifecycle"></a></li>
+<li><a href="http://www.repostatus.org/#active" class="external-link"><img src="http://www.repostatus.org/badges/latest/active.svg" alt="Project Status: Active – The project has reached a stable, usable state and is being actively developed."></a></li>
+<li><a href="https://cran.r-project.org/" class="external-link"><img src="https://img.shields.io/badge/R%3E%3D-3.5.0-6666ff.svg" alt="minimal R version"></a></li>
+<li><a href="commits/master"><img src="https://img.shields.io/badge/Package%20version-1.2.2-orange.svg" alt="packageversion"></a></li>
+<li><a href="/commits/master"><img src="https://img.shields.io/badge/last%20change-2021--12--20-brightgreen.svg" alt="Last-changedate"></a></li>
+<li><a href="https://github.com/thierrygosselin/radiator/actions" class="external-link"><img src="https://github.com/thierrygosselin/radiator/workflows/R-CMD-check/badge.svg" alt="R-CMD-check"></a></li>
+<li><a href="https://doi.org/10.5281/zenodo.3687060" class="external-link"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.3687060.svg" alt="DOI"></a></li>
+</ul>
+</div>
+
+  </div>
 </div>
 
 
       <footer><div class="copyright">
-  <p>Developed by Thierry Gosselin.</p>
+  <p></p>
+<p>Developed by Thierry Gosselin.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
+  <p></p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
 </div>
 
       </footer>
@@ -196,6 +203,8 @@
 
   
 
+
+  
 
   </body>
 </html>

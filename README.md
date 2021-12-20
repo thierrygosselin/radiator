@@ -7,8 +7,8 @@ state and is being actively
 developed.](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active)
 [![minimal R
 version](https://img.shields.io/badge/R%3E%3D-3.5.0-6666ff.svg)](https://cran.r-project.org/)
-[![packageversion](https://img.shields.io/badge/Package%20version-1.2.1-orange.svg)](commits/master)
-[![Last-changedate](https://img.shields.io/badge/last%20change-2021--10--29-brightgreen.svg)](/commits/master)
+[![packageversion](https://img.shields.io/badge/Package%20version-1.2.2-orange.svg)](commits/master)
+[![Last-changedate](https://img.shields.io/badge/last%20change-2021--12--20-brightgreen.svg)](/commits/master)
 [![R-CMD-check](https://github.com/thierrygosselin/radiator/workflows/R-CMD-check/badge.svg)](https://github.com/thierrygosselin/radiator/actions)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3687060.svg)](https://doi.org/10.5281/zenodo.3687060)
 <!-- badges: end -->

@@ -17,7 +17,7 @@ Default: \code{pop.levels = NULL}.}
 
 \item{filename}{(optional) The file name prefix for the arlequin file
 written to the working directory. With default: \code{filename = NULL},
-the date and time is appended to \code{radiator_arlequin_}.}
+the filename generated follow this \code{radiator_arlequin_DATE@TIME.csv}.}
 
 \item{...}{other parameters passed to the function.}
 }

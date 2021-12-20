@@ -1,8 +1,8 @@
 Package: radiator
 Type: Package
 Title: RADseq Data Exploration, Manipulation and Visualization using R
-Version: 1.2.1
-Date: 2021-10-28
+Version: 1.2.2
+Date: 2021-12-20
 Encoding: UTF-8
 Authors@R: c(
   person("Thierry", "Gosselin", email = "thierrygosselin@icloud.com", role = c("aut", "cre")),
@@ -40,7 +40,7 @@ Suggests:
     parallel,
     progressr,
     purrr,
-    readr (>= 1.4.0),
+    readr (>= 2.1.0),
     rlang,
     rmarkdown,
     SNPRelate,

@@ -57,7 +57,7 @@ In this vignette I present *brewless* options only.
 
 ## Update your OS
 
-* the current version is macOS Big Sur 11.0.1
+* the current version is macOS Monterey 12.0.1
 * [how to update](http://support.apple.com/kb/HT1338?viewlocale=en_US&locale=en_US)
 
 
@@ -233,12 +233,12 @@ Several flavors available, check for the proper [link](http://releases.llvm.org/
 # Install [R](https://cran.r-project.org)
 
 
-To install R v4.0.3 **"Bunny-Wunnies Freak Out"** released on 2020-10-10 download the
+To install R v4.1.2 **"Bird Hippie "** released on 2021-11-01 download the
 installer and follow the instructions
 ```{bash eval=FALSE}
 # for macOS
 cd Downloads
-curl -O https://cran.r-project.org/bin/macosx/R-4.0.3.pkg
+curl -O https://cran.r-project.org/bin/macosx/R-4.1.2.pkg
 ```
 
 
@@ -458,7 +458,7 @@ localtime.c:42:10: fatal error: 'string.h' file not found
 ^~~~~~~~~~
 ```
 
-**With macOS** version 11.0.1 (Big Sur): follow the `.Makevars` [configuration](#Makevars_config)
+**With macOS** version 12.0.1 (Monterey): follow the `.Makevars` [configuration](#Makevars_config)
 
 ## Error `.setMaxGlobalSize`
 
