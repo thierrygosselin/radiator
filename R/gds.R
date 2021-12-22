@@ -836,7 +836,7 @@ extract_genotypes_metadata <- function(
   # sync.markers.individuals = TRUE
   # whitelist = FALSE
   # blacklist = FALSE
-  # verbose = FALSE
+  # verbose = TRUE
 
   keep.one <- FALSE
   if (!radiator.node) return(NULL)
@@ -939,7 +939,7 @@ extract_coverage <- function(
   # verbose = TRUE
   # depth.tibble = FALSE
 
-  coverage.info <- list()
+  # coverage.info <- list()
   data.source <- extract_data_source(gds)
 
   n.markers <- summary_gds(gds, verbose = FALSE)$n.markers
@@ -948,7 +948,7 @@ extract_coverage <- function(
   if (!"dart" %in% data.source || "counts" %in% data.source) {
     depth <- extract_genotypes_metadata(
       gds,
-      genotypes.meta.select = c("ID_SEQ", "M_SEQ", "READ_DEPTH",
+      genotypes.meta.select = c("MARKERS", "INDIVIDUALS","ID_SEQ", "M_SEQ", "READ_DEPTH",
                                 "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH"),
       sync.markers.individuals = TRUE,
       whitelist = TRUE

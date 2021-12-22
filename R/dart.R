@@ -465,7 +465,7 @@ read_dart <- function(
     dplyr::arrange(VARIANT_ID) %>%
     dplyr::mutate(FILTERS = "whitelist") %>%
     dplyr::select(
-      FILTERS, VARIANT_ID, MARKERS, CHROM, LOCUS, POS, COL, REF, ALT,
+      FILTERS, M_SEQ, VARIANT_ID, MARKERS, CHROM, LOCUS, POS, COL, REF, ALT,
       tidyselect::everything(.)
     )
 
@@ -591,7 +591,7 @@ read_dart <- function(
 
       #check identical markers
       same.markers <- identical(unique(missing$MARKERS), unique(data$MARKERS))
-      same.individuals<- identical(unique(missing$INDIVIDUALS), unique(data$INDIVIDUALS))
+      same.individuals <- identical(unique(missing$INDIVIDUALS), unique(data$INDIVIDUALS))
       if (!same.markers || !same.individuals) {
         message("note: data and missing memory don't share all the same markers and/or individuals")
         data %<>% dplyr::left_join(missing, by = c("MARKERS", "INDIVIDUALS"))
@@ -685,6 +685,12 @@ import_dart <- function(
   blacklist.id <- strata.df$blacklist.id
   strata.df <- strata.df$strata
   n.ind.strata <- nrow(strata.df)
+
+  strata.df %<>%
+    dplyr::mutate(
+      ID_SEQ = seq_len(length.out = dplyr::n()),
+      STRATA_SEQ = as.integer(factor(x = STRATA, levels = levels(STRATA)))
+    )
 
   # Check that TARGET_ID in strata match TARGET_ID in the DArT file ------------
   if (verbose) message("Using individuals in strata file to filter individuals in DArT file")
@@ -876,7 +882,7 @@ clean_dart_locus <- function(x, fast = TRUE) {
   if (fast) {
     # x <- data
     if (!rlang::has_name(x, "CHROM")) x %<>% dplyr::mutate(CHROM = "CHROM_1")
-    want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS", "COL",
+    want <- c("VARIANT_ID", "M_SEQ", "MARKERS", "CHROM", "LOCUS", "POS", "COL",
               "REF", "ALT", "SEQUENCE",
               "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")
     x %<>%
@@ -895,6 +901,7 @@ clean_dart_locus <- function(x, fast = TRUE) {
         ALT = stringi::stri_extract_last_regex(str = SNP, pattern = "[A-Z]"),
         MARKERS = stringi::stri_join(CHROM, LOCUS, POS, sep = "__"),
         VARIANT_ID = as.integer(factor(MARKERS)),
+        M_SEQ = VARIANT_ID,
         SNP = NULL
       ) %>%
       dplyr::select(tidyselect::any_of(want), tidyselect::everything()) %>%
@@ -907,7 +914,7 @@ clean_dart_locus <- function(x, fast = TRUE) {
       dplyr::arrange(CHROM, LOCUS, POS, REF)
 
   } else {
-    want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS", "COL",
+    want <- c("VARIANT_ID", "M_SEQ", "MARKERS", "CHROM", "LOCUS", "POS", "COL",
               "REF", "ALT", "SEQUENCE",
               "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")
     x %<>%
@@ -925,6 +932,7 @@ clean_dart_locus <- function(x, fast = TRUE) {
         CHROM = rep("CHROM_1", n()),
         MARKERS = stringi::stri_join(CHROM, LOCUS, POS, sep = "__"),
         VARIANT_ID = as.integer(factor(MARKERS)),
+        M_SEQ = VARIANT_ID,
         COL = POS
       ) %>%
       dplyr::select(tidyselect::any_of(want), tidyselect::everything()) %>%
@@ -1206,6 +1214,12 @@ dart2gds <- function(
   } else {
     genotypes.meta %<>% dplyr::select(-INDIVIDUALS...7) %>% dplyr::rename(INDIVIDUALS = INDIVIDUALS...3)
   }
+
+  # M_SEQ and ID_SEQ
+  strata.temp <- dplyr::select(.data = strata, tidyselect::any_of(c("INDIVIDUALS", "ID_SEQ")))
+  genotypes.meta %<>%
+    dplyr::mutate(M_SEQ = VARIANT_ID) %>%
+    dplyr::left_join(strata.temp, by = "INDIVIDUALS")
 
 
   # modify genotypes meta to generate GT_BIN
