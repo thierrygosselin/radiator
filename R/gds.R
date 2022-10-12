@@ -2381,6 +2381,7 @@ generate_markers_stats <- function(
       ac <- SeqArray::seqAlleleCount(
         gdsfile = gds,
         ref.allele = NULL,
+        verbose = TRUE,
         parallel = parallel.core)
 
       # check if more than 2 alternate alleles...
