@@ -717,7 +717,7 @@ compute_mac <- function(
         SeqArray::seqAlleleCount(
           gdsfile = data,
           ref.allele = NULL,
-          .progress = TRUE,
+          cerbose = TRUE,
           parallel = parallel.core
           ) %>%
           unlist(.) %>%
