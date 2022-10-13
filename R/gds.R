@@ -2381,7 +2381,7 @@ generate_markers_stats <- function(
       ac <- SeqArray::seqAlleleCount(
         gdsfile = gds,
         ref.allele = NULL,
-        .progress = TRUE,
+        verbose = TRUE,
         parallel = parallel.core)
 
       # check if more than 2 alternate alleles...
@@ -2525,7 +2525,7 @@ generate_markers_stats <- function(
       info$MISSING_PROP <- SeqArray::seqMissing(
         gdsfile = gds,
         per.variant = TRUE,
-        .progress = TRUE,
+        verbose = TRUE,
         parallel = parallel.core
       )
     }
@@ -2868,7 +2868,7 @@ missing_per_pop <- function(
         MISSING_PROP = SeqArray::seqMissing(
           gdsfile = gds,
           per.variant = TRUE,
-          .progress = TRUE,
+          verbose = TRUE,
           parallel = parallel.core.temp
         )
       )
