@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -32,7 +32,7 @@
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -72,36 +72,48 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">merge_dart</span><span class="op">(</span>
-  <span class="va">dart1</span>,
-  <span class="va">strata1</span>,
-  <span class="va">dart2</span>,
-  <span class="va">strata2</span>,
-  filter.monomorphic <span class="op">=</span> <span class="cn">TRUE</span>,
-  filter.common.markers <span class="op">=</span> <span class="cn">TRUE</span>,
-  filename <span class="op">=</span> <span class="cn">NULL</span>,
-  remove.non.immortalized.dart.markers <span class="op">=</span> <span class="cn">TRUE</span>,
-  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,
-  <span class="va">...</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">merge_dart</span><span class="op">(</span></span>
+<span>  <span class="va">dart1</span>,</span>
+<span>  <span class="va">strata1</span>,</span>
+<span>  <span class="va">dart2</span>,</span>
+<span>  <span class="va">strata2</span>,</span>
+<span>  filter.monomorphic <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  filter.common.markers <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  filename <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  remove.non.immortalized.dart.markers <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>dart1</dt>
 <dd><p>Full path of the first DArT file.</p></dd>
+
+
 <dt>strata1</dt>
 <dd><p>Full path of the first strata file for dart1.</p></dd>
+
+
 <dt>dart2</dt>
 <dd><p>Full path of the second DArT file.</p></dd>
+
+
 <dt>strata2</dt>
 <dd><p>Full path of the second strata file for dart2.</p></dd>
+
+
 <dt>filter.monomorphic</dt>
 <dd><p>(optional, logical)
 Default: <code>filter.monomorphic = TRUE</code>.</p></dd>
+
+
 <dt>filter.common.markers</dt>
 <dd><p>(optional, logical)
 Default: <code>filter.common.markers = TRUE</code>.</p></dd>
+
+
 <dt>filename</dt>
 <dd><p>Name of the merged DArT file.
 By default, the function gives the merged data the filename:<code>merge_dart</code>
@@ -109,21 +121,30 @@ with date and time appended. The function will also append the date and time
 to the filename provided.
 The data is written in the working directory.
 Default: <code>filename = NULL</code>.</p></dd>
+
+
 <dt>remove.non.immortalized.dart.markers</dt>
 <dd><p>(logical). By default the function
 will remove markers starting <code>1000</code>, those are called <code>non-immortalized</code>
 markers by DArT.
 Default: <code>remove.non.immortalized.dart.markers = TRUE</code>.</p></dd>
+
+
 <dt>parallel.core</dt>
 <dd><p>(optional) The number of core used for parallel
 execution during import.
 Default: <code>parallel.core = parallel::detectCores() - 1</code>.</p></dd>
+
+
 <dt>...</dt>
 <dd><p>(optional) To pass further arguments for fine-tuning the function.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>The function returns a list in the global environment and 2 data frames
+    
+
+<p>The function returns a list in the global environment and 2 data frames
 in the working directory. The dataframes are the tidy dataset and a strata file
 of the 2 merged DArT files.</p>
     </div>
@@ -151,12 +172,12 @@ this as to be done manually by the user.</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in"><span class="co"># The simplest way to run the function:</span></span>
-<span class="r-in"><span class="va">merged.data</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">merge_dart</span><span class="op">(</span></span>
-<span class="r-in">dart1 <span class="op">=</span> <span class="st">"bluefin_larvae.tsv"</span>, strata1 <span class="op">=</span> <span class="st">"strata1_bft_larvae.tsv"</span>,</span>
-<span class="r-in">dart2 <span class="op">=</span> <span class="st">"bluefin_adults.csv"</span>, strata2 <span class="op">=</span> <span class="st">"strata2_bft_adults.tsv"</span><span class="op">)</span></span>
-<span class="r-in"><span class="op">}</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span><span class="co"># The simplest way to run the function:</span></span></span>
+<span class="r-in"><span><span class="va">merged.data</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">merge_dart</span><span class="op">(</span></span></span>
+<span class="r-in"><span>dart1 <span class="op">=</span> <span class="st">"bluefin_larvae.tsv"</span>, strata1 <span class="op">=</span> <span class="st">"strata1_bft_larvae.tsv"</span>,</span></span>
+<span class="r-in"><span>dart2 <span class="op">=</span> <span class="st">"bluefin_adults.csv"</span>, strata2 <span class="op">=</span> <span class="st">"strata2_bft_adults.tsv"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -171,7 +192,7 @@ this as to be done manually by the user.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -32,7 +32,7 @@
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -72,40 +72,53 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">extract_coverage</span><span class="op">(</span>
-  <span class="va">gds</span>,
-  markers <span class="op">=</span> <span class="cn">TRUE</span>,
-  ind <span class="op">=</span> <span class="cn">TRUE</span>,
-  update.gds <span class="op">=</span> <span class="cn">FALSE</span>,
-  depth.tibble <span class="op">=</span> <span class="cn">FALSE</span>,
-  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">2</span>,
-  verbose <span class="op">=</span> <span class="cn">FALSE</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">extract_coverage</span><span class="op">(</span></span>
+<span>  <span class="va">gds</span>,</span>
+<span>  markers <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  ind <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  update.gds <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  depth.tibble <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">2</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>gds</dt>
 <dd><p>The gds object.</p></dd>
+
+
 <dt>markers</dt>
 <dd><p>(optional, logical) Default: <code>markers = TRUE</code>.</p></dd>
+
+
 <dt>ind</dt>
 <dd><p>(optional, logical) Default: <code>ind = TRUE</code>.</p></dd>
+
+
 <dt>update.gds</dt>
 <dd><p>(optional, logical) Default: <code>update.gds = FALSE</code>.</p></dd>
+
+
 <dt>depth.tibble</dt>
 <dd><p>(optional, logical) Returns the depth info in a tibble instead of list
 with total and mean coverage info.
 Used internally.
 Default:<code>depth.tibble = FALSE</code>.</p></dd>
+
+
 <dt>parallel.core</dt>
 <dd><p>(optional) The number of core used for parallel
 execution during import.
 Default: <code>parallel.core = parallel::detectCores() - 1</code>.</p></dd>
+
+
 <dt>verbose</dt>
 <dd><p>(optional, logical) When <code>verbose = TRUE</code>
 the function is a little more chatty during execution.
 Default: <code>verbose = TRUE</code>.</p></dd>
+
 </dl></div>
 
   </div>
@@ -120,7 +133,7 @@ Default: <code>verbose = TRUE</code>.</p></dd>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

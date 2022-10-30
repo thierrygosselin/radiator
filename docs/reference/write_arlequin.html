@@ -20,7 +20,7 @@ and might be of interest for users."><!-- mathjax --><script src="https://cdnjs.
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -35,7 +35,7 @@ and might be of interest for users."><!-- mathjax --><script src="https://cdnjs.
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -78,7 +78,7 @@ and might be of interest for users.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">write_arlequin</span><span class="op">(</span><span class="va">data</span>, pop.levels <span class="op">=</span> <span class="cn">NULL</span>, filename <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">write_arlequin</span><span class="op">(</span><span class="va">data</span>, pop.levels <span class="op">=</span> <span class="cn">NULL</span>, filename <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -88,19 +88,28 @@ and might be of interest for users.</p>
 a tidy data frame in wide or long format in the working directory.
 <em>How to get a tidy data frame ?</em>
 Look into <span class="pkg">radiator</span> <code><a href="tidy_genomic_data.html">tidy_genomic_data</a></code>.</p></dd>
+
+
 <dt>pop.levels</dt>
 <dd><p>(optional, string) A character string with your populations ordered.
 Default: <code>pop.levels = NULL</code>.</p></dd>
+
+
 <dt>filename</dt>
 <dd><p>(optional) The file name prefix for the arlequin file
 written to the working directory. With default: <code>filename = NULL</code>,
 the filename generated follow this <code>radiator_arlequin_DATE@TIME.csv</code>.</p></dd>
+
+
 <dt>...</dt>
 <dd><p>other parameters passed to the function.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>An arlequin file is saved to the working directory.</p>
+    
+
+<p>An arlequin file is saved to the working directory.</p>
     </div>
     <div id="references">
     <h2>References</h2>
@@ -125,7 +134,7 @@ data analysis. Evolutionary Bioinformatics Online 1:47-50.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

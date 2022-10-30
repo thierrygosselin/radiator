@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -32,7 +32,7 @@
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -72,7 +72,7 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">detect_genomic_format</span><span class="op">(</span><span class="va">data</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">detect_genomic_format</span><span class="op">(</span><span class="va">data</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -85,10 +85,13 @@ genlight (library(adegenet)), gtypes (library(strataG)), genepop, DArT,
 and a data frame in long/tidy or wide format. To verify that radiator detect
 your file format use <code>detect_genomic_format</code> (see example below).
 Documented in <strong>Input genomic datasets</strong> of <code><a href="tidy_genomic_data.html">tidy_genomic_data</a></code>.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>One of these file format:</p><ul><li><p>tbl_df: for a data frame</p></li>
+    
+
+<p>One of these file format:</p><ul><li><p>tbl_df: for a data frame</p></li>
 <li><p>genind: for a genind object</p></li>
 <li><p>genlight: for a genlight object</p></li>
 <li><p>gtypes: for a gtypes object</p></li>
@@ -109,10 +112,10 @@ Documented in <strong>Input genomic datasets</strong> of <code><a href="tidy_gen
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in"><span class="co">#To verify your file is detected by radiator as the correct format:</span></span>
-<span class="r-in"><span class="fu">radiator</span><span class="fu">::</span><span class="fu">detect_genomic_format</span><span class="op">(</span>data <span class="op">=</span> <span class="st">"populations.snps.vcf"</span><span class="op">)</span></span>
-<span class="r-in"><span class="op">}</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span><span class="co">#To verify your file is detected by radiator as the correct format:</span></span></span>
+<span class="r-in"><span><span class="fu">radiator</span><span class="fu">::</span><span class="fu">detect_genomic_format</span><span class="op">(</span>data <span class="op">=</span> <span class="st">"populations.snps.vcf"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -127,7 +130,7 @@ Documented in <strong>Input genomic datasets</strong> of <code><a href="tidy_gen
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

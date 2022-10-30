@@ -19,7 +19,7 @@ POP_ID column, the function will change the column name."><!-- mathjax --><scrip
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -34,7 +34,7 @@ POP_ID column, the function will change the column name."><!-- mathjax --><scrip
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -76,7 +76,7 @@ reorder the levels. If the data as <code>STRATA</code> column instead of a
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">change_pop_names</span><span class="op">(</span><span class="va">data</span>, pop.levels <span class="op">=</span> <span class="cn">NULL</span>, pop.labels <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">change_pop_names</span><span class="op">(</span><span class="va">data</span>, pop.levels <span class="op">=</span> <span class="cn">NULL</span>, pop.labels <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -95,6 +95,8 @@ and genotypes if you are using a VCF file with no genotype
 Neither is <span class="pkg">radiator</span> able to magically generate a genind object
 from a SilicoDArT dataset. Please look at the first few lines of your dataset
 to understand it's limit before asking raditor to convert or filter your dataset.</p></dd>
+
+
 <dt>pop.levels</dt>
 <dd><p>(optional, string) This refers to the levels in a factor. In this
 case, the id of the pop.
@@ -103,6 +105,8 @@ alphabetical or numerical order. e.g. <code>pop.levels = c("QUE", "ONT", "ALB")<
 instead of the default <code>pop.levels = c("ALB", "ONT", "QUE")</code>.
 White spaces in population names are replaced by underscore.
 Default: <code>pop.levels = NULL</code>.</p></dd>
+
+
 <dt>pop.labels</dt>
 <dd><p>(optional, string) Use this argument to rename/relabel
 your pop or combine your pop. e.g. To combine <code>"QUE"</code> and <code>"ONT"</code>
@@ -117,6 +121,7 @@ Default: <code>pop.labels = NULL</code>. If you find this too complicated,
 there is also the <code>strata</code> argument that can do the same thing,
 see below.
 White spaces in population names are replaced by underscore.</p></dd>
+
 </dl></div>
     <div id="see-also">
     <h2>See also</h2>
@@ -141,7 +146,7 @@ White spaces in population names are replaced by underscore.</p></dd>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

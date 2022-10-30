@@ -36,7 +36,7 @@
 #' "max.marker","monomorphic.out", "snp.ld", "filter.call.rate",
 #' "filter.markers.coverage", "filter.markers.missing", "number.snp.reads",
 #' "mixed.genomes.analysis", "duplicate.genomes.analysis", "maf.data", "ref.calibration")}.
-# @keywords internal
+#' @keywords internal
 #' @inheritParams radiator_common_arguments
 #'
 #' @export

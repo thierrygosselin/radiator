@@ -20,7 +20,7 @@ Novices, start with this one!"><!-- mathjax --><script src="https://cdnjs.cloudf
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -35,7 +35,7 @@ Novices, start with this one!"><!-- mathjax --><script src="https://cdnjs.cloudf
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -78,16 +78,16 @@ Novices, start with this one!</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">filter_rad</span><span class="op">(</span>
-  <span class="va">data</span>,
-  strata <span class="op">=</span> <span class="cn">NULL</span>,
-  interactive.filter <span class="op">=</span> <span class="cn">TRUE</span>,
-  output <span class="op">=</span> <span class="cn">NULL</span>,
-  filename <span class="op">=</span> <span class="cn">NULL</span>,
-  verbose <span class="op">=</span> <span class="cn">TRUE</span>,
-  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,
-  <span class="va">...</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">filter_rad</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
+<span>  strata <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  interactive.filter <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  output <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  filename <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -106,6 +106,8 @@ and genotypes if you are using a VCF file with no genotype
 Neither is <span class="pkg">radiator</span> able to magically generate a genind object
 from a SilicoDArT dataset. Please look at the first few lines of your dataset
 to understand it's limit before asking raditor to convert or filter your dataset.</p></dd>
+
+
 <dt>strata</dt>
 <dd><p>(optional)
 The strata file is a tab delimited file with a minimum of 2 columns headers:
@@ -114,11 +116,15 @@ DArT data: a third column <code>TARGET_ID</code> is required.
 Documented on <code><a href="read_dart.html">read_dart</a></code>. Also use the strata read function to
 blacklist individuals.
 Default: <code>strata = NULL</code>.</p></dd>
+
+
 <dt>interactive.filter</dt>
 <dd><p>(optional, logical) Do you want the filtering session to
 be interactive. Figures of distribution are shown before asking for filtering
 thresholds.
 Default: <code>interactive.filter = TRUE</code>.</p></dd>
+
+
 <dt>output</dt>
 <dd><p>29 genomic data formats can be exported: tidy (by default),
 genepop, genind, genlight, vcf (for file format version, see details below),
@@ -133,24 +139,35 @@ requires extra columns in the strata file. You can find the info in the
 corresponding <em>write_</em> functions of radiator
 (<a href="https://thierrygosselin.github.io/radiator/reference/index.html" class="external-link">reference</a>).</p>
 <p>Default: <code>output = NULL</code>.</p></dd>
+
+
 <dt>filename</dt>
 <dd><p>(optional) The filename prefix for the objet in the global environment
 or the working directory. Default: <code>filename = NULL</code>. A default name will be used,
 customized with the output file(s) selected.</p></dd>
+
+
 <dt>verbose</dt>
 <dd><p>(optional, logical) When <code>verbose = TRUE</code>
 the function is a little more chatty during execution.
 Default: <code>verbose = TRUE</code>.</p></dd>
+
+
 <dt>parallel.core</dt>
 <dd><p>(optional) The number of core used for parallel
 execution during import.
 Default: <code>parallel.core = parallel::detectCores() - 1</code>.</p></dd>
+
+
 <dt>...</dt>
 <dd><p>(optional) To pass further argument for fine-tuning the function.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>The function returns an object (list). The content of the object
+    
+
+<p>The function returns an object (list). The content of the object
 can be listed with <code>names(object)</code> and use <code>$</code> to isolate specific
 object (see examples). Some output format will write the output file in the
 working directory. The tidy genomic data frame is generated automatically.</p>
@@ -385,24 +402,24 @@ separately.
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in"><span class="co"># Some of the packages used in this function are not installed by default.</span></span>
-<span class="r-in"><span class="co"># Installed the required packages:</span></span>
-<span class="r-in"><span class="fu"><a href="radiator_pkg_install.html">radiator_pkg_install</a></span><span class="op">(</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># Very simple:</span></span>
-<span class="r-in"><span class="va">shark</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">filter_rad</span><span class="op">(</span></span>
-<span class="r-in">    data <span class="op">=</span> <span class="st">"data.shark.vcf"</span>,</span>
-<span class="r-in">    strata <span class="op">=</span> <span class="st">"strata.shark.tsv"</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># With filename and output</span></span>
-<span class="r-in"><span class="va">shark</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">filter_rad</span><span class="op">(</span></span>
-<span class="r-in">    data <span class="op">=</span> <span class="st">"data.shark.vcf"</span>,</span>
-<span class="r-in">    strata <span class="op">=</span> <span class="st">"strata.shark.tsv"</span>,</span>
-<span class="r-in">    output <span class="op">=</span> <span class="st">"genind"</span>,</span>
-<span class="r-in">    filename <span class="op">=</span> <span class="st">"shark"</span><span class="op">)</span></span>
-<span class="r-in"><span class="op">}</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span><span class="co"># Some of the packages used in this function are not installed by default.</span></span></span>
+<span class="r-in"><span><span class="co"># Installed the required packages:</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="radiator_pkg_install.html">radiator_pkg_install</a></span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Very simple:</span></span></span>
+<span class="r-in"><span><span class="va">shark</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">filter_rad</span><span class="op">(</span></span></span>
+<span class="r-in"><span>    data <span class="op">=</span> <span class="st">"data.shark.vcf"</span>,</span></span>
+<span class="r-in"><span>    strata <span class="op">=</span> <span class="st">"strata.shark.tsv"</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># With filename and output</span></span></span>
+<span class="r-in"><span><span class="va">shark</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">filter_rad</span><span class="op">(</span></span></span>
+<span class="r-in"><span>    data <span class="op">=</span> <span class="st">"data.shark.vcf"</span>,</span></span>
+<span class="r-in"><span>    strata <span class="op">=</span> <span class="st">"strata.shark.tsv"</span>,</span></span>
+<span class="r-in"><span>    output <span class="op">=</span> <span class="st">"genind"</span>,</span></span>
+<span class="r-in"><span>    filename <span class="op">=</span> <span class="st">"shark"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -417,7 +434,7 @@ separately.
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

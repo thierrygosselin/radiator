@@ -19,7 +19,7 @@ visualization figures."><!-- mathjax --><script src="https://cdnjs.cloudflare.co
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -34,7 +34,7 @@ visualization figures."><!-- mathjax --><script src="https://cdnjs.cloudflare.co
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -76,13 +76,13 @@ visualization figures.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">remove_duplicates</span><span class="op">(</span>
-  data <span class="op">=</span> <span class="st">"individuals.pairwise.dist.tsv"</span>,
-  stats <span class="op">=</span> <span class="st">"genotyped.statistics.tsv"</span>,
-  dup.threshold <span class="op">=</span> <span class="fl">0.25</span>,
-  diff.pop.remove <span class="op">=</span> <span class="cn">TRUE</span>,
-  path.folder <span class="op">=</span> <span class="cn">NULL</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">remove_duplicates</span><span class="op">(</span></span>
+<span>  data <span class="op">=</span> <span class="st">"individuals.pairwise.dist.tsv"</span>,</span>
+<span>  stats <span class="op">=</span> <span class="st">"genotyped.statistics.tsv"</span>,</span>
+<span>  dup.threshold <span class="op">=</span> <span class="fl">0.25</span>,</span>
+<span>  diff.pop.remove <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  path.folder <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -90,21 +90,30 @@ visualization figures.</p>
     <dl><dt>data</dt>
 <dd><p>(path) The individual's pairwise data.
 Default: <code>data = "individuals.pairwise.dist.tsv"</code>.</p></dd>
+
+
 <dt>stats</dt>
 <dd><p>(path) The genotype statistics
 Default: <code>stats = "genotyped.statistics.tsv"</code>.</p></dd>
+
+
 <dt>dup.threshold</dt>
 <dd><p>(double) The threshold to filter out duplicates
 Default: <code>dup.threshold = 0.25</code>.</p></dd>
+
+
 <dt>diff.pop.remove</dt>
 <dd><p>Remove all individuals in pairs from different pop.
 Both samples are potentially problems. With defautl, the function will not keep
 one sample in the duplicate pair.
 Default: <code>diff.pop.remove = TRUE</code>.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A list with blacklisted duplicates. Write the blacklist in the working
+    
+
+<p>A list with blacklisted duplicates. Write the blacklist in the working
 directory.</p>
     </div>
     <div id="author">
@@ -124,7 +133,7 @@ directory.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

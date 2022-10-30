@@ -19,7 +19,7 @@ Write to directory the stats and boxplot."><!-- mathjax --><script src="https://
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -34,7 +34,7 @@ Write to directory the stats and boxplot."><!-- mathjax --><script src="https://
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -76,14 +76,14 @@ Write to directory the stats and boxplot.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">ld_boxplot</span><span class="op">(</span>
-  <span class="va">gds</span>,
-  subsample.markers.stats <span class="op">=</span> <span class="fl">0.2</span>,
-  ld.method <span class="op">=</span> <span class="st">"r2"</span>,
-  path.folder <span class="op">=</span> <span class="cn">NULL</span>,
-  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">2</span>,
-  verbose <span class="op">=</span> <span class="cn">TRUE</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">ld_boxplot</span><span class="op">(</span></span>
+<span>  <span class="va">gds</span>,</span>
+<span>  subsample.markers.stats <span class="op">=</span> <span class="fl">0.2</span>,</span>
+<span>  ld.method <span class="op">=</span> <span class="st">"r2"</span>,</span>
+<span>  path.folder <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">2</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
 
@@ -99,7 +99,7 @@ Write to directory the stats and boxplot.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

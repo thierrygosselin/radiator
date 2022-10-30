@@ -9,6 +9,7 @@
 #' @param group.rank (Number) The number of group to class the MAF.
 #' @param filename (optional) Name of the file written to the working directory.
 #' @rdname diagnostic_maf
+#' @keywords internal
 #' @export
 #' @details Highly recommended to look at the distribution of MAF
 

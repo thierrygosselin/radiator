@@ -20,7 +20,7 @@ and might be of interest for users."><!-- mathjax --><script src="https://cdnjs.
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -35,7 +35,7 @@ and might be of interest for users."><!-- mathjax --><script src="https://cdnjs.
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -78,13 +78,13 @@ and might be of interest for users.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">write_vcf</span><span class="op">(</span>
-  <span class="va">data</span>,
-  pop.info <span class="op">=</span> <span class="cn">FALSE</span>,
-  filename <span class="op">=</span> <span class="cn">NULL</span>,
-  source <span class="op">=</span> <span class="cn">NULL</span>,
-  empty <span class="op">=</span> <span class="cn">FALSE</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">write_vcf</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
+<span>  pop.info <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  filename <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  source <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  empty <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -94,20 +94,29 @@ and might be of interest for users.</p>
 a tidy data frame in wide or long format in the working directory.
 <em>How to get a tidy data frame ?</em>
 Look into <span class="pkg">radiator</span> <code><a href="tidy_genomic_data.html">tidy_genomic_data</a></code>.</p></dd>
+
+
 <dt>pop.info</dt>
 <dd><p>(optional, logical) Should the population information be
 included in the FORMAT field (along the GT info for each samples ?). To make
 the VCF population-ready use <code>pop.info = TRUE</code>. The population information
 must be included in the <code>POP_ID</code> column of the tidy dataset.
 Default: <code>pop.info = FALSE</code>. Experimental.</p></dd>
+
+
 <dt>filename</dt>
 <dd><p>(optional) The file name prefix for the vcf file
 written to the working directory. With default: <code>filename = NULL</code>,
 the date and time is appended to <code>radiator_vcf_file_</code>.</p></dd>
+
+
 <dt>source</dt>
 <dd><p>source of vcf</p></dd>
+
+
 <dt>empty</dt>
 <dd><p>generate an empty vcf</p></dd>
+
 </dl></div>
     <div id="details">
     <h2>Details</h2>
@@ -140,7 +149,7 @@ Bioinformatics, 27, 2156-2158.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

@@ -57,3 +57,4 @@ whitelist.markers = "whitelist.loci.txt")
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}
 }
+\keyword{internal}

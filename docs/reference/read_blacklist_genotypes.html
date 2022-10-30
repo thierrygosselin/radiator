@@ -20,7 +20,7 @@ and might be of interest for users."><!-- mathjax --><script src="https://cdnjs.
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -35,7 +35,7 @@ and might be of interest for users."><!-- mathjax --><script src="https://cdnjs.
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -78,7 +78,7 @@ and might be of interest for users.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">read_blacklist_genotypes</span><span class="op">(</span>blacklist.genotypes <span class="op">=</span> <span class="cn">NULL</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span>, <span class="va">...</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">read_blacklist_genotypes</span><span class="op">(</span>blacklist.genotypes <span class="op">=</span> <span class="cn">NULL</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -95,14 +95,19 @@ sequencing errors or genotypes with poor genotype likelihood or coverage.</p>
 <p>Columns are cleaned of separators that interfere with some packages or codes, detailed in
 <code><a href="clean_markers_names.html">clean_markers_names</a></code> and <code><a href="clean_ind_names.html">clean_ind_names</a></code>
 Default <code>blacklist.genotypes = NULL</code>.</p></dd>
+
+
 <dt>verbose</dt>
 <dd><p>(optional, logical) When <code>verbose = TRUE</code>
 the function is a little more chatty during execution.
 Default: <code>verbose = TRUE</code>.</p></dd>
+
+
 <dt>...</dt>
 <dd><p>(optional) Advance mode that allows to pass further arguments
 for fine-tuning the function. Also used for legacy arguments (see details or
 special section)</p></dd>
+
 </dl></div>
     <div id="life-cycle">
     <h2>Life cycle</h2>
@@ -121,10 +126,10 @@ the same thing and only one can be used.</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in"><span class="va">bl</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">read_blacklist_genotypes</span><span class="op">(</span>data <span class="op">=</span> <span class="va">data</span>,</span>
-<span class="r-in">    blacklist.genotypes <span class="op">=</span> <span class="st">"blacklist.geno.iguana.tsv"</span><span class="op">)</span></span>
-<span class="r-in"><span class="op">}</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span><span class="va">bl</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">read_blacklist_genotypes</span><span class="op">(</span>data <span class="op">=</span> <span class="va">data</span>,</span></span>
+<span class="r-in"><span>    blacklist.genotypes <span class="op">=</span> <span class="st">"blacklist.geno.iguana.tsv"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -139,7 +144,7 @@ the same thing and only one can be used.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

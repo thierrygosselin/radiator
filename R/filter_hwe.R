@@ -1139,7 +1139,6 @@ update_filter_parameter <- function(filter, unfiltered,
 #     dplyr::mutate(ANALYSIS = furrr::future_map(
 #       .x = .$DATA,
 #       .f = hwe_analysis,
-#       .progress = TRUE,
 #       future.scheduling = future.scheduling)) %>%
 #     dplyr::select(-DATA) %>%
 #     tidyr::unnest(.)

@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -49,7 +49,7 @@
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -88,9 +88,10 @@
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>Get Started</h1>
-                        <h4 data-toc-skip class="author">Thierry Gosselin</h4>
+                        <h4 data-toc-skip class="author">Thierry
+Gosselin</h4>
             
-            <h4 data-toc-skip class="date">2021-12-22</h4>
+            <h4 data-toc-skip class="date">2022-10-30</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/thierrygosselin/radiator/blob/HEAD/vignettes/get_started.Rmd" class="external-link"><code>vignettes/get_started.Rmd</code></a></small>
       <div class="hidden name"><code>get_started.Rmd</code></div>
@@ -99,47 +100,56 @@
 
     
     
-<div class="section level1">
-<h1 id="learning-radiator">Learning radiator<a class="anchor" aria-label="anchor" href="#learning-radiator"></a>
-</h1>
-<p>To see if radiator is the right tool for you, you can start with the basics.</p>
 <div class="section level2">
-<h2 id="prepare-a-strata-file">1. Prepare a strata file<a class="anchor" aria-label="anchor" href="#prepare-a-strata-file"></a>
+<h2 id="learning-radiator">Learning radiator<a class="anchor" aria-label="anchor" href="#learning-radiator"></a>
 </h2>
+<p>To see if radiator is the right tool for you, you can start with the
+basics.</p>
+<div class="section level3">
+<h3 id="prepare-a-strata-file">1. Prepare a strata file<a class="anchor" aria-label="anchor" href="#prepare-a-strata-file"></a>
+</h3>
 <ul>
 <li>It’s a tab separated file, e.g. <a href="https://www.dropbox.com/s/g0vsek0dmtpxntt/example.strata.tsv?dl=0" class="external-link">example.strata.tsv</a>.</li>
-<li>A minimum of 2 columns: <code>INDIVIDUALS</code> and <code>STRATA</code> is required.</li>
-<li>The <code>STRATA</code> column identifies the individuals stratification, the hierarchical groupings: populations, sampling sites or any grouping you want.</li>
+<li>A minimum of 2 columns: <code>INDIVIDUALS</code> and
+<code>STRATA</code> is required.</li>
+<li>The <code>STRATA</code> column identifies the individuals
+stratification, the hierarchical groupings: populations, sampling sites
+or any grouping you want.</li>
 <li>It’s like <em>stacks</em> population map file with header…</li>
-<li>DArT users: the strata requires 3 columns and is described in <code>??radiator::readr_dart</code> <a href="https://www.dropbox.com/s/utq2h6o00v55kep/example.dart.strata.tsv?dl=0" class="external-link">example.dart.strata.tsv</a>.</li>
+<li>DArT users: the strata requires 3 columns and is described in
+<code>??radiator::readr_dart</code> <a href="https://www.dropbox.com/s/utq2h6o00v55kep/example.dart.strata.tsv?dl=0" class="external-link">example.dart.strata.tsv</a>.</li>
 </ul>
 <p>To make sure it’s going to work properly, try:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu">radiator</span><span class="fu">::</span><span class="fu"><a href="../reference/summary_strata.html">summary_strata</a></span><span class="op">(</span><span class="st">"my.strata.tsv"</span><span class="op">)</span>
-<span class="co"># more details in with `??radiator::summary_strata`</span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu">radiator</span><span class="fu">::</span><span class="fu"><a href="../reference/summary_strata.html">summary_strata</a></span><span class="op">(</span><span class="st">"my.strata.tsv"</span><span class="op">)</span></span>
+<span><span class="co"># more details in with `??radiator::summary_strata`</span></span></code></pre></div>
 </div>
-<div class="section level2">
-<h2 id="filter-your-radseq-data">2. Filter your RADseq data<a class="anchor" aria-label="anchor" href="#filter-your-radseq-data"></a>
-</h2>
+<div class="section level3">
+<h3 id="filter-your-radseq-data">2. Filter your RADseq data<a class="anchor" aria-label="anchor" href="#filter-your-radseq-data"></a>
+</h3>
 <ul>
 <li>
 <code>filter_rad</code> is the ONE FUNCTION TO RULE THEM ALL.</li>
-<li>There’s a built-in interactive mode that requires users to visualize the data before choosing thresholds.</li>
-<li>The function is made of filtering modules that user’s can also access separately or in combination.</li>
-<li>For 95% of users, <code>filter_rad</code> will be enough to start exploring the biology!</li>
+<li>There’s a built-in interactive mode that requires users to visualize
+the data before choosing thresholds.</li>
+<li>The function is made of filtering modules that user’s can also
+access separately or in combination.</li>
+<li>For 95% of users, <code>filter_rad</code> will be enough to start
+exploring the biology!</li>
 </ul>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu"><a href="../reference/filter_rad.html">filter_rad</a></span><span class="op">(</span>
-    data <span class="op">=</span> <span class="st">"my.vcf"</span>,
-    strata <span class="op">=</span> <span class="st">"my.strata.tsv"</span>, 
-    output <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"genind"</span>, <span class="st">"stockr"</span><span class="op">)</span>
-    <span class="op">)</span></code></pre></div>
-<p><strong>To cite radiator</strong>, inside R type <code>citation("radiator")</code></p>
+<code class="sourceCode R"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu"><a href="../reference/filter_rad.html">filter_rad</a></span><span class="op">(</span></span>
+<span>    data <span class="op">=</span> <span class="st">"my.vcf"</span>,</span>
+<span>    strata <span class="op">=</span> <span class="st">"my.strata.tsv"</span>, </span>
+<span>    output <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"genind"</span>, <span class="st">"stockr"</span><span class="op">)</span></span>
+<span>    <span class="op">)</span></span></code></pre></div>
+<p><strong>To cite radiator</strong>, inside R type
+<code>citation("radiator")</code></p>
 </div>
 </div>
-<div class="section level1">
-<h1 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
-</h1>
+<div class="section level2">
+<h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
+</h2>
 <table class="table">
 <colgroup>
 <col width="25%">
@@ -152,34 +162,125 @@
 <tbody>
 <tr class="odd">
 <td align="left"><strong>Import</strong></td>
-<td align="left">List of the 14 supported input genomic file formats (<strong>diploid data only</strong>) and their variations:<br><a href="https://samtools.github.io/hts-specs/" class="external-link">VCF: SNPs and haplotypes</a> (Danecek et al., 2011)<br><a href="http://www.diversityarrays.com" class="external-link">DArT files (5): genotypes in 1row, alleles counts and coverage in 2 rows, SilicoDArT genotypes and counts</a><br><a href="https://www.cog-genomics.org/plink2" class="external-link">PLINK: bed/tped/tfam</a> (Purcell et al., 2007)<br><a href="https://github.com/thibautjombart/adegenet" class="external-link">genind</a> (Jombart et al., 2010; Jombart and Ahmed, 2011)<br><a href="https://github.com/thibautjombart/adegenet" class="external-link">genlight</a> (Jombart et al., 2010; Jombart and Ahmed, 2011)<br><a href="https://github.com/EricArcher/strataG" class="external-link">strataG gtypes</a> (Archer et al., 2016)<br><a href="http://genepop.curtin.edu.au" class="external-link">Genepop</a> (Raymond and Rousset, 1995; Rousset, 2008)<br><a href="http://catchenlab.life.illinois.edu/stacks/" class="external-link">STACKS haplotype file</a> (Catchen et al., 2011, 2013)<br><a href="https://github.com/jgx65/hierfstat" class="external-link">hierfstat</a> (Goudet, 2005)<br><a href="https://github.com/zhengxwen/SeqArray" class="external-link">SeqArray</a> (Zheng et al., 2017)<br><a href="https://github.com/zhengxwen/SNPRelate" class="external-link">SNPRelate</a> (Zheng et al., 2012)<br>Dataframes of genotypes in wide or long/tidy format<br><br><strong>Reading and tidying is found inside: <code>genomic_converter</code>, <code>tidy_</code> and <code>read_</code> functions</strong>
+<td align="left">List of the 14 supported input genomic file formats
+(<strong>diploid data only</strong>) and their variations:<br><a href="https://samtools.github.io/hts-specs/" class="external-link">VCF: SNPs and
+haplotypes</a> (Danecek et al., 2011)<br><a href="http://www.diversityarrays.com" class="external-link">DArT files (5): genotypes in 1row,
+alleles counts and coverage in 2 rows, SilicoDArT genotypes and
+counts</a><br><a href="https://www.cog-genomics.org/plink2" class="external-link">PLINK:
+bed/tped/tfam</a> (Purcell et al., 2007)<br><a href="https://github.com/thibautjombart/adegenet" class="external-link">genind</a> (Jombart et
+al., 2010; Jombart and Ahmed, 2011)<br><a href="https://github.com/thibautjombart/adegenet" class="external-link">genlight</a> (Jombart
+et al., 2010; Jombart and Ahmed, 2011)<br><a href="https://github.com/EricArcher/strataG" class="external-link">strataG gtypes</a> (Archer
+et al., 2016)<br><a href="http://genepop.curtin.edu.au" class="external-link">Genepop</a>
+(Raymond and Rousset, 1995; Rousset, 2008)<br><a href="http://catchenlab.life.illinois.edu/stacks/" class="external-link">STACKS haplotype
+file</a> (Catchen et al., 2011, 2013)<br><a href="https://github.com/jgx65/hierfstat" class="external-link">hierfstat</a> (Goudet,
+2005)<br><a href="https://github.com/zhengxwen/SeqArray" class="external-link">SeqArray</a>
+(Zheng et al., 2017)<br><a href="https://github.com/zhengxwen/SNPRelate" class="external-link">SNPRelate</a> (Zheng et
+al., 2012)<br>Dataframes of genotypes in wide or long/tidy
+format<br><br><strong>Reading and tidying is found inside:
+<code>genomic_converter</code>, <code>tidy_</code> and
+<code>read_</code> functions</strong>
 </td>
 </tr>
 <tr class="even">
 <td align="left"><strong>Output</strong></td>
-<td align="left">29 genomic data formats can be exported out of <strong>radiator</strong>. The module responsible for this is <code>genomic_converter</code>. Separate modules handles the different formats and are also available:<br><code>write_vcf</code>: <a href="https://samtools.github.io/hts-specs/" class="external-link">VCF</a> (Danecek et al., 2011)<br><code>write_plink</code>: <a href="https://www.cog-genomics.org/plink2" class="external-link">PLINK tped/tfam</a> (Purcell et al., 2007)<br><code>write_genind</code>: <a href="https://github.com/thibautjombart/adegenet" class="external-link">adegenet genind and genlight</a> (Jombart et al., 2010; Jombart and Ahmed, 2011)<br><code>write_genlight</code>: <a href="https://github.com/thibautjombart/adegenet" class="external-link">genlight</a> (Jombart et al., 2010; Jombart and Ahmed, 2011)<br><code>write_gsi_sim</code>: <a href="https://github.com/eriqande/gsi_sim" class="external-link">gsi_sim</a> (Anderson et al. 2008)<br><code>write_rubias</code>: <a href="https://github.com/eriqande/rubias" class="external-link">rubias</a> (Moran and Anderson, 2018)<br><code>write_gtypes</code>: <a href="https://github.com/EricArcher/strataG" class="external-link">strataG gtypes</a> (Archer et al. 2016)<br><code>write_colony</code>: <a href="https://www.zsl.org/science/software/colony" class="external-link">COLONY</a> (Jones and Wang, 2010; Wang, 2012)<br><code>write_genepop</code>: <a href="http://genepop.curtin.edu.au" class="external-link">Genepop</a> (Raymond and Rousset, 1995; Rousset, 2008)<br><code>write_genepopedit</code>: <a href="https://github.com/rystanley/genepopedit" class="external-link">genepopedit</a> (Stanley et al., 2017)<br><a href="http://catchenlab.life.illinois.edu/stacks/" class="external-link">STACKS haplotype file</a> (Catchen et al., 2011, 2013)<br><code>write_betadiv</code>: <a href="http://adn.biol.umontreal.ca/~numericalecology/Rcode/" class="external-link">betadiv</a> (Lamy, 2015)<br><code>write_dadi</code>: <a href="http://gutengroup.mcb.arizona.edu/software/" class="external-link">δaδi</a> (Gutenkunst et al., 2009)<br><code>write_structure</code>: <a href="https://web.stanford.edu/group/pritchardlab/structure.html" class="external-link">structure</a> (Pritchard et al., 2000)<br><code>write_faststructure</code>: <a href="https://github.com/rajanil/fastStructure" class="external-link">faststructure</a> (Raj &amp; Pritchard, 2014)<br><code>write_arlequin</code>: <a href="http://cmpg.unibe.ch/software/arlequin35/" class="external-link">Arlequin</a> (Excoffier et al. 2005)<br><code>write_hierfstat</code>: <a href="https://github.com/jgx65/hierfstat" class="external-link">hierfstat</a> (Goudet, 2005)<br><code>write_snprelate</code>: <a href="https://github.com/zhengxwen/SNPRelate" class="external-link">SNPRelate</a> (Zheng et al. 2012)<br><code>write_seqarray</code>: <a href="https://github.com/zhengxwen/SeqArray" class="external-link">SeqArray</a> (Zheng et al. 2017)<br><code>write_bayescan</code>: <a href="http://cmpg.unibe.ch/software/BayeScan" class="external-link">BayeScan</a> (Foll and Gaggiotti, 2008)<br><code>write_pcadapt</code>: <a href="https://github.com/bcm-uga/pcadapt" class="external-link">pcadapt</a> (Luu et al. 2017)<br><code>write_hzar</code> (Derryberry et al. 2013) <br><code>write_fineradstructure</code> (Malinsky et al., 2018) <br><code>write_related</code> <a href="https://github.com/timothyfrasier/related" class="external-link">related</a> (Pew et al., 2015)<br><code>write_stockr</code> for stockR package (Foster el al., submitted)<br><code>write_maverick</code> <a href="http://www.bobverity.com/home/maverick/what-is-maverick/" class="external-link">MavericK</a> (Verity &amp; Nichols, 2016)<br><code>write_ldna</code> <a href="https://github.com/petrikemppainen/LDna" class="external-link">LDna</a> (Kemppainen et al. 2015)<br><code>write_hapmap</code> <a href="https://www.ncbi.nlm.nih.gov/variation/news/NCBI_retiring_HapMap/" class="external-link">HapMap</a><br>Dataframes of genotypes in wide or long/tidy format</td>
+<td align="left">29 genomic data formats can be exported out of
+<strong>radiator</strong>. The module responsible for this is
+<code>genomic_converter</code>. Separate modules handles the different
+formats and are also available:<br><code>write_vcf</code>: <a href="https://samtools.github.io/hts-specs/" class="external-link">VCF</a> (Danecek et al.,
+2011)<br><code>write_plink</code>: <a href="https://www.cog-genomics.org/plink2" class="external-link">PLINK tped/tfam</a> (Purcell
+et al., 2007)<br><code>write_genind</code>: <a href="https://github.com/thibautjombart/adegenet" class="external-link">adegenet genind and
+genlight</a> (Jombart et al., 2010; Jombart and Ahmed,
+2011)<br><code>write_genlight</code>: <a href="https://github.com/thibautjombart/adegenet" class="external-link">genlight</a> (Jombart
+et al., 2010; Jombart and Ahmed, 2011)<br><code>write_gsi_sim</code>: <a href="https://github.com/eriqande/gsi_sim" class="external-link">gsi_sim</a> (Anderson et
+al. 2008)<br><code>write_rubias</code>: <a href="https://github.com/eriqande/rubias" class="external-link">rubias</a> (Moran and
+Anderson, 2018)<br><code>write_gtypes</code>: <a href="https://github.com/EricArcher/strataG" class="external-link">strataG gtypes</a> (Archer
+et al. 2016)<br><code>write_colony</code>: <a href="https://www.zsl.org/science/software/colony" class="external-link">COLONY</a> (Jones and
+Wang, 2010; Wang, 2012)<br><code>write_genepop</code>: <a href="http://genepop.curtin.edu.au" class="external-link">Genepop</a> (Raymond and Rousset,
+1995; Rousset, 2008)<br><code>write_genepopedit</code>: <a href="https://github.com/rystanley/genepopedit" class="external-link">genepopedit</a> (Stanley
+et al., 2017)<br><a href="http://catchenlab.life.illinois.edu/stacks/" class="external-link">STACKS haplotype
+file</a> (Catchen et al., 2011, 2013)<br><code>write_betadiv</code>: <a href="http://adn.biol.umontreal.ca/~numericalecology/Rcode/" class="external-link">betadiv</a>
+(Lamy, 2015)<br><code>write_dadi</code>: <a href="http://gutengroup.mcb.arizona.edu/software/" class="external-link">δaδi</a> (Gutenkunst
+et al., 2009)<br><code>write_structure</code>: <a href="https://web.stanford.edu/group/pritchardlab/structure.html" class="external-link">structure</a>
+(Pritchard et al., 2000)<br><code>write_faststructure</code>: <a href="https://github.com/rajanil/fastStructure" class="external-link">faststructure</a> (Raj
+&amp; Pritchard, 2014)<br><code>write_arlequin</code>: <a href="http://cmpg.unibe.ch/software/arlequin35/" class="external-link">Arlequin</a> (Excoffier
+et al. 2005)<br><code>write_hierfstat</code>: <a href="https://github.com/jgx65/hierfstat" class="external-link">hierfstat</a> (Goudet,
+2005)<br><code>write_snprelate</code>: <a href="https://github.com/zhengxwen/SNPRelate" class="external-link">SNPRelate</a> (Zheng et
+al. 2012)<br><code>write_seqarray</code>: <a href="https://github.com/zhengxwen/SeqArray" class="external-link">SeqArray</a> (Zheng et
+al. 2017)<br><code>write_bayescan</code>: <a href="http://cmpg.unibe.ch/software/BayeScan" class="external-link">BayeScan</a> (Foll and
+Gaggiotti, 2008)<br><code>write_pcadapt</code>: <a href="https://github.com/bcm-uga/pcadapt" class="external-link">pcadapt</a> (Luu et
+al. 2017)<br><code>write_hzar</code> (Derryberry et al. 2013)
+<br><code>write_fineradstructure</code> (Malinsky et al., 2018)
+<br><code>write_related</code> <a href="https://github.com/timothyfrasier/related" class="external-link">related</a> (Pew et
+al., 2015)<br><code>write_stockr</code> for stockR package (Foster el
+al., submitted)<br><code>write_maverick</code> <a href="http://www.bobverity.com/home/maverick/what-is-maverick/" class="external-link">MavericK</a>
+(Verity &amp; Nichols, 2016)<br><code>write_ldna</code> <a href="https://github.com/petrikemppainen/LDna" class="external-link">LDna</a> (Kemppainen et
+al. 2015)<br><code>write_hapmap</code> <a href="https://www.ncbi.nlm.nih.gov/variation/news/NCBI_retiring_HapMap/" class="external-link">HapMap</a><br>Dataframes
+of genotypes in wide or long/tidy format</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>Conversion function</strong></td>
 <td align="left">
-<code>genomic_converter</code> import/export genomic formats mentioned above. The function is also integrated with usefull filters, blacklist and whitelist.</td>
+<code>genomic_converter</code> import/export genomic
+formats mentioned above. The function is also integrated with usefull
+filters, blacklist and whitelist.</td>
 </tr>
 <tr class="even">
 <td align="left"><strong>Outliers detection</strong></td>
 <td align="left">
-<code>detect_duplicate_genomes</code>: detect and remove duplicate individuals from your dataset <br><code>detect_mixed_genomes</code>: detect and remove potentially mixed individuals<br><code>stackr::summary_haplotype</code> and <code>filter_snp_number</code>: Discard of outlier markers with <em>de novo</em> assembly artifact (e.g. markers with an extreme number of SNP per haplotype or with irregular number of alleles)</td>
+<code>detect_duplicate_genomes</code>: detect and
+remove duplicate individuals from your dataset
+<br><code>detect_mixed_genomes</code>: detect and remove potentially
+mixed individuals<br><code>stackr::summary_haplotype</code> and
+<code>filter_snp_number</code>: Discard of outlier markers with <em>de
+novo</em> assembly artifact (e.g. markers with an extreme number of SNP
+per haplotype or with irregular number of alleles)</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>Filters</strong></td>
-<td align="left">Targets of filters: alleles, genotypes, markers, individuals and populations and associated metrics and statistics can be filtered and/or selected in several ways inside the main filtering function <code>filter_rad</code> and/or the underlying modules:<br><br><code>filter_rad</code>: designed for RADseq data, it’s the <em>one function to rule them all</em>. Best used with unfiltered or very low filtered VCF (or listed input) file. The function can handle very large VCF files (e.g. no problem with &gt;2M SNPs, &gt; 30GB files), all within R!!<br><code>filter_dart_reproducibility</code>: blaclist markers under a certain threshold of DArT reproducibility metric.<br><code>filter_monomorphic</code>: blacklist markers with only 1 morph.<br><code>filter_common_markers</code>: keep only markers common between strata.<br><code>filter_individuals</code>: blacklist individuals based on missingness, heterozygosity and/or total coverage.<br><code>filter_mac</code>: blacklist markers based on minor/alternate allele count.<br><code>filter_coverage</code>: blacklist markers based on mean read depth (coverage).<br><code>filter_genotype_likelihood</code>: Discard markers based on genotype likelihood<br><code>filter_genotyping</code>: blacklist markers based on genotyping/call rate.<br><code>filter_snp_position_read</code>: blacklist markers based based on the SNP position on the read/locus.<br><code>filter_snp_number</code>: blacklist locus with too many SNPs.<br><code>filter_ld</code>: blacklist markers based on short and/or long distance linkage disequilibrium.<br><code>filter_hwe</code>: blacklist markers based on Hardy-Weinberg Equilibrium expectations (HWE).<br><code>filter_het</code>: blacklist markers based on the observed heterozygosity (Het obs).<br><code>filter_fis</code>: blacklist markers based on the inbreeding coefficient (Fis).<br><code>filter_whitelist</code>: keep only markers present in a whitelist</td>
+<td align="left">Targets of filters: alleles, genotypes, markers,
+individuals and populations and associated metrics and statistics can be
+filtered and/or selected in several ways inside the main filtering
+function <code>filter_rad</code> and/or the underlying
+modules:<br><br><code>filter_rad</code>: designed for RADseq data, it’s
+the <em>one function to rule them all</em>. Best used with unfiltered or
+very low filtered VCF (or listed input) file. The function can handle
+very large VCF files (e.g. no problem with &gt;2M SNPs, &gt; 30GB
+files), all within R!!<br><code>filter_dart_reproducibility</code>:
+blaclist markers under a certain threshold of DArT reproducibility
+metric.<br><code>filter_monomorphic</code>: blacklist markers with only
+1 morph.<br><code>filter_common_markers</code>: keep only markers common
+between strata.<br><code>filter_individuals</code>: blacklist
+individuals based on missingness, heterozygosity and/or total
+coverage.<br><code>filter_mac</code>: blacklist markers based on
+minor/alternate allele count.<br><code>filter_coverage</code>: blacklist
+markers based on mean read depth
+(coverage).<br><code>filter_genotype_likelihood</code>: Discard markers
+based on genotype likelihood<br><code>filter_genotyping</code>:
+blacklist markers based on genotyping/call
+rate.<br><code>filter_snp_position_read</code>: blacklist markers based
+based on the SNP position on the
+read/locus.<br><code>filter_snp_number</code>: blacklist locus with too
+many SNPs.<br><code>filter_ld</code>: blacklist markers based on short
+and/or long distance linkage disequilibrium.<br><code>filter_hwe</code>:
+blacklist markers based on Hardy-Weinberg Equilibrium expectations
+(HWE).<br><code>filter_het</code>: blacklist markers based on the
+observed heterozygosity (Het obs).<br><code>filter_fis</code>: blacklist
+markers based on the inbreeding coefficient
+(Fis).<br><code>filter_whitelist</code>: keep only markers present in a
+whitelist</td>
 </tr>
 <tr class="even">
-<td align="left"><strong><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a>-based plotting</strong></td>
-<td align="left">Visualize distribution of important metric and statistics and create publication-ready figures</td>
+<td align="left"><strong><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a>-based
+plotting</strong></td>
+<td align="left">Visualize distribution of important metric and
+statistics and create publication-ready figures</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>Parallel</strong></td>
-<td align="left">Codes designed and optimized for fast computations using Genomic Data Structure <a href="https://github.com/zhengxwen/gdsfmt" class="external-link">GDS</a> file format and data science packages in <a href="https://www.tidyverse.org" class="external-link">tiverse</a>. Works with all OS: Linux, Mac and now PC!</td>
+<td align="left">Codes designed and optimized for fast computations
+using Genomic Data Structure <a href="https://github.com/zhengxwen/gdsfmt" class="external-link">GDS</a> file format and data
+science packages in <a href="https://www.tidyverse.org" class="external-link">tiverse</a>.
+Works with all OS: Linux, Mac and now PC!</td>
 </tr>
 </tbody>
 </table>
@@ -203,7 +304,7 @@
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer>

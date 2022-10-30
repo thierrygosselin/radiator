@@ -37,7 +37,7 @@ a decision on thresholds.
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -52,7 +52,7 @@ a decision on thresholds.
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -109,21 +109,21 @@ a decision on thresholds.</p></li>
 </ol></div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">filter_het</span><span class="op">(</span>
-  interactive.filter <span class="op">=</span> <span class="cn">TRUE</span>,
-  <span class="va">data</span>,
-  strata <span class="op">=</span> <span class="cn">NULL</span>,
-  ind.heterozygosity.threshold <span class="op">=</span> <span class="cn">NULL</span>,
-  het.approach <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SNP"</span>, <span class="st">"overall"</span><span class="op">)</span>,
-  het.threshold <span class="op">=</span> <span class="fl">1</span>,
-  het.dif.threshold <span class="op">=</span> <span class="fl">1</span>,
-  outlier.pop.threshold <span class="op">=</span> <span class="fl">1</span>,
-  helper.tables <span class="op">=</span> <span class="cn">FALSE</span>,
-  coverage.info <span class="op">=</span> <span class="cn">FALSE</span>,
-  filename <span class="op">=</span> <span class="cn">NULL</span>,
-  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,
-  <span class="va">...</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">filter_het</span><span class="op">(</span></span>
+<span>  interactive.filter <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  <span class="va">data</span>,</span>
+<span>  strata <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ind.heterozygosity.threshold <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  het.approach <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SNP"</span>, <span class="st">"overall"</span><span class="op">)</span>,</span>
+<span>  het.threshold <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  het.dif.threshold <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  outlier.pop.threshold <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  helper.tables <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  coverage.info <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  filename <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -133,6 +133,8 @@ a decision on thresholds.</p></li>
 be interactive. With the default, the user is asked to see figures of
 distribution before making decisions for filtering with heterozygosity statistics.
 Default: <code>interactive.filter == TRUE</code>.</p></dd>
+
+
 <dt>data</dt>
 <dd><p>14 options for input (<strong>diploid data only</strong>): VCFs (SNPs or Haplotypes,
 to make the vcf population ready),
@@ -147,6 +149,8 @@ and genotypes if you are using a VCF file with no genotype
 Neither is <span class="pkg">radiator</span> able to magically generate a genind object
 from a SilicoDArT dataset. Please look at the first few lines of your dataset
 to understand it's limit before asking raditor to convert or filter your dataset.</p></dd>
+
+
 <dt>strata</dt>
 <dd><p>(optional)
 The strata file is a tab delimited file with a minimum of 2 columns headers:
@@ -155,6 +159,8 @@ DArT data: a third column <code>TARGET_ID</code> is required.
 Documented on <code><a href="read_dart.html">read_dart</a></code>. Also use the strata read function to
 blacklist individuals.
 Default: <code>strata = NULL</code>.</p></dd>
+
+
 <dt>ind.heterozygosity.threshold</dt>
 <dd><p>(string, double, optional)
 Blacklist individuals based on observed heterozygosity (averaged across markers).</p>
@@ -166,6 +172,8 @@ Individuals with mean observed heterozygosity higher (&gt;) or lower (&lt;)
 than the thresholds will be blacklisted.</p>
 <p>Default: <code>ind.heterozygosity.threshold = NULL</code> will turn off completely
 the filter and the function will only output the plots and table of heterozygosity.</p></dd>
+
+
 <dt>het.approach</dt>
 <dd><p>(Character string). First value, <code>"SNP"</code> or
 <code>"haplotype"</code>. The haplotype approach considers the statistic
@@ -176,11 +184,15 @@ With the SNP approach, SNPs are independently analyzed and blacklisted.
 The second value, will use the statistics by population <code>"pop"</code> or
 will consider the data overall, as 1 large group <code>"overall"</code>.
 Default: <code>het.approach = c("SNP", "overall")</code>.</p></dd>
+
+
 <dt>het.threshold</dt>
 <dd><p>Number Biallelic markers usually max 0.5. But departure
 from this value is common. The higher the proportion threshold, the more relaxed
 the filter is. With default there is no filtering.
 Default: <code>het.threshold = 1</code>.</p></dd>
+
+
 <dt>het.dif.threshold</dt>
 <dd><p>Number (0 - 1). For <code>het.approach = "haplotype"</code> only.
 You can set a threshold for the difference in het along your read.
@@ -191,6 +203,8 @@ You should strive to have similar statistics along short read like RAD.
 The higher the proportion threshold, the more relaxed the filter is.
 With default, there is no filtering and all the range of differences are allowed.
 Default: <code>het.dif.threshold = 1</code>.</p></dd>
+
+
 <dt>outlier.pop.threshold</dt>
 <dd><p>(integer, optional) Useful to incorporate problematic
 populations dragging down polymorphism discovery, but still wanted for analysis.
@@ -202,35 +216,51 @@ you tolerate a maximum of 2 populations failing the
 Manage outlier markers, individuals and populations
 downstream with blacklists and whitelists produced by the function.
 Default: <code>outlier.pop.threshold = 1</code>. See details for more info.</p></dd>
+
+
 <dt>helper.tables</dt>
 <dd><p>(logical) Output tables that show
 the number of markers blacklisted or whitelisted based on a series of
 automatic thresholds to guide decisions. When <code>interactive.filter == TRUE</code>,
 helper tables are written to the directory.
 Default: <code>helper.tables = FALSE</code>.</p></dd>
+
+
 <dt>coverage.info</dt>
 <dd><p>(optional, logical) Use
 <code>coverage.info = TRUE</code>, if you want to visualize
 the relationshio between locus coverage and locus observed heterozygosity
 statistics. Coverage information is required (e.g. in a vcf file...).
 Default: coverage.info = FALSE.</p></dd>
+
+
 <dt>filename</dt>
 <dd><p>(optional) The function uses <code><a href="http://www.fstpackage.org/reference/write_fst.html" class="external-link">write.fst</a></code>,
 to write the tidy data frame in
 the folder created in the working directory. The file extension appended to
 the <code>filename</code> provided is <code>.rad</code>.
 Default: <code>filename = NULL</code>.</p></dd>
+
+
 <dt>parallel.core</dt>
 <dd><p>(optional) The number of core used for parallel
 execution during import.
 Default: <code>parallel.core = parallel::detectCores() - 1</code>.</p></dd>
+
+
 <dt>...</dt>
 <dd><p>(optional) To pass further arguments for fine-tuning the function.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>The function returns inside the global environment a list with
-15 objects, the objects names are found by using <code>names(your.list.name)</code>:</p><ol><li><p>filtered tidy data frame: <code>$tidy.filtered.het</code></p></li>
+    
+
+<p>The function returns inside the global environment a list with
+15 objects, the objects names are found by using <code>names(your.list.name)</code>:</p>
+
+
+<ol><li><p>filtered tidy data frame: <code>$tidy.filtered.het</code></p></li>
 <li><p>whitelist of markers:<code>$whitelist.markers</code></p></li>
 <li><p>the strata:<code>$strata</code></p></li>
 <li><p>the filters parameters used:<code>$filters.parameters</code></p></li>
@@ -315,7 +345,7 @@ or a biological reason (highly inbred individual, etc.).</p></li>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

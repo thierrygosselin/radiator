@@ -18,7 +18,7 @@ based on individuals or populations."><!-- mathjax --><script src="https://cdnjs
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -33,7 +33,7 @@ based on individuals or populations."><!-- mathjax --><script src="https://cdnjs
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -74,7 +74,7 @@ based on individuals or populations.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">split_vcf</span><span class="op">(</span><span class="va">data</span>, <span class="va">strata</span>, parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>, <span class="va">...</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">split_vcf</span><span class="op">(</span><span class="va">data</span>, <span class="va">strata</span>, parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -93,6 +93,8 @@ and genotypes if you are using a VCF file with no genotype
 Neither is <span class="pkg">radiator</span> able to magically generate a genind object
 from a SilicoDArT dataset. Please look at the first few lines of your dataset
 to understand it's limit before asking raditor to convert or filter your dataset.</p></dd>
+
+
 <dt>strata</dt>
 <dd><p>A file identical to the strata file usually used in radiator,
 with an additional column named: <code>SPLIT</code>.
@@ -101,16 +103,23 @@ This new column contains numerical values
 that indicate for each INDIVIDUALS/STRATA, how to split.
 The number of VCF to split to is based on the max value found in the column
 <code>SPLIT</code>, above this would result in 3 VCF files created).</p></dd>
+
+
 <dt>parallel.core</dt>
 <dd><p>(optional) The number of core used for parallel
 execution during import.
 Default: <code>parallel.core = parallel::detectCores() - 1</code>.</p></dd>
+
+
 <dt>...</dt>
 <dd><p>(optional) To pass further arguments for fine-tuning the function.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>The function returns in the global environment a list with
+    
+
+<p>The function returns in the global environment a list with
 the different tidy dataset from the split vcf. In the working directory,
 the splitted VCF files with <code>"_1", "_2"</code> in the name.</p>
     </div>
@@ -121,13 +130,13 @@ the splitted VCF files with <code>"_1", "_2"</code> in the name.</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in"><span class="va">split.data</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">split_vcf</span><span class="op">(</span></span>
-<span class="r-in">data <span class="op">=</span> <span class="st">"batch_1.vcf"</span>,</span>
-<span class="r-in">strata <span class="op">=</span> <span class="st">"strata.split.tsv"</span>,</span>
-<span class="r-in">blacklist.id <span class="op">=</span> <span class="st">"blacklisted.id.txt"</span>,</span>
-<span class="r-in">whitelist.markers <span class="op">=</span> <span class="st">"whitelist.loci.txt"</span><span class="op">)</span></span>
-<span class="r-in"><span class="op">}</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span><span class="va">split.data</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">split_vcf</span><span class="op">(</span></span></span>
+<span class="r-in"><span>data <span class="op">=</span> <span class="st">"batch_1.vcf"</span>,</span></span>
+<span class="r-in"><span>strata <span class="op">=</span> <span class="st">"strata.split.tsv"</span>,</span></span>
+<span class="r-in"><span>blacklist.id <span class="op">=</span> <span class="st">"blacklisted.id.txt"</span>,</span></span>
+<span class="r-in"><span>whitelist.markers <span class="op">=</span> <span class="st">"whitelist.loci.txt"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -142,7 +151,7 @@ the splitted VCF files with <code>"_1", "_2"</code> in the name.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

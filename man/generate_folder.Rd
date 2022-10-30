@@ -40,3 +40,4 @@ Generate a folder based on ...
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}
 }
+\keyword{internal}

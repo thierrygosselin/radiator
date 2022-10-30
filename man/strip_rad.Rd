@@ -27,3 +27,4 @@ and keep only the sample ids.}
 \description{
 Strip a tidy data set of it's strata and markers meta. Used internally.
 }
+\keyword{internal}

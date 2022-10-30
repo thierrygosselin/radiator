@@ -28,7 +28,7 @@ and might be of interest for users."><!-- mathjax --><script src="https://cdnjs.
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -43,7 +43,7 @@ and might be of interest for users."><!-- mathjax --><script src="https://cdnjs.
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -94,59 +94,78 @@ and might be of interest for users.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">write_rad</span><span class="op">(</span>
-  <span class="va">data</span>,
-  path <span class="op">=</span> <span class="cn">NULL</span>,
-  filename <span class="op">=</span> <span class="cn">NULL</span>,
-  tsv <span class="op">=</span> <span class="cn">FALSE</span>,
-  internal <span class="op">=</span> <span class="cn">FALSE</span>,
-  append <span class="op">=</span> <span class="cn">FALSE</span>,
-  col.names <span class="op">=</span> <span class="cn">TRUE</span>,
-  write.message <span class="op">=</span> <span class="st">"standard"</span>,
-  verbose <span class="op">=</span> <span class="cn">FALSE</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">write_rad</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
+<span>  path <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  filename <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  tsv <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  internal <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  append <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  col.names <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  write.message <span class="op">=</span> <span class="st">"standard"</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>data</dt>
 <dd><p>An object in the global environment: tidy data frame or GDS connection file</p></dd>
+
+
 <dt>path</dt>
 <dd><p>(optional) For tidy data frame, the path to write the data on disk.
 Default: <code>path = NULL</code>.</p></dd>
+
+
 <dt>filename</dt>
 <dd><p>(optional) Name of the file (when using tsv files).
 Default: <code>filename = NULL</code>.</p></dd>
+
+
 <dt>tsv</dt>
 <dd><p>(optinal, logical) To trigger saving using <code><a href="https://readr.tidyverse.org/reference/write_delim.html" class="external-link">readr::write_tsv</a></code>.
 Default: <code>tsv = FALSE</code>.</p></dd>
+
+
 <dt>internal</dt>
 <dd><p>(optional, logical) This is used inside radiator internal code and it stops
 from writting the file.
 Default: <code>internal = FALSE</code>.</p></dd>
+
+
 <dt>append</dt>
 <dd><p>(optional, logical) If <code>FALSE</code>, will overwrite existing file.
 If <code>TRUE</code>, will append to existing file.
 In both cases, if file does not exist a new file is created.
 Default: <code>append = FALSE</code>.</p></dd>
+
+
 <dt>col.names</dt>
 <dd><p>(optional, logical) Write columns names at the top of the file?
 Must be either TRUE or FALSE.
 Default: <code>col.names = TRUE</code>.</p></dd>
+
+
 <dt>write.message</dt>
 <dd><p>(optional, character) Print a message in the console
 after writting file.
 With <code>write.message = NULL</code>, nothing is printed in the console.
 Default: <code>write.message = "standard"</code>. This will print
 <code>message("File written: ", folder_short(filename))</code>.</p></dd>
+
+
 <dt>verbose</dt>
 <dd><p>(optional, logical) <code>verbose = TRUE</code> to be chatty
 during execution.
 Default: <code>verbose = FALSE</code>.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A file written in the working directory or nothing if it's a GDS connection file.</p>
+    
+
+<p>A file written in the working directory or nothing if it's a GDS connection file.</p>
     </div>
     <div id="see-also">
     <h2>See also</h2>
@@ -161,11 +180,11 @@ Default: <code>verbose = FALSE</code>.</p></dd>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="va"><a href="http://github.com/zhengxwen/SeqArray" class="external-link">SeqArray</a></span><span class="op">)</span></span>
-<span class="r-in"><span class="fu">radiator</span><span class="fu">::</span><span class="fu">write_rad</span><span class="op">(</span>data <span class="op">=</span> <span class="va">tidy.data</span>, path <span class="op">=</span> <span class="st">"data.shark.rad"</span><span class="op">)</span></span>
-<span class="r-in"><span class="fu">radiator</span><span class="fu">::</span><span class="fu">write_rad</span><span class="op">(</span>data <span class="op">=</span> <span class="va">gds.object</span><span class="op">)</span></span>
-<span class="r-in"><span class="op">}</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="va"><a href="http://github.com/zhengxwen/SeqArray" class="external-link">SeqArray</a></span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">radiator</span><span class="fu">::</span><span class="fu">write_rad</span><span class="op">(</span>data <span class="op">=</span> <span class="va">tidy.data</span>, path <span class="op">=</span> <span class="st">"data.shark.rad"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">radiator</span><span class="fu">::</span><span class="fu">write_rad</span><span class="op">(</span>data <span class="op">=</span> <span class="va">gds.object</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -180,7 +199,7 @@ Default: <code>verbose = FALSE</code>.</p></dd>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

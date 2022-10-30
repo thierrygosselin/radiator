@@ -19,7 +19,7 @@ and might be of interest for users."><!-- mathjax --><script src="https://cdnjs.
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -34,7 +34,7 @@ and might be of interest for users."><!-- mathjax --><script src="https://cdnjs.
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -76,14 +76,14 @@ and might be of interest for users.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">write_genlight</span><span class="op">(</span>
-  <span class="va">data</span>,
-  biallelic <span class="op">=</span> <span class="cn">TRUE</span>,
-  write <span class="op">=</span> <span class="cn">FALSE</span>,
-  dartr <span class="op">=</span> <span class="cn">FALSE</span>,
-  verbose <span class="op">=</span> <span class="cn">FALSE</span>,
-  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">2</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">write_genlight</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
+<span>  biallelic <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  write <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  dartr <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">2</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -95,15 +95,21 @@ and might be of interest for users.</p>
 Look into <code><a href="tidy_genomic_data.html">tidy_genomic_data</a></code>,
 <code><a href="read_vcf.html">read_vcf</a></code> or
 <code><a href="tidy_vcf.html">tidy_vcf</a></code>.</p></dd>
+
+
 <dt>biallelic</dt>
 <dd><p>(logical, optional) If you already know that the data is
 biallelic use this argument to speed up the function.
 Default: <code>biallelic = TRUE</code>.</p></dd>
+
+
 <dt>write</dt>
 <dd><p>(logical, optional) To write in the working directory the genlight
 object. The file is written with <code>radiator_genlight_DATE@TIME.RData</code> and
 can be open with load or readRDS.
 Default: <code>write = FALSE</code>.</p></dd>
+
+
 <dt>dartr</dt>
 <dd><p>(logical, optional) For non-dartR users who wants to have a genlight
 object ready for the package. This option transfer or generates:
@@ -112,14 +118,19 @@ ONE_RATIO_REF, ONE_RATIO_SNP</code>. These markers metadata are stored into
 the genlight slot: <code>genlight.obj@other$loc.metrics</code>.
 <strong>Use the radiator generated GDS data for best result</strong>.
 Default: <code>dartr = FALSE</code>.</p></dd>
+
+
 <dt>verbose</dt>
 <dd><p>(optional, logical) When <code>verbose = TRUE</code>
 the function is a little more chatty during execution.
 Default: <code>verbose = TRUE</code>.</p></dd>
+
+
 <dt>parallel.core</dt>
 <dd><p>(optional) The number of core used for parallel
 execution during import.
 Default: <code>parallel.core = parallel::detectCores() - 1</code>.</p></dd>
+
 </dl></div>
     <div id="references">
     <h2>References</h2>
@@ -136,21 +147,21 @@ Bioinformatics, 27, 3070-3071.</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in"><span class="co"># With defaults:</span></span>
-<span class="r-in"><span class="va">turtle</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">write_genlight</span><span class="op">(</span>data <span class="op">=</span> <span class="st">"my.radiator.gds.rad"</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># Write gl object in directory:</span></span>
-<span class="r-in"><span class="va">turtle</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">write_genlight</span><span class="op">(</span>data <span class="op">=</span> <span class="st">"my.radiator.gds.rad"</span>, write <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># Generate a dartR ready genlight and verbose = TRUE:</span></span>
-<span class="r-in"><span class="va">turtle</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">write_genlight</span><span class="op">(</span></span>
-<span class="r-in">    data <span class="op">=</span> <span class="st">"my.radiator.gds.rad"</span>,</span>
-<span class="r-in">    write <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span class="r-in">    dartr <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span class="r-in">    verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
-<span class="r-in"> <span class="op">)</span></span>
-<span class="r-in"><span class="op">}</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span><span class="co"># With defaults:</span></span></span>
+<span class="r-in"><span><span class="va">turtle</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">write_genlight</span><span class="op">(</span>data <span class="op">=</span> <span class="st">"my.radiator.gds.rad"</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Write gl object in directory:</span></span></span>
+<span class="r-in"><span><span class="va">turtle</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">write_genlight</span><span class="op">(</span>data <span class="op">=</span> <span class="st">"my.radiator.gds.rad"</span>, write <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Generate a dartR ready genlight and verbose = TRUE:</span></span></span>
+<span class="r-in"><span><span class="va">turtle</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">write_genlight</span><span class="op">(</span></span></span>
+<span class="r-in"><span>    data <span class="op">=</span> <span class="st">"my.radiator.gds.rad"</span>,</span></span>
+<span class="r-in"><span>    write <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
+<span class="r-in"><span>    dartr <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
+<span class="r-in"><span>    verbose <span class="op">=</span> <span class="cn">TRUE</span></span></span>
+<span class="r-in"><span> <span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -165,7 +176,7 @@ Bioinformatics, 27, 3070-3071.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

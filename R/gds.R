@@ -366,10 +366,11 @@ gds2tidy <- function(
   }
 
   # added 20210616
-  weird.locus <- length(unique(markers.meta$LOCUS)) <= 1
+
+  weird.locus <- suppressWarnings(length(unique(markers.meta$LOCUS)) <= 1)
   if (weird.locus) {
     message("LOCUS field empty... adding unique id instead")
-    markers.meta$LOCUS <- markers.meta$VARIANT_ID
+    markers.meta$LOCUS <- suppressWarnings(markers.meta$VARIANT_ID)
   }
 
   # colnames and "id" tidy data...
@@ -2381,7 +2382,6 @@ generate_markers_stats <- function(
       ac <- SeqArray::seqAlleleCount(
         gdsfile = gds,
         ref.allele = NULL,
-        .progress = TRUE,
         parallel = parallel.core)
 
       # check if more than 2 alternate alleles...
@@ -2431,7 +2431,6 @@ generate_markers_stats <- function(
       #     SeqArray::seqAlleleCount(
       #       gdsfile = gds,
       #       ref.allele = NULL,
-      #       .progress = TRUE,
       #       parallel = parallel.core) %>%
       #       unlist(.) %>%
       #       matrix(
@@ -2525,7 +2524,6 @@ generate_markers_stats <- function(
       info$MISSING_PROP <- SeqArray::seqMissing(
         gdsfile = gds,
         per.variant = TRUE,
-        .progress = TRUE,
         parallel = parallel.core
       )
     }
@@ -2868,7 +2866,6 @@ missing_per_pop <- function(
         MISSING_PROP = SeqArray::seqMissing(
           gdsfile = gds,
           per.variant = TRUE,
-          .progress = TRUE,
           parallel = parallel.core.temp
         )
       )

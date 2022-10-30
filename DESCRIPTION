@@ -1,8 +1,8 @@
 Package: radiator
 Type: Package
 Title: RADseq Data Exploration, Manipulation and Visualization using R
-Version: 1.2.2
-Date: 2021-12-20
+Version: 1.2.3
+Date: 2022-10-30
 Encoding: UTF-8
 Authors@R: c(
   person("Thierry", "Gosselin", email = "thierrygosselin@icloud.com", role = c("aut", "cre")),
@@ -22,10 +22,8 @@ Imports:
     furrr (>= 0.2.0),
     HardyWeinberg,
     magrittr,
-    tidyverse,
-    SeqArray (>= 1.28.1),
-    UpSetR, 
-    ggpubr
+    SeqArray (>= 1.36.0),
+    UpSetR
 Suggests:
     adegenet,
     amap,
@@ -55,7 +53,7 @@ License: GPL-3
 LazyLoad: yes
 VignetteBuilder:
     knitr
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.1
 ByteCompile: TRUE
 URL: https://thierrygosselin.github.io/radiator/
 BugReports: https://github.com/thierrygosselin/radiator/issues

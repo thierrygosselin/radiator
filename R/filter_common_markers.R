@@ -393,7 +393,6 @@ not_common_markers <- function(
       var.name = "variant.id")[SeqArray::seqMissing(
         gdsfile = x,
         per.variant = TRUE,
-        .progress = FALSE,
         parallel = parallel.core.opt
       ) == 1]
     return(bl)
@@ -470,7 +469,6 @@ plot_upset <- function(
         STRATA = SeqArray::seqMissing(
           gdsfile = x,
           per.variant = TRUE,
-          .progress = FALSE,
           parallel = parallel.core.opt
         ) %>%
           magrittr::inset(. == 1L, 9L) %>%

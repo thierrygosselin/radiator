@@ -31,7 +31,7 @@ Output: 29 output file formats are supported (see output argument below)
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -46,7 +46,7 @@ Output: 29 output file formats are supported (see output argument below)
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -97,15 +97,15 @@ reality of GBS/RADseq data while maintaining a reproducible workflow.</p>
 </ul></div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">genomic_converter</span><span class="op">(</span>
-  <span class="va">data</span>,
-  strata <span class="op">=</span> <span class="cn">NULL</span>,
-  output <span class="op">=</span> <span class="cn">NULL</span>,
-  filename <span class="op">=</span> <span class="cn">NULL</span>,
-  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,
-  verbose <span class="op">=</span> <span class="cn">TRUE</span>,
-  <span class="va">...</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">genomic_converter</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
+<span>  strata <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  output <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  filename <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -124,6 +124,8 @@ and genotypes if you are using a VCF file with no genotype
 Neither is <span class="pkg">radiator</span> able to magically generate a genind object
 from a SilicoDArT dataset. Please look at the first few lines of your dataset
 to understand it's limit before asking raditor to convert or filter your dataset.</p></dd>
+
+
 <dt>strata</dt>
 <dd><p>(optional)
 The strata file is a tab delimited file with a minimum of 2 columns headers:
@@ -132,6 +134,8 @@ DArT data: a third column <code>TARGET_ID</code> is required.
 Documented on <code><a href="read_dart.html">read_dart</a></code>. Also use the strata read function to
 blacklist individuals.
 Default: <code>strata = NULL</code>.</p></dd>
+
+
 <dt>output</dt>
 <dd><p>29 genomic data formats can be exported: tidy (by default),
 genepop, genind, genlight, vcf (for file format version, see details below),
@@ -146,24 +150,35 @@ requires extra columns in the strata file. You can find the info in the
 corresponding <em>write_</em> functions of radiator
 (<a href="https://thierrygosselin.github.io/radiator/reference/index.html" class="external-link">reference</a>).</p>
 <p>Default: <code>output = NULL</code>.</p></dd>
+
+
 <dt>filename</dt>
 <dd><p>(optional) The filename prefix for the object in the global environment
 or the working directory. Default: <code>filename = NULL</code>. A default name will be used,
 customized with the output file(s) selected.</p></dd>
+
+
 <dt>parallel.core</dt>
 <dd><p>(optional) The number of core used for parallel
 execution during import.
 Default: <code>parallel.core = parallel::detectCores() - 1</code>.</p></dd>
+
+
 <dt>verbose</dt>
 <dd><p>(optional, logical) When <code>verbose = TRUE</code>
 the function is a little more chatty during execution.
 Default: <code>verbose = TRUE</code>.</p></dd>
+
+
 <dt>...</dt>
 <dd><p>(optional) To pass further arguments for fine-tuning the function.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>The function returns an object (list). The content of the object
+    
+
+<p>The function returns an object (list). The content of the object
 can be listed with <code>names(object)</code> and use <code>$</code> to isolate specific
 object (see examples). Some output format will write the output file in the
 working directory. The tidy genomic data frame is generated automatically.</p>
@@ -336,21 +351,21 @@ Bioinformatics.</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in"><span class="co">#To verify your file is detected by radiator as the correct format:</span></span>
-<span class="r-in"><span class="fu">radiator</span><span class="fu">::</span><span class="fu"><a href="detect_genomic_format.html">detect_genomic_format</a></span><span class="op">(</span>data <span class="op">=</span> <span class="st">"populations.snps.vcf"</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># The simplest form of the function:</span></span>
-<span class="r-in"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="va"><a href="https://github.com/EricArcher/strataG" class="external-link">strataG</a></span><span class="op">)</span> <span class="co"># for the gtypes format...</span></span>
-<span class="r-in"><span class="va">snowcrab</span> <span class="op">&lt;-</span> <span class="fu">genomic_converter</span><span class="op">(</span></span>
-<span class="r-in">                   data <span class="op">=</span> <span class="st">"populations.snps.vcf"</span>, strata <span class="op">=</span> <span class="st">"snowcrab.strata.tsv"</span>,</span>
-<span class="r-in">                   output <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"genlight"</span>, <span class="st">"genepop"</span>, <span class="st">"gtypes"</span><span class="op">)</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co">#Get the content of the object created using:</span></span>
-<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">snowcrab</span><span class="op">)</span></span>
-<span class="r-in"><span class="co">#To isolate the genlight object (without imputation):</span></span>
-<span class="r-in"><span class="va">genlight</span> <span class="op">&lt;-</span> <span class="va">snowcrab</span><span class="op">$</span><span class="va">genlight</span></span>
-<span class="r-in"><span class="op">}</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span><span class="co">#To verify your file is detected by radiator as the correct format:</span></span></span>
+<span class="r-in"><span><span class="fu">radiator</span><span class="fu">::</span><span class="fu"><a href="detect_genomic_format.html">detect_genomic_format</a></span><span class="op">(</span>data <span class="op">=</span> <span class="st">"populations.snps.vcf"</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># The simplest form of the function:</span></span></span>
+<span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="va">strataG</span><span class="op">)</span> <span class="co"># for the gtypes format...</span></span></span>
+<span class="r-in"><span><span class="va">snowcrab</span> <span class="op">&lt;-</span> <span class="fu">genomic_converter</span><span class="op">(</span></span></span>
+<span class="r-in"><span>                   data <span class="op">=</span> <span class="st">"populations.snps.vcf"</span>, strata <span class="op">=</span> <span class="st">"snowcrab.strata.tsv"</span>,</span></span>
+<span class="r-in"><span>                   output <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"genlight"</span>, <span class="st">"genepop"</span>, <span class="st">"gtypes"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">#Get the content of the object created using:</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">snowcrab</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co">#To isolate the genlight object (without imputation):</span></span></span>
+<span class="r-in"><span><span class="va">genlight</span> <span class="op">&lt;-</span> <span class="va">snowcrab</span><span class="op">$</span><span class="va">genlight</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -365,7 +380,7 @@ Bioinformatics.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

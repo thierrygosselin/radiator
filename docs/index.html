@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -49,7 +49,7 @@
   <a href="reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -98,9 +98,9 @@
 </h2>
 <p>To try out the dev version of <strong>radiator</strong>, copy/paste the code below:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="st"><a href="https://devtools.r-lib.org/" class="external-link">"devtools"</a></span><span class="op">)</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"devtools"</span><span class="op">)</span>
-<span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/remote-reexports.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"thierrygosselin/radiator"</span><span class="op">)</span>
-<span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://thierrygosselin.github.io/radiator/" class="external-link">radiator</a></span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="st"><a href="https://devtools.r-lib.org/" class="external-link">"devtools"</a></span><span class="op">)</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"devtools"</span><span class="op">)</span></span>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"thierrygosselin/radiator"</span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://thierrygosselin.github.io/radiator/" class="external-link">radiator</a></span><span class="op">)</span></span></code></pre></div>
 <p><strong>Note</strong></p>
 <p>Some Windows OS and Linux OS recently experienced some problems during installations, linked to CRAN &amp; Bioconductor tango problems:</p>
 <ul>
@@ -108,10 +108,10 @@
 <li><p>Verify that installing <strong>radiator</strong> also installed the <a href="https://www.bioconductor.org/packages/release/bioc/html/SeqArray.html" class="external-link">Bioconductor</a> packages: <code>gdsfmt</code> and <a href="https://github.com/zhengxwen/SeqArray" class="external-link">SeqArray</a> with version &gt;= 1.28.1.</p></li>
 </ul>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://r-lib.github.io/sessioninfo/reference/package_info.html" class="external-link">package_info</a></span><span class="op">(</span>pkgs <span class="op">=</span> <span class="st">"SeqArray"</span><span class="op">)</span> <span class="co"># to verify version</span>
-
-<span class="co"># If manually installing SeqArray is necessary</span>
-<span class="fu">BiocManager</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/BiocManager/man/install.html" class="external-link">install</a></span><span class="op">(</span><span class="st">"SeqArray"</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://r-lib.github.io/sessioninfo/reference/package_info.html" class="external-link">package_info</a></span><span class="op">(</span>pkgs <span class="op">=</span> <span class="st">"SeqArray"</span><span class="op">)</span> <span class="co"># to verify version</span></span>
+<span></span>
+<span><span class="co"># If manually installing SeqArray is necessary</span></span>
+<span><span class="fu">BiocManager</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/BiocManager/man/install.html" class="external-link">install</a></span><span class="op">(</span><span class="st">"SeqArray"</span><span class="op">)</span></span></code></pre></div>
 <p>Web site with additional info: <a href="https://thierrygosselin.github.io/radiator/" class="external-link uri">https://thierrygosselin.github.io/radiator/</a></p>
 <ul>
 <li><a href="https://thierrygosselin.github.io/radiator/articles/rad_genomics_computer_setup.html" class="external-link">Computer setup and troubleshooting</a></li>
@@ -177,8 +177,8 @@
 <li><a href="https://tidyverse.org/lifecycle/#maturing" class="external-link"><img src="https://img.shields.io/badge/lifecycle-maturing-blue.svg" alt="lifecycle"></a></li>
 <li><a href="http://www.repostatus.org/#active" class="external-link"><img src="http://www.repostatus.org/badges/latest/active.svg" alt="Project Status: Active – The project has reached a stable, usable state and is being actively developed."></a></li>
 <li><a href="https://cran.r-project.org/" class="external-link"><img src="https://img.shields.io/badge/R%3E%3D-3.5.0-6666ff.svg" alt="minimal R version"></a></li>
-<li><a href="commits/master"><img src="https://img.shields.io/badge/Package%20version-1.2.2-orange.svg" alt="packageversion"></a></li>
-<li><a href="/commits/master"><img src="https://img.shields.io/badge/last%20change-2021--12--22-brightgreen.svg" alt="Last-changedate"></a></li>
+<li><a href="commits/master"><img src="https://img.shields.io/badge/Package%20version-1.2.3-orange.svg" alt="packageversion"></a></li>
+<li><a href="/commits/master"><img src="https://img.shields.io/badge/last%20change-2022--10--30-brightgreen.svg" alt="Last-changedate"></a></li>
 <li><a href="https://github.com/thierrygosselin/radiator/actions" class="external-link"><img src="https://github.com/thierrygosselin/radiator/workflows/R-CMD-check/badge.svg" alt="R-CMD-check"></a></li>
 <li><a href="https://doi.org/10.5281/zenodo.3687060" class="external-link"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.3687060.svg" alt="DOI"></a></li>
 </ul>
@@ -195,7 +195,7 @@
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer>

@@ -559,7 +559,6 @@ filter_ld <- function(
                 SeqArray::seqAlleleCount(
                   gdsfile = data,
                   ref.allele = NULL,
-                  .progress = TRUE,
                   parallel = parallel.core) %>%
                   unlist(.) %>%
                   matrix(
@@ -1349,7 +1348,6 @@ ld_missing <- function(
             MISSING_PROP = SeqArray::seqMissing(
               gdsfile = data,
               per.variant = TRUE,
-              .progress = TRUE,
               parallel = parallel.core.temp
             )
           ) %>%

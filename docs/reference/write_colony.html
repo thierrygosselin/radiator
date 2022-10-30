@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -32,7 +32,7 @@
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -72,27 +72,27 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">write_colony</span><span class="op">(</span>
-  <span class="va">data</span>,
-  strata <span class="op">=</span> <span class="cn">NULL</span>,
-  sample.markers <span class="op">=</span> <span class="cn">NULL</span>,
-  pop.select <span class="op">=</span> <span class="cn">NULL</span>,
-  allele.freq <span class="op">=</span> <span class="cn">NULL</span>,
-  inbreeding <span class="op">=</span> <span class="fl">0</span>,
-  mating.sys.males <span class="op">=</span> <span class="fl">0</span>,
-  mating.sys.females <span class="op">=</span> <span class="fl">0</span>,
-  clone <span class="op">=</span> <span class="fl">0</span>,
-  run.length <span class="op">=</span> <span class="fl">2</span>,
-  analysis <span class="op">=</span> <span class="fl">1</span>,
-  allelic.dropout <span class="op">=</span> <span class="fl">0</span>,
-  error.rate <span class="op">=</span> <span class="fl">0.02</span>,
-  print.all.colony.opt <span class="op">=</span> <span class="cn">FALSE</span>,
-  random.seed <span class="op">=</span> <span class="cn">NULL</span>,
-  verbose <span class="op">=</span> <span class="cn">FALSE</span>,
-  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,
-  filename <span class="op">=</span> <span class="cn">NULL</span>,
-  <span class="va">...</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">write_colony</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
+<span>  strata <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sample.markers <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  pop.select <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  allele.freq <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  inbreeding <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  mating.sys.males <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  mating.sys.females <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  clone <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  run.length <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>  analysis <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  allelic.dropout <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  error.rate <span class="op">=</span> <span class="fl">0.02</span>,</span>
+<span>  print.all.colony.opt <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  random.seed <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,</span>
+<span>  filename <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -104,21 +104,29 @@
 Look into <code><a href="tidy_genomic_data.html">tidy_genomic_data</a></code>,
 <code><a href="read_vcf.html">read_vcf</a></code> or
 <code><a href="tidy_vcf.html">tidy_vcf</a></code>.</p></dd>
+
+
 <dt>strata</dt>
 <dd><p>(path or object) The strata file or object.
 Additional documentation is available in <code><a href="read_strata.html">read_strata</a></code>.
 Use that function to whitelist/blacklist populations/individuals.
 Option to set <code>pop.levels/pop.labels</code> is also available.</p></dd>
+
+
 <dt>sample.markers</dt>
 <dd><p>(number) <code>COLONY</code> can take a long time to run,
 use a random subsample of your markers to speed test <code>COLONY</code>
 e.g. <code>sample.markers = 500</code> to use only 500 randomly chosen markers.
 Default: <code>sample.markers = NULL</code>, will use all markers.</p></dd>
+
+
 <dt>pop.select</dt>
 <dd><p>(optional, string) Selected list of populations for
 the analysis. e.g. <code>pop.select = c("QUE", "ONT")</code> to select <code>QUE</code>
 and <code>ONT</code> population samples (out of 20 pops).
 Default: <code>pop.select = NULL</code></p></dd>
+
+
 <dt>allele.freq</dt>
 <dd><p>(optional, string) Allele frequency can be computed from
 a select group.
@@ -126,63 +134,94 @@ e.g. <code>allele.freq = "QUE"</code> or <code>allele.freq = c("QUE", "ONT")</co
 Using <code>allele.freq = "overall"</code> will use all the samples to compute the
 allele frequency.
 Default: <code>allele.freq = NULL</code>, will not compute allele frequency.</p></dd>
+
+
 <dt>inbreeding</dt>
 <dd><p>(boolean) 0/1 no inbreeding/inbreeding.
 Default: <code>inbreeding = 0</code></p></dd>
+
+
 <dt>mating.sys.males</dt>
 <dd><p>(boolean) Mating system in males.
 0/1 polygyny/monogyny.
 Default: <code>mating.sys.males = 0</code>.</p></dd>
+
+
 <dt>mating.sys.females</dt>
 <dd><p>(boolean) Mating system in females.
 0/1 polygyny/monogyny.
 Default: <code>mating.sys.females = 0</code>.</p></dd>
+
+
 <dt>clone</dt>
 <dd><p>(boolean) Should clones and duplicated individuals be inferred.
 0/1, yes/no. Default: <code>clone = 0</code>.</p></dd>
+
+
 <dt>run.length</dt>
 <dd><p>(integer) Length of run. 1 (short), 2 (medium), 3 (long),
 4 (very long). Start with short or medium run and consider longer run if your
 estimates probability are not stable or really good.
 Default: <code>run.length = 2</code>.</p></dd>
+
+
 <dt>analysis</dt>
 <dd><p>(integer) Analysis method.
 0 (Pairwise-Likelihood Score), 1 (Full Likelihood),
 2 (combined Pairwise-Likelihood Score and Full Likelihood).
 Default: <code>analysis = 1</code>.</p></dd>
+
+
 <dt>allelic.dropout</dt>
 <dd><p>Locus allelic dropout rate.
 Default : <code>allelic.dropout = 0</code>.</p></dd>
+
+
 <dt>error.rate</dt>
 <dd><p>Locus error rate.
 Default:<code>error.rate = 0.02</code>.</p></dd>
+
+
 <dt>print.all.colony.opt</dt>
 <dd><p>(logical) Should all <code>COLONY</code> options be printed in the file.</p>
 <p><strong>This require manual curation, for the file to work directly with <code>COLONY</code></strong>.
 Default = <code>print.all.colony.opt = FALSE</code>.</p></dd>
+
+
 <dt>random.seed</dt>
 <dd><p>(integer, optional) For reproducibility, set an integer
 that will be used inside the function that requires randomness. With default,
 a random number is generated and printed in the appropriate output.
 Default: <code>random.seed = NULL</code>.</p></dd>
+
+
 <dt>verbose</dt>
 <dd><p>(optional, logical) When <code>verbose = TRUE</code>
 the function is a little more chatty during execution.
 Default: <code>verbose = TRUE</code>.</p></dd>
+
+
 <dt>parallel.core</dt>
 <dd><p>(optional) The number of core used for parallel
 execution during import.
 Default: <code>parallel.core = parallel::detectCores() - 1</code>.</p></dd>
+
+
 <dt>filename</dt>
 <dd><p>Name of the acronym for filenaming in the working directory.</p></dd>
+
+
 <dt>...</dt>
 <dd><p>(optional) Advance mode that allows to pass further arguments
 for fine-tuning the function. Also used for legacy arguments (see details or
 special section)</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A <code>COLONY</code> file in your working directory (2 if you selected imputations arguments...)</p>
+    
+
+<p>A <code>COLONY</code> file in your working directory (2 if you selected imputations arguments...)</p>
     </div>
     <div id="details">
     <h2>Details</h2>
@@ -215,10 +254,10 @@ Parentage Assignment from Multilocus Marker Data. Genetics, 191, 183–194.</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in"><span class="co"># Simplest way to run the function with a tidy dataset:</span></span>
-<span class="r-in"><span class="va">colony.file</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">write_colony</span><span class="op">(</span>data <span class="op">=</span> <span class="st">"turtle.data.rad"</span><span class="op">)</span></span>
-<span class="r-in"><span class="op">}</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span><span class="co"># Simplest way to run the function with a tidy dataset:</span></span></span>
+<span class="r-in"><span><span class="va">colony.file</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">write_colony</span><span class="op">(</span>data <span class="op">=</span> <span class="st">"turtle.data.rad"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -233,7 +272,7 @@ Parentage Assignment from Multilocus Marker Data. Genetics, 191, 183–194.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

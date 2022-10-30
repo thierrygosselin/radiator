@@ -24,7 +24,7 @@ several other filtering options."><!-- mathjax --><script src="https://cdnjs.clo
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -39,7 +39,7 @@ several other filtering options."><!-- mathjax --><script src="https://cdnjs.clo
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -86,14 +86,14 @@ several other filtering options.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">tidy_vcf</span><span class="op">(</span>
-  <span class="va">data</span>,
-  strata <span class="op">=</span> <span class="cn">NULL</span>,
-  filename <span class="op">=</span> <span class="cn">NULL</span>,
-  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,
-  verbose <span class="op">=</span> <span class="cn">FALSE</span>,
-  <span class="va">...</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">tidy_vcf</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
+<span>  strata <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  filename <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -101,6 +101,8 @@ several other filtering options.</p>
     <dl><dt>data</dt>
 <dd><p>(VCF file, character string) The VCF SNPs are biallelic or haplotypes.
 To make the VCF population-ready, the argument <code>strata</code> is required.</p></dd>
+
+
 <dt>strata</dt>
 <dd><p>(optional)
 The strata file is a tab delimited file with a minimum of 2 columns headers:
@@ -109,6 +111,8 @@ DArT data: a third column <code>TARGET_ID</code> is required.
 Documented on <code><a href="read_dart.html">read_dart</a></code>. Also use the strata read function to
 blacklist individuals.
 Default: <code>strata = NULL</code>.</p></dd>
+
+
 <dt>filename</dt>
 <dd><p>(optional) The function uses <code><a href="http://www.fstpackage.org/reference/write_fst.html" class="external-link">write.fst</a></code>,
 to write the tidy data frame in
@@ -116,21 +120,30 @@ the working directory. The file extension appended to
 the <code>filename</code> provided is <code>.rad</code>.
 With default: <code>filename = NULL</code>, the tidy data frame is
 in the global environment only (i.e. not written in the working directory...).</p></dd>
+
+
 <dt>parallel.core</dt>
 <dd><p>(optional) The number of core used for parallel
 execution during import.
 Default: <code>parallel.core = parallel::detectCores() - 1</code>.</p></dd>
+
+
 <dt>verbose</dt>
 <dd><p>(optional, logical) When <code>verbose = TRUE</code>
 the function is a little more chatty during execution.
 Default: <code>verbose = TRUE</code>.</p></dd>
+
+
 <dt>...</dt>
 <dd><p>(optional) To pass further argument for fine-tuning the tidying
 (read below).</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>The output in your global environment is a tidy data frame, the GDS file
+    
+
+<p>The output in your global environment is a tidy data frame, the GDS file
 generated is in the working directory under the name given during function execution.</p>
     </div>
     <div id="vcf-file-format">
@@ -283,22 +296,22 @@ Bioinformatics, 27, 2156-2158.</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in"><span class="co"># very basic with built-in defaults (not recommended):</span></span>
-<span class="r-in"><span class="va">prep.data</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">tidy_vcf</span><span class="op">(</span>data <span class="op">=</span> <span class="st">"populations.snps.vcf"</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># Using more arguments and filters (recommended):</span></span>
-<span class="r-in"><span class="va">tidy.data</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">tidy_vcf</span><span class="op">(</span></span>
-<span class="r-in">    data <span class="op">=</span> <span class="st">"populations.snps.vcf"</span>,</span>
-<span class="r-in">    strata <span class="op">=</span> <span class="st">"strata_salamander.tsv"</span>,</span>
-<span class="r-in">    filter.individuals.missing <span class="op">=</span> <span class="st">"outlier"</span>,</span>
-<span class="r-in">    filter.mac <span class="op">=</span> <span class="fl">4</span>,</span>
-<span class="r-in">    filter.genotyping <span class="op">=</span> <span class="fl">0.1</span>,</span>
-<span class="r-in">    filter.snp.position.read <span class="op">=</span> <span class="st">"outliers"</span>,</span>
-<span class="r-in">    filter.short.ld <span class="op">=</span> <span class="st">"mac"</span>,</span>
-<span class="r-in">    path.folder <span class="op">=</span> <span class="st">"salamander/prep_data"</span>,</span>
-<span class="r-in">    verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span class="r-in"><span class="op">}</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span><span class="co"># very basic with built-in defaults (not recommended):</span></span></span>
+<span class="r-in"><span><span class="va">prep.data</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">tidy_vcf</span><span class="op">(</span>data <span class="op">=</span> <span class="st">"populations.snps.vcf"</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Using more arguments and filters (recommended):</span></span></span>
+<span class="r-in"><span><span class="va">tidy.data</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">tidy_vcf</span><span class="op">(</span></span></span>
+<span class="r-in"><span>    data <span class="op">=</span> <span class="st">"populations.snps.vcf"</span>,</span></span>
+<span class="r-in"><span>    strata <span class="op">=</span> <span class="st">"strata_salamander.tsv"</span>,</span></span>
+<span class="r-in"><span>    filter.individuals.missing <span class="op">=</span> <span class="st">"outlier"</span>,</span></span>
+<span class="r-in"><span>    filter.mac <span class="op">=</span> <span class="fl">4</span>,</span></span>
+<span class="r-in"><span>    filter.genotyping <span class="op">=</span> <span class="fl">0.1</span>,</span></span>
+<span class="r-in"><span>    filter.snp.position.read <span class="op">=</span> <span class="st">"outliers"</span>,</span></span>
+<span class="r-in"><span>    filter.short.ld <span class="op">=</span> <span class="st">"mac"</span>,</span></span>
+<span class="r-in"><span>    path.folder <span class="op">=</span> <span class="st">"salamander/prep_data"</span>,</span></span>
+<span class="r-in"><span>    verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -313,7 +326,7 @@ Bioinformatics, 27, 2156-2158.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

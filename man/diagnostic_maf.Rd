@@ -32,3 +32,4 @@ data = tidy.salmon.data, group.rank = 10)
 \seealso{
 \link{filter_maf}
 }
+\keyword{internal}

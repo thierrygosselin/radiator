@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -32,7 +32,7 @@
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -72,31 +72,42 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">estimate_m</span><span class="op">(</span>
-  <span class="va">data</span>,
-  nreps <span class="op">=</span> <span class="fl">200</span>,
-  m_init <span class="op">=</span> <span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span>,
-  a0 <span class="op">=</span> <span class="fl">0.5</span>,
-  a1 <span class="op">=</span> <span class="fl">0.5</span>,
-  sm <span class="op">=</span> <span class="fl">0.005</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">estimate_m</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
+<span>  nreps <span class="op">=</span> <span class="fl">200</span>,</span>
+<span>  m_init <span class="op">=</span> <span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span>,</span>
+<span>  a0 <span class="op">=</span> <span class="fl">0.5</span>,</span>
+<span>  a1 <span class="op">=</span> <span class="fl">0.5</span>,</span>
+<span>  sm <span class="op">=</span> <span class="fl">0.005</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>data</dt>
 <dd><p>A tidy data frame (biallelic only).</p></dd>
+
+
 <dt>nreps</dt>
 <dd><p>number of MCMC sweeps to do.
 Default: <code>nreps = 200</code>.</p></dd>
+
+
 <dt>m_init</dt>
 <dd><p>initial starting value for m must be between 0 and 1</p></dd>
+
+
 <dt>a0</dt>
 <dd><p>beta parameter for reference alleles</p></dd>
+
+
 <dt>a1</dt>
 <dd><p>beta parameter for alternate alleles</p></dd>
+
+
 <dt>sm</dt>
 <dd><p>standard devation of proposal distribution for m</p></dd>
+
 </dl></div>
     <div id="author">
     <h2>Author</h2>
@@ -115,7 +126,7 @@ Default: <code>nreps = 200</code>.</p></dd>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

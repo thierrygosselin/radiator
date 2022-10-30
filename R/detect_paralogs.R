@@ -92,7 +92,7 @@
 #' as = "raw"), con = "chinook.vcf")
 #'
 #' # Import VCF and run the function
-#' chinook.paralogs <- radiator::read_vcf(data = "chinook.vcf") %>%
+#' chinook.paralogs <- radiator::read_vcf(data = "chinook.vcf", vcf.stats = FALSE) %>%
 #'     radiator::detect_paralogs(data = .)
 #' }
 
@@ -242,7 +242,8 @@ detect_paralogs <- function(
       gds2tidy(gds = data, parallel.core = parallel.core) %>%
         dplyr::select(-POP_ID) %>%
         dplyr::mutate(dplyr::across(where(is.factor), .fns = as.character))
-      , by = c("INDIVIDUALS", "MARKERS")
+      , by = c("ID_SEQ", "M_SEQ")
+      # , by = c("INDIVIDUALS", "MARKERS")
     )
 
   # check for stacks specific coverage problem ----------------------------------

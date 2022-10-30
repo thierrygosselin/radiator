@@ -20,3 +20,4 @@ join_rad(x, s, m, g, env.arg = NULL)
 \description{
 Join back the parts stripped in strip_rad. Used internally.
 }
+\keyword{internal}

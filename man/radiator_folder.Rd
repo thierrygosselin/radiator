@@ -20,3 +20,4 @@ Generate the rad folders
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}
 }
+\keyword{internal}

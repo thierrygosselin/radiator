@@ -150,7 +150,7 @@ check_dart <- function(data) {
     temp.file <- suppressWarnings(suppressMessages(readr::read_table(file = data, n_max = 20, col_names = "HEADER")))
     skip.number <- which(
       stringi::stri_detect_regex(str = temp.file$HEADER,pattern = "^[:Letter:]")
-    ) -1
+    ) - 1
     star.number <- stringi::stri_count_fixed(str = data.type, pattern = "*")
     data.type <- readr::read_lines(file = data, skip = skip.number, n_max = skip.number + 1)[1]
   } else {

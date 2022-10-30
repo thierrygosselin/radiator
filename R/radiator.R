@@ -381,7 +381,7 @@ radiator_results_message <- function(
 #' @param prefix_int Use an integer prefix padded left with 0.
 #' Default: \code{prefix_int = TRUE}.
 #' @inheritParams folder_short
-# @keywords internal
+#' @keywords internal
 #' @export
 #' @rdname radiator_folder
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
@@ -608,6 +608,7 @@ generate_filename <- function(
 #' @inheritParams radiator_folder
 #' @inheritParams radiator_common_arguments
 #' @inheritParams folder_short
+#' @keywords internal
 #' @export
 #' @rdname generate_folder
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
@@ -653,7 +654,7 @@ generate_folder <- function(
 #' @name folder_short
 #' @param f Folder name
 #' @rdname folder_short
-# @keywords internal
+#' @keywords internal
 #' @export
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 folder_short <- function(f) {

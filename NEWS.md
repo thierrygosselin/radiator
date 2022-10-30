@@ -1,3 +1,9 @@
+# radiator 1.2.3 2022-10-30
+
+* bug fix with reading VCF, the new update works with SeqArray (>= 1.36.0)
+* work on Tidy VCF.
+
+
 # radiator 1.2.2 2021-12-20
 
 * bug fix when using *arlequin* output file

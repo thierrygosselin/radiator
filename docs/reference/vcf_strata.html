@@ -18,7 +18,7 @@ to the FORMAT field of a VCF file."><!-- mathjax --><script src="https://cdnjs.c
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -33,7 +33,7 @@ to the FORMAT field of a VCF file."><!-- mathjax --><script src="https://cdnjs.c
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -74,27 +74,34 @@ to the <code>FORMAT</code> field of a VCF file.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">vcf_strata</span><span class="op">(</span><span class="va">data</span>, <span class="va">strata</span>, filename <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">vcf_strata</span><span class="op">(</span><span class="va">data</span>, <span class="va">strata</span>, filename <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>data</dt>
 <dd><p>A VCF file</p></dd>
+
+
 <dt>strata</dt>
 <dd><p>(optional) A tab delimited file at least 2 columns
 with header:
 <code>INDIVIDUALS</code> and <code>STRATA</code>.
 The <code>STRATA</code> and any other columns can be any hierarchical grouping.
 To create a strata file see <code><a href="individuals2strata.html">individuals2strata</a></code>.</p></dd>
+
+
 <dt>filename</dt>
 <dd><p>(optional) The file name for the modifed VCF,
 written to the working directory. Default: <code>filename = NULL</code> will make a
 custom filename with data and time.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A VCF file in the working directory with new <code>FORMAT</code> field(s)
+    
+
+<p>A VCF file in the working directory with new <code>FORMAT</code> field(s)
 correponding to the strata column(s).</p>
     </div>
     <div id="references">
@@ -125,7 +132,7 @@ Bioinformatics, 27, 2156-2158.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

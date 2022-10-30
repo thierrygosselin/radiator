@@ -240,14 +240,14 @@ sexy_markers <- function(data,
 
   # Check for when interactive.filter = FALSE ---------------------------------
   verbose <- TRUE
-  if (interactive.filter == FALSE){
+  if (interactive.filter == FALSE) {
     arguments <- c("mis.threshold.data", "mis.threshold.silicodata",
                    "threshold.y.markers", "threshold.y.silico.markers",
                    "sex.id.input", "het.qr.input", "threshold.x.markers.qr",
                    "zoom.data", "threshold.x.markers.RD", "zoom.silicodata",
                    "threshold.x.markers.RD.silico")
-    for (name in  arguments){
-      if (!exists(name)){
+    for (name in  arguments) {
+      if (!exists(name)) {
         rlang::abort("Incorrect input arguments", cat("When 'interactive.filter == FALSE' the following arguments are needed:",
                                                       arguments, sep = "\n"))
       }
@@ -338,7 +338,7 @@ sexy_markers <- function(data,
 
   # * VCF files ------------------------------------------------------------------
   if (data.type == "vcf.file") {
-    if(Sys.info()[['sysname']]=="Windows" && parallel.core != 1){
+    if (Sys.info()[['sysname']] == "Windows" && parallel.core != 1) {
       message("There is currently an issue with the cluster allocation in WINDOWS systems.\nConsequently, we set the 'parallel.core' to 1.")
       parallel.core <-  1
     }
@@ -374,7 +374,7 @@ sexy_markers <- function(data,
   }
 
 
-  if(Sys.info()[['sysname']]=="Windows" && parallel.core != 1){
+  if (Sys.info()[['sysname']] == "Windows" && parallel.core != 1) {
     message("There is currently an issue with the cluster allocation in WINDOWS systems.\nConsequently, we set the 'parallel.core' to 1. This will only affect the data-filtering time.")
     parallel.core <- 1
   }
@@ -458,7 +458,7 @@ sexy_markers <- function(data,
   gds.bk <- data
   # gds.bk -> data
 
-  if( !("vcf.file" %in% data.type)){
+  if (!("vcf.file" %in% data.type)) {
     data <- radiator::extract_genotypes_metadata(
       gds = data,
       genotypes.meta.select = c("MARKERS", "INDIVIDUALS", "GT_BIN", "READ_DEPTH"),
@@ -499,7 +499,7 @@ sexy_markers <- function(data,
         value.name = "READ_DEPTH"
       ) %>%
       tibble::as_tibble(.) %>%
-      dplyr::left_join(GT_BIN, by = c("INDIVIDUALS", "MARKERS"))%>%
+      dplyr::left_join(GT_BIN, by = c("INDIVIDUALS", "MARKERS")) %>%
       radiator::join_strata(data = .,
                             strata = strata,
                             verbose = FALSE) %>%
@@ -761,7 +761,7 @@ sexy_markers <- function(data,
     if (!is.null(threshold.y.silico.markers)) {
       if (threshold.y.silico.markers < 0) {
         y.silico.markers <- dplyr::filter(silico.sum, DIFF < threshold.y.silico.markers)$MARKERS
-      } else if (threshold.y.silico.markers > 0){
+      } else if (threshold.y.silico.markers > 0) {
         y.silico.markers <- dplyr::filter(silico.sum, DIFF > threshold.y.silico.markers)$MARKERS
       }
       res$heterogametic.silico.markers <- y.silico.markers
@@ -1213,7 +1213,7 @@ This marker could be absent due to an error.")
       message(
         "\n\nIndividuals with unknown sex ID are now included in the analysis.
         The new sex-ratio (F/M) is: ",
-        round(sex.ratio$N[sex.ratio$GENETIC_SEX=="F"] / sex.ratio$N[sex.ratio$GENETIC_SEX=="M"], 2)
+        round(sex.ratio$N[sex.ratio$GENETIC_SEX == "F"] / sex.ratio$N[sex.ratio$GENETIC_SEX == "M"], 2)
       )
       print(sex.ratio)
     } else {message("Sex ID has not changed. Sex and summary statistics are not recalculated.")}
@@ -1222,7 +1222,7 @@ This marker could be absent due to an error.")
 
   # Remove markers that are already extracted and have high missingness
   print(ggplot2::qplot(data.sum$MISSINGNESS, xlab = "Missingness per SNP marker"))
-  if(interactive.filter) {
+  if (interactive.filter) {
     mis.threshold.data <-
       radiator::radiator_question(x = "Have a look at the plot: Choose the upper threshold for missingness per SNP marker (e.g. 0.2):", minmax = c(0, 1))
 
@@ -1307,7 +1307,7 @@ This marker could be absent due to an error.")
   }
 
   # Quantilte regression
-  if(het.qr.input == 1) {
+  if (het.qr.input == 1) {
     plot.filename <- "3B.sexy_markers_HET_qr_plot"
     if (!is.null(species) && !is.null(population)) {
       plot.filename <-
@@ -1393,7 +1393,7 @@ This marker could be absent due to an error.")
     x.markers <- NULL
     res$homogametic.het.markers <- NULL
   }
-  if (length(x.markers) == 0){
+  if (length(x.markers) == 0) {
     res$homogametic.het.markers <- NULL
   }
 
@@ -1462,7 +1462,7 @@ This marker could be absent due to an error.")
     print(hist1.fig)
 
     ## INTERACTIVE ZOOM
-    if(interactive.filter){
+    if (interactive.filter) {
       zoom.data <-
         radiator::radiator_question(x = "Choose the lower OR upper threshold to subset the histogram (e.g. scaling the plot to a ratio < 0.8 or ratio > 1.2)",minmax = c(-2,2))
     } else {
@@ -1480,9 +1480,9 @@ This marker could be absent due to an error.")
 
     hist2.fig <- sex_markers_plot(
       data =
-        if(zoom.data > 1){
+        if (zoom.data > 1) {
           dplyr::filter(data.sum, RATIO > zoom.data)
-        } else if(zoom.data < 1){
+        } else if (zoom.data < 1) {
           dplyr::filter(data.sum, RATIO < zoom.data)
         },
       x = "RATIO",
@@ -1529,7 +1529,7 @@ This marker could be absent due to an error.")
       x.markers <- NULL
       res$homogametic.RD.markers <- NULL
     }
-    if (length(x.markers) == 0){
+    if (length(x.markers) == 0) {
       res$homogametic.RD.markers <- NULL
     }
   }
@@ -1601,7 +1601,7 @@ This marker could be absent due to an error.")
 
 
     ## INTERACTIVE ZOOM
-    if(interactive.filter){
+    if (interactive.filter) {
       zoom.silicodata <-
         radiator::radiator_question(x = "Choose the lower OR upper threshold to subset the histogram (e.g. scaling the plot to a ratio < 0.8 or ratio > 1.2)",minmax = c(-2,2))
     } else {
@@ -1619,9 +1619,9 @@ This marker could be absent due to an error.")
 
     hist2.fig <- sex_markers_plot(
       data =
-        if(zoom.silicodata > 1){
+        if (zoom.silicodata > 1) {
           dplyr::filter(silico.sum, RATIO > zoom.silicodata)
-        } else if(zoom.silicodata < 1){
+        } else if (zoom.silicodata < 1) {
           dplyr::filter(silico.sum, RATIO < zoom.silicodata)
         },
       x = "RATIO",
@@ -1670,7 +1670,7 @@ This marker could be absent due to an error.")
       x.markers <- NULL
       res$homogametic.RD.silico.markers <- NULL
     }
-    if (length(x.markers) == 0){
+    if (length(x.markers) == 0) {
       res$homogametic.RD.silico.markers <- NULL
     }
   }
@@ -1681,7 +1681,7 @@ This marker could be absent due to an error.")
   ## SEX MARKER SUMMARY ##
 
   ### Get the sequence metadata from the gds object
-  if(class(gds.bk) == "SeqVarGDSClass"){
+  if (class(gds.bk)[1] == "SeqVarGDSClass") {
     # Set sex-marker to whitelist and allign the sex-marker method with the markers
     meta <- radiator::extract_markers_metadata(
       gds = gds.bk,
@@ -1693,7 +1693,7 @@ This marker could be absent due to an error.")
     ) %>%
       dplyr::distinct(MARKERS, .keep_all = TRUE)
   }
-  if(!is.null(silicodata)){
+  if (!is.null(silicodata)) {
     silico <- dplyr::select(silicodata, MARKERS, SEQUENCE) %>%
       dplyr::distinct(MARKERS, .keep_all = TRUE)
   } else{
@@ -1765,7 +1765,7 @@ This marker could be absent due to an error.")
           )
       )
     # TODO add check for when SEQUENCE data is not available
-    if (tibble::has_name(meta, "SEQUENCE")){
+    if (tibble::has_name(meta, "SEQUENCE")) {
       res$sexy.summary %<>% dplyr::mutate(
         SEQUENCE =
           c(
@@ -1889,7 +1889,7 @@ This marker could be absent due to an error.")
 
 sex_markers_plot <- function(
   data, x, y, x.title = "x title", y.title = "y title", subtitle = "subtitle", title = "Big title",
-  width = 15, height = 15, scat = FALSE,tuckey = FALSE, qreg = FALSE, hist = FALSE, RD = FALSE, plot.filename = NULL) {
+  width = 15, height = 15, scat = FALSE, tuckey = FALSE, qreg = FALSE, hist = FALSE, RD = FALSE, plot.filename = NULL) {
   x <- dplyr::sym(x)
 
   element.text <- ggplot2::element_text(size = 10, face = "bold")
@@ -1916,7 +1916,7 @@ sex_markers_plot <- function(
       sex.plot <- sex.plot + ggplot2::scale_y_reverse()
     } else if (qreg) {
       sex.plot <- sex.plot
-    } else if (RD){
+    } else if (RD) {
       sex.plot <- sex.plot + ggplot2::geom_abline(slope = c(2,1,1/2))
     } else if (scat) {
       sex.plot <- sex.plot + ggplot2::scale_x_continuous(limits = c(0, 1)) +
@@ -1954,7 +1954,7 @@ sex_markers_plot <- function(
 #' @keywords internal
 #' @export
 
-summarize_sex <- function (data, silicodata, data.source, coverage.thresholds = NULL, tau = 0.3) {
+summarize_sex <- function(data, silicodata, data.source, coverage.thresholds = NULL, tau = 0.3) {
   if (tibble::has_name(data, "READ_DEPTH")) {
     # With DArT count data and VCFs
 
@@ -2006,7 +2006,7 @@ summarize_sex <- function (data, silicodata, data.source, coverage.thresholds = 
             residuals
         )
     )
-  } else if (tibble::has_name(data, "GT_BIN") ){  #genotype data
+  } else if (tibble::has_name(data, "GT_BIN") ) {  #genotype data
     mis <-
       dplyr::select(data, MARKERS, INDIVIDUALS, STRATA, GT_BIN) %>%
       dplyr::group_by(MARKERS) %>%
@@ -2086,7 +2086,7 @@ summarize_sex <- function (data, silicodata, data.source, coverage.thresholds = 
           RATIO = MEAN_READ_DEPTH_F / MEAN_READ_DEPTH_M,
           MEAN = (PRESENCE_ABSENCE_M + PRESENCE_ABSENCE_F) / 2,
           DIFF = PRESENCE_ABSENCE_M - PRESENCE_ABSENCE_F
-        )%>%
+        ) %>%
         dplyr::left_join(mis, by = "MARKERS")
     } else {
       silico.sum <- silicodata %>%
@@ -2111,7 +2111,7 @@ summarize_sex <- function (data, silicodata, data.source, coverage.thresholds = 
         dplyr::mutate(
           MEAN = (PRESENCE_ABSENCE_M + PRESENCE_ABSENCE_F) / 2,
           DIFF = PRESENCE_ABSENCE_M - PRESENCE_ABSENCE_F
-        )%>%
+        ) %>%
         dplyr::left_join(mis, by = "MARKERS")
     }
   } else {
@@ -2129,7 +2129,7 @@ summarize_sex <- function (data, silicodata, data.source, coverage.thresholds = 
 
 
 # FASTA file (different for silico)
-write_fasta <- function (sexmarkdf, filename) {
+write_fasta <- function(sexmarkdf, filename) {
   afile <- file(filename, open = 'w')
   if (!is.null(species) && !is.null(population)) {
     for (i in 1:length(sexmarkdf$MARKERS)) {

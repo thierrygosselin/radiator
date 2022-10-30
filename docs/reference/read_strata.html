@@ -21,7 +21,7 @@ and might be of interest for users."><!-- mathjax --><script src="https://cdnjs.
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -36,7 +36,7 @@ and might be of interest for users."><!-- mathjax --><script src="https://cdnjs.
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -80,18 +80,18 @@ and might be of interest for users.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">read_strata</span><span class="op">(</span>
-  <span class="va">strata</span>,
-  pop.id <span class="op">=</span> <span class="cn">FALSE</span>,
-  pop.levels <span class="op">=</span> <span class="cn">NULL</span>,
-  pop.labels <span class="op">=</span> <span class="cn">NULL</span>,
-  pop.select <span class="op">=</span> <span class="cn">NULL</span>,
-  blacklist.id <span class="op">=</span> <span class="cn">NULL</span>,
-  keep.two <span class="op">=</span> <span class="cn">TRUE</span>,
-  path.folder <span class="op">=</span> <span class="cn">NULL</span>,
-  filename <span class="op">=</span> <span class="cn">NULL</span>,
-  verbose <span class="op">=</span> <span class="cn">FALSE</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">read_strata</span><span class="op">(</span></span>
+<span>  <span class="va">strata</span>,</span>
+<span>  pop.id <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  pop.levels <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  pop.labels <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  pop.select <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  blacklist.id <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  keep.two <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  path.folder <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  filename <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -101,10 +101,14 @@ and might be of interest for users.</p>
 Additional documentation is available in <code>read_strata</code>.
 Use that function to whitelist/blacklist populations/individuals.
 Option to set <code>pop.levels/pop.labels</code> is also available.</p></dd>
+
+
 <dt>pop.id</dt>
 <dd><p>(logical) When <code>pop.id = TRUE</code>, the strata returns
 the stratification colname <code>POP_ID</code>.
 Default: <code>pop.id = FALSE</code>, returns <code>STRATA</code>.</p></dd>
+
+
 <dt>pop.levels</dt>
 <dd><p>(optional, string) This refers to the levels in a factor. In this
 case, the id of the pop.
@@ -113,6 +117,8 @@ alphabetical or numerical order. e.g. <code>pop.levels = c("QUE", "ONT", "ALB")<
 instead of the default <code>pop.levels = c("ALB", "ONT", "QUE")</code>.
 White spaces in population names are replaced by underscore.
 Default: <code>pop.levels = NULL</code>.</p></dd>
+
+
 <dt>pop.labels</dt>
 <dd><p>(optional, string) Use this argument to rename/relabel
 your pop or combine your pop. e.g. To combine <code>"QUE"</code> and <code>"ONT"</code>
@@ -127,11 +133,15 @@ Default: <code>pop.labels = NULL</code>. If you find this too complicated,
 there is also the <code>strata</code> argument that can do the same thing,
 see below.
 White spaces in population names are replaced by underscore.</p></dd>
+
+
 <dt>pop.select</dt>
 <dd><p>(optional, string) Selected list of populations for
 the analysis. e.g. <code>pop.select = c("QUE", "ONT")</code> to select <code>QUE</code>
 and <code>ONT</code> population samples (out of 20 pops).
 Default: <code>pop.select = NULL</code></p></dd>
+
+
 <dt>blacklist.id</dt>
 <dd><p>(optional, path or object) A blacklist file in the working directory
 or object in the global environment. The data frame
@@ -139,15 +149,21 @@ as 1 column (named <code>INDIVIDUALS</code>) and is filled with the individual I
 The ids are cleaned with <code><a href="clean_ind_names.html">clean_ind_names</a></code> for separators,
 only <code>-</code> are tolerated. Duplicates are removed automatically.
 Default: <code>blacklist.id = NULL</code>.</p></dd>
+
+
 <dt>keep.two</dt>
 <dd><p>(optional, logical) The output is limited to 2 columns:
 <code>INDIVIDUALS, STRATA</code>.
 Default: <code>keep.two = TRUE</code>.</p></dd>
+
+
 <dt>path.folder</dt>
 <dd><p>(optional, path)
 If <code>!is.null(blacklist.id) || !is.null(pop.select)</code>, the modified strata
 is written by default in the working directory.
 Default: <code>path.folder = getwd()</code>.</p></dd>
+
+
 <dt>filename</dt>
 <dd><p>(optional, character) If <code>!is.null(blacklist.id) ||
 !is.null(pop.select)</code>, the modified strata is written by default in the
@@ -155,14 +171,19 @@ working directory with date and time appended to <code>strata_radiator_filtered<
 to make the file unique. If you plan on writing more than 1 strata file per minute,
 use this argument to supply the unique filename.
 Default: <code>filename = NULL</code>.</p></dd>
+
+
 <dt>verbose</dt>
 <dd><p>(optional, logical) When <code>verbose = TRUE</code>
 the function is a little more chatty during execution.
 Default: <code>verbose = TRUE</code>.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p><strong>A list</strong> with several components:</p><ol><li><p>$strata</p></li>
+    
+
+<p><strong>A list</strong> with several components:</p><ol><li><p>$strata</p></li>
 <li><p>$pop.levels</p></li>
 <li><p>$pop.labels</p></li>
 <li><p>$pop.select</p></li>
@@ -216,24 +237,24 @@ See the example in <code><a href="extract_dart_target_id.html">extract_dart_targ
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in"><span class="va">strata.info</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">read_strata</span><span class="op">(</span><span class="va">strata</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># the return object is a list with 5 objects:</span></span>
-<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">strata.info</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># to get the strata</span></span>
-<span class="r-in"><span class="va">new.strata</span> <span class="op">&lt;-</span> <span class="va">strata.info</span><span class="op">$</span><span class="va">strata</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># if naything is changed from the original strata, a new strata file is</span></span>
-<span class="r-in"><span class="co"># generated automatically:</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="va">new.strata</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">read_strata</span><span class="op">(</span></span>
-<span class="r-in">    strata <span class="op">=</span> <span class="va">strata</span>,</span>
-<span class="r-in">    blacklist.id <span class="op">=</span> <span class="st">"blacklisted.ids.tsv"</span></span>
-<span class="r-in">    <span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="op">}</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span><span class="va">strata.info</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">read_strata</span><span class="op">(</span><span class="va">strata</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># the return object is a list with 5 objects:</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">strata.info</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># to get the strata</span></span></span>
+<span class="r-in"><span><span class="va">new.strata</span> <span class="op">&lt;-</span> <span class="va">strata.info</span><span class="op">$</span><span class="va">strata</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># if naything is changed from the original strata, a new strata file is</span></span></span>
+<span class="r-in"><span><span class="co"># generated automatically:</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">new.strata</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">read_strata</span><span class="op">(</span></span></span>
+<span class="r-in"><span>    strata <span class="op">=</span> <span class="va">strata</span>,</span></span>
+<span class="r-in"><span>    blacklist.id <span class="op">=</span> <span class="st">"blacklisted.ids.tsv"</span></span></span>
+<span class="r-in"><span>    <span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -248,7 +269,7 @@ See the example in <code><a href="extract_dart_target_id.html">extract_dart_targ
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

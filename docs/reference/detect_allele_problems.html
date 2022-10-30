@@ -25,7 +25,7 @@ during genotyping of heterozygote with low coverage data."><!-- mathjax --><scri
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -40,7 +40,7 @@ during genotyping of heterozygote with low coverage data."><!-- mathjax --><scri
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -88,7 +88,7 @@ during genotyping of heterozygote with low coverage data.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">detect_allele_problems</span><span class="op">(</span><span class="va">data</span>, allele.threshold <span class="op">=</span> <span class="fl">3</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span>, <span class="va">...</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">detect_allele_problems</span><span class="op">(</span><span class="va">data</span>, allele.threshold <span class="op">=</span> <span class="fl">3</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -98,32 +98,47 @@ during genotyping of heterozygote with low coverage data.</p>
 a tidy data frame in wide or long format in the working directory.
 <em>How to get a tidy data frame ?</em>
 Look into <span class="pkg">radiator</span> <code><a href="tidy_genomic_data.html">tidy_genomic_data</a></code>.</p></dd>
+
+
 <dt>allele.threshold</dt>
 <dd><p>(integer) Threshold of alternate allele copies.
 Below this threshold markers are blacklisted. Choose this threshold based
 on your tolerance for uninformative or unreliable information and
 minor allele frequency. Summary statistics for this blacklist will be calculated.
 See details for more info.</p></dd>
+
+
 <dt>verbose</dt>
 <dd><p>(optional, logical) When <code>verbose = TRUE</code>
 the function is a little more chatty during execution.
 Default: <code>verbose = TRUE</code>.</p></dd>
+
+
 <dt>...</dt>
 <dd><p>(optional) Advance mode that allows to pass further arguments
 for fine-tuning the function (see details).</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A list with summary, plot and blacklist.
+    
+
+<p>A list with summary, plot and blacklist.
 Summary statistics for the blacklisted markers are generated and include
-coverage and genotype likelihood information.
-<code>$alt.allele.count.plot</code>: Distribution of marker's alternate allele number.
-The shape is usually skewed right.
-<code>$alt.depth.count.distribution.plot</code>: Distribution of markers alternate
+coverage and genotype likelihood information.</p>
+
+
+<p><code>$alt.allele.count.plot</code>: Distribution of marker's alternate allele number.
+The shape is usually skewed right.</p>
+
+
+<p><code>$alt.depth.count.distribution.plot</code>: Distribution of markers alternate
 allele depth (in number of read). The range showed on the plot is
 between 1 and 10, and you decide your tolerance for low coverage
-and good genotype calls.
-This plot is associated with <code>$number.markers</code>, a table that shows the
+and good genotype calls.</p>
+
+
+<p>This plot is associated with <code>$number.markers</code>, a table that shows the
 number of markers &lt;= <code>allele.threshold </code>. Also in the table, the
 range of alternate allele read depth (1 to 10), same as plot but showing here
 the the cumulative number of markers. Again, would you trust a marker with only
@@ -166,16 +181,16 @@ using a blacklist of genotypes...</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in"><span class="va">problem</span> <span class="op">&lt;-</span> <span class="fu">detect_allele_problems</span><span class="op">(</span></span>
-<span class="r-in">        data <span class="op">=</span> <span class="va">salamander</span>,</span>
-<span class="r-in">        strata <span class="op">=</span> <span class="st">"strata.salmon.tsv"</span>,</span>
-<span class="r-in">        allele.threshold <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># The default with this function:</span></span>
-<span class="r-in"><span class="co"># filter.monomorphic = TRUE # = discarded</span></span>
-<span class="r-in"><span class="co"># filter.common.markers = TRUE # markers not in common between pop are discarded</span></span>
-<span class="r-in"><span class="op">}</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span><span class="va">problem</span> <span class="op">&lt;-</span> <span class="fu">detect_allele_problems</span><span class="op">(</span></span></span>
+<span class="r-in"><span>        data <span class="op">=</span> <span class="va">salamander</span>,</span></span>
+<span class="r-in"><span>        strata <span class="op">=</span> <span class="st">"strata.salmon.tsv"</span>,</span></span>
+<span class="r-in"><span>        allele.threshold <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># The default with this function:</span></span></span>
+<span class="r-in"><span><span class="co"># filter.monomorphic = TRUE # = discarded</span></span></span>
+<span class="r-in"><span><span class="co"># filter.common.markers = TRUE # markers not in common between pop are discarded</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -190,7 +205,7 @@ using a blacklist of genotypes...</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

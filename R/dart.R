@@ -1653,6 +1653,7 @@ clean_dart_colnames <- function(data, blacklist.id = NULL, dart.col.num = NULL, 
 #' dart1 = "bluefin_larvae.tsv", strata1 = "strata1_bft_larvae.tsv",
 #' dart2 = "bluefin_adults.csv", strata2 = "strata2_bft_adults.tsv")
 #' }
+#' @keywords internal
 #' @rdname merge_dart
 #' @export
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}

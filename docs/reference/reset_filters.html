@@ -18,7 +18,7 @@ Reset specific filters or all filters at once."><!-- mathjax --><script src="htt
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -33,7 +33,7 @@ Reset specific filters or all filters at once."><!-- mathjax --><script src="htt
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -74,28 +74,28 @@ Reset specific filters or all filters at once.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">reset_filters</span><span class="op">(</span>
-  <span class="va">gds</span>,
-  list.filters <span class="op">=</span> <span class="cn">TRUE</span>,
-  reset.all <span class="op">=</span> <span class="cn">FALSE</span>,
-  filter.individuals.missing <span class="op">=</span> <span class="cn">FALSE</span>,
-  filter.individuals.heterozygosity <span class="op">=</span> <span class="cn">FALSE</span>,
-  filter.individuals.coverage.total <span class="op">=</span> <span class="cn">FALSE</span>,
-  detect.mixed.genomes <span class="op">=</span> <span class="cn">FALSE</span>,
-  detect.duplicate.genomes <span class="op">=</span> <span class="cn">FALSE</span>,
-  filter.reproducibility <span class="op">=</span> <span class="cn">FALSE</span>,
-  filter.monomorphic <span class="op">=</span> <span class="cn">FALSE</span>,
-  filter.common.markers <span class="op">=</span> <span class="cn">FALSE</span>,
-  filter.mac <span class="op">=</span> <span class="cn">FALSE</span>,
-  filter.mean.coverage <span class="op">=</span> <span class="cn">FALSE</span>,
-  filter.genotyping <span class="op">=</span> <span class="cn">FALSE</span>,
-  filter.snp.position.read <span class="op">=</span> <span class="cn">FALSE</span>,
-  filter.snp.number <span class="op">=</span> <span class="cn">FALSE</span>,
-  filter.short.ld <span class="op">=</span> <span class="cn">FALSE</span>,
-  filter.long.ld <span class="op">=</span> <span class="cn">FALSE</span>,
-  filter.hwe <span class="op">=</span> <span class="cn">FALSE</span>,
-  filter.whitelist <span class="op">=</span> <span class="cn">FALSE</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">reset_filters</span><span class="op">(</span></span>
+<span>  <span class="va">gds</span>,</span>
+<span>  list.filters <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  reset.all <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  filter.individuals.missing <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  filter.individuals.heterozygosity <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  filter.individuals.coverage.total <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  detect.mixed.genomes <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  detect.duplicate.genomes <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  filter.reproducibility <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  filter.monomorphic <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  filter.common.markers <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  filter.mac <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  filter.mean.coverage <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  filter.genotyping <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  filter.snp.position.read <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  filter.snp.number <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  filter.short.ld <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  filter.long.ld <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  filter.hwe <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  filter.whitelist <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -106,63 +106,102 @@ Reset specific filters or all filters at once.</p>
 Look into <code><a href="tidy_genomic_data.html">tidy_genomic_data</a></code>,
 <code><a href="read_vcf.html">read_vcf</a></code>,
 <code><a href="tidy_vcf.html">tidy_vcf</a></code> or <code><a href="write_gds.html">write_gds</a></code>.</p></dd>
+
+
 <dt>list.filters</dt>
 <dd><p>filters (logical, optional) List current active filters for individuals and markers.
 Default: <code>list.filters = TRUE</code>.</p></dd>
+
+
 <dt>reset.all</dt>
 <dd><p>(logical, optional) Reset all individuals and markers filters.
 Default: <code>reset.all = FALSE</code>.</p></dd>
+
+
 <dt>filter.individuals.missing</dt>
 <dd><p>(logical, optional)
 Default: <code>filter.individuals.missing = FALSE</code>.</p></dd>
+
+
 <dt>filter.individuals.heterozygosity</dt>
 <dd><p>(logical, optional)
 Default: <code>filter.individuals.heterozygosity = FALSE</code>.</p></dd>
+
+
 <dt>filter.individuals.coverage.total</dt>
 <dd><p>(logical, optional)
 Default: <code>filter.individuals.coverage.total = FALSE</code>.</p></dd>
+
+
 <dt>detect.mixed.genomes</dt>
 <dd><p>(logical, optional)
 Default: <code>detect.mixed.genomes = FALSE</code>.</p></dd>
+
+
 <dt>detect.duplicate.genomes</dt>
 <dd><p>(logical, optional)
 Default: <code>detect.duplicate.genomes = FALSE</code>.</p></dd>
+
+
 <dt>filter.reproducibility</dt>
 <dd><p>(logical, optional)
 Default: <code>filter.reproducibility = FALSE</code>.</p></dd>
+
+
 <dt>filter.monomorphic</dt>
 <dd><p>(logical, optional)
 Default: <code>filter.monomorphic = FALSE</code>.</p></dd>
+
+
 <dt>filter.common.markers</dt>
 <dd><p>(logical, optional)
 Default: <code>filter.common.markers = FALSE</code>.</p></dd>
+
+
 <dt>filter.mac</dt>
 <dd><p>(logical, optional)
 Default: <code>filter.mac = FALSE</code>.</p></dd>
+
+
 <dt>filter.mean.coverage</dt>
 <dd><p>(logical, optional)
 Default: <code>filter.mean.coverage = FALSE</code>.</p></dd>
+
+
 <dt>filter.genotyping</dt>
 <dd><p>(logical, optional)
 Default: <code>filter.genotyping = FALSE</code>.</p></dd>
+
+
 <dt>filter.snp.position.read</dt>
 <dd><p>(logical, optional)
 Default: <code>filter.snp.position.read = FALSE</code>.</p></dd>
+
+
 <dt>filter.snp.number</dt>
 <dd><p>(logical, optional)
 Default: <code>filter.snp.number = FALSE</code>.</p></dd>
+
+
 <dt>filter.short.ld</dt>
 <dd><p>(logical, optional)
 Default: <code>filter.short.ld = FALSE</code>.</p></dd>
+
+
 <dt>filter.long.ld</dt>
 <dd><p>(logical, optional)
 Default: <code>filter.long.ld = FALSE</code>.</p></dd>
+
+
 <dt>filter.hwe</dt>
 <dd><p>(logical, optional)
 Default: <code>filter.hwe = FALSE</code>.</p></dd>
+
+
 <dt>filter.whitelist</dt>
 <dd><p>(logical, optional)
 Default: <code>filter.whitelist = FALSE</code>.</p></dd>
+
 </dl></div>
     <div id="see-also">
     <h2>See also</h2>
@@ -175,14 +214,14 @@ Default: <code>filter.whitelist = FALSE</code>.</p></dd>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in"><span class="co"># List active filters for individuals and markers</span></span>
-<span class="r-in"><span class="fu">reset_filters</span><span class="op">(</span><span class="va">gds</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># You changed your decision concerning the genotyping threshold or</span></span>
-<span class="r-in"><span class="co"># entered the wrong one:</span></span>
-<span class="r-in"><span class="fu">reset_filters</span><span class="op">(</span><span class="va">gds</span>, filter.genotyping <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span class="r-in"><span class="op">}</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span><span class="co"># List active filters for individuals and markers</span></span></span>
+<span class="r-in"><span><span class="fu">reset_filters</span><span class="op">(</span><span class="va">gds</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># You changed your decision concerning the genotyping threshold or</span></span></span>
+<span class="r-in"><span><span class="co"># entered the wrong one:</span></span></span>
+<span class="r-in"><span><span class="fu">reset_filters</span><span class="op">(</span><span class="va">gds</span>, filter.genotyping <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -197,7 +236,7 @@ Default: <code>filter.whitelist = FALSE</code>.</p></dd>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

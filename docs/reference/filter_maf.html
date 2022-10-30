@@ -20,7 +20,7 @@ tidy_genomic_data."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/aj
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -35,7 +35,7 @@ tidy_genomic_data."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/aj
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -78,16 +78,16 @@ Remove markers based on Minor/Alternate Allele Frequency (MAF) or Count (MAC).</
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">filter_maf</span><span class="op">(</span>
-  interactive.filter <span class="op">=</span> <span class="cn">TRUE</span>,
-  <span class="va">data</span>,
-  strata <span class="op">=</span> <span class="cn">NULL</span>,
-  maf.thresholds <span class="op">=</span> <span class="cn">NULL</span>,
-  filename <span class="op">=</span> <span class="cn">NULL</span>,
-  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,
-  verbose <span class="op">=</span> <span class="cn">TRUE</span>,
-  <span class="va">...</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">filter_maf</span><span class="op">(</span></span>
+<span>  interactive.filter <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  <span class="va">data</span>,</span>
+<span>  strata <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  maf.thresholds <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  filename <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -96,6 +96,8 @@ Remove markers based on Minor/Alternate Allele Frequency (MAF) or Count (MAC).</
 <dd><p>(optional, logical) Do you want the filtering session to
 be interactive. With default: <code>interactive.filter == TRUE</code>, figures and
 tables are shown before making decisions for filtering.</p></dd>
+
+
 <dt>data</dt>
 <dd><p>14 options for input (<strong>diploid data only</strong>): VCFs (SNPs or Haplotypes,
 to make the vcf population ready),
@@ -110,6 +112,8 @@ and genotypes if you are using a VCF file with no genotype
 Neither is <span class="pkg">radiator</span> able to magically generate a genind object
 from a SilicoDArT dataset. Please look at the first few lines of your dataset
 to understand it's limit before asking raditor to convert or filter your dataset.</p></dd>
+
+
 <dt>strata</dt>
 <dd><p>(optional)
 The strata file is a tab delimited file with a minimum of 2 columns headers:
@@ -118,6 +122,8 @@ DArT data: a third column <code>TARGET_ID</code> is required.
 Documented on <code><a href="read_dart.html">read_dart</a></code>. Also use the strata read function to
 blacklist individuals.
 Default: <code>strata = NULL</code>.</p></dd>
+
+
 <dt>maf.thresholds</dt>
 <dd><p>(optional, string) 5 values required in the string.</p>
 <p>Example using maf.thresholds with SNP and frequency approach:
@@ -151,26 +157,37 @@ The number of pop required to pass the thresholds
 to keep the marker. Usually, I always use <code>1</code>, for 1 pop is required to
 pass thresholds and keep the marker.</p></li>
 </ol></dd>
+
+
 <dt>filename</dt>
 <dd><p>(optional, character) Write to folder the MAF filtered
 tidy dataset. The name will be appended <code>.rad</code>. With default, the filtered
 data is only in the global environment.
 Default: <code>filename = NULL</code>.</p></dd>
+
+
 <dt>parallel.core</dt>
 <dd><p>(optional) The number of core used for parallel
 execution during import.
 Default: <code>parallel.core = parallel::detectCores() - 1</code>.</p></dd>
+
+
 <dt>verbose</dt>
 <dd><p>(optional, logical) When <code>verbose = TRUE</code>
 the function is a little more chatty during execution.
 Default: <code>verbose = TRUE</code>.</p></dd>
+
+
 <dt>...</dt>
 <dd><p>(optional) To pass further arguments for fine-tuning the function
 and legacy arguments (see Life cycle section below).</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>With <code>interactive.filter = FALSE</code>, a list in the global environment,
+    
+
+<p>With <code>interactive.filter = FALSE</code>, a list in the global environment,
 with 7 objects:</p><ol><li><p>$tidy.filtered.maf</p></li>
 <li><p>$whitelist.markers</p></li>
 <li><p>$blacklist.markers</p></li>
@@ -180,10 +197,18 @@ with 7 objects:</p><ol><li><p>$tidy.filtered.maf</p></li>
 <li><p>$distribution.maf.local</p></li>
 <li><p>$maf.global.summary</p></li>
 <li><p>$maf.helper.table</p></li>
-</ol><p><strong>maf.helper.table:</strong>First and second variables (in columns) represents POP_ID and sample size (n).
-The last 2 rows are the local MAF (suggested based on the lowest pop value)
-and the TOTAL/GLOBAL observations.
-Columns starting with ALT are the variable corresponding
+</ol><p><strong>maf.helper.table:</strong></p>
+
+
+
+<p>First and second variables (in columns) represents POP_ID and sample size (n).</p>
+
+
+<p>The last 2 rows are the local MAF (suggested based on the lowest pop value)
+and the TOTAL/GLOBAL observations.</p>
+
+
+<p>Columns starting with ALT are the variable corresponding
 to the number of alternative (ALT) allele (ranging from 1 to 20).
 The observations in the ALT allele variable columns are the local (for the pop)
 and global (last row) MAF of your dataset.
@@ -248,34 +273,34 @@ use the interactive version.</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in"><span class="co"># The minumum</span></span>
-<span class="r-in"><span class="va">turtle.maf</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">filter_maf</span><span class="op">(</span></span>
-<span class="r-in">        data <span class="op">=</span> <span class="st">"turtle.vcf"</span>,</span>
-<span class="r-in">        strata <span class="op">=</span> <span class="st">"turtle.strata.tsv"</span><span class="op">)</span></span>
-<span class="r-in"><span class="co"># This will use the default: interactive version,</span></span>
-<span class="r-in"><span class="co"># a list is created and to view the filtered tidy data:</span></span>
-<span class="r-in"><span class="va">tidy.data</span> <span class="op">&lt;-</span> <span class="va">turtle.maf</span><span class="op">$</span><span class="va">tidy.filtered.maf</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># The remaining argument are used in tidy_genomic_data during import and allow</span></span>
-<span class="r-in"><span class="co"># the user to apply some filtering or selection before doing the MAF filtering.</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># If I want to filter Alternate alleles based on count.</span></span>
-<span class="r-in"><span class="va">turtle.maf</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">filter_maf</span><span class="op">(</span></span>
-<span class="r-in">        data <span class="op">=</span> <span class="st">"turtle.vcf"</span>,</span>
-<span class="r-in">        strata <span class="op">=</span> <span class="st">"turtle.strata.tsv"</span>,</span>
-<span class="r-in">        maf.thresholds <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SNP"</span>, <span class="fl">3</span>, <span class="st">"OR"</span>, <span class="st">"5"</span>, <span class="fl">1</span><span class="op">)</span>,</span>
-<span class="r-in">        filename <span class="op">=</span> <span class="st">"turtle.maf"</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># This will remove monomorphic markers (by default filter.monomorphic = TRUE)</span></span>
-<span class="r-in"><span class="co"># it will use the SNP approache (SNPs are considered independent and</span></span>
-<span class="r-in"><span class="co"># filtered independent)</span></span>
-<span class="r-in"><span class="co"># I keep markers if: they have a local count of 3 alternate allele OR global</span></span>
-<span class="r-in"><span class="co"># count of 5 alternate allele.</span></span>
-<span class="r-in"><span class="co"># I keep the marker if at leat 1 pop pass that.</span></span>
-<span class="r-in"><span class="co"># finally the filtered data will be written in the directory under the name:</span></span>
-<span class="r-in"><span class="co"># turtle.maf.rad</span></span>
-<span class="r-in"><span class="op">}</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span><span class="co"># The minumum</span></span></span>
+<span class="r-in"><span><span class="va">turtle.maf</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">filter_maf</span><span class="op">(</span></span></span>
+<span class="r-in"><span>        data <span class="op">=</span> <span class="st">"turtle.vcf"</span>,</span></span>
+<span class="r-in"><span>        strata <span class="op">=</span> <span class="st">"turtle.strata.tsv"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># This will use the default: interactive version,</span></span></span>
+<span class="r-in"><span><span class="co"># a list is created and to view the filtered tidy data:</span></span></span>
+<span class="r-in"><span><span class="va">tidy.data</span> <span class="op">&lt;-</span> <span class="va">turtle.maf</span><span class="op">$</span><span class="va">tidy.filtered.maf</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># The remaining argument are used in tidy_genomic_data during import and allow</span></span></span>
+<span class="r-in"><span><span class="co"># the user to apply some filtering or selection before doing the MAF filtering.</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># If I want to filter Alternate alleles based on count.</span></span></span>
+<span class="r-in"><span><span class="va">turtle.maf</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">filter_maf</span><span class="op">(</span></span></span>
+<span class="r-in"><span>        data <span class="op">=</span> <span class="st">"turtle.vcf"</span>,</span></span>
+<span class="r-in"><span>        strata <span class="op">=</span> <span class="st">"turtle.strata.tsv"</span>,</span></span>
+<span class="r-in"><span>        maf.thresholds <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SNP"</span>, <span class="fl">3</span>, <span class="st">"OR"</span>, <span class="st">"5"</span>, <span class="fl">1</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>        filename <span class="op">=</span> <span class="st">"turtle.maf"</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># This will remove monomorphic markers (by default filter.monomorphic = TRUE)</span></span></span>
+<span class="r-in"><span><span class="co"># it will use the SNP approache (SNPs are considered independent and</span></span></span>
+<span class="r-in"><span><span class="co"># filtered independent)</span></span></span>
+<span class="r-in"><span><span class="co"># I keep markers if: they have a local count of 3 alternate allele OR global</span></span></span>
+<span class="r-in"><span><span class="co"># count of 5 alternate allele.</span></span></span>
+<span class="r-in"><span><span class="co"># I keep the marker if at leat 1 pop pass that.</span></span></span>
+<span class="r-in"><span><span class="co"># finally the filtered data will be written in the directory under the name:</span></span></span>
+<span class="r-in"><span><span class="co"># turtle.maf.rad</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -290,7 +315,7 @@ use the interactive version.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

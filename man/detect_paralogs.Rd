@@ -114,7 +114,7 @@ Chinook_sequenceReads.vcf?sequence=1"),
 as = "raw"), con = "chinook.vcf")
 
 # Import VCF and run the function
-chinook.paralogs <- radiator::read_vcf(data = "chinook.vcf") \%>\%
+chinook.paralogs <- radiator::read_vcf(data = "chinook.vcf", vcf.stats = FALSE) \%>\%
     radiator::detect_paralogs(data = .)
 }
 }

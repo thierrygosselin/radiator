@@ -20,7 +20,7 @@ genotype likelihood thresholds and ii) erase those blacklisted genotypes from
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -35,7 +35,7 @@ genotype likelihood thresholds and ii) erase those blacklisted genotypes from
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -78,37 +78,50 @@ genotype likelihood thresholds and ii) erase those blacklisted genotypes from
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">erase_genotypes</span><span class="op">(</span>
-  <span class="va">tidy.vcf.file</span>,
-  <span class="va">haplotypes.file</span>,
-  <span class="va">read.depth.threshold</span>,
-  <span class="va">allele.depth.threshold</span>,
-  <span class="va">allele.imbalance.threshold</span>,
-  <span class="va">filename</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">erase_genotypes</span><span class="op">(</span></span>
+<span>  <span class="va">tidy.vcf.file</span>,</span>
+<span>  <span class="va">haplotypes.file</span>,</span>
+<span>  <span class="va">read.depth.threshold</span>,</span>
+<span>  <span class="va">allele.depth.threshold</span>,</span>
+<span>  <span class="va">allele.imbalance.threshold</span>,</span>
+<span>  <span class="va">filename</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>tidy.vcf.file</dt>
 <dd><p>A data frame object or file (using ".tsv") of a tidy vcf.</p></dd>
+
+
 <dt>haplotypes.file</dt>
 <dd><p>(optional) The 'batch_x.haplotypes.tsv'. If you want to
 erase the genotypes that don't pass the threshold.</p></dd>
+
+
 <dt>read.depth.threshold</dt>
 <dd><p>(integer) Threshold for the read depth.</p></dd>
+
+
 <dt>allele.depth.threshold</dt>
 <dd><p>(integer) Threhold for the min depth
 of REF or ALT alleles.</p></dd>
+
+
 <dt>allele.imbalance.threshold</dt>
 <dd><p>(numeric) Threshold of ratio between ALT and REF
 depth of coverage. See details below.</p></dd>
+
+
 <dt>filename</dt>
 <dd><p>(optional) Name of the file written to the working directory.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>The function returns the blacklisted individuals genotypes,
+    
+
+<p>The function returns the blacklisted individuals genotypes,
 by loci, position (SNP, POS in stacks), populations and individuals.
 For VCF, return the tidy vcf in the global environment only and in
 the directory with <code>filename</code>. For haplotype file the original
@@ -141,7 +154,7 @@ use positive values, the function will calculate the +/- imbalance.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

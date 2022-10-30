@@ -20,7 +20,7 @@ Statistics: Reproducibility (established by DArT)"><!-- mathjax --><script src="
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -35,7 +35,7 @@ Statistics: Reproducibility (established by DArT)"><!-- mathjax --><script src="
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -78,14 +78,14 @@ Based on the repoducibility column found in DArT files.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">filter_dart_reproducibility</span><span class="op">(</span>
-  <span class="va">data</span>,
-  interactive.filter <span class="op">=</span> <span class="cn">TRUE</span>,
-  filter.reproducibility <span class="op">=</span> <span class="cn">NULL</span>,
-  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,
-  verbose <span class="op">=</span> <span class="cn">TRUE</span>,
-  <span class="va">...</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">filter_dart_reproducibility</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
+<span>  interactive.filter <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  filter.reproducibility <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -97,33 +97,46 @@ Based on the repoducibility column found in DArT files.</p>
 Look into <code><a href="tidy_genomic_data.html">tidy_genomic_data</a></code>,
 <code><a href="read_vcf.html">read_vcf</a></code> or
 <code><a href="tidy_vcf.html">tidy_vcf</a></code>.</p></dd>
+
+
 <dt>interactive.filter</dt>
 <dd><p>(optional, logical) Do you want the filtering session to
 be interactive. Figures of distribution are shown before asking for filtering
 thresholds.
 Default: <code>interactive.filter = TRUE</code>.</p></dd>
+
+
 <dt>filter.reproducibility</dt>
 <dd><p>(double, character) This is best decided after viewing the figures.
 Usually values higher than 0.95 are not uncommon.
 The value can also be character: <code>filter.reproducibility = "outliers"</code>.
 Using this, will remove outlier markers using the lower outlier statistics.
 Default: <code>filter.reproducibility = NULL</code>.</p></dd>
+
+
 <dt>parallel.core</dt>
 <dd><p>(optional) The number of core used for parallel
 execution during import.
 Default: <code>parallel.core = parallel::detectCores() - 1</code>.</p></dd>
+
+
 <dt>verbose</dt>
 <dd><p>(optional, logical) When <code>verbose = TRUE</code>
 the function is a little more chatty during execution.
 Default: <code>verbose = TRUE</code>.</p></dd>
+
+
 <dt>...</dt>
 <dd><p>(optional) Advance mode that allows to pass further arguments
 for fine-tuning the function. Also used for legacy arguments (see details or
 special section)</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A list in the global environment with 6 objects:</p><ol><li><p>$whitelist.markers</p></li>
+    
+
+<p>A list in the global environment with 6 objects:</p><ol><li><p>$whitelist.markers</p></li>
 <li><p>$blacklist.markers</p></li>
 <li><p>$filters.parameters</p></li>
 </ol><p>The object can be isolated in separate object outside the list by
@@ -140,16 +153,16 @@ the data based on the reproducibility value:</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in"><span class="va">spotted.cod</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu"><a href="read_dart.html">read_dart</a></span><span class="op">(</span></span>
-<span class="r-in">    data <span class="op">=</span> <span class="st">"Combined_1514and1614_SNP_80Callrate.csv"</span>,</span>
-<span class="r-in">    strata <span class="op">=</span> <span class="st">"strata.dart.spotted.cod.tsv"</span></span>
-<span class="r-in"><span class="op">)</span></span>
-<span class="r-in"><span class="va">turtle.filtered</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">filter_dart_reproducibility</span><span class="op">(</span></span>
-<span class="r-in">    data <span class="op">=</span> <span class="va">spotted.cod</span>,</span>
-<span class="r-in">    filter.reproducibility <span class="op">=</span> <span class="fl">0.97</span></span>
-<span class="r-in"><span class="op">)</span></span>
-<span class="r-in"><span class="op">}</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span><span class="va">spotted.cod</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu"><a href="read_dart.html">read_dart</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    data <span class="op">=</span> <span class="st">"Combined_1514and1614_SNP_80Callrate.csv"</span>,</span></span>
+<span class="r-in"><span>    strata <span class="op">=</span> <span class="st">"strata.dart.spotted.cod.tsv"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">turtle.filtered</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">filter_dart_reproducibility</span><span class="op">(</span></span></span>
+<span class="r-in"><span>    data <span class="op">=</span> <span class="va">spotted.cod</span>,</span></span>
+<span class="r-in"><span>    filter.reproducibility <span class="op">=</span> <span class="fl">0.97</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -164,7 +177,7 @@ the data based on the reproducibility value:</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

@@ -19,7 +19,7 @@ and might be of interest for users."><!-- mathjax --><script src="https://cdnjs.
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -34,7 +34,7 @@ and might be of interest for users."><!-- mathjax --><script src="https://cdnjs.
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -76,14 +76,14 @@ and might be of interest for users.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">tidy_genlight</span><span class="op">(</span>
-  <span class="va">data</span>,
-  tidy <span class="op">=</span> <span class="cn">TRUE</span>,
-  gds <span class="op">=</span> <span class="cn">TRUE</span>,
-  write <span class="op">=</span> <span class="cn">FALSE</span>,
-  verbose <span class="op">=</span> <span class="cn">FALSE</span>,
-  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">tidy_genlight</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
+<span>  tidy <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  gds <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  write <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -91,24 +91,35 @@ and might be of interest for users.</p>
     <dl><dt>data</dt>
 <dd><p>(path or object) A genlight object in the global environment or
 path to a genlight file that will be open with <code>readRDS</code>.</p></dd>
+
+
 <dt>tidy</dt>
 <dd><p>(logical) Generate a tidy dataset.
 Default: <code>tidy = TRUE</code>.</p></dd>
+
+
 <dt>gds</dt>
 <dd><p>(optional, logical) To write a radiator gds object.
 Default: <code>gds = TRUE</code>.</p></dd>
+
+
 <dt>write</dt>
 <dd><p>(optional, logical) To write in the working directory the tidy
 data. The file is written with <code>radiator_genlight_DATE@TIME.rad</code>.
 Default: <code>write = FALSE</code>.</p></dd>
+
+
 <dt>verbose</dt>
 <dd><p>(optional, logical) When <code>verbose = TRUE</code>
 the function is a little more chatty during execution.
 Default: <code>verbose = TRUE</code>.</p></dd>
+
+
 <dt>parallel.core</dt>
 <dd><p>(optional) The number of core used for parallel
 execution during import.
 Default: <code>parallel.core = parallel::detectCores() - 1</code>.</p></dd>
+
 </dl></div>
     <div id="details">
     <h2>Details</h2>
@@ -147,7 +158,7 @@ Bioinformatics, 27, 3070-3071.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

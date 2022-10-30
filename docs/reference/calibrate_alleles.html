@@ -24,7 +24,7 @@ and might be of interest for users."><!-- mathjax --><script src="https://cdnjs.
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -39,7 +39,7 @@ and might be of interest for users."><!-- mathjax --><script src="https://cdnjs.
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -86,13 +86,13 @@ and might be of interest for users.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">calibrate_alleles</span><span class="op">(</span>
-  <span class="va">data</span>,
-  biallelic <span class="op">=</span> <span class="cn">NULL</span>,
-  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,
-  verbose <span class="op">=</span> <span class="cn">FALSE</span>,
-  <span class="va">...</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">calibrate_alleles</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
+<span>  biallelic <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -100,26 +100,37 @@ and might be of interest for users.</p>
     <dl><dt>data</dt>
 <dd><p>A genomic data set in the global environment tidy formats.
 See details for more info.</p></dd>
+
+
 <dt>biallelic</dt>
 <dd><p>(optional) If <code>biallelic = TRUE/FALSE</code> will be use
 during multiallelic REF/ALT decision and speed up computations.
 Default: <code>biallelic = NULL</code>.</p></dd>
+
+
 <dt>parallel.core</dt>
 <dd><p>(optional) The number of core used for parallel
 execution. This is no longer used. The code is as fast as it can. Using
 more cores will reduce the speed.
 Default: <code>parallel.core = parallel::detectCores() - 1</code>.</p></dd>
+
+
 <dt>verbose</dt>
 <dd><p>(optional, logical) <code>verbose = TRUE</code> to be chatty
 during execution.
 Default: <code>verbose = FALSE</code>.</p></dd>
+
+
 <dt>...</dt>
 <dd><p>(optional) To pass further argument for fine-tuning the tidying
 (details below).</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>Depending if the input file is biallelic or multiallelic,
+    
+
+<p>Depending if the input file is biallelic or multiallelic,
 the function will output additional to REF and ALT column several genotype codings:</p><ul><li><p><code>GT</code>: the genotype in 6 digits format with integers.</p></li>
 <li><p><code>GT_VCF</code>: the genotype in VCF format with integers.</p></li>
 <li><p><code>GT_VCF_NUC</code>: the genotype in VCF format with letters corresponding to nucleotide.</p></li>
@@ -154,7 +165,7 @@ A minimum of 4 columns are required (the rest are considered metata info):</p><o
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

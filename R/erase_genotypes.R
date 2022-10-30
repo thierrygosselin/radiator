@@ -29,6 +29,7 @@
 #' the directory with \code{filename}. For haplotype file the original
 #' filename with "_erased_geno" is appended.
 #' @rdname erase_genotypes
+#' @keywords internal
 #' @export
 
 erase_genotypes <- function(tidy.vcf.file, haplotypes.file, read.depth.threshold, allele.depth.threshold, allele.imbalance.threshold, filename) {

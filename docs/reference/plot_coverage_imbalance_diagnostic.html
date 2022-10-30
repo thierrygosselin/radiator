@@ -21,7 +21,7 @@ alleles will highlight the problem in you data."><!-- mathjax --><script src="ht
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -36,7 +36,7 @@ alleles will highlight the problem in you data."><!-- mathjax --><script src="ht
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -80,32 +80,43 @@ alleles will highlight the problem in you data.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">plot_coverage_imbalance_diagnostic</span><span class="op">(</span>
-  <span class="va">tidy.vcf.file</span>,
-  <span class="va">pop.levels</span>,
-  <span class="va">read.depth.threshold</span>,
-  <span class="va">aes.colour</span>,
-  <span class="va">adjust.bin</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">plot_coverage_imbalance_diagnostic</span><span class="op">(</span></span>
+<span>  <span class="va">tidy.vcf.file</span>,</span>
+<span>  <span class="va">pop.levels</span>,</span>
+<span>  <span class="va">read.depth.threshold</span>,</span>
+<span>  <span class="va">aes.colour</span>,</span>
+<span>  <span class="va">adjust.bin</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>tidy.vcf.file</dt>
 <dd><p>The tidy VCF file created with tidy_genomic_data.</p></dd>
+
+
 <dt>pop.levels</dt>
 <dd><p>Character string defining your ordered populations.</p></dd>
+
+
 <dt>read.depth.threshold</dt>
 <dd><p>Define the threshold you wish to analyse.</p></dd>
+
+
 <dt>aes.colour</dt>
 <dd><p>GGPLOT2 aesthetics,
 e.g. aes(y = ..count..).</p></dd>
+
+
 <dt>adjust.bin</dt>
 <dd><p>Adjust GGPLOT2 bin size (0 to 1).</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>4-plots highlighting the different combination of under
+    
+
+<p>4-plots highlighting the different combination of under
  or over the coverage threshold and mean genotype likelihood.
  Y- axis show the distribution of genotypes.
  X- axis show the coverage imbalance the
@@ -138,7 +149,7 @@ Use ( fig + facet_grid(GROUP_GL ~ GROUP_COVERAGE)). The ratio is calculated :
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -32,7 +32,7 @@
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -72,7 +72,7 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">detect_ref_genome</span><span class="op">(</span>chromosome <span class="op">=</span> <span class="cn">NULL</span>, data <span class="op">=</span> <span class="cn">NULL</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">detect_ref_genome</span><span class="op">(</span>chromosome <span class="op">=</span> <span class="cn">NULL</span>, data <span class="op">=</span> <span class="cn">NULL</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -80,6 +80,8 @@
     <dl><dt>chromosome</dt>
 <dd><p>(string) String with chromosome ID, unique or not.
 Default: <code>chromosome = NULL</code>.</p></dd>
+
+
 <dt>data</dt>
 <dd><p>(optional, path or object) radiator GDS object or file. When this
 argument is used, the function look inside the GDS radiator node for:</p><ul><li><p><code>reference.genome</code> node and <code>TRUE/FALSE</code> value</p></li>
@@ -87,14 +89,19 @@ argument is used, the function look inside the GDS radiator node for:</p><ul><li
 column</p></li>
 <li><p><code>chromosome</code> node directly.</p></li>
 </ul><p>Default: <code>data = NULL</code>.</p></dd>
+
+
 <dt>verbose</dt>
 <dd><p>(optional, logical) When <code>verbose = TRUE</code>
 the function is a little more chatty during execution.
 Default: <code>verbose = TRUE</code>.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>TRUE/FALSE if dataset is assembled with a reference genome or not.</p>
+    
+
+<p>TRUE/FALSE if dataset is assembled with a reference genome or not.</p>
     </div>
     <div id="author">
     <h2>Author</h2>
@@ -103,9 +110,9 @@ Default: <code>verbose = TRUE</code>.</p></dd>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in"><span class="va">ref.genome</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">detect_ref_genome</span><span class="op">(</span>chromosome <span class="op">=</span> <span class="va">tidy.data</span><span class="op">$</span><span class="va">CHROM</span><span class="op">)</span></span>
-<span class="r-in"><span class="op">}</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span><span class="va">ref.genome</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">detect_ref_genome</span><span class="op">(</span>chromosome <span class="op">=</span> <span class="va">tidy.data</span><span class="op">$</span><span class="va">CHROM</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -120,7 +127,7 @@ Default: <code>verbose = TRUE</code>.</p></dd>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

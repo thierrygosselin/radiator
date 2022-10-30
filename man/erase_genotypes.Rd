@@ -55,3 +55,4 @@ depth REF allele).
 e.g. REF = 3 and ALT = 2 the ratio = -0.2. For the function to work properly,
 use positive values, the function will calculate the +/- imbalance.
 }
+\keyword{internal}

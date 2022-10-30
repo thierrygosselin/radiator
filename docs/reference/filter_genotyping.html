@@ -20,7 +20,7 @@ Statistics: mean genotyping/call rate (missingness information)."><!-- mathjax -
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -35,7 +35,7 @@ Statistics: mean genotyping/call rate (missingness information)."><!-- mathjax -
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -78,15 +78,15 @@ based on genotyping/call rate.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">filter_genotyping</span><span class="op">(</span>
-  <span class="va">data</span>,
-  interactive.filter <span class="op">=</span> <span class="cn">TRUE</span>,
-  filter.genotyping <span class="op">=</span> <span class="cn">NULL</span>,
-  filename <span class="op">=</span> <span class="cn">NULL</span>,
-  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,
-  verbose <span class="op">=</span> <span class="cn">TRUE</span>,
-  <span class="va">...</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">filter_genotyping</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
+<span>  interactive.filter <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  filter.genotyping <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  filename <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -98,34 +98,49 @@ based on genotyping/call rate.</p>
 Look into <code><a href="tidy_genomic_data.html">tidy_genomic_data</a></code>,
 <code><a href="read_vcf.html">read_vcf</a></code> or
 <code><a href="tidy_vcf.html">tidy_vcf</a></code>.</p></dd>
+
+
 <dt>interactive.filter</dt>
 <dd><p>(optional, logical) Do you want the filtering session to
 be interactive. With default: <code>interactive.filter == TRUE</code>, figures and
 tables are shown before making decisions for filtering.</p></dd>
+
+
 <dt>filter.genotyping</dt>
 <dd><p>(optional, string) 2 options:</p><ul><li><p>character string <code>filter.genotyping = "outliers"</code> will use as
 thresholds the higher outlier values in the box plot.</p></li>
 <li><p>double <code>filter.genotyping = 0.2</code>. Will allow up to 0.2 missing genotypes.</p></li>
 </ul><p>Default: <code>filter.genotyping = NULL</code>.</p></dd>
+
+
 <dt>filename</dt>
 <dd><p>(optional, character)
 Default: <code>filename = NULL</code>.</p></dd>
+
+
 <dt>parallel.core</dt>
 <dd><p>(optional) The number of core used for parallel
 execution during import.
 Default: <code>parallel.core = parallel::detectCores() - 1</code>.</p></dd>
+
+
 <dt>verbose</dt>
 <dd><p>(optional, logical) When <code>verbose = TRUE</code>
 the function is a little more chatty during execution.
 Default: <code>verbose = TRUE</code>.</p></dd>
+
+
 <dt>...</dt>
 <dd><p>(optional) Advance mode that allows to pass further arguments
 for fine-tuning the function. Also used for legacy arguments (see details or
 special section)</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>With <code>interactive.filter = FALSE</code>, a list in the global environment,
+    
+
+<p>With <code>interactive.filter = FALSE</code>, a list in the global environment,
 with 7 objects:</p><ol><li><p>$tidy.filtered.mac</p></li>
 <li><p>$whitelist.markers</p></li>
 <li><p>$blacklist.markers</p></li>
@@ -170,9 +185,9 @@ If the supplied directory doesn't exist, it's created.</p></li>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in"><span class="co"># The minumum</span></span>
-<span class="r-in"><span class="op">}</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span><span class="co"># The minumum</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -187,7 +202,7 @@ If the supplied directory doesn't exist, it's created.</p></li>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

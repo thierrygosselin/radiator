@@ -24,7 +24,7 @@ pairwise genome similarity
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -39,7 +39,7 @@ pairwise genome similarity
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -82,19 +82,19 @@ to highligh potential duplicate individuals.</p><ol><li><p>distance between indi
 </ol></div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">detect_duplicate_genomes</span><span class="op">(</span>
-  <span class="va">data</span>,
-  interactive.filter <span class="op">=</span> <span class="cn">TRUE</span>,
-  detect.duplicate.genomes <span class="op">=</span> <span class="cn">TRUE</span>,
-  dup.threshold <span class="op">=</span> <span class="fl">0</span>,
-  distance.method <span class="op">=</span> <span class="st">"manhattan"</span>,
-  genome <span class="op">=</span> <span class="cn">FALSE</span>,
-  threshold.common.markers <span class="op">=</span> <span class="cn">NULL</span>,
-  blacklist.duplicates <span class="op">=</span> <span class="cn">FALSE</span>,
-  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,
-  verbose <span class="op">=</span> <span class="cn">TRUE</span>,
-  <span class="va">...</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">detect_duplicate_genomes</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
+<span>  interactive.filter <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  detect.duplicate.genomes <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  dup.threshold <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  distance.method <span class="op">=</span> <span class="st">"manhattan"</span>,</span>
+<span>  genome <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  threshold.common.markers <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  blacklist.duplicates <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -106,16 +106,24 @@ to highligh potential duplicate individuals.</p><ol><li><p>distance between indi
 Look into <code><a href="tidy_genomic_data.html">tidy_genomic_data</a></code>,
 <code><a href="read_vcf.html">read_vcf</a></code> or
 <code><a href="tidy_vcf.html">tidy_vcf</a></code>.</p></dd>
+
+
 <dt>interactive.filter</dt>
 <dd><p>(optional, logical) Do you want the filtering session to
 be interactive. Figures of distribution are shown before asking for filtering
 thresholds.
 Default: <code>interactive.filter = TRUE</code>.</p></dd>
+
+
 <dt>detect.duplicate.genomes</dt>
 <dd><p>(optional, logical) For use inside radiator pipelines.
 Default: <code>detect.duplicate.genomes = TRUE</code>.</p></dd>
+
+
 <dt>dup.threshold</dt>
 <dd><p>Default: <code>dup.threshold = 0</code>. Turn off filter.</p></dd>
+
+
 <dt>distance.method</dt>
 <dd><p>(character) Depending on input data, 2 different methods
 are used (give similar results):</p><ul><li><p>gds data The calculation is fast it's <code><a href="https://rdrr.io/pkg/SNPRelate/man/snpgdsIBS.html" class="external-link">SNPRelate::snpgdsIBS</a></code> under
@@ -126,6 +134,8 @@ This must be one of "euclidean", "maximum", "manhattan", "canberra", "binary".</
 Default: <code>distance.method = "manhattan"</code>. This is very fast
 compared to the genome similarity method. It uses allele counts and the codes
 are tailored for biallelic and multiallelic markers.</p></dd>
+
+
 <dt>genome</dt>
 <dd><p>(logical) Computes pairwise genome similarity in parallel.
 The proportion of the shared genotypes is averaged across shared markers between
@@ -133,6 +143,8 @@ each pairwise comparison. This method makes filtering easier because the
 threshold is more intuitive with the plots produced, but it's much longer
 to run, even in parallel, so better to run overnight.
 Default: <code>genome = FALSE</code>.</p></dd>
+
+
 <dt>threshold.common.markers</dt>
 <dd><p>(double, optional) When using the
 pairwise genome similarity approach (<code>genome = TRUE</code>), using a threshold
@@ -142,28 +154,39 @@ allows to reduce the number of false positive, when missing data is involved.
 e.g. 2 samples might have 100<!-- % markers in common, but if they only have -->
 30<!-- % of their genotyped markers in common, this is a poor fit. -->
 Default: <code>threshold.common.markers = NULL</code>.</p></dd>
+
+
 <dt>blacklist.duplicates</dt>
 <dd><p>(optional, logical)
 With <code>blacklist.duplicates = TRUE</code>, after visualization,
 the user is asked to enter a threshold to filter out duplicates.
 With default, <code>blacklist.duplicates = FALSE</code>, the function as no
 interaction with user.</p></dd>
+
+
 <dt>parallel.core</dt>
 <dd><p>(optional) The number of core used for parallel
 execution during import.
 Default: <code>parallel.core = parallel::detectCores() - 1</code>.</p></dd>
+
+
 <dt>verbose</dt>
 <dd><p>(optional, logical) When <code>verbose = TRUE</code>
 the function is a little more chatty during execution.
 Default: <code>verbose = TRUE</code>.</p></dd>
+
+
 <dt>...</dt>
 <dd><p>(optional) Advance mode that allows to pass further arguments
 for fine-tuning the function. Also used for legacy arguments (see details or
 special section)</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A list with potentially 8 objects:</p><ul><li><p><code>$distance </code>: results of the distance method.</p></li>
+    
+
+<p>A list with potentially 8 objects:</p><ul><li><p><code>$distance </code>: results of the distance method.</p></li>
 <li><p><code>$distance.stats</code>: Summary statistics of the distance method.</p></li>
 <li><p><code>$pairwise.genome.similarity</code>: results of the genome method.</p></li>
 <li><p><code>$genome.stats</code>: Summary statistics of the genome method.</p></li>
@@ -211,55 +234,55 @@ an extremely low number of genotypes...</em></p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in"><span class="co"># First run and simplest way (if you have the tidy tibble):</span></span>
-<span class="r-in"><span class="va">dup</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">detect_duplicate_genomes</span><span class="op">(</span>data <span class="op">=</span> <span class="st">"wombat_tidy.rad"</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># This will use by default:</span></span>
-<span class="r-in"><span class="co"># distance.method = "manhattan"</span></span>
-<span class="r-in"><span class="co"># genome = FALSE</span></span>
-<span class="r-in"><span class="co"># parallel.core = all my CPUs - 1</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># If you need a tidy tibble: use one of radiator \code{tidy_} function or</span></span>
-<span class="r-in"><span class="co"># \code{radiator::tidy_genomic_data}</span></span>
-<span class="r-in"></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># To view the manhattan plot:</span></span>
-<span class="r-in"><span class="va">dup</span><span class="op">$</span><span class="va">manhattan.plot.distance</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># to view the data stats</span></span>
-<span class="r-in"><span class="va">dup.data.stats</span> <span class="op">&lt;-</span> <span class="va">dup</span><span class="op">$</span><span class="va">distance.stats</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># to view the data</span></span>
-<span class="r-in"><span class="va">dup.data</span> <span class="op">&lt;-</span> <span class="va">dup</span><span class="op">$</span><span class="va">distance</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># Based on the look of the distribution using both manhattan and boxplot,</span></span>
-<span class="r-in"><span class="co"># I can filter the dataset to highlight potential duplicates.</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># To run the distance (with euclidean distance instead of the default manhattan,</span></span>
-<span class="r-in"><span class="co"># and also carry the second analysis (with the genome method):</span></span>
-<span class="r-in"><span class="va">dup</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu"><a href="tidy_genomic_data.html">tidy_genomic_data</a></span><span class="op">(</span></span>
-<span class="r-in">    data <span class="op">=</span> <span class="va">wombat_tidy_object</span>,</span>
-<span class="r-in">    strata <span class="op">=</span> <span class="st">"wombat.strata.tsv"</span>,</span>
-<span class="r-in">    vcf.metadata <span class="op">=</span> <span class="cn">FALSE</span></span>
-<span class="r-in"><span class="op">)</span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span>
-<span class="r-in"><span class="fu">radiator</span><span class="fu">::</span><span class="fu">detect_duplicate_genomes</span><span class="op">(</span></span>
-<span class="r-in">    data <span class="op">=</span> <span class="va">.</span>,</span>
-<span class="r-in">    distance.method <span class="op">=</span> <span class="st">"euclidean"</span>,</span>
-<span class="r-in">    genome <span class="op">=</span> <span class="cn">TRUE</span></span>
-<span class="r-in">    <span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># to view the data of the genome data</span></span>
-<span class="r-in"><span class="va">dup.data</span> <span class="op">&lt;-</span> <span class="va">dup</span><span class="op">$</span><span class="va">pairwise.genome.similarity</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># Based on the look of the distribution using both manhattan and boxplot,</span></span>
-<span class="r-in"><span class="co"># I can filter the dataset based on 98% of identical genotype proportion,</span></span>
-<span class="r-in"><span class="co"># to highlight potential duplicates:</span></span>
-<span class="r-in"><span class="va">dup.filtered</span> <span class="op">&lt;-</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span>.data <span class="op">=</span> <span class="va">dup.data</span>, <span class="va">PROP_IDENTICAL</span> <span class="op">&gt;</span> <span class="fl">0.98</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># Get the list of duplicates id</span></span>
-<span class="r-in"><span class="va">dup.list.names</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>INDIVIDUALS <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">dup.filtered</span><span class="op">$</span><span class="va">ID1</span>, <span class="va">dup.filtered</span><span class="op">$</span><span class="va">ID2</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span class="r-in"><span class="op">}</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span><span class="co"># First run and simplest way (if you have the tidy tibble):</span></span></span>
+<span class="r-in"><span><span class="va">dup</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">detect_duplicate_genomes</span><span class="op">(</span>data <span class="op">=</span> <span class="st">"wombat_tidy.rad"</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># This will use by default:</span></span></span>
+<span class="r-in"><span><span class="co"># distance.method = "manhattan"</span></span></span>
+<span class="r-in"><span><span class="co"># genome = FALSE</span></span></span>
+<span class="r-in"><span><span class="co"># parallel.core = all my CPUs - 1</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># If you need a tidy tibble: use one of radiator \code{tidy_} function or</span></span></span>
+<span class="r-in"><span><span class="co"># \code{radiator::tidy_genomic_data}</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># To view the manhattan plot:</span></span></span>
+<span class="r-in"><span><span class="va">dup</span><span class="op">$</span><span class="va">manhattan.plot.distance</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># to view the data stats</span></span></span>
+<span class="r-in"><span><span class="va">dup.data.stats</span> <span class="op">&lt;-</span> <span class="va">dup</span><span class="op">$</span><span class="va">distance.stats</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># to view the data</span></span></span>
+<span class="r-in"><span><span class="va">dup.data</span> <span class="op">&lt;-</span> <span class="va">dup</span><span class="op">$</span><span class="va">distance</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Based on the look of the distribution using both manhattan and boxplot,</span></span></span>
+<span class="r-in"><span><span class="co"># I can filter the dataset to highlight potential duplicates.</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># To run the distance (with euclidean distance instead of the default manhattan,</span></span></span>
+<span class="r-in"><span><span class="co"># and also carry the second analysis (with the genome method):</span></span></span>
+<span class="r-in"><span><span class="va">dup</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu"><a href="tidy_genomic_data.html">tidy_genomic_data</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    data <span class="op">=</span> <span class="va">wombat_tidy_object</span>,</span></span>
+<span class="r-in"><span>    strata <span class="op">=</span> <span class="st">"wombat.strata.tsv"</span>,</span></span>
+<span class="r-in"><span>    vcf.metadata <span class="op">=</span> <span class="cn">FALSE</span></span></span>
+<span class="r-in"><span><span class="op">)</span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
+<span class="r-in"><span><span class="fu">radiator</span><span class="fu">::</span><span class="fu">detect_duplicate_genomes</span><span class="op">(</span></span></span>
+<span class="r-in"><span>    data <span class="op">=</span> <span class="va">.</span>,</span></span>
+<span class="r-in"><span>    distance.method <span class="op">=</span> <span class="st">"euclidean"</span>,</span></span>
+<span class="r-in"><span>    genome <span class="op">=</span> <span class="cn">TRUE</span></span></span>
+<span class="r-in"><span>    <span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># to view the data of the genome data</span></span></span>
+<span class="r-in"><span><span class="va">dup.data</span> <span class="op">&lt;-</span> <span class="va">dup</span><span class="op">$</span><span class="va">pairwise.genome.similarity</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Based on the look of the distribution using both manhattan and boxplot,</span></span></span>
+<span class="r-in"><span><span class="co"># I can filter the dataset based on 98% of identical genotype proportion,</span></span></span>
+<span class="r-in"><span><span class="co"># to highlight potential duplicates:</span></span></span>
+<span class="r-in"><span><span class="va">dup.filtered</span> <span class="op">&lt;-</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span>.data <span class="op">=</span> <span class="va">dup.data</span>, <span class="va">PROP_IDENTICAL</span> <span class="op">&gt;</span> <span class="fl">0.98</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Get the list of duplicates id</span></span></span>
+<span class="r-in"><span><span class="va">dup.list.names</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>INDIVIDUALS <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">dup.filtered</span><span class="op">$</span><span class="va">ID1</span>, <span class="va">dup.filtered</span><span class="op">$</span><span class="va">ID2</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -274,7 +297,7 @@ an extremely low number of genotypes...</em></p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

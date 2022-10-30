@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -32,7 +32,7 @@
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -72,16 +72,16 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">filter_fis</span><span class="op">(</span>
-  <span class="va">data</span>,
-  approach <span class="op">=</span> <span class="st">"haplotype"</span>,
-  <span class="va">fis.min.threshold</span>,
-  <span class="va">fis.max.threshold</span>,
-  <span class="va">fis.diff.threshold</span>,
-  <span class="va">pop.threshold</span>,
-  <span class="va">percent</span>,
-  <span class="va">filename</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">filter_fis</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
+<span>  approach <span class="op">=</span> <span class="st">"haplotype"</span>,</span>
+<span>  <span class="va">fis.min.threshold</span>,</span>
+<span>  <span class="va">fis.max.threshold</span>,</span>
+<span>  <span class="va">fis.diff.threshold</span>,</span>
+<span>  <span class="va">pop.threshold</span>,</span>
+<span>  <span class="va">percent</span>,</span>
+<span>  <span class="va">filename</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -100,26 +100,41 @@ and genotypes if you are using a VCF file with no genotype
 Neither is <span class="pkg">radiator</span> able to magically generate a genind object
 from a SilicoDArT dataset. Please look at the first few lines of your dataset
 to understand it's limit before asking raditor to convert or filter your dataset.</p></dd>
+
+
 <dt>approach</dt>
 <dd><p>Character. By <code>"SNP"</code> or by <code>"haplotype"</code>.
 The function will consider the SNP or haplotype statistics to filter the marker.
 Default by <code>"haplotype"</code>.</p></dd>
+
+
 <dt>fis.min.threshold</dt>
 <dd><p>Number.</p></dd>
+
+
 <dt>fis.max.threshold</dt>
 <dd><p>Number.</p></dd>
+
+
 <dt>fis.diff.threshold</dt>
 <dd><p>Number (0 - 1)</p></dd>
+
+
 <dt>pop.threshold</dt>
 <dd><p>Fixed number of pop required to keep the locus.</p></dd>
+
+
 <dt>percent</dt>
 <dd><p>Is the threshold a percentage ? TRUE or FALSE.</p></dd>
+
+
 <dt>filename</dt>
 <dd><p>(optional) The function uses <code><a href="http://www.fstpackage.org/reference/write_fst.html" class="external-link">write.fst</a></code>,
 to write the tidy data frame in
 the folder created in the working directory. The file extension appended to
 the <code>filename</code> provided is <code>.rad</code>.
 Default: <code>filename = NULL</code>.</p></dd>
+
 </dl></div>
 
   </div>
@@ -134,7 +149,7 @@ Default: <code>filename = NULL</code>.</p></dd>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

@@ -68,3 +68,4 @@ tidy.data <- radiator::generate_markers_metadata(data = bluefintuna.data)
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}
 }
+\keyword{internal}

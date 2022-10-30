@@ -19,7 +19,7 @@ An argument also allows to reset the filters."><!-- mathjax --><script src="http
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -34,7 +34,7 @@ An argument also allows to reset the filters."><!-- mathjax --><script src="http
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -76,39 +76,52 @@ An argument also allows to reset the filters.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">sync_gds</span><span class="op">(</span>
-  <span class="va">gds</span>,
-  samples <span class="op">=</span> <span class="cn">NULL</span>,
-  variant.id <span class="op">=</span> <span class="cn">NULL</span>,
-  reset.gds <span class="op">=</span> <span class="cn">FALSE</span>,
-  reset.filters.m <span class="op">=</span> <span class="cn">FALSE</span>,
-  reset.filters.i <span class="op">=</span> <span class="cn">FALSE</span>,
-  verbose <span class="op">=</span> <span class="cn">FALSE</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">sync_gds</span><span class="op">(</span></span>
+<span>  <span class="va">gds</span>,</span>
+<span>  samples <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  variant.id <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  reset.gds <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  reset.filters.m <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  reset.filters.i <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>gds</dt>
 <dd><p>The gds object.</p></dd>
+
+
 <dt>samples</dt>
 <dd><p>(optional, character string). Will sync the gds object/file with
 these samples. With default, uses the individuals in the radiator node.
 If not found, goes a level above and uses the individuals in the main GDS.
 Default: <code>samples = NULL</code>.</p></dd>
+
+
 <dt>variant.id</dt>
 <dd><p>(optional, integer string). Will sync the gds object/file with
 these variant.id With default, uses the variant.id in the radiator node.
 If not found, goes a level above and uses the variant.id in the main GDS.
 Default: <code>variant.id = NULL</code>.</p></dd>
+
+
 <dt>reset.gds</dt>
 <dd><p>(optional, logical) Default: <code>reset.gds = FALSE</code>.</p></dd>
+
+
 <dt>reset.filters.m</dt>
 <dd><p>(optional, logical) To reset only markers/variant. Default: <code>reset.filters.m = FALSE</code>.</p></dd>
+
+
 <dt>reset.filters.i</dt>
 <dd><p>(optional, logical) To reset only individuals. Default: <code>reset.filters.i = FALSE</code>.</p></dd>
+
+
 <dt>verbose</dt>
 <dd><p>(optional, logical) Default: <code>verbose = FALSE</code>.</p></dd>
+
 </dl></div>
     <div id="see-also">
     <h2>See also</h2>
@@ -127,7 +140,7 @@ Default: <code>variant.id = NULL</code>.</p></dd>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

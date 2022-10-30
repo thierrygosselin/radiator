@@ -305,6 +305,7 @@ separate_markers <- function(
 #' tidy.data <- radiator::generate_markers_metadata(data = bluefintuna.data)
 #' }
 #' @export
+#' @keywords internal
 #' @seealso \code{\link{detect_biallelic_markers}} and \code{\link{separate_markers}}
 
 
@@ -943,7 +944,7 @@ rad_wide <- function(
 #' and keep only the sample ids.
 #' @param verbose (logical) The function will chat more when allowed.
 # @noRd
-# @keywords internal
+#' @keywords internal
 #' @export
 strip_rad <- function(
   x,
@@ -1055,7 +1056,7 @@ strip_rad <- function(
 #' @param g The genotypes metadata.
 #' @param env.arg You want to redirect \code{rlang::current_env()} to this argument.
 # @noRd
-# @keywords internal
+#' @keywords internal
 #' @export
 join_rad <- function(x, s, m, g, env.arg = NULL) {
   if (!is.null(g)) {

@@ -17,7 +17,7 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
-**Time to allow: ETA ~20 min**
+**Time to allow: ETA ~20 min for experience users, 1h for novices**
 
 This vignette purposes is to show users how to setup their computers 
 for RADseq genomic analysis inside R. It targets users of my packages or 
@@ -57,7 +57,7 @@ In this vignette I present *brewless* options only.
 
 ## Update your OS
 
-* the current version is macOS Monterey 12.0.1
+* the current version is macOS Ventura 13.0
 * [how to update](http://support.apple.com/kb/HT1338?viewlocale=en_US&locale=en_US)
 
 
@@ -81,17 +81,19 @@ xcode-select --install
 
 * If command line tools is already installed you'll get this message 
 `xcode-select: error: command line tools are already installed, use "Software Update" to install updates`
-* to test if you have a compiler, you can also type: `make` in the terminal
+* to test if you have a compiler, you can also type: `make` in the terminal, if it's installed you will have something similar to this `*** No targets specified and no makefile found.  Stop.`
+
+**Terminology:**
+
+* [Reading](https://thoughtbot.com/blog/the-magic-behind-configure-make-make-install): 
+to understand the basic steps to install software with the terminal 
+(*configure*, *make* and *sudo make install* steps)
 * `./configure`: configure everything before installation
 * `make`: connect libraries and the source before make install 
 ([doc](http://www.gnu.org/software/make/manual/make.html))
 * `make install`: use to build (compile) source code to create binary files and
 install the application on our system as configured using `./configure`,
 usually in `/usr/local/bin`.
-* [Reading](https://thoughtbot.com/blog/the-magic-behind-configure-make-make-install): 
-to understand the basic steps to install software with the terminal 
-(*configure*, *make* and *sudo make install* steps)
-* for more *curl* option type `curl -h`
 
 
 ## Compiler
@@ -114,35 +116,34 @@ The command below fro both GCC and Clang will:
 
 Choose the binary version number based on your OS and change the version accordingly [link](http://hpc.sourceforge.net).
 
-**Catalina** [gcc-9.2-bin.tar.gz](http://prdownloads.sourceforge.net/hpc/gcc-9.2-bin.tar.gz)
-**Mojave** [gcc-8.3.tar.gz](http://prdownloads.sourceforge.net/hpc/gcc-8.3-bin.tar.gz)
+**Ventura and Monterey** [gcc-11.2-bin.tar.gz](http://prdownloads.sourceforge.net/hpc/gcc-11.2-bin.tar.gz)
 
 ```{bash eval=FALSE}
 #In Terminal
 cd Downloads
-sudo tar -zxvf gcc-9.2-bin.tar.gz -C /usr/local --strip-components=2
+sudo tar -zxvf gcc-11.2-bin.tar.gz -C /usr/local --strip-components=2
 ```
 
 ```{bash eval=FALSE}
-sudo rm gcc-9.2-bin.tar.gz
+sudo rm gcc-11.2-bin.tar.gz
 gcc -v
 ```
 
 ### Update Clang
 
-We want [clang](https://en.wikipedia.org/wiki/Clang) compiler with OpenMP enabled.
+We want [clang](https://en.wikipedia.org/wiki/Clang) compiler with OpenMP enabled. The latest version is [15.0.3](https://github.com/llvm/llvm-project/releases/tag/llvmorg-15.0.3).
 
 ```{bash eval=FALSE}
 #In browser
-https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.0/clang+llvm-11.0.0-x86_64-apple-darwin.tar.xz
+https://github.com/llvm/llvm-project/releases/download/llvmorg-15.0.3/clang+llvm-15.0.3-x86_64-apple-darwin.tar.xz
 #In Terminal
 cd Downloads
-sudo tar -xzvf clang+llvm-11.0.0-x86_64-apple-darwin.tar.xz -C/usr/local --strip-components=1
+sudo tar -xzvf clang+llvm-15.0.3-x86_64-apple-darwin.tar.xz -C/usr/local --strip-components=1
 ```
 
 
 ```{bash eval=FALSE}
-sudo rm clang+llvm-11.0.0-x86_64-apple-darwin.tar.xz
+sudo rm clang+llvm-15.0.3-x86_64-apple-darwin.tar.xz
 clang -v
 ```
 
@@ -185,6 +186,7 @@ sudo touch $HOME/.bash_profile
 
 To modify, you can use [BBEdit](http://www.barebones.com/products/bbedit/index.html)
 to open or make and modify hidden items (using the option *Show hidden items* on the open file screen).
+Look for the free version.
 With Linux, use Vi!
 
 Copy/paste the line below in your `.bash_profile` file:
@@ -217,6 +219,9 @@ cd ~/Downloads
 sudo python get-pip.py
 ```
 
+If you get *command not found* you might not have python installed.
+
+
 ```{bash eval=FALSE}
 pip install -U pip   # to upgrade
 ```
@@ -233,13 +238,14 @@ Several flavors available, check for the proper [link](http://releases.llvm.org/
 # Install [R](https://cran.r-project.org)
 
 
-To install R v4.1.2 **"Bird Hippie "** released on 2021-11-01 download the
+To install R v4.2.1 **"Funny-Looking Kid"** released on 2022-06-23 download the
 installer and follow the instructions
 ```{bash eval=FALSE}
 # for macOS
 cd Downloads
-curl -O https://cran.r-project.org/bin/macosx/R-4.1.2.pkg
+curl -O https://cran.r-project.org/bin/macosx/R-4.2.1.pkg
 ```
+
 
 
 
@@ -348,11 +354,18 @@ So far, I've only experience 1 problem after upgrading to Big Sur, and it's link
 to *adegenet* dependency on [sf](https://r-spatial.github.io/sf/) package [(solution)](#sfprob).
 
 
+## Error: checking whether the C++ compiler works... no
+
+When rtying to compile a software if you get this error: `checking whether the C++ compiler works... no` or `configure: error: C++ compiler cannot create executables`
+
+Try installing Xcode from the App Store.
+
+
 ## Error: "https" not supported
 
 If you get something like: `https not supported or disabled in libcurl`, install or re-install:
 
-[OpenSSL](www.openssl.org)
+[OpenSSL](https://www.openssl.org)
 
 Required if GCC compiler is used (TLS backend is then used). Not required if clang is used (securetransport backend is used).
 ```{bash eval=FALSE}
@@ -376,12 +389,16 @@ sudo rm -R openssl*
 Check for the latest release of [curl](https://curl.haxx.se/download)
 ```{bash eval=FALSE}
 #Copy/paste in your browser
-https://curl.haxx.se/download/curl-7.73.0.tar.gz
+https://curl.haxx.se/download/curl-7.85.0.tar.gz
 # Terminal
 cd ~/Downloads
-tar -zxvf curl-7.73.0.tar.gz
-cd curl-7.73.0
+tar -zxvf curl-7.85.0.tar.gz
+cd curl-7.85.0
 ```
+
+*for more *curl* option type `curl -h`*
+
+
 
 The next step depends on the compiler used
 
@@ -394,7 +411,7 @@ Note: with macOS 11.0.1 this give me an error `configure: error: OpenSSL libs an
 If this is the case, use **clang**:
 ```{bash eval=FALSE}
 CC="/usr/local/bin/clang"
-./configure --without-ssl --with-darwinssl # to install via clang
+./configure --without-ssl #--with-darwinssl # to install via clang
 ```
 
 
@@ -928,7 +945,7 @@ sudo mv fsc26_mac64/fsc26 /usr/local/bin/fsc26 # will ask for your computer pass
 ```{bash chunk common to both OS, eval=FALSE}
 sudo chmod 777 /usr/local/bin/fsc26
 fsc26
-````
+```
 
 Re-start R and the software fastsimcoal2 will automatically be in your PATH...
 

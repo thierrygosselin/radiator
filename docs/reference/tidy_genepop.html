@@ -25,7 +25,7 @@ several other filtering options."><!-- mathjax --><script src="https://cdnjs.clo
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -40,7 +40,7 @@ several other filtering options."><!-- mathjax --><script src="https://cdnjs.clo
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -88,7 +88,7 @@ several other filtering options.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">tidy_genepop</span><span class="op">(</span><span class="va">data</span>, strata <span class="op">=</span> <span class="cn">NULL</span>, tidy <span class="op">=</span> <span class="cn">TRUE</span>, filename <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">tidy_genepop</span><span class="op">(</span><span class="va">data</span>, strata <span class="op">=</span> <span class="cn">NULL</span>, tidy <span class="op">=</span> <span class="cn">TRUE</span>, filename <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -96,26 +96,35 @@ several other filtering options.</p>
     <dl><dt>data</dt>
 <dd><p>A <a href="https://genepop.curtin.edu.au/help_input.html" class="external-link">genepop</a>
 filename with extension <code>.gen</code>.</p></dd>
+
+
 <dt>strata</dt>
 <dd><p>(optional) A tab delimited file with 2 columns. Header:
 <code>INDIVIDUALS</code> and <code>STRATA</code>.
 The <code>STRATA</code> column can be any hierarchical grouping.
 To create a strata file see <code><a href="individuals2strata.html">individuals2strata</a></code>.
 Default: <code>strata = NULL</code>.</p></dd>
+
+
 <dt>tidy</dt>
 <dd><p>(optional, logical) With <code>tidy = FALSE</code>,
 the markers are the variables and the genotypes the observations (wide format).
 With the default: <code>tidy = TRUE</code>, markers and genotypes are variables
 with their own columns (long format).</p></dd>
+
+
 <dt>filename</dt>
 <dd><p>(optional) The file name for the tidy data frame
 written to the working directory.
 Default: <code>filename = NULL</code>, the tidy data is
 in the global environment only (i.e. not written in the working directory).</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>The output in your global environment is a wide or long/tidy data frame.
+    
+
+<p>The output in your global environment is a wide or long/tidy data frame.
 If <code>filename</code> is provided, the wide or long/tidy data frame is also
 written to the working directory.</p>
     </div>
@@ -204,27 +213,27 @@ doi:10.1111/j.1471-8286.2007.01931.x</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in"><span class="co"># We will use the genepop dataset provided with adegenet package</span></span>
-<span class="r-in"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="st"><a href="https://github.com/thibautjombart/adegenet" class="external-link">"adegenet"</a></span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># The simplest form of the function:</span></span>
-<span class="r-in"><span class="va">nancycats.tidy</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">tidy_genepop</span><span class="op">(</span></span>
-<span class="r-in">    data <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span></span>
-<span class="r-in">        <span class="st">"files/nancycats.gen"</span>,</span>
-<span class="r-in">        package <span class="op">=</span> <span class="st">"adegenet"</span></span>
-<span class="r-in">        <span class="op">)</span></span>
-<span class="r-in">    <span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># To output a data frame in wide format, with markers in separate columns:</span></span>
-<span class="r-in"><span class="va">nancycats.wide</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">tidy_genepop</span><span class="op">(</span></span>
-<span class="r-in">    data <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span></span>
-<span class="r-in">    <span class="st">"files/nancycats.gen"</span>,</span>
-<span class="r-in">    package<span class="op">=</span><span class="st">"adegenet"</span></span>
-<span class="r-in"><span class="op">)</span>,</span>
-<span class="r-in">    tidy <span class="op">=</span> <span class="cn">FALSE</span></span>
-<span class="r-in"><span class="op">)</span></span>
-<span class="r-in"><span class="op">}</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span><span class="co"># We will use the genepop dataset provided with adegenet package</span></span></span>
+<span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="st"><a href="https://github.com/thibautjombart/adegenet" class="external-link">"adegenet"</a></span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># The simplest form of the function:</span></span></span>
+<span class="r-in"><span><span class="va">nancycats.tidy</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">tidy_genepop</span><span class="op">(</span></span></span>
+<span class="r-in"><span>    data <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>        <span class="st">"files/nancycats.gen"</span>,</span></span>
+<span class="r-in"><span>        package <span class="op">=</span> <span class="st">"adegenet"</span></span></span>
+<span class="r-in"><span>        <span class="op">)</span></span></span>
+<span class="r-in"><span>    <span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># To output a data frame in wide format, with markers in separate columns:</span></span></span>
+<span class="r-in"><span><span class="va">nancycats.wide</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">tidy_genepop</span><span class="op">(</span></span></span>
+<span class="r-in"><span>    data <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    <span class="st">"files/nancycats.gen"</span>,</span></span>
+<span class="r-in"><span>    package<span class="op">=</span><span class="st">"adegenet"</span></span></span>
+<span class="r-in"><span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    tidy <span class="op">=</span> <span class="cn">FALSE</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -239,7 +248,7 @@ doi:10.1111/j.1471-8286.2007.01931.x</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

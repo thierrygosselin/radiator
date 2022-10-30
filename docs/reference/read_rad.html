@@ -24,7 +24,7 @@ and might be of interest for users."><!-- mathjax --><script src="https://cdnjs.
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -39,7 +39,7 @@ and might be of interest for users."><!-- mathjax --><script src="https://cdnjs.
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -86,17 +86,17 @@ and might be of interest for users.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">read_rad</span><span class="op">(</span>
-  <span class="va">data</span>,
-  columns <span class="op">=</span> <span class="cn">NULL</span>,
-  from <span class="op">=</span> <span class="fl">1</span>,
-  to <span class="op">=</span> <span class="cn">NULL</span>,
-  as.data.table <span class="op">=</span> <span class="cn">FALSE</span>,
-  old.format <span class="op">=</span> <span class="cn">FALSE</span>,
-  allow.dup <span class="op">=</span> <span class="cn">FALSE</span>,
-  check <span class="op">=</span> <span class="cn">TRUE</span>,
-  verbose <span class="op">=</span> <span class="cn">FALSE</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">read_rad</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
+<span>  columns <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  from <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  to <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  as.data.table <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  old.format <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  allow.dup <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  check <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -104,42 +104,61 @@ and might be of interest for users.</p>
     <dl><dt>data</dt>
 <dd><p>A file in the working directory ending with .rad or .gds,
 and produced by radiator, assigner or grur.</p></dd>
+
+
 <dt>columns</dt>
 <dd><p>(optional) For fst file. Column names to read. The default is to read all all columns.
 Default: <code>columns = NULL</code>.</p></dd>
+
+
 <dt>from</dt>
 <dd><p>(optional) For fst file. Read data starting from this row number.
 Default: <code>from = 1</code>.</p></dd>
+
+
 <dt>to</dt>
 <dd><p>(optional) For fst file. Read data up until this row number.
 The default is to read to the last row of the stored dataset.
 Default: <code>to = NULL</code>.</p></dd>
+
+
 <dt>as.data.table</dt>
 <dd><p>(optional, logical) For fst file. If <code>TRUE</code>,
 the result will be returned as a <code>data.table</code> object.
 Any keys set on dataset <code>x</code> before writing will be retained.
 This allows for storage of sorted datasets.
 Default: <code>as.data.table = TRUE</code>.</p></dd>
+
+
 <dt>old.format</dt>
 <dd><p>(optional, logical) For fst file. Use <code>TRUE</code> to read fst
 files generated with a fst package version lower than v.0.8.0
 Default: <code>old.format = FALSE</code>.</p></dd>
+
+
 <dt>allow.dup</dt>
 <dd><p>(optional, logical) To allow the opening of a GDS file with
 read-only mode when it has been opened in the same R session.
 Default: <code>allow.dup = FALSE</code>.</p></dd>
+
+
 <dt>check</dt>
 <dd><p>(optional, logical) Verify that GDS number of samples and markers
 match.
 Default: <code>check = TRUE</code>.</p></dd>
+
+
 <dt>verbose</dt>
 <dd><p>(optional, logical) <code>verbose = TRUE</code> to be chatty
 during execution.
 Default: <code>verbose = FALSE</code>.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A radiator tidy data frame or
+    
+
+<p>A radiator tidy data frame or
 GDS object (with read/write permissions) in the global environment.</p>
     </div>
     <div id="details">
@@ -160,11 +179,11 @@ set the filters (variants and samples) based on the info found in the file.</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="va"><a href="http://github.com/zhengxwen/SeqArray" class="external-link">SeqArray</a></span><span class="op">)</span></span>
-<span class="r-in"><span class="va">shark</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">read_rad</span><span class="op">(</span>data <span class="op">=</span> <span class="st">"data.shark.gds"</span><span class="op">)</span></span>
-<span class="r-in"><span class="va">turtle</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">read_rad</span><span class="op">(</span>data <span class="op">=</span> <span class="st">"data.turtle.rad"</span><span class="op">)</span></span>
-<span class="r-in"><span class="op">}</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="va"><a href="http://github.com/zhengxwen/SeqArray" class="external-link">SeqArray</a></span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">shark</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">read_rad</span><span class="op">(</span>data <span class="op">=</span> <span class="st">"data.shark.gds"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">turtle</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">read_rad</span><span class="op">(</span>data <span class="op">=</span> <span class="st">"data.turtle.rad"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -179,7 +198,7 @@ set the filters (variants and samples) based on the info found in the file.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

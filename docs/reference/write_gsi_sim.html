@@ -20,7 +20,7 @@ and might be of interest for users."><!-- mathjax --><script src="https://cdnjs.
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -35,7 +35,7 @@ and might be of interest for users."><!-- mathjax --><script src="https://cdnjs.
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -78,13 +78,13 @@ and might be of interest for users.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">write_gsi_sim</span><span class="op">(</span>
-  <span class="va">data</span>,
-  pop.levels <span class="op">=</span> <span class="cn">NULL</span>,
-  pop.labels <span class="op">=</span> <span class="cn">NULL</span>,
-  strata <span class="op">=</span> <span class="cn">NULL</span>,
-  filename <span class="op">=</span> <span class="st">"gsi_sim.unname.txt"</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">write_gsi_sim</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
+<span>  pop.levels <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  pop.labels <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  strata <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  filename <span class="op">=</span> <span class="st">"gsi_sim.unname.txt"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -93,6 +93,8 @@ and might be of interest for users.</p>
 <dd><p>A tidy genomic data set in the working directory tidy formats.
 <em>How to get a tidy data frame ?</em>
 Look for <span class="pkg">radiator</span> <code><a href="tidy_genomic_data.html">tidy_genomic_data</a></code>.</p></dd>
+
+
 <dt>pop.levels</dt>
 <dd><p>(option, string) This refers to the levels in a factor. In this
 case, the id of the pop.
@@ -101,6 +103,8 @@ alphabetical or numerical order. e.g. <code>pop.levels = c("QUE", "ONT", "ALB")<
 instead of the default <code>pop.levels = c("ALB", "ONT", "QUE")</code>.
 Default: <code>pop.levels = NULL</code>. If you find this too complicated, there is also the
 <code>strata</code> argument that can do the same thing, see below.</p></dd>
+
+
 <dt>pop.labels</dt>
 <dd><p>(optional, string) Use this argument to rename/relabel
 your pop or combine your pop. e.g. To combine <code>"QUE"</code> and <code>"ONT"</code>
@@ -113,18 +117,25 @@ To rename <code>"QUE"</code> to <code>"TAS"</code>:
 <code>pop.labels = c("TAS", "ONT", "ALB")</code>.
 Default: <code>pop.labels = NULL</code>. If you find this too complicated, there is also the
 <code>strata</code> argument that can do the same thing, see below.</p></dd>
+
+
 <dt>strata</dt>
 <dd><p>(optional) A tab delimited file with 2 columns with header:
 <code>INDIVIDUALS</code> and <code>STRATA</code>.
 Default: <code>strata = NULL</code>. Use this argument to rename or change
 the populations id with the new <code>STRATA</code> column.
 The <code>STRATA</code> column can be any hierarchical grouping.</p></dd>
+
+
 <dt>filename</dt>
 <dd><p>The name of the file written to the working directory.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A gsi_sim input file is saved to the working directory.</p>
+    
+
+<p>A gsi_sim input file is saved to the working directory.</p>
     </div>
     <div id="references">
     <h2>References</h2>
@@ -158,7 +169,7 @@ identification (GSI) in the tidyverse.</p></div>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

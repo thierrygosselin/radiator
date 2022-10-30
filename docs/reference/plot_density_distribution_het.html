@@ -20,7 +20,7 @@ summary statistics."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/a
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -35,7 +35,7 @@ summary statistics."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/a
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -77,31 +77,42 @@ summary statistics.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">plot_density_distribution_het</span><span class="op">(</span>
-  <span class="va">data</span>,
-  <span class="va">pop.levels</span>,
-  <span class="va">het.group</span>,
-  <span class="va">aes.colour</span>,
-  <span class="va">adjust.bin</span>,
-  <span class="va">x.title</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">plot_density_distribution_het</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
+<span>  <span class="va">pop.levels</span>,</span>
+<span>  <span class="va">het.group</span>,</span>
+<span>  <span class="va">aes.colour</span>,</span>
+<span>  <span class="va">adjust.bin</span>,</span>
+<span>  <span class="va">x.title</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>data</dt>
 <dd><p>sumstats or tidy vcf files.</p></dd>
+
+
 <dt>pop.levels</dt>
 <dd><p>Character string defining your ordered populations.</p></dd>
+
+
 <dt>het.group</dt>
 <dd><p>= aes(x = HET_MAX, na.rm = F)</p></dd>
+
+
 <dt>aes.colour</dt>
 <dd><p>GGPLOT2 aesthetics colour,
 e.g. aes(y = ..scaled.., color = GROUP).</p></dd>
+
+
 <dt>adjust.bin</dt>
 <dd><p>Adjust GGPLOT2 bin size (0 to 1).</p></dd>
+
+
 <dt>x.title</dt>
 <dd><p>Title of the x-axis.</p></dd>
+
 </dl></div>
 
   </div>
@@ -116,7 +127,7 @@ e.g. aes(y = ..scaled.., color = GROUP).</p></dd>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

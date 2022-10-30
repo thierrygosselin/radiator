@@ -31,7 +31,7 @@ For UNIX machines, please install the 64bits version."><!-- mathjax --><script s
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -46,7 +46,7 @@ For UNIX machines, please install the 64bits version."><!-- mathjax --><script s
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -97,19 +97,19 @@ For UNIX machines, please install the 64bits version.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">run_bayescan</span><span class="op">(</span>
-  <span class="va">data</span>,
-  n <span class="op">=</span> <span class="fl">5000</span>,
-  thin <span class="op">=</span> <span class="fl">10</span>,
-  nbp <span class="op">=</span> <span class="fl">20</span>,
-  pilot <span class="op">=</span> <span class="fl">5000</span>,
-  burn <span class="op">=</span> <span class="fl">50000</span>,
-  <span class="va">pr_odds</span>,
-  subsample <span class="op">=</span> <span class="cn">NULL</span>,
-  iteration.subsample <span class="op">=</span> <span class="fl">1</span>,
-  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,
-  bayescan.path <span class="op">=</span> <span class="st">"/usr/local/bin/bayescan"</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">run_bayescan</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
+<span>  n <span class="op">=</span> <span class="fl">5000</span>,</span>
+<span>  thin <span class="op">=</span> <span class="fl">10</span>,</span>
+<span>  nbp <span class="op">=</span> <span class="fl">20</span>,</span>
+<span>  pilot <span class="op">=</span> <span class="fl">5000</span>,</span>
+<span>  burn <span class="op">=</span> <span class="fl">50000</span>,</span>
+<span>  <span class="va">pr_odds</span>,</span>
+<span>  subsample <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  iteration.subsample <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,</span>
+<span>  bayescan.path <span class="op">=</span> <span class="st">"/usr/local/bin/bayescan"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -126,43 +126,77 @@ arguments described below <code>subsample</code> and <code>iteration.subsample</
 <li><p>Remember: you can do both the BayeScan file and tidy data with
 <code><a href="genomic_converter.html">genomic_converter</a></code>.</p></li>
 </ol></dd>
+
+
 <dt>n</dt>
 <dd><p>(integer) Number of outputted iterations. Default: <code>n = 5000</code>.</p></dd>
+
+
 <dt>thin</dt>
 <dd><p>(integer) Thinning interval size. Default: <code>thin = 10</code></p></dd>
+
+
 <dt>nbp</dt>
 <dd><p>(integer) Number of pilot runs. Default: <code>nbp = 20</code>.</p></dd>
+
+
 <dt>pilot</dt>
 <dd><p>(integer) Length of pilot runs. Default: <code>pilot = 5000</code>.</p></dd>
+
+
 <dt>burn</dt>
 <dd><p>(integer) Burn-in length. Default: <code>burn = 50000</code>.</p></dd>
+
+
 <dt>pr_odds</dt>
 <dd><p>(integer) Prior odds for the neutral model. A <code>pr_odds = 10</code>,
 indicates that the neutral model is 10 times more likely than the
 model with selection. Larger <code>pr_odds</code> the more conservative is the results.</p></dd>
+
+
 <dt>subsample</dt>
 <dd><p>(Integer or character)
 With <code>subsample = 36</code>, 36 individuals in each populations are chosen
 randomly to represent the dataset. With <code>subsample = "min"</code>, the
 minimum number of individual/population found in the data is used automatically.
 Default is no subsampling, <code>subsample = NULL</code>.</p></dd>
+
+
 <dt>iteration.subsample</dt>
 <dd><p>(Integer) The number of iterations to repeat
 subsampling.
 With <code>subsample = 20</code> and <code>iteration.subsample = 10</code>,
 20 individuals/populations will be randomly chosen 10 times.
 Default: <code>iteration.subsample = 1</code>.</p></dd>
+
+
 <dt>parallel.core</dt>
 <dd><p>(integer) Number of CPU for parallel computations.
 Default: <code>parallel.core = parallel::detectCores() - 1</code></p></dd>
+
+
 <dt>bayescan.path</dt>
 <dd><p>(character, path) Provide the FULL path to BayeScan program.
 Default: <code>bayescan.path = "/usr/local/bin/bayescan"</code>. See details.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>For specific <a href="http://cmpg.unibe.ch/software/BayeScan/" class="external-link">BayeScan</a>output files, see <a href="http://cmpg.unibe.ch/software/BayeScan/" class="external-link">BayeScan</a>documentation, please read the manual.
-radiator::run_bayescan outputs without subsampling:</p><ol><li><p><code>bayescan</code>: dataframe with results of BayeScan analysis.</p></li>
+    
+
+<p>For specific <a href="http://cmpg.unibe.ch/software/BayeScan/" class="external-link">BayeScan</a></p>
+
+
+<p>output files, see <a href="http://cmpg.unibe.ch/software/BayeScan/" class="external-link">BayeScan</a></p>
+
+
+<p>documentation, please read the manual.</p>
+
+
+<p>radiator::run_bayescan outputs without subsampling:</p>
+
+
+<ol><li><p><code>bayescan</code>: dataframe with results of BayeScan analysis.</p></li>
 <li><p><code>selection.summary</code>: dataframe showing the number of markers in the different group of selections and model choice.</p></li>
 <li><p><code>whitelist.markers.positive.selection</code>: Whitelist of markers under diversifying selection and common in all iterations.</p></li>
 <li><p><code>whitelist.markers.neutral.selection</code>: Whitelist of neutral markers and common in all iterations.</p></li>
@@ -178,7 +212,10 @@ radiator::run_bayescan outputs without subsampling:</p><ol><li><p><code>bayescan
 <li><p><code>accuracy.snp.number</code>: dataframe with the number of SNPs per locus and the count of accurate/not accurate locus.</p></li>
 <li><p><code>accuracy.snp.number.plot</code>: the plot showing the proportion of accurate/not accurate locus in relation to SNPs per locus.</p></li>
 <li><p><code>not.accurate.summary</code>: dataframe summarizing the number of not accurate locus with selection type found on locus.</p></li>
-</ol><p>radiator::run_bayescan outputs WITH subsampling:</p><ol><li><p><code>subsampling.individuals</code>: dataframe with indivuals subsample id and random seed number.</p></li>
+</ol><p>radiator::run_bayescan outputs WITH subsampling:</p>
+
+
+<ol><li><p><code>subsampling.individuals</code>: dataframe with indivuals subsample id and random seed number.</p></li>
 <li><p><code>bayescan.all.subsamples</code>: long dataframe with combined iterations of bayescan results.</p></li>
 <li><p><code>selection.accuracy</code>: dataframe with all markers with selection grouping and number of times observed throughout iterations.</p></li>
 <li><p><code>accurate.markers</code>: dataframe with markers attributed the same selection grouping in all iterations.</p></li>
@@ -238,43 +275,43 @@ Molecular Ecology 20: 1450-1462</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in"><span class="co"># library(radiator)</span></span>
-<span class="r-in"><span class="co"># get a tidy data frame and a bayescan file with radiator::genomic_converter:</span></span>
-<span class="r-in"><span class="co"># to run with a vcf haplotype file</span></span>
-<span class="r-in"><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu"><a href="genomic_converter.html">genomic_converter</a></span><span class="op">(</span></span>
-<span class="r-in">    data <span class="op">=</span> <span class="st">"batch_1.haplotypes.vcf"</span>,</span>
-<span class="r-in">    strata <span class="op">=</span> <span class="st">"../../02_project_info/strata.stacks.TL.tsv"</span>,</span>
-<span class="r-in">    whitelist.markers <span class="op">=</span> <span class="st">"whitelist.filtered.markers.tsv"</span>,</span>
-<span class="r-in">    blacklist.id <span class="op">=</span> <span class="st">"blacklist.id.tsv"</span>,</span>
-<span class="r-in">    output <span class="op">=</span> <span class="st">"bayescan"</span>,</span>
-<span class="r-in">    filename <span class="op">=</span> <span class="st">"bayescan.haplotypes"</span></span>
-<span class="r-in">    <span class="op">)</span></span>
-<span class="r-in"><span class="co"># to run BayeScan:</span></span>
-<span class="r-in"><span class="va">scan.pops</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">run_bayescan</span><span class="op">(</span></span>
-<span class="r-in">    data <span class="op">=</span> <span class="st">"bayescan.haplotypes.txt"</span>,</span>
-<span class="r-in">    pr_odds <span class="op">=</span> <span class="fl">1000</span></span>
-<span class="r-in">    <span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># This will use the default values for argument: n, thin, nbp, pilot and burn.</span></span>
-<span class="r-in"><span class="co"># The number of CPUs will be the number available - 1 (the default).</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># To test the impact of unbalance sampling run BayeScan with subsampling,</span></span>
-<span class="r-in"><span class="co"># for this, you need to feed the function the tidy data frame generated above</span></span>
-<span class="r-in"><span class="co"># with radiator::genomic_converter:</span></span>
-<span class="r-in"><span class="va">scan.pops.sub</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">run_bayescan</span><span class="op">(</span></span>
-<span class="r-in">    data <span class="op">=</span> <span class="va">data</span><span class="op">$</span><span class="va">tidy.data</span>,</span>
-<span class="r-in">    pr_odds <span class="op">=</span> <span class="fl">1000</span>,</span>
-<span class="r-in">    subsample <span class="op">=</span> <span class="st">"min"</span>,</span>
-<span class="r-in">    iteration.subsample <span class="op">=</span> <span class="fl">10</span></span>
-<span class="r-in">    <span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># This will run BayeScan 10 times, and for each iteration, the number of individuals</span></span>
-<span class="r-in"><span class="co"># sampled in each pop will be equal to the minimal number found in the pops</span></span>
-<span class="r-in"><span class="co"># (e.g. pop1 N = 36, pop2 N = 50 and pop3 N = 15, the subsampling will use 15</span></span>
-<span class="r-in"><span class="co"># individuals in each pop, taken randomly.</span></span>
-<span class="r-in"><span class="co"># You can also choose a specific subsample value with the argument.</span></span>
-<span class="r-in"><span class="op">}</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span><span class="co"># library(radiator)</span></span></span>
+<span class="r-in"><span><span class="co"># get a tidy data frame and a bayescan file with radiator::genomic_converter:</span></span></span>
+<span class="r-in"><span><span class="co"># to run with a vcf haplotype file</span></span></span>
+<span class="r-in"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu"><a href="genomic_converter.html">genomic_converter</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    data <span class="op">=</span> <span class="st">"batch_1.haplotypes.vcf"</span>,</span></span>
+<span class="r-in"><span>    strata <span class="op">=</span> <span class="st">"../../02_project_info/strata.stacks.TL.tsv"</span>,</span></span>
+<span class="r-in"><span>    whitelist.markers <span class="op">=</span> <span class="st">"whitelist.filtered.markers.tsv"</span>,</span></span>
+<span class="r-in"><span>    blacklist.id <span class="op">=</span> <span class="st">"blacklist.id.tsv"</span>,</span></span>
+<span class="r-in"><span>    output <span class="op">=</span> <span class="st">"bayescan"</span>,</span></span>
+<span class="r-in"><span>    filename <span class="op">=</span> <span class="st">"bayescan.haplotypes"</span></span></span>
+<span class="r-in"><span>    <span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># to run BayeScan:</span></span></span>
+<span class="r-in"><span><span class="va">scan.pops</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">run_bayescan</span><span class="op">(</span></span></span>
+<span class="r-in"><span>    data <span class="op">=</span> <span class="st">"bayescan.haplotypes.txt"</span>,</span></span>
+<span class="r-in"><span>    pr_odds <span class="op">=</span> <span class="fl">1000</span></span></span>
+<span class="r-in"><span>    <span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># This will use the default values for argument: n, thin, nbp, pilot and burn.</span></span></span>
+<span class="r-in"><span><span class="co"># The number of CPUs will be the number available - 1 (the default).</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># To test the impact of unbalance sampling run BayeScan with subsampling,</span></span></span>
+<span class="r-in"><span><span class="co"># for this, you need to feed the function the tidy data frame generated above</span></span></span>
+<span class="r-in"><span><span class="co"># with radiator::genomic_converter:</span></span></span>
+<span class="r-in"><span><span class="va">scan.pops.sub</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">run_bayescan</span><span class="op">(</span></span></span>
+<span class="r-in"><span>    data <span class="op">=</span> <span class="va">data</span><span class="op">$</span><span class="va">tidy.data</span>,</span></span>
+<span class="r-in"><span>    pr_odds <span class="op">=</span> <span class="fl">1000</span>,</span></span>
+<span class="r-in"><span>    subsample <span class="op">=</span> <span class="st">"min"</span>,</span></span>
+<span class="r-in"><span>    iteration.subsample <span class="op">=</span> <span class="fl">10</span></span></span>
+<span class="r-in"><span>    <span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># This will run BayeScan 10 times, and for each iteration, the number of individuals</span></span></span>
+<span class="r-in"><span><span class="co"># sampled in each pop will be equal to the minimal number found in the pops</span></span></span>
+<span class="r-in"><span><span class="co"># (e.g. pop1 N = 36, pop2 N = 50 and pop3 N = 15, the subsampling will use 15</span></span></span>
+<span class="r-in"><span><span class="co"># individuals in each pop, taken randomly.</span></span></span>
+<span class="r-in"><span><span class="co"># You can also choose a specific subsample value with the argument.</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -289,7 +326,7 @@ Molecular Ecology 20: 1450-1462</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

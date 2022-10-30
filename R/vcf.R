@@ -857,7 +857,6 @@ read_vcf <- function(
         blacklist.strands <- SeqArray::seqAlleleCount(
           gdsfile = gds,
           ref.allele = NULL,
-          .progress = TRUE,
           parallel = parallel.core) %>%
           unlist(.) %>%
           matrix(
@@ -872,7 +871,9 @@ read_vcf <- function(
                              POS = blacklist.strands$POS,
                              MISSING_PROP = SeqArray::seqMissing(
                                gdsfile = gds,
-                               per.variant = TRUE, .progress = TRUE, parallel = parallel.core),
+                               per.variant = TRUE,
+                               parallel = parallel.core
+                               ),
                              .after = 1) %>%
           dplyr::mutate(
             MAC = dplyr::if_else(ALT_COUNT < REF_COUNT, ALT_COUNT, REF_COUNT),
@@ -1875,6 +1876,8 @@ tidy_vcf <- function(
   if (verbose) message("Updating GDS with genotypes.meta values")
   update_radiator_gds(gds = data, node.name = "genotypes.meta", value = tidy.data)
   message("\nTidy data file written: ", filename.rad$filename.short)
+  if (verbose) message("Closing GDS file connection")
+  SeqArray::seqClose(data) # close the connection
   return(tidy.data)
 }#End tidy_vcf
 
@@ -2270,7 +2273,7 @@ check_header_source_vcf <- function(vcf) {
 #' whitelist.markers = "whitelist.loci.txt")
 #' }
 
-
+#' @keywords internal
 #' @rdname split_vcf
 #' @export
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}

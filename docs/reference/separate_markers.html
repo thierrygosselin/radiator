@@ -23,7 +23,7 @@ function provides an easy way to do it."><!-- mathjax --><script src="https://cd
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -38,7 +38,7 @@ function provides an easy way to do it."><!-- mathjax --><script src="https://cd
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -84,17 +84,17 @@ function provides an easy way to do it.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">separate_markers</span><span class="op">(</span>
-  <span class="va">data</span>,
-  sep <span class="op">=</span> <span class="st">"__"</span>,
-  markers.meta.lists.only <span class="op">=</span> <span class="cn">FALSE</span>,
-  markers.meta.all.only <span class="op">=</span> <span class="cn">FALSE</span>,
-  generate.markers.metadata <span class="op">=</span> <span class="cn">TRUE</span>,
-  generate.ref.alt <span class="op">=</span> <span class="cn">FALSE</span>,
-  biallelic <span class="op">=</span> <span class="cn">NULL</span>,
-  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,
-  verbose <span class="op">=</span> <span class="cn">TRUE</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">separate_markers</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
+<span>  sep <span class="op">=</span> <span class="st">"__"</span>,</span>
+<span>  markers.meta.lists.only <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  markers.meta.all.only <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  generate.markers.metadata <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  generate.ref.alt <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  biallelic <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -105,6 +105,8 @@ If <code>CHROM</code>, <code>LOCUS</code>, <code>POS</code> are already present,
 returns the dataset untouched.
 The data can be whitelists and blacklists of markers or tidy datasets or
 radiator GDS object.</p></dd>
+
+
 <dt>sep</dt>
 <dd><p>(optional, character) Separator used to identify the different
 field in the <code>MARKERS</code> column.</p>
@@ -112,23 +114,31 @@ field in the <code>MARKERS</code> column.</p>
 to generate markers metadata column:
 <code>"CHROM", "LOCUS", "POS", "REF", "ALT"</code>, use <code>sep = NULL</code>.
 Default: <code>sep = "__"</code>.</p></dd>
+
+
 <dt>markers.meta.lists.only</dt>
 <dd><p>(logical, optional)
 Allows to keep only the markers metadata:
 <code>"VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS"</code>, useful for whitelist
 or blacklist.
 Default: <code>markers.meta.lists.only = FALSE</code></p></dd>
+
+
 <dt>markers.meta.all.only</dt>
 <dd><p>(logica, optionall)
 Allows to keep all available markers metadata:
 <code>"VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF", "ALT"</code>,
 useful inside radiator.
 Default: <code>markers.meta.all.only = FALSE</code></p></dd>
+
+
 <dt>generate.markers.metadata</dt>
 <dd><p>(logical, optional)
 Generate missing markers metadata when missing.
 <code>"CHROM", "LOCUS", "POS"</code>.
 Default: <code>generate.markers.metadata = TRUE</code></p></dd>
+
+
 <dt>generate.ref.alt</dt>
 <dd><p>(logical, optional) Generate missing REF/ALT alleles
 with: REF = A and ALT = C (for biallelic datasets, only).
@@ -136,6 +146,8 @@ It is turned off automatically
 when argument <code>markers.meta.lists.only = TRUE</code> and
 on automatically when argument <code>markers.meta.all.only = TRUE</code>
 Default: <code>generate.ref.alt = FALSE</code></p></dd>
+
+
 <dt>biallelic</dt>
 <dd><p>(logical) Speed up the function execution by entering
 if the dataset is biallelic or not. Used internally for verification, before
@@ -144,18 +156,25 @@ By default, the function calls <code><a href="detect_biallelic_markers.html">det
 The argument is required if <code>data</code> is a tidy dataset and not just
 a whitelist/blacklist.
 Default: <code>biallelic = NULL</code></p></dd>
+
+
 <dt>parallel.core</dt>
 <dd><p>(optional) The number of core used for parallel
 execution during import.
 Default: <code>parallel.core = parallel::detectCores() - 1</code>.</p></dd>
+
+
 <dt>verbose</dt>
 <dd><p>(optional, logical) When <code>verbose = TRUE</code>
 the function is a little more chatty during execution.
 Default: <code>verbose = TRUE</code>.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>The same data in the global environment, with 3 new columns:
+    
+
+<p>The same data in the global environment, with 3 new columns:
 <code>CHROM</code>, <code>LOCUS</code>, <code>POS</code>. Additionnal columns may be genrated,
 see arguments documentation.</p>
     </div>
@@ -170,10 +189,10 @@ see arguments documentation.</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in"><span class="va">whitelist</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">separate_markers</span><span class="op">(</span>data <span class="op">=</span> <span class="va">whitelist.markers</span><span class="op">)</span></span>
-<span class="r-in"><span class="va">tidy.data</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">separate_markers</span><span class="op">(</span>data <span class="op">=</span> <span class="va">bluefintuna.data</span><span class="op">)</span></span>
-<span class="r-in"><span class="op">}</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span><span class="va">whitelist</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">separate_markers</span><span class="op">(</span>data <span class="op">=</span> <span class="va">whitelist.markers</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">tidy.data</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">separate_markers</span><span class="op">(</span>data <span class="op">=</span> <span class="va">bluefintuna.data</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -188,7 +207,7 @@ see arguments documentation.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

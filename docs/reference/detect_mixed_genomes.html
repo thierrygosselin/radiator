@@ -19,7 +19,7 @@ sequencing effort, etc."><!-- mathjax --><script src="https://cdnjs.cloudflare.c
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -34,7 +34,7 @@ sequencing effort, etc."><!-- mathjax --><script src="https://cdnjs.cloudflare.c
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -76,16 +76,16 @@ sequencing effort, etc.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">detect_mixed_genomes</span><span class="op">(</span>
-  <span class="va">data</span>,
-  interactive.filter <span class="op">=</span> <span class="cn">TRUE</span>,
-  detect.mixed.genomes <span class="op">=</span> <span class="cn">TRUE</span>,
-  ind.heterozygosity.threshold <span class="op">=</span> <span class="cn">NULL</span>,
-  by.strata <span class="op">=</span> <span class="cn">FALSE</span>,
-  verbose <span class="op">=</span> <span class="cn">TRUE</span>,
-  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,
-  <span class="va">...</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">detect_mixed_genomes</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
+<span>  interactive.filter <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  detect.mixed.genomes <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  ind.heterozygosity.threshold <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  by.strata <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -97,14 +97,20 @@ sequencing effort, etc.</p>
 Look into <code><a href="tidy_genomic_data.html">tidy_genomic_data</a></code>,
 <code><a href="read_vcf.html">read_vcf</a></code> or
 <code><a href="tidy_vcf.html">tidy_vcf</a></code>.</p></dd>
+
+
 <dt>interactive.filter</dt>
 <dd><p>(optional, logical) Do you want the filtering session to
 be interactive. Figures of distribution are shown before asking for filtering
 thresholds.
 Default: <code>interactive.filter = TRUE</code>.</p></dd>
+
+
 <dt>detect.mixed.genomes</dt>
 <dd><p>(optional, logical) For use inside radiator pipelines.
 Default: <code>detect.mixed.genomes = TRUE</code>.</p></dd>
+
+
 <dt>ind.heterozygosity.threshold</dt>
 <dd><p>(string, double, optional)
 Blacklist individuals based on observed heterozygosity (averaged across markers).</p>
@@ -116,6 +122,8 @@ Individuals with mean observed heterozygosity higher (&gt;) or lower (&lt;)
 than the thresholds will be blacklisted.</p>
 <p>Default: <code>ind.heterozygosity.threshold = NULL</code> will turn off completely
 the filter and the function will only output the plots and table of heterozygosity.</p></dd>
+
+
 <dt>by.strata</dt>
 <dd><p>(optional, logical)
 Can only be used when <code>interactive.filter = TRUE</code>, allows to enter
@@ -123,23 +131,35 @@ heterozygosity thresholds by strata, instead of overall. This is not recommended
 to use inside <code><a href="filter_rad.html">filter_rad</a></code> or when doing population discovery.
 This is a good use when dealing with different species.
 Default: <code>by.strata = FALSE</code>.</p></dd>
+
+
 <dt>verbose</dt>
 <dd><p>(optional, logical) When <code>verbose = TRUE</code>
 the function is a little more chatty during execution.
 Default: <code>verbose = TRUE</code>.</p></dd>
+
+
 <dt>parallel.core</dt>
 <dd><p>(optional) The number of core used for parallel
 execution during import.
 Default: <code>parallel.core = parallel::detectCores() - 1</code>.</p></dd>
+
+
 <dt>...</dt>
 <dd><p>(optional) Advance mode that allows to pass further arguments
 for fine-tuning the function. Also used for legacy arguments (see details or
 special section)</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>The function returns inside the global environment a list with
-5 objects:</p><ol><li><p>the individual's heterozigosity (<code>$individual.heterozygosity</code>)
+    
+
+<p>The function returns inside the global environment a list with
+5 objects:</p>
+
+
+<ol><li><p>the individual's heterozigosity (<code>$individual.heterozygosity</code>)
 a dataframe containing for each individual, the population id, the number of
 genotyped markers, the number of missing genotypes (based on the number of
 markers of the population and overall), the number of markers genotyped as heterozygote
@@ -195,21 +215,21 @@ on previous version of this function.</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in"><span class="co">#Step1: highlight outlier individuals, the simplest way to run:</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">detect_mixed_genomes</span><span class="op">(</span>data <span class="op">=</span> <span class="st">"wombat_tidy.rad"</span><span class="op">)</span></span>
-<span class="r-in"><span class="co"># where the .rad file is a tidy data set generated by radiator.</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># Or if you don't have a tidy df:</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu"><a href="tidy_genomic_data.html">tidy_genomic_data</a></span><span class="op">(</span></span>
-<span class="r-in">    data <span class="op">=</span> <span class="st">"wombat.vcf"</span>,</span>
-<span class="r-in">    strata <span class="op">=</span> <span class="st">"strata.wombat.tsv"</span></span>
-<span class="r-in">    <span class="op">)</span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span>
-<span class="r-in"><span class="fu">radiator</span><span class="fu">::</span><span class="fu">detect_mixed_genomes</span><span class="op">(</span><span class="va">.</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="op">}</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span><span class="co">#Step1: highlight outlier individuals, the simplest way to run:</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">detect_mixed_genomes</span><span class="op">(</span>data <span class="op">=</span> <span class="st">"wombat_tidy.rad"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># where the .rad file is a tidy data set generated by radiator.</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Or if you don't have a tidy df:</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu"><a href="tidy_genomic_data.html">tidy_genomic_data</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    data <span class="op">=</span> <span class="st">"wombat.vcf"</span>,</span></span>
+<span class="r-in"><span>    strata <span class="op">=</span> <span class="st">"strata.wombat.tsv"</span></span></span>
+<span class="r-in"><span>    <span class="op">)</span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
+<span class="r-in"><span><span class="fu">radiator</span><span class="fu">::</span><span class="fu">detect_mixed_genomes</span><span class="op">(</span><span class="va">.</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -224,7 +244,7 @@ on previous version of this function.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

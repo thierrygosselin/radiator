@@ -20,7 +20,7 @@ DArT files."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.3</span>
       </span>
     </div>
 
@@ -35,7 +35,7 @@ DArT files."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
      
     <span class="caret"></span>
@@ -78,15 +78,15 @@ and optionally, a tidy dataset using
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">read_dart</span><span class="op">(</span>
-  <span class="va">data</span>,
-  <span class="va">strata</span>,
-  filename <span class="op">=</span> <span class="cn">NULL</span>,
-  tidy.dart <span class="op">=</span> <span class="cn">FALSE</span>,
-  verbose <span class="op">=</span> <span class="cn">FALSE</span>,
-  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,
-  <span class="va">...</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">read_dart</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
+<span>  <span class="va">strata</span>,</span>
+<span>  filename <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  tidy.dart <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  parallel.core <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -114,6 +114,8 @@ VCF files (dosage of alternate allele, see details).</p>
 
 <p>If you encounter a problem, sent me your data so that I can update
 the function.</p></dd>
+
+
 <dt>strata</dt>
 <dd><p>A tab delimited file or object with 3 columns.
 Columns header is:
@@ -131,6 +133,8 @@ Silico DArT data is currently used to detect sex markers, so the <code>STRATA</c
 column should be filed with sex information: <code>M</code> or <code>F</code>.</p>
 <p>See example on how to extract the TARGET_ID of your DArT file.</p>
 <p><a href="https://www.dropbox.com/s/utq2h6o00v55kep/example.dart.strata.tsv?dl=0)" class="external-link">example.dart.strata.tsv</a>.</p></dd>
+
+
 <dt>filename</dt>
 <dd><p>(optional) The function uses <code><a href="http://www.fstpackage.org/reference/write_fst.html" class="external-link">write.fst</a></code>,
 to write the tidy data frame in
@@ -138,27 +142,43 @@ the working directory. The file extension appended to
 the <code>filename</code> provided is <code>.rad</code>.
 With default: <code>filename = NULL</code>, the tidy data frame is
 in the global environment only (i.e. not written in the working directory...).</p></dd>
+
+
 <dt>tidy.dart</dt>
 <dd><p>(logical, optional) Generate a tidy dataset.
 Default:<code>tidy.dart = FALSE</code>.</p></dd>
+
+
 <dt>verbose</dt>
 <dd><p>(optional, logical) When <code>verbose = TRUE</code>
 the function is a little more chatty during execution.
 Default: <code>verbose = TRUE</code>.</p></dd>
+
+
 <dt>parallel.core</dt>
 <dd><p>(optional) The number of core used for parallel
 execution during import.
 Default: <code>parallel.core = parallel::detectCores() - 1</code>.</p></dd>
+
+
 <dt>...</dt>
 <dd><p>(optional) To pass further argument for fine-tuning the function.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A radiator GDS file and tidy dataframe with several columns depending on DArT file:
+    
+
+<p>A radiator GDS file and tidy dataframe with several columns depending on DArT file:
 <code>silico.dart:</code> A tibble with 5 columns: <code>CLONE_ID, SEQUENCE, VALUE, INDIVIDUALS, STRATA</code>.
-This object is also saved in the directory (file ending with .rad).
-Common to <code>1row, 2rows and counts</code>: A GDS file is automatically generated.
-To have a tidy tibble, the argument <code>tidy.dart = TRUE</code> must be used.</p><ol><li><p>VARIANT_ID: generated by radiator and correspond the markers in integer.</p></li>
+This object is also saved in the directory (file ending with .rad).</p>
+
+
+<p>Common to <code>1row, 2rows and counts</code>: A GDS file is automatically generated.
+To have a tidy tibble, the argument <code>tidy.dart = TRUE</code> must be used.</p>
+
+
+<ol><li><p>VARIANT_ID: generated by radiator and correspond the markers in integer.</p></li>
 <li><p>MARKERS: generated by radiator and correspond to CHROM + LOCUS + POS separated by 2 underscores.</p></li>
 <li><p>CHROM: the chromosome info, for de novo: CHROM_1.</p></li>
 <li><p>LOCUS: the locus info.</p></li>
@@ -215,12 +235,12 @@ Default: <code>path.folder = NULL</code>. The working directory is used.</p></li
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in"><span class="va">clownfish.dart.tidy</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">read_dart</span><span class="op">(</span></span>
-<span class="r-in">    data <span class="op">=</span> <span class="st">"clownfish.dart.csv"</span>,</span>
-<span class="r-in">    strata <span class="op">=</span> <span class="st">"clownfish.strata.tsv"</span></span>
-<span class="r-in">    <span class="op">)</span></span>
-<span class="r-in"><span class="op">}</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span><span class="va">clownfish.dart.tidy</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">read_dart</span><span class="op">(</span></span></span>
+<span class="r-in"><span>    data <span class="op">=</span> <span class="st">"clownfish.dart.csv"</span>,</span></span>
+<span class="r-in"><span>    strata <span class="op">=</span> <span class="st">"clownfish.strata.tsv"</span></span></span>
+<span class="r-in"><span>    <span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -235,7 +255,7 @@ Default: <code>path.folder = NULL</code>. The working directory is used.</p></li
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer></div>

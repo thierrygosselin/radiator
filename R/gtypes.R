@@ -23,7 +23,7 @@ tidy_gtypes <- function(data) {
 
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) stop("Input file necessary...")
-  if (class(data) != "gtypes") stop("Input is not a genlight object")
+  if (class(data)[1] != "gtypes") stop("Input is not a genlight object")
 
   # import ---------------------------------------------------------------------
   # lots of changes with gtypes so some stuff might be broken...
