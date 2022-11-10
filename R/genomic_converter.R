@@ -322,12 +322,8 @@ genomic_converter <- function(
   # Check for specific format vs package required-----------------------------
   # if ("gtypes" %in% output) radiator_packages_dep(package = "strataG")
   if ("genlight" %in% output) radiator_packages_dep(package = "adegenet")
-  if ("seqarray" %in% output) {
-    radiator_packages_dep(package = "SeqArray", cran = FALSE, bioc = TRUE)
-  }
-  if ("snprelate" %in% output) {
-    radiator_packages_dep(package = "SNPRelate", cran = FALSE, bioc = TRUE)
-  }
+  if ("seqarray" %in% output) radiator_packages_dep(package = "SeqArray", bioc = TRUE)
+  if ("snprelate" %in% output) radiator_packages_dep(package = "SNPRelate", bioc = TRUE)
 
   # Cleanup-------------------------------------------------------------------
   # obj.keeper <- c(ls(envir = globalenv()), "res", "verbose")

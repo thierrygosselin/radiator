@@ -184,10 +184,9 @@ tidy_genlight <- function(
         verbose = verbose
       ) %$%
       input
-    if (write) {
-      radiator::write_rad(data = tidy.data, path = filename.genlight)
-      if (verbose) message("File written: ", filename.short)
-    }
+
+    if (write) radiator::write_rad(data = tidy.data, path = filename.genlight, verbose = verbose)
+
   }#End tidy genlight
 
   if (gds) {

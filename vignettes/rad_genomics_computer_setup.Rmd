@@ -580,7 +580,7 @@ There are solutions using *Homebrew*, but I'm not a fan for the shortcuts.
 
 ```{bash eval=FALSE}
 cd ~/Downloads
-curl -L https://www.unidata.ucar.edu/downloads/udunits/udunits-2.2.26.tar.gz | tar xf -
+curl -L https://artifacts.unidata.ucar.edu/repository/downloads-udunits/current/udunits-2.2.28.tar.gz | tar xf -
 cd udunits*
 ./configure && make -j56 && sudo make install
 cd ..
@@ -591,7 +591,7 @@ sudo rm -R udunits*
 
 ```{bash eval=FALSE}
 cd ~/Downloads
-curl -L https://www.sqlite.org/2020/sqlite-autoconf-3330000.tar.gz | tar xf -
+curl -L https://www.sqlite.org/2022/sqlite-autoconf-3390400.tar.gz | tar xf -
 cd sqlite-autoconf*
 ./configure && make -j56 && sudo make install
 cd ..
@@ -603,7 +603,7 @@ sudo rm -R sqlite-autoconf*
 
 ```{bash eval=FALSE}
 cd ~/Downloads
-curl -L https://download.osgeo.org/libtiff/tiff-4.1.0.tar.gz | tar xf -
+curl -L https://download.osgeo.org/libtiff/tiff-4.4.0.tar.gz | tar xf -
 cd tiff*
 ./configure && make -j56 && sudo make install
 cd ..
@@ -614,11 +614,17 @@ sudo rm -R tiff*
 
 ```{bash eval=FALSE}
 cd ~/Downloads
-curl -L  http://download.osgeo.org/proj/proj-7.2.0.tar.gz | tar xf -
+curl -L  https://download.osgeo.org/proj/proj-9.1.0.tar.gz | tar xf -
 cd proj*
-./configure --libdir=/usr/local/lib && make -j56 && sudo make install
-cd ..
+mkdir build
+cd build
+cmake ..
+cmake --build .
+sudo cmake --build . --target install
+cd ~/Downloads
 sudo rm -R proj*
+# with prior releases, when configure was necessary
+# ./configure --libdir=/usr/local/lib && make -j56 && sudo make install 
 ```
 
 [GDAL](https://gdal.org)
@@ -628,11 +634,17 @@ export LDFLAGS="-L/usr/local/lib"
 export CPPFLAGS="-I/usr/local/include"
 
 cd ~/Downloads
-curl -L https://github.com/OSGeo/gdal/releases/download/v3.2.0/gdal-3.2.0.tar.gz | tar xf -
+curl -L https://github.com/OSGeo/gdal/releases/download/v3.5.3/gdal-3.5.3.tar.gz | tar xf -
 cd gdal*
-./configure --prefix=/usr/local --libdir=/usr/local/lib --with-proj=/usr/local && make -j56 && sudo make install #time for coffee...
-cd ..
+mkdir build
+cd build
+cmake ..
+cmake --build .
+sudo cmake --build . --target install
+cd ~/Downloads
 sudo rm -R gdal*
+# previous install command required
+#./configure --prefix=/usr/local --libdir=/usr/local/lib --with-proj=/usr/local && make -j56 && sudo make install #time for coffee...
 ```
 
 
@@ -642,10 +654,16 @@ sudo rm -R gdal*
 cd ~/Downloads
 git clone https://git.osgeo.org/gitea/geos/geos.git
 cd geos*
-./autogen.sh
-./configure --libdir=/usr/local/lib && make -j56 && sudo make install
-cd ..
+mkdir build
+cd build
+cmake ..
+cmake --build .
+sudo cmake --build . --target install
+cd ~/Downloads
 sudo rm -R geos*
+# previous install command required
+#./autogen.sh
+#./configure --libdir=/usr/local/lib && make -j56 && sudo make install
 ```
 
 **Back in R/RStudio**
@@ -712,7 +730,6 @@ usethis::edit_r_makevars()
 
 This latest os requires extra lines:
 ```{bash eval=FALSE}
-CC=/usr/local/bin/clang
 CC=/usr/local/bin/clang
 CXX=/usr/local/bin/clang++
 CXX1X=/usr/local/bin/clang++

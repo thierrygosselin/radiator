@@ -660,13 +660,15 @@ tidy_plink <- function(
     message("\nGenotypes formats generated with ", n.markers, " SNPs: ")
     message("    GT_BIN (the dosage of ALT allele: 0, 1, 2 NA)")
 
+    biallelic <- radiator::detect_biallelic_markers(data)
     tidy.data <- gds2tidy(
       gds = data,
       markers.meta = NULL,
       pop.id = FALSE,
-      calibrate.alleles = calibrate.alleles
+      calibrate.alleles = calibrate.alleles,
+      close.gds = TRUE
     )
-    return(res = list(input = tidy.data, biallelic = radiator::detect_biallelic_markers(data)))
+    return(res = list(input = tidy.data, biallelic = biallelic))
   }#End tidy bed
 } # End tidy_plink
 

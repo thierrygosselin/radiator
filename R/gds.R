@@ -338,6 +338,7 @@ gds2tidy <- function(
   calibrate.alleles = TRUE,
   strip.rad = FALSE,
   parallel.core = parallel::detectCores() - 1,
+  close.gds = FALSE,
   ...
 ) {
   if (is.null(individuals)) {
@@ -437,6 +438,13 @@ gds2tidy <- function(
         verbose = FALSE
       ) %$% input
   }
+
+  #  close the connection with GDS file
+  if (close.gds) {
+    SeqArray::seqClose(gds)
+    gds <- NULL
+  }
+
   return(tidy.data)
 } #End tidy gds
 

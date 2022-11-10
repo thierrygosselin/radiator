@@ -14,6 +14,7 @@ gds2tidy(
   calibrate.alleles = TRUE,
   strip.rad = FALSE,
   parallel.core = parallel::detectCores() - 1,
+  close.gds = FALSE,
   ...
 )
 }

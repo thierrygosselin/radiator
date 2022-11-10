@@ -1,3 +1,8 @@
+# radiator 1.2.4 2022-11-10
+
+* bug fix when using some tidy function from GDS, the connection was not closing properly
+
+
 # radiator 1.2.3 2022-10-30
 
 * bug fix with reading VCF, the new update works with SeqArray (>= 1.36.0)

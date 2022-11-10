@@ -10,7 +10,7 @@
 
 
 
-<meta name="date" content="2022-10-30" />
+<meta name="date" content="2022-11-10" />
 
 <title>RADseq Genomics in R</title>
 
@@ -1486,7 +1486,7 @@ border-radius: 0px;
 
 <h1 class="title toc-ignore">RADseq Genomics in R</h1>
 <h3 class="subtitle">computer setup</h3>
-<h4 class="date">2022-10-30</h4>
+<h4 class="date">2022-11-10</h4>
 
 </div>
 
@@ -1952,50 +1952,68 @@ the shortcuts.</p>
 <p><em>brewless</em> version to execute in the terminal:</p>
 <p><a href="https://www.unidata.ucar.edu/software/udunits/">udunits</a></p>
 <pre class="bash"><code>cd ~/Downloads
-curl -L https://www.unidata.ucar.edu/downloads/udunits/udunits-2.2.26.tar.gz | tar xf -
+curl -L https://artifacts.unidata.ucar.edu/repository/downloads-udunits/current/udunits-2.2.28.tar.gz | tar xf -
 cd udunits*
 ./configure &amp;&amp; make -j56 &amp;&amp; sudo make install
 cd ..
 sudo rm -R udunits*</code></pre>
 <p><a href="https://www.sqlite.org">sqlite</a></p>
 <pre class="bash"><code>cd ~/Downloads
-curl -L https://www.sqlite.org/2020/sqlite-autoconf-3330000.tar.gz | tar xf -
+curl -L https://www.sqlite.org/2022/sqlite-autoconf-3390400.tar.gz | tar xf -
 cd sqlite-autoconf*
 ./configure &amp;&amp; make -j56 &amp;&amp; sudo make install
 cd ..
 sudo rm -R sqlite-autoconf*</code></pre>
 <p><a href="http://libtiff.maptools.org">libtiff</a></p>
 <pre class="bash"><code>cd ~/Downloads
-curl -L https://download.osgeo.org/libtiff/tiff-4.1.0.tar.gz | tar xf -
+curl -L https://download.osgeo.org/libtiff/tiff-4.4.0.tar.gz | tar xf -
 cd tiff*
 ./configure &amp;&amp; make -j56 &amp;&amp; sudo make install
 cd ..
 sudo rm -R tiff*</code></pre>
 <p><a href="https://proj.org/about.html">proj</a></p>
 <pre class="bash"><code>cd ~/Downloads
-curl -L  http://download.osgeo.org/proj/proj-7.2.0.tar.gz | tar xf -
+curl -L  https://download.osgeo.org/proj/proj-9.1.0.tar.gz | tar xf -
 cd proj*
-./configure --libdir=/usr/local/lib &amp;&amp; make -j56 &amp;&amp; sudo make install
-cd ..
-sudo rm -R proj*</code></pre>
+mkdir build
+cd build
+cmake ..
+cmake --build .
+sudo cmake --build . --target install
+cd ~/Downloads
+sudo rm -R proj*
+# with prior releases, when configure was necessary
+# ./configure --libdir=/usr/local/lib &amp;&amp; make -j56 &amp;&amp; sudo make install </code></pre>
 <p><a href="https://gdal.org">GDAL</a></p>
 <pre class="bash"><code>export LDFLAGS=&quot;-L/usr/local/lib&quot;
 export CPPFLAGS=&quot;-I/usr/local/include&quot;
 
 cd ~/Downloads
-curl -L https://github.com/OSGeo/gdal/releases/download/v3.2.0/gdal-3.2.0.tar.gz | tar xf -
+curl -L https://github.com/OSGeo/gdal/releases/download/v3.5.3/gdal-3.5.3.tar.gz | tar xf -
 cd gdal*
-./configure --prefix=/usr/local --libdir=/usr/local/lib --with-proj=/usr/local &amp;&amp; make -j56 &amp;&amp; sudo make install #time for coffee...
-cd ..
-sudo rm -R gdal*</code></pre>
+mkdir build
+cd build
+cmake ..
+cmake --build .
+sudo cmake --build . --target install
+cd ~/Downloads
+sudo rm -R gdal*
+# previous install command required
+#./configure --prefix=/usr/local --libdir=/usr/local/lib --with-proj=/usr/local &amp;&amp; make -j56 &amp;&amp; sudo make install #time for coffee...</code></pre>
 <p><a href="https://trac.osgeo.org/geos">GEOS</a></p>
 <pre class="bash"><code>cd ~/Downloads
 git clone https://git.osgeo.org/gitea/geos/geos.git
 cd geos*
-./autogen.sh
-./configure --libdir=/usr/local/lib &amp;&amp; make -j56 &amp;&amp; sudo make install
-cd ..
-sudo rm -R geos*</code></pre>
+mkdir build
+cd build
+cmake ..
+cmake --build .
+sudo cmake --build . --target install
+cd ~/Downloads
+sudo rm -R geos*
+# previous install command required
+#./autogen.sh
+#./configure --libdir=/usr/local/lib &amp;&amp; make -j56 &amp;&amp; sudo make install</code></pre>
 <p><strong>Back in R/RStudio</strong></p>
 <pre class="r"><code>install.packages(&quot;rgeos&quot;, repos=&quot;http://R-Forge.R-project.org&quot;, type=&quot;source&quot;)
 install.packages(&quot;rgdal&quot;, repos=&quot;http://R-Forge.R-project.org&quot;, type=&quot;source&quot;)
@@ -2054,7 +2072,6 @@ compiling <code>rmetasim</code>:</p>
 <p><strong>macOS</strong></p>
 <p>This latest os requires extra lines:</p>
 <pre class="bash"><code>CC=/usr/local/bin/clang
-CC=/usr/local/bin/clang
 CXX=/usr/local/bin/clang++
 CXX1X=/usr/local/bin/clang++
 FLIBS=-L/usr/local/lib

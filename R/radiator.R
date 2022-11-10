@@ -71,7 +71,7 @@
 # @inheritParams radiator_common_arguments
 
 
-radiator_common_arguments <- function (
+radiator_common_arguments <- function(
   gds,
   data,
   parallel.core = parallel::detectCores() - 1,
@@ -755,20 +755,13 @@ radiator_snakecase <- function(x) {
 #' @keywords internal
 #' @export
 radiator_packages_dep <- function(package, cran = TRUE, bioc = FALSE) {
+  if (cran) bioc <- FALSE
+  if (bioc) cran <- FALSE
   installer <- "devtools::install_github"
-
-  if (cran) {
-    installer <- "install.packages"
-  }
-  if (bioc) {
-    installer <- "BiocManager::install"
-  }
-
+  if (cran) installer <- "install.packages"
+  if (bioc) installer <- "BiocManager::install"
   how.to <- stringi::stri_join(installer, "('", package, "')")
-
   if (suppressPackageStartupMessages(!requireNamespace(package, quietly = TRUE))) {
-    # Alternative way:
-    # if (!"SeqArray" %in% utils::installed.packages()[,"Package"]) {
     rlang::abort(
       paste0(paste0("Package required: ", package),
              paste0("\n       Install with: ", how.to))
