@@ -49,12 +49,12 @@
 
 
 tidy_genlight <- function(
-  data,
-  tidy = TRUE,
-  gds = TRUE,
-  write = FALSE,
-  verbose = FALSE,
-  parallel.core = parallel::detectCores() - 1
+    data,
+    tidy = TRUE,
+    gds = TRUE,
+    write = FALSE,
+    verbose = FALSE,
+    parallel.core = parallel::detectCores() - 1
 ) {
   # Test
   # data = "radiator_genlight_20191211@1836.RData"
@@ -194,6 +194,7 @@ tidy_genlight <- function(
     # markers %<>% dplyr::mutate(VARIANT_ID = as.integer(factor(MARKERS)))
     gds.filename <- radiator_gds(
       data.source = "genlight",
+      geno.coding = "alt.dos",
       genotypes = gt2array(
         gt.bin = tidy.data$GT_BIN,
         n.ind = n.ind,
@@ -276,12 +277,12 @@ tidy_genlight <- function(
 
 
 write_genlight <- function(
-  data,
-  biallelic = TRUE,
-  write = FALSE,
-  dartr = FALSE,
-  verbose = FALSE,
-  parallel.core = parallel::detectCores() - 2
+    data,
+    biallelic = TRUE,
+    write = FALSE,
+    dartr = FALSE,
+    verbose = FALSE,
+    parallel.core = parallel::detectCores() - 2
 ) {
 
 

@@ -108,6 +108,11 @@ you should remove both their names and the corresponding genotypes.
 \item No empty lines should be found within the file.
 \item No more than one empty line should be present at the end of file.
 }
+\strong{not an ideal genomic format: } The nice thing about RADseq dataset is
+that you have several important genotypes and markers metadata
+(chromosome, locus, snp, position, read depth, allele depth, etc.) available,
+these are all lacking in the genepop format. This format is kept for archival
+reasons in radiator.
 }
 \examples{
 \dontrun{

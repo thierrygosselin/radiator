@@ -2,7 +2,7 @@ Package: radiator
 Type: Package
 Title: RADseq Data Exploration, Manipulation and Visualization using R
 Version: 1.2.4
-Date: 2022-11-10
+Date: 2022-11-17
 Encoding: UTF-8
 Authors@R: c(
   person("Thierry", "Gosselin", email = "thierrygosselin@icloud.com", role = c("aut", "cre")),
@@ -28,6 +28,7 @@ Suggests:
     adegenet,
     amap,
     BiocManager,
+    cli,
     devtools,
     future,
     gdsfmt,

@@ -134,16 +134,16 @@
 #' }
 
 read_strata <- function(
-  strata,
-  pop.id = FALSE,
-  pop.levels = NULL,
-  pop.labels = NULL,
-  pop.select = NULL,
-  blacklist.id = NULL,
-  keep.two = TRUE,
-  path.folder = NULL,
-  filename = NULL,
-  verbose = FALSE
+    strata,
+    pop.id = FALSE,
+    pop.levels = NULL,
+    pop.labels = NULL,
+    pop.select = NULL,
+    blacklist.id = NULL,
+    keep.two = TRUE,
+    path.folder = NULL,
+    filename = NULL,
+    verbose = FALSE
 ) {
   if (missing(strata)) rlang::abort("\nMissing strata argument...\n")
   # file.date <- format(Sys.time(), "%Y%m%d@%H%M")
@@ -176,7 +176,7 @@ read_strata <- function(
 
     #blacklist.id ----------------------------------------------------------------
     blacklist.id <- read_blacklist_id(blacklist.id, verbose)
-    if (!is.null(blacklist.id)){
+    if (!is.null(blacklist.id)) {
       strata  %<>% dplyr::filter(!INDIVIDUALS %in% blacklist.id$INDIVIDUALS)
     }
 
@@ -361,10 +361,10 @@ summary_strata <- function(strata) {
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 individuals2strata <- function(
-  data,
-  strata.start,
-  strata.end,
-  filename = NULL
+    data,
+    strata.start,
+    strata.end,
+    filename = NULL
 ) {
 
 
@@ -473,9 +473,9 @@ change_pop_names <- function(data, pop.levels = NULL, pop.labels = NULL) {
 
 
 check_pop_levels <- function(
-  pop.levels = NULL,
-  pop.labels = NULL,
-  pop.select = NULL
+    pop.levels = NULL,
+    pop.labels = NULL,
+    pop.select = NULL
 ) {
 
   # checks ---------------------------------------------------------------------
@@ -637,7 +637,8 @@ strata_haplo <- function(strata = NULL, data = NULL, blacklist.id = NULL) {
           file = strata, col_names = TRUE,
           # col_types = col.types
           col_types = readr::cols(.default = readr::col_character())
-        ))
+        )
+      )
     } else {
       strata.df <- strata
     }
@@ -702,7 +703,7 @@ read_blacklist_id <- function(blacklist.id = NULL, verbose = TRUE) {
       blacklist.id <- dplyr::mutate(
         .data = blacklist.id,
         dplyr::across(tidyselect::everything(), .fns = as.character)
-        )
+      )
     }
     blacklist.id$INDIVIDUALS <- radiator::clean_ind_names(blacklist.id$INDIVIDUALS)
 

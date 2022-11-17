@@ -697,6 +697,42 @@ So far, I haven't found the cure to this computer-specific problem.
 
 # Specific librairies installation
 
+
+## `fst` & `fstcore` & `data.table`
+
+Better to install and compile them from source to enable OpenMP. Install in the 
+terminal [zstd](https://facebook.github.io/zstd/) and [lz4](https://lz4.github.io/lz4/):
+
+
+```{bash eval=FALSE}
+cd ~/Downloads
+curl -L https://github.com/lz4/lz4/archive/refs/tags/v1.9.4.tar.gz | tar xf -
+cd lz4*
+make 
+sudo make install
+cd .. 
+sudo rm -R lz4*
+```
+
+```{bash eval=FALSE}
+cd ~/Downloads
+curl -L https://github.com/facebook/zstd/archive/refs/tags/v1.5.2.tar.gz | tar xf -
+cd zstd*
+make 
+sudo make install
+cd .. 
+sudo rm -R zstd*
+```
+
+
+```{r eval=FALSE}
+install.packages("fstcore")
+install.packages("fst", type = "source")
+install.packages("data.table", type = "source")
+```
+
+
+
 ## `rmetasim`
 
 ### Download

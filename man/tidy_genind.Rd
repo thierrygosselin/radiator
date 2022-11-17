@@ -45,6 +45,14 @@ Tidy genind object from
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and might be of interest for users.
 }
+\note{
+\href{https://github.com/thibautjombart/adegenet}{genind} objects, like
+genepop, are not optimal genomic format for RADseq datasets,
+they lack important genotypes and markers metadata: chromosome, locus, snp,
+position, read depth, allele depth, etc.
+\href{https://github.com/thibautjombart/adegenet}{genlight} object is a more
+interesting container and is memory efficient, see \code{\link{tidy_genlight}}.
+}
 \references{
 Jombart T (2008) adegenet: a R package for the multivariate
 analysis of genetic markers. Bioinformatics, 24, 1403-1405.

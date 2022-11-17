@@ -289,6 +289,7 @@
 
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
+
 genomic_converter <- function(
   data,
   strata = NULL,
@@ -415,7 +416,8 @@ genomic_converter <- function(
 
   # File type detection
   data.type <- detect_genomic_format(data = data)
-  if (verbose) message("\nImporting data: ", data.type)
+  m <- stringi::stri_join("\nImporting data: ", data.type)
+  if (verbose) cli::cli_progress_step(m)
 
   input <- radiator::tidy_genomic_data(
     data = data,
@@ -435,7 +437,7 @@ genomic_converter <- function(
     verbose = FALSE
   )
 
-  if (verbose) message("\nPreparing data for output\n")
+  if (verbose) cli::cli_progress_step("\nPreparing data\n")
 
   if (is.null(strata) && is.null(strata.bk)) {
     strata.bk <- strata <- radiator::generate_strata(data = input)
@@ -464,6 +466,7 @@ genomic_converter <- function(
   if (TRUE %in% (c("genepop", "hierfstat", "structure", "hzar", "gsi_sim",
                    "genepopedit", "arlequin", "bayescan") %in% output)) {
     if (!rlang::has_name(input, "GT")) {
+      if (verbose) cli::cli_progress_step("Generating genotype format required for conversion")
       input %<>% radiator::calibrate_alleles(data = ., biallelic = biallelic, gt = TRUE) %$% input
     }
   }
@@ -522,7 +525,7 @@ genomic_converter <- function(
 
   # GENEPOP --------------------------------------------------------------------
   if ("genepop" %in% output) {
-    if (verbose) message("Generating genepop file")
+    if (verbose) cli::cli_progress_step("Generating genepop file")
     radiator::write_genepop(
       data = input,
       pop.levels = pop.levels,
@@ -532,39 +535,43 @@ genomic_converter <- function(
 
   # GENEPOPEDIT --------------------------------------------------------------------
   if ("genepopedit" %in% output) {
-    if (verbose) message("Generating genepopedit flatten object")
+    if (verbose) cli::cli_progress_step("Generating genepopedit flatten object")
     res$genepopedit <- radiator::write_genepopedit(data = input)
   } # end genepopedit output
 
 
   # GSI_SIM --------------------------------------------------------------------
   if ("gsi_sim" %in% output) {
-    if (verbose) message("Generating gsi_sim output")
-    res$gsi_sim <- radiator::write_gsi_sim(data = input,
-                                           pop.levels = pop.levels,
-                                           strata = strata.bk,
-                                           filename = filename)
+    if (verbose) cli::cli_progress_step("Generating gsi_sim output")
+    res$gsi_sim <- radiator::write_gsi_sim(
+      data = input,
+      pop.levels = pop.levels,
+      strata = strata.bk,
+      filename = filename
+      )
   } # end gsi_sim output
 
   # RUBIAS --------------------------------------------------------------------
   if ("rubias" %in% output) {
-    if (verbose) message("Generating rubias output")
-    res$rubias <- radiator::write_rubias(data = input,
-                                         strata = strata.bk,
-                                         filename = filename,
-                                         parallel.core = parallel.core)
+    if (verbose) cli::cli_progress_step("Generating rubias output")
+    res$rubias <- radiator::write_rubias(
+      data = input,
+      strata = strata.bk,
+      filename = filename,
+      parallel.core = parallel.core
+      )
   } # end rubias output
 
   # HapMap --------------------------------------------------------------------
   if ("hapmap" %in% output) {
-    if (verbose) message("Generating hapmap output")
+    if (verbose) cli::cli_progress_step("Generating hapmap output")
     radiator::write_hapmap(data = input, filename = filename)
   } # end hapmap output
 
 
   # hierfstat --------------------------------------------------------------------
   if ("hierfstat" %in% output) {
-    if (verbose) message("Generating hierfstat file")
+    if (verbose) cli::cli_progress_step("Generating hierfstat file")
     res$hierfstat <- radiator::write_hierfstat(
       data = input,
       filename = filename
@@ -573,7 +580,7 @@ genomic_converter <- function(
 
   # strataG --------------------------------------------------------------------
   if ("gtypes" %in% output) {
-    if (verbose) message("Generating strataG gtypes object")
+    if (verbose) cli::cli_progress_step("Generating strataG gtypes object")
     res$gtypes <- radiator::write_gtypes(
       data = input,
       write = TRUE,
@@ -583,7 +590,7 @@ genomic_converter <- function(
 
   # structure --------------------------------------------------------------------
   if ("structure" %in% output) {
-    if (verbose) message("Generating structure file")
+    if (verbose) cli::cli_progress_step("Generating structure file")
     radiator::write_structure(
       data = input,
       pop.levels = pop.levels,
@@ -594,7 +601,7 @@ genomic_converter <- function(
 
   # faststructure --------------------------------------------------------------------
   if ("faststructure" %in% output) {
-    if (verbose) message("Generating faststructure file")
+    if (verbose) cli::cli_progress_step("Generating faststructure file")
     radiator::write_faststructure(
       data = input,
       pop.levels = pop.levels,
@@ -605,116 +612,67 @@ genomic_converter <- function(
   # betadiv --------------------------------------------------------------------
   if ("betadiv" %in% output) {
     if (!biallelic) rlang::abort("betadiv output is currently implemented for biallelic data only")
-    if (verbose) message("Generating betadiv object")
+    if (verbose) cli::cli_progress_step("Generating betadiv object")
     res$betadiv <- radiator::write_betadiv(data = input)
-
-    # if (!is.null(imputation.method)) {
-    #   if (verbose) message("Generating betadiv object WITH imputations")
-    #   res$betadiv.imputed <- radiator::write_betadiv(data = input.imp)
-    # }
   } # end betadiv output
 
   # arlequin --------------------------------------------------------------------
   if ("arlequin" %in% output) {
-    if (verbose) message("Generating arlequin file")
+    if (verbose) cli::cli_progress_step("Generating arlequin file")
     radiator::write_arlequin(
       data = input,
       pop.levels = pop.levels,
       filename = filename
     )
-
-    # if (!is.null(imputation.method)) {
-    #   if (verbose) message("Generating arlequin file WITH imputations")
-    #   radiator::write_arlequin(
-    #     data = input.imp,
-    #     pop.levels = pop.levels,
-    #     filename = filename.imp
-    #   )
-    # }
   } # end arlequin output
 
   # GENIND ---------------------------------------------------------------------
   if ("genind" %in% output) {
-    if (verbose) message("Generating adegenet genind object")
+    if (verbose) cli::cli_progress_step("Generating adegenet genind object")
     res$genind <- radiator::write_genind(data = input, write = TRUE)
-
-    # if (!is.null(imputation.method)) {
-    #   if (verbose) message("Generating adegenet genind object WITH imputations")
-    #   res$genind.imputed <- radiator::write_genind(data = input.imp)
-    # }
   } # end genind
 
   # GENLIGHT -------------------------------------------------------------------
   if ("genlight" %in% output) {
-    if (verbose) message("Generating adegenet genlight object")
+    if (verbose) cli::cli_progress_step("Generating adegenet genlight object")
     res$genlight <- radiator::write_genlight(
       data = input, biallelic = TRUE, write = TRUE)
-
-    # if (!is.null(imputation.method)) {
-    #   if (verbose) message("Generating adegenet genlight object WITH imputations")
-    #   res$genlight.imputed <- radiator::write_genlight(data = input.imp,
-    #                                                    biallelic = TRUE)
-    # }
   } # end genlight output
 
   # VCF ------------------------------------------------------------------------
   if ("vcf" %in% output) {
     if (!biallelic) rlang::abort("vcf output is currently implemented for biallelic data only")
-    if (verbose) message("Generating VCF file")
+    if (verbose) cli::cli_progress_step("Generating VCF file")
     radiator::write_vcf(
       data = input,
       filename = filename
     )
-
-    # if (!is.null(imputation.method)) {
-    #   if (verbose) message("Generating VCF file WITH imputations")
-    #   radiator::write_vcf(
-    #     data = input.imp,
-    #     filename = filename.imp
-    #   )
-    # }
   } # end vcf output
 
   # PLINK ----------------------------------------------------------------------
   if ("plink" %in% output) {
-    if (verbose) message("Generating PLINK tped/tfam files")
+    if (verbose) cli::cli_progress_step("Generating PLINK")
     radiator::write_plink(
       data = input,
       filename = filename
     )
-
-    # if (!is.null(imputation.method)) {
-    #   if (verbose) message("Generating PLINK tped/tfam files WITH imputations")
-    #   radiator::write_plink(
-    #     data = input.imp,
-    #     filename = filename.imp
-    #   )
-    # }
   } # end plink output
 
 
   # SNPRelate ------------------------------------------------------------------
   if ("snprelate" %in% output) {
+    if (verbose) cli::cli_progress_step("Generating SNPRelate")
     res$snprelate <- radiator::write_snprelate(
       data = input,
       biallelic = TRUE,
       filename = filename,
       verbose = verbose
     )
-    # if (!is.null(imputation.method)) {
-    #   if (verbose) message("Generating SNPRelate object WITH imputations")
-    #   res$snprelate.imputed <- radiator::write_snprelate(
-    #     data = input.imp,
-    #     biallelic = TRUE,
-    #     filename = filename.imp,
-    #     verbose = verbose
-    #   )
-    # }
   }
 
   # bayescan -------------------------------------------------------------------
   if ("bayescan" %in% output) {
-    if (verbose) message("Generating BayeScan object")
+    if (verbose) cli::cli_progress_step("Generating BayeScan")
     res$bayescan <- radiator::write_bayescan(
       data = input,
       pop.select = pop.select,
@@ -723,7 +681,7 @@ genomic_converter <- function(
 
   # pcadapt -------------------------------------------------------------------
   if ("pcadapt" %in% output) {
-    if (verbose) message("Generating pcadapt file and object")
+    if (verbose) cli::cli_progress_step("Generating pcadapt file and object")
     res$pcadapt <- radiator::write_pcadapt(
       data = input,
       filename = filename,
@@ -734,10 +692,10 @@ genomic_converter <- function(
 
   # hzar -------------------------------------------------------------------
   if ("hzar" %in% output) {
-    if (verbose) message("Generating HZAR file")
+    if (verbose) cli::cli_progress_step("Generating HZAR file")
     res$hzar <- radiator::write_hzar(
       data = input,
-      distance = NULL,
+      distances = NULL,
       filename = filename,
       parallel.core = parallel.core
     )
@@ -746,7 +704,7 @@ genomic_converter <- function(
 
   # fineradstructure -----------------------------------------------------------
   if ("fineradstructure" %in% output) {
-    if (verbose) message("Generating fineradstructure file")
+    if (verbose) cli::cli_progress_step("Generating fineradstructure file")
     message("\n\nNote: This function recently changed")
     message("check radiator news and function documentation:")
     message("?radiator::write_fineradstructure\n\n")
@@ -756,55 +714,34 @@ genomic_converter <- function(
 
   # related --------------------------------------------------------------------
   if ("related" %in% output) {
-    if (verbose) message("Generating related file")
+    if (verbose) cli::cli_progress_step("Generating related file")
     res$related <- radiator::write_related(
       data = input, filename = filename, parallel.core = parallel.core)
-
-    # if (!is.null(imputation.method)) {
-    #   if (verbose) message("Generating related file WITH imputations")
-    #   res$related.imputed <- radiator::write_related(
-    #     data = input.imp, filename = filename.imp, parallel.core = parallel.core)
-    # }
   }
 
   # stockr --------------------------------------------------------------------
   if ("stockr" %in% output) {
-    if (verbose) message("Generating stockR file")
+    if (verbose) cli::cli_progress_step("Generating stockR file")
     res$stockr <- radiator::write_stockr(data = input, verbose = verbose)
   }
 
   # maverick --------------------------------------------------------------------
   if ("maverick" %in% output) {
-    if (verbose) message("Generating MavericK files")
+    if (verbose) cli::cli_progress_step("Generating MavericK files")
     radiator::write_maverick(
       data = input,
       filename = filename
     )
-
-    # if (!is.null(imputation.method)) {
-    #   if (verbose) message("Generating MavericK files WITH imputations")
-    #   radiator::write_maverick(
-    #     data = input.imp,
-    #     filename = filename.imp
-    #   )
-    # }
   } # end MavericK output
 
   # dadi -----------------------------------------------------------------------
   if ("dadi" %in% output) {
-    radiator::write_dadi(
-      data = input
-    )
+    if (verbose) cli::cli_progress_step("Generating dadi")
+    radiator::write_dadi(data = input)
     message("\n\nNote: To use an outgroup, use radiator::write_dadi separately\n")
   }
 
-
-
   # Writing tidy on disk -------------------------------------------------------
-  # tidy.name <- stringi::stri_join(filename, ".rad")
-  # message("\nWriting tidy data set:\n", tidy.name)
-  # write_rad(data = input, path = tidy.name)
-
 
   # outout results -------------------------------------------------------------
   if (verbose) {

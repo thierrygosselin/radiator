@@ -115,60 +115,20 @@ tidy_fstat <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
     do.call(rbind, stringi::stri_split_fixed(str = data$data, pattern = "\t")),
     .name_repair = "minimal"
   ) %>%
-    magrittr::set_colnames(x = ., c("POP_ID", markers))
+    magrittr::set_colnames(x = ., c("STRATA", markers))
 
   # Create a string of id
-  id <- tibble::tibble(INDIVIDUALS = paste0("IND-", seq_along(1:length(data$POP_ID))))
+  id <- tibble::tibble(INDIVIDUALS = paste0("IND-", seq_along(1:length(data$STRATA))))
 
   # bind with data
   data <- dplyr::bind_cols(id, data)
 
   # Population info ------------------------------------------------------------
   # Strata
+
   if (!is.null(strata)) {
-    if (is.vector(strata)) {
-      number.columns.strata <- max(utils::count.fields(strata, sep = "\t"))
-      col.types <- stringi::stri_join(rep("c", number.columns.strata), collapse = "")
-      strata.df <- readr::read_tsv(file = strata, col_names = TRUE, col_types = col.types) %>%
-        dplyr::rename(POP_ID = STRATA)
-    } else {
-      # message("strata object: yes")
-      colnames(strata) <- stringi::stri_replace_all_fixed(
-        str = colnames(strata),
-        pattern = "STRATA",
-        replacement = "POP_ID",
-        vectorize_all = FALSE
-      )
-      strata.df <- strata
-    }
-
-    # Remove potential whitespace in pop_id
-    strata.df$POP_ID <- stringi::stri_replace_all_fixed(
-      strata.df$POP_ID,
-      pattern = " ",
-      replacement = "_",
-      vectorize_all = FALSE
-    )
-
-    # Remove unwanted character in individual names
-    strata.df <- strata.df %>%
-      dplyr::mutate(
-        INDIVIDUALS =  stringi::stri_replace_all_fixed(
-          str = INDIVIDUALS,
-          pattern = c("_", ",", ":"),
-          replacement = c("-", "", "-"),
-          vectorize_all = FALSE
-        ),
-        INDIVIDUALS = stringi::stri_replace_all_regex(
-          str = INDIVIDUALS,
-          pattern = "\\s+",
-          replacement = "",
-          vectorize_all = FALSE
-        )
-      )
-
-    #join strata and data
-    individuals <- dplyr::left_join(x = individuals, y = strata.df, by = "INDIVIDUALS")
+    strata <- radiator::read_strata(strata = strata) %$% strata
+    data <- join_strata(data = data, strata = strata)
   }
 
   # Tidy -------------------------------------------------------------------------
@@ -177,11 +137,11 @@ tidy_fstat <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
   data %<>%
     radiator::rad_long(
       x = .,
-      cols = c("POP_ID", "INDIVIDUALS"),
+      cols = c("STRATA", "INDIVIDUALS"),
       names_to = "MARKERS",
       values_to = "GENOTYPE",
       variable_factor = FALSE
-      ) %>%
+    ) %>%
     tidyr::separate(
       col = GENOTYPE, into = c("A1", "A2"), sep = as.numeric(fstat.first.line$allele.coding)
     ) %>%
@@ -196,10 +156,10 @@ tidy_fstat <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
     data %<>%
       radiator::rad_wide(
         x = .,
-        formula = "POP_ID + INDIVIDUALS ~ MARKERS",
+        formula = "STRATA + INDIVIDUALS ~ MARKERS",
         values_from = "GENOTYPE"
       ) %>%
-      dplyr::arrange(POP_ID, INDIVIDUALS)
+      dplyr::arrange(STRATA, INDIVIDUALS)
   }
 
   # writing to a file  ---------------------------------------------------------
@@ -247,17 +207,22 @@ write_hierfstat <- function(data, filename = NULL) {
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
 
   # Checking for missing and/or default arguments ------------------------------
-  if (missing(data)) rlang::abort("Input file necessary to write the hierfstat file is missing")
+  if (missing(data)) rlang::abort("Input file missing")
 
   # Import data ---------------------------------------------------------------
-  if (is.vector(data)) data %<>% radiator::tidy_wide(data = ., import.metadata = TRUE)
+  cli::cli_progress_step("Importing data")
+
+  data %<>% radiator::tidy_wide(data = .)
 
   if (!rlang::has_name(data, "GT")) {
-    data %<>% calibrate_alleles(data = ., verbose = FALSE, gt = TRUE) %$% input
+    cli::cli_progress_step("Recoding genotypes...")
+    data <- gt_recoding(x = data, gt = TRUE, gt.bin = FALSE, gt.vcf = FALSE, gt.vcf.nuc = FALSE)
   }
 
-  data <- dplyr::select(.data = data, POP_ID, INDIVIDUALS, MARKERS, GT) %>%
-    dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
+  cli::cli_progress_step("Preparing data")
+  data %<>%
+    dplyr::select(STRATA, INDIVIDUALS, MARKERS, GT) %>%
+    dplyr::arrange(MARKERS, STRATA, INDIVIDUALS)
 
   # Create a marker vector  ------------------------------------------------
   markers <- dplyr::distinct(.data = data, MARKERS) %>%
@@ -265,20 +230,20 @@ write_hierfstat <- function(data, filename = NULL) {
     purrr::flatten_chr(.)
 
   # Get the number of sample (pop) for hierfstat -------------------------------
-  if (is.factor(data$POP_ID)) data$POP_ID <- droplevels(data$POP_ID)
+  if (is.factor(data$STRATA)) data$STRATA <- droplevels(data$STRATA)
 
-  np <- nlevels(droplevels(data$POP_ID))
+  np <- nlevels(droplevels(data$STRATA))
   np.message <- stringi::stri_join("    * Number of sample pop, np = ", np, sep = "")
-  message(np.message)
+  cli::cli_progress_step(np.message)
 
   # Get the number of loci -----------------------------------------------------
   nl <- length(markers)
   nl.message <- stringi::stri_join("    * Number of markers, nl = ", nl, sep = "")
-  message(nl.message)
+  cli::cli_progress_step(nl.message)
 
   data <- suppressWarnings(
     data %>%
-      dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT) %>%
+      dplyr::select(MARKERS, STRATA, INDIVIDUALS, GT) %>%
       dplyr::mutate(
         GT = replace(GT, which(GT == "000000"), NA),
         A1 = as.numeric(stringi::stri_sub(str = GT, from = 1, to = 3)),
@@ -290,27 +255,28 @@ write_hierfstat <- function(data, filename = NULL) {
   nu <- max(c(unique(data$A1), unique(data$A2)), na.rm = TRUE)
   nu.message <- stringi::stri_join("    * The highest number used to label an allele, nu = ",
                                    nu, sep = "")
-  message(nu.message)
+  cli::cli_progress_step(nu.message)
 
   # prep the data  -------------------------------------------------------------
   data  %<>%
-      dplyr::mutate(
-        GT = stringi::stri_join(A1, A2, sep = ""),
-        A1 = NULL,
-        A2 = NULL,
-        GT = as.numeric(GT)
-      ) %>%
-        radiator::rad_wide(
-          x = .,
-          formula = "POP_ID + INDIVIDUALS ~ MARKERS",
-          values_from = "GT"
-        ) %<>%
-        dplyr::arrange(POP_ID, INDIVIDUALS) %>%
-        dplyr::mutate(POP_ID = as.integer(POP_ID), INDIVIDUALS = NULL)
+    dplyr::mutate(
+      GT = stringi::stri_join(A1, A2, sep = ""),
+      A1 = NULL,
+      A2 = NULL,
+      GT = as.numeric(GT)
+    ) %>%
+    radiator::rad_wide(
+      x = .,
+      formula = "STRATA + INDIVIDUALS ~ MARKERS",
+      values_from = "GT"
+    ) %<>%
+    dplyr::arrange(STRATA, INDIVIDUALS) %>%
+    dplyr::mutate(STRATA = as.integer(STRATA), INDIVIDUALS = NULL)
 
   # allele coding --------------------------------------------------------------
   allele.coding <- 1
-  message("    * The alleles are encoded with one digit number")
+  cli::cli_progress_step("    * The alleles are encoded with one digit number")
+
 
   # Filename -------------------------------------------------------------------
   if (is.null(filename)) {
@@ -321,6 +287,7 @@ write_hierfstat <- function(data, filename = NULL) {
 
 
   # FSTAT: write the first line ------------------------------------------------
+  cli::cli_progress_step("Writing hierfstat file")
   fstat.first.line <- stringi::stri_join(np, nl, nu, allele.coding, sep = " ")
   fstat.first.line <- as.data.frame(fstat.first.line)
   readr::write_delim(x = fstat.first.line, file = filename, delim = "\n", append = FALSE,
@@ -328,12 +295,22 @@ write_hierfstat <- function(data, filename = NULL) {
 
   # FSTAT: write the locus name to the file
   loci.table <- as.data.frame(markers)
-  readr::write_delim(x = loci.table, file = filename, delim = "\n", append = TRUE,
-                     col_names = FALSE)
+  readr::write_delim(
+    x = loci.table,
+    file = filename,
+    delim = "\n",
+    append = TRUE,
+    col_names = FALSE
+  )
 
   # FSTAT: write the pop and genotypes
-  readr::write_delim(x = data, na = "00", file = filename, delim = "\t", append = TRUE,
-                     col_names = FALSE)
+  readr::write_delim(
+    x = data, na = "00",
+    file = filename,
+    delim = "\t",
+    append = TRUE,
+    col_names = FALSE
+  )
   data <- as.data.frame(data) # required by hierfstat...
   return(data)
 }# End write_hierfstat

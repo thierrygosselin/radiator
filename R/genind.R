@@ -30,6 +30,12 @@
 
 #' @inheritParams radiator_common_arguments
 
+#' @note \href{https://github.com/thibautjombart/adegenet}{genind} objects, like
+#' genepop, are not optimal genomic format for RADseq datasets,
+#' they lack important genotypes and markers metadata: chromosome, locus, snp,
+#' position, read depth, allele depth, etc.
+#' \href{https://github.com/thibautjombart/adegenet}{genlight} object is a more
+#' interesting container and is memory efficient, see \code{\link{tidy_genlight}}.
 
 #' @export
 #' @rdname tidy_genind
@@ -55,7 +61,7 @@ tidy_genind <- function(
   # TEST
   # keep.allele.names = TRUE
   # tidy = TRUE
-  # gds = FALSE
+  # gds = TRUE
   # write = FALSE
   # verbose = TRUE
 
@@ -88,59 +94,100 @@ tidy_genind <- function(
     }
 
     # detect A2... facilitate the conversion if made by radiator...
-    A2 <- TRUE %in% unique(stringi::stri_detect_fixed(str = sample(colnames(data@tab), min(ncol(data@tab), 100)), pattern = ".A2"))
-    if (isTRUE(TRUE %in% unique(stringi::stri_detect_fixed(str = sample(colnames(data@tab), min(ncol(data@tab), 100)), pattern = ".A2__")))) {
-      A2 <- FALSE
-    }
+    A2 <- FALSE
     codom <- FALSE
+    colnames.coding <- sample(colnames(data@tab), min(ncol(data@tab), 100))
+    A2 <- TRUE %in% unique(stringi::stri_detect_fixed(str = colnames.coding, pattern = ".A2"))
+    #isTRUE(TRUE %in% unique(stringi::stri_detect_fixed(str = colnames.coding, pattern = ".A2__")))
     if (data@type == "codom") codom <- TRUE
 
-    data.temp <- tibble::as_tibble(data@tab) %>%
-      tibble::add_column(.data = ., INDIVIDUALS = rownames(data@tab), .before = 1)
-    if (nostrata) {
-      data.temp %<>% tibble::add_column(STRATA = "pop")
-    } else {
-      data.temp %<>% tibble::add_column(STRATA = data@pop)
-    }
-    data <- data.temp
-    data.temp <- NULL
+    # data.temp <- tibble::as_tibble(data@tab) %>%
+    #   tibble::add_column(.data = ., INDIVIDUALS = rownames(data@tab), .before = 1)
+    # if (nostrata) {
+    #   data.temp %<>% tibble::add_column(STRATA = "pop")
+    # } else {
+    #   data.temp %<>% tibble::add_column(STRATA = data@pop)
+    # }
+    # data <- data.temp
+    # data.temp <- NULL
 
     if (biallelic) {
-      if (A2) {
-        # changed adegenet::indNames to rownames(data@tab) to lower dependencies
-        data %<>%
-          dplyr::select(STRATA, INDIVIDUALS, dplyr::ends_with(match = ".A2")) %>%
-          radiator::rad_long(
-            x = .,
-            cols = c("INDIVIDUALS", "STRATA"),
-            names_to = "MARKERS",
-            values_to = "GT_BIN"
-          ) %>%
-          dplyr::mutate(
-            MARKERS = stringi::stri_replace_all_fixed(
-              str = MARKERS, pattern = ".A2", replacement = "", vectorize_all = FALSE),
-            GT_VCF = dplyr::if_else(GT_BIN == 0, "0/0",
-                                    dplyr::if_else(GT_BIN == 1, "0/1", "1/1"), missing = "./."),
-            GT = dplyr::if_else(GT_BIN == 0, "001001", dplyr::if_else(GT_BIN == 1, "001002", "002002") , missing = "000000")
-          )
-      } else {
-        if (codom) {
-          data %<>%
-            radiator::rad_long(
-              x = .,
-              cols = c("INDIVIDUALS", "STRATA"),
-              names_to = "MARKERS_ALLELES",
-              values_to = "GT_BIN"
-            ) %>%
-            tidyr::separate(data = ., col = MARKERS_ALLELES, into = c("MARKERS", "ALLELES"), sep = "\\.") %>%
-            dplyr::mutate(
-              ALLELES = NULL,
-              GT_VCF = dplyr::if_else(GT_BIN == 0, "0/0",
-                                      dplyr::if_else(GT_BIN == 1, "0/1", "1/1"), missing = "./."),
-              GT = dplyr::if_else(GT_BIN == 0, "001001", dplyr::if_else(GT_BIN == 1, "001002", "002002") , missing = "000000")
-            )
-        }
+      # if (A2 || codom) {
+      markers.meta <- colnames(data@tab)
+      n.snp <- length(markers.meta)/2
+
+      alt.alleles <- tibble::tibble(
+        MARKERS_ALLELES = markers.meta,
+        COUNT = colSums(x = data@tab, na.rm = TRUE)
+      ) %>%
+        dplyr::mutate(
+          MARKERS = stringi::stri_extract_first_regex(str = markers.meta, pattern = "^[^.]+"),
+          ALLELES = stringi::stri_extract_last_regex(str = markers.meta, pattern = "(?<=\\.).*"),
+          ALLELES = stringi::stri_replace_all_fixed(str = ALLELES, pattern = c("A1__", "A2__"), replacement = c("", ""), vectorize_all = FALSE),
+        ) %>%
+        dplyr::arrange(MARKERS, COUNT, ALLELES) %>%
+        dplyr::mutate(REF = rep(c("ALT", "REF"), n() / 2))
+
+      # check that REF/ALT are A, C, G, T before going further .....
+      discard.alleles <- FALSE
+      unique.alleles <- unique(alt.alleles$ALLELES)
+      if (length(unique.alleles) > 4) discard.alleles <- TRUE
+      if (any(stringi::stri_detect_regex(str = unique.alleles, pattern = "[0-9]"))) discard.alleles <- TRUE
+
+      if (!discard.alleles) {
+        ref.alt <- dplyr::select(alt.alleles, MARKERS, REF, ALLELES) %>%
+          radiator::rad_wide(x = ., formula = "MARKERS ~ REF", values_from = "ALLELES")
       }
+
+      alt.alleles %<>% dplyr::filter(REF == "ALT") %$% MARKERS_ALLELES
+      if (length(alt.alleles) != n.snp) rlang::abort("Contact author problem with tidying the genind")
+
+      # test1 <- tibble::as_tibble(t(data@tab), rownames = "MARKERS") %>%
+      #   dplyr::filter(MARKERS %in% alt.alleles) %>%
+      #   dplyr::arrange(MARKERS)
+      # test2 <- tibble::as_tibble(t(data@tab[, alt.alleles]), rownames = "MARKERS") %>% dplyr::arrange(MARKERS)
+      # test3 <- tibble::as_tibble(t(data@tab[, seq(2, length(markers.meta), by = 2)]), rownames = "MARKERS") %>% dplyr::arrange(MARKERS)
+
+      data <- tibble::as_tibble(t(data@tab), rownames = "MARKERS") %>%
+        dplyr::filter(MARKERS %in% alt.alleles) %>%
+        dplyr::mutate(
+          MARKERS = stringi::stri_extract_first_regex(str = MARKERS, pattern = "^[^.]+"),
+          MARKERS = stringi::stri_replace_all_fixed(
+            str = MARKERS,
+            pattern = c("__A1", "__A2"),
+            replacement = c("", ""),
+            vectorize_all = FALSE
+          ),
+          VARIANT_ID = as.integer(factor(MARKERS))) %>%
+        dplyr::arrange(VARIANT_ID)
+
+      alt.alleles <- NULL
+      markers.meta <- dplyr::distinct(data, VARIANT_ID, MARKERS)
+
+      if (!discard.alleles) {
+        markers.meta %<>%
+          dplyr::left_join(ref.alt, by = "MARKERS")
+      }
+      ref.alt <- NULL
+
+      # generate markers metadata
+
+      markers.meta %<>% separate_markers(data = ., generate.ref.alt = TRUE, biallelic = TRUE)
+
+      data <- radiator::rad_long(
+        x = data,
+        cols = "MARKERS",
+        names_to = "INDIVIDUALS",
+        values_to = "GT_BIN"
+      ) %>%
+        dplyr::left_join(strata, by = "INDIVIDUALS") %>%
+        dplyr::left_join(markers.meta, by = "MARKERS") %>%
+        dplyr::mutate(
+          INDIVIDUALS = radiator::clean_ind_names(INDIVIDUALS),
+          STRATA = radiator::clean_pop_names(STRATA)
+        ) %>%
+        dplyr::arrange(MARKERS, STRATA, INDIVIDUALS)
+      # }
     } else {
 
       if (keep.allele.names) {
@@ -222,107 +269,24 @@ tidy_genind <- function(
 
   }# End tidy genind
   if (gds) {
-
-    chrom.info <- FALSE
-    locus.info <- FALSE
-    pos.info <- FALSE
-    n.markers <- dplyr::n_distinct(data$MARKERS)
+    n.snp <- dplyr::n_distinct(data$MARKERS)
     n.ind <- dplyr::n_distinct(data$INDIVIDUALS)
-
-    markers <- data %>%
-      # dplyr::group_by(MARKERS) %>%
-      dplyr::distinct(MARKERS) %>%
-      dplyr::mutate(
-        VARIANT_ID = as.integer(factor(MARKERS)),
-        CHROM = factor(rep("CHROM1", n.markers)),
-        LOCUS = MARKERS # this is usually the adegenet behavior
-        # POS = vctrs::vec_cast(seq(from = 1, to = n.markers, by = 1), integer()) # need to remove the dependecy
-      )
-
-
-    data %<>%
-      dplyr::mutate(
-        INDIVIDUALS = radiator::clean_ind_names(INDIVIDUALS),
-        STRATA = radiator::clean_pop_names(STRATA)
-      ) %>%
-      dplyr::arrange(MARKERS, STRATA, INDIVIDUALS)
 
     gds.filename <- radiator_gds(
       data.source = "genind",
+      geno.coding = "alt.dos",
       genotypes = gt2array(
         gt.bin = data$GT_BIN,
         n.ind = n.ind,
-        n.snp = n.markers
+        n.snp = n.snp
       ),
       strata = strata,
       biallelic = TRUE,
-      markers.meta = markers,
+      markers.meta = markers.meta,
       filename = NULL,
       verbose = verbose
     )
-
-
-
-
-
-    # doesnt work with all genind object + GDS requires an array...
-    # # prepare genind
-    # alt.alleles <- tibble::tibble(
-    #   MARKERS_ALLELES = colnames(data@tab),
-    #   COUNT = colSums(x = data@tab, na.rm = TRUE)
-    # ) %>%
-    #   dplyr::mutate(
-    #     MARKERS = stringi::stri_extract_first_regex(str = colnames(data@tab), pattern = "^[^.]+"),
-    #     ALLELES = stringi::stri_extract_last_regex(str = colnames(data@tab), pattern = "(?<=\\.).*"),
-    #     ALLELES = stringi::stri_replace_all_fixed(str = ALLELES, pattern = c("A1__", "A2__"), replacement = c("", ""), vectorize_all = FALSE),
-    #   ) %>%
-    #   dplyr::arrange(MARKERS, COUNT, ALLELES) %>%
-    #   dplyr::mutate(REF = rep(c("ALT", "REF"), n() / 2))
-    #
-    # # check that REF/ALT are A, C, G, T before going further
-    # # any(unique(alt.alleles$ALLELES) %in% c("A", "C", "G", "T"))
-    # # any(unique(c("A", "DD", "G")) %in% c("A", "C", "G", "T"))
-    #
-    # ref.alt <- dplyr::select(alt.alleles, MARKERS, REF, ALLELES) %>%
-    #   radiator::rad_wide(x = ., formula = "MARKERS ~ REF", values_from = "ALLELES")
-    #
-    # alt.alleles %<>% dplyr::filter(REF == "ALT") %$% MARKERS_ALLELES
-    #
-    # geno <- tibble::as_tibble(t(data@tab), rownames = "MARKERS") %>%
-    #   dplyr::filter(MARKERS %in% alt.alleles) %>%
-    #   dplyr::mutate(
-    #     MARKERS = stringi::stri_extract_first_regex(str = MARKERS, pattern = "^[^.]+"),
-    #     MARKERS = stringi::stri_replace_all_fixed(
-    #       str = MARKERS,
-    #       pattern = c("__A1", "__A2"),
-    #       replacement = c("", ""),
-    #       vectorize_all = FALSE
-    #     ),
-    #     VARIANT_ID = as.integer(factor(MARKERS))) %>%
-    #   dplyr::arrange(VARIANT_ID)
-    #
-    # alt.alleles <- NULL
-    # markers.meta <- dplyr::select(geno, VARIANT_ID, MARKERS) %>%
-    #   dplyr::left_join(ref.alt, by = "MARKERS")
-    # ref.alt <- NULL
-    #
-    # suppressWarnings(
-    #   geno %<>%
-    #     dplyr::select(-MARKERS) %>%
-    #     tibble::column_to_rownames(.data = ., var = "VARIANT_ID")
-    # )
-    #
-    # gds.filename <- radiator_gds(
-    #   data.source = "genind",
-    #   genotypes = geno,
-    #   strata = strata,
-    #   biallelic = TRUE,
-    #   markers.meta = markers.meta,
-    #   filename = NULL,
-    #   open = FALSE,
-    #   verbose = verbose
-    # )
-    if (verbose) message("Written: GDS filename: ", gds.filename)
+    # if (verbose) message("Written: GDS filename: ", gds.filename)
   }# End gds genind
 
   return(data)
@@ -386,7 +350,6 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
       radiator::tidy_wide(data = ., import.metadata = TRUE) %>%
       dplyr::select(tidyselect::any_of(want))
   }
-
 
   if (is.factor(data$STRATA)) {
     pop.levels <- levels(data$STRATA)
@@ -508,7 +471,7 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
     strata = strata.genind,
     hierarchy = NULL
   )
-  data <- NULL
+  data <- strata.genind <- NULL
 
   if (write) {
     filename.temp <- generate_filename(extension = "genind")

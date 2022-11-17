@@ -255,7 +255,7 @@ radiator_parameters <- function(
       verbose = verbose)
     # update info
     res$info <- info.new
-    res$filters.parameters.path <-parameter.obj$filters.parameters.path
+    res$filters.parameters.path <- parameter.obj$filters.parameters.path
   }#End update
 
   # messages
