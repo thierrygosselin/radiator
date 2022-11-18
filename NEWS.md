@@ -1,7 +1,7 @@
-# radiator 1.2.4 2022-11-16
+# radiator 1.2.4 2022-11-17
 
 * bug fix when using some tidy function from GDS, the connection was not closing properly
-* work on genind, genlight and genepop functions
+* work on genind, genlight, genepop, hierfstat, arlequin functions
 * updated the vignette
 
 

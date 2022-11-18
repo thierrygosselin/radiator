@@ -10,7 +10,7 @@
 
 
 
-<meta name="date" content="2022-11-10" />
+<meta name="date" content="2022-11-17" />
 
 <title>RADseq Genomics in R</title>
 
@@ -1486,7 +1486,7 @@ border-radius: 0px;
 
 <h1 class="title toc-ignore">RADseq Genomics in R</h1>
 <h3 class="subtitle">computer setup</h3>
-<h4 class="date">2022-11-10</h4>
+<h4 class="date">2022-11-17</h4>
 
 </div>
 
@@ -2044,6 +2044,29 @@ from the start…</li>
 </div>
 <div id="specific-librairies-installation" class="section level1">
 <h1>Specific librairies installation</h1>
+<div id="fst-fstcore-data.table" class="section level2">
+<h2><code>fst</code> &amp; <code>fstcore</code> &amp;
+<code>data.table</code></h2>
+<p>Better to install and compile them from source to enable OpenMP.
+Install in the terminal <a href="https://facebook.github.io/zstd/">zstd</a> and <a href="https://lz4.github.io/lz4/">lz4</a>:</p>
+<pre class="bash"><code>cd ~/Downloads
+curl -L https://github.com/lz4/lz4/archive/refs/tags/v1.9.4.tar.gz | tar xf -
+cd lz4*
+make 
+sudo make install
+cd .. 
+sudo rm -R lz4*</code></pre>
+<pre class="bash"><code>cd ~/Downloads
+curl -L https://github.com/facebook/zstd/archive/refs/tags/v1.5.2.tar.gz | tar xf -
+cd zstd*
+make 
+sudo make install
+cd .. 
+sudo rm -R zstd*</code></pre>
+<pre class="r"><code>install.packages(&quot;fstcore&quot;)
+install.packages(&quot;fst&quot;, type = &quot;source&quot;)
+install.packages(&quot;data.table&quot;, type = &quot;source&quot;)</code></pre>
+</div>
 <div id="rmetasim" class="section level2">
 <h2><code>rmetasim</code></h2>
 <div id="download" class="section level3">

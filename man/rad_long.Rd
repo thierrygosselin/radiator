@@ -10,6 +10,7 @@ rad_long(
   measure_vars = NULL,
   names_to = NULL,
   values_to = NULL,
+  names_sep = NULL,
   variable_factor = TRUE,
   keep_rownames = FALSE,
   tidy = FALSE

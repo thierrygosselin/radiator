@@ -4,25 +4,11 @@
 \alias{tidy_genind}
 \title{Tidy a genind object to a tidy dataframe}
 \usage{
-tidy_genind(
-  data,
-  keep.allele.names = FALSE,
-  tidy = TRUE,
-  gds = TRUE,
-  write = FALSE,
-  verbose = FALSE
-)
+tidy_genind(data, tidy = TRUE, gds = TRUE, write = FALSE, verbose = FALSE)
 }
 \arguments{
 \item{data}{(path or object) A genind object in the global environment or
 path to a genind file that will be open with \code{readRDS}.}
-
-\item{keep.allele.names}{Allows to keep allele names for the tidy dataset.
-Requires the alleles to be numeric. To have this argument in
-\pkg{radiator} \code{\link{tidy_genomic_data}} or
-\pkg{radiator} \code{\link{genomic_converter}}
-use it at the end. \code{...} in those function looks for it.
-Default: \code{keep.allele.names = FALSE}.}
 
 \item{tidy}{(logical) Generate a tidy dataset.
 Default: \code{tidy = TRUE}.}
@@ -52,6 +38,14 @@ they lack important genotypes and markers metadata: chromosome, locus, snp,
 position, read depth, allele depth, etc.
 \href{https://github.com/thibautjombart/adegenet}{genlight} object is a more
 interesting container and is memory efficient, see \code{\link{tidy_genlight}}.
+
+
+By default allele names will be kept for the tidy dataset,
+if the alleles is numeric and length < 3.
+
+
+In the unlikely event that the genind object as no stratification/population,
+\emph{pop} will be added to the strata column.
 }
 \references{
 Jombart T (2008) adegenet: a R package for the multivariate

@@ -9,16 +9,8 @@
 #' @param data (path or object) A genind object in the global environment or
 #' path to a genind file that will be open with \code{readRDS}.
 
-#' @param keep.allele.names Allows to keep allele names for the tidy dataset.
-#' Requires the alleles to be numeric. To have this argument in
-#' \pkg{radiator} \code{\link{tidy_genomic_data}} or
-#' \pkg{radiator} \code{\link{genomic_converter}}
-#' use it at the end. \code{...} in those function looks for it.
-#' Default: \code{keep.allele.names = FALSE}.
-
 #' @param tidy (logical) Generate a tidy dataset.
 #' Default: \code{tidy = TRUE}.
-
 
 #' @param gds (optional, logical) To write a radiator gds object.
 #' Currently, for biallelic datasets only.
@@ -36,6 +28,15 @@
 #' position, read depth, allele depth, etc.
 #' \href{https://github.com/thibautjombart/adegenet}{genlight} object is a more
 #' interesting container and is memory efficient, see \code{\link{tidy_genlight}}.
+#'
+#'
+#' By default allele names will be kept for the tidy dataset,
+#' if the alleles is numeric and length < 3.
+#'
+#'
+#' In the unlikely event that the genind object as no stratification/population,
+#' \emph{pop} will be added to the strata column.
+
 
 #' @export
 #' @rdname tidy_genind
@@ -51,7 +52,6 @@
 
 tidy_genind <- function(
     data,
-    keep.allele.names = FALSE,
     tidy = TRUE,
     gds = TRUE,
     write = FALSE,
@@ -59,46 +59,45 @@ tidy_genind <- function(
 ) {
 
   # TEST
-  # keep.allele.names = TRUE
   # tidy = TRUE
   # gds = TRUE
   # write = FALSE
   # verbose = TRUE
+  if (verbose) cli::cli_progress_step("Reading genind")
 
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("data argument required")
   if (is.vector(data)) data <- readRDS(data)
   if (class(data)[1] != "genind") rlang::abort("Input is not a genind object")
-  if (verbose) message("genind info:")
+
+
+  # Working on individuals and strata ------------------------------------------
   strata <- tibble::tibble(INDIVIDUALS = rownames(data@tab))
   if (is.null(data@pop)) {
-    if (verbose) message("    strata: no")
-    if (verbose) message("    'pop' will be added")
     strata %<>% dplyr::mutate(STRATA = "pop")
-    nostrata <- TRUE
   } else {
-    if (verbose) message("    strata: yes")
     strata$STRATA = data@pop
-    nostrata <- FALSE
   }
+
+  n.ind <- length(strata$INDIVIDUALS)
+  n.snp <- length(unique(data@loc.fac))
 
   biallelic <- max(unique(data@loc.n.all)) == 2
   if (!biallelic) gds <- FALSE
   if (gds) tidy <- TRUE
 
-  if (tidy) {
-    if (write) {
-      filename.temp <- generate_filename(extension = "rad")
-      filename.short <- filename.temp$filename.short
-      filename.genind <- filename.temp$filename
-    }
+  if (write) {
+    filename.temp <- generate_filename(extension = "rad")
+    filename.short <- filename.temp$filename.short
+    filename.genind <- filename.temp$filename
+  }
 
+  if (tidy) {
     # detect A2... facilitate the conversion if made by radiator...
     A2 <- FALSE
     codom <- FALSE
     colnames.coding <- sample(colnames(data@tab), min(ncol(data@tab), 100))
     A2 <- TRUE %in% unique(stringi::stri_detect_fixed(str = colnames.coding, pattern = ".A2"))
-    #isTRUE(TRUE %in% unique(stringi::stri_detect_fixed(str = colnames.coding, pattern = ".A2__")))
     if (data@type == "codom") codom <- TRUE
 
     # data.temp <- tibble::as_tibble(data@tab) %>%
@@ -112,7 +111,7 @@ tidy_genind <- function(
     # data.temp <- NULL
 
     if (biallelic) {
-      # if (A2 || codom) {
+      if (verbose) cli::cli_progress_step("Preparing biallelic tidy data")
       markers.meta <- colnames(data@tab)
       n.snp <- length(markers.meta)/2
 
@@ -171,7 +170,6 @@ tidy_genind <- function(
       ref.alt <- NULL
 
       # generate markers metadata
-
       markers.meta %<>% separate_markers(data = ., generate.ref.alt = TRUE, biallelic = TRUE)
 
       data <- radiator::rad_long(
@@ -187,88 +185,63 @@ tidy_genind <- function(
           STRATA = radiator::clean_pop_names(STRATA)
         ) %>%
         dplyr::arrange(MARKERS, STRATA, INDIVIDUALS)
-      # }
+
     } else {
+      if (verbose) cli::cli_progress_step("Preparing multi-allelic tidy data")
+      data <- radiator::rad_long(
+          x = tibble::as_tibble(data@tab, rownames = "INDIVIDUALS"),
+          cols = "INDIVIDUALS",
+          names_to = c("MARKERS", "ALLELES"),
+          values_to = "COUNT",
+          names_sep = "\\.",
+          tidy = TRUE
+        ) %>%
+        dplyr::left_join(strata, by = "INDIVIDUALS")
 
-      if (keep.allele.names) {
-        message("Alleles names are kept if all numeric and padded with 0 if length < 3")
-        data %<>%
-          radiator::rad_long(
-            x = .,
-            cols = c("INDIVIDUALS", "STRATA"),
-            names_to = "MARKERS_ALLELES",
-            values_to = "COUNT"
-          ) %>%
-          dplyr::filter(COUNT > 0 | is.na(COUNT)) %>%
-          tidyr::separate(data = ., col = MARKERS_ALLELES, into = c("MARKERS", "ALLELES"), sep = "\\.") %>%
-          dplyr::mutate(
-            ALLELES = stringi::stri_replace_all_fixed(str = ALLELES, pattern = c("A1__", "A2__"), replacement = c("", ""), vectorize_all = FALSE),
-          )
+      check.alleles <- unique(stringi::stri_detect_regex(str = unique(data$ALLELES), pattern = "[0-9]"))
+      if (!check.alleles) data %<>% dplyr::mutate(ALLELES = as.numeric(factor(ALLELES)))
+      data %<>%
+        dplyr::mutate(ALLELES = stringi::stri_pad_left(str = ALLELES, pad = "0", width = 3)) %>%
+        dplyr::filter(is.na(COUNT) | COUNT != 0)
 
-        check.alleles <- unique(stringi::stri_detect_regex(str = unique(data$ALLELES), pattern = "[0-9]"))
-        check.alleles <- length(check.alleles) == 1 && check.alleles
-
-        if (check.alleles) {
-          data %<>%
-            dplyr::mutate(
-              ALLELES = stringi::stri_pad_left(str = ALLELES, pad = "0", width = 3)
-            )
+      multi_genind <- function(x) {
+        count.type <- unique(x$COUNT)
+        if (is.na(count.type)) {
+          x %<>%
+            dplyr::distinct(STRATA, INDIVIDUALS, MARKERS) %>%
+            dplyr::mutate(GT = rep("000000", dplyr::n())) %>%
+            dplyr::ungroup(.)
+        } else if (count.type == 2L) {
+          x %<>%
+            dplyr::group_by(STRATA, INDIVIDUALS, MARKERS) %>%
+            dplyr::summarise(GT = stringi::stri_join(ALLELES, ALLELES, sep = ""), .groups = "drop")
         } else {
-          data %<>%
-            dplyr::mutate(
-              ALLELES = as.numeric(factor(ALLELES)),
-              ALLELES = stringi::stri_pad_left(str = ALLELES, pad = "0", width = 3)
-            )
+          x %<>%
+            dplyr::group_by(STRATA, INDIVIDUALS, MARKERS) %>%
+            dplyr::summarise(GT = stringi::stri_join(ALLELES, collapse = ""), .groups = "drop")
         }
-
-      } else {
-        message("Alleles names for each markers will be converted to factors and padded with 0")
-        data %<>%
-          radiator::rad_long(
-            x = .,
-            cols = c("INDIVIDUALS", "STRATA"),
-            names_to = "MARKERS_ALLELES",
-            values_to = "COUNT"
-          ) %>%
-          dplyr::filter(COUNT > 0 | is.na(COUNT)) %>%
-          tidyr::separate(data = ., col = MARKERS_ALLELES, into = c("MARKERS", "ALLELES"), sep = "\\.") %>%
-          dplyr::mutate(
-            ALLELES = stringi::stri_replace_all_fixed(str = ALLELES, pattern = c("A1__", "A2__"), replacement = c("", ""), vectorize_all = FALSE),
-            ALLELES = as.numeric(factor(ALLELES)),
-            ALLELES = stringi::stri_pad_left(str = ALLELES, pad = "0", width = 3)
-          )
       }
 
-      # #If the genind was coded with allele 0, this will generate missing data with this code
-      # allele.zero <- TRUE %in% stringi::stri_detect_regex(str = unique(data3$ALLELES), pattern = "^0$")
-      # if (allele.zero) stop("alleles in this multiallelic genind were coded as 0 and won't work with this script")
-
-      #Isolate missing genotype
-      missing.hom <- dplyr::filter(data, is.na(COUNT)) %>%
-        dplyr::distinct(STRATA, INDIVIDUALS, MARKERS) %>%
-        dplyr::mutate(GT = rep("000000", n())) %>%
-        dplyr::ungroup(.)
-
-      #Isolate all Homozygote genotypes and combine with the missings
-      missing.hom <- dplyr::filter(data, COUNT == 2) %>%
-        dplyr::group_by(STRATA, INDIVIDUALS, MARKERS) %>%
-        dplyr::summarise(GT = stringi::stri_join(ALLELES, ALLELES, sep = "")) %>%
-        dplyr::ungroup(.) %>%
-        dplyr::bind_rows(missing.hom)
-
-      #Isolate all Het genotypes and combine
-      data <- dplyr::filter(data, COUNT != 2) %>%#this will also remove the missing
-        dplyr::group_by(STRATA, INDIVIDUALS, MARKERS) %>%
-        dplyr::summarise(GT = stringi::stri_join(ALLELES, collapse = "")) %>%
-        dplyr::ungroup(.) %>%
-        dplyr::bind_rows(missing.hom)
-      missing.hom <- NULL
+      if (n.ind * n.snp >= 5000000) {
+        data <- radiator_future(
+          .x = data,
+          .f = multi_genind,
+          flat.future = "dfr",
+          split.with = "COUNT"
+        )
+      } else {
+        data %<>%
+          dplyr::group_split(COUNT) %>%
+          purrr::map_dfr(.x = ., .f = multi_genind)
+      }
     }#End for multi-allelic or weird genind
 
     if (write) radiator::write_rad(data = data, path = filename.genind, verbose = verbose)
 
   }# End tidy genind
   if (gds) {
+    if (verbose) cli::cli_progress_step("Working on the GDS dataset")
+    if (!rlang::has_name(x = data, "GT_BIN")) rlang::abort("Missing GT_BIN format to generate GDS, contact author")
     n.snp <- dplyr::n_distinct(data$MARKERS)
     n.ind <- dplyr::n_distinct(data$INDIVIDUALS)
 
@@ -286,7 +259,6 @@ tidy_genind <- function(
       filename = NULL,
       verbose = verbose
     )
-    # if (verbose) message("Written: GDS filename: ", gds.filename)
   }# End gds genind
 
   return(data)

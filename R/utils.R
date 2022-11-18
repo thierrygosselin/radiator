@@ -863,6 +863,7 @@ rad_long <- function(
   measure_vars = NULL,
   names_to = NULL,
   values_to = NULL,
+  names_sep = NULL,
   variable_factor = TRUE,
   keep_rownames = FALSE,
   tidy = FALSE
@@ -870,13 +871,25 @@ rad_long <- function(
 
   # tidyr
   if (tidy) {
-    x %<>%
-      tidyr::pivot_longer(
-        data = .,
-        cols = -cols,
-        names_to = names_to,
-        values_to = values_to
-      )
+    if (is.null(names_sep)) {
+      x %<>%
+        tidyr::pivot_longer(
+          data = .,
+          cols = -cols,
+          names_to = names_to,
+          values_to = values_to
+        )
+    } else {
+      x %<>%
+        tidyr::pivot_longer(
+          data = .,
+          cols = -cols,
+          names_to = names_to,
+          values_to = values_to,
+          names_sep = names_sep
+        )
+    }
+
   } else {# data.table
     x %<>%
       data.table::as.data.table(., keep.rownames = keep_rownames) %>%
@@ -891,8 +904,11 @@ rad_long <- function(
       tibble::as_tibble(.)
   }
 
-  if (names_to == "M_SEQ") x$M_SEQ %<>% as.integer
-  if (names_to == "ID_SEQ") x$ID_SEQ %<>% as.integer
+  if (length(names_to) == 1L) {
+    if (names_to == "M_SEQ") x$M_SEQ %<>% as.integer
+    if (names_to == "ID_SEQ") x$ID_SEQ %<>% as.integer
+  }
+
   return(x)
 }#rad_long
 

@@ -174,13 +174,13 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
   # Replace white space with only 1 space
   data$data %<>%
     stringi::stri_replace_all_regex(
-    str = .,
-    pattern = "\\s+",
-    replacement = " ",
-    vectorize_all = FALSE
-  ) %>%
-  # Remove unnecessary spaces
-  stringi::stri_trim_right(str = ., pattern = "\\P{Wspace}")
+      str = .,
+      pattern = "\\s+",
+      replacement = " ",
+      vectorize_all = FALSE
+    ) %>%
+    # Remove unnecessary spaces
+    stringi::stri_trim_right(str = ., pattern = "\\P{Wspace}")
 
   # Pop indices ----------------------------------------------------------------
   pop.indices <- which(data$data %in% c("Pop", "pop", "POP"))
@@ -195,7 +195,7 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
     pattern = " ",
     replacement = "",
     vectorize_all = FALSE
-    )
+  )
 
   # Remove markers from the dataset --------------------------------------------
   data %<>% dplyr::slice(-(1:(pop.indices[1] - 1)))
@@ -279,7 +279,7 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
   data <- tibble::as_tibble(
     do.call(rbind, stringi::stri_split_fixed(str = data$GT, pattern = " ")),
     .name_repair = "minimal"
-    ) %>%
+  ) %>%
     magrittr::set_colnames(x = ., markers)
   markers <- NULL
 
@@ -292,7 +292,7 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
         radiator::read_strata(strata = strata, pop.id = TRUE, verbose = FALSE) %$%
           strata,
         by = "INDIVIDUALS"
-        )
+      )
 
   } else {
     # add pop based on internal genepop: integer and reorder the columns
@@ -324,7 +324,7 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
         cols = c("POP_ID", "INDIVIDUALS"),
         names_to = "MARKERS",
         values_to = "GT"
-        ) %>%
+      ) %>%
         tidyr::separate(
           data = ., col = GT, into = c("A1", "A2"),
           sep = gt.sep, remove = TRUE, extra = "drop"
@@ -349,10 +349,10 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
       if (tidy) {
         data %<>%
           radiator::rad_long(
-          x = .,
-          cols = c("POP_ID", "INDIVIDUALS"),
-          names_to = "MARKERS",
-          values_to = "GT"
+            x = .,
+            cols = c("POP_ID", "INDIVIDUALS"),
+            names_to = "MARKERS",
+            values_to = "GT"
           )
       }
     }
@@ -416,12 +416,12 @@ tidy_genepop <- function(data, strata = NULL, tidy = TRUE, filename = NULL) {
 
 
 write_genepop <- function(
-  data,
-  pop.levels = NULL,
-  genepop.header = NULL,
-  markers.line = TRUE,
-  filename = NULL,
-  ...
+    data,
+    pop.levels = NULL,
+    genepop.header = NULL,
+    markers.line = TRUE,
+    filename = NULL,
+    ...
 ) {
 
 
@@ -432,6 +432,7 @@ write_genepop <- function(
   # filename = NULL
 
   options(stringsAsFactors = FALSE)
+  cli::cli_progress_step("Reading data")
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("Input file missing")
 
@@ -445,31 +446,30 @@ write_genepop <- function(
     data <- gds2tidy(gds = data, parallel.core = parallel::detectCores() - 1)
     data.type <- "tbl_df"
   } else {
-    if (is.vector(data)) data %<>% radiator::tidy_wide(data = ., import.metadata = TRUE)
-  }
-
-  if (rlang::has_name(data, "STRATA") && !rlang::has_name(data, "POP_ID")) {
-    data %<>% dplyr::rename(POP_ID = STRATA)
+    if (is.vector(data)) data %<>% radiator::tidy_wide(data = ., )
   }
 
   if (!rlang::has_name(data, "GT")) {
-    data %<>% calibrate_alleles(data = ., verbose = FALSE) %$% input
+    cli::cli_progress_step("Recoding genotypes...")
+    data <- gt_recoding(x = data, gt = TRUE, gt.bin = FALSE, gt.vcf = FALSE, gt.vcf.nuc = FALSE)
   }
 
-  data %<>% dplyr::select(POP_ID, INDIVIDUALS, MARKERS, GT)
+  cli::cli_progress_step("Preparing data")
+
+  data %<>% dplyr::select(STRATA, INDIVIDUALS, MARKERS, GT)
 
   # pop.levels -----------------------------------------------------------------
   if (!is.null(pop.levels)) {
     data %<>%
       dplyr::mutate(
-        POP_ID = factor(POP_ID, levels = pop.levels, ordered = TRUE),
-        POP_ID = droplevels(POP_ID)
+        STRATA = factor(STRATA, levels = pop.levels, ordered = TRUE),
+        STRATA = droplevels(STRATA)
       ) %>%
-      dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS)
+      dplyr::arrange(STRATA, INDIVIDUALS, MARKERS)
   } else {
     data %<>%
-      dplyr::mutate(POP_ID = factor(POP_ID)) %>%
-      dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS)
+      dplyr::mutate(STRATA = factor(STRATA)) %>%
+      dplyr::arrange(STRATA, INDIVIDUALS, MARKERS)
   }
 
   # Create a marker vector  ------------------------------------------------
@@ -478,8 +478,8 @@ write_genepop <- function(
   # Wide format ----------------------------------------------------------------
   data  %<>%
     dplyr::arrange(MARKERS) %>%
-    radiator::rad_wide(x = ., formula = "POP_ID + INDIVIDUALS ~ MARKERS", values_from = "GT") %>%
-    dplyr::arrange(POP_ID, INDIVIDUALS) %>%
+    radiator::rad_wide(x = ., formula = "STRATA + INDIVIDUALS ~ MARKERS", values_from = "GT") %>%
+    dplyr::arrange(STRATA, INDIVIDUALS) %>%
     dplyr::mutate(INDIVIDUALS = paste(INDIVIDUALS, ",", sep = ""))
 
   # Write the file in genepop format -------------------------------------------
@@ -505,9 +505,8 @@ write_genepop <- function(
 
   # genepop construction
   # could probably use purrr here...
+  cli::cli_progress_step("Writing genepop")
 
-  pop <- data$POP_ID # Create a population vector
-  data <- split(dplyr::select(.data = data, -POP_ID), pop) # split genepop by populations
   filename.connection <- file(filename, "w") # open the connection to the file
   writeLines(text = genepop.header, con = filename.connection, sep = "\n") # write the genepop header
   if (markers.line) { # write the markers on a single line
@@ -516,8 +515,18 @@ write_genepop <- function(
     writeLines(text = stringi::stri_join(markers, sep = "\n"), con = filename.connection, sep = "\n")
   }
   close(filename.connection) # close the connection
-  for (i in 1:length(data)) {
+
+  write_gen <- function(x, filename) {
     readr::write_delim(x = as.data.frame("pop"), file = filename, delim = "\n", append = TRUE, col_names = FALSE)
-    readr::write_delim(x = data[[i]], file = filename, delim = " ", append = TRUE, col_names = FALSE)
+    readr::write_delim(x = x, file = filename, delim = " ", append = TRUE, col_names = FALSE)
   }
+
+  purrr::walk(
+    .x = dplyr::group_split(.tbl = data, STRATA, .keep = FALSE),
+    .f = write_gen,
+    filename = filename
+  )
+  cli::cli_progress_step(stringi::stri_join("Genepop file: ", filename))
+
+  invisible(filename)
 }# End write_genepop

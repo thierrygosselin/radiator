@@ -40,15 +40,18 @@ write_arlequin <- function(
 ) {
 
   # Checking for missing and/or default arguments ******************************
+  cli::cli_progress_step("Reading data")
   if (missing(data)) rlang::abort("Input file missing")
 
   # Import data ---------------------------------------------------------------
   data %<>% radiator::tidy_wide(data = .)
 
   if (!rlang::has_name(data, "GT")) {
-    data %<>% calibrate_alleles(data = ., verbose = FALSE) %$% input
+    cli::cli_progress_step("Recoding genotypes...")
+    data <- gt_recoding(x = data, gt = TRUE, gt.bin = FALSE, gt.vcf = FALSE, gt.vcf.nuc = FALSE)
   }
 
+  cli::cli_progress_step("Preparing data")
   data %<>% dplyr::select(STRATA, INDIVIDUALS, MARKERS, GT)
 
 
@@ -108,10 +111,7 @@ write_arlequin <- function(
     filename.short <- filename
   }
 
-
-  message("File written: ", filename.short)
-
-
+  cli::cli_progress_step("Writing arlequin")
   filename.connection <- file(filename, "w") # open the connection to the file
   # Profile section
   write("[Profile]", file = filename.connection)
@@ -125,35 +125,65 @@ write_arlequin <- function(
   write(paste("[Data]"), file = filename.connection, append = TRUE)
   write(paste("[[Samples]]"), file = filename.connection, append = TRUE)
 
-  pop <- as.character(data$STRATA) # Create a population vector
-  data.split <- split(data, pop) # split data by populations
-  for (i in 1:length(data.split)) {
-    # i <- 1
-    pop.data <- data.split[[i]]
-    pop.name <- unique(as.character(pop.data$STRATA))
-    n.ind <- dplyr::n_distinct(pop.data$INDIVIDUALS)
-    write(paste("SampleName = ", pop.name), file = filename.connection, append = TRUE)
+  # pop <- as.character(data$STRATA) # Create a population vector
+  # data.split <- split(data, pop) # split data by populations
+  # for (i in 1:length(data.split)) {
+  #   # i <- 1
+  #   # i <- 2
+  #   pop.data <- data.split[[i]]
+  #   pop.name <- unique(as.character(pop.data$STRATA))
+  #   n.ind <- dplyr::n_distinct(pop.data$INDIVIDUALS)
+  #   write(paste("SampleName = ", pop.name), file = filename.connection, append = TRUE)
+  #   write(paste("SampleSize = ", n.ind), file = filename.connection, append = TRUE)
+  #   write(paste("SampleData = {"), file = filename.connection, append = TRUE)
+  #   pop.data$INDIVIDUALS[seq(from = 2, to = n.ind * 2, by = 2)] <- ""
+  #   pop.data <- dplyr::select(.data = pop.data, -STRATA)
+  #   ncol.data <- ncol(pop.data)
+  #   pop.data <- as.matrix(pop.data)
+  #   write(x = t(pop.data), ncolumns = ncol.data, sep = "\t", append = TRUE, file = filename.connection)
+  #   write("}", file = filename.connection, append = TRUE)
+  # }
+
+  write_arl <- function(x, filename.connection) {
+    n.ind <- dplyr::n_distinct(x$INDIVIDUALS)
+    write(paste("SampleName = ", unique(as.character(x$STRATA))), file = filename.connection, append = TRUE)
     write(paste("SampleSize = ", n.ind), file = filename.connection, append = TRUE)
     write(paste("SampleData = {"), file = filename.connection, append = TRUE)
-    pop.data$INDIVIDUALS[seq(from = 2, to = n.ind * 2, by = 2)] <- ""
-    # test <- data.frame(data.split[[i]])
-    # close(filename.connection) # close the connection
-    pop.data <- dplyr::select(.data = pop.data, -STRATA)
-    ncol.data <- ncol(pop.data)
-    pop.data <- as.matrix(pop.data)
-    write(x = t(pop.data), ncolumns = ncol.data, sep = "\t", append = TRUE, file = filename.connection)
+    x$INDIVIDUALS[seq(from = 2, to = n.ind * 2, by = 2)] <- ""
+    x %<>% dplyr::select(-STRATA)
+    ncol.data <- ncol(x)
+    x <- as.matrix(x)
+    write(x = t(x), ncolumns = ncol.data, sep = "\t", append = TRUE, file = filename.connection)
     write("}", file = filename.connection, append = TRUE)
   }
+
+  data.split <- dplyr::group_split(.tbl = data, STRATA, .keep = TRUE)
+  purrr::walk(
+    .x = data.split,
+    .f = write_arl,
+    filename.connection = filename.connection
+  )
+
 
   write(paste("[[Structure]]"), file = filename.connection, append = TRUE)
   write(paste("StructureName = ", "\"", "One cluster", "\""), file = filename.connection, append = TRUE)
   write(paste("NbGroups = 1"), file = filename.connection, append = TRUE)
   write(paste("Group = {"), file = filename.connection, append = TRUE)
-  for (i in 1:length(data.split)) {
-    pop.data <- data.split[[i]]
-    pop.name <- unique(pop.data$STRATA)
-    write(paste("\"", pop.name, "\"", sep = ""), file = filename.connection, append = TRUE)
+
+  write_arl_end <- function(x, filename.connection) {
+    write(paste("\"", unique(x$STRATA), "\"", sep = ""), file = filename.connection, append = TRUE)
   }
+  purrr::walk(
+    .x = data.split,
+    .f = write_arl_end,
+    filename.connection = filename.connection
+  )
+  # for (i in 1:length(data.split)) {
+  #   pop.data <- data.split[[i]]
+  #   pop.name <- unique(pop.data$STRATA)
+  #   write(paste("\"", pop.name, "\"", sep = ""), file = filename.connection, append = TRUE)
+  # }
   write(paste("}"), file = filename.connection, append = TRUE)
+  cli::cli_progress_step(stringi::stri_join("Arlequin file: ", filename.short))
   invisible(data)
 } # end write_arlequin
