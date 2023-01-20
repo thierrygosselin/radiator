@@ -435,7 +435,7 @@ generate_squeleton_folders <- function(
     "filter_dart_reproducibility",
     "filter_individuals", "filter_individuals", "filter_individuals",
     "filter_common_markers",
-    "filter_mac",
+    "filter_ma",
     "filter_coverage",
     "filter_genotyping",
     "filter_snp_position_read",
@@ -453,7 +453,7 @@ generate_squeleton_folders <- function(
       "filter.individuals.heterozygosity",
       "filter.individuals.coverage.total",
       "filter.common.markers",
-      "filter.mac",
+      "filter.ma",
       "filter.coverage",
       "filter.genotyping",
       "filter.snp.position.read",
@@ -784,9 +784,11 @@ radiator_function_header <- function(f.name = NULL, start = TRUE, verbose = TRUE
   if (is.null(f.name)) invisible(NULL)
   if (start) {
     if (verbose) {
-      cat("################################################################################\n")
+      # cat("################################################################################\n")
+      cat(paste0(stringi::stri_pad_both(str = "", width = 80L, pad = "#"), "\n"))
       cat(paste0(stringi::stri_pad_both(str = paste0(" radiator::", f.name, " "), width = 80L, pad = "#"), "\n"))
-      cat("################################################################################\n")
+      cat(paste0(stringi::stri_pad_both(str = "", width = 80L, pad = "#"), "\n"))
+      # cat("################################################################################\n")
     }
   } else {
     if (verbose) {

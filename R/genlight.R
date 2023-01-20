@@ -332,16 +332,16 @@ write_genlight <- function(
       ind.levels <- unique(data$INDIVIDUALS)
 
       if (!"counts" %in% data.source) {
-        genotypes.meta <- extract_coverage(
-          gds = data.bk,
-          ind = FALSE,
-          depth.tibble = TRUE,
-          parallel.core = parallel.core
-        )
-        suppressWarnings(
-          data %<>%
-            dplyr::left_join(genotypes.meta, by = c("INDIVIDUALS", "MARKERS"))
-        )
+        # genotypes.meta <- extract_coverage(# Note to my self... need to adapt the code here for the new extract function when you have the time
+        #   gds = data.bk,
+        #   individuals = FALSE,
+        #   depth.tibble = TRUE,
+        #   parallel.core = parallel.core
+        # )
+        # suppressWarnings(
+        #   data %<>%
+        #     dplyr::left_join(genotypes.meta, by = c("INDIVIDUALS", "MARKERS"))
+        # )
       }
 
       genotypes.meta <- NULL

@@ -7,6 +7,6 @@
 individual_het(gds)
 }
 \description{
-Calculate individual het
+Calculate individual heterozygosity from GDS
 }
 \keyword{internal}

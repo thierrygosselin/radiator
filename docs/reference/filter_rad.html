@@ -20,7 +20,7 @@ Novices, start with this one!"><!-- mathjax --><script src="https://cdnjs.cloudf
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.4</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.5</span>
       </span>
     </div>
 
@@ -221,20 +221,20 @@ proportion of missing genotypes, heterozygosity, total and mean coverage.</p></l
 on missingness (genotyping rate of individuals).</p></li>
 <li><p><code>radiator_filter_individuals_args.tsv</code>: the function calls and values.</p></li>
 </ul><p>The function will remove automatically monomorphic markers if individuals are removed.</p></li>
-<li><p><strong>filter_mac</strong>: remove/blacklist markers based on Minor/Alternate Allele Count (MAC).
-Described in <code><a href="filter_mac.html">filter_mac</a></code>.</p><ul><li><p><code>distribution.mac.global.pdf</code>: distribution of overall MAC.</p></li>
-<li><p><code>mac.boxplot.pdf</code>: boxplot of the MAC.</p></li>
-<li><p><code>mac.global.tsv</code>: a tibble with the global MAC and MAF.</p></li>
+<li><p><strong>filter_ma</strong>: remove/blacklist markers based on Minor/Alternate Allele Count (MAC), Frequency (MAF) or Depth (MAD).
+Described in <code><a href="filter_ma.html">filter_ma</a></code>.</p><ul><li><p><code>distribution.mac.global.pdf</code>: distribution of overall MAC.</p></li>
+<li><p><code>ma.boxplot.pdf</code>: boxplot of the MAC.</p></li>
+<li><p><code>ma.global.tsv</code>: a tibble with the global MAC and MAF.</p></li>
 <li><p><code>mac.markers.plot.pdf</code>: the helper plot showing
 the impact of thresholds
 on the number of markers blacklisted and whitelisted.</p></li>
 <li><p><code>mac.helper.table.tsv</code>: a tibble with
 the impact of thresholds on the the number
 of markers blacklisted and whitelisted.</p></li>
-<li><p><code>mac.summary.stats.tsv</code>: MAC summary statistics.</p></li>
-<li><p><code>blacklist.markers.mac.tsv</code>: blacklisted markers.</p></li>
-<li><p><code>whitelist.markers.mac.tsv</code>: whitelisted markers.</p></li>
-<li><p><code>radiator_filter_mac_args.tsv</code>: the function calls and values.</p></li>
+<li><p><code>ma.summary.stats.tsv</code>: MAC summary statistics.</p></li>
+<li><p><code>blacklist.markers.ma.tsv</code>: blacklisted markers.</p></li>
+<li><p><code>whitelist.markers.ma.tsv</code>: whitelisted markers.</p></li>
+<li><p><code>radiator_filter_ma_args.tsv</code>: the function calls and values.</p></li>
 </ul></li>
 <li><p><strong>filter_coverage</strong>: remove/blacklist markers based on mean coverage information.
 Described in <code><a href="filter_coverage.html">filter_coverage</a></code>.</p><ul><li><p><code>markers_metadata.tsv</code>: all the markers coverage metadata available.</p></li>
@@ -374,7 +374,7 @@ separately.
 <li><p><strong>filter.individuals.missing</strong>: detailed in <code><a href="filter_individuals.html">filter_individuals</a></code>.</p></li>
 <li><p><strong>filter.individuals.heterozygosity</strong>: detailed in <code><a href="filter_individuals.html">filter_individuals</a></code>.</p></li>
 <li><p><strong>filter.individuals.coverage.total</strong>: detailed in <code><a href="filter_individuals.html">filter_individuals</a></code>.</p></li>
-<li><p><strong>filter.mac</strong>: detailed in <code><a href="filter_mac.html">filter_mac</a></code>.</p></li>
+<li><p><strong>filter.ma</strong>: detailed in <code><a href="filter_ma.html">filter_ma</a></code>.</p></li>
 <li><p><strong>filter.coverage</strong>: detailed in <code><a href="filter_coverage.html">filter_coverage</a></code>.</p></li>
 <li><p><strong>filter.genotyping</strong>: described in <code><a href="filter_genotyping.html">filter_genotyping</a></code>.</p></li>
 <li><p><strong>filter.snp.position.read</strong>: described in <code><a href="filter_snp_position_read.html">filter_snp_position_read</a></code>.</p></li>
@@ -434,7 +434,7 @@ separately.
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

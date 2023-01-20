@@ -13,19 +13,19 @@ radiator_dots(
     "filter.reproducibility", "filter.individuals.missing",
     "filter.individuals.heterozygosity", "filter.individuals.coverage.total",
     "filter.individuals.coverage.median", "filter.individuals.coverage.iqr",
-    "filter.common.markers", "filter.monomorphic", "filter.mac", "filter.coverage", "dp",
-    "filter.genotyping", "filter.snp.position.read", "filter.snp.number",
-    "filter.short.ld", "filter.long.ld", "long.ld.missing", "ld.method", "ld.figures", 
- 
-       "detect.mixed.genomes", "ind.heterozygosity.threshold",
-    "detect.duplicate.genomes", "filter.hwe", "filter.strands", "random.seed",
-    "path.folder", "filename", "parameters", "blacklist.genotypes", "erase.genotypes",
-    "gt", "gt.bin", "gt.vcf", "gt.vcf.nuc", "pop.levels", "pop.labels", "pop.select",
-    "blacklist.id", "markers.info", "keep.allele.names", "keep.gds", "calibrate.alleles",
-    "vcf.metadata", "vcf.stats", "wide", "whitelist.markers", "write.tidy",
-    "missing.memory", "dart.sequence", "internal", 
-     "heatmap.fst", "tidy.check",
-    "tidy.vcf", "tidy.dart"),
+    "filter.common.markers", "filter.monomorphic", "filter.ma", "ma.stats",
+    "filter.coverage", "dp", "filter.genotyping", "filter.snp.position.read",
+    "filter.snp.number", "filter.short.ld", "filter.long.ld", "long.ld.missing",
+    "ld.method", 
+     "ld.figures", "detect.mixed.genomes",
+    "ind.heterozygosity.threshold", "detect.duplicate.genomes", "filter.hwe",
+    "filter.strands", "random.seed", "path.folder", "filename", "parameters",
+    "blacklist.genotypes", "erase.genotypes", "gt", "gt.bin", "gt.vcf", "gt.vcf.nuc",
+    "pop.levels", "pop.labels", "pop.select", "blacklist.id", "markers.info",
+    "keep.allele.names", "keep.gds", "calibrate.alleles", "vcf.metadata", "vcf.stats",
+    "wide", "whitelist.markers", "write.tidy", "missing.memory", "dart.sequence", 
+    
+    "internal", "heatmap.fst", "tidy.check", "tidy.vcf", "tidy.dart"),
   deprecated = c("maf.thresholds", "common.markers", "max.marker", "monomorphic.out",
     "snp.ld", "filter.call.rate", "filter.markers.coverage", "filter.markers.missing",
     "number.snp.reads", "mixed.genomes.analysis", "duplicate.genomes.analysis",
@@ -50,7 +50,7 @@ Default: \code{keepers = c(
 "filter.reproducibility", "filter.individuals.missing",
 "filter.individuals.heterozygosity", "filter.individuals.coverage.total",
 "filter.individuals.coverage.median", "filter.individuals.coverage.iqr",
-"filter.common.markers", "filter.monomorphic", "filter.mac",
+"filter.common.markers", "filter.monomorphic", "filter.ma", "ma.stats"
 "filter.coverage", "filter.genotyping", "filter.snp.position.read",
 "filter.snp.number", "filter.short.ld", "filter.long.ld", "long.ld.missing",
 "ld.method", "detect.mixed.genomes", "ind.heterozygosity.threshold",
@@ -70,7 +70,7 @@ Default: \code{keepers = c(
 \item{deprecated}{(optional) radiator's deprecated arguments.
 Default: \code{deprecated = c("maf.thresholds", "common.markers",
 "max.marker","monomorphic.out", "snp.ld", "filter.call.rate",
-"filter.markers.coverage", "filter.markers.missing", "number.snp.reads",
+"filter.markers.coverage", "filter.mac","filter.markers.missing", "number.snp.reads",
 "mixed.genomes.analysis", "duplicate.genomes.analysis", "maf.data", "ref.calibration")}.}
 
 \item{verbose}{(optional, logical) When \code{verbose = TRUE}

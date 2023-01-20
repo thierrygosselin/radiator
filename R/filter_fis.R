@@ -16,6 +16,12 @@
 #' the \code{filename} provided is \code{.rad}.
 #' Default: \code{filename = NULL}.
 #' @inheritParams tidy_genomic_data
+#'
+#' @details
+#' The Fis calculated uses the ratio of averages (1-mean(Ho)/mean(Hs))
+#' and NOT THE AVERAGE OF RATIOS (Nei 1987).
+#' @references Nei M. (1987) Molecular Evolutionary Genetics. Columbia University Press.
+#' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 #' @rdname filter_fis
 #' @export
 
@@ -44,7 +50,7 @@ filter_fis <- function(data, approach = "haplotype", fis.min.threshold, fis.max.
   }
   pop.number <- dplyr::n_distinct(data$POP_ID)
 
-  if(stringi::stri_detect_fixed(pop.threshold, ".") & pop.threshold < 1) {
+  if (stringi::stri_detect_fixed(pop.threshold, ".") & pop.threshold < 1) {
     multiplication.number <- 1/pop.number
     message("Using a proportion threshold...")
     threshold.id <- "of proportion"
@@ -58,7 +64,7 @@ filter_fis <- function(data, approach = "haplotype", fis.min.threshold, fis.max.
     threshold.id <- "population as a fixed"
   }
 
-  if (missing(approach) | approach == "haplotype"){
+  if (missing(approach) | approach == "haplotype") {
     message("Approach selected: haplotype")
     fis.filter <- data %>%
       dplyr::select(LOCUS, POS, POP_ID, FIS) %>%
@@ -75,7 +81,7 @@ filter_fis <- function(data, approach = "haplotype", fis.min.threshold, fis.max.
       dplyr::tally(.) %>%
       dplyr::filter((n * multiplication.number) >= pop.threshold) %>%
       dplyr::select(LOCUS) %>%
-      dplyr::left_join(data, by="LOCUS") %>%
+      dplyr::left_join(data, by = "LOCUS") %>%
       dplyr::arrange(LOCUS, POP_ID)
   } else {
     message("Approach selected: SNP")

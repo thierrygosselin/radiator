@@ -430,17 +430,22 @@ detect_duplicate_genomes <- function(
         verbose = verbose)
 
       # geno.stats
-      geno.stats <- generate_id_stats(
+
+      geno.stats <- generate_stats(
         gds = data, # change to data...
+        markers = FALSE,
         missing = TRUE,
         heterozygosity = FALSE,
         coverage = FALSE,
+        allele.coverage = FALSE,
+        exhaustive = FALSE,
         plot = FALSE,
         file.date = file.date,
         parallel.core = parallel.core,
         verbose = FALSE,
-        path.folder = path.folder) %$% info %>%
+        path.folder = path.folder) %$% i.info %>%
         dplyr::mutate(GENOTYPED_PROP = 1 - MISSING_PROP, MISSING_PROP = NULL) #%>% dplyr::rename(POP_ID = STRATA)
+
       strata <- dplyr::distinct(geno.stats, INDIVIDUALS, STRATA)
 
       geno.stats %<>% dplyr::select(INDIVIDUALS, GENOTYPED_PROP )

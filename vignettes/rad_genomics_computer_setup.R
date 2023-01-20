@@ -43,7 +43,20 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 #  Error: C stack usage  7971092 is too close to the limit
 
 ## ----eval=FALSE---------------------------------------------------------------
-#  install.packages("fstcore")
+#  usethis::edit_r_makevars()
+
+## ----eval=FALSE---------------------------------------------------------------
+#  #fstcore fst data.table
+#  CC=/usr/local/bin/gcc -fopenmp
+#  CXX=/usr/local/bin/g++ -fopenmp
+#  CXX11=/usr/local/bin/g++ -fopenmp
+#  CXX14=/usr/local/bin/g++ -fopenmp
+#  CXX17=/usr/local/bin/g++ -fopenmp
+#  CXX1X=/usr/local/bin/g++ -fopenmp
+#  CXX98=/usr/local/bin/g++ -fopenmp
+
+## ----eval=FALSE---------------------------------------------------------------
+#  install.packages("fstcore", type = "source")
 #  install.packages("fst", type = "source")
 #  install.packages("data.table", type = "source")
 

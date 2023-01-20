@@ -25,7 +25,7 @@ several other filtering options."><!-- mathjax --><script src="https://cdnjs.clo
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.4</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.5</span>
       </span>
     </div>
 
@@ -188,7 +188,12 @@ If you remove one or several loci from your input file,
 you should remove both their names and the corresponding genotypes.</p></li>
 <li><p>No empty lines should be found within the file.</p></li>
 <li><p>No more than one empty line should be present at the end of file.</p></li>
-</ul></div>
+</ul><p><strong>not an ideal genomic format: </strong> The nice thing about RADseq dataset is
+that you have several important genotypes and markers metadata
+(chromosome, locus, snp, position, read depth, allele depth, etc.) available,
+these are all lacking in the genepop format. This format is kept for archival
+reasons in radiator.</p>
+    </div>
     <div id="references">
     <h2>References</h2>
     <p>Raymond M. &amp; Rousset F, (1995).
@@ -248,7 +253,7 @@ doi:10.1111/j.1471-8286.2007.01931.x</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

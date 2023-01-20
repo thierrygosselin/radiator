@@ -329,18 +329,21 @@ detect_mixed_genomes <- function(
       # GDS....
       missing.group <- "1"
 
-      id.stats <- generate_id_stats(
+      id.stats <- generate_stats(
         gds = data,
+        markers = FALSE,
         missing = TRUE,
         heterozygosity = TRUE,
         coverage = FALSE,
+        allele.coverage = FALSE,
+        exhaustive = FALSE,
         path.folder = path.folder,
         plot = FALSE,
         file.date = file.date,
         parallel.core = parallel.core,
         verbose = FALSE)
 
-      het.ind <- id.stats$info %>%
+      het.ind <- id.stats$i.info %>%
         dplyr::select(INDIVIDUALS, STRATA, HET_PROP = HETEROZYGOSITY, MISSING_PROP_OVERALL = MISSING_PROP) %>%
         dplyr::mutate(MISSING_PROP_POP = MISSING_PROP_OVERALL)
 

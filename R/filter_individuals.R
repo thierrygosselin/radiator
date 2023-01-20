@@ -222,14 +222,27 @@ filter_individuals <- function(
     variant.select <- subsample <- NULL
     subsample.markers.stats <- 1
 
-    id.stats <- generate_id_stats(
+    # id.stats <- generate_id_stats(
+    #   gds = data,
+    #   subsample = variant.select,
+    #   path.folder = path.folder,
+    #   file.date = file.date,
+    #   parallel.core = parallel.core,
+    #   verbose = verbose)
+
+    id.stats <- generate_stats(
       gds = data,
+      individuals = TRUE,
+      markers = FALSE,
+      exhaustive = FALSE,
       subsample = variant.select,
       path.folder = path.folder,
       file.date = file.date,
       parallel.core = parallel.core,
-      verbose = verbose)
-    print(id.stats$fig)
+      verbose = TRUE
+    )
+    print(id.stats$i.fig)
+
 
     # Step 2. Missingness-----------------------------------------------------------------
     if (interactive.filter) {
@@ -258,12 +271,12 @@ The maximum amount of missingness you tolerate for a sample (e.g. 0.3): ", minma
       if (!purrr::is_double(filter.individuals.missing)) {
         # if max and outliers high are the same leave the value
         # if max and outliers high are not the same do gymnastic
-        if (id.stats$stats$OUTLIERS_HIGH[1] == id.stats$stats$MAX[1]) {
+        if (id.stats$i.stats$OUTLIERS_HIGH[1] == id.stats$i.stats$MAX[1]) {
           higher.eq <- FALSE
         } else {
           higher.eq <- TRUE
         }
-        outlier.id.missing <- id.stats$stats$OUTLIERS_HIGH[1]
+        outlier.id.missing <- id.stats$i.stats$OUTLIERS_HIGH[1]
         if (verbose) message("\nRemoving outliers individuals based on genotyping statistics: ", outlier.id.missing)
         filter.individuals.missing <- outlier.id.missing
       } else {
@@ -271,7 +284,7 @@ The maximum amount of missingness you tolerate for a sample (e.g. 0.3): ", minma
         higher.eq <- FALSE
       }
 
-      bl <- dplyr::ungroup(id.stats$info)
+      bl <- dplyr::ungroup(id.stats$i.info)
 
       if (higher.eq) {
         bl %<>% dplyr::filter(MISSING_PROP >= filter.individuals.missing)
@@ -360,25 +373,25 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
         lower.eq <- FALSE
       } else {
         if (is.character(filter.individuals.heterozygosity)) {
-          if (id.stats$stats$OUTLIERS_LOW[2] == id.stats$stats$MIN[2]) {
+          if (id.stats$i.stats$OUTLIERS_LOW[2] == id.stats$i.stats$MIN[2]) {
             lower.eq <- FALSE
           } else {
             lower.eq <- TRUE
           }
-          if (id.stats$stats$OUTLIERS_HIGH[2] == id.stats$stats$MAX[2]) {
+          if (id.stats$i.stats$OUTLIERS_HIGH[2] == id.stats$i.stats$MAX[2]) {
             higher.eq <- FALSE
           } else {
             higher.eq <- TRUE
           }
-          het.low <- id.stats$stats$OUTLIERS_LOW[2]
-          het.high <- id.stats$stats$OUTLIERS_HIGH[2]
+          het.low <- id.stats$i.stats$OUTLIERS_LOW[2]
+          het.high <- id.stats$i.stats$OUTLIERS_HIGH[2]
           if (verbose) message("\nRemoving outliers individuals based on heterozygosity statistics: ", het.low, " / ", het.high)
         } else {
           rlang::abort("Unknown filter.individuals.heterozygosity thresholds used")
         }
       }
 
-      bl <- dplyr::ungroup(id.stats$info)
+      bl <- dplyr::ungroup(id.stats$i.info)
 
       # fl & fh for filter high and low
       if (lower.eq) {
@@ -415,7 +428,7 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
         bl.filename <- stringi::stri_join("blacklist.individuals.heterozygosity_", file.date, ".tsv")
         readr::write_tsv(x = bl, file = file.path(path.folder, bl.filename))
         # bl.i <- update_bl_individuals(gds = data, update = bl)
-        id.stats$info  %<>%
+        id.stats$i.info  %<>%
           dplyr::filter(!INDIVIDUALS %in% bl$INDIVIDUALS)
 
         # update_radiator_gds(gds = data, node.name = "individuals.meta", value = id.stats$info, sync = TRUE)
@@ -445,7 +458,7 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
     }#End filter.individuals.heterozygosity
 
     # Step 4. Coverage ---------------------------------------------------------
-    depth.info <- "total coverage" %in% id.stats$stats$GROUP
+    depth.info <- "total coverage" %in% id.stats$i.stats$GROUP
     if (depth.info) {
       if (interactive.filter) {
 
@@ -545,25 +558,25 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
           lower.eq <- higher.eq <- FALSE
         } else {
           if (is.character(filter.individuals.coverage.total)) {
-            if (id.stats$stats$OUTLIERS_LOW[3] == id.stats$stats$MIN[3]) {
+            if (id.stats$i.stats$OUTLIERS_LOW[3] == id.stats$i.stats$MIN[3]) {
               lower.eq <- FALSE
             } else {
               lower.eq <- TRUE
             }
-            if (id.stats$stats$OUTLIERS_HIGH[3] == id.stats$stats$MAX[3]) {
+            if (id.stats$i.stats$OUTLIERS_HIGH[3] == id.stats$i.stats$MAX[3]) {
               higher.eq <- FALSE
             } else {
               higher.eq <- TRUE
             }
-            cov.low <- id.stats$stats$OUTLIERS_LOW[3]
-            cov.high <- id.stats$stats$OUTLIERS_HIGH[3]
+            cov.low <- id.stats$i.stats$OUTLIERS_LOW[3]
+            cov.high <- id.stats$i.stats$OUTLIERS_HIGH[3]
             if (verbose) message("\nRemoving outliers individuals based on total coverage statistics: ", cov.low, " / ", cov.high)
             } else {
             rlang::abort("Unknown TOTAL coverage thresholds used")
           }
         }
 
-        bl <- dplyr::ungroup(id.stats$info)
+        bl <- dplyr::ungroup(id.stats$i.info)
 
         # fl & fh for filter high and low
         if (lower.eq) {
@@ -631,25 +644,25 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
           lower.eq <- higher.eq <- FALSE
         } else {
           if (is.character(filter.individuals.coverage.median)) {
-            if (id.stats$stats$OUTLIERS_LOW[5] == id.stats$stats$MIN[5]) {
+            if (id.stats$i.stats$OUTLIERS_LOW[5] == id.stats$i.stats$MIN[5]) {
               lower.eq <- FALSE
             } else {
               lower.eq <- TRUE
             }
-            if (id.stats$stats$OUTLIERS_HIGH[5] == id.stats$stats$MAX[5]) {
+            if (id.stats$i.stats$OUTLIERS_HIGH[5] == id.stats$i.stats$MAX[5]) {
               higher.eq <- FALSE
             } else {
               higher.eq <- TRUE
             }
-            cov.low <- id.stats$stats$OUTLIERS_LOW[5]
-            cov.high <- id.stats$stats$OUTLIERS_HIGH[5]
+            cov.low <- id.stats$i.stats$OUTLIERS_LOW[5]
+            cov.high <- id.stats$i.stats$OUTLIERS_HIGH[5]
             if (verbose) message("\nRemoving outliers individuals based on MEDIAN coverage statistics: ", cov.low, " / ", cov.high)
           } else {
             rlang::abort("Unknown MEDIAN coverage thresholds used")
           }
         }
 
-        bl <- dplyr::ungroup(id.stats$info)
+        bl <- dplyr::ungroup(id.stats$i.info)
 
         # fl & fh for filter high and low
         if (lower.eq) {
@@ -717,25 +730,25 @@ The maximum amount of heterozygosity you tolerate for a sample:", minmax = c(0, 
           lower.eq <- higher.eq <- FALSE
         } else {
           if (is.character(filter.individuals.coverage.iqr)) {
-            if (id.stats$stats$OUTLIERS_LOW[6] == id.stats$stats$MIN[6]) {
+            if (id.stats$i.stats$OUTLIERS_LOW[6] == id.stats$i.stats$MIN[6]) {
               lower.eq <- FALSE
             } else {
               lower.eq <- TRUE
             }
-            if (id.stats$stats$OUTLIERS_HIGH[6] == id.stats$stats$MAX[6]) {
+            if (id.stats$i.stats$OUTLIERS_HIGH[6] == id.stats$i.stats$MAX[6]) {
               higher.eq <- FALSE
             } else {
               higher.eq <- TRUE
             }
-            cov.low <- id.stats$stats$OUTLIERS_LOW[6]
-            cov.high <- id.stats$stats$OUTLIERS_HIGH[6]
+            cov.low <- id.stats$i.stats$OUTLIERS_LOW[6]
+            cov.high <- id.stats$i.stats$OUTLIERS_HIGH[6]
             if (verbose) message("\nRemoving outliers individuals based on IQR coverage statistics: ", cov.low, " / ", cov.high)
           } else {
             rlang::abort("Unknown IQR coverage thresholds used")
           }
         }
 
-        bl <- dplyr::ungroup(id.stats$info)
+        bl <- dplyr::ungroup(id.stats$i.info)
 
         # fl & fh for filter high and low
         if (lower.eq) {

@@ -17,7 +17,7 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
-**Time to allow: ETA ~20 min for experience users, 1h for novices**
+**Time to allow: ETA ~30-45 min for experience users, 1h-2h for novices**
 
 This vignette purposes is to show users how to setup their computers 
 for RADseq genomic analysis inside R. It targets users of my packages or 
@@ -38,8 +38,8 @@ The vignette is also usefull if your:
 * `ranger`
 * `missRanger`
 * `pcaMethods`
-* how to **OpenMP enabled** specific packages that require to run in parallel for
-the imputations.
+* how to have **OpenMP enabled** specific packages. R packages that requires 
+to run in parallel for the imputations (e.g. `fstcore`, `fst`, `data.table`).
 
 I'm currently merging information also found in this [tutorial](http://gbs-cloud-tutorial.readthedocs.io/en/latest/03_computer_setup.html)
 
@@ -475,7 +475,7 @@ localtime.c:42:10: fatal error: 'string.h' file not found
 ^~~~~~~~~~
 ```
 
-**With macOS** version 12.0.1 (Monterey): follow the `.Makevars` [configuration](#Makevars_config)
+**With macOS** : your `Makevars` needs additional lines to make it work [configuration](#Makevars_config).
 
 ## Error `.setMaxGlobalSize`
 
@@ -725,8 +725,28 @@ sudo rm -R zstd*
 ```
 
 
+`fstcore`, `fst` and `data.table` requires these R *Makevars* specifications. 
+If you have other lines, comment (`#`) before saving and installing from source:
+
 ```{r eval=FALSE}
-install.packages("fstcore")
+usethis::edit_r_makevars()
+```
+
+
+```{r eval=FALSE}
+#fstcore fst data.table
+CC=/usr/local/bin/gcc -fopenmp
+CXX=/usr/local/bin/g++ -fopenmp
+CXX11=/usr/local/bin/g++ -fopenmp
+CXX14=/usr/local/bin/g++ -fopenmp
+CXX17=/usr/local/bin/g++ -fopenmp
+CXX1X=/usr/local/bin/g++ -fopenmp
+CXX98=/usr/local/bin/g++ -fopenmp
+```
+
+
+```{r eval=FALSE}
+install.packages("fstcore", type = "source")
 install.packages("fst", type = "source")
 install.packages("data.table", type = "source")
 ```
@@ -1090,6 +1110,7 @@ source ~/.bash_profile          # reload startup script
 git --version                   # confirmed the version you just installed
 which git                       # returns /usr/local/bin
 ```
+
 
 ## macOS Terminal from specific folder
 

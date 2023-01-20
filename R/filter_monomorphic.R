@@ -168,15 +168,7 @@ filter_monomorphic <- function(
           sync = TRUE,
           verbose = verbose
         )
-
-        # bl %<>% dplyr::select(MARKERS) %>%
-        #   dplyr::mutate(FILTER = "filter.monomorphic")
-
-        # bl.gds <- update_bl_markers(gds = data, update = bl)
-      } #else {
-      #   bl <- wl[0,]
-      #   n.markers.after <- n.markers.before
-      # }
+      }
 
       # write the whitelist even if no blacklist...
       write_rad(
@@ -210,13 +202,6 @@ filter_monomorphic <- function(
         file.date = file.date,
         internal = internal,
         verbose = verbose)
-      # if (tibble::has_name(data, "POP_ID")) {
-      #   filters.parameters$info$n.pop <- length(unique(data$POP_ID))
-      # }
-      # if (tibble::has_name(data, "STRATA")) {
-      #   filters.parameters$info$n.pop <- length(unique(data$STRATA))
-      # }
-      # filters.parameters$info$n.ind <- length(unique(data$INDIVIDUALS))
 
       # Scanning for monomorphic markers------------------------------------------
       if (verbose) message("Scanning for monomorphic markers...")
@@ -287,16 +272,6 @@ filter_monomorphic <- function(
       internal = internal,
       verbose = verbose)
 
-    # if (data.type != "SeqVarGDSClass") {
-    #   if (tibble::has_name(data, "POP_ID")) {
-    #     filters.parameters$info$n.pop <- length(unique(data$POP_ID))
-    #   }
-    #   if (tibble::has_name(data, "STRATA")) {
-    #     filters.parameters$info$n.pop <- length(unique(data$STRATA))
-    #   }
-    #   filters.parameters$info$n.ind <- length(unique(data$INDIVIDUALS))
-    # }
-
     # Return -------------------------------------------------------------------
     radiator_results_message(
       rad.message = "\nFilter monomorphic markers",
@@ -319,12 +294,14 @@ count_monomorphic <- function(x, parallel.core = parallel::detectCores() - 1) {
   variants <- SeqArray::seqGetData(gdsfile = x, var.name = "variant.id")
   # Function proposed by Xiuwen doesnt work below line 329 it missed some markers
   # in some datasets...
-  mono <- SeqArray::seqApply(gdsfile = x,
-                             var.name = "$dosage_alt",
-                             # FUN = function(g) all(g == 1L, na.rm = TRUE),
-                             FUN = function(g) length(unique(g[!is.na(g)])) == 1,
-                             margin = "by.variant", as.is = "logical",
-                             parallel = parallel.core)
+  mono <- SeqArray::seqApply(
+    gdsfile = x,
+    var.name = "$dosage_alt",
+    # FUN = function(g) all(g == 1L, na.rm = TRUE),
+    FUN = function(g) length(unique(g[!is.na(g)])) == 1,
+    margin = "by.variant", as.is = "logical",
+    parallel = parallel.core
+  )
   bl <- variants[mono]
   return(bl)
 }

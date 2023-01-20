@@ -1,6 +1,6 @@
-# Minor Allele Frequency Diagnostic
-#' @title MAF diagnostic
-#' @description Minor Allele Frequency diagnostic, help choose a filter threshold.
+# Minor Allele Diagnostic
+#' @title MA diagnostic
+#' @description Minor Allele diagnostic, help choose a filter threshold.
 #' @param data A file in the working directory or object in the global environment
 #' in wide or long (tidy) formats. To import, the function uses
 #' \href{https://github.com/thierrygosselin/radiator}{radiator}
@@ -15,15 +15,15 @@
 
 #' @examples
 #' \dontrun{
-#' problem <- radiator::diagnostic_maf(
+#' problem <- radiator::diagnostic_ma(
 #' data = tidy.salmon.data, group.rank = 10)
 #' }
 
 
-#' @seealso \link{filter_maf}
+#' @seealso \link{filter_ma}
 
 
-diagnostic_maf <- function(data, group.rank, filename = NULL){
+diagnostic_ma <- function(data, group.rank, filename = NULL){
 
   if (missing(data)) rlang::abort("Input file missing")
   if (missing(group.rank)) rlang::abort("group.rank argument missing")

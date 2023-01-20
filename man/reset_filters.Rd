@@ -16,7 +16,7 @@ reset_filters(
   filter.reproducibility = FALSE,
   filter.monomorphic = FALSE,
   filter.common.markers = FALSE,
-  filter.mac = FALSE,
+  filter.ma = FALSE,
   filter.mean.coverage = FALSE,
   filter.genotyping = FALSE,
   filter.snp.position.read = FALSE,
@@ -65,8 +65,8 @@ Default: \code{filter.monomorphic = FALSE}.}
 \item{filter.common.markers}{(logical, optional)
 Default: \code{filter.common.markers = FALSE}.}
 
-\item{filter.mac}{(logical, optional)
-Default: \code{filter.mac = FALSE}.}
+\item{filter.ma}{(logical, optional)
+Default: \code{filter.ma = FALSE}.}
 
 \item{filter.mean.coverage}{(logical, optional)
 Default: \code{filter.mean.coverage = FALSE}.}

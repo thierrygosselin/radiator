@@ -803,7 +803,8 @@ radiator_future <- function(
             parallel::mclapply(X = ., FUN = .f, ..., mc.cores = parallel.core) %>%
             purrr::flatten_int(.)
         },
-        chr = {.x %<>%
+        chr = {
+          .x %<>%
             parallel::mclapply(X = ., FUN = .f, ..., mc.cores = parallel.core) %>%
             purrr::flatten_chr(.)
         },

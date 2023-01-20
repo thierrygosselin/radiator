@@ -181,9 +181,9 @@ Required package: \code{UpSetR}.
 Default: \code{filter.common.markers = TRUE}.
 Documented in \code{\link[radiator]{filter_common_markers}}.
 Required package: \code{UpSetR}.
-\item \code{filter.mac}: (integer)
-Default: \code{filter.mac = NULL}.
-Documented in \code{\link[radiator]{filter_mac}}.
+\item \code{filter.ma}: (integer)
+Default: \code{filter.ma = NULL}.
+Documented in \code{\link[radiator]{filter_ma}}.
 \item \code{filter.coverage}: (logical)
 Default: \code{filter.coverage = NULL}.
 Documented in \code{\link[radiator]{filter_coverage}}.
@@ -220,7 +220,7 @@ tidy.data <- radiator::tidy_vcf(
     data = "populations.snps.vcf",
     strata = "strata_salamander.tsv",
     filter.individuals.missing = "outlier",
-    filter.mac = 4,
+    filter.ma = 4,
     filter.genotyping = 0.1,
     filter.snp.position.read = "outliers",
     filter.short.ld = "mac",

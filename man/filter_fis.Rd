@@ -54,3 +54,13 @@ Default: \code{filename = NULL}.}
 \description{
 TODO
 }
+\details{
+The Fis calculated uses the ratio of averages (1-mean(Ho)/mean(Hs))
+and NOT THE AVERAGE OF RATIOS (Nei 1987).
+}
+\references{
+Nei M. (1987) Molecular Evolutionary Genetics. Columbia University Press.
+}
+\author{
+Thierry Gosselin \email{thierrygosselin@icloud.com}
+}

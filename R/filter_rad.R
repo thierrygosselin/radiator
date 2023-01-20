@@ -203,22 +203,22 @@
 #' \item \code{radiator_filter_individuals_args.tsv}: the function calls and values.
 #' }
 #' The function will remove automatically monomorphic markers if individuals are removed.
-#' \item \strong{filter_mac}: remove/blacklist markers based on Minor/Alternate Allele Count (MAC).
-#' Described in \code{\link[radiator]{filter_mac}}.
+#' \item \strong{filter_ma}: remove/blacklist markers based on Minor/Alternate Allele Count (MAC), Frequency (MAF) or Depth (MAD).
+#' Described in \code{\link[radiator]{filter_ma}}.
 #' \itemize{
 #' \item \code{distribution.mac.global.pdf}: distribution of overall MAC.
-#' \item \code{mac.boxplot.pdf}: boxplot of the MAC.
-#' \item \code{mac.global.tsv}: a tibble with the global MAC and MAF.
+#' \item \code{ma.boxplot.pdf}: boxplot of the MAC.
+#' \item \code{ma.global.tsv}: a tibble with the global MAC and MAF.
 #' \item \code{mac.markers.plot.pdf}: the helper plot showing
 #' the impact of thresholds
 #' on the number of markers blacklisted and whitelisted.
 #' \item \code{mac.helper.table.tsv}: a tibble with
 #' the impact of thresholds on the the number
 #' of markers blacklisted and whitelisted.
-#' \item \code{mac.summary.stats.tsv}: MAC summary statistics.
-#' \item \code{blacklist.markers.mac.tsv}: blacklisted markers.
-#' \item \code{whitelist.markers.mac.tsv}: whitelisted markers.
-#' \item \code{radiator_filter_mac_args.tsv}: the function calls and values.
+#' \item \code{ma.summary.stats.tsv}: MAC summary statistics.
+#' \item \code{blacklist.markers.ma.tsv}: blacklisted markers.
+#' \item \code{whitelist.markers.ma.tsv}: whitelisted markers.
+#' \item \code{radiator_filter_ma_args.tsv}: the function calls and values.
 #' }
 #' \item \strong{filter_coverage}: remove/blacklist markers based on mean coverage information.
 #' Described in \code{\link[radiator]{filter_coverage}}.
@@ -380,7 +380,7 @@
 #' \item \strong{filter.individuals.missing}: detailed in \code{\link[radiator]{filter_individuals}}.
 #' \item \strong{filter.individuals.heterozygosity}: detailed in \code{\link[radiator]{filter_individuals}}.
 #' \item \strong{filter.individuals.coverage.total}: detailed in \code{\link[radiator]{filter_individuals}}.
-#' \item \strong{filter.mac}: detailed in \code{\link[radiator]{filter_mac}}.
+#' \item \strong{filter.ma}: detailed in \code{\link[radiator]{filter_ma}}.
 #' \item \strong{filter.coverage}: detailed in \code{\link[radiator]{filter_coverage}}.
 #' \item \strong{filter.genotyping}: described in \code{\link[radiator]{filter_genotyping}}.
 #' \item \strong{filter.snp.position.read}: described in \code{\link[radiator]{filter_snp_position_read}}.
@@ -453,7 +453,7 @@ filter_rad <- function(
       "filter.reproducibility", "filter.individuals.missing",
       "filter.individuals.heterozygosity", "filter.individuals.coverage.total",
       "filter.individuals.coverage.median", "filter.individuals.coverage.iqr",
-      "filter.common.markers", "filter.monomorphic", "filter.mac",
+      "filter.common.markers", "filter.monomorphic", "filter.ma",
       "filter.coverage", "filter.genotyping", "filter.snp.position.read",
       "filter.snp.number", "filter.short.ld", "filter.long.ld", "long.ld.missing",
       "ld.method", "detect.mixed.genomes", "ind.heterozygosity.threshold",
@@ -476,7 +476,7 @@ filter_rad <- function(
   filter.individuals.coverage.total.bk <- filter.individuals.coverage.total
   filter.individuals.coverage.median.bk <- filter.individuals.coverage.median
   filter.individuals.coverage.iqr.bk <- filter.individuals.coverage.iqr
-  filter.mac.bk <- filter.mac
+  filter.ma.bk <- filter.ma
   filter.coverage.bk <- filter.coverage
   filter.genotyping.bk <- filter.genotyping
   filter.snp.position.read.bk <- filter.snp.position.read
@@ -708,10 +708,10 @@ filter_rad <- function(
   )
 
   # Filter MAC------------------------------------------------------------------
-  gds <- filter_mac(
+  gds <- filter_ma(
     data = gds,
     interactive.filter = interactive.filter,
-    filter.mac = filter.mac.bk,
+    filter.ma = filter.ma.bk,
     filename = NULL,
     parallel.core = parallel.core,
     verbose = verbose,
@@ -901,59 +901,46 @@ filter_rad <- function(
 
   # Statistics after filtering -------------------------------------------------
   if (verbose) message("\nGenerating statistics after filtering")
-  # SUBSAMPLE markers
-  # n.markers <- length(markers.meta$VARIANT_ID)
-  # if (n.markers < 200000) subsample.markers.stats <- 1
-  # if (subsample.markers.stats < 1) {
-  #   markers.subsampled <- dplyr::sample_frac(
-  #     tbl = markers.meta,
-  #     size = subsample.markers.stats)
-  #   variant.select <- markers.subsampled$VARIANT_ID
-  #   subsample.filename <- stringi::stri_join("markers.subsampled_", file.date, ".tsv")
-  #   dplyr::select(markers.subsampled, MARKERS) %>%
-  #     dplyr::mutate(RANDOM_SEED = random.seed) %>%
-  #     readr::write_tsv(
-  #       x = .,
-  #       file = file.path(path.folder, subsample.filename))
-  #   markers.subsampled <- NULL
-  # } else {
-  #   variant.select <- NULL
-  # }
 
-  # Individuals stats
-  if (verbose) message("calculating individual stats...")
-  id.stats <- generate_id_stats(
+  # Individuals and markers stats
+  i.m.stats <- generate_stats(
     gds = gds,
-    # subsample = variant.select,
+    individuals = TRUE,
+    markers = TRUE,
+    missing = TRUE,
+    heterozygosity = TRUE,
+    coverage = TRUE,
+    allele.coverage = TRUE,
+    mac = TRUE,
+    snp.position.read = TRUE,
+    snp.per.locus = TRUE,
     path.folder = path.folder,
     file.date = file.date,
     parallel.core = parallel.core,
     verbose = verbose
-  ) %$% info
+  )
+
+  # id.stats <- generate_id_stats(
+  #   gds = gds,
+  #   # subsample = variant.select,
+  #   path.folder = path.folder,
+  #   file.date = file.date,
+  #   parallel.core = parallel.core,
+  #   verbose = verbose
+  # ) %$% info
 
   # Markers stats
-  if (verbose) message("calculating markers stats...")
-  markers.stats <- generate_markers_stats(
-    gds = gds,
-    path.folder = path.folder,
-    filename = NULL,
-    file.date = file.date,
-    parallel.core = parallel.core,
-    verbose = verbose
-    # ,
-    # subsample = variant.select
-  ) %$% info
-
-  # missing memory
-  # if (verbose) message("Memorizing missing genotypes")
-  # memory.filename <- stringi::stri_join(filename, "_filtered_missing_memory.rad")
-  # dplyr::select(
-  #   input, MARKERS, INDIVIDUALS, GT_BIN) %>%
-  #   dplyr::mutate(GT_BIN = is.na(GT_BIN)) %>%
-  #   dplyr::rename(ERASE = GT_BIN) %>%
-  #   dplyr::arrange(MARKERS, INDIVIDUALS) %>%
-  #   radiator::write_rad(data = ., path = memory.filename)
-  # if (verbose) message("File written: ", memory.filename)
+  # markers.stats <- generate_stats(
+  #   gds = gds,
+  #   individuals = FALSE,
+  #   path.folder = path.folder,
+  #   filename = NULL,
+  #   file.date = file.date,
+  #   parallel.core = parallel.core,
+  #   verbose = verbose
+  #   # ,
+  #   # subsample = variant.select
+  # ) %$% info
 
   # genomic_converter-----------------------------------------------------------
   if (verbose) message("\nTransferring data to genomic converter...")

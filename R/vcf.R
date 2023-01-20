@@ -139,9 +139,9 @@
 #' Default (\code{filter.strands = "blacklist"}).
 #' \item \code{filter.common.markers}: (logical) Default: \code{filter.common.markers = TRUE}.
 #' Documented in \code{\link{filter_common_markers}}.
-#' \item \code{filter.mac}: (integer) Default: \code{filter.mac = NULL}.
-#' To blacklist markers below a specific Minor Allele Count (calculated overall/global).
-#' Documented in \code{\link{filter_mac}}.
+#' \item \code{filter.ma}: (integer) Default: \code{filter.ma = NULL}.
+#' To blacklist markers below a specific Minor Allele Count, Frequency or Depth (calculated overall/global).
+#' Documented in \code{\link{filter_ma}}.
 #'
 #' \item \code{filter.coverage}: (optional, string)
 #' Default: \code{filter.coverage = NULL}. To blacklist markers based on mean coverage.
@@ -240,7 +240,7 @@
 #'     filter.individuals.missing = "outliers",
 #'     filter.common.markers = TRUE,
 #'     filter.strands = "blacklist",
-#'     filter.mac = 4,
+#'     filter.ma = 4,
 #'     filter.genotyping = 0.3,
 #'     filter.snp.position.read = "outliers",
 #'     filter.short.ld = "mac",
@@ -254,13 +254,13 @@
 #' }
 
 read_vcf <- function(
-  data,
-  strata = NULL,
-  filename = NULL,
-  vcf.stats = TRUE,
-  parallel.core = parallel::detectCores() - 1,
-  verbose = TRUE,
-  ...
+    data,
+    strata = NULL,
+    filename = NULL,
+    vcf.stats = TRUE,
+    parallel.core = parallel::detectCores() - 1,
+    verbose = TRUE,
+    ...
 ) {
 
   # #Test
@@ -279,7 +279,7 @@ read_vcf <- function(
   # filter.coverage = NULL
   # filter.genotyping <- NULL
   # filter.snp.position.read <- NULL
-  # filter.mac <- NULL
+  # filter.ma <- NULL
   # filter.common.markers = FALSE
   # filter.monomorphic <- FALSE
   # filter.short.ld <- NULL
@@ -306,7 +306,7 @@ read_vcf <- function(
   # filter.long.ld <- 0.3
   # filter.common.markers = TRUE
   # filter.monomorphic <- TRUE
-  # filter.mac <- 4
+  # filter.ma <- 4
   # filter.coverage = c(5, 150)
   # filter.genotyping <- 0.15
   # filter.snp.position.read <- "outliers"
@@ -340,7 +340,7 @@ read_vcf <- function(
     args.list = as.list(environment()),
     dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
     keepers = c("whitelist.markers",
-                "filter.mac", "filter.snp.position.read", "filter.snp.number",
+                "filter.ma", "filter.snp.position.read", "filter.snp.number",
                 "filter.coverage", "filter.genotyping", "filter.short.ld",
                 "filter.long.ld", "long.ld.missing", "ld.method",
                 "filter.individuals.missing", "filter.individuals.coverage.total",
@@ -355,7 +355,7 @@ read_vcf <- function(
   )
 
   if (!is.null(filter.snp.position.read) ||
-      !is.null(filter.mac) ||
+      !is.null(filter.ma) ||
       !is.null(filter.coverage) ||
       !is.null(filter.genotyping) ||
       !is.null(filter.short.ld) ||
@@ -463,14 +463,14 @@ read_vcf <- function(
   if (verbose) message("File written: random.seed (", random.seed,")")
 
   # VCF: Read ------------------------------------------------------------------
-  timing.vcf <- proc.time()
-
   # Get file size
   big.vcf <- file.size(data)
-  if (big.vcf >= 1000000000) {
-    message("\nReading VCF... you might have time for an espresso or tea!")
+  if (big.vcf >= 20000000000) {
+    cli::cli_progress_step("Reading VCF... you have time for a break...")
+  } else if (big.vcf >= 1000000000) {
+    cli::cli_progress_step("Reading VCF... you might have time for an espresso!")
   } else {
-    message("\nReading VCF... ")
+    cli::cli_progress_step("Reading VCF")
   }
   parallel.temp <- parallel.core
   # for small VCF SeqArray not that good with parallel...
@@ -490,10 +490,6 @@ read_vcf <- function(
 
   if (!is.null(detect.source$markers.info)) markers.info <- detect.source$markers.info
   if (!is.null(detect.source$overwrite.metadata)) overwrite.metadata <- detect.source$overwrite.metadata
-
-  # generate the GDS
-  # changed 20210615
-  # safe read
 
   vcf_read_temp <- function(
     data, filename, parallel.temp, check.header, markers.info, overwrite.metadata) {
@@ -515,6 +511,17 @@ read_vcf <- function(
   data.safe <- safe_vcf_read(data, filename, parallel.temp, check.header, markers.info, overwrite.metadata)
 
   if (is.null(data.safe$error)) {
+    gds <- SeqArray::seqOpen(gds.fn = data.safe$result, readonly = FALSE)
+  } else {
+    cli::cli_progress_step("Reading VCF in parallel resulted in an error")
+    os <- Sys.info()[['sysname']]
+    if (os == "Windows") {
+      cli::cli_progress_step("Common problem with Windows machines")
+    } else {
+      cli::cli_progress_step("Not normal with UNIX machines: check your SeqArray installation")
+    }
+    cli::cli_progress_step("Reading VCF with parallel turned OFF")
+
     gds <- SeqArray::seqVCF2GDS(
       vcf.fn = data,
       out.fn = filename,
@@ -526,36 +533,15 @@ read_vcf <- function(
       fmt.import = overwrite.metadata# characters, the variable name(s) in the FORMAT field for import; or NULL for all variables#
     ) %>%
       SeqArray::seqOpen(gds.fn = ., readonly = FALSE)
-  } else {
-    gds <- SeqArray::seqOpen(gds.fn = data.safe$result, readonly = FALSE)
   }
-
-  vcf_read_temp <- data.safe <- safe_vcf_read <- NULL
-
-  # previously, the code caused some problems with PC
-  # gds <- suppressWarnings(
-  #   SeqArray::seqVCF2GDS(
-  #     vcf.fn = data,
-  #     out.fn = filename,
-  #     parallel = parallel.temp,
-  #     storage.option = "ZIP_RA",
-  #     verbose = FALSE,
-  #     header = check.header,
-  #     info.import = markers.info, # characters, the variable name(s) in the INFO field for import; or NULL for all variables
-  #     fmt.import = overwrite.metadata# characters, the variable name(s) in the FORMAT field for import; or NULL for all variables#
-  #   ) %>%
-  #     SeqArray::seqOpen(gds.fn = ., readonly = FALSE)
-  # )
+  #no longer used
+  vcf_read_temp <- data.safe <- safe_vcf_read <- overwrite.metadata <- NULL
+  parallel.temp <- check.header <- detect.source <- markers.info <- NULL
+  cli::cli_progress_done()
+  if (verbose) message("Analyzing VCF")
 
   # VCF: Summary ----------------------------------------------------------------
-  summary_gds(gds, verbose = TRUE)
-  if (verbose) message("\nRead time: ", round((proc.time() - timing.vcf)[[3]]), " sec\n")
-
-  if (verbose) message("\nGDS file written: ", filename.short)
-  parallel.temp <- check.header <- detect.source <- NULL #no longer used
-
   # Generate radiator skeleton -------------------------------------------------
-  if (verbose) message("\nAnalyzing the vcf...")
   radiator.gds <- radiator_gds_skeleton(gds)
 
   # VCF: source ----------------------------------------------------------------
@@ -658,6 +644,10 @@ read_vcf <- function(
   # VCF: reference genome or de novo -------------------------------------------
   ref.genome <- detect_ref_genome(data = gds, verbose = verbose)
 
+
+  # Cleaning VCF stacks ipyrad plink etc ..-------------------------------------
+  message("\nCleaning VCF")
+
   # Stacks specific adjustments
   if (!ref.genome) {
     if (stacks.2) {
@@ -695,13 +685,9 @@ read_vcf <- function(
   # Locus with NA or . or ""
   weird.locus <- length(unique(markers.meta$LOCUS)) <= 1
   if (weird.locus && !stacks.2) {
-    if (verbose) message("LOCUS field empty... adding unique id instead")
+    message("LOCUS field empty... adding unique id instead")
     markers.meta$LOCUS <- markers.meta$VARIANT_ID
   }
-
-  # if (stringi::stri_detect_fixed(str = data.source, pattern = "GATK") && !biallelic) {
-  #   vcf.stats <- FALSE
-  # }
 
   # VCF: LOCUS cleaning and Strands detection ----------------------------------
   if (isTRUE(unique(stringi::stri_detect_fixed(
@@ -711,7 +697,6 @@ read_vcf <- function(
   ) {
     data.source <- "dart.vcf"
     update_radiator_gds(gds = gds, node.name = "data.source", value = data.source)
-    if (verbose) message("VCF source: ", data.source)
   }
 
   if (data.source != "dart.vcf" && stringi::stri_detect_regex(str = markers.meta[1,3], pattern = "[^[:alnum:]]+")) {
@@ -769,7 +754,8 @@ read_vcf <- function(
   dup.markers <- length(markers.meta$MARKERS) - length(unique(markers.meta$MARKERS))
   if (dup.markers > 0) {
     message("\nNumber of duplicate MARKERS id: ", dup.markers)
-    message("Adding integer to differentiate...")
+    message("Adding integer to differentiate")
+
     markers.meta %<>%
       dplyr::arrange(MARKERS) %>%
       dplyr::mutate(MARKERS_NEW = MARKERS) %>%
@@ -799,6 +785,8 @@ read_vcf <- function(
     value = markers.meta$CHROM,
     replace = TRUE
   )
+
+  # Filters --------------------------------------------------------------------
   # # radiator_parameters: generate --------------------------------------------
   filters.parameters <- radiator_parameters(
     generate = TRUE,
@@ -827,7 +815,7 @@ read_vcf <- function(
     verbose = verbose
   )
 
-  # Filters --------------------------------------------------------------------
+
   # Filter duplicated SNPs on different strands---------------------------------
   if (detect.strand) {
     blacklist.strands <- markers.meta %>%
@@ -873,7 +861,7 @@ read_vcf <- function(
                                gdsfile = gds,
                                per.variant = TRUE,
                                parallel = parallel.core
-                               ),
+                             ),
                              .after = 1) %>%
           dplyr::mutate(
             MAC = dplyr::if_else(ALT_COUNT < REF_COUNT, ALT_COUNT, REF_COUNT),
@@ -1015,8 +1003,7 @@ read_vcf <- function(
     )
   }
 
-  filter.check.unique <- NULL
-  markers.meta <- individuals <- NULL
+  filter.check.unique <- filter.vcf <- markers.meta <- individuals <- NULL
 
   # Filter_monomorphic----------------------------------------------------------
   gds <- filter_monomorphic(
@@ -1066,10 +1053,11 @@ read_vcf <- function(
   )
 
   # Filter MAC----------------------------------------------------------------
-  gds <- filter_mac(
+  gds <- filter_ma(
     data = gds,
     interactive.filter = FALSE,
-    filter.mac = filter.mac,
+    ma.stats = ma.stats,
+    filter.ma = filter.ma,
     filename = NULL,
     parallel.core = parallel.core,
     verbose = FALSE,
@@ -1142,7 +1130,6 @@ read_vcf <- function(
 
   # Final Sync GDS -----------------------------------------------------------
   if (verbose) message("\nPreparing output files...")
-
   markers.meta <- extract_markers_metadata(gds, whitelist = TRUE)
 
   strata <- extract_individuals_metadata(
@@ -1201,11 +1188,41 @@ read_vcf <- function(
 
   #-----------------------------------  VCF STATS   ----------------------------
   if (vcf.stats) {
-    # SUBSAMPLE markers
+    message("\nVCF statistics per individuals and markers")
+    # check for problem with large vector size
     n.markers <- length(markers.meta$VARIANT_ID)
+    n.ind <- as.numeric(length(strata$INDIVIDUALS))
+    n.snp <- as.numeric(n.markers) # numeric required it's not just a bk
+    large.data <- n.ind * n.snp
+    vector.size.limit <- 2^31
     if (n.markers < 200000) subsample.markers.stats <- 1
 
+    if (large.data > vector.size.limit) {
+      if (subsample.markers.stats == 1) message("Large VCF: markers subsampling turned ON for coverage statistics")
+      # check subsample
+      if (!n.snp * subsample.markers.stats * n.ind < vector.size.limit) {
+        subsample.markers.stats <- 0.3
+        if (!n.snp * subsample.markers.stats * n.ind < vector.size.limit) {
+          subsample.markers.stats <- 0.2
+          if (!n.snp * subsample.markers.stats * n.ind < vector.size.limit) {
+            subsample.markers.stats <- 0.1
+            if (!n.snp * subsample.markers.stats * n.ind < vector.size.limit) {
+              subsample.markers.stats <- 0.05
+            }
+          }
+        }
+      }
+    }
+
+    large.data <- vector.size.limit <- NULL
+
+    # with huge dataset subsampling is faster and still very reliable for overall
+    # statistics like the ones generated here...
+
+
+    # SUBSAMPLE markers
     if (subsample.markers.stats < 1) {
+      message("Using a subsample proportion of markers: ", subsample.markers.stats)
       markers.subsampled <- dplyr::sample_frac(
         tbl = markers.meta,
         size = subsample.markers.stats)
@@ -1221,54 +1238,49 @@ read_vcf <- function(
       variant.select <- NULL
     }
 
-    # Individuals stats
-    message("\nGenerating individual stats...")
-    id.stats <- generate_id_stats(
+    # Individuals and markers stats --------------------------------------------
+    i.m.stats <- generate_stats(
       gds = gds,
       subsample = variant.select,
+      exhaustive = TRUE,
+      force.stats = TRUE,
       path.folder = path.folder,
+      plot = TRUE,
+      digits = 6,
       file.date = file.date,
       parallel.core = parallel.core,
-      verbose = verbose) %$% info
-
-    # Markers stats
-    message("Generating markers stats...")
-    markers.stats <- generate_markers_stats(
-      gds = gds,
-      path.folder = path.folder,
-      filename = markers.file,
-      file.date = file.date,
-      parallel.core = parallel.core,
-      verbose = verbose,
-      subsample = variant.select) %$% info
+      verbose = TRUE
+    )
 
     # For summary at the end of the function:
-    ind.missing <- round(mean(id.stats$MISSING_PROP, na.rm = TRUE), 2)
-    if (dp) ind.cov.total <- round(mean(id.stats$COVERAGE_TOTAL, na.rm = TRUE), 0)
-    if (dp) ind.cov.mean <- round(mean(id.stats$COVERAGE_MEAN, na.rm = TRUE), 0)
-    markers.missing <- round(mean(markers.stats$MISSING_PROP, na.rm = TRUE), 2)
-    if (dp) markers.cov <- round(mean(markers.stats$COVERAGE_MEAN, na.rm = TRUE), 0) # same as above because NA...
+    ind.missing <- round(i.m.stats$i.stats$MEAN[i.m.stats$i.stats$GROUP == "missing genotypes"], 2)
+    if (dp) ind.cov.total <- round(i.m.stats$i.stats$MEAN[i.m.stats$i.stats$GROUP == "total coverage"], 0)
+    if (dp) ind.cov.mean <- round(i.m.stats$i.stats$MEAN[i.m.stats$i.stats$GROUP == "mean coverage"], 0)
+    markers.missing <- round(i.m.stats$m.stats$MEAN[i.m.stats$m.stats$GROUP == "missing genotypes"], 2)
+    if (dp) markers.cov <- round(i.m.stats$m.stats$MEAN[i.m.stats$m.stats$GROUP == "mean coverage"], 0) # same as above because NA...
   }#End stats
 
   #RESULTS --------------------------------------------------------------------
   number.info <- SeqArray::seqGetFilter(gdsfile = gds)
+
   if (verbose) {
     cat("################################### SUMMARY ####################################\n")
     if (vcf.stats) {
-      message("\nVCF summary:\nMissing data: ")
+      message("\nVCF summary\nMissing data: ")
       message("    markers: ", markers.missing)
       message("    individuals: ", ind.missing)
       if (dp) message("\n\nCoverage info:")
-      if (dp) message("    individuals mean read depth: ", ind.cov.total)
+      if (dp) message("    individuals mean total coverage: ", ind.cov.total)
       if (dp) message("    individuals mean genotype coverage: ", ind.cov.mean)
       if (dp) message("    markers mean coverage: ", markers.cov)
     }
   }
-  message("\nNumber of chromosome/contig/scaffold: ", length(unique(markers.meta$CHROM)))
+  message("\nVCF info:")
+  message("Number of chromosome/contig/scaffold: ", length(unique(markers.meta$CHROM)))
   message("Number of locus: ", length(unique(markers.meta$LOCUS)))
   message("Number of markers: ", length(number.info$variant.sel[number.info$variant.sel]))
   summary_strata(strata)
-  id.stats <- markers.stats <- markers.meta <- NULL
+  i.m.stats <- markers.meta <- NULL
 
   message("radiator Genomic Data Structure (GDS) file: ", folder_short(filename))
   return(gds)
@@ -1427,9 +1439,9 @@ read_vcf <- function(
 #' Default: \code{filter.common.markers = TRUE}.
 #' Documented in \code{\link[radiator]{filter_common_markers}}.
 #' Required package: \code{UpSetR}.
-#' \item \code{filter.mac}: (integer)
-#' Default: \code{filter.mac = NULL}.
-#' Documented in \code{\link[radiator]{filter_mac}}.
+#' \item \code{filter.ma}: (integer)
+#' Default: \code{filter.ma = NULL}.
+#' Documented in \code{\link[radiator]{filter_ma}}.
 #' \item \code{filter.coverage}: (logical)
 #' Default: \code{filter.coverage = NULL}.
 #' Documented in \code{\link[radiator]{filter_coverage}}.
@@ -1467,7 +1479,7 @@ read_vcf <- function(
 #'     data = "populations.snps.vcf",
 #'     strata = "strata_salamander.tsv",
 #'     filter.individuals.missing = "outlier",
-#'     filter.mac = 4,
+#'     filter.ma = 4,
 #'     filter.genotyping = 0.1,
 #'     filter.snp.position.read = "outliers",
 #'     filter.short.ld = "mac",
@@ -1486,12 +1498,12 @@ read_vcf <- function(
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 tidy_vcf <- function(
-  data,
-  strata = NULL,
-  filename = NULL,
-  parallel.core = parallel::detectCores() - 1,
-  verbose = FALSE,
-  ...) {
+    data,
+    strata = NULL,
+    filename = NULL,
+    parallel.core = parallel::detectCores() - 1,
+    verbose = FALSE,
+    ...) {
 
   # # test
   # data = "populations.snps.vcf"
@@ -1509,7 +1521,7 @@ tidy_vcf <- function(
   # filter.common.markers = TRUE
   # filter.monomorphic = TRUE
   # filter.strands = FALSE
-  # filter.mac = 4
+  # filter.ma = 4
   # filter.coverage = TRUE
   # filter.genotyping = 10
   # filter.snp.position.read = "outliers"
@@ -1556,7 +1568,7 @@ tidy_vcf <- function(
       "filter.individuals.coverage.total",
       "filter.common.markers",
       "filter.monomorphic",
-      "filter.mac",
+      "filter.ma", "ma.stats",
       "filter.coverage",
       "filter.genotyping",
       "filter.snp.position.read",
@@ -1577,7 +1589,7 @@ tidy_vcf <- function(
   )
 
   if (!is.null(filter.snp.position.read) ||
-      !is.null(filter.mac) ||
+      !is.null(filter.ma) ||
       !is.null(filter.coverage) ||
       !is.null(filter.genotyping) ||
       !is.null(filter.short.ld) ||
@@ -1662,7 +1674,7 @@ tidy_vcf <- function(
     whitelist.markers = whitelist.markers,
     filter.individuals.missing = filter.individuals.missing,
     filter.individuals.coverage.total = filter.individuals.coverage.total,
-    filter.mac = filter.mac,
+    filter.ma = filter.ma,
     filter.coverage = filter.coverage,
     filter.genotyping = filter.genotyping,
     filter.snp.position.read = filter.snp.position.read,
@@ -1930,11 +1942,11 @@ tidy_vcf <- function(
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 write_vcf <- function(
-  data,
-  pop.info = FALSE,
-  filename = NULL,
-  source = NULL,
-  empty = FALSE
+    data,
+    pop.info = FALSE,
+    filename = NULL,
+    source = NULL,
+    empty = FALSE
 ) {
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
 
@@ -2279,10 +2291,10 @@ check_header_source_vcf <- function(vcf) {
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 split_vcf <- function(
-  data,
-  strata,
-  parallel.core = parallel::detectCores() - 1,
-  ...
+    data,
+    strata,
+    parallel.core = parallel::detectCores() - 1,
+    ...
 ) {
   cat("#######################################################################\n")
   cat("########################### radiator::split_vcf #########################\n")
@@ -2421,7 +2433,7 @@ split_vcf <- function(
 # @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 # merge_vcf <- function(
-#   vcf1, strata1,
+    #   vcf1, strata1,
 #   vcf2, strata2,
 #   whitelist.markers = NULL,
 #   filename = NULL,
@@ -2494,11 +2506,11 @@ split_vcf <- function(
 #   #   input <- radiator::filter_common_markers(data = input, verbose = TRUE)$input
 #   # }
 #   #
-#   # if (!is.null(filter.mac)) {
+#   # if (!is.null(filter.ma)) {
 #   #   input <- filter_maf(
 #   #     data = input,
 #   #     interactive.filter = FALSE,
-#   #     filter.mac = filter.mac,
+#   #     filter.ma = filter.ma,
 #   #     parallel.core = parallel.core,
 #   #     verbose = FALSE)$tidy.filtered.mac
 #   # }

@@ -10,7 +10,7 @@
 
 
 
-<meta name="date" content="2022-11-17" />
+<meta name="date" content="2022-11-30" />
 
 <title>RADseq Genomics in R</title>
 
@@ -1486,12 +1486,12 @@ border-radius: 0px;
 
 <h1 class="title toc-ignore">RADseq Genomics in R</h1>
 <h3 class="subtitle">computer setup</h3>
-<h4 class="date">2022-11-17</h4>
+<h4 class="date">2022-11-30</h4>
 
 </div>
 
 
-<p><strong>Time to allow: ETA ~20 min for experience users, 1h for
+<p><strong>Time to allow: ETA ~30-45 min for experience users, 1h-2h for
 novices</strong></p>
 <p>This vignette purposes is to show users how to setup their computers
 for RADseq genomic analysis inside R. It targets users of my packages or
@@ -1511,8 +1511,10 @@ simulations with <code>strataG</code>.</li>
 <li><code>ranger</code></li>
 <li><code>missRanger</code></li>
 <li><code>pcaMethods</code></li>
-<li>how to <strong>OpenMP enabled</strong> specific packages that
-require to run in parallel for the imputations.</li>
+<li>how to have <strong>OpenMP enabled</strong> specific packages. R
+packages that requires to run in parallel for the imputations
+(e.g. <code>fstcore</code>, <code>fst</code>,
+<code>data.table</code>).</li>
 </ul>
 <p>I’m currently merging information also found in this <a href="http://gbs-cloud-tutorial.readthedocs.io/en/latest/03_computer_setup.html">tutorial</a></p>
 <div id="macos" class="section level1">
@@ -1857,8 +1859,8 @@ clang++ -std=gnu++11 -I&quot;/Library/Frameworks/R.framework/Resources/include&q
 localtime.c:42:10: fatal error: &#39;string.h&#39; file not found
 #include &lt;string.h&gt;
 ^~~~~~~~~~</code></pre>
-<p><strong>With macOS</strong> version 12.0.1 (Monterey): follow the
-<code>.Makevars</code> <a href="#Makevars_config">configuration</a></p>
+<p><strong>With macOS</strong> : your <code>Makevars</code> needs
+additional lines to make it work <a href="#Makevars_config">configuration</a>.</p>
 </div>
 <div id="error-.setmaxglobalsize" class="section level2">
 <h2>Error <code>.setMaxGlobalSize</code></h2>
@@ -2063,7 +2065,20 @@ make
 sudo make install
 cd .. 
 sudo rm -R zstd*</code></pre>
-<pre class="r"><code>install.packages(&quot;fstcore&quot;)
+<p><code>fstcore</code>, <code>fst</code> and <code>data.table</code>
+requires these R <em>Makevars</em> specifications. If you have other
+lines, comment (<code>#</code>) before saving and installing from
+source:</p>
+<pre class="r"><code>usethis::edit_r_makevars()</code></pre>
+<pre class="r"><code>#fstcore fst data.table
+CC=/usr/local/bin/gcc -fopenmp
+CXX=/usr/local/bin/g++ -fopenmp
+CXX11=/usr/local/bin/g++ -fopenmp
+CXX14=/usr/local/bin/g++ -fopenmp
+CXX17=/usr/local/bin/g++ -fopenmp
+CXX1X=/usr/local/bin/g++ -fopenmp
+CXX98=/usr/local/bin/g++ -fopenmp</code></pre>
+<pre class="r"><code>install.packages(&quot;fstcore&quot;, type = &quot;source&quot;)
 install.packages(&quot;fst&quot;, type = &quot;source&quot;)
 install.packages(&quot;data.table&quot;, type = &quot;source&quot;)</code></pre>
 </div>

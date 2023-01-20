@@ -107,7 +107,7 @@ if (getRversion() >= "2.15.1") {
       "dev.off", "dp", "file.date",
       "filter.common.markers", "filter.coverage", "filter.genotyping",
       "filter.individuals.coverage.total", "filter.individuals.heterozygosity",
-      "filter.individuals.missing", "filter.long.ld", "filter.mac",
+      "filter.individuals.missing", "filter.long.ld", "filter.ma", "ma.stats",
       "filter.monomorphic", "filter.reproducibility", "filter.short.ld",
       "filter.snp.number", "filter.snp.position.read", "filter.strands",
       "filters.parameters.path", "first.data.info",
@@ -152,7 +152,10 @@ if (getRversion() >= "2.15.1") {
       "filter.individuals.coverage.median", "COMMON_META", "where", "everything",
       "M_SEQ", "ID_SEQ", "1", "2", "ORIG_GT_BIN", "STRATA_SEQ", "IDTEMP", ".data",
       "EQUAL_COUNTS", "strataG", "HET_EXP", "id", "stratum", "DOS_ALT",
-      "ALLELES_ALT_A2", "ALLELES_REF_A1", "NUC_ALT_A2", "NUC_REF_A1"
+      "ALLELES_ALT_A2", "ALLELES_REF_A1", "NUC_ALT_A2", "NUC_REF_A1",
+      "MAD_GLOBAL_CORR", "MAC_GLOBAL_CORR", "MAF_GLOBAL_DEPTH_CORR",
+      "TOTAL_COUNT", "m.info", "MAF_GLOBAL_COUNT_CORR", "MAF_GLOBAL_DEPTH_CORR",
+      "MAD_GLOBAL", "i.info"
     )
   )
 }

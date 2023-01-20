@@ -539,7 +539,6 @@ genomic_converter <- function(
     res$genepopedit <- radiator::write_genepopedit(data = input)
   } # end genepopedit output
 
-
   # GSI_SIM --------------------------------------------------------------------
   if ("gsi_sim" %in% output) {
     if (verbose) cli::cli_progress_step("Generating gsi_sim output")
@@ -567,7 +566,6 @@ genomic_converter <- function(
     if (verbose) cli::cli_progress_step("Generating hapmap output")
     radiator::write_hapmap(data = input, filename = filename)
   } # end hapmap output
-
 
   # hierfstat --------------------------------------------------------------------
   if ("hierfstat" %in% output) {
@@ -658,7 +656,6 @@ genomic_converter <- function(
     )
   } # end plink output
 
-
   # SNPRelate ------------------------------------------------------------------
   if ("snprelate" %in% output) {
     if (verbose) cli::cli_progress_step("Generating SNPRelate")
@@ -688,7 +685,6 @@ genomic_converter <- function(
       parallel.core = parallel.core
     )
   }
-
 
   # hzar -------------------------------------------------------------------
   if ("hzar" %in% output) {

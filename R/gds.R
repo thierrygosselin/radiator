@@ -6,19 +6,19 @@
 #' @keywords internal
 #' @export
 radiator_gds <- function(
-  genotypes = NULL,
-  biallelic = TRUE,
-  data.source = NULL,
-  geno.coding = c("alt.dos", "ref.dos"),
-  strata = NULL,
-  markers.meta = NULL,
-  genotypes.meta = NULL,
-  dp = NULL, # read depth
-  ad = NULL, # allele depth
-  gl = NULL, # genotype likelihood
-  filename = NULL,
-  open = FALSE,
-  verbose = TRUE
+    genotypes = NULL,
+    biallelic = TRUE,
+    data.source = NULL,
+    geno.coding = c("alt.dos", "ref.dos"),
+    strata = NULL,
+    markers.meta = NULL,
+    genotypes.meta = NULL,
+    dp = NULL, # read depth
+    ad = NULL, # allele depth
+    gl = NULL, # genotype likelihood
+    filename = NULL,
+    open = FALSE,
+    verbose = TRUE
 ) {
   # genotypes <- data
   message("Generating GDS...")
@@ -110,7 +110,7 @@ radiator_gds <- function(
   # MARKERS META ---------------------------------------------------------------
   # rare case (usually DArT) where some IDs are still in the metadata...
   if (!is.null(strata)) {
-      markers.meta %<>% dplyr::select(-dplyr::any_of(strata$INDIVIDUALS))
+    markers.meta %<>% dplyr::select(-dplyr::any_of(strata$INDIVIDUALS))
   }
 
   # check <- markers.meta$MARKERS
@@ -294,9 +294,9 @@ tidy2gds <- function(x) {
   want <- c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF",
             "ALT")
   markers.meta <- x %>%
-      dplyr::select(dplyr::any_of(want)) %>%
-      dplyr::distinct(.) %>%
-      dplyr::arrange(VARIANT_ID)
+    dplyr::select(dplyr::any_of(want)) %>%
+    dplyr::distinct(.) %>%
+    dplyr::arrange(VARIANT_ID)
 
   notwanted <- c("MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF","ALT")
   x %<>%
@@ -329,17 +329,17 @@ tidy2gds <- function(x) {
 #' @keywords internal
 #' @export
 gds2tidy <- function(
-  gds,
-  markers.meta = NULL,
-  markers.meta.select = NULL,
-  wide = FALSE,
-  individuals = NULL,
-  pop.id = TRUE,
-  calibrate.alleles = TRUE,
-  strip.rad = FALSE,
-  parallel.core = parallel::detectCores() - 1,
-  close.gds = FALSE,
-  ...
+    gds,
+    markers.meta = NULL,
+    markers.meta.select = NULL,
+    wide = FALSE,
+    individuals = NULL,
+    pop.id = TRUE,
+    calibrate.alleles = TRUE,
+    strip.rad = FALSE,
+    parallel.core = parallel::detectCores() - 1,
+    close.gds = FALSE,
+    ...
 ) {
   if (is.null(individuals)) {
     individuals <- extract_individuals_metadata(gds = gds, whitelist = TRUE, verbose = FALSE)
@@ -393,7 +393,7 @@ gds2tidy <- function(
     }
     cn <- markers.meta %>% dplyr::pull(MARKERS)
     want.m <- "MARKERS"
-}
+  }
   if (rlang::has_name(individuals, "ID_SEQ")) {
     want.id <- "ID_SEQ"
   } else {
@@ -492,14 +492,14 @@ radiator_gds_skeleton <- function(gds) {
 #' @keywords internal
 #' @export
 update_radiator_gds <- function(
-  gds,
-  radiator.gds = TRUE,
-  node.name,
-  value,
-  replace = TRUE,
-  sync = FALSE,
-  summary = FALSE,
-  verbose = FALSE
+    gds,
+    radiator.gds = TRUE,
+    node.name,
+    value,
+    replace = TRUE,
+    sync = FALSE,
+    summary = FALSE,
+    verbose = FALSE
 ) {
 
   if (node.name %in% c("AD", "DP", "GL")) {
@@ -615,12 +615,12 @@ extract_data_source <- function(gds) {
 # @keywords internal
 #' @export
 extract_individuals_metadata <- function(
-  gds,
-  ind.field.select = NULL,
-  radiator.node = TRUE,
-  whitelist = FALSE,
-  blacklist = FALSE,
-  verbose = FALSE
+    gds,
+    ind.field.select = NULL,
+    radiator.node = TRUE,
+    whitelist = FALSE,
+    blacklist = FALSE,
+    verbose = FALSE
 ) {
 
   # For SNPRelate data
@@ -707,12 +707,12 @@ extract_individuals_metadata <- function(
 # @keywords internal
 #' @export
 extract_markers_metadata <- function(
-  gds,
-  markers.meta.select = NULL,
-  radiator.node = TRUE,
-  whitelist = FALSE,
-  blacklist = FALSE,
-  verbose = FALSE
+    gds,
+    markers.meta.select = NULL,
+    radiator.node = TRUE,
+    whitelist = FALSE,
+    blacklist = FALSE,
+    verbose = FALSE
 ) {
 
   # will switch radiator.node to FALSE if returns null
@@ -828,15 +828,15 @@ extract_markers_metadata <- function(
 # @keywords internal
 #' @export
 extract_genotypes_metadata <- function(
-  gds,
-  genotypes.meta.select = NULL,
-  genotypes = FALSE,
-  radiator.node = TRUE,
-  index.only = FALSE,
-  sync.markers.individuals = TRUE,
-  whitelist = FALSE,
-  blacklist = FALSE,
-  verbose = FALSE
+    gds,
+    genotypes.meta.select = NULL,
+    genotypes = FALSE,
+    radiator.node = TRUE,
+    index.only = FALSE,
+    sync.markers.individuals = TRUE,
+    whitelist = FALSE,
+    blacklist = FALSE,
+    verbose = FALSE
 ) {
   ## TEST
   # genotypes = FALSE
@@ -898,12 +898,12 @@ extract_genotypes_metadata <- function(
     if (!whitelist && !blacklist && !rlang::has_name(genotypes.meta, "FILTERS")) {
       genotypes.meta %<>% dplyr::mutate(FILTERS = "whitelist")
     }
-    if (whitelist && rlang::has_name(genotypes.meta, "FILTERS")){
+    if (whitelist && rlang::has_name(genotypes.meta, "FILTERS")) {
       genotypes.meta %<>%
         dplyr::filter(FILTERS == "whitelist") %>%
         dplyr::select(-FILTERS)
     }
-    if (blacklist && rlang::has_name(genotypes.meta, "FILTERS")){
+    if (blacklist && rlang::has_name(genotypes.meta, "FILTERS")) {
       genotypes.meta %<>%
         dplyr::filter(FILTERS != "whitelist") %>%
         dplyr::select(-FILTERS)
@@ -915,341 +915,389 @@ extract_genotypes_metadata <- function(
   }
 }#End extract_genotypes_metadata
 
+# check_coverage--------------------------------------------------------------
+#' @title check_coverage
+#' @description Check that the coverage info is in the GDS. By default, it will
+#' look for the DP and AD info in the FORMAT field.
+#' @rdname extract_coverage
+#' @param gds The gds object.
+#' @param genotypes.metadata.check (optional, logical) Look for already extracted coverage information in the
+#' radiator genotypes_metadata field of the GDS.
+#' Default: \code{genotypes.metadata.check = FALSE}.
+#' @param stacks.haplo.check (optional, logical) stacks haplotypes VCF header is
+#' baddly generated. It will say you have Read and allele Depth info, but you don't.
+#' Default: \code{stacks.haplo.check = FALSE}.
+#' @param dart.check (optional, logical) DArT have different reporting for coverage
+#' information.
+#' Default: \code{dart.check = FALSE}.
+# @keywords internal
+#' @export
+
+check_coverage <- function(gds, genotypes.metadata.check = FALSE, stacks.haplo.check = FALSE, dart.check = FALSE){
+
+  got.coverage <- NULL # default
+
+  # stacks haplotype vcf have the info fields for depth in the VCF header
+  # but they do not have the info with genotypes...
+  # it's laziness from stacks...
+
+  if (stacks.haplo.check) {
+    data.source <- extract_data_source(gds)
+    biallelic <- radiator::detect_biallelic_markers(data = gds)
+    biallelic <- gdsfmt::read.gdsn(gdsfmt::index.gdsn(
+      node = gds, path = "radiator/biallelic", silent = TRUE))
+    if (!biallelic) {
+      # check again to be 100% sure...
+      biallelic <- radiator::detect_biallelic_markers(data = gds)
+    }
+    if (!biallelic && stringi::stri_detect_fixed(str = data.source, pattern = "Stacks"))  got.coverage <- NULL
+  }
+
+  # DART
+  # DArT count and 1 and 2 rows have different information...
+  if (dart.check && "dart" %in% data.source) {
+    if (any(c("2rows", "1row") %in% data.source)) {
+      got.coverage <- extract_markers_metadata(
+        gds,
+        markers.meta.select = c("AVG_COUNT_REF", "AVG_COUNT_SNP"),
+        whitelist = TRUE
+      )
+      if (!is.null(got.coverage)) got.coverage <- c("AVG_COUNT_REF", "AVG_COUNT_SNP")
+    }#End DART 1row and 2 rows
+  }
+
+  # check if coverage info already extracted and in the genotypes_metadata field
+  if (genotypes.metadata.check) {
+    geno.index <- extract_genotypes_metadata(
+      gds = gds,
+      genotypes.meta.select = c("READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH"),
+      index.only = TRUE
+    )
+    if (length(geno.index) == 0L) {
+      got.coverage <- NULL
+    } else {
+      # this part might generate an error if you actually have genotypes metadata...
+      # need to run tests...
+      got.coverage <- geno.index
+    }
+    geno.index <- NULL
+  }
+
+  # Check GDS
+  # detect FORMAT fields available
+  have <-  SeqArray::seqSummary(
+    gdsfile = gds,
+    varname = "annotation/format",
+    check = "none", verbose = FALSE)$ID
+
+  if (length(have) > 0) {
+    # if (!exhaustive) {
+    # want <- c("DP", "CATG")
+    # } else {
+    want <- c("DP", "AD", "CATG")
+    # }
+
+    got.coverage <- purrr::keep(.x = have, .p = have %in% want)
+  } else {
+    got.coverage <- NULL
+  }
+  have <- NULL
+  return(got.coverage)
+}#End check_coverate
+
 # extract_coverage--------------------------------------------------------------
 #' @title extract_coverage
 #' @description Extract coverage information from a GDS file
 #' @rdname extract_coverage
 #' @param gds The gds object.
 #' @param markers (optional, logical) Default: \code{markers = TRUE}.
-#' @param ind (optional, logical) Default: \code{ind = TRUE}.
-#' @param update.gds (optional, logical) Default: \code{update.gds = FALSE}.
-#' @param depth.tibble (optional, logical) Returns the depth info in a tibble instead of list
-#' with total and mean coverage info.
-#' Used internally.
-#' Default:\code{depth.tibble = FALSE}.
+#' @param individuals (optional, logical) Default: \code{individuals = TRUE}.
+#' @param dp (optional, logical) Default: \code{dp = TRUE}.
+#' @param ad (optional, logical) Default: \code{ad = TRUE}.
+#' @param coverage.stats (optional, character string). Choice of stats to use with
+#' coverage.
+#' Default: \code{coverage.stats = c("sum", "mean", "median", "iqr")}.
+#' @param subsample.info (optional, double) Default: \code{subsample.info = 1}.
+#' The subsample proportion used (e.g. 0.3 or none the default).
+
+# @param verbose (optional, logical) Default: \code{verbose = FALSE}.
+# @param exhaustive (optional, logical) With default, will output the total, mean
+# median and IQR coverage information for all depth info (AD, DP).
+# With \code{exhaustive = FALSE}, only the total and mean coverage for DP is extracted.
+# Default: \code{exhaustive = TRUE}.
+# @param total.cov (optional, logical) For individual or markers total coverage.
+# Default: \code{total.cov = FALSE}.
+# @param mean.cov (optional, logical) For individual or markers mean coverage.
+# Default: \code{mean.cov = TTRUE}.
+# @param median.cov (optional, logical) For individual or markers median coverage.
+# Default: \code{median.cov = FALSE}.
+# @param iqr.cov (optional, logical) For individual or Inter-Quartile Range (iqr) coverage.
+# Default: \code{iqr.cov = FALSE}.
+# @param update.gds (optional, logical) Default: \code{update.gds = FALSE}.
+# @param depth.tibble (optional, logical) Returns the depth info in a tibble instead of list
+# with total and mean coverage info.
+# Used internally.
+# Default:\code{depth.tibble = FALSE}.
 #' @inheritParams radiator_common_arguments
 
 # @keywords internal
 #' @export
 extract_coverage <- function(
-  gds,
-  markers = TRUE,
-  ind = TRUE,
-  update.gds = FALSE,
-  depth.tibble = FALSE,
-  parallel.core = parallel::detectCores() - 2,
-  verbose = FALSE
-) {
-  #Test
-  # markers = TRUE
-  # ind = TRUE
-  # update.gds = FALSE
-  # parallel.core = parallel::detectCores() - 2
-  # verbose = TRUE
-  # depth.tibble = FALSE
+    gds,
+    individuals = TRUE,
+    markers = TRUE,
+    dp = TRUE,
+    ad = TRUE,
+    coverage.stats = c("sum", "mean", "median", "iqr"),
+    subsample.info = 1,
+    verbose = TRUE
+    ) {
 
-  # coverage.info <- list()
-  data.source <- extract_data_source(gds)
+  if (verbose) cli::cli_progress_step("Coverage ...")
+  i.info <- i.stats <- m.info <- m.stats <- NULL
 
-  n.markers <- summary_gds(gds, verbose = FALSE)$n.markers
+  # internal function
+  coverage_stats <- function(
+    gds,
+    coverage.stats = c("sum", "mean", "median", "iqr"),
+    dp = TRUE,
+    ad = TRUE,
+    individuals = TRUE,
+    markers = TRUE
+  ) {
 
-  # DArT counts and VCFs -------------------------------------------------------
-  if (!"dart" %in% data.source || "counts" %in% data.source) {
-    depth <- extract_genotypes_metadata(
-      gds,
-      genotypes.meta.select = c("MARKERS", "INDIVIDUALS","ID_SEQ", "M_SEQ", "READ_DEPTH",
-                                "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH"),
-      sync.markers.individuals = TRUE,
-      whitelist = TRUE
+    coverage.stats <- match.arg(
+      arg = coverage.stats,
+      choices = c("sum", "mean", "median", "iqr"),
+      several.ok = TRUE
     )
+    dp.i <- dp.m <- ad.m <- ad.i <- NULL
 
-    # No genotype metadata recorded:
-    if (length(depth) == 0 || is.null(depth)) {
-      if (stringi::stri_detect_fixed(str = data.source, pattern = "Stacks") &&
-          !gdsfmt::read.gdsn(gdsfmt::index.gdsn(
-            node = gds, path = "radiator/biallelic", silent = TRUE))) {
-        have <- integer(0)
-      } else {
-        # detect FORMAT fields available
-        have <-  SeqArray::seqSummary(
-          gdsfile = gds,
-          varname = "annotation/format",
-          check = "none", verbose = FALSE)$ID
-      }
 
-      # by default
-      depth <- NULL
-
-      if (length(have) > 0) {
-        want <- c("DP", "AD", "CATG")
-        parse.format.list <- purrr::keep(.x = have, .p = have %in% want)
-        depth <- NULL
-
-        if (length(parse.format.list) > 0) {
-          if (verbose) message("Extracting ", paste0(parse.format.list, collapse = ", "), " information...")
-          # work on parallelization of this part
-          depth <- parse_gds_metadata(x = parse.format.list, gds = gds, strip.rad = TRUE, verbose = FALSE)
-        }
-        parse.format.list <- want <- NULL
-      } else {
-        return(NULL)
-      }
-      have <- NULL
-    }
-    # Defaults
-    m <- i <- coverage.info <- NULL
-
-    if (!is.null(depth)) {
-      # detect.catg
-      if (rlang::has_name(depth, "C_DEPTH")) {
-        depth %<>%
-          dplyr::left_join(
-            extract_markers_metadata(
-              gds = gds,
-              markers.meta.select = c("M_SEQ", "REF", "ALT"),
-              whitelist = TRUE
-            ), by = "M_SEQ") %>%
-          dplyr::mutate(
-            ALLELE_REF_DEPTH = dplyr::case_when(
-              REF == "C" ~ C_DEPTH,
-              REF == "A" ~ A_DEPTH,
-              REF == "T" ~ T_DEPTH,
-              REF == "G" ~ G_DEPTH
-            ),
-            ALLELE_ALT_DEPTH = dplyr::case_when(
-              ALT == "C" ~ C_DEPTH,
-              ALT == "A" ~ A_DEPTH,
-              ALT == "T" ~ T_DEPTH,
-              ALT == "G" ~ G_DEPTH
-            )
-          )
-      }#catg.depth
-
-      if (depth.tibble) return(depth)
-
-      want <- c("READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH")
-      have <- colnames(depth)
-      want <- purrr::keep(.x = have, .p = have %in% want)
-
-      # required functions -----------------------------------------------------
-      colnames_rep <- function(x, total = FALSE, mean = FALSE, median = FALSE, iqr = FALSE) {
-        depth.pattern <- c("READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH")
-        replace.pattern <- c("COVERAGE_", "REF_DEPTH_", "ALT_DEPTH_")
-
-        if (total) {
-          x <- stringi::stri_replace_all_fixed(
-            str = x,
-            pattern = depth.pattern,
-            replacement = paste0(replace.pattern, "TOTAL"),
-            vectorize_all = FALSE
-          )
-        }
-        if (mean) {
-          x <- stringi::stri_replace_all_fixed(
-            str = x,
-            pattern = depth.pattern,
-            replacement = paste0(replace.pattern, "MEAN"),
-            vectorize_all = FALSE
-          )
-        }
-
-        if (median) {
-          x <- stringi::stri_replace_all_fixed(
-            str = x,
-            pattern = depth.pattern,
-            replacement = paste0(replace.pattern, "MEDIAN"),
-            vectorize_all = FALSE
-          )
-        }
-
-        if (iqr) {
-          x <- stringi::stri_replace_all_fixed(
-            str = x,
-            pattern = depth.pattern,
-            replacement = paste0(replace.pattern, "IQR"),
-            vectorize_all = FALSE
-          )
-        }
-        return(x)
-      }#End colnames_rep
-
-      # IQR radiator function
-      iqr_radiator <- function(x) {
-        iqr <- abs(diff(stats::quantile(x, probs = c(0.25, 0.75), na.rm = TRUE)))
-        return(iqr)
-      }#End iqr_radiator
+    if (dp) {
+      coverage.stats.l <- as.list(coverage.stats)
+      names(coverage.stats.l) <- stringi::stri_replace_all_fixed(
+        str = coverage.stats,
+        pattern = c("sum", "mean", "median", "iqr"),
+        replacement = c("COVERAGE_TOTAL", "COVERAGE_MEAN", "COVERAGE_MEDIAN", "COVERAGE_IQR"),
+        vectorize_all = FALSE
+      )
 
       if (markers) {
-        m <- dplyr::group_by(depth, M_SEQ) %>%
-          dplyr::summarise(dplyr::across(.cols = tidyselect::all_of(want), .fns = sum, na.rm = TRUE), .groups = "keep") %>%
-          dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = round, digits = 0)) %>%
-          dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = as.integer)) %>%
-          dplyr::ungroup(.) %>%
-          dplyr::rename_with(.fn = colnames_rep, total = TRUE) %>%
-          dplyr::bind_cols(
-            dplyr::group_by(depth, M_SEQ) %>%
-              dplyr::summarise(dplyr::across(.cols = tidyselect::all_of(want), .fns = mean, na.rm = TRUE), .groups = "keep") %>%
-              dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = round, digits = 0)) %>%
-              dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = as.integer)) %>%
-              dplyr::ungroup(.) %>%
-              dplyr::rename_with(.fn = colnames_rep, mean = TRUE) %>%
-              dplyr::select(-M_SEQ)
-          ) %>%
-          dplyr::bind_cols(
-            dplyr::group_by(depth, M_SEQ) %>%
-              dplyr::summarise(dplyr::across(.cols = tidyselect::all_of(want), .fns = stats::median, na.rm = TRUE), .groups = "keep") %>%
-              dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = round, digits = 0)) %>%
-              dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = as.integer)) %>%
-              dplyr::ungroup(.) %>%
-              dplyr::rename_with(.fn = colnames_rep, median = TRUE) %>%
-              dplyr::select(-M_SEQ)
-          ) %>%
-          dplyr::bind_cols(
-            dplyr::group_by(depth, M_SEQ) %>%
-              dplyr::summarise(dplyr::across(.cols = tidyselect::all_of(want), .fns = iqr_radiator), .groups = "keep") %>%
-              dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = round, digits = 0)) %>%
-              dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = as.integer)) %>%
-              dplyr::ungroup(.) %>%
-              dplyr::rename_with(.fn = colnames_rep, iqr = TRUE) %>%
-              dplyr::select(-M_SEQ)
+        dp_f_m <- function(gds, coverage.stats) {
+
+          # Using switch instead was not optimal for additional options in the func...
+          if (coverage.stats == "sum") rad_cov_stats <- function(x) round(sum(x, na.rm = TRUE))
+          if (coverage.stats == "mean") rad_cov_stats <- function(x) round(mean(x, na.rm = TRUE))
+          if (coverage.stats == "median") rad_cov_stats <- function(x) round(stats::median(x, na.rm = TRUE))
+          # if (coverage.stats == "iqr") rad_cov_stats <- function(x) round(abs(diff(stats::quantile(x, probs = c(0.25, 0.75), na.rm = TRUE))))
+          if (coverage.stats == "iqr") rad_cov_stats <- function(x) round(matrixStats::iqr(x, na.rm = TRUE)) # faster
+
+          x <- SeqArray::seqApply(
+            gdsfile = gds,
+            var.name = "annotation/format/DP",
+            FUN = rad_cov_stats,
+            as.is = "integer",
+            margin = "by.variant",
+            parallel = TRUE
           )
+        }
+
+        dp.m <- purrr::map_dfc(.x = coverage.stats.l, .f = dp_f_m, gds = gds)
       }
-      if (ind) {
-        i <- dplyr::group_by(depth, ID_SEQ) %>%
-          dplyr::summarise(dplyr::across(.cols = tidyselect::all_of(want), .fns = sum, na.rm = TRUE), .groups = "keep") %>%
-          dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = round, digits = 0)) %>%
-          dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = as.integer)) %>%
-          dplyr::ungroup(.) %>%
-          dplyr::rename_with(.fn = colnames_rep, total = TRUE) %>%
-          dplyr::bind_cols(
-            dplyr::group_by(depth, ID_SEQ) %>%
-              dplyr::summarise(dplyr::across(.cols = tidyselect::all_of(want), .fns = mean, na.rm = TRUE), .groups = "keep") %>%
-              dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = round, digits = 0)) %>%
-              dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = as.integer)) %>%
-              dplyr::ungroup(.) %>%
-              dplyr::rename_with(.fn = colnames_rep, mean = TRUE) %>%
-              dplyr::select(-ID_SEQ)
-          ) %>%
-          dplyr::bind_cols(
-            dplyr::group_by(depth, ID_SEQ) %>%
-              dplyr::summarise(dplyr::across(.cols = tidyselect::all_of(want), .fns = stats::median, na.rm = TRUE), .groups = "keep") %>%
-              dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = round, digits = 0)) %>%
-              dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = as.integer)) %>%
-              dplyr::ungroup(.) %>%
-              dplyr::rename_with(.fn = colnames_rep, median = TRUE) %>%
-              dplyr::select(-ID_SEQ)
-          ) %>%
-          dplyr::bind_cols(
-            dplyr::group_by(depth, ID_SEQ) %>%
-              dplyr::summarise(dplyr::across(.cols = tidyselect::all_of(want), .fns = iqr_radiator), .groups = "keep") %>%
-              dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = round, digits = 0)) %>%
-              dplyr::mutate(dplyr::across(.cols = tidyselect::all_of(want), .fns = as.integer)) %>%
-              dplyr::ungroup(.) %>%
-              dplyr::rename_with(.fn = colnames_rep, iqr = TRUE) %>%
-              dplyr::select(-ID_SEQ)
-          )
+
+      if (individuals) {
+        # changing the margin doesnt work with seqarray, the GDS needs to be optimized by sample
+        # this operation is very costly in both time and disk space.
+        # faster to do matrix calculations by rows and sums
+        # Note to myself: the huge speed gain by using other packages robustbse, Rfast, etc.
+        # is not worth the unreliability of the results check your testing files...
+
+        dp.temp <- SeqArray::seqGetData(
+          gdsfile = gds,
+          var.name = "annotation/format/DP"
+        )
+
+        dp_f_i <- function(coverage.stats, x) {
+          if ("sum" %in% coverage.stats) x <- rowSums(x, na.rm = TRUE)
+          if ("mean" %in% coverage.stats) x <- rowMeans(x, na.rm = TRUE)
+          if ("median" %in% coverage.stats) x <- matrixStats::rowMedians(x, na.rm = TRUE)
+          if ("iqr" %in% coverage.stats) x <- matrixStats::rowIQRs(x, na.rm = TRUE)
+          x <- as.integer(round(x))
+          return(x)
+        }
+
+        dp.i <- purrr::map_dfc(.x = coverage.stats.l, .f = dp_f_i, x = dp.temp)
+        dp.temp <- NULL
       }
     }
 
-  }#End DART counts
 
-  #DArT 1 row and 2rows
-  if ("dart" %in% data.source && any(c("2rows", "1row") %in% data.source)) {
-    depth <- extract_markers_metadata(
-      gds,
-      markers.meta.select = c("AVG_COUNT_REF", "AVG_COUNT_SNP"),
-      whitelist = TRUE
-    )
-    markers <- ind <- FALSE
-
-    if (is.null(depth)) return(NULL)
-
-    coverage.info$markers.mean <- as.integer(
-      round(depth$AVG_COUNT_REF + depth$AVG_COUNT_SNP, 0))
-    coverage.info$ref.mean <- as.integer(round(depth$AVG_COUNT_REF, 0))
-    coverage.info$alt.mean <- as.integer(round(depth$AVG_COUNT_SNP, 0))
-    depth <- NULL
+    if (ad) {
+      #temp object contains AD for REF and ALT
+      ref <- SeqArray::seqGetData(
+        gdsfile = gds,
+        var.name = "annotation/format/AD"
+      )$data
 
 
-  }#End DART 1row and 2 rows
+      # to extract the REF and ALT
+      column.vec <- seq_len(length.out = dim(ref)[2])
+      alt <- ref[, column.vec %% 2 == 0]
+      alt[alt == 0] <- NA
+      ref <- ref[, column.vec %% 2 == 1]
+      ref[ref == 0] <- NA
+      column.vec <- NULL
 
+      ad_f <- function(coverage.stats, x, margin = c("markers", "individuals")) {
 
-  # Update
-  if (update.gds && markers) {
-    markers.meta <- extract_markers_metadata(gds, whitelist = FALSE)
-    m.levels <- markers.meta$MARKERS
-    not.wanted <- c("COVERAGE_MEAN", "REF_DEPTH_MEAN", "ALT_DEPTH_MEAN",
-                    "COVERAGE_TOTAL", "REF_DEPTH_TOTAL", "ALT_DEPTH_TOTAL",
-                    "COVERAGE_MEDIAN", "REF_DEPTH_MEDIAN", "ALT_DEPTH_MEDIAN",
-                    "COVERAGE_IQR", "REF_DEPTH_IQR", "ALT_DEPTH_IQR"
-    )
-    if (any(not.wanted %in% colnames(markers.meta))) {
-      markers.meta %<>% dplyr::select(-dplyr::any_of(not.wanted))
+        margin <- match.arg(
+          arg = margin,
+          choices = c("markers", "individuals"),
+          several.ok = FALSE
+        )
+
+        if (margin == "markers") {
+          if ("sum" %in% coverage.stats) x <- colSums(x, na.rm = TRUE)
+          if ("mean" %in% coverage.stats) x <- colMeans(x, na.rm = TRUE)
+          if ("median" %in% coverage.stats) x <- matrixStats::colMedians(x, na.rm = TRUE)
+          if ("iqr" %in% coverage.stats) x <- matrixStats::colIQRs(x, na.rm = TRUE)
+          x <- as.integer(round(x))
+          return(x)
+        }
+        if (margin == "individuals") {
+          if ("sum" %in% coverage.stats) x <- rowSums(x, na.rm = TRUE)
+          if ("mean" %in% coverage.stats) x <- rowMeans(x, na.rm = TRUE)
+          if ("median" %in% coverage.stats) x <- matrixStats::rowMedians(x, na.rm = TRUE)
+          if ("iqr" %in% coverage.stats) x <- matrixStats::rowIQRs(x, na.rm = TRUE)
+          x <- as.integer(round(x))
+          return(x)
+        }
+      }
+
+      # for ref and alt
+      coverage.stats.ref <- coverage.stats.alt <- as.list(coverage.stats)
+
+      names(coverage.stats.ref) <- stringi::stri_replace_all_fixed(
+        str = coverage.stats,
+        pattern = c("sum", "mean", "median", "iqr"),
+        replacement = c("REF_DEPTH_TOTAL", "REF_DEPTH_MEAN", "REF_DEPTH_MEDIAN", "REF_DEPTH_IQR"),
+        vectorize_all = FALSE
+      )
+      names(coverage.stats.alt) <- stringi::stri_replace_all_fixed(
+        str = coverage.stats,
+        pattern = c("sum", "mean", "median", "iqr"),
+        replacement = c("ALT_DEPTH_TOTAL", "ALT_DEPTH_MEAN", "ALT_DEPTH_MEDIAN", "ALT_DEPTH_IQR"),
+        vectorize_all = FALSE
+      )
+
+      if (markers) {
+        ad.m <- dplyr::bind_cols(
+          purrr::map_dfc(.x = coverage.stats.ref, .f = ad_f, x = ref, margin = "markers"),
+          purrr::map_dfc(.x = coverage.stats.alt, .f = ad_f, x = alt, margin = "markers")
+        )
+      }
+
+      if (individuals) {
+        ad.i <- dplyr::bind_cols(
+          purrr::map_dfc(.x = coverage.stats.ref, .f = ad_f, x = ref, margin = "individuals"),
+          purrr::map_dfc(.x = coverage.stats.alt, .f = ad_f, x = alt, margin = "individuals")
+        )
+      }
+      ref <- alt <- NULL
     }
-    common.col <- intersect(colnames(m), colnames(markers.meta))
-    suppressWarnings(markers.meta %<>% dplyr::left_join(m, by = common.col))
-    not.wanted <- NULL
-    if (!identical(markers.meta$MARKERS, m.levels)) {
-      rlang::abort("Problem with order of markers: contact author")
+
+    cov.m <- dplyr::bind_cols(dp.m, ad.m)
+    cov.i <- dplyr::bind_cols(dp.i, ad.i)
+
+    cov.stats <- list(markers = cov.m, individuals = cov.i)
+
+    return(cov.stats)
+  } # END dp_stats
+
+
+  c.s <- coverage_stats(
+    gds = gds,
+    coverage.stats = coverage.stats,
+    dp = dp,
+    ad = ad,
+    individuals = individuals,
+    markers = markers
+  )
+
+  # required for individuals and markers
+  cov_tibble_stats <- function(have, tibble.group, data, subsample.info) {
+    if (have %in% names(data)) {
+      cov.tib <- tibble_stats(x = as.numeric(data[[have]]), group = tibble.group, subsample = subsample.info)
+    } else {
+      cov.tib <- NULL
     }
-    m.levels <- NULL
-    update_radiator_gds(gds = gds,
-                        node.name = "markers.meta",
-                        value = markers.meta)
-    markers.meta <- NULL
-  }
+    return(cov.tib)
+  }#End cov_tibble_stats
+
+
+
+  if (individuals) {
+    i.info %<>%
+      dplyr::bind_cols(c.s$individuals)
+
+    have <- names(c.s$individuals)
+    want <- c("COVERAGE_TOTAL", "COVERAGE_MEAN", "COVERAGE_MEDIAN", "COVERAGE_IQR", "REF_DEPTH_TOTAL", "REF_DEPTH_MEAN", "REF_DEPTH_MEDIAN", "REF_DEPTH_IQR", "ALT_DEPTH_TOTAL", "ALT_DEPTH_MEAN", "ALT_DEPTH_MEDIAN", "ALT_DEPTH_IQR")
+    tibble.group <- c("total coverage", "mean coverage", "median coverage", "iqr coverage", "total ref depth", "mean ref depth", "median ref depth", "iqr ref depth", "total alt depth", "mean alt depth", "median alt depth", "iqr alt depth")
+
+    have <- purrr::keep(.x = have, .p = have %in% want)
+
+    tibble.group <- stringi::stri_replace_all_fixed(
+      str = have,
+      pattern = want,
+      replacement = tibble.group,
+      vectorize_all = FALSE
+    )
+
+    i.stats %<>%
+      dplyr::bind_rows(
+        purrr::map2_dfr(
+          .x = as.list(have),
+          .y = as.list(tibble.group),
+          .f = cov_tibble_stats,
+          data = i.info,
+          subsample.info = subsample.info
+        )
+      )
+  }#End ind
 
   if (markers) {
-    m %<>% dplyr::select(-M_SEQ)
-    colnames(m) <- stringi::stri_replace_all_fixed(
-      str = colnames(m),
-      pattern = c("COVERAGE", "TOTAL", "_DEPTH", "_"),
-      replacement = c("markers", "tot", "", "."),
-      vectorize_all = FALSE
-    )
-    colnames(m) <- stringi::stri_trans_tolower(str = colnames(m))
-    coverage.info <- as.list(m)
-    m <- NULL
-  }
+    m.info %<>%
+      dplyr::bind_cols(c.s$markers)
 
-  if (update.gds && ind) {
-    strata <- extract_individuals_metadata(gds = gds, whitelist = FALSE)
-    i.levels <- strata$INDIVIDUALS
-    not.wanted <- c("COVERAGE_MEAN", "REF_DEPTH_MEAN", "ALT_DEPTH_MEAN",
-                    "COVERAGE_TOTAL", "REF_DEPTH_TOTAL", "ALT_DEPTH_TOTAL",
-                    "COVERAGE_MEDIAN", "REF_DEPTH_MEDIAN", "ALT_DEPTH_MEDIAN",
-                    "COVERAGE_IQR", "REF_DEPTH_IQR", "ALT_DEPTH_IQR"
-    )
-    if (any(not.wanted %in% colnames(strata))) {
-      strata %<>% dplyr::select(-dplyr::any_of(not.wanted))
-    }
-    common.col <- intersect(colnames(i), colnames(strata))
-    suppressWarnings(strata %<>% dplyr::left_join(i, by = common.col))
-    not.wanted <- NULL
-    if (!identical(strata$INDIVIDUALS, i.levels)) {
-      rlang::abort("Problem with order of individuals: contact author")
-    }
-    i.levels <- NULL
-    update_radiator_gds(gds = gds,
-                        node.name = "individuals.meta",
-                        value = strata)
-    strata <- NULL
-  }
-  if (ind) {
-    i %<>% dplyr::select(-ID_SEQ)
-    colnames(i) <- stringi::stri_replace_all_fixed(
-      str = colnames(i),
-      pattern = c("COVERAGE", "TOTAL", "_DEPTH", "REF", "ALT", "_"),
-      replacement = c("ind.cov", "tot", "", "ind.ref", "ind.alt", "."),
+    have <- names(c.s$markers)
+    want <- c("COVERAGE_TOTAL", "COVERAGE_MEAN", "COVERAGE_MEDIAN", "COVERAGE_IQR", "REF_DEPTH_TOTAL", "REF_DEPTH_MEAN", "REF_DEPTH_MEDIAN", "REF_DEPTH_IQR", "ALT_DEPTH_TOTAL", "ALT_DEPTH_MEAN", "ALT_DEPTH_MEDIAN", "ALT_DEPTH_IQR")
+    tibble.group <- c("total coverage", "mean coverage", "median coverage", "iqr coverage", "total ref depth", "mean ref depth", "median ref depth", "iqr ref depth", "total alt depth", "mean alt depth", "median alt depth", "iqr alt depth")
+
+    have <- purrr::keep(.x = have, .p = have %in% want)
+
+    tibble.group <- stringi::stri_replace_all_fixed(
+      str = have,
+      pattern = want,
+      replacement = tibble.group,
       vectorize_all = FALSE
     )
-    colnames(i) <- stringi::stri_trans_tolower(str = colnames(i))
-    i <- as.list(i)
-    coverage.info <- c(coverage.info, i)
-    i <- NULL
-  }
-  return(coverage.info)
+
+
+    m.stats %<>%
+      dplyr::bind_rows(
+        purrr::map2_dfr(
+          .x = as.list(have),
+          .y = as.list(tibble.group),
+          .f = cov_tibble_stats,
+          data = m.info,
+          subsample.info = subsample.info
+        )
+      )
+  }#End markers
+  return(list(i.info = i.info, i.stats = i.stats, m.info = m.info, m.stats = m.stats))
 }#End extract_coverage
+
 
 # parse_gds_metadata -----------------------------------------------------------
 #' @title parse_gds_metadata
@@ -1258,10 +1306,10 @@ extract_coverage <- function(
 #' @keywords internal
 #' @export
 parse_gds_metadata <- function(
-  x,
-  gds = NULL,
-  verbose = TRUE,
-  strip.rad = FALSE
+    x,
+    gds = NULL,
+    verbose = TRUE,
+    strip.rad = FALSE
 ) {
 
   # x <- parse.format.list
@@ -1279,7 +1327,8 @@ parse_gds_metadata <- function(
   # format.name <- x <- "AO" # not yet implemented
   # format.name <- x <- "QA" # not yet implemented
   res <- list()
-  format.name <- x
+  format.name <- as.list(x)
+  names(format.name) <- x
   if (verbose) message("\nParsing and tidying genotypes metadata: ", stringi::stri_join(x, collapse = ", "))
 
   # sample and markers in long format...
@@ -1291,6 +1340,12 @@ parse_gds_metadata <- function(
     m <- "VARIANT_ID"
   }
 
+  # When subsampling is used, different numbers of markers ....
+  sum.gds <- summary_gds(gds, verbose = FALSE)
+  n.ind <- sum.gds$n.ind
+  n.markers <- sum.gds$n.markers
+  sum.gds <- NULL
+
 
   i <- radiator::extract_individuals_metadata(
     gds = gds,
@@ -1298,186 +1353,207 @@ parse_gds_metadata <- function(
     whitelist = TRUE
   ) %>%
     dplyr::pull()
-  n.ind <- length(i)
-  m <- radiator::extract_markers_metadata(
+
+  if (length(i) != n.ind) {
+    rlang::abort("Problem with GDS sync, contact author and mention: parsing problem")
+  }
+
+  m.temp <- radiator::extract_markers_metadata(
     gds = gds,
     markers.meta.select = m,
     whitelist = TRUE
   ) %>%
     dplyr::pull()
-  n.markers <- length(m)
 
-  res$info <- tibble::tibble(
-    C1 = rep(i, n.markers),
-    C2 = rep(m, n.ind)
-  )
+  if (length(m.temp) != n.markers) {
+    v.select <- radiator::extract_markers_metadata(gds = gds, radiator.node = FALSE) %>% dplyr::pull("VARIANT_ID")
+    m.temp <- radiator::extract_markers_metadata(gds = gds, radiator.node = TRUE, markers.meta.select = c("VARIANT_ID","M_SEQ"), whitelist = TRUE) %>%
+      dplyr::filter(VARIANT_ID %in% v.select) %>%
+      dplyr::pull(m)
+  }
+  m <- m.temp
+  n.markers <- length(m)
+  m.temp <- NULL
 
   if (strip.rad) {
-    res$info %<>%
-      magrittr::set_colnames(x = ., value = c("ID_SEQ", "M_SEQ")) %>%
-      dplyr::arrange(M_SEQ, ID_SEQ)
+    res$info <- tibble::tibble(
+      ID_SEQ = rep(i, n.markers),
+      M_SEQ = sort(rep(m, n.ind)) # faster than dplyr::arrange(M_SEQ, ID_SEQ)
+    )
   } else {
-    res$info %<>%
-      magrittr::set_colnames(x = ., value = c("INDIVIDUALS", "VARIANT_ID")) %>%
-      dplyr::mutate(INDIVIDUALS = factor(x = INDIVIDUALS, levels = i)) %>%
-      dplyr::arrange(VARIANT_ID, INDIVIDUALS)
+    res$info <- tibble::tibble(
+      INDIVIDUALS = rep(i, n.markers),
+      VARIANT_ID = sort(rep(m, n.ind)) # faster than dplyr::arrange(M_SEQ, ID_SEQ)
+    ) %>%
+      dplyr::mutate(INDIVIDUALS = factor(x = INDIVIDUALS, levels = i))
   }
   m <- i <- NULL
 
-
-
-  # Allele Depth
-  if ("AD" %in% format.name) {
-    # NOTE TO MYSELF: THIS SHOULD BE DONE FOR BIALLELIC DATA ONLY...
-    if (verbose) message("AD column: splitting into ALLELE_REF_DEPTH and ALLELE_ALT_DEPTH")
-    # PLAN A:
-    temp.ad <- SeqArray::seqGetData(
-      gdsfile = gds,
-      var.name = "annotation/format/AD"
-    ) %$%
-      data
-
-    column.vec <- seq_len(length.out = dim(temp.ad)[2])
-
-    make_tibble <- function(...) tibble::tibble(...)
-    safe_make_tibble <- purrr::safely(.f = make_tibble)
-    safe.ad <- safe_make_tibble(
-      ALLELE_REF_DEPTH = temp.ad[, column.vec %% 2 == 1] %>%
-        as.vector(.) %>% replace_by_na(data = ., what = 0L),
-      ALLELE_ALT_DEPTH = temp.ad[, column.vec %% 2 == 0] %>%
-        as.vector(.) %>% replace_by_na(data = ., what = 0L)
-    )
-
-    if (is.null(safe.ad$error)) {
-      res$AD <- safe.ad$result
-      safe.ad <- temp.ad <- NULL
-    } else {
-      message("\n\nCaution: something is wrong with the dataset AD")
-      message("Probable cause: missing information for some sample(s)")
-    }
-  }# End AD
-
-  # Read depth
-  if ("DP" %in% format.name) {
-    if (verbose) message("DP column: cleaning and renaming to READ_DEPTH")
-    res$DP <- tibble::tibble(
-      READ_DEPTH = SeqArray::seqGetData(
+  gds_metadata <- function(gds, format.name, verbose = TRUE) {
+    # Allele Depth
+    if ("AD" %in% format.name) {
+      # NOTE TO MYSELF: THIS SHOULD BE DONE FOR BIALLELIC DATA ONLY...
+      if (verbose) message("AD column: splitting into ALLELE_REF_DEPTH and ALLELE_ALT_DEPTH")
+      temp.ad <- SeqArray::seqGetData(
         gdsfile = gds,
-        var.name = "annotation/format/DP"
-      ) %>%
-        as.vector(.)
-    )
-  } # End DP
+        var.name = "annotation/format/AD"
+      )$data
 
-  # Cleaning HQ: Haplotype quality as phred score
-  if ("HQ" %in% format.name) {
-    res$HQ <- tibble::tibble(HQ = SeqArray::seqGetData(
-      gdsfile = gds,
-      var.name = "annotation/format/HQ")$data %>% as.vector(.))
+      column.vec <- seq_len(length.out = dim(temp.ad)[2])
 
-    # test <- res$HQ
+      make_tibble <- function(...) tibble::tibble(...)
+      safe_make_tibble <- purrr::safely(.f = make_tibble)
+      safe.ad <- safe_make_tibble(
+        ALLELE_REF_DEPTH = temp.ad[, column.vec %% 2 == 1] %>%
+          as.vector(.) %>% replace_by_na(data = ., what = 0L),
+        ALLELE_ALT_DEPTH = temp.ad[, column.vec %% 2 == 0] %>%
+          as.vector(.) %>% replace_by_na(data = ., what = 0L)
+      )
 
-    # check HQ and new stacks version with no HQ
-    all.missing <- nrow(res$HQ)
-    if (all.missing != 0) {
-      if (verbose) message("HQ column: Haplotype Quality")
-    } else {
-      message("HQ values are all missing: removing column")
-      res$HQ <- NULL
-    }
-  } # End HQ
+      if (is.null(safe.ad$error)) {
+        AD <- safe.ad$result
+      } else {
+        message("\n\nCaution: something is wrong with the dataset AD")
+        message("Likely missing information for some sample(s)")
+      }
+      make_tibble <- safe_make_tibble <- safe.ad <- temp.ad <- column.vec <- NULL
+      return(AD)
+    }# End AD
 
-  # Cleaning GQ: Genotype quality as phred score
-  if ("GQ" %in% format.name) {
-    if (verbose) message("GQ column: Genotype Quality")
-    res$GQ <- tibble::tibble(
-      GQ = SeqArray::seqGetData(
-        gdsfile = gds,
-        var.name = "annotation/format/GQ"
-      ) %>%
-        as.vector(.)
-    )
-  } # End GQ
-
-  # GL cleaning
-  if ("GL" %in% format.name) {
-    if (verbose) message("GL column: cleaning Genotype Likelihood column")
-    gl <- unique(SeqArray::seqGetData(gdsfile = gds,
-                                      var.name = "annotation/format/GL")$length)
-    if (gl > 0) {
-      res$GL <- SeqArray::seqGetData(
-        gdsfile = gds,
-        var.name = "annotation/format/GL")$data
-
-      column.vec <- seq_len(length.out = dim(res$GL)[2])
-      res$GL <- tibble::tibble(
-        GL_HOM_REF = res$GL[, column.vec %% 3 == 1] %>%
-          as.vector(.),
-        GL_HET = res$GL[, column.vec %% 3 == 2] %>%
-          as.vector(.),
-        GL_HOM_ALT = res$GL[, column.vec %% 3 == 0] %>%
+    # Read depth
+    if ("DP" %in% format.name) {
+      if (verbose) message("DP column: cleaning and renaming to READ_DEPTH")
+      DP <- tibble::tibble(
+        READ_DEPTH = SeqArray::seqGetData(
+          gdsfile = gds,
+          var.name = "annotation/format/DP"
+        ) %>%
           as.vector(.)
       )
-      res$GL[res$GL == "NaN"] <- NA
+      return(DP)
+    } # End DP
+
+    # Cleaning HQ: Haplotype quality as phred score
+    if ("HQ" %in% format.name) {
+      HQ <- tibble::tibble(HQ = SeqArray::seqGetData(
+        gdsfile = gds,
+        var.name = "annotation/format/HQ")$data %>% as.vector(.))
+
+      # test <- res$HQ
+
+      # check HQ and new stacks version with no HQ
+      all.missing <- nrow(HQ)
+      if (all.missing != 0) {
+        if (verbose) message("HQ column: Haplotype Quality")
+      } else {
+        message("HQ values are all missing: removing column")
+        HQ <- NULL
+      }
+      return(HQ)
+    } # End HQ
+
+    # Cleaning GQ: Genotype quality as phred score
+    if ("GQ" %in% format.name) {
+      if (verbose) message("GQ column: Genotype Quality")
+      GQ <- tibble::tibble(
+        GQ = SeqArray::seqGetData(
+          gdsfile = gds,
+          var.name = "annotation/format/GQ"
+        ) %>%
+          as.vector(.)
+      )
+      return(GQ)
+    } # End GQ
+
+    # GL cleaning
+    if ("GL" %in% format.name) {
+      if (verbose) message("GL column: cleaning Genotype Likelihood column")
+      gl <- unique(SeqArray::seqGetData(gdsfile = gds,
+                                        var.name = "annotation/format/GL")$length)
+      if (gl > 0) {
+        GL <- SeqArray::seqGetData(
+          gdsfile = gds,
+          var.name = "annotation/format/GL")$data
+
+        column.vec <- seq_len(length.out = dim(GL)[2])
+        GL <- tibble::tibble(
+          GL_HOM_REF = GL[, column.vec %% 3 == 1] %>%
+            as.vector(.),
+          GL_HET = GL[, column.vec %% 3 == 2] %>%
+            as.vector(.),
+          GL_HOM_ALT = GL[, column.vec %% 3 == 0] %>%
+            as.vector(.)
+        )
+        GL[GL == "NaN"] <- NA
+        gl <- column.vec <- NULL
+      }
+      return(GL)
+    } # End GL
+
+    # Cleaning GOF: Goodness of fit value
+    if ("GOF" %in% format.name) {
+      if (verbose) message("GOF column: Goodness of fit value")
+      GOF <- tibble::tibble(
+        GOF = SeqArray::seqGetData(
+          gdsfile = gds,
+          var.name = "annotation/format/GOF"
+        ) %>%
+          as.vector(.)
+      )
+      return(GOF)
+    } # End GOF
+
+    # Cleaning NR: Number of reads covering variant location in this sample
+    if ("NR" %in% format.name) {
+      if (verbose) message("NR column: splitting column into the number of variant")
+      NR <- tibble::tibble(
+        NR = SeqArray::seqGetData(
+          gdsfile = gds,
+          var.name = "annotation/format/NR"
+        ) %>%
+          as.vector(.)
+      )
+      return(NR)
+    }#End cleaning NR column
+
+    # Cleaning NV: Number of reads containing variant in this sample
+    if ("NV" %in% format.name) {
+      if (verbose) message("NV column: splitting column into the number of variant")
+      NV <- tibble::tibble(
+        NV = SeqArray::seqGetData(
+          gdsfile = gds,
+          var.name = "annotation/format/NV"
+        ) %>%
+          as.vector(.)
+      )
+      return(NV)
+    }#End cleaning NV column
+
+    # CATG from ipyrad...
+    if ("CATG" %in% format.name) {
+      if (verbose) message("CATG columns: cleaning and renaming C_DEPTH, A_DEPTH, T_DEPTH, G_DEPTH")
+      CATG <- SeqArray::seqGetData(gdsfile = gds,var.name = "annotation/format/CATG")$data
+
+      column.vec <- seq_len(length.out = dim(CATG)[2])
+
+      CATG <- tibble::tibble(
+        C_DEPTH =  CATG[, column.vec %% 4 == 1] %>%
+          as.integer(.),
+        A_DEPTH =  CATG[, column.vec %% 4 == 2] %>%
+          as.integer(.),
+        T_DEPTH =  CATG[, column.vec %% 4 == 3] %>%
+          as.integer(.),
+        G_DEPTH =  CATG[, column.vec %% 4 == 0] %>%
+          as.integer(.)
+      )
       column.vec <- NULL
-    }
-  } # End GL
+      return(CATG)
+    } # End CATG
+  }# END gds_metadata
 
-  # Cleaning GOF: Goodness of fit value
-  if ("GOF" %in% format.name) {
-    if (verbose) message("GOF column: Goodness of fit value")
-    res$GOF <- tibble::tibble(
-      GOF = SeqArray::seqGetData(
-        gdsfile = gds,
-        var.name = "annotation/format/GOF"
-      ) %>%
-        as.vector(.)
-    )
-  } # End GOF
+  res$metadata <- purrr::map_dfc(.x = format.name, .f = gds_metadata, gds = gds)
 
-  # Cleaning NR: Number of reads covering variant location in this sample
-  if ("NR" %in% format.name) {
-    if (verbose) message("NR column: splitting column into the number of variant")
-    res$NR <- tibble::tibble(
-      NR = SeqArray::seqGetData(
-        gdsfile = gds,
-        var.name = "annotation/format/NR"
-      ) %>%
-        as.vector(.)
-    )
-  }#End cleaning NR column
-
-  # Cleaning NV: Number of reads containing variant in this sample
-  if ("NV" %in% format.name) {
-    if (verbose) message("NV column: splitting column into the number of variant")
-    res$NR <- tibble::tibble(
-      NV = SeqArray::seqGetData(
-        gdsfile = gds,
-        var.name = "annotation/format/NV"
-      ) %>%
-        as.vector(.)
-    )
-  }#End cleaning NV column
-
-  # CATG from ipyrad...
-  if ("CATG" %in% format.name) {
-    if (verbose) message("CATG columns: cleaning and renaming C_DEPTH, A_DEPTH, T_DEPTH, G_DEPTH")
-    res$CATG <- SeqArray::seqGetData(gdsfile = gds,var.name = "annotation/format/CATG")$data
-
-    column.vec <- seq_len(length.out = dim(res$CATG)[2])
-
-    res$CATG <- tibble::tibble(
-      C_DEPTH =  res$CATG[, column.vec %% 4 == 1] %>%
-        as.integer(.),
-      A_DEPTH =  res$CATG[, column.vec %% 4 == 2] %>%
-        as.integer(.),
-      T_DEPTH =  res$CATG[, column.vec %% 4 == 3] %>%
-        as.integer(.),
-      G_DEPTH =  res$CATG[, column.vec %% 4 == 0] %>%
-        as.integer(.)
-    )
-    column.vec <- NULL
-  } # End CATG
+  # Flatten the tibble for results
   res %<>% purrr::flatten_dfc(.)
   return(res)
 }#End parse_gds_metadata
@@ -1506,13 +1582,13 @@ parse_gds_metadata <- function(
 #' @seealso \code{\link{sync_gds}}, \code{\link{list_filters}}.
 #' @export
 sync_gds <- function(
-  gds,
-  samples = NULL,
-  variant.id = NULL,
-  reset.gds = FALSE,
-  reset.filters.m = FALSE,
-  reset.filters.i = FALSE,
-  verbose = FALSE) {
+    gds,
+    samples = NULL,
+    variant.id = NULL,
+    reset.gds = FALSE,
+    reset.filters.m = FALSE,
+    reset.filters.i = FALSE,
+    verbose = FALSE) {
 
   if (reset.gds || reset.filters.m || reset.filters.i) {
     if (reset.gds) {
@@ -1646,8 +1722,8 @@ list_filters <- function(gds) {
 #' Default: \code{filter.monomorphic = FALSE}.
 #' @param filter.common.markers (logical, optional)
 #' Default: \code{filter.common.markers = FALSE}.
-#' @param filter.mac (logical, optional)
-#' Default: \code{filter.mac = FALSE}.
+#' @param filter.ma (logical, optional)
+#' Default: \code{filter.ma = FALSE}.
 #' @param filter.mean.coverage (logical, optional)
 #' Default: \code{filter.mean.coverage = FALSE}.
 #' @param filter.genotyping (logical, optional)
@@ -1681,26 +1757,26 @@ list_filters <- function(gds) {
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 reset_filters <- function(
-  gds,
-  list.filters = TRUE,
-  reset.all = FALSE,
-  filter.individuals.missing = FALSE,
-  filter.individuals.heterozygosity = FALSE,
-  filter.individuals.coverage.total = FALSE,
-  detect.mixed.genomes = FALSE,
-  detect.duplicate.genomes = FALSE,
-  filter.reproducibility = FALSE,
-  filter.monomorphic = FALSE,
-  filter.common.markers = FALSE,
-  filter.mac = FALSE,
-  filter.mean.coverage = FALSE,
-  filter.genotyping = FALSE,
-  filter.snp.position.read = FALSE,
-  filter.snp.number = FALSE,
-  filter.short.ld = FALSE,
-  filter.long.ld = FALSE,
-  filter.hwe = FALSE,
-  filter.whitelist = FALSE
+    gds,
+    list.filters = TRUE,
+    reset.all = FALSE,
+    filter.individuals.missing = FALSE,
+    filter.individuals.heterozygosity = FALSE,
+    filter.individuals.coverage.total = FALSE,
+    detect.mixed.genomes = FALSE,
+    detect.duplicate.genomes = FALSE,
+    filter.reproducibility = FALSE,
+    filter.monomorphic = FALSE,
+    filter.common.markers = FALSE,
+    filter.ma = FALSE,
+    filter.mean.coverage = FALSE,
+    filter.genotyping = FALSE,
+    filter.snp.position.read = FALSE,
+    filter.snp.number = FALSE,
+    filter.short.ld = FALSE,
+    filter.long.ld = FALSE,
+    filter.hwe = FALSE,
+    filter.whitelist = FALSE
 ) {
   radiator_packages_dep(package = "SeqArray", cran = FALSE, bioc = TRUE)
   data.type <- radiator::detect_genomic_format(gds)
@@ -1773,8 +1849,8 @@ reset_filters <- function(
     reset.m$filter.common.markers <- "filter.common.markers"
   }
 
-  if (filter.mac) {
-    reset.m$filter.mac <- "filter.mac"
+  if (filter.ma) {
+    reset.m$filter.ma <- "filter.ma"
   }
 
   if (filter.mean.coverage) {
@@ -1841,8 +1917,9 @@ summary_gds <- function(gds, check.sync = FALSE, verbose = TRUE) {
   check <- SeqArray::seqGetFilter(gds)
   n.ind <- length(check$sample.sel[check$sample.sel])
   n.markers <- length(check$variant.sel[check$variant.sel])
-  if (verbose) message("    number of samples: ", n.ind)
-  if (verbose) message("    number of markers: ", n.markers)
+
+  if (verbose) message("    Number of individuals: ", n.ind)
+  if (verbose) message("    Number of markers: ", n.markers)
 
   if (check.sync) {
     id.filtered <- nrow(
@@ -1879,11 +1956,11 @@ summary_gds <- function(gds, check.sync = FALSE, verbose = TRUE) {
 #' @keywords internal
 #' @export
 update_bl_markers <- function(
-  gds,
-  generate = FALSE,
-  update = NULL,
-  extract = FALSE,
-  bl.gds = NULL
+    gds,
+    generate = FALSE,
+    update = NULL,
+    extract = FALSE,
+    bl.gds = NULL
 ) {
 
   # Check conditions...
@@ -1943,11 +2020,11 @@ update_bl_markers <- function(
 #' @keywords internal
 #' @export
 update_bl_individuals <- function(
-  gds,
-  generate = FALSE,
-  update = NULL,
-  extract = FALSE,
-  bl.i.gds = NULL
+    gds,
+    generate = FALSE,
+    update = NULL,
+    extract = FALSE,
+    bl.i.gds = NULL
 ) {
 
   # Check conditions...
@@ -2001,391 +2078,226 @@ update_bl_individuals <- function(
 }#End update_bl_individuals
 
 
-# generate id statistics--------------------------------------------------------
-#' @title generate_id_stats
-#' @description Generate id/sample statistics
-#' @rdname generate_id_stats
+# generate statistics--------------------------------------------------------
+#' @title generate_stats
+#' @description Generate individuals and markers statistics
+#' @rdname generate_stats
 #' @keywords internal
 #' @export
-generate_id_stats <- function(
-  gds,
-  missing = TRUE,
-  heterozygosity = TRUE,
-  coverage = TRUE,
-  subsample = NULL,
-  path.folder = NULL,
-  plot = TRUE,
-  digits = 6,
-  file.date = NULL,
-  parallel.core = parallel::detectCores() - 1,
-  verbose = TRUE
+generate_stats <- function(
+    gds,
+    individuals = TRUE,
+    markers = TRUE,
+    missing = TRUE,
+    heterozygosity = TRUE,
+    coverage = TRUE,
+    allele.coverage = TRUE,
+    mac = TRUE,
+    snp.position.read = TRUE,
+    snp.per.locus = TRUE,
+    subsample = NULL,
+    exhaustive = TRUE,
+    force.stats = TRUE,
+    path.folder = NULL,
+    plot = TRUE,
+    digits = 6,
+    file.date = NULL,
+    parallel.core = parallel::detectCores() - 1,
+    verbose = TRUE
 ) {
 
   ## TEST
+  # individuals = TRUE
+  # markers = FALSE
   # missing = TRUE
   # heterozygosity = TRUE
   # coverage = TRUE
-  # subsample = NULL
+  # allele.coverage = TRUE
+  # mac = TRUE
+  # snp.position.read = TRUE
+  # snp.per.locus = TRUE
+  # subsample = variant.select
+  # exhaustive = FALSE
+  # force.stats = TRUE
+  # # path.folder = NULL
   # plot = TRUE
   # digits = 6
-
-  # path.folder = NULL
-  # file.date = NULL
+  # # file.date = NULL
   # parallel.core = parallel::detectCores() - 1
   # verbose = TRUE
 
+  if (verbose) message("Generating statistics")
+
   if (is.null(path.folder)) path.folder <- getwd()
-  res <- list() # return result in this list
   if (is.null(file.date)) file.date <- format(Sys.time(), "%Y%m%d@%H%M")
 
-  # subsampling ----------------------------------------------------------------
-  if (!is.null(subsample)) {
-    SeqArray::seqSetFilter(object = gds,
-                           variant.id = subsample,
-                           action = "push+set",
-                           verbose = FALSE)
+  # Defaults -------------------------------------------------------------------
+  m.stats <- i.stats <- i.info <- m.info <- NULL
+
+  if (allele.coverage) mac <- TRUE # by default the mac info is needed...
+  if (!markers) {
+    snp.position.read <- snp.per.locus <- mac <- FALSE
   }
 
-  id.info <- extract_individuals_metadata(gds, ind.field.select = c("INDIVIDUALS", "STRATA"), whitelist = TRUE)
+  # required info --------------------------------------------------------------
+  data.source <- extract_data_source(gds)
+  if (individuals) {
+    i.info <- extract_individuals_metadata(gds, ind.field.select = c("INDIVIDUALS", "STRATA"), whitelist = TRUE)
+  }
 
-  # by defaults
-  id.stats.m <- id.stats.h <- id.stats.c <- NULL
+  # need this info even if markers = FALSE
+  m.info <- extract_markers_metadata(gds = gds, whitelist = TRUE)
+  n.markers.tot <- nrow(m.info)
+  if (!rlang::has_name(m.info, "COL")) snp.position.read <- FALSE
+
+  subsample.info <- NULL # default for reporting in the tibble
+
+  # snp.per.locus and snp.position.read are very fast with huge dataset, no need for subsampling...
+
+  # snp.per.locus --------------------------------------------------------------
+  if (snp.per.locus) {
+    if (verbose) cli::cli_progress_step("SNPs per locus")
+    if (!rlang::has_name(m.info, "SNP_PER_LOCUS") || force.stats) {
+      biallelic <- gdsfmt::read.gdsn(gdsfmt::index.gdsn(
+        node = gds,
+        path = "radiator/biallelic", silent = TRUE))
+      if (!is.logical(biallelic)) biallelic <- FALSE
+      if (biallelic) {
+        m.info %<>%
+          dplyr::group_by(LOCUS) %>%
+          dplyr::mutate(SNP_PER_LOCUS = n()) %>%
+          dplyr::ungroup(.)
+      } else {
+        if (verbose) message("With haplotype vcf, number of SNP/locus is counted based on the REF allele")
+        if (verbose) message("    this stat is good only if nuc length is equal between REF and ALT haplotypes")
+        if (verbose) message("    stacks haplotype vcf: ok")
+        if (verbose) message("    dDocent/freebayes haplotype vcf: be careful")
+
+        m.info %<>%
+          dplyr::mutate(
+            SNP_PER_LOCUS = stringi::stri_length(
+              str = SeqArray::seqGetData(gdsfile = gds, var.name = "$ref"))
+          )
+      }
+    }
+    m.stats %<>%
+      dplyr::bind_rows(
+        tibble_stats(x = m.info$SNP_PER_LOCUS, group = "SNPs per locus", subsample = subsample.info)
+      )
+  } # snp.per.locus
+
+  # snp.position.read -----------------------------------------------------------
+  if (snp.position.read) {
+    if (verbose) cli::cli_progress_step("SNP position on the read")
+    m.stats %<>%
+      dplyr::bind_rows(
+        tibble_stats(
+          x = dplyr::distinct(m.info, COL) %$% COL,
+          group = "SNP position on read",
+          subsample = subsample.info
+        )
+      )
+  } # snp.position.read
 
   # missing --------------------------------------------------------------------
   if (missing) {
-    # info
-    id.info %<>%
-      dplyr::mutate(
-        MISSING_PROP = round(
-          SeqArray::seqMissing(
-            gdsfile = gds,
-            per.variant = FALSE,
-            parallel = parallel.core
-          )
-          , digits
-        )
-      )
-    # stats
-    id.stats.m <- tibble_stats(
-      x = id.info$MISSING_PROP,
-      group = "missing genotypes")
-  }# End missing
+    if (verbose) cli::cli_progress_step("Missing genotypes")
 
+    if (individuals) {
+      # info
+      i.info %<>%
+        dplyr::mutate(
+          MISSING_PROP = round(
+            SeqArray::seqMissing(
+              gdsfile = gds,
+              per.variant = FALSE,
+              parallel = parallel.core
+            )
+            , digits
+          )
+        )
+      # stats
+      i.stats %<>%
+        dplyr::bind_rows(
+          tibble_stats(
+            x = i.info$MISSING_PROP,
+            group = "missing genotypes",
+            subsample = subsample.info
+          )
+        )
+    } # End ind
+    if (markers) {
+      if (!rlang::has_name(m.info, "MISSING_PROP") || force.stats) {
+        m.info$MISSING_PROP <- SeqArray::seqMissing(
+          gdsfile = gds,
+          per.variant = TRUE,
+          parallel = parallel.core
+        )
+      }
+      m.stats %<>%
+        dplyr::bind_rows(
+          tibble_stats(
+            x = m.info$MISSING_PROP,
+            group = "missing genotypes",
+            subsample = subsample.info
+          )
+        )
+    }#End markers
+  }# End missing
 
   # heterozygosity -------------------------------------------------------------
   if (heterozygosity) {
-    # info
-    id.info %<>%
-      dplyr::mutate(HETEROZYGOSITY = round(individual_het(gds), digits))
+    if (verbose) cli::cli_progress_step("Heterozygosity")
 
-    id.info$HETEROZYGOSITY[is.na(id.info$HETEROZYGOSITY)] <- 0
+    if (individuals) {
+      # info
+      i.info %<>%
+        dplyr::mutate(HETEROZYGOSITY = round(individual_het(gds), digits))
 
-    # stats
-    id.stats.h <- tibble_stats(
-      x = id.info$HETEROZYGOSITY,
-      group = "heterozygosity")
-  } # het
-
-  # coverage -------------------------------------------------------------------
-  if (coverage) {
-    # info
-    dp <- extract_coverage(gds, markers = FALSE)
-
-    # check that DP exist...
-    if (!is.null(dp) && "ind.cov.tot" %in% names(dp)) {
-      id.info %<>%
-        dplyr::mutate(
-          COVERAGE_TOTAL = dp$ind.cov.tot,
-          COVERAGE_MEAN = dp$ind.cov.mean,
-          COVERAGE_MEDIAN = dp$ind.cov.median,
-          COVERAGE_IQR = dp$ind.cov.iqr
-        )
-
-      id.info$COVERAGE_MEAN[is.na(id.info$COVERAGE_MEAN)] <- 0
-
+      i.info$HETEROZYGOSITY[is.na(i.info$HETEROZYGOSITY)] <- 0
 
       # stats
-      id.stats.c <- dplyr::bind_rows(
-        tibble_stats(
-          x = as.numeric(id.info$COVERAGE_TOTAL),
-          group = "total coverage"),
-        tibble_stats(
-          x = as.numeric(id.info$COVERAGE_MEAN),
-          group = "mean coverage"),
-        tibble_stats(
-          x = as.numeric(id.info$COVERAGE_MEDIAN),
-          group = "median coverage"),
-        tibble_stats(
-          x = as.numeric(id.info$COVERAGE_IQR),
-          group = "iqr coverage")
-      )
-    } else {
-      coverage <- FALSE
-      id.stats.c <- NULL
-    }
-  } # End coverage
-
-  # Generate the stats
-  id.stats <- dplyr::bind_rows(id.stats.m, id.stats.h, id.stats.c)
-  id.levels <- c("total coverage", "mean coverage", "median coverage", "iqr coverage", "missing genotypes", "heterozygosity")
-  id.stats$GROUP <- factor(x = id.stats$GROUP, levels = id.levels, ordered = TRUE)
-  id.stats$GROUP <- droplevels(x = id.stats$GROUP)
-
-  id.stats.filename <- stringi::stri_join("individuals.qc.stats_", file.date, ".tsv")
-  if (!is.null(id.info)) readr::write_tsv(x = id.info, file = file.path(path.folder, id.stats.filename))
-  id.stats.filename <- stringi::stri_join("individuals.qc.stats.summary_", file.date, ".tsv")
-  if (!is.null(id.stats)) readr::write_tsv(x = id.stats, file = file.path(path.folder, id.stats.filename))
-  if (verbose) message("File written: individuals qc info and stats summary")
-
-  # Generate plots
-  if (plot) {
-    # correlations info
-
-    # Note to myself: here we need to add conditions when some stats are not requested...
-    corr.info <- stringi::stri_join("Correlations:\n")
-
-    if (coverage && missing) {
-      cm <- floor(stats::cor(id.info$COVERAGE_TOTAL, id.info$MISSING_PROP, use = "pairwise.complete.obs") * 100) / 100
-      cmt <- stringi::stri_join("    total coverage & missing = ", cm)
-      corr.info <- stringi::stri_join(corr.info, cmt)
-    }
-    if (coverage) {
-      if (stats::sd(id.info$COVERAGE_MEAN) != 0) {
-        cc <- ceiling(stats::cor(id.info$COVERAGE_TOTAL, id.info$COVERAGE_MEAN,use = "pairwise.complete.obs") * 100) / 100
-      } else {
-        cc <- "NA"
-        message("Note: mean individual coverage SD = 0")
-        message("correlation with total coverage is not possible")
+      i.stats %<>%
+        dplyr::bind_rows(
+          tibble_stats(
+            x = i.info$HETEROZYGOSITY,
+            group = "heterozygosity",
+            subsample = subsample.info
+          )
+        )
+    }#end ind
+    if (markers) {
+      if (!rlang::has_name(m.info, "HET_OBS") || force.stats) {
+        m.info %<>%
+          dplyr::mutate(
+            HET_OBS = round(markers_het(gds), 6),
+            FIS = round(markers_fis(gds), 6)
+          )
       }
-      cct <- stringi::stri_join("\n    total coverage & mean coverage = ", cc)
-      corr.info <- stringi::stri_join(corr.info, cct)
-    }
-    if (coverage && heterozygosity) {
-      ch <- ceiling(stats::cor(id.info$COVERAGE_TOTAL, id.info$HETEROZYGOSITY, use = "pairwise.complete.obs") * 100) / 100
-      cht <- stringi::stri_join("\n    total coverage & heterozygosity = ", ch)
-      corr.info <- stringi::stri_join(corr.info, cht)
-    }
-    if (missing && heterozygosity) {
-      mh <- floor(stats::cor(id.info$HETEROZYGOSITY, id.info$MISSING_PROP, use = "pairwise.complete.obs") * 100) / 100
-      mht <- stringi::stri_join("\n    missing & heterozygosity = ", mh)
-      corr.info <- stringi::stri_join(corr.info, mht)
-    }
+      m.stats %<>%
+        dplyr::bind_rows(
+          tibble_stats(
+            x = m.info$HET_OBS,
+            group = "observed heterozygosity",
+            subsample = subsample.info
+          )
+        ) %>%
+        dplyr::bind_rows(
+          tibble_stats(
+            x = m.info$FIS,
+            group = "inbreeding coefficient (Fis)",
+            subsample = subsample.info
+          )
+        )
 
-    # heterozygosity.info
-    if (heterozygosity) {
-      n.markers <- summary_gds(gds, verbose = FALSE) %$% n.markers
-      n.markers.range <- ceiling((id.stats[[2,6]] - id.stats[[2,2]] ) * n.markers)
-      n.markers.iqr <- ceiling(id.stats[[2,7]] * n.markers)
+    }#End markers
+  }#End het
 
-      corr.info <- stringi::stri_join(
-        "n.markers = ", n.markers,
-        "\nn. het markers in the bp range = ", n.markers.range,
-        "\nn. het markers in the bp IQR = ", n.markers.iqr,
-        "\n\n", corr.info
-      )
-    }
-
-    if (missing) {
-      missing.out <- stringi::stri_join("Missing genotypes outlier: ", id.stats[[1, 9]])
-      corr.info <- stringi::stri_join(missing.out, "\n", corr.info)
-    }
-
-    if (!is.null(subsample)) {
-      subtitle.ind.stats <- stringi::stri_join(
-        "Markers subsampled: ", length(subsample), "\n\n", corr.info)
-    } else {
-      subtitle.ind.stats <- corr.info
-    }
-
-    res$fig <- boxplot_stats(
-      data = id.stats,
-      title = "Individual's QC stats",
-      subtitle = subtitle.ind.stats,
-      x.axis.title = NULL,
-      y.axis.title = "Statistics",
-      facet.columns = TRUE,
-      bp.filename = stringi::stri_join("individuals.qc_", file.date, ".pdf"),
-      path.folder = path.folder)
-    if (verbose) message("File written: individuals qc plot")
-
-  }
-
-  if (!is.null(subsample)) {
-    SeqArray::seqSetFilter(gds, action = "pop", verbose = FALSE)
-  }
-  res$stats <- id.stats
-  res$info <- id.info
-  return(res)
-}#End generate_id_stats
-
-# generate markers statistics---------------------------------------------------
-#' @title generate_markers_stats
-#' @description Generate markers statistics
-#' @rdname generate_markers_stats
-#' @keywords internal
-#' @export
-generate_markers_stats <- function(
-  gds,
-  coverage = TRUE,
-  allele.coverage = TRUE,
-  missing = TRUE,
-  mac = TRUE,
-  heterozygosity = TRUE,
-  snp.position.read = TRUE,
-  snp.per.locus = TRUE,
-  path.folder = NULL,
-  filename = NULL,
-  fig.filename = NULL,
-  plot = TRUE,
-  force.stats = TRUE,
-  subsample = NULL,
-  file.date = NULL,
-  parallel.core = parallel::detectCores() - 1,
-  verbose = TRUE
-) {
-
-  # coverage = TRUE
-  # allele.coverage = TRUE
-  # missing = TRUE
-  # mac = TRUE
-  # heterozygosity = TRUE
-  # snp.position.read = TRUE
-  # snp.per.locus = TRUE
-  # path.folder = NULL
-  # filename = NULL
-  # fig.filename = NULL
-  # plot = TRUE
-  # force.stats = TRUE
-  # subsample = NULL
-  # file.date = NULL
-  # parallel.core = parallel::detectCores() - 1
-  # verbose = TRUE
-
-  if (is.null(path.folder)) path.folder <- getwd()
-  if (is.null(file.date)) file.date <- format(Sys.time(), "%Y%m%d@%H%M")
-  data.source <- extract_data_source(gds)
-
-  # Filenames
-  # Stats
-  if (is.null(filename)) {
-    markers.stats.file <- stringi::stri_join("markers_metadata_stats_", file.date, ".tsv")
-  } else {
-    markers.stats.file <- stringi::stri_join(filename, "_stats_", file.date, ".tsv")
-  }
-
-  # tables
-  if (is.null(filename)) {
-    filename <- stringi::stri_join("markers_metadata_", file.date, ".tsv")
-  } else {
-    filename <- stringi::stri_join(filename, "_", file.date, ".tsv")
-  }
-
-  # Figure
-  if (is.null(fig.filename)) {
-    fig.filename <- stringi::stri_join("markers_qc_", file.date, ".pdf")
-  } else {
-    fig.filename <- stringi::stri_join(fig.filename, "_", file.date, ".pdf")
-  }
-
-  info <- extract_markers_metadata(gds = gds, whitelist = TRUE)
-
-  if (!is.null(subsample)) {
-    SeqArray::seqSetFilter(object = gds,
-                           variant.id = subsample,
-                           action = "push+set",
-                           verbose = FALSE)
-    info %<>% dplyr::filter(VARIANT_ID %in% subsample)
-  }
-  n.markers <- length(info$VARIANT_ID)
-
-  if (allele.coverage) mac <- TRUE # by default the mac info is needed...
-  if (!rlang::has_name(info, "COL")) snp.position.read <- FALSE
-
-  stats.cmd <- stats.cmi <- NULL
-  stats.cm <- stats.ct <- stats.mac <- NULL
-  stats.rt <- stats.at <- stats.am <- stats.rm <- NULL
-  stats.m <- stats.h <- stats.f <- stats.s <- stats.sp <- ad.info <- NULL
-
-  # Coverage
-  if (coverage) {
-    if (!rlang::has_name(info, "COVERAGE_TOTAL") || force.stats) {
-      if ("dart" %in% data.source) {
-        if ("counts" %in% data.source) {
-          mc <- extract_coverage(gds, ind = FALSE)#coverage
-        } else {
-          if (is.null(subsample)) {
-            mc <- extract_coverage(gds, ind = FALSE)#coverage
-            # mc$markers.tot <- NULL
-          } else {
-            mc <- list()
-            # mc$markers.tot <- NULL
-            mc$markers.mean <- info$COVERAGE_MEAN
-            mc$ref.mean <- info$REF_DEPTH_MEAN
-            mc$alt.mean <- info$ALT_DEPTH_MEAN
-          }
-        }
-      } else {
-        mc <- extract_coverage(gds, ind = FALSE)#coverage
-      }
-
-      if (!is.null(mc$markers.tot)) {
-        info$COVERAGE_TOTAL <- mc$markers.tot
-        stats.ct <- tibble_stats(
-          x = info$COVERAGE_TOTAL,
-          group = "total coverage")
-      }
-
-      if (!is.null(mc$markers.mean)) {
-        info$COVERAGE_MEAN <- mc$markers.mean
-        stats.cm <- tibble_stats(
-          x = info$COVERAGE_MEAN,
-          group = "mean coverage")
-      }
-      if (!is.null(mc$markers.median)) {
-        info$COVERAGE_MEDIAN <- mc$markers.median
-        stats.cmd <- tibble_stats(
-          x = info$COVERAGE_MEDIAN,
-          group = "median coverage")
-      }
-      if (!is.null(mc$markers.iqr)) {
-        info$COVERAGE_IQR <- mc$markers.iqr
-        stats.cmi <- tibble_stats(
-          x = info$COVERAGE_IQR,
-          group = "iqr coverage")
-      }
-      if (!is.null(mc$ref.mean)) {
-        info$REF_DEPTH_MEAN <- mc$ref.mean
-        allele.coverage <- mac <- TRUE
-      }
-      if (!is.null(mc$alt.mean)) {
-        info$ALT_DEPTH_MEAN <- mc$alt.mean
-      }
-      if (!is.null(mc$ref.median)) {
-        info$REF_DEPTH_MEDIAN <- mc$ref.median
-      }
-      if (!is.null(mc$ref.iqr)) {
-        info$REF_DEPTH_IQR <- mc$ref.iqr
-      }
-      if (!is.null(mc$alt.median)) {
-        info$ALT_DEPTH_MEDIAN <- mc$alt.median
-      }
-      if (!is.null(mc$alt.iqr)) {
-        info$ALT_DEPTH_IQR <- mc$alt.iqr
-      }
-
-      mc <- NULL
-    } else {
-      stats.ct <- tibble_stats(
-        x = info$COVERAGE_TOTAL,
-        group = "total coverage")
-      stats.cm <- tibble_stats(
-        x = info$COVERAGE_MEAN,
-        group = "mean coverage")
-    }
-  } #coverage
-
+  # MAC ------------------------------------------------------------------------
   if (mac) {
-    if (!rlang::has_name(info, "MAC_GLOBAL") || force.stats) {
+    if (verbose) cli::cli_progress_step("MAC")
+
+    if (!rlang::has_name(m.info, "MAC_GLOBAL") || force.stats) {
 
       ac <- SeqArray::seqAlleleCount(
         gdsfile = gds,
@@ -2393,7 +2305,7 @@ generate_markers_stats <- function(
         parallel = parallel.core)
 
       # check if more than 2 alternate alleles...
-      info %<>%
+      m.info %<>%
         dplyr::mutate(
           N_ALLELES = purrr::map_int(.x = ac, .f = length),
           REF_COUNT = purrr::map_int(.x = ac, .f = max),
@@ -2403,19 +2315,14 @@ generate_markers_stats <- function(
           A_SUM = NULL
         )
       ac <- NULL
-      n.al.max <- max(info$N_ALLELES, na.rm = TRUE)
-
-      # A1 = purrr::map_int(.x = ac, .f = 1),
-      # A2 = purrr::map_int(.x = ac, .f = 2),
-      # A3 = purrr::map_int(.x = ac, .f = 3, .default = NA),
-      # A4 = purrr::map_int(.x = ac, .f = 4, .default = NA)
+      n.al.max <- max(m.info$N_ALLELES, na.rm = TRUE)
 
       # when more than 2 alternate alleles...
       if (n.al.max > 2) {
-        info %<>% dplyr::mutate(ALT_CHECK = "ALT")
+        m.info %<>% dplyr::mutate(ALT_CHECK = "ALT")
         message("\n\nCaution: More than 2 alleles detected in the dataset")
         wanted.info <- c("VARIANT_ID", "CHROM", "LOCUS", "POS", "MARKERS", "REF", "ALT", "N_ALLELES")
-        info %>%
+        m.info %>%
           dplyr::filter(N_ALLELES > 2) %>%
           dplyr::select(dplyr::any_of(wanted.info)) %>%
           write_rad(
@@ -2427,333 +2334,615 @@ generate_markers_stats <- function(
             verbose = TRUE
           )
       } else {
-        info %<>%
+        m.info %<>%
           dplyr::mutate(ALT_CHECK = dplyr::if_else(MAC_GLOBAL <= REF_COUNT, "ALT", "REF"))
       }
 
+      if (!allele.coverage) m.info %<>% dplyr::select(-ALT_CHECK)
 
-      ## previously:
-
-      # info %<>%
-      #   dplyr::bind_cols(
-      #     SeqArray::seqAlleleCount(
-      #       gdsfile = gds,
-      #       ref.allele = NULL,
-      #       parallel = parallel.core) %>%
-      #       unlist(.) %>%
-      #       matrix(
-      #         data = .,
-      #         nrow = n.markers, ncol = 2, byrow = TRUE,
-      #         dimnames = list(rownames = info$VARIANT_ID,
-      #                         colnames = c("REF_COUNT", "ALT_COUNT"))) %>%
-      #       tibble::as_tibble(.)
-      #   ) %>%
-      #   dplyr::mutate(
-      #     MAC_GLOBAL = dplyr::if_else(ALT_COUNT < REF_COUNT, ALT_COUNT, REF_COUNT),
-      #     MAF_GLOBAL = MAC_GLOBAL / (REF_COUNT + ALT_COUNT),
-      #     ALT_CHECK = dplyr::if_else(MAC_GLOBAL == ALT_COUNT, "ALT", "REF"),
-      #     ALT_COUNT = NULL
-      #   )
     }
-
-    stats.mac <- tibble_stats(
-      x = info$MAC_GLOBAL,
-      group = "MAC")
-
+    m.stats %<>%
+      dplyr::bind_rows(
+        tibble_stats(
+          x = m.info$MAC_GLOBAL,
+          group = "MAC",
+          subsample = subsample.info
+        )
+      )
   } #mac
 
-  if (allele.coverage) {
-
-    if (!rlang::has_name(info, "REF_DEPTH_TOTAL") || force.stats) {
-
-      ad.info <- gdsfmt::index.gdsn(gds, "annotation/format/AD", silent = TRUE)
-      if (!is.null(ad.info)) {
-        ad <- SeqArray::seqGetData(gds, "annotation/format/AD") %$% data
-
-        info %<>%
-          dplyr::bind_cols(
-            #REF and ALT Total read depth
-            colSums(x = ad, na.rm = TRUE, dims = 1L) %>%
-              unlist(.) %>%
-              matrix(
-                data = .,
-                nrow = n.markers, ncol = 2, byrow = TRUE,
-                dimnames = list(rownames = info$VARIANT_ID,
-                                colnames = c("RT", "AT"))) %>%
-              tibble::as_tibble(.),
-            #REF and ALT Mean read depth
-            colMeans(x = ad, na.rm = TRUE, dims = 1L) %>%
-              unlist(.) %>%
-              matrix(
-                data = .,
-                nrow = n.markers, ncol = 2, byrow = TRUE,
-                dimnames = list(rownames = info$VARIANT_ID,
-                                colnames = c("RM", "AM"))) %>%
-              tibble::as_tibble(.)
-          ) %>%
-          dplyr::mutate(
-            REF_DEPTH_TOTAL = dplyr::if_else(ALT_CHECK == "ALT", RT, AT),
-            ALT_DEPTH_TOTAL = dplyr::if_else(ALT_CHECK == "ALT", AT, RT),
-            RT = NULL, AT = NULL,
-            REF_DEPTH_MEAN = dplyr::if_else(ALT_CHECK == "ALT", RM, AM),
-            ALT_DEPTH_MEAN = dplyr::if_else(ALT_CHECK == "ALT", AM, RM),
-            ALT_CHECK = NULL, RM = NULL, AM = NULL
-          )
-        ad <- ad.info <- NULL
-      }
-    }
-
-    if (rlang::has_name(info, "REF_DEPTH_TOTAL")) {
-      stats.rt <- tibble_stats(
-        x = info$REF_DEPTH_TOTAL,
-        group = "total ref depth")
-      stats.at <- tibble_stats(
-        x = info$ALT_DEPTH_TOTAL,
-        group = "total alt depth")
-    }
-
-    if (rlang::has_name(info, "REF_DEPTH_MEAN")) {
-      stats.rm <- tibble_stats(
-        x = info$REF_DEPTH_MEAN,
-        group = "mean ref depth")
-      stats.am <- tibble_stats(
-        x = info$ALT_DEPTH_MEAN,
-        group = "mean alt depth")
-    }
+  # subsampling ----------------------------------------------------------------
+  if (!is.null(subsample)) {
+    SeqArray::seqSetFilter(object = gds,
+                           variant.id = subsample,
+                           action = "push+set",
+                           verbose = FALSE)
+    m.info %<>% dplyr::filter(VARIANT_ID %in% subsample)
+    n.markers <- length(m.info$VARIANT_ID)
+    subsample.info <- round(n.markers / n.markers.tot, 2)
+  }# End subsampling
 
 
-  } else {
-    if (mac) info %<>% dplyr::select(-ALT_CHECK)
+  # # checking for REAL ALTERNATE ALLELE using REF and ALT READ DEPTH
+  # if (allele.coverage) {
+  #
+  #   if (!rlang::has_name(m.info, "REF_DEPTH_TOTAL") || force.stats) {
+  #
+  #     ad.info <- gdsfmt::index.gdsn(gds, "annotation/format/AD", silent = TRUE)
+  #     if (!is.null(ad.info)) {
+  #       ad <- SeqArray::seqGetData(gds, "annotation/format/AD") %$% data
+  #
+  #       m.info %<>%
+  #         dplyr::bind_cols(
+  #           #REF and ALT Total read depth
+  #           colSums(x = ad, na.rm = TRUE, dims = 1L) %>%
+  #             unlist(.) %>%
+  #             matrix(
+  #               data = .,
+  #               nrow = n.markers, ncol = 2, byrow = TRUE,
+  #               dimnames = list(rownames = m.info$VARIANT_ID,
+  #                               colnames = c("RT", "AT"))) %>%
+  #             tibble::as_tibble(.),
+  #           #REF and ALT Mean read depth
+  #           colMeans(x = ad, na.rm = TRUE, dims = 1L) %>%
+  #             unlist(.) %>%
+  #             matrix(
+  #               data = .,
+  #               nrow = n.markers, ncol = 2, byrow = TRUE,
+  #               dimnames = list(rownames = m.info$VARIANT_ID,
+  #                               colnames = c("RM", "AM"))) %>%
+  #             tibble::as_tibble(.)
+  #         ) %>%
+  #         dplyr::mutate(
+  #           REF_DEPTH_TOTAL = dplyr::if_else(ALT_CHECK == "ALT", RT, AT),
+  #           ALT_DEPTH_TOTAL = dplyr::if_else(ALT_CHECK == "ALT", AT, RT),
+  #           RT = NULL, AT = NULL,
+  #           REF_DEPTH_MEAN = dplyr::if_else(ALT_CHECK == "ALT", RM, AM),
+  #           ALT_DEPTH_MEAN = dplyr::if_else(ALT_CHECK == "ALT", AM, RM),
+  #           ALT_CHECK = NULL, RM = NULL, AM = NULL
+  #         )
+  #       ad <- ad.info <- NULL
+  #     }
+  #   }
+  #
+  #   if (rlang::has_name(m.info, "REF_DEPTH_TOTAL")) {
+  #     stats.rt <- tibble_stats(
+  #       x = m.info$REF_DEPTH_TOTAL,
+  #       group = "total ref depth")
+  #     stats.at <- tibble_stats(
+  #       x = m.info$ALT_DEPTH_TOTAL,
+  #       group = "total alt depth")
+  #   }
+  #
+  #   if (rlang::has_name(m.info, "REF_DEPTH_MEAN")) {
+  #     stats.rm <- tibble_stats(
+  #       x = m.info$REF_DEPTH_MEAN,
+  #       group = "mean ref depth")
+  #     stats.am <- tibble_stats(
+  #       x = m.info$ALT_DEPTH_MEAN,
+  #       group = "mean alt depth")
+  #   }
+  #
+  #
+  # }
+  # coverage -------------------------------------------------------------------
+  # Confirm coverage information is available
+  if (coverage || allele.coverage) {
+    got.coverage <- check_coverage(
+      gds = gds,
+      stacks.haplo.check = TRUE,
+      genotypes.metadata.check = TRUE,
+      dart.check = TRUE
+    )
+    if (!"DP" %in% got.coverage) coverage <- FALSE
+    if (!"AD" %in% got.coverage) allele.coverage <- FALSE
+    if (!exhaustive) allele.coverage <- FALSE
+    got.coverage <- NULL
   }
 
-  if (missing) {
-    if (!rlang::has_name(info, "MISSING_PROP") || force.stats) {
-      # if (rlang::has_name(info, "MISSING_PROP")) info  %<>% dplyr::select(-MISSING_PROP)
-      info$MISSING_PROP <- SeqArray::seqMissing(
-        gdsfile = gds,
-        per.variant = TRUE,
-        parallel = parallel.core
+  if (coverage || allele.coverage) {
+    if (verbose) cli::cli_progress_step("Coverage ...")
+
+    # internal function
+    coverage_stats <- function(
+    gds,
+    coverage.stats = c("sum", "mean", "median", "iqr"),
+    dp = TRUE,
+    ad = TRUE,
+    individuals = TRUE,
+    markers = TRUE
+    ) {
+
+      coverage.stats <- match.arg(
+        arg = coverage.stats,
+        choices = c("sum", "mean", "median", "iqr"),
+        several.ok = TRUE
       )
-    }
-    stats.m <- tibble_stats(
-      x = info$MISSING_PROP,
-      group = "missing genotypes")
+      dp.i <- dp.m <- ad.m <- ad.i <- NULL
 
-  } # missing
 
-  if (heterozygosity) {
-    if (!rlang::has_name(info, "HET_OBS") || force.stats) {
-      info %<>%
-        dplyr::mutate(
-          HET_OBS = round(markers_het(gds), 6),
-          FIS = round(markers_fis(gds), 6)
+      if (dp) {
+        coverage.stats.l <- as.list(coverage.stats)
+        names(coverage.stats.l) <- stringi::stri_replace_all_fixed(
+          str = coverage.stats,
+          pattern = c("sum", "mean", "median", "iqr"),
+          replacement = c("COVERAGE_TOTAL", "COVERAGE_MEAN", "COVERAGE_MEDIAN", "COVERAGE_IQR"),
+          vectorize_all = FALSE
         )
-    }
-    stats.h <- tibble_stats(
-      x = info$HET_OBS,
-      group = "observed heterozygosity")
 
-    stats.f <- tibble_stats(
-      x = info$FIS,
-      group = "inbreeding coefficient (Fis)")
+        if (markers) {
+          dp_f_m <- function(gds, coverage.stats) {
 
-  } # heterozygosity
+            # Using switch instead was not optimal for additional options in the func...
+            if (coverage.stats == "sum") rad_cov_stats <- function(x) round(sum(x, na.rm = TRUE))
+            if (coverage.stats == "mean") rad_cov_stats <- function(x) round(mean(x, na.rm = TRUE))
+            if (coverage.stats == "median") rad_cov_stats <- function(x) round(stats::median(x, na.rm = TRUE))
+            # if (coverage.stats == "iqr") rad_cov_stats <- function(x) round(abs(diff(stats::quantile(x, probs = c(0.25, 0.75), na.rm = TRUE))))
+            if (coverage.stats == "iqr") rad_cov_stats <- function(x) round(matrixStats::iqr(x, na.rm = TRUE)) # faster
 
-  if (snp.per.locus) {
-    if (!rlang::has_name(info, "SNP_PER_LOCUS") || force.stats) {
-      biallelic <- gdsfmt::read.gdsn(gdsfmt::index.gdsn(
-        node = gds,
-        path = "radiator/biallelic", silent = TRUE))
-      if (!is.logical(biallelic)) biallelic <- FALSE
-      if (biallelic) {
-        info %<>%
-          dplyr::group_by(LOCUS) %>%
-          dplyr::mutate(SNP_PER_LOCUS = n()) %>%
-          dplyr::ungroup(.)
-      } else {
-        if (verbose) message("With haplotype vcf, number of SNP/locus is counted based on the REF allele")
-        if (verbose) message("    this stat is good only if nuc length is equal between REF and ALT haplotypes")
-        if (verbose) message("    stacks haplotype vcf: ok")
-        if (verbose) message("    dDocent/freebayes haplotype vcf: be careful")
+            x <- SeqArray::seqApply(
+              gdsfile = gds,
+              var.name = "annotation/format/DP",
+              FUN = rad_cov_stats,
+              as.is = "integer",
+              margin = "by.variant",
+              parallel = TRUE
+            )
+          }
 
-        info %<>%
-          dplyr::mutate(
-            SNP_PER_LOCUS = stringi::stri_length(
-              str = SeqArray::seqGetData(gdsfile = gds, var.name = "$ref"))
+          dp.m <- purrr::map_dfc(.x = coverage.stats.l, .f = dp_f_m, gds = gds)
+        }
+
+        if (individuals) {
+          # changing the margin doesnt work with seqarray, the GDS needs to be optimized by sample
+          # this operation is very costly in both time and disk space.
+          # faster to do matrix calculations by rows and sums
+          # Note to myself: the huge speed gain by using other packages robustbse, Rfast, etc.
+          # is not worth the unreliability of the results check your testing files...
+
+          dp.temp <- SeqArray::seqGetData(
+            gdsfile = gds,
+            var.name = "annotation/format/DP"
           )
+
+          dp_f_i <- function(coverage.stats, x) {
+            if ("sum" %in% coverage.stats) x <- rowSums(x, na.rm = TRUE)
+            if ("mean" %in% coverage.stats) x <- rowMeans(x, na.rm = TRUE)
+            if ("median" %in% coverage.stats) x <- matrixStats::rowMedians(x, na.rm = TRUE)
+            if ("iqr" %in% coverage.stats) x <- matrixStats::rowIQRs(x, na.rm = TRUE)
+            x <- as.integer(round(x))
+            return(x)
+          }
+
+          dp.i <- purrr::map_dfc(.x = coverage.stats.l, .f = dp_f_i, x = dp.temp)
+          dp.temp <- NULL
+        }
       }
-    }
-    stats.s <- tibble_stats(
-      x = info$SNP_PER_LOCUS,
-      group = "SNPs per locus")
-  } # snp.per.locus
 
-  if (snp.position.read) {
-    stats.sp <- tibble_stats(
-      x = dplyr::distinct(info, COL) %$% COL,
-      group = "SNP position on read")
-  } # snp.position.read
 
-  # Generate the stats
-  stats <- dplyr::bind_rows(
-    stats.cm, stats.cmd, stats.cmi, stats.ct,#coverage
-    stats.mac, #MAC
-    stats.rt, stats.at, stats.rm, stats.am, # allele depth
-    stats.m, # missing
-    stats.h, stats.f,#het obs and fis
-    stats.sp, # snp position on read
-    stats.s#snps per locus
-  )
-  stats.cm <- stats.ct <- stats.mac <- stats.rt <- stats.at <- stats.rm <- stats.am <- NULL
-  stats.m <- stats.h <- stats.f <- stats.s <- stats.sp <- NULL
+      if (ad) {
+        #temp object contains AD for REF and ALT
+        ref <- SeqArray::seqGetData(
+          gdsfile = gds,
+          var.name = "annotation/format/AD"
+        )$data
 
+
+        # to extract the REF and ALT
+        column.vec <- seq_len(length.out = dim(ref)[2])
+        alt <- ref[, column.vec %% 2 == 0]
+        alt[alt == 0] <- NA
+        ref <- ref[, column.vec %% 2 == 1]
+        ref[ref == 0] <- NA
+        column.vec <- NULL
+
+        ad_f <- function(coverage.stats, x, margin = c("markers", "individuals")) {
+
+          margin <- match.arg(
+            arg = margin,
+            choices = c("markers", "individuals"),
+            several.ok = FALSE
+          )
+
+          if (margin == "markers") {
+            if ("sum" %in% coverage.stats) x <- colSums(x, na.rm = TRUE)
+            if ("mean" %in% coverage.stats) x <- colMeans(x, na.rm = TRUE)
+            if ("median" %in% coverage.stats) x <- matrixStats::colMedians(x, na.rm = TRUE)
+            if ("iqr" %in% coverage.stats) x <- matrixStats::colIQRs(x, na.rm = TRUE)
+            x <- as.integer(round(x))
+            return(x)
+          }
+          if (margin == "individuals") {
+            if ("sum" %in% coverage.stats) x <- rowSums(x, na.rm = TRUE)
+            if ("mean" %in% coverage.stats) x <- rowMeans(x, na.rm = TRUE)
+            if ("median" %in% coverage.stats) x <- matrixStats::rowMedians(x, na.rm = TRUE)
+            if ("iqr" %in% coverage.stats) x <- matrixStats::rowIQRs(x, na.rm = TRUE)
+            x <- as.integer(round(x))
+            return(x)
+          }
+        }
+
+        # for ref and alt
+        coverage.stats.ref <- coverage.stats.alt <- as.list(coverage.stats)
+
+        names(coverage.stats.ref) <- stringi::stri_replace_all_fixed(
+          str = coverage.stats,
+          pattern = c("sum", "mean", "median", "iqr"),
+          replacement = c("REF_DEPTH_TOTAL", "REF_DEPTH_MEAN", "REF_DEPTH_MEDIAN", "REF_DEPTH_IQR"),
+          vectorize_all = FALSE
+        )
+        names(coverage.stats.alt) <- stringi::stri_replace_all_fixed(
+          str = coverage.stats,
+          pattern = c("sum", "mean", "median", "iqr"),
+          replacement = c("ALT_DEPTH_TOTAL", "ALT_DEPTH_MEAN", "ALT_DEPTH_MEDIAN", "ALT_DEPTH_IQR"),
+          vectorize_all = FALSE
+        )
+
+        if (markers) {
+          ad.m <- dplyr::bind_cols(
+            purrr::map_dfc(.x = coverage.stats.ref, .f = ad_f, x = ref, margin = "markers"),
+            purrr::map_dfc(.x = coverage.stats.alt, .f = ad_f, x = alt, margin = "markers")
+          )
+        }
+
+        if (individuals) {
+          ad.i <- dplyr::bind_cols(
+            purrr::map_dfc(.x = coverage.stats.ref, .f = ad_f, x = ref, margin = "individuals"),
+            purrr::map_dfc(.x = coverage.stats.alt, .f = ad_f, x = alt, margin = "individuals")
+          )
+        }
+        ref <- alt <- NULL
+      }
+
+      cov.m <- dplyr::bind_cols(dp.m, ad.m)
+      cov.i <- dplyr::bind_cols(dp.i, ad.i)
+
+      cov.stats <- list(markers = cov.m, individuals = cov.i)
+
+      return(cov.stats)
+    } # END dp_stats
+
+    c.s <- coverage_stats(
+      gds = gds,
+      coverage.stats = c("sum", "mean", "median", "iqr"),
+      dp = coverage,
+      ad = allele.coverage,
+      individuals = individuals,
+      markers = markers
+    )
+
+    # required for individuals and markers
+    cov_tibble_stats <- function(have, tibble.group, data, subsample.info) {
+      if (have %in% names(data)) {
+        cov.tib <- tibble_stats(x = as.numeric(data[[have]]), group = tibble.group, subsample = subsample.info)
+      } else {
+        cov.tib <- NULL
+      }
+      return(cov.tib)
+    }#End cov_tibble_stats
+
+
+
+    if (individuals) {
+      i.info %<>%
+        dplyr::bind_cols(c.s$individuals)
+
+      have <- names(c.s$individuals)
+      want <- c("COVERAGE_TOTAL", "COVERAGE_MEAN", "COVERAGE_MEDIAN", "COVERAGE_IQR", "REF_DEPTH_TOTAL", "REF_DEPTH_MEAN", "REF_DEPTH_MEDIAN", "REF_DEPTH_IQR", "ALT_DEPTH_TOTAL", "ALT_DEPTH_MEAN", "ALT_DEPTH_MEDIAN", "ALT_DEPTH_IQR")
+      tibble.group <- c("total coverage", "mean coverage", "median coverage", "iqr coverage", "total ref depth", "mean ref depth", "median ref depth", "iqr ref depth", "total alt depth", "mean alt depth", "median alt depth", "iqr alt depth")
+
+      have <- purrr::keep(.x = have, .p = have %in% want)
+
+      tibble.group <- stringi::stri_replace_all_fixed(
+        str = have,
+        pattern = want,
+        replacement = tibble.group,
+        vectorize_all = FALSE
+      )
+
+      i.stats %<>%
+        dplyr::bind_rows(
+          purrr::map2_dfr(
+            .x = as.list(have),
+            .y = as.list(tibble.group),
+            .f = cov_tibble_stats,
+            data = i.info,
+            subsample.info = subsample.info
+          )
+        )
+    }#End ind
+
+    if (markers) {
+      m.info %<>%
+        dplyr::bind_cols(c.s$markers)
+
+      have <- names(c.s$markers)
+      want <- c("COVERAGE_TOTAL", "COVERAGE_MEAN", "COVERAGE_MEDIAN", "COVERAGE_IQR", "REF_DEPTH_TOTAL", "REF_DEPTH_MEAN", "REF_DEPTH_MEDIAN", "REF_DEPTH_IQR", "ALT_DEPTH_TOTAL", "ALT_DEPTH_MEAN", "ALT_DEPTH_MEDIAN", "ALT_DEPTH_IQR")
+      tibble.group <- c("total coverage", "mean coverage", "median coverage", "iqr coverage", "total ref depth", "mean ref depth", "median ref depth", "iqr ref depth", "total alt depth", "mean alt depth", "median alt depth", "iqr alt depth")
+
+      have <- purrr::keep(.x = have, .p = have %in% want)
+
+      tibble.group <- stringi::stri_replace_all_fixed(
+        str = have,
+        pattern = want,
+        replacement = tibble.group,
+        vectorize_all = FALSE
+      )
+
+
+      m.stats %<>%
+        dplyr::bind_rows(
+          purrr::map2_dfr(
+            .x = as.list(have),
+            .y = as.list(tibble.group),
+            .f = cov_tibble_stats,
+            data = m.info,
+            subsample.info = subsample.info
+          )
+        )
+    }#End markers
+  } # End coverage
+
+  # NOTE TO MYSELF need to work on including that one with DArT files...--------
+  #DArT 1 row and 2rows --------------------------------------------------------
+  # if ("dart" %in% data.source && any(c("2rows", "1row") %in% data.source)) {
+  #   depth <- extract_markers_metadata(
+  #     gds,
+  #     markers.meta.select = c("AVG_COUNT_REF", "AVG_COUNT_SNP"),
+  #     whitelist = TRUE
+  #   )
+  #   markers <- ind <- FALSE
+  #
+  #   if (is.null(depth)) return(NULL)
+  #
+  #   coverage.info$markers.mean <- as.integer(
+  #     round(depth$AVG_COUNT_REF + depth$AVG_COUNT_SNP, 0)
+  #   )
+  #   coverage.info$ref.mean <- as.integer(round(depth$AVG_COUNT_REF))
+  #   coverage.info$alt.mean <- as.integer(round(depth$AVG_COUNT_SNP))
+  #   depth <- NULL
+  # }#End DART 1row and 2 rows
+  #
+
+
+  # work on the stats ----------------------------------------------------------
   markers.levels <- c(
-    "total coverage", "total ref depth", "total alt depth",
-    "mean coverage", "mean ref depth", "mean alt depth", "median coverage", "iqr coverage",
     "missing genotypes",
     "MAC",  "observed heterozygosity",
     "inbreeding coefficient (Fis)",
     "SNP position on read",
-    "SNPs per locus"
+    "SNPs per locus",
+    "total coverage", "total ref depth", "total alt depth",
+    "mean coverage", "mean ref depth", "mean alt depth",
+    "median coverage", "median ref depth", "median alt depth",
+    "iqr coverage", "iqr ref depth", "iqr alt depth"
   )
-  stats$GROUP <- factor(x = stats$GROUP, levels = markers.levels,
-                        ordered = TRUE)
-  stats$GROUP <- droplevels(x = stats$GROUP)
+  m.stats$GROUP <- factor(x = m.stats$GROUP, levels = markers.levels, ordered = TRUE)
+  m.stats$GROUP <- droplevels(x = m.stats$GROUP)
 
-  info %<>% dplyr::arrange(MARKERS) %>%
-    readr::write_tsv(x = ., file = file.path(path.folder, filename))
+  id.levels <- c("missing genotypes", "heterozygosity", "total coverage",
+                 "mean coverage", "median coverage", "iqr coverage",
+                 "total ref depth", "mean ref depth", "median ref depth",
+                 "iqr ref depth",
+                 "total alt depth", "mean alt depth", "median alt depth",
+                 "iqr alt depth")
+  i.stats$GROUP <- factor(x = i.stats$GROUP, levels = id.levels, ordered = TRUE)
+  i.stats$GROUP <- droplevels(x = i.stats$GROUP)
 
-  # Generate plots
+
+  # Generate plots -------------------------------------------------------------
   if (plot) {
-    # correlations info
-
-    # Note to myself: here we need to add conditions when some stats are not requested...
-    corr.info <- stringi::stri_join("Correlations:\n")
-
-    if (rlang::has_name(info, "COVERAGE_TOTAL") && missing) {
-      cm <- floor(stats::cor(info$COVERAGE_TOTAL, info$MISSING_PROP, use = "pairwise.complete.obs") * 100) / 100
-      cmt <- stringi::stri_join("    total coverage & missing = ", cm)
-      corr.info <- stringi::stri_join(corr.info, cmt)
-    }
-    if (rlang::has_name(info, "COVERAGE_TOTAL") && rlang::has_name(info, "COVERAGE_MEAN")) {
-      cc <- ceiling(stats::cor(info$COVERAGE_TOTAL, info$COVERAGE_MEAN, use = "pairwise.complete.obs") * 100) / 100
-      cct <- stringi::stri_join("\n    total coverage & mean coverage = ", cc)
-      corr.info <- stringi::stri_join(corr.info, cct)
-    }
-    if (rlang::has_name(info, "COVERAGE_TOTAL") && heterozygosity) {
-      ch <- ceiling(stats::cor(info$COVERAGE_TOTAL, info$HET_OBS, use = "pairwise.complete.obs") * 100) / 100
-      cht <- stringi::stri_join("\n    total coverage & heterozygosity = ", ch)
-      corr.info <- stringi::stri_join(corr.info, cht)
-    }
-    if (missing && heterozygosity) {
-      mh <- floor(stats::cor(info$HET_OBS, info$MISSING_PROP, use = "pairwise.complete.obs") * 100) / 100
-      mht <- stringi::stri_join("\n    missing & heterozygosity = ", mh)
-      corr.info <- stringi::stri_join(corr.info, mht)
-    }
-
-    # corr.info <- stringi::stri_join(
-    #   "Correlations:\n",
-    #   "    total coverage & missing = ", cm,
-    #   "\n    total coverage & mean coverage = ", cc,
-    #   "\n    total coverage & heterozygosity = ", ch,
-    #   "\n    missing & heterozygosity = ", mh
-    # )
+    if (verbose) cli::cli_progress_step("Generating figures")
+    i.fig.filename <- stringi::stri_join("individuals_qc_", file.date, ".pdf") # Figure
+    m.fig.filename <- stringi::stri_join("markers_qc_", file.date, ".pdf") # Figure
 
 
-    cm <- cc <- ch <- mh <- mht <- cmt <- cct <- cht <- NULL
+    if (individuals) {
+      # conditions for figures ---------------------------------------------------
 
-    if (!is.null(subsample)) {
-      subtitle.stats <- stringi::stri_join(
-        "Markers subsampled: ", length(subsample), "\n\n", corr.info)
-    } else {
-      subtitle.stats <- corr.info
-    }
+      # info printed on top of figures
+      corr.info <- stringi::stri_join("Correlations:\n")
 
-    if (!heterozygosity && !rlang::has_name(info, "COVERAGE_TOTAL")) {
-      subtitle.stats <- NULL
-    }
+      if (coverage && missing) {
+        cm <- floor(stats::cor(i.info$COVERAGE_TOTAL, i.info$MISSING_PROP, use = "pairwise.complete.obs") * 100) / 100
+        cmt <- stringi::stri_join("    total coverage & missing = ", cm)
+        corr.info <- stringi::stri_join(corr.info, cmt)
+      }
+      if (coverage) {
+        if (stats::sd(i.info$COVERAGE_MEAN) != 0) {
+          cc <- ceiling(stats::cor(i.info$COVERAGE_TOTAL, i.info$COVERAGE_MEAN, use = "pairwise.complete.obs") * 100) / 100
+        } else {
+          cc <- "NA"
+          message("Note: mean individual coverage SD = 0")
+          message("correlation with total coverage is not possible")
+        }
+        cct <- stringi::stri_join("\n    total coverage & mean coverage = ", cc)
+        corr.info <- stringi::stri_join(corr.info, cct)
+      }
+      if (coverage && heterozygosity) {
+        ch <- ceiling(stats::cor(i.info$COVERAGE_TOTAL, i.info$HETEROZYGOSITY, use = "pairwise.complete.obs") * 100) / 100
+        cht <- stringi::stri_join("\n    total coverage & heterozygosity = ", ch)
+        corr.info <- stringi::stri_join(corr.info, cht)
+      }
+      if (missing && heterozygosity) {
+        mh <- floor(stats::cor(i.info$HETEROZYGOSITY, i.info$MISSING_PROP, use = "pairwise.complete.obs") * 100) / 100
+        mht <- stringi::stri_join("\n    missing & heterozygosity = ", mh)
+        corr.info <- stringi::stri_join(corr.info, mht)
+      }
+      if (heterozygosity) {
+        n.markers <- summary_gds(gds, verbose = FALSE) %$% n.markers
+        n.markers.range <- ceiling((i.stats[[2,6]] - i.stats[[2,2]] ) * n.markers)
+        n.markers.iqr <- ceiling(i.stats[[2,7]] * n.markers)
+
+        corr.info <- stringi::stri_join(
+          "n.markers = ", n.markers,
+          "\nn. het markers in the bp range = ", n.markers.range,
+          "\nn. het markers in the bp IQR = ", n.markers.iqr,
+          "\n\n", corr.info
+        )
+      }
+      if (missing) {
+        missing.out <- stringi::stri_join("Missing genotypes outlier: ", i.stats[[1, 9]])
+        corr.info <- stringi::stri_join(missing.out, "\n", corr.info)
+      }
+
+      cm <- cmt <- cc <- cct <- ch <- cht <- mh <- mht <- NULL
 
 
-    fig <- boxplot_stats(
-      data = stats,
-      title = "Marker's QC stats",
-      subtitle = subtitle.stats,
-      x.axis.title = NULL,
-      y.axis.title = "Statistics",
-      facet.columns = TRUE,
-      bp.filename = fig.filename,
-      path.folder = path.folder)
+      if (!is.null(subsample)) {
+        subtitle.ind.stats <- stringi::stri_join(
+          "Markers subsampled: ", length(subsample), "\n\n", corr.info)
+      } else {
+        subtitle.ind.stats <- corr.info
+      }
+
+      i.fig <- boxplot_stats(
+        data = i.stats,
+        title = "Individual's QC stats",
+        subtitle = subtitle.ind.stats,
+        x.axis.title = NULL,
+        y.axis.title = "Statistics",
+        facet.columns = TRUE,
+        scale.log = TRUE,
+        scientific.format = FALSE,
+        bp.filename = i.fig.filename,
+        path.folder = path.folder)
+      # if (verbose) message("File written: individuals qc plot")
+
+    }#End ind
+
+    if (markers) {
+      # correlations info
+      corr.info <- stringi::stri_join("Correlations:\n")
+
+      if (rlang::has_name(m.info, "COVERAGE_TOTAL") && missing) {
+        cm <- floor(stats::cor(m.info$COVERAGE_TOTAL, m.info$MISSING_PROP, use = "pairwise.complete.obs") * 100) / 100
+        cmt <- stringi::stri_join("    total coverage & missing = ", cm)
+        corr.info <- stringi::stri_join(corr.info, cmt)
+      }
+      if (rlang::has_name(m.info, "COVERAGE_TOTAL") && rlang::has_name(m.info, "COVERAGE_MEAN")) {
+        cc <- ceiling(stats::cor(m.info$COVERAGE_TOTAL, m.info$COVERAGE_MEAN, use = "pairwise.complete.obs") * 100) / 100
+        cct <- stringi::stri_join("\n    total coverage & mean coverage = ", cc)
+        corr.info <- stringi::stri_join(corr.info, cct)
+      }
+      if (rlang::has_name(m.info, "COVERAGE_TOTAL") && heterozygosity) {
+        ch <- ceiling(stats::cor(m.info$COVERAGE_TOTAL, m.info$HET_OBS, use = "pairwise.complete.obs") * 100) / 100
+        cht <- stringi::stri_join("\n    total coverage & heterozygosity = ", ch)
+        corr.info <- stringi::stri_join(corr.info, cht)
+      }
+      if (missing && heterozygosity) {
+        mh <- floor(stats::cor(m.info$HET_OBS, m.info$MISSING_PROP, use = "pairwise.complete.obs") * 100) / 100
+        mht <- stringi::stri_join("\n    missing & heterozygosity = ", mh)
+        corr.info <- stringi::stri_join(corr.info, mht)
+      }
+
+      cm <- cc <- ch <- mh <- mht <- cmt <- cct <- cht <- NULL
+
+      if (!is.null(subsample)) {
+        subtitle.stats <- stringi::stri_join(
+          "Markers subsampled: ", length(subsample), "\n\n", corr.info)
+      } else {
+        subtitle.stats <- corr.info
+      }
+
+      if (!heterozygosity && !rlang::has_name(m.info, "COVERAGE_TOTAL")) {
+        subtitle.stats <- NULL
+      }
+
+      m.fig <- boxplot_stats(
+        data = m.stats,
+        title = "Marker's QC stats",
+        subtitle = subtitle.stats,
+        x.axis.title = NULL,
+        scale.log = TRUE,
+        scientific.format = FALSE,
+        y.axis.title = "Statistics",
+        facet.columns = TRUE,
+        bp.filename = m.fig.filename,
+        path.folder = path.folder)
+    }#End markers
+  }#End fig
+
+  # Subsampling back to normal -------------------------------------------------
+  if (!is.null(subsample)) SeqArray::seqSetFilter(gds, action = "pop", verbose = FALSE)
+
+  # write files ----------------------------------------------------------------
+  if (verbose) cli::cli_progress_step("Writing files")
+  i.stats.f <- stringi::stri_join("individuals.qc.stats_", file.date, ".tsv")
+  m.stats.f <- stringi::stri_join("markers.qc.stats_", file.date, ".tsv")
+  i.stats.f.sum <- stringi::stri_join("individuals.qc.stats.summary_", file.date, ".tsv")# tibble summary stats
+  m.stats.f.sum <- stringi::stri_join("markers.qc.stats.summary_", file.date, ".tsv")# tibble summary stats
+
+  if (!markers) m.stats <- m.info <- m.fig <- NULL
+  if (!individuals) i.stats <- i.info <- i.fig <- NULL
+  if (!plot) m.fig <- i.fig <- NULL
 
 
-    dplyr::mutate(.data = stats,
-                  dplyr::across(
-                    .cols = where(is.numeric),
-                    .fns = format,
-                    scientific = FALSE
-                  )
+  if (!is.null(m.stats)) {
+    dplyr::mutate(.data = m.stats,
+                  dplyr::across(.cols = where(is.numeric), .fns = round, digits = digits),
+                  dplyr::across(.cols = where(is.numeric), .fns = format, scientific = FALSE),
     ) %>%
-      readr::write_tsv(x = ., file = file.path(path.folder, markers.stats.file))
-
-
-  } else {
-    fig <- NULL
+      readr::write_tsv(x = ., file = file.path(path.folder, m.stats.f.sum))
   }
-
-  # restore original filters (subsampling...)
-  if (!is.null(subsample)) {
-    SeqArray::seqSetFilter(gds, action = "pop", verbose = TRUE)
+  if (!is.null(i.stats)) {
+    dplyr::mutate(.data = i.stats,
+                  dplyr::across(.cols = where(is.numeric), .fns = round, digits = digits),
+                  dplyr::across(.cols = where(is.numeric), .fns = format, scientific = FALSE),
+    ) %>%
+      readr::write_tsv(x = ., file = file.path(path.folder, i.stats.f.sum))
   }
-  # else {
-  # radiator.gds <- gdsfmt::index.gdsn(node = gds, path = "radiator", silent = TRUE)
-  # Update GDS
-  # if (!is.null(radiator.gds)) {
-  # gdsfmt::add.gdsn(
-  # node = radiator.gds,
-  # name = "markers.meta",
-  # val = info,
-  # replace = TRUE,
-  # compress = "ZIP_RA",
-  # closezip = TRUE)
-  # }
-  # }
+  if (!is.null(i.info)) readr::write_tsv(x = i.info, file = file.path(path.folder, i.stats.f))
+  if (!is.null(m.info)) readr::write_tsv(x = m.info, file = file.path(path.folder, m.stats.f))
+  if (verbose) cli::cli_process_done()
 
-  return(list(info = info, stats = stats, fig = fig))
-}#End generate_markers_stats
+  # return stats ---------------------------------------------------------------
+  return(list(i.info = i.info, m.info = m.info, i.stats = i.stats, m.stats = m.stats, i.fig = i.fig, m.fig = m.fig))
+}#End generate_stats
+
 
 # Calculate individual het------------------------------------------------------
 #' @title individual_het
-#' @description Calculate individual het
+#' @description Calculate individual heterozygosity from GDS
 #' @rdname individual_het
 #' @keywords internal
 #' @export
 individual_het <- function(gds) {
 
   # PLAN A
-  info <- summary_gds(gds = gds, check.sync = TRUE, verbose = FALSE)
-  nonmiss <- het <- integer(info$n.ind)
+
+  # Longer with big datasets
+  # info <- summary_gds(gds = gds, check.sync = TRUE, verbose = FALSE)
+  # nonmiss <- het <- integer(info$n.ind)
   #
-  SeqArray::seqApply(
-    gdsfile = gds,
-    var.name = "genotype",
-    FUN = function(x) {
-      nm <- !is.na(x[1,]) & !is.na(x[2,])
-      het <<- het + (x[1,] != x[2,] & nm)
-      nonmiss <<- nonmiss + nm
-    },
-    margin = "by.variant",
-    as.is = "none",
-    parallel = FALSE
-  )
-  return(het / nonmiss)
+  # SeqArray::seqApply(
+  #   gdsfile = gds,
+  #   var.name = "genotype",
+  #   FUN = function(x) {
+  #     nm <- !is.na(x[1,]) & !is.na(x[2,])
+  #     het <<- het + (x[1,] != x[2,] & nm)
+  #     nonmiss <<- nonmiss + nm
+  #   },
+  #   margin = "by.variant",
+  #   as.is = "none",
+  #   parallel = FALSE
+  # )
+  #
+
+  # return(het / nonmiss)
 
 
   # PLAN B
-  # need to test if faster...
   # da <- SeqArray::seqGetData(gdsfile = gds, var.name = "$dosage_alt")
-  # return(rowSums(da == 1L, na.rm = TRUE) / rowSums(!is.na(da), na.rm = FALSE))
+  # het <- rowSums(da == 1L, na.rm = TRUE) / rowSums(!is.na(da), na.rm = FALSE)
 
+  # faster
+  het <- SeqArray::seqGetData(gdsfile = gds, var.name = "$dosage_alt")
+  rs1 <- rowSums(het == 1L, na.rm = TRUE)
+  rs2 <- rowSums(!is.na(het), na.rm = FALSE)
+  het <- rs1 / rs2
+  return(het)
 }#End individual_het
-
 
 # Calculate markers het------------------------------------------------------
 #' @title markers_het
@@ -2769,12 +2958,15 @@ markers_het <- function(gds) {
     FUN = function(x) sum(x == 1, na.rm = TRUE) / sum(!is.na(x)),
     margin = "by.variant",
     as.is = "double",
-    parallel = FALSE
+    parallel = TRUE
   )
   # PLAN B
-  # need to test if faster...
-  # da <- SeqArray::seqGetData(gdsfile = gds, var.name = "$dosage_alt")
-  # return(colSums(da == 1L, na.rm = TRUE) / colSums(!is.na(da), na.rm = FALSE))
+  # not faster... strange because for sample it is faster...
+  # het <- SeqArray::seqGetData(gdsfile = gds, var.name = "$dosage_alt")
+  # rs1 <- colSums(het == 1L, na.rm = TRUE)
+  # rs2 <- colSums(!is.na(het), na.rm = FALSE)
+  # het <- rs1 / rs2
+
 }#End markers_het
 
 # Calculate markers FIS------------------------------------------------------
@@ -2848,9 +3040,9 @@ generate_gt_vcf_nuc <- function(gds) {
 #' @keywords internal
 #' @export
 missing_per_pop <- function(
-  gds,
-  strata,
-  parallel.core = parallel::detectCores() - 1
+    gds,
+    strata,
+    parallel.core = parallel::detectCores() - 1
 ) {
   missing_pop <- function(
     id.select,
@@ -2984,11 +3176,11 @@ missing_per_pop <- function(
 
 
 write_gds <- function(
-  data,
-  data.source = NULL,
-  filename = NULL,
-  open = TRUE,
-  verbose = TRUE
+    data,
+    data.source = NULL,
+    filename = NULL,
+    open = TRUE,
+    verbose = TRUE
 ) {
   timing <- proc.time()
 

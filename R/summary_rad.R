@@ -103,13 +103,13 @@ summary_rad <- function(
         HET_O = PQ/N,
         HET_E = 2 * FREQ_REF * FREQ_ALT,
         FIS = dplyr::if_else(HET_O == 0, 1, round(((HET_E - HET_O) / HET_E), digits)),
-        PP = NULL, PQ = NULL, QQ= NULL
+        PP = NULL, PQ = NULL, QQ = NULL
       )
 
     if (maf == "global") {
-      x %<>%dplyr::rename(MAF_GLOBAL = FREQ_ALT)
+      x %<>% dplyr::rename(MAF_GLOBAL = FREQ_ALT)
     } else {
-      x %<>%dplyr::rename(MAF_LOCAL = FREQ_ALT)
+      x %<>% dplyr::rename(MAF_LOCAL = FREQ_ALT)
     }
 
     return(x)

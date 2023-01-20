@@ -202,14 +202,15 @@ filter_snp_number <- function(
     # Generate snp per locus stats----------------------------------------------
     if (verbose) message("Generating statistics")
     if (data.type == "SeqVarGDSClass") {
-      wl <- generate_markers_stats(
+      wl <- generate_stats(
         gds = data,
+        individuals = FALSE,
         snp.per.locus = TRUE,
         missing = FALSE,
+        heterozygosity = FALSE,
         coverage = FALSE,
         allele.coverage = FALSE,
         mac = FALSE,
-        heterozygosity = FALSE,
         snp.position.read = FALSE,
         force.stats = force.stats,
         path.folder = path.folder,
@@ -217,8 +218,8 @@ filter_snp_number <- function(
         plot = FALSE,
         parallel.core = parallel.core
       )
-      stats <- wl$stats
-      wl <- bl <- wl$info
+      stats <- wl$m.stats
+      wl <- bl <- wl$m.info
     } else {
       bl <- wl
       wl %<>%

@@ -147,22 +147,22 @@ on missingness (genotyping rate of individuals).
 \item \code{radiator_filter_individuals_args.tsv}: the function calls and values.
 }
 The function will remove automatically monomorphic markers if individuals are removed.
-\item \strong{filter_mac}: remove/blacklist markers based on Minor/Alternate Allele Count (MAC).
-Described in \code{\link[radiator]{filter_mac}}.
+\item \strong{filter_ma}: remove/blacklist markers based on Minor/Alternate Allele Count (MAC), Frequency (MAF) or Depth (MAD).
+Described in \code{\link[radiator]{filter_ma}}.
 \itemize{
 \item \code{distribution.mac.global.pdf}: distribution of overall MAC.
-\item \code{mac.boxplot.pdf}: boxplot of the MAC.
-\item \code{mac.global.tsv}: a tibble with the global MAC and MAF.
+\item \code{ma.boxplot.pdf}: boxplot of the MAC.
+\item \code{ma.global.tsv}: a tibble with the global MAC and MAF.
 \item \code{mac.markers.plot.pdf}: the helper plot showing
 the impact of thresholds
 on the number of markers blacklisted and whitelisted.
 \item \code{mac.helper.table.tsv}: a tibble with
 the impact of thresholds on the the number
 of markers blacklisted and whitelisted.
-\item \code{mac.summary.stats.tsv}: MAC summary statistics.
-\item \code{blacklist.markers.mac.tsv}: blacklisted markers.
-\item \code{whitelist.markers.mac.tsv}: whitelisted markers.
-\item \code{radiator_filter_mac_args.tsv}: the function calls and values.
+\item \code{ma.summary.stats.tsv}: MAC summary statistics.
+\item \code{blacklist.markers.ma.tsv}: blacklisted markers.
+\item \code{whitelist.markers.ma.tsv}: whitelisted markers.
+\item \code{radiator_filter_ma_args.tsv}: the function calls and values.
 }
 \item \strong{filter_coverage}: remove/blacklist markers based on mean coverage information.
 Described in \code{\link[radiator]{filter_coverage}}.
@@ -324,7 +324,7 @@ separately.
 \item \strong{filter.individuals.missing}: detailed in \code{\link[radiator]{filter_individuals}}.
 \item \strong{filter.individuals.heterozygosity}: detailed in \code{\link[radiator]{filter_individuals}}.
 \item \strong{filter.individuals.coverage.total}: detailed in \code{\link[radiator]{filter_individuals}}.
-\item \strong{filter.mac}: detailed in \code{\link[radiator]{filter_mac}}.
+\item \strong{filter.ma}: detailed in \code{\link[radiator]{filter_ma}}.
 \item \strong{filter.coverage}: detailed in \code{\link[radiator]{filter_coverage}}.
 \item \strong{filter.genotyping}: described in \code{\link[radiator]{filter_genotyping}}.
 \item \strong{filter.snp.position.read}: described in \code{\link[radiator]{filter_snp_position_read}}.

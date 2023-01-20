@@ -42,9 +42,10 @@
 #' Reducing linkage before running genome scan is essential. At least start by
 #' removing SNPs on the same RADseq locus (short linkage disequilibrium).
 #'
-#' \item \strong{Filtering markers with low Minor Allele Count} : use the argument
-#' \code{filter.mac} to evaluate the impact of MAC/MAF on genome scans.
-#' The function \code{\link{filter_mac}} is called.
+#' \item \strong{Filtering markers with low Minor Allele Count, Frequency or Depth}
+#' Use the 2 arguments provided by the function \code{\link{filter_ma}} (read doc):
+#' \code{filter.ma} and \code{ma.stats} to evaluate the impact of MAC/MAF/MAD on genome scans.
+#'  is called.
 #'
 #' \item Turning off the filter that keeps markers in common between strata:
 #' This is not recommended, but users who wants to explore the impact of such filtering
@@ -84,7 +85,7 @@ write_pcadapt <- function(
 
   # dotslist -------------------------------------------------------------------
   dotslist <- rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE)
-  want <- c("filter.common.markers", "filter.mac", "filter.short.ld",
+  want <- c("filter.common.markers", "filter.ma", "ma.stats", "filter.short.ld",
             "filter.long.ld", "long.ld.missing", "ld.method")
 
   unknowned_param <- setdiff(names(dotslist), want)
@@ -98,7 +99,8 @@ write_pcadapt <- function(
 
 
   # argument <- radiator.dots[["argument"]]
-  filter.mac <- radiator.dots[["filter.mac"]]
+  filter.ma <- radiator.dots[["filter.ma"]]
+  ma.stats <- radiator.dots[["ma.stats"]]
   filter.short.ld <- radiator.dots[["filter.short.ld"]]
   filter.long.ld <- radiator.dots[["filter.long.ld"]]
   long.ld.missing <- radiator.dots[["long.ld.missing"]]
@@ -135,11 +137,12 @@ write_pcadapt <- function(
   if (!biallelic) rlang::abort("\npcadapt only work with biallelic dataset")
 
   # MAC ------------------------------------------------------------------------
-  if (!is.null(filter.mac)) { # with MAF
-    data <- radiator::filter_mac(
+  if (!is.null(filter.ma)) { # with MAF
+    data <- radiator::filter_ma(
       data = data,
       interactive.filter = FALSE,
-      filter.mac = filter.mac,
+      ma.stats = ma.stats,
+      filter.ma = filter.ma,
       parallel.core = parallel.core,
       verbose = FALSE) %$% input
   } # End of MAC filters

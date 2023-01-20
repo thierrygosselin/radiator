@@ -20,7 +20,7 @@ and might be of interest for users."><!-- mathjax --><script src="https://cdnjs.
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.4</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.5</span>
       </span>
     </div>
 
@@ -78,14 +78,7 @@ and might be of interest for users.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">tidy_genind</span><span class="op">(</span></span>
-<span>  <span class="va">data</span>,</span>
-<span>  keep.allele.names <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  tidy <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  gds <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  write <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">tidy_genind</span><span class="op">(</span><span class="va">data</span>, tidy <span class="op">=</span> <span class="cn">TRUE</span>, gds <span class="op">=</span> <span class="cn">TRUE</span>, write <span class="op">=</span> <span class="cn">FALSE</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -93,15 +86,6 @@ and might be of interest for users.</p>
     <dl><dt>data</dt>
 <dd><p>(path or object) A genind object in the global environment or
 path to a genind file that will be open with <code>readRDS</code>.</p></dd>
-
-
-<dt>keep.allele.names</dt>
-<dd><p>Allows to keep allele names for the tidy dataset.
-Requires the alleles to be numeric. To have this argument in
-<span class="pkg">radiator</span> <code><a href="tidy_genomic_data.html">tidy_genomic_data</a></code> or
-<span class="pkg">radiator</span> <code><a href="genomic_converter.html">genomic_converter</a></code>
-use it at the end. <code>...</code> in those function looks for it.
-Default: <code>keep.allele.names = FALSE</code>.</p></dd>
 
 
 <dt>tidy</dt>
@@ -127,6 +111,21 @@ the function is a little more chatty during execution.
 Default: <code>verbose = TRUE</code>.</p></dd>
 
 </dl></div>
+    <div id="note">
+    <h2>Note</h2>
+    <p><a href="https://github.com/thibautjombart/adegenet" class="external-link">genind</a> objects, like
+genepop, are not optimal genomic format for RADseq datasets,
+they lack important genotypes and markers metadata: chromosome, locus, snp,
+position, read depth, allele depth, etc.
+<a href="https://github.com/thibautjombart/adegenet" class="external-link">genlight</a> object is a more
+interesting container and is memory efficient, see <code><a href="tidy_genlight.html">tidy_genlight</a></code>.</p>
+
+<p>By default allele names will be kept for the tidy dataset,
+if the alleles is numeric and length &lt; 3.</p>
+
+<p>In the unlikely event that the genind object as no stratification/population,
+<em>pop</em> will be added to the strata column.</p>
+    </div>
     <div id="references">
     <h2>References</h2>
     <p>Jombart T (2008) adegenet: a R package for the multivariate
@@ -152,7 +151,7 @@ Bioinformatics, 27, 3070-3071.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

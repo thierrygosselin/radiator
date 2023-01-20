@@ -396,10 +396,9 @@ individuals2strata <- function(
 # change_pop_names--------------------------------------------------------------
 
 #' @name change_pop_names
-#' @title Transform into a factor the POP_ID column, change names and reorder the levels
-#' @description Transform into a factor the POP_ID column, change names and
-#' reorder the levels. If the data as \code{STRATA} column instead of a
-#' \code{POP_ID} column, the function will change the column name.
+#' @title Transform into a factor the STRATA column, change names and reorder the levels
+#' @description Transform into a factor the STRATA column, change names and
+#' reorder the levels.
 
 #' @inheritParams tidy_genomic_data
 #' @inheritParams read_strata
@@ -418,17 +417,17 @@ change_pop_names <- function(data, pop.levels = NULL, pop.labels = NULL) {
   # checks ---------------------------------------------------------------------
   if (missing(data)) rlang::abort("Input file missing")
 
-  # POP_ID in gsi_sim does not like spaces, we need to remove space in everything touching POP_ID...
-  data %<>% dplyr::rename(POP_ID = tidyselect::contains("STRATA"))
+  # STRATA in gsi_sim does not like spaces, we need to remove space in everything touching STRATA...
+  # data %<>% dplyr::rename(POP_ID = tidyselect::contains("STRATA"))
 
 
-  # removing spaces in data$POP_ID, pop.levels and pop.labels
+  # removing spaces in data$STRATA, pop.levels and pop.labels
   if (!is.null(pop.levels)) {
     if (is.null(pop.labels)) {
       pop.labels <- pop.levels <- clean_pop_names(pop.levels)
     }
-    if (dplyr::n_distinct(data$POP_ID) != length(pop.levels)) {
-      rlang::abort("The number of strata/POP_ID in the data is different than the number of pop.levels: check argument and data")
+    if (dplyr::n_distinct(data$STRATA) != length(pop.levels)) {
+      rlang::abort("The number of STRATA in the data is different than the number of pop.levels: check argument and data")
     }
   }
 
@@ -439,17 +438,17 @@ change_pop_names <- function(data, pop.levels = NULL, pop.labels = NULL) {
   }
 
   # in the data
-  data$POP_ID %<>% clean_pop_names(x = .)
+  data$STRATA %<>% clean_pop_names(x = .)
 
-  # convert POP_ID to factor and change names-----------------------------------
+  # convert STRATA to factor and change names-----------------------------------
 
   if (is.null(pop.levels)) { # no pop.levels
-    data$POP_ID %<>% factor(x = .)
+    data$STRATA %<>% factor(x = .)
   } else {# with pop.levels
-    data$POP_ID %<>% factor(x = ., levels = pop.levels, ordered = FALSE)
-    levels(data$POP_ID) <- pop.labels
+    data$STRATA %<>% factor(x = ., levels = pop.levels, ordered = FALSE)
+    levels(data$STRATA) <- pop.labels
   }
-  data %<>% dplyr::arrange(POP_ID, INDIVIDUALS)
+  data %<>% dplyr::arrange(STRATA, INDIVIDUALS)
   return(data)
 }# end function change_pop_names
 

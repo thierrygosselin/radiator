@@ -242,12 +242,18 @@ boxplot_stats <- function(
   subtitle = NULL,
   x.axis.title = NULL,
   y.axis.title,
+  flip = FALSE,
+  scale.log = FALSE,
+  scientific.format = FALSE,
   facet.columns = FALSE,
   facet.rows = FALSE,
   bp.filename = NULL,
   path.folder = NULL
 ) {
   # data <- test
+  # flip = FALSE
+  # scale.log = FALSE
+  # scientific.format = FALSE
   # x.axis.title = NULL
   # x.axis.title <- "SNP position on the read groupings"
   # title <- "Individual's QC stats"
@@ -263,8 +269,14 @@ boxplot_stats <- function(
   if (is.null(path.folder)) path.folder <- getwd()
 
   n.group <- dplyr::n_distinct(data$GROUP)
-  element.text <- ggplot2::element_text(size = 10,
-                                        face = "bold")
+  element.text <- ggplot2::element_text(size = 10, face = "bold")
+
+  if (flip) facet.columns <- FALSE
+
+  if (scale.log) {
+    if (!is.null(x.axis.title)) x.axis.title <- paste0(x.axis.title, "\n(log10)")
+    if (!is.null(y.axis.title)) y.axis.title <- paste0(y.axis.title, "\n(log10)")
+  }
 
   if (facet.columns) {
     data <- dplyr::mutate(data, X = "1")
@@ -273,11 +285,15 @@ boxplot_stats <- function(
     fig.boxplot <- ggplot2::ggplot(data = data, ggplot2::aes(GROUP))
   }
 
-
   fig.boxplot <- fig.boxplot +
     ggplot2::geom_boxplot(
-      ggplot2::aes(ymin = OUTLIERS_LOW, lower = Q25, middle = MEDIAN, upper = Q75,
-                   ymax = OUTLIERS_HIGH), stat = "identity") +
+      ggplot2::aes(ymin = OUTLIERS_LOW,
+                   lower = Q25,
+                   middle = MEDIAN,
+                   upper = Q75,
+                   ymax = OUTLIERS_HIGH
+      ),
+      stat = "identity") +
     ggplot2::labs(y = y.axis.title, title = title)
 
   if (!is.null(subtitle)) fig.boxplot <- fig.boxplot + ggplot2::labs(subtitle = subtitle)
@@ -316,6 +332,19 @@ boxplot_stats <- function(
         linetype = "dashed")
   }
 
+  if (scale.log) {
+    if (!scientific.format) {
+      fig.boxplot <- fig.boxplot +
+        ggplot2::scale_y_log10(labels = scales::number_format(), oob = scales::squish_infinite)
+    } else {
+      fig.boxplot <- fig.boxplot +
+        ggplot2::scale_y_log10(oob = scales::squish_infinite)
+    }
+  } else {
+    fig.boxplot <- fig.boxplot +
+      ggplot2::scale_y_continuous(labels = scales::number_format())
+  }
+
   fig.boxplot <- fig.boxplot +
     ggplot2::theme_bw() +
     ggplot2::theme(
@@ -324,6 +353,16 @@ boxplot_stats <- function(
       axis.title.y = element.text,
       axis.text.y = element.text
     )
+
+  if (flip) {
+    fig.boxplot <- fig.boxplot +
+      ggplot2::theme(
+        axis.title.y = ggplot2::element_blank(),
+        axis.text.y = ggplot2::element_blank(),
+        axis.ticks.y = ggplot2::element_blank()
+      )
+    x.axis.title <- "test"
+  }
 
   if (is.null(x.axis.title)) {
     fig.boxplot <- fig.boxplot +
@@ -361,14 +400,29 @@ boxplot_stats <- function(
     height <- 5 + (4 * n.group)
   }
 
+  if (flip) {
+    fig.boxplot <- fig.boxplot +
+      ggplot2::facet_wrap(GROUP ~ ., scales = "free", nrow = n.group) +
+      ggplot2::coord_flip()
+  }
+
   if (!facet.rows && !facet.columns) {
     width <-  13 + (5 * n.group) + 1
     height <-  8
   }
 
-  print(fig.boxplot)
+  if (flip) {
+    n.facet <- n.group * 2
+    width <- 20
+    height <- 5 + (4 * n.group)
+  }
+
+  # fig.boxplot <- fig.boxplot + ggplot2::coord_flip()
+  suppressWarnings(print(fig.boxplot))
+
   if (!is.null(bp.filename)) {
-    suppressMessages(
+    suppressWarnings(
+      suppressMessages(
       ggplot2::ggsave(
         filename = file.path(path.folder, bp.filename),
         plot = fig.boxplot,
@@ -380,10 +434,35 @@ boxplot_stats <- function(
         useDingbats = FALSE
       )
     )
+    )
   }
   return(fig.boxplot)
-}#Endboxplot_stats
+}#End boxplot_stats
 
+# plot_histogram----------------------------------------------------------------
+#' @title Figure of distribution (histogram)
+#' @description Create density distribution of coverage summary statistics.
+#' Use the coverage summary file created with coverage_summary function.
+#' @param data Coverage summary file.
+#' @param adjust.bin Adjust GGPLOT2 bin size (0 to 1).
+#' @export
+#' @rdname plot_density_distribution_coverage
+#' @keywords internal
+
+
+plot_histogram <- function(data, variable, x.axis.title, y.axis.title) {
+
+ ggplot2::ggplot(data = data, ggplot2::aes(x = .data[[variable]])) +
+     ggplot2::geom_histogram(bins = 30) +
+     ggplot2::labs(y = y.axis.title, x = x.axis.title) +
+    ggplot2::scale_y_continuous(labels = scales::number_format()) +
+     ggplot2::theme(
+       legend.position = "none",
+       axis.title.x = ggplot2::element_text(size = 12, face = "bold"),
+       axis.title.y = ggplot2::element_text(size = 12, face = "bold")
+     ) +
+     ggplot2::theme_minimal()
+}
 
 
 
@@ -841,3 +920,70 @@ plot_boxplot_diversity <- function(data, aes.x.y, y.title) {
     )
 }
 
+#' @title radiator helper plot used in MAC, MAF and MAD filter
+#' @description GGPLOT2 radiator helper plot used in MAC, MAF and MAD filter.
+#' Lines and points, to help decide filter threshold.
+#' @param data containing the stats
+#' @param strata Containing strata info for the visual.
+#' Default: \code{strata = FALSE}.
+#' @param stats e.g. MAC, MAF or MAD.
+#' @param x.axis.title Title for the x axis
+#' @param text.orientation Orientation of the x axis text.
+#' Default: \code{text.orientation = "horizontal"horizontal}.
+#' @param plot.filename To save the figure provide a filename.
+#' Default: \code{plot.filename = NULL}
+#' @export
+#' @rdname plot_boxplot_diversity
+#' @keywords internal
+radiator_helper_plot <- function(data, strata = FALSE, stats, x.axis.title = NULL, x.breaks = NULL, text.orientation = "horizontal", plot.filename = NULL) {
+  helper.plot <- ggplot2::ggplot(data = data, ggplot2::aes(x = .data[[stats]], y = MARKERS)) +
+    ggplot2::geom_line() +
+    ggplot2::geom_point(size = 2, shape = 21, fill = "white")
+
+  if (is.null(x.axis.title)) x.axis.title <- "Give me a title!"
+  width.factor <- 1
+  if (!is.null(x.breaks)) {
+    if (length(x.breaks) > 25) width.factor <- floor(length(x.breaks) / 25)
+    helper.plot <- helper.plot +
+      ggplot2::scale_x_continuous(name = x.axis.title, breaks = x.breaks)
+  } else {
+    helper.plot <- helper.plot +
+      ggplot2::scale_x_continuous(name = x.axis.title)
+  }
+
+  helper.plot <- helper.plot +
+    ggplot2::theme(
+      axis.title.x = ggplot2::element_text(size = 10, face = "bold"),
+      axis.title.y = ggplot2::element_text(size = 10, face = "bold"),
+      strip.text.x = ggplot2::element_text(size = 10, face = "bold")
+    ) +
+    ggplot2::scale_y_continuous(name = "Number of markers", labels = scales::number_format()) +
+    ggplot2::theme_bw()
+
+  if (text.orientation == "vertical") {
+    helper.plot <- helper.plot +
+      ggplot2::theme(axis.text.x = ggplot2::element_text(size = 8, angle = 90, hjust = 1, vjust = 0.5))
+  } else {
+    helper.plot <- helper.plot +
+      ggplot2::theme(axis.text.x = ggplot2::element_text(size = 8))
+  }
+
+  if (strata) {
+    helper.plot <- helper.plot + ggplot2::facet_grid(LIST ~ STRATA, scales = "free", space = "free")
+  } else {
+    helper.plot <- helper.plot + ggplot2::facet_grid(LIST ~. , scales = "free", space = "free")
+  }
+
+  if (!is.null(plot.filename)) {
+    ggplot2::ggsave(
+      filename = paste0(plot.filename, ".pdf"),
+      plot = helper.plot,
+      width = 20 * width.factor,
+      height = 15,
+      dpi = 300,
+      units = "cm",
+      limitsize = FALSE,
+      useDingbats = FALSE)
+  }
+  return(helper.plot)
+}#End radiator_helper_plot

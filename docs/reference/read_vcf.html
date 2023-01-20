@@ -27,7 +27,7 @@ and might be of interest for users."><!-- mathjax --><script src="https://cdnjs.
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.4</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.5</span>
       </span>
     </div>
 
@@ -253,9 +253,9 @@ and duplicated markers are kept (not recommended, but here for testing purposes)
 Default (<code>filter.strands = "blacklist"</code>).</p></li>
 <li><p><code>filter.common.markers</code>: (logical) Default: <code>filter.common.markers = TRUE</code>.
 Documented in <code><a href="filter_common_markers.html">filter_common_markers</a></code>.</p></li>
-<li><p><code>filter.mac</code>: (integer) Default: <code>filter.mac = NULL</code>.
-To blacklist markers below a specific Minor Allele Count (calculated overall/global).
-Documented in <code><a href="filter_mac.html">filter_mac</a></code>.</p></li>
+<li><p><code>filter.ma</code>: (integer) Default: <code>filter.ma = NULL</code>.
+To blacklist markers below a specific Minor Allele Count, Frequency or Depth (calculated overall/global).
+Documented in <code><a href="filter_ma.html">filter_ma</a></code>.</p></li>
 <li><p><code>filter.coverage</code>: (optional, string)
 Default: <code>filter.coverage = NULL</code>. To blacklist markers based on mean coverage.
 Documented in <code><a href="filter_coverage.html">filter_coverage</a></code>.</p></li>
@@ -350,7 +350,7 @@ Bioinformatics, 27, 2156-2158.</p>
 <span class="r-in"><span>    filter.individuals.missing <span class="op">=</span> <span class="st">"outliers"</span>,</span></span>
 <span class="r-in"><span>    filter.common.markers <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
 <span class="r-in"><span>    filter.strands <span class="op">=</span> <span class="st">"blacklist"</span>,</span></span>
-<span class="r-in"><span>    filter.mac <span class="op">=</span> <span class="fl">4</span>,</span></span>
+<span class="r-in"><span>    filter.ma <span class="op">=</span> <span class="fl">4</span>,</span></span>
 <span class="r-in"><span>    filter.genotyping <span class="op">=</span> <span class="fl">0.3</span>,</span></span>
 <span class="r-in"><span>    filter.snp.position.read <span class="op">=</span> <span class="st">"outliers"</span>,</span></span>
 <span class="r-in"><span>    filter.short.ld <span class="op">=</span> <span class="st">"mac"</span>,</span></span>
@@ -376,7 +376,7 @@ Bioinformatics, 27, 2156-2158.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

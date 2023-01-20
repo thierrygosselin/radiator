@@ -1,3 +1,9 @@
+# radiator 1.2.5 2023-01-20
+
+* huge work on `filter_ma` that now incorporate Minor Allele Frequency (MAF), 
+Minor Allele Count (MAC) and Minor Allele Depth (MAD).
+
+
 # radiator 1.2.4 2022-11-17
 
 * bug fix when using some tidy function from GDS, the connection was not closing properly

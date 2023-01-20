@@ -2,7 +2,7 @@
 % Please edit documentation in R/strata.R
 \name{change_pop_names}
 \alias{change_pop_names}
-\title{Transform into a factor the POP_ID column, change names and reorder the levels}
+\title{Transform into a factor the STRATA column, change names and reorder the levels}
 \usage{
 change_pop_names(data, pop.levels = NULL, pop.labels = NULL)
 }
@@ -45,9 +45,8 @@ see below.
 White spaces in population names are replaced by underscore.}
 }
 \description{
-Transform into a factor the POP_ID column, change names and
-reorder the levels. If the data as \code{STRATA} column instead of a
-\code{POP_ID} column, the function will change the column name.
+Transform into a factor the STRATA column, change names and
+reorder the levels.
 }
 \seealso{
 \code{\link{read_strata}}, \code{\link{summary_strata}},
