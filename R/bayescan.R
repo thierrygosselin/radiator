@@ -75,7 +75,7 @@
 #' \item \code{whitelist.markers.neutral.positive.selection}: Whitelist of neutral markers and markers under diversifying selection and common in all iterations.
 #' \item \code{blacklist.markers.balancing.selection}: Blacklist of markers under balancing selection and common in all iterations.
 #' \item \code{markers.dictionary}: BayeScan use integer for MARKERS info. In this dataframe, the corresponding values used inside the function.
-#' \item \code{pop.dictionary}: BayeScan use integer for POP_ID info. In this dataframe, the corresponding values used inside the function.
+#' \item \code{pop.dictionary}: BayeScan use integer for STRATA info. In this dataframe, the corresponding values used inside the function.
 #' \item \code{bayescan.plot}: plot showing markers Fst and model choice.
 #'
 #' Additionnally, if multiple SNPs/locus are detected the object will also have:
@@ -262,21 +262,21 @@ run_bayescan <- function(
       columns.tidy <- colnames(data)
       want <- c("GT_VCF", "GT_VCF_NUC", "GT", "GT_BIN")
       want.check <- TRUE %in% (unique(want %in% columns.tidy))
-      want.more <- c("MARKERS", "INDIVIDUALS", "POP_ID")
+      want.more <- c("MARKERS", "INDIVIDUALS", "STRATA")
       want.more.check <- isTRUE(unique(want.more %in% columns.tidy))
       is.tidy <- isTRUE(unique(c(want.check, want.more.check)))
       if (!is.tidy) rlang::abort("A tidy data frame object required")
     }
 
-    ind.pop.df <- dplyr::distinct(.data = data, POP_ID, INDIVIDUALS)
+    ind.pop.df <- dplyr::distinct(.data = data, STRATA, INDIVIDUALS)
 
     # Print some statistics ----------------------------------------------------
     strata.stats <- ind.pop.df %>%
-      dplyr::group_by(POP_ID) %>%
+      dplyr::group_by(STRATA) %>%
       dplyr::tally(.) %>%
-      dplyr::mutate(STRATA = stringi::stri_join(POP_ID, n, sep = " = "))
+      dplyr::mutate(STRATA = stringi::stri_join(STRATA, n, sep = " = "))
 
-    n.pop <- dplyr::n_distinct(ind.pop.df$POP_ID)
+    n.pop <- dplyr::n_distinct(ind.pop.df$STRATA)
     n.ind <- dplyr::n_distinct(ind.pop.df$INDIVIDUALS)
     message("Number of populations: ", n.pop)
     message("Number of individuals: ", n.ind)
@@ -286,7 +286,7 @@ run_bayescan <- function(
 
     if (subsample == "min") {
       subsample <- ind.pop.df %>%
-        dplyr::group_by(POP_ID) %>%
+        dplyr::group_by(STRATA) %>%
         dplyr::tally(.) %>%
         dplyr::filter(n == min(n)) %>%
         dplyr::ungroup(.) %>%
@@ -616,12 +616,12 @@ subsampling_data <- function(
 
     if (subsample > 1) {# integer
       subsample.select <- ind.pop.df %>%
-        dplyr::group_by(POP_ID) %>%
+        dplyr::group_by(STRATA) %>%
         dplyr::sample_n(tbl = ., size = subsample, replace = FALSE)# sampling individuals for each pop
     }
     if (subsample < 1) { # proportion
       subsample.select <- ind.pop.df %>%
-        dplyr::group_by(POP_ID) %>%
+        dplyr::group_by(STRATA) %>%
         dplyr::sample_frac(tbl = ., size = subsample, replace = FALSE)# sampling individuals for each pop
     }
     subsample.select <- subsample.select %>%
@@ -629,7 +629,7 @@ subsampling_data <- function(
         SUBSAMPLE = rep(iteration.subsample, n()),
         RANDOM_SEED_NUMBER = rep(random.seed, n())
       ) %>%
-      dplyr::arrange(POP_ID, INDIVIDUALS) %>%
+      dplyr::arrange(STRATA, INDIVIDUALS) %>%
       dplyr::ungroup(.)
   }
   return(subsample.select)
@@ -693,7 +693,7 @@ bayescan_one <- function(
     bayescan.filename <- stringi::stri_join(
       "radiator_bayescan_subsample_", subsample.id)
     bayescan.sub <- radiator::write_bayescan(
-      data = dplyr::semi_join(data, x, by = c("POP_ID", "INDIVIDUALS")),
+      data = dplyr::semi_join(data, x, by = c("STRATA", "INDIVIDUALS")),
       parallel.core = parallel.core.bk,
       filename = bayescan.filename)
     x <- NULL #unused object
@@ -1124,13 +1124,13 @@ write_bayescan <- function(
   }
 
   # make sure we use POP_ID and not STRATA here...
-  if (rlang::has_name(data, "STRATA")) data %<>% dplyr::rename(POP_ID = STRATA)
+  # if (rlang::has_name(data, "STRATA")) data %<>% dplyr::rename(POP_ID = STRATA)
 
   # pop.select -----------------------------------------------------------------
   if (!is.null(pop.select)) {
     message("pop.select: ")
-    data %<>% dplyr::filter(POP_ID %in% pop.select)
-    if (is.factor(data$POP_ID)) data$POP_ID <- droplevels(data$POP_ID)
+    data %<>% dplyr::filter(STRATA %in% pop.select)
+    if (is.factor(data$STRATA)) data$STRATA <- droplevels(data$STRATA)
   }
 
   # Keeping common markers -----------------------------------------------------
@@ -1143,14 +1143,14 @@ write_bayescan <- function(
   biallelic <- radiator::detect_biallelic_markers(data = data)
 
   if (!biallelic) {
-    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS", "POP_ID", "GT_VCF_NUC", "GT")
+    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS", "STRATA", "GT_VCF_NUC", "GT")
     data <- suppressWarnings(dplyr::select(data, dplyr::one_of(want)))
     if (rlang::has_name(data, "GT_VCF_NUC")) {
-      want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS", "POP_ID", "GT_VCF_NUC")
+      want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS", "STRATA", "GT_VCF_NUC")
       data <- suppressWarnings(dplyr::select(data, dplyr::one_of(want))) %>%
         dplyr::rename(GT_HAPLO = GT_VCF_NUC)
     } else {
-      want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS", "POP_ID", "GT")
+      want <- c("MARKERS", "CHROM", "LOCUS", "POS", "INDIVIDUALS", "STRATA", "GT")
       data <- suppressWarnings(dplyr::select(data, dplyr::one_of(want))) %>%
         dplyr::rename(GT_HAPLO = GT)
     }
@@ -1171,28 +1171,28 @@ write_bayescan <- function(
       verbose = TRUE
       ) %$%
       input %>%
-      dplyr::select(MARKERS, INDIVIDUALS, POP_ID, GT_BIN)
+      dplyr::select(MARKERS, INDIVIDUALS, STRATA, GT_BIN)
   }
 
   # prep data wide format ------------------------------------------------------
   n.ind <- dplyr::n_distinct(data$INDIVIDUALS)
-  n.pop <- dplyr::n_distinct(data$POP_ID)
+  n.pop <- dplyr::n_distinct(data$STRATA)
   n.markers <- dplyr::n_distinct(data$MARKERS)
 
   data %<>%
     dplyr::ungroup(.) %>%
     dplyr::mutate(
-      BAYESCAN_POP = factor(POP_ID),
+      BAYESCAN_POP = factor(STRATA),
       BAYESCAN_POP = as.integer(BAYESCAN_POP),
       BAYESCAN_MARKERS = factor(MARKERS),
       BAYESCAN_MARKERS = as.integer(BAYESCAN_MARKERS)
     )
 
-  pop.dictionary <- dplyr::distinct(data, POP_ID, BAYESCAN_POP)
+  pop.dictionary <- dplyr::distinct(data, STRATA, BAYESCAN_POP)
   markers.dictionary <- dplyr::distinct(data, MARKERS, BAYESCAN_MARKERS) %>%
     dplyr::arrange(BAYESCAN_MARKERS)
 
-  data %<>% dplyr::select(-POP_ID, -MARKERS)
+  data %<>% dplyr::select(-STRATA, -MARKERS)
 
   # writing file to directory  ------------------------------------------------
   # Filename: date and time to have unique filenaming
@@ -1203,9 +1203,9 @@ write_bayescan <- function(
   } else {
     filename.problem <- file.exists(filename)
     if (filename.problem) {
-      filename <- stringi::stri_join(filename, "_", file.date, ".txt")
+      filename <- stringi::stri_join(filename, "_bayescan_", file.date, ".txt")
     } else {
-      filename <- stringi::stri_join(filename, ".txt")
+      filename <- stringi::stri_join(filename, "_bayescan", ".txt")
     }
   }
 

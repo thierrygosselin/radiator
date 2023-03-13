@@ -1,3 +1,10 @@
+# radiator 1.2.6 2023-03-13
+
+* Bug fix with `pcadapt`, `bayescan`, `genlight` output thanks to @jcaccavo. 
+Confusion between `POP_ID` and `STRATA` remained for some less used functions while
+the migration towards `STRATA` only inside radiator.
+
+
 # radiator 1.2.5 2023-01-20
 
 * huge work on `filter_ma` that now incorporate Minor Allele Frequency (MAF), 

@@ -439,11 +439,11 @@ write_genlight <- function(
 
       # gl.obj@other$loc.metrics$rdepth
       data %<>%
-        dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT_BIN) %>%
+        dplyr::select(MARKERS, STRATA, INDIVIDUALS, GT_BIN) %>%
         dplyr::mutate(GT_BIN = as.integer(GT_BIN)) %>%
         radiator::rad_wide(
           x = .,
-          formula = "POP_ID + INDIVIDUALS ~ MARKERS",
+          formula = "STRATA + INDIVIDUALS ~ MARKERS",
           values_from = "GT_BIN"
         )
     }#End dartr
@@ -451,15 +451,15 @@ write_genlight <- function(
     data.type <- "tbl_df"
   } else {
     # Tidy data
-    if (rlang::has_name(data, "STRATA")) data %<>% dplyr::rename(POP_ID = STRATA)
-    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "POP_ID", "INDIVIDUALS",
+    # if (rlang::has_name(data, "STRATA")) data %<>% dplyr::rename(POP_ID = STRATA)
+    want <- c("MARKERS", "CHROM", "LOCUS", "POS", "STRATA", "INDIVIDUALS",
               "REF", "ALT", "GT_VCF", "GT_BIN",
               "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG",
               "ONE_RATIO_REF", "ONE_RATIO_SNP")
     data %<>%
       radiator::tidy_wide(data = ., import.metadata = TRUE) %>%
       dplyr::select(tidyselect::any_of(want)) %>%
-      dplyr::arrange(POP_ID, INDIVIDUALS)
+      dplyr::arrange(STRATA, INDIVIDUALS)
 
     # Detect if biallelic data ---------------------------------------------------
     if (is.null(biallelic)) biallelic <- radiator::detect_biallelic_markers(data)
@@ -467,7 +467,7 @@ write_genlight <- function(
     want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT",
               "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG",
               "ONE_RATIO_REF", "ONE_RATIO_SNP")
-    data %<>% dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
+    data %<>% dplyr::arrange(MARKERS, STRATA, INDIVIDUALS)
     markers.meta <- dplyr::select(data, tidyselect::any_of(want)) %>%
       dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
       separate_markers(
@@ -487,11 +487,11 @@ write_genlight <- function(
     }
 
     data %<>%
-      dplyr::select(MARKERS, POP_ID, INDIVIDUALS, GT_BIN) %>%
+      dplyr::select(MARKERS, STRATA, INDIVIDUALS, GT_BIN) %>%
       dplyr::mutate(GT_BIN = as.integer(GT_BIN)) %>%
       radiator::rad_wide(
         x = .,
-        formula = "POP_ID + INDIVIDUALS ~ MARKERS",
+        formula = "STRATA + INDIVIDUALS ~ MARKERS",
         values_from = "GT_BIN"
       )
   }# End tidy data
@@ -520,7 +520,7 @@ write_genlight <- function(
     parallel = parallel.core.temp
   )
   adegenet::indNames(gl.obj)   <- data$INDIVIDUALS
-  adegenet::pop(gl.obj)        <- data$POP_ID
+  adegenet::pop(gl.obj)        <- data$STRATA
   adegenet::chromosome(gl.obj) <- markers.meta$CHROM
   adegenet::locNames(gl.obj)   <- markers.meta$LOCUS
   adegenet::position(gl.obj)   <- markers.meta$POS

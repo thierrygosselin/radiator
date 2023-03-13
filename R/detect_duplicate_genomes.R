@@ -198,11 +198,10 @@ detect_duplicate_genomes <- function(
   ...
 ) {
 
-  # Testing
-  # data <- tidy.data
-  # data <- gds
+  # # Testing
   # interactive.filter = TRUE
   # detect.duplicate.genomes = TRUE
+  # dup.threshold = 0
   # distance.method = "manhattan"
   # genome = FALSE
   # threshold.common.markers = NULL
@@ -213,7 +212,6 @@ detect_duplicate_genomes <- function(
   # path.folder = NULL
   # parameters = NULL
   # internal <- FALSE
-  # obj.keeper <- c(ls(envir = globalenv()), "data")
 
   if (interactive.filter || detect.duplicate.genomes) {
     if (interactive.filter) {
@@ -275,13 +273,12 @@ detect_duplicate_genomes <- function(
 
     # Detect format --------------------------------------------------------------
     data.type <- radiator::detect_genomic_format(data)
-    # data.type <- radiator::detect_genomic_format(gds)
 
     if (!data.type %in% c("SeqVarGDSClass", "gds.file")) {
       radiator_packages_dep(package = "amap")
 
       # Tidy data
-      data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
+      data <- radiator::tidy_wide(data = data, import.metadata = FALSE)
 
       # Filter parameter file: generate and initiate
       filters.parameters <- radiator_parameters(
@@ -1080,7 +1077,7 @@ distance_individuals <- function(
 
   x <- dplyr::bind_cols(x, ID1.pop, ID2.pop) %>%
     dplyr::mutate(
-      POP_COMP = dplyr::if_else(ID1.pop == ID2.pop, "same pop", "different pop"),
+      POP_COMP = dplyr::if_else(ID1_POP == ID2_POP, "same pop", "different pop"),
       POP_COMP = factor(POP_COMP, levels = c("same pop", "different pop"), ordered = TRUE),
       PAIRWISE = rep("pairwise", n()),
       METHOD = rep(distance.method, n())

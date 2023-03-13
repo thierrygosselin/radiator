@@ -80,6 +80,10 @@ write_pcadapt <- function(
 ) {
 
   message("Generating pcadapt file...")
+
+  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
+
+
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("Input file is missing")
 
@@ -101,6 +105,8 @@ write_pcadapt <- function(
   # argument <- radiator.dots[["argument"]]
   filter.ma <- radiator.dots[["filter.ma"]]
   ma.stats <- radiator.dots[["ma.stats"]]
+  if (is.null(ma.stats)) ma.stats <- "mac"
+
   filter.short.ld <- radiator.dots[["filter.short.ld"]]
   filter.long.ld <- radiator.dots[["filter.long.ld"]]
   long.ld.missing <- radiator.dots[["long.ld.missing"]]
@@ -119,8 +125,8 @@ write_pcadapt <- function(
   # pop.select -----------------------------------------------------------------
   if (!is.null(pop.select)) {
     message("pop.select: ")
-    data %<>% dplyr::filter(POP_ID %in% pop.select)
-    if (is.factor(data$POP_ID)) data$POP_ID <- droplevels(data$POP_ID)
+    data %<>% dplyr::filter(STRATA %in% pop.select)
+    if (is.factor(data$STRATA)) data$STRATA <- droplevels(data$STRATA)
   }
 
   # Keeping common markers -----------------------------------------------------
@@ -162,7 +168,7 @@ write_pcadapt <- function(
   # Biallelic and GT_BIN -------------------------------------------------------
 
   n.ind <- dplyr::n_distinct(data$INDIVIDUALS)
-  n.pop <- dplyr::n_distinct(data$POP_ID)
+  n.pop <- dplyr::n_distinct(data$STRATA)
   n.markers <- dplyr::n_distinct(data$MARKERS)
 
 
@@ -171,26 +177,24 @@ write_pcadapt <- function(
       data = ., biallelic = TRUE, gt.bin = TRUE) %$% input
   }
 
-  data  %<>% dplyr::select(MARKERS, INDIVIDUALS, POP_ID, GT_BIN)
+  data %<>% dplyr::select(MARKERS, INDIVIDUALS, STRATA, GT_BIN)
 
   pop.string <- data %>%
-    dplyr::distinct(POP_ID, INDIVIDUALS) %>%
-    dplyr::arrange(POP_ID, INDIVIDUALS) %>%
-    dplyr::select(POP_ID)
+    dplyr::distinct(STRATA, INDIVIDUALS) %>%
+    dplyr::arrange(STRATA, INDIVIDUALS) %>%
+    dplyr::select(STRATA)
 
-  pop.string <- pop.string$POP_ID
+  pop.string <- pop.string$STRATA
 
   data %<>%
-    dplyr::select(MARKERS, INDIVIDUALS, POP_ID, GT_BIN) %>%
-    dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS) %>%
-    dplyr::select(-POP_ID) %>%
+    dplyr::select(MARKERS, INDIVIDUALS, STRATA, GT_BIN) %>%
+    dplyr::arrange(STRATA, INDIVIDUALS, MARKERS) %>%
+    dplyr::select(-STRATA) %>%
     dplyr::mutate(GT_BIN = replace(GT_BIN, which(is.na(GT_BIN)), 9)) %>%
     rad_wide(x = ., formula = "MARKERS ~ INDIVIDUALS", values_from = "GT_BIN") %>% # could be the other way ...
     dplyr::select(-MARKERS)
 
   # writing file to directory  ------------------------------------------------
-  # Filename: date and time to have unique filenaming
-  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
 
   if (is.null(filename)) {
     filename <- stringi::stri_join("radiator_pcadapt_", file.date, ".txt")

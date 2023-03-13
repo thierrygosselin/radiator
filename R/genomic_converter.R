@@ -672,7 +672,6 @@ genomic_converter <- function(
     if (verbose) cli::cli_progress_step("Generating BayeScan")
     res$bayescan <- radiator::write_bayescan(
       data = input,
-      pop.select = pop.select,
       filename = filename)
   }
 

@@ -155,7 +155,7 @@ if (getRversion() >= "2.15.1") {
       "ALLELES_ALT_A2", "ALLELES_REF_A1", "NUC_ALT_A2", "NUC_REF_A1",
       "MAD_GLOBAL_CORR", "MAC_GLOBAL_CORR", "MAF_GLOBAL_DEPTH_CORR",
       "TOTAL_COUNT", "m.info", "MAF_GLOBAL_COUNT_CORR", "MAF_GLOBAL_DEPTH_CORR",
-      "MAD_GLOBAL", "i.info"
+      "MAD_GLOBAL", "i.info", "ID1_POP", "ID2_POP"
     )
   )
 }

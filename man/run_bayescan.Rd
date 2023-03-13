@@ -80,7 +80,7 @@ radiator::run_bayescan outputs without subsampling:
 \item \code{whitelist.markers.neutral.positive.selection}: Whitelist of neutral markers and markers under diversifying selection and common in all iterations.
 \item \code{blacklist.markers.balancing.selection}: Blacklist of markers under balancing selection and common in all iterations.
 \item \code{markers.dictionary}: BayeScan use integer for MARKERS info. In this dataframe, the corresponding values used inside the function.
-\item \code{pop.dictionary}: BayeScan use integer for POP_ID info. In this dataframe, the corresponding values used inside the function.
+\item \code{pop.dictionary}: BayeScan use integer for STRATA info. In this dataframe, the corresponding values used inside the function.
 \item \code{bayescan.plot}: plot showing markers Fst and model choice.
 
 Additionnally, if multiple SNPs/locus are detected the object will also have:
