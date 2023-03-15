@@ -46,14 +46,18 @@ write_stockr <- function(data, filename = NULL, verbose = TRUE) {
     }
   }
 
-  if (!rlang::has_name(data, "POP_ID") && rlang::has_name(data, "STRATA")) {
-    data %<>% dplyr::rename(POP_ID = STRATA)
+  # if (!rlang::has_name(data, "POP_ID") && rlang::has_name(data, "STRATA")) {
+  #   data %<>% dplyr::rename(POP_ID = STRATA)
+  # }
+
+  if (!rlang::has_name(data, "GT_BIN")) {
+    data <- gt_recoding(x = data, gt = FALSE, gt.bin = TRUE, gt.vcf = FALSE, gt.vcf.nuc = FALSE)
   }
 
 
-  data <- dplyr::select(data, MARKERS, POP_ID, INDIVIDUALS, GT_BIN) %>%
-    dplyr::arrange(MARKERS, POP_ID, INDIVIDUALS)
-  strata <- dplyr::distinct(data, INDIVIDUALS, POP_ID)
+  data <- dplyr::select(data, MARKERS, STRATA, INDIVIDUALS, GT_BIN) %>%
+    dplyr::arrange(MARKERS, STRATA, INDIVIDUALS)
+  strata <- dplyr::distinct(data, INDIVIDUALS, STRATA)
 
   data <- suppressWarnings(
     dplyr::select(data, MARKERS, INDIVIDUALS, GT_BIN) %>%
@@ -69,7 +73,7 @@ write_stockr <- function(data, filename = NULL, verbose = TRUE) {
       tibble::column_to_rownames(.data = ., var = "MARKERS")) %>%
     as.matrix(.)
 
-  attr(data,"grps") <- strata$POP_ID
+  attr(data,"grps") <- strata$STRATA
   attr(data,"sample.grps") <- factor(strata$INDIVIDUALS)
 
 
