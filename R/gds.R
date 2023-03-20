@@ -204,8 +204,13 @@ radiator_gds <- function(
       storage = "bit2",
       closezip = TRUE)
   )
+  # gdsfmt::closefn.gds(gdsfile = data.gds)
+  # data.gds <- gdsfmt::openfn.gds(filename = filename.gds$filename, readonly = FALSE)
+  # ?gdsfmt::unload.gdsn
+  # gdsfmt::read.gdsn(node = genotype.node)
   # gdsfmt::readmode.gdsn(node = genotype.node)
   # gdsfmt::compression.gdsn(node = genotype.node, compress="ZIP_RA")
+  # gdsfmt::compression.gdsn(node = genotype.node, compress="")
   # data.node <- gdsfmt::index.gdsn(node = genotype.node, path = "data", silent = TRUE)
   # gdsfmt::write.gdsn(node = genotype.node, val = genotypes)
 

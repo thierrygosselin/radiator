@@ -8,7 +8,7 @@ dart2gds(
   data,
   strata = NULL,
   markers.meta,
-  filename,
+  filename.gds,
   dart.format,
   gt.vcf = FALSE,
   gt.vcf.nuc = FALSE,

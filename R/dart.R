@@ -288,7 +288,6 @@ read_dart <- function(
   # pop.levels = NULL
 
   # Cleanup-------------------------------------------------------------------
-  # obj.keeper <- c(ls(envir = globalenv()), "data")
   radiator_function_header(f.name = "read_dart", verbose = verbose)
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
   if (verbose) message("Execution date@time: ", file.date)
@@ -430,6 +429,21 @@ read_dart <- function(
   n.markers <- length(unique(data$MARKERS))
   gt.bin <- TRUE
 
+
+  # CHECK FOR MODIFIED DART FILE
+  # an easy way is to check the number of locus
+  if (dart.format == "2rows" && (n.markers != nrow(data) / 2)) {
+    prob.file <- file.path(path.folder, "dart_problem.tsv")
+    check <- data %>%
+      dplyr::count(MARKERS, LOCUS) %>%
+      dplyr::filter(n > 2) %>%
+      dplyr::select(AlleleID = LOCUS) %>%
+      readr::write_tsv(x = ., file = prob.file)
+
+    rlang::abort("\n\nProblem with DArT file. The number of AlleleID/Locus is wrong. Check the modifications you made on the original DArT file. File written: dart_problem.tsv")
+  }
+
+
   # gt.vcf is genotype coding in the VCF: 0/0, 0/1, 1/1, ./.
   if (is.null(gt.vcf)) {
     if (n.markers < 5000) gt.vcf <- TRUE
@@ -478,14 +492,12 @@ read_dart <- function(
   )
 
   #GDS
-  #filename = filename.gds
-
   data <- suppressWarnings(
     dart2gds(
       data = data,
       strata = strata,
       markers.meta = markers.meta,
-      filename = filename.gds,
+      filename.gds = filename.gds,
       dart.format = dart.format,
       gt.vcf = gt.vcf,
       gt.vcf.nuc = gt.vcf.nuc,
@@ -1044,7 +1056,7 @@ dart2gds <- function(
   data,
   strata = NULL,
   markers.meta,
-  filename,
+  filename.gds,
   dart.format,
   gt.vcf = FALSE,
   gt.vcf.nuc = FALSE,
@@ -1257,11 +1269,7 @@ dart2gds <- function(
 
 
   # genotypes array ----------------------------------------------------------
-  genotypes <- gt2array(
-    gt.bin = genotypes.meta$GT_BIN, n.ind = n.ind, n.snp = n.snp
-  )
-
-  if (gt.vcf) {
+    if (gt.vcf) {
     genotypes.meta %<>%
       dplyr::mutate(
         GT_VCF = dplyr::case_when(
@@ -1298,7 +1306,9 @@ dart2gds <- function(
   # open = TRUE
   data <- radiator_gds(
     strata = strata,
-    genotypes = genotypes,
+    genotypes = gt2array(
+      gt.bin = genotypes.meta$GT_BIN, n.ind = n.ind, n.snp = n.snp
+    ),
     markers.meta = markers.meta,
     genotypes.meta = genotypes.meta,
     biallelic = TRUE,
@@ -1306,7 +1316,7 @@ dart2gds <- function(
     dp = dp,
     ad = NULL,
     geno.coding = geno.coding,
-    filename = filename,
+    filename = filename.gds,
     open = TRUE,
     verbose = verbose
   )

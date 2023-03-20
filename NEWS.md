@@ -1,3 +1,8 @@
+# radiator 1.2.7 2023-03-20
+
+* Additional checks during DArT file reading.
+
+
 # radiator 1.2.6 2023-03-13
 
 * Bug fix with `pcadapt`, `bayescan`, `genlight` output thanks to @jcaccavo. 
