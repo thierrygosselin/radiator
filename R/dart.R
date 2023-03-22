@@ -372,6 +372,7 @@ read_dart <- function(
     data = data,
     strata = strata,
     pop.levels = pop.levels,
+    path.folder = path.folder,
     parallel.core = parallel.core,
     verbose = verbose
   )
@@ -833,6 +834,7 @@ import_dart <- function(
 
     # necessary steps...observed with DArT file using ref genome ---------------
     data %<>% dplyr::filter(!is.na(LOCUS))
+
     # Check for duplicate rows (sometimes people combine DArT data...)
     if (rlang::has_name(data, "POS")) {
       data %<>% dplyr::arrange(LOCUS, POS)
@@ -880,6 +882,25 @@ import_dart <- function(
     target.id = strata.df$INDIVIDUALS,
     verbose = TRUE)
 
+  # Check for problematic DArT 2 rows ------------------------------------------
+  if (dart.format == "2rows") {
+    n.markers <- length(unique(data$MARKERS))
+    if (n.markers != nrow(data) / 2) {
+      message("\n\nProblem with DArT file")
+      prob.file <- file.path(path.folder, "dart_problem.tsv")
+
+      check <- data %>%
+        dplyr::count(MARKERS, LOCUS) %>%
+        dplyr::filter(n > 2) %>%
+        dplyr::select(LOCUS) %>%
+        unlist()
+
+      dplyr::filter(data, LOCUS %in% check) %>%
+        readr::write_tsv(x = ., file = prob.file)
+      check <- prob.file <- NULL
+      rlang::abort("The number of AlleleID/Locus is wrong.\nCheck the modifications you made on the original DArT file. \n\nFile written: dart_problem.tsv")
+    }
+  }
   return(res = list(data = data, strata = strata.df, dart.format = dart.format))
 }#End import_dart
 
