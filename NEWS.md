@@ -1,3 +1,9 @@
+# radiator 1.2.7 2023-04-03
+
+* Several bug fix while reading VCF from ipyrad
+
+
+
 # radiator 1.2.7 2023-03-20
 
 * Additional checks during DArT file reading.

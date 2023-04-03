@@ -425,7 +425,7 @@ write_genepop <- function(
 ) {
 
 
-  # # For test
+  # # For testing
   # pop.levels = NULL
   # genepop.header = NULL
   # markers.line = TRUE
@@ -443,7 +443,7 @@ write_genepop <- function(
 
   if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
     if (data.type == "gds.file") data %<>% radiator::read_rad(data = .)
-    data <- gds2tidy(gds = data, parallel.core = parallel::detectCores() - 1)
+    data <- gds2tidy(gds = data, pop.id = FALSE, parallel.core = parallel::detectCores() - 1)
     data.type <- "tbl_df"
   } else {
     if (is.vector(data)) data %<>% radiator::tidy_wide(data = ., )

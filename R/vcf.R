@@ -1535,6 +1535,7 @@ tidy_vcf <- function(
   # calibrate.alleles = FALSE
   # random.seed = NULL
   # parameters = NULL
+  # subsample.markers.stats <- 1
 
   # Cleanup---------------------------------------------------------------------
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
@@ -1715,6 +1716,9 @@ tidy_vcf <- function(
   markers.meta <- extract_markers_metadata(gds = data, markers.meta.select = "M_SEQ", whitelist = TRUE)
   n.markers <- nrow(markers.meta)
 
+  check <- extract_markers_metadata(gds = data, whitelist = TRUE)
+
+
   # STRATEGY -----------------------------------------------------------------
   if (tidy.check && n.markers > 20000) {
     cat("\n\n################################## IMPORTANT ###################################\n")
@@ -1814,6 +1818,10 @@ tidy_vcf <- function(
     # NOTE TO MYSELF: might be faster to screen stacks here in data.source...
 
     if (rlang::has_name(tidy.data, "C_DEPTH")) {
+      ref <- extract_markers_metadata(gds = data, markers.meta.select = c("M_SEQ", "REF", "ALT"), whitelist = TRUE)
+      tidy.data %<>% dplyr::left_join(ref, by = "M_SEQ")
+      ref <- NULL
+
       tidy.data %<>%
         dplyr::mutate(
           ALLELE_REF_DEPTH = dplyr::case_when(
@@ -1829,6 +1837,44 @@ tidy_vcf <- function(
             ALT == "G" ~ G_DEPTH
           )
         )
+
+      # temp <- tidy.data %>%
+      #   dplyr::group_by(M_SEQ) %>%
+      #   dplyr::summarise(
+      #     A_DEPTH = sum(A_DEPTH, na.rm = TRUE),
+      #     C_DEPTH = sum(C_DEPTH, na.rm = TRUE),
+      #     G_DEPTH = sum(G_DEPTH, na.rm = TRUE),
+      #     T_DEPTH = sum(T_DEPTH, na.rm = TRUE)
+      #   ) %>%
+      #   radiator::rad_long(cols = "M_SEQ", names_to = "ACGT_DEPTH", values_to = "DEPTH", tidy = TRUE) %>%
+      #   dplyr::arrange(M_SEQ, -DEPTH) %>%
+      #   dplyr::group_by(M_SEQ) %>%
+      #   dplyr::slice_head(n = 2) %>%
+      #   dplyr::ungroup() #%>% dplyr::bind_rows()
+      #
+      #
+      # # check that we have 2
+      # n.row <- nrow(temp)
+      # check <- length(unique(temp$M_SEQ))
+      #
+      # if (check != n.row / 2) {
+      #   rlang::abort("Contact author problem with Allele depth")
+      # }
+      #
+      # temp %<>%
+      #   dplyr::mutate(
+      #     NUCLEOTIDE = stringi::stri_sub(ACGT_DEPTH, from = 1, to = 1),
+      #     ACGT_DEPTH = NULL,
+      #     ALLELE = rep(x = c("REF", "ALT"), times = n.row / 2),
+      #     ALLELE_DEPTH = rep(x = c("ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH"), times = n.row / 2)
+      #   ) %>%
+      #   dplyr::group_by(M_SEQ) %>%
+      #   radiator::rad_wide(names_from = c("ALLELE", "ALLELE_DEPTH"), values_from = c("NUCLEOTIDE", "DEPTH"), tidy = TRUE) %>%
+      #   dplyr::rename(REF = NUCLEOTIDE_REF_ALLELE_REF_DEPTH, ALT = NUCLEOTIDE_ALT_ALLELE_ALT_DEPTH, ALLELE_REF_DEPTH = DEPTH_REF_ALLELE_REF_DEPTH, ALLELE_ALT_DEPTH = DEPTH_ALT_ALLELE_ALT_DEPTH)
+      #
+      #
+      # tidy.data %<>% dplyr::left_join(temp, by = "M_SEQ")
+      # n.row <- check <- temp <- NULL
     }#catg.depth
 
 
