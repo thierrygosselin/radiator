@@ -1,3 +1,8 @@
+# radiator 1.2.9 2024-01-25
+
+* Bug fix stemming from genalex files and genind conversion
+
+
 # radiator 1.2.8 2023-04-03
 
 * Several bug fix while reading VCF from ipyrad

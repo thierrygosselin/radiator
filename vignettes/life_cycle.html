@@ -12,35 +12,34 @@
 
 <meta name="author" content="Thierry Gosselin" />
 
-<meta name="date" content="2020-10-16" />
+<meta name="date" content="2023-05-12" />
 
 <title>Life Cycle</title>
 
-<script>// Hide empty <a> tag within highlighted CodeBlock for screen reader accessibility (see https://github.com/jgm/pandoc/issues/6352#issuecomment-626106786) -->
-// v0.0.1
-// Written by JooYoung Seo (jooyoung@psu.edu) and Atsushi Yasumoto on June 1st, 2020.
-
-document.addEventListener('DOMContentLoaded', function() {
-  const codeList = document.getElementsByClassName("sourceCode");
-  for (var i = 0; i < codeList.length; i++) {
-    var linkList = codeList[i].getElementsByTagName('a');
-    for (var j = 0; j < linkList.length; j++) {
-      if (linkList[j].innerHTML === "") {
-        linkList[j].setAttribute('aria-hidden', 'true');
-      }
-    }
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
   }
 });
 </script>
 
 <style type="text/css">
-  code{white-space: pre-wrap;}
-  span.smallcaps{font-variant: small-caps;}
-  span.underline{text-decoration: underline;}
-  div.column{display: inline-block; vertical-align: top; width: 50%;}
-  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
-  ul.task-list{list-style: none;}
-      </style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
 
 
 
@@ -240,19 +239,39 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">Life Cycle</h1>
 <h4 class="author">Thierry Gosselin</h4>
-<h4 class="date">2020-10-16</h4>
+<h4 class="date">2023-05-12</h4>
 
 
 
-<p>radiator is maturing, but in order to make the package better, changes are inevitable. Experimental functions will change, argument names will change.</p>
-<p>Below an example of recent changes that are all documented in <a href="https://thierrygosselin.github.io/radiator/news/index.html">NEWS and changelog</a>.</p>
+<p>radiator is maturing, but in order to make the package better,
+changes are inevitable. Experimental functions will change, argument
+names will change.</p>
+<p>Below an example of recent changes that are all documented in <a href="https://thierrygosselin.github.io/radiator/news/index.html">NEWS
+and changelog</a>.</p>
 <p><strong>DArT users</strong>:</p>
 <ul>
-<li><code>filter_dart</code>: is now deprecated. Please use <code>filter_rad</code>.</li>
-<li><code>tidy_dart</code> and <code>tidy_silico_dart</code>: are now deprecated. Please use <code>read_dart</code> for all the 4 DArT files recognized by radiator.</li>
+<li><code>filter_dart</code>: is now deprecated. Please use
+<code>filter_rad</code>.</li>
+<li><code>tidy_dart</code> and <code>tidy_silico_dart</code>: are now
+deprecated. Please use <code>read_dart</code> for all the 4 DArT files
+recognized by radiator.</li>
 </ul>
 <p><strong>Missing data: visualization and imputations</strong></p>
-<p>Visualizing missing data and it’s imputations requires special attention that fall outside the scope of <strong>radiator</strong>. Inside my package called <a href="https://github.com/thierrygosselin/grur">grur</a>, users can <strong>visualize patterns of missingness</strong> associated with different variables (lanes, chips, sequencers, populations, sample sites, reads/samples, homozygosity, etc). Several <strong>Map-independent imputations</strong> of missing genotypes are available: <strong>Random Forests</strong> (on-the-fly-imputations or predictive modeling), <strong>Extreme Gradient Tree Boosting</strong>, Strawman imputations (~ max/mean/mode: the most frequently observed, non-missing genotypes is used). Imputations can be conducted <strong>overall samples</strong> or <strong>by populations/strata/grouping</strong>. <code>radiator::genomic_converter</code> is integrated with the imputation function of <strong>grur</strong>.</p>
+<p>Visualizing missing data and it’s imputations requires special
+attention that fall outside the scope of <strong>radiator</strong>.
+Inside my package called <a href="https://github.com/thierrygosselin/grur">grur</a>, users can
+<strong>visualize patterns of missingness</strong> associated with
+different variables (lanes, chips, sequencers, populations, sample
+sites, reads/samples, homozygosity, etc). Several
+<strong>Map-independent imputations</strong> of missing genotypes are
+available: <strong>Random Forests</strong> (on-the-fly-imputations or
+predictive modeling), <strong>Extreme Gradient Tree Boosting</strong>,
+Strawman imputations (~ max/mean/mode: the most frequently observed,
+non-missing genotypes is used). Imputations can be conducted
+<strong>overall samples</strong> or <strong>by
+populations/strata/grouping</strong>.
+<code>radiator::genomic_converter</code> is integrated with the
+imputation function of <strong>grur</strong>.</p>
 
 
 

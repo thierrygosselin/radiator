@@ -115,6 +115,28 @@ radiator_gds <- function(
 
   # check <- markers.meta$MARKERS
   # generate all the markers metadata
+
+
+    # test <- markers.meta  %>%
+  #   dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
+  #   separate_markers(
+  #     data = .,
+  #     sep = "__",
+  #     markers.meta.all.only = TRUE,
+  #     biallelic = TRUE,
+  #     verbose = verbose)
+
+  # data.bk <- data
+  # data <- data.bk
+  # data <- markers.meta  %>%
+  #   dplyr::distinct(MARKERS, .keep_all = TRUE)
+  # sep = "__"
+  # markers.meta.all.only = TRUE
+  # markers.meta.lists.only = FALSE
+  # biallelic = TRUE
+  # generate.ref.alt = FALSE
+  # parallel.core = parallel::detectCores() - 1
+
   markers.meta  %<>%
     dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
     separate_markers(

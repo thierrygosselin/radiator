@@ -367,7 +367,8 @@ generate_markers_metadata <- function(
     }
 
     if (!tibble::has_name(markers.meta, "POS")) {
-      markers.meta %<>% dplyr::mutate(CHROM = rep(1L, n.markers))
+      # markers.meta %<>% dplyr::mutate(CHROM = rep(1L, n.markers)) # error 20240125?
+      markers.meta %<>% dplyr::mutate(POS = MARKERS)
       if (verbose) message("POS info missing: dataset filled with MARKERS column")
     }
 

@@ -141,12 +141,6 @@ tidy_genind <- function(
       alt.alleles %<>% dplyr::filter(REF == "ALT") %$% MARKERS_ALLELES
       if (length(alt.alleles) != n.snp) rlang::abort("Contact author problem with tidying the genind")
 
-      # test1 <- tibble::as_tibble(t(data@tab), rownames = "MARKERS") %>%
-      #   dplyr::filter(MARKERS %in% alt.alleles) %>%
-      #   dplyr::arrange(MARKERS)
-      # test2 <- tibble::as_tibble(t(data@tab[, alt.alleles]), rownames = "MARKERS") %>% dplyr::arrange(MARKERS)
-      # test3 <- tibble::as_tibble(t(data@tab[, seq(2, length(markers.meta), by = 2)]), rownames = "MARKERS") %>% dplyr::arrange(MARKERS)
-
       data <- tibble::as_tibble(t(data@tab), rownames = "MARKERS") %>%
         dplyr::filter(MARKERS %in% alt.alleles) %>%
         dplyr::mutate(
@@ -174,12 +168,12 @@ tidy_genind <- function(
 
       data <- radiator::rad_long(
         x = data,
-        cols = "MARKERS",
+        cols = c("MARKERS", "VARIANT_ID"),
         names_to = "INDIVIDUALS",
         values_to = "GT_BIN"
       ) %>%
         dplyr::left_join(strata, by = "INDIVIDUALS") %>%
-        dplyr::left_join(markers.meta, by = "MARKERS") %>%
+        dplyr::left_join(markers.meta, by = c("MARKERS", "VARIANT_ID")) %>%
         dplyr::mutate(
           INDIVIDUALS = radiator::clean_ind_names(INDIVIDUALS),
           STRATA = radiator::clean_pop_names(STRATA)
