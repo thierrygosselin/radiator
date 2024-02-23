@@ -977,9 +977,28 @@ strip_rad <- function(
 ) {
   objs <- utils::object.size(x)
 
-  # STRATA ----------
-  strata.n <- intersect(colnames(x), c("STRATA", "POP_ID"))
+  # Check if ID_SEQ, STRATA_SEQ and M_SEQ present...
+  if (rlang::has_name(x, "ID_SEQ") && rlang::has_name(x, "INDIVIDUALS")) {
+    x %<>% dplyr::select(-ID_SEQ)
+  }
 
+  if (rlang::has_name(x, "STRATA_SEQ")) {
+    strata.n <- intersect(colnames(x), c("STRATA", "POP_ID"))
+    if (length(strata.n) > 0 && strata.n %in% c("STRATA", "POP_ID")) {
+      x %<>% dplyr::select(-STRATA_SEQ)
+    }
+  }
+
+  if (rlang::has_name(x, "M_SEQ")) {
+    markers.n <- intersect(colnames(x), c("VARIANT_ID", "CHROM", "LOCUS", "POS", "MARKERS"))
+    if (length(markers.n) > 0) {
+      x %<>% dplyr::select(-M_SEQ)
+    }
+  }
+  strata.n <- markers.n <- NULL
+
+
+  # STRATA ----------
   if (rlang::has_name(x, "POP_ID")) {
     strata <- radiator::generate_strata(data = x, pop.id = TRUE) %>%
       dplyr::mutate(
@@ -1009,7 +1028,7 @@ strip_rad <- function(
     pos = env.arg,
     envir = env.arg
   )
-  cm <- keep.strata <- pop.id <- strata.n <- strata <- NULL
+  cm <- keep.strata <- pop.id <- strata <- NULL
 
   # MARKERS ---------
   x %<>%

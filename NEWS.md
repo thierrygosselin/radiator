@@ -1,3 +1,8 @@
+# radiator 1.3.0 2024-02-22
+
+* Bug fix using coverage and DArT data
+
+
 # radiator 1.2.9 2024-01-25
 
 * Bug fix stemming from genalex files and genind conversion

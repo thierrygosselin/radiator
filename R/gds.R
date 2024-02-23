@@ -967,9 +967,9 @@ check_coverage <- function(gds, genotypes.metadata.check = FALSE, stacks.haplo.c
   # stacks haplotype vcf have the info fields for depth in the VCF header
   # but they do not have the info with genotypes...
   # it's laziness from stacks...
+  data.source <- extract_data_source(gds)
 
   if (stacks.haplo.check) {
-    data.source <- extract_data_source(gds)
     biallelic <- radiator::detect_biallelic_markers(data = gds)
     biallelic <- gdsfmt::read.gdsn(gdsfmt::index.gdsn(
       node = gds, path = "radiator/biallelic", silent = TRUE))
@@ -989,7 +989,10 @@ check_coverage <- function(gds, genotypes.metadata.check = FALSE, stacks.haplo.c
         markers.meta.select = c("AVG_COUNT_REF", "AVG_COUNT_SNP"),
         whitelist = TRUE
       )
-      if (!is.null(got.coverage)) got.coverage <- c("AVG_COUNT_REF", "AVG_COUNT_SNP")
+      if (!is.null(got.coverage)) {
+        got.coverage <- c("AVG_COUNT_REF", "AVG_COUNT_SNP")
+        return(got.coverage)
+      }
     }#End DART 1row and 2 rows
   }
 
@@ -1006,6 +1009,7 @@ check_coverage <- function(gds, genotypes.metadata.check = FALSE, stacks.haplo.c
       # this part might generate an error if you actually have genotypes metadata...
       # need to run tests...
       got.coverage <- geno.index
+      return(got.coverage)
     }
     geno.index <- NULL
   }
@@ -1018,13 +1022,9 @@ check_coverage <- function(gds, genotypes.metadata.check = FALSE, stacks.haplo.c
     check = "none", verbose = FALSE)$ID
 
   if (length(have) > 0) {
-    # if (!exhaustive) {
-    # want <- c("DP", "CATG")
-    # } else {
     want <- c("DP", "AD", "CATG")
-    # }
-
     got.coverage <- purrr::keep(.x = have, .p = have %in% want)
+    return(got.coverage)
   } else {
     got.coverage <- NULL
   }
@@ -2461,7 +2461,7 @@ generate_stats <- function(
       genotypes.metadata.check = TRUE,
       dart.check = TRUE
     )
-    if (!"DP" %in% got.coverage) coverage <- FALSE
+    if (!"DP" %in% got.coverage && !"READ_DEPTH" %in% got.coverage) coverage <- FALSE
     if (!"AD" %in% got.coverage) allele.coverage <- FALSE
     if (!exhaustive) allele.coverage <- FALSE
     got.coverage <- NULL
@@ -2496,10 +2496,28 @@ generate_stats <- function(
           replacement = c("COVERAGE_TOTAL", "COVERAGE_MEAN", "COVERAGE_MEDIAN", "COVERAGE_IQR"),
           vectorize_all = FALSE
         )
+        data.source <- radiator::extract_data_source(gds = gds)
+
+        if ("dart" %in% data.source) {
+          dart.data <- radiator::extract_genotypes_metadata(
+            gds = gds,
+            genotypes.meta.select = c("M_SEQ", "ID_SEQ", "READ_DEPTH"),
+            whitelist = TRUE
+          ) %>%
+            radiator::rad_wide(
+              x = .,
+              formula = "ID_SEQ ~ M_SEQ",
+              values_from = "READ_DEPTH"
+            ) %>%
+            dplyr::select(-ID_SEQ)
+          colnames(dart.data) <- NULL
+          dart.data <- as.matrix(dart.data)
+        } else {
+          dart.data <- NULL
+        }
 
         if (markers) {
-          dp_f_m <- function(gds, coverage.stats) {
-
+          dp_f_m <- function(gds, coverage.stats, dart.data) {
             # Using switch instead was not optimal for additional options in the func...
             if (coverage.stats == "sum") rad_cov_stats <- function(x) round(sum(x, na.rm = TRUE))
             if (coverage.stats == "mean") rad_cov_stats <- function(x) round(mean(x, na.rm = TRUE))
@@ -2507,17 +2525,23 @@ generate_stats <- function(
             # if (coverage.stats == "iqr") rad_cov_stats <- function(x) round(abs(diff(stats::quantile(x, probs = c(0.25, 0.75), na.rm = TRUE))))
             if (coverage.stats == "iqr") rad_cov_stats <- function(x) round(matrixStats::iqr(x, na.rm = TRUE)) # faster
 
-            x <- SeqArray::seqApply(
-              gdsfile = gds,
-              var.name = "annotation/format/DP",
-              FUN = rad_cov_stats,
-              as.is = "integer",
-              margin = "by.variant",
-              parallel = TRUE
-            )
+            if (!is.null(dart.data)) {
+              x <- as.integer(apply(X = dart.data, MARGIN = 2, FUN = rad_cov_stats))
+              dart.data <- NULL
+            } else {
+              x <- SeqArray::seqApply(
+                gdsfile = gds,
+                var.name = "annotation/format/DP",
+                FUN = rad_cov_stats,
+                as.is = "integer",
+                margin = "by.variant",
+                parallel = TRUE
+              )
+            }
+            return(x)
           }
 
-          dp.m <- purrr::map_dfc(.x = coverage.stats.l, .f = dp_f_m, gds = gds)
+          dp.m <- purrr::map_dfc(.x = coverage.stats.l, .f = dp_f_m, gds = gds, dart.data = dart.data)
         }
 
         if (individuals) {
@@ -2527,10 +2551,16 @@ generate_stats <- function(
           # Note to myself: the huge speed gain by using other packages robustbse, Rfast, etc.
           # is not worth the unreliability of the results check your testing files...
 
-          dp.temp <- SeqArray::seqGetData(
-            gdsfile = gds,
-            var.name = "annotation/format/DP"
-          )
+          if ("dart" %in% data.source) {
+            dp.temp <- dart.data
+            dart.data <- NULL
+          } else {
+            dp.temp <- SeqArray::seqGetData(
+              gdsfile = gds,
+              var.name = "annotation/format/DP"
+            )
+          }
+
 
           dp_f_i <- function(coverage.stats, x) {
             if ("sum" %in% coverage.stats) x <- rowSums(x, na.rm = TRUE)
