@@ -716,7 +716,7 @@ sudo rm -R lz4*
 
 ```{bash eval=FALSE}
 cd ~/Downloads
-curl -L https://github.com/facebook/zstd/archive/refs/tags/v1.5.2.tar.gz | tar xf -
+curl -L https://github.com/facebook/zstd/archive/refs/tags/v1.5.5.tar.gz | tar xf -
 cd zstd*
 make 
 sudo make install

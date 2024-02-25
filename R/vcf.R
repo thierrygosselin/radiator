@@ -489,6 +489,7 @@ read_vcf <- function(
   dp <- "DP" %in% detect.source$check.header$format$ID # Check that DP is valid
 
   if (!is.null(detect.source$markers.info)) markers.info <- detect.source$markers.info
+  overwrite.metadata <- NULL # by default
   if (!is.null(detect.source$overwrite.metadata)) overwrite.metadata <- detect.source$overwrite.metadata
 
   vcf_read_temp <- function(
