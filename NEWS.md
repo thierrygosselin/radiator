@@ -1,3 +1,8 @@
+# radiator 1.3.1 2024-04-23
+
+* Updated DArT code that use COUNT files to check more for problematic markers usually stemming from merged projects
+
+
 # radiator 1.3.0 2024-02-22
 
 * Bug fix using coverage and DArT data

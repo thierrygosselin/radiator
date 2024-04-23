@@ -882,8 +882,8 @@ import_dart <- function(
     target.id = strata.df$INDIVIDUALS,
     verbose = TRUE)
 
-  # Check for problematic DArT 2 rows ------------------------------------------
-  if (dart.format == "2rows") {
+  # Check for problematic DArT 2 rows and counts --------------------------------
+  if (dart.format == "2rows" || dart.format == "counts") {
     n.markers <- length(unique(data$MARKERS))
     if (n.markers != nrow(data) / 2) {
       message("\n\nProblem with DArT file")
@@ -1269,7 +1269,7 @@ dart2gds <- function(
       dplyr::mutate(
         dplyr::across(
           .cols = c(READ_DEPTH, ALLELE_REF_DEPTH, ALLELE_ALT_DEPTH),
-          .fns = replace_by_na, what = 0L
+          .fns = ~ replace_by_na(data = ., what = 0L)
         )
       )
   } else {
@@ -1277,7 +1277,7 @@ dart2gds <- function(
       dplyr::mutate(
         dplyr::across(
           .cols = "ALLELE_REF_DEPTH",
-          .fns = switch_allele_count, dart.group = FALSE
+          .fns = ~ switch_allele_count(x = ., dart.group = FALSE, ref = TRUE)
         )
       ) %>%
       dplyr::mutate(
@@ -1290,7 +1290,7 @@ dart2gds <- function(
 
 
   # genotypes array ----------------------------------------------------------
-    if (gt.vcf) {
+  if (gt.vcf) {
     genotypes.meta %<>%
       dplyr::mutate(
         GT_VCF = dplyr::case_when(
