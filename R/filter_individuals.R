@@ -222,14 +222,6 @@ filter_individuals <- function(
     variant.select <- subsample <- NULL
     subsample.markers.stats <- 1
 
-    # id.stats <- generate_id_stats(
-    #   gds = data,
-    #   subsample = variant.select,
-    #   path.folder = path.folder,
-    #   file.date = file.date,
-    #   parallel.core = parallel.core,
-    #   verbose = verbose)
-
     id.stats <- generate_stats(
       gds = data,
       individuals = TRUE,

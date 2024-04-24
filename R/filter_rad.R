@@ -920,28 +920,6 @@ filter_rad <- function(
     verbose = verbose
   )
 
-  # id.stats <- generate_id_stats(
-  #   gds = gds,
-  #   # subsample = variant.select,
-  #   path.folder = path.folder,
-  #   file.date = file.date,
-  #   parallel.core = parallel.core,
-  #   verbose = verbose
-  # ) %$% info
-
-  # Markers stats
-  # markers.stats <- generate_stats(
-  #   gds = gds,
-  #   individuals = FALSE,
-  #   path.folder = path.folder,
-  #   filename = NULL,
-  #   file.date = file.date,
-  #   parallel.core = parallel.core,
-  #   verbose = verbose
-  #   # ,
-  #   # subsample = variant.select
-  # ) %$% info
-
   # genomic_converter-----------------------------------------------------------
   if (verbose) message("\nTransferring data to genomic converter...")
   res$output <- genomic_converter(

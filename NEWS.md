@@ -1,5 +1,6 @@
-# radiator 1.3.1 2024-04-23
+# radiator 1.3.1 2024-04-24
 
+* works with R 4.3.3
 * Updated DArT code that use COUNT files to check more for problematic markers usually stemming from merged projects
 
 

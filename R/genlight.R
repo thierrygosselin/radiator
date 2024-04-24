@@ -114,7 +114,8 @@ tidy_genlight <- function(
   if (is.null(data@position)) {
     if (verbose) message("    POS: no")
     pos.info <- FALSE
-    data@position <- rlang::as_integer(seq(from = 1, to = n.markers, by = 1))
+    # data@position <- rlang::as_integer(seq(from = 1, to = n.markers, by = 1))
+    data@position <- vctrs::vec_cast(x = seq(from = 1, to = n.markers, by = 1), to = integer())
   } else {
     if (verbose) message("    POS: yes")
     pos.info <- TRUE
