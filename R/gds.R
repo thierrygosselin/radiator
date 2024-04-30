@@ -908,18 +908,34 @@ extract_genotypes_metadata <- function(
       sum <- summary_gds(gds, verbose = FALSE)
       n.obs <- sum$n.ind * sum$n.markers
       if (nrow(genotypes.meta) != n.obs) {
+
+        m.s <- "M_SEQ"
+        if ("MARKERS" %in% genotypes.meta.select) m.s <- "MARKERS"
+        i.s <- "ID_SEQ"
+        if ("INDIVIDUALS" %in% genotypes.meta.select) m.s <- "INDIVIDUALS"
+
         markers <- extract_markers_metadata(
           gds = gds,
-          markers.meta.select = "MARKERS",
+          markers.meta.select = m.s,
           whitelist = TRUE
-        ) %$% MARKERS
+        )
+        markers <- markers[[m.s]]
+
         individuals <- extract_individuals_metadata(
           gds = gds,
-          ind.field.select = "INDIVIDUALS",
+          ind.field.select = i.s,
           whitelist = TRUE
-        ) %$% INDIVIDUALS
-        genotypes.meta %<>%
-          dplyr::filter(MARKERS %in% markers, INDIVIDUALS %in% individuals)
+        )
+        individuals <- individuals[[i.s]]
+
+        genotypes.meta <- dplyr::filter(
+          .data = genotypes.meta,
+          genotypes.meta[[m.s]] %in% markers,
+          genotypes.meta[[i.s]] %in% individuals
+          )
+
+        # genotypes.meta %<>%
+        #   dplyr::filter(MARKERS %in% markers, INDIVIDUALS %in% individuals)
       }
     }
     if (!whitelist && !blacklist && !rlang::has_name(genotypes.meta, "FILTERS")) {
@@ -2463,6 +2479,7 @@ generate_stats <- function(
     )
     if (!"DP" %in% got.coverage && !"READ_DEPTH" %in% got.coverage) coverage <- FALSE
     if (!"AD" %in% got.coverage) allele.coverage <- FALSE
+    if ("ALLELE_ALT_DEPTH" %in% got.coverage) allele.coverage <- TRUE
     if (!exhaustive) allele.coverage <- FALSE
     got.coverage <- NULL
   }
@@ -2578,20 +2595,51 @@ generate_stats <- function(
 
 
       if (ad) {
-        #temp object contains AD for REF and ALT
-        ref <- SeqArray::seqGetData(
-          gdsfile = gds,
-          var.name = "annotation/format/AD"
-        )$data
 
 
-        # to extract the REF and ALT
-        column.vec <- seq_len(length.out = dim(ref)[2])
-        alt <- ref[, column.vec %% 2 == 0]
-        alt[alt == 0] <- NA
-        ref <- ref[, column.vec %% 2 == 1]
-        ref[ref == 0] <- NA
-        column.vec <- NULL
+        if ("dart" %in% data.source) {
+          dart.data <- radiator::extract_genotypes_metadata(
+            gds = gds,
+            genotypes.meta.select = c("M_SEQ", "ID_SEQ", "ALLELE_ALT_DEPTH", "ALLELE_REF_DEPTH"),
+            whitelist = TRUE
+          )
+
+          ref <- radiator::rad_wide(
+              x = dart.data,
+              formula = "ID_SEQ ~ M_SEQ",
+              values_from = "ALLELE_REF_DEPTH"
+            ) %>%
+            dplyr::select(-ID_SEQ)
+          colnames(ref) <- NULL
+          ref <- as.matrix(ref)
+
+          alt <- radiator::rad_wide(
+            x = dart.data,
+            formula = "ID_SEQ ~ M_SEQ",
+            values_from = "ALLELE_ALT_DEPTH"
+          ) %>%
+            dplyr::select(-ID_SEQ)
+          colnames(alt) <- NULL
+          alt <- as.matrix(alt)
+          dart.data <- NULL
+
+
+        } else {
+          #temp object contains AD for REF and ALT
+          ref <- SeqArray::seqGetData(
+            gdsfile = gds,
+            var.name = "annotation/format/AD"
+          )$data
+
+
+          # to extract the REF and ALT
+          column.vec <- seq_len(length.out = dim(ref)[2])
+          alt <- ref[, column.vec %% 2 == 0]
+          alt[alt == 0] <- NA
+          ref <- ref[, column.vec %% 2 == 1]
+          ref[ref == 0] <- NA
+          column.vec <- NULL
+        }
 
         ad_f <- function(coverage.stats, x, margin = c("markers", "individuals")) {
 

@@ -66,6 +66,7 @@ packages: `gdsfmt` and
 devtools::package_info(pkgs = "SeqArray") # to verify version
 
 # If manually installing SeqArray is necessary
+install.packages("BiocManager")
 BiocManager::install("SeqArray")
 ```
 

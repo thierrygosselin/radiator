@@ -72,6 +72,7 @@
 
 
 radiator_common_arguments <- function(
+  interactive.filter = TRUE,
   gds,
   data,
   parallel.core = parallel::detectCores() - 1,

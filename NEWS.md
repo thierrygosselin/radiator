@@ -1,3 +1,10 @@
+# radiator 1.3.2 2024-04-30
+
+* works with R 4.3.4
+* Fix issue #186 related some particular DArT files
+
+
+
 # radiator 1.3.1 2024-04-24
 
 * works with R 4.3.3

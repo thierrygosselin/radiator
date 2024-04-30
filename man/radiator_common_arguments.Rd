@@ -5,6 +5,7 @@
 \title{radiator common arguments}
 \usage{
 radiator_common_arguments(
+  interactive.filter = TRUE,
   gds,
   data,
   parallel.core = parallel::detectCores() - 1,
@@ -14,6 +15,11 @@ radiator_common_arguments(
 )
 }
 \arguments{
+\item{interactive.filter}{(optional, logical) Do you want the filtering session to
+be interactive. Figures of distribution are shown before asking for filtering
+thresholds.
+Default: \code{interactive.filter = TRUE}.}
+
 \item{gds}{(2 options) A Genomic Data Structure (GDS) file or object
 
 \emph{How to get GDS ?}
@@ -48,11 +54,6 @@ Default: \code{random.seed = NULL}.}
 \item{...}{(optional) Advance mode that allows to pass further arguments
 for fine-tuning the function. Also used for legacy arguments (see details or
 special section)}
-
-\item{interactive.filter}{(optional, logical) Do you want the filtering session to
-be interactive. Figures of distribution are shown before asking for filtering
-thresholds.
-Default: \code{interactive.filter = TRUE}.}
 }
 \description{
 radiator common arguments

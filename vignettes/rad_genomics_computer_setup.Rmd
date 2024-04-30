@@ -675,6 +675,22 @@ devtools::install_github("r-spatial/sf", configure.args = "--with-proj-lib=/usr/
 install.packages("adegenet")
 ```
 
+## Error: `HTTP status was 404 Not Found`
+
+This error is sometimes poping after a new R upgrade. Try installing the problematic package differently.
+
+
+Instead of: 
+
+```{r, eval=FALSE}
+BiocManager::install("SeqArray")
+```
+
+
+Try:
+```{r, eval=FALSE}
+remotes::install_local(path = "SeqArray_latest.tar.gz")
+```
 
 
 ## Error: `C stacks usage`

@@ -1,4 +1,4 @@
-## ---- include = FALSE---------------------------------------------------------
+## ----include = FALSE----------------------------------------------------------
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 
 ## ----eval=FALSE---------------------------------------------------------------
@@ -21,25 +21,31 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ## ----eval=FALSE---------------------------------------------------------------
 #  file.exists("~/.Renviron")
 
-## ---- eval=FALSE--------------------------------------------------------------
+## ----eval=FALSE---------------------------------------------------------------
 #  Sys.getenv("LD_LIBRARY_PATH")
 #  # [1]""
 
-## ---- eval=FALSE--------------------------------------------------------------
+## ----eval=FALSE---------------------------------------------------------------
 #  # in R:
 #  Sys.setenv(LD_LIBRARY_PATH="/usr/local/lib/")
 #  # For Linux you could use: /usr/local/lib/:/usr/lib64
 
-## ---- eval=FALSE--------------------------------------------------------------
+## ----eval=FALSE---------------------------------------------------------------
 #  Sys.setenv(LD_LIBRARY_PATH="/usr/local/lib64/R/lib:/lib:/usr/local/lib64:/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.222.b10-0.amzn2.0.1.x86_64/jre/lib/amd64/server:/usr/local/lib/:/usr/lib64")
 
-## ---- eval=FALSE--------------------------------------------------------------
+## ----eval=FALSE---------------------------------------------------------------
 #  install.packages("rgeos", repos="http://R-Forge.R-project.org", type="source")
 #  install.packages("rgdal", repos="http://R-Forge.R-project.org", type="source")
 #  devtools::install_github("r-spatial/sf", configure.args = "--with-proj-lib=/usr/local")
 #  install.packages("adegenet")
 
-## ---- eval=FALSE--------------------------------------------------------------
+## ----eval=FALSE---------------------------------------------------------------
+#  BiocManager::install("SeqArray")
+
+## ----eval=FALSE---------------------------------------------------------------
+#  remotes::install_local(path = "SeqArray_latest.tar.gz")
+
+## ----eval=FALSE---------------------------------------------------------------
 #  Error: C stack usage  7971092 is too close to the limit
 
 ## ----eval=FALSE---------------------------------------------------------------

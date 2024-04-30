@@ -197,15 +197,12 @@ filter_coverage <- function(
   if (interactive.filter) message("\nStep 1. Coverage visualization and helper table\n")
 
   # Generate coverage stats-----------------------------------------------------
-  # info <- extract_coverage(gds = data, individuals = FALSE, markers = TRUE, dp = TRUE, ad = FALSE, verbose = verbose)
-
   info <- generate_stats(
     gds = data,
     individuals = FALSE,
     markers = TRUE,
     missing = FALSE,
     coverage = TRUE,
-    # allele.coverage = TRUE,
     allele.coverage = FALSE,
     mac = FALSE,
     heterozygosity = FALSE,

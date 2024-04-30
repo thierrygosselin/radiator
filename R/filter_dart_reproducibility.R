@@ -186,7 +186,10 @@ filter_dart_reproducibility <- function(
     if (verbose) message("File written: dart_reproducibility_stats.tsv")
 
     # Generate box plot ---------------------------------------------------------
-    outlier.rep <- ceiling(rep.stats[[8]] * 1000) / 1000
+    # Previously using IQR and I think it's an error that was introduced.
+    # pretty sure it should be the outlier low threshold..
+    # outlier.rep <- ceiling(rep.stats[[8]] * 1000) / 1000
+    outlier.rep <- ceiling(rep.stats[["OUTLIERS_LOW"]] * 1000) / 1000
     bp.filename <- stringi::stri_join("dart_reproducibility_boxplot_", file.date, ".pdf")
     rep.fig <- boxplot_stats(
       data = rep.stats,
