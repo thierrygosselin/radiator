@@ -30,7 +30,11 @@
 #' "write.tidy",
 #' "dart.sequence",
 #' "missing.memory",
-#' "internal", "heatmap.fst", "tidy.check", "tidy.vcf", "tidy.dart")}.
+#' "internal", "heatmap.fst", "tidy.check", "tidy.vcf", "tidy.dart",
+#' "species", "population", "tau", "threshold.y.markers", "threshold.y.silico.markers",
+#' "sex.id.input", "threshold.x.markers.qr", "threshold.x.markers.RD", "threshold.x.markers.RD.silico",
+#' "mis.threshold.data", "mis.threshold.silicodata", "zoom.data", "zoom.silicodata",
+#' "sex.id.input", "het.qr.input")}.
 #' @param deprecated (optional) radiator's deprecated arguments.
 #' Default: \code{deprecated = c("maf.thresholds", "common.markers",
 #' "max.marker","monomorphic.out", "snp.ld", "filter.call.rate",
@@ -80,7 +84,22 @@ radiator_dots <- function(
     "dart.sequence",
     "internal",
     "heatmap.fst",
-    "tidy.check", "tidy.vcf", "tidy.dart"
+    "tidy.check", "tidy.vcf", "tidy.dart",
+    "species",
+    "population",
+    "tau",
+    "threshold.y.markers",
+    "threshold.y.silico.markers",
+    "sex.id.input",
+    "threshold.x.markers.qr",
+    "threshold.x.markers.RD",
+    "threshold.x.markers.RD.silico",
+    "mis.threshold.data",
+    "mis.threshold.silicodata",
+    "zoom.data",
+    "zoom.silicodata",
+    "sex.id.input",
+    "het.qr.input"
   ),
   deprecated = c(
     "maf.thresholds",

@@ -2,6 +2,7 @@
 
 * works with R 4.3.4
 * Fix issue #186 related some particular DArT files
+* Fix issue #187 related to sexy_markers and VCF files
 
 
 

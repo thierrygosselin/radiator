@@ -19,7 +19,8 @@ sex_markers_plot(
   qreg = FALSE,
   hist = FALSE,
   RD = FALSE,
-  plot.filename = NULL
+  plot.filename = NULL,
+  path = NULL
 )
 }
 \description{

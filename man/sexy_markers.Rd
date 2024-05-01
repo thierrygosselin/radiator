@@ -7,8 +7,8 @@
 sexy_markers(
   data,
   silicodata = NULL,
-  boost.analysis = FALSE,
   strata = NULL,
+  boost.analysis = FALSE,
   coverage.thresholds = 1,
   filters = TRUE,
   interactive.filter = TRUE,
@@ -27,11 +27,6 @@ This can be count or genotyped data. Note that both \code{data} and
 \code{silicodata} can be used at the same time.\cr
 Default: \code{silicodata = NULL}.}
 
-\item{boost.analysis}{(optional, logical) This method uses machine learning
-approaches to find sex markers and re-assign samples in sex group.\cr
-The approach is currently been tested and will be available for uses soon.
-Default: \code{boost.analysis = FALSE}.}
-
 \item{strata}{(file) A tab delimited file with a minimum of
 2 columns (\code{INDIVIDUALS, STRATA}) for VCF files and 3 columns for DArT files
 (\code{TARGET_ID, INDIVIDUALS, STRATA}).
@@ -46,6 +41,11 @@ Default: \code{strata = NULL}, the function will look for sex info in the
 tidy data or GDS data (individuals.meta section).
 You can easily build the strata file by starting with the output of these
 functions: \code{\link[radiator]{extract_dart_target_id}} and \code{\link[radiator]{extract_individuals_vcf}}}
+
+\item{boost.analysis}{(optional, logical) This method uses machine learning
+approaches to find sex markers and re-assign samples in sex group.\cr
+The approach is currently under construction.
+Default: \code{boost.analysis = FALSE}.}
 
 \item{coverage.thresholds}{(optional, integer) The minimum coverage required
 to call a marker absent. For silico genotype data this must be < 1.\cr
@@ -63,7 +63,7 @@ the function expects additional arguments (see Advance mode).\cr
 Default: \code{interactive.filter = TRUE}.}
 
 \item{folder.name}{(optional,character) Name of the folder to store the results.
-Default: \code{folder.name = "sexy_marker_date/time"}.}
+Default: \code{folder.name = NULL}. The name sexy_markers_datetime will be generated.}
 
 \item{parallel.core}{(optional) The number of core used for parallel
 execution during import.
@@ -168,6 +168,10 @@ double the number of counts for markers on the X chromosome.
 
 \emph{dots-dots-dots ...} allows to pass several arguments for fine-tuning the function:
 \itemize{
+\item \code{species}: To give your figures some meanings.
+Default \code{species = NULL}.
+\item \code{population}: To give your figures some meanings.
+Default \code{species = NULL}.
 \item \code{tau}: The quantile used in regression to distinguish homogametic markers
 with the \strong{heterozygosity method}. See \code{\link[quantreg]{rq}}.\cr
 Default \code{tau = 0.03}.

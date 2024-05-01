@@ -18,11 +18,6 @@
 #' \code{silicodata} can be used at the same time.\cr
 #' Default: \code{silicodata = NULL}.
 
-#' @param boost.analysis (optional, logical) This method uses machine learning
-#' approaches to find sex markers and re-assign samples in sex group.\cr
-#' The approach is currently been tested and will be available for uses soon.
-#' Default: \code{boost.analysis = FALSE}.
-
 #' @param strata (file) A tab delimited file with a minimum of
 #' 2 columns (\code{INDIVIDUALS, STRATA}) for VCF files and 3 columns for DArT files
 #' (\code{TARGET_ID, INDIVIDUALS, STRATA}).
@@ -37,6 +32,12 @@
 #' tidy data or GDS data (individuals.meta section).
 #' You can easily build the strata file by starting with the output of these
 #' functions: \code{\link[radiator]{extract_dart_target_id}} and \code{\link[radiator]{extract_individuals_vcf}}
+
+
+#' @param boost.analysis (optional, logical) This method uses machine learning
+#' approaches to find sex markers and re-assign samples in sex group.\cr
+#' The approach is currently under construction.
+#' Default: \code{boost.analysis = FALSE}.
 
 #' @param coverage.thresholds (optional, integer) The minimum coverage required
 #' to call a marker absent. For silico genotype data this must be < 1.\cr
@@ -55,7 +56,7 @@
 #' Default: \code{interactive.filter = TRUE}.
 #'
 #' @param folder.name (optional,character) Name of the folder to store the results.
-#' Default: \code{folder.name = "sexy_marker_date/time"}.
+#' Default: \code{folder.name = NULL}. The name sexy_markers_datetime will be generated.
 #'
 #' @inheritParams radiator_common_arguments
 #'
@@ -134,9 +135,14 @@
 #'
 #' \emph{dots-dots-dots ...} allows to pass several arguments for fine-tuning the function:
 #' \itemize{
+#' \item \code{species}: To give your figures some meanings.
+#' Default \code{species = NULL}.
+#' \item \code{population}: To give your figures some meanings.
+#' Default \code{species = NULL}.
 #' \item \code{tau}: The quantile used in regression to distinguish homogametic markers
 #' with the \strong{heterozygosity method}. See \code{\link[quantreg]{rq}}.\cr
 #' Default \code{tau = 0.03}.
+
 #' \item \code{mis.threshold.data}: Threshold to filter the SNP data on missingness.
 #' Only if \code{interactive.filter = FALSE}.
 #' \item \code{mis.threshold.silicodata}: Threshold to filter the silico data on
@@ -207,8 +213,8 @@
 
 sexy_markers <- function(data,
                          silicodata = NULL,
-                         boost.analysis = FALSE,
                          strata = NULL,
+                         boost.analysis = FALSE,
                          coverage.thresholds = 1,
                          filters = TRUE,
                          interactive.filter = TRUE,
@@ -218,9 +224,9 @@ sexy_markers <- function(data,
 ) {
 
   # Test
-  # library(radiator)
-  # coverage.thresholds = 1 ##NEEDS TO BE SET TO 1 if genotype data
+  # silicodata <- "../1.Data/G.galeus/SchoolShark_silico_counts.csv"
   # boost.analysis = FALSE
+  # coverage.thresholds = 1 ##NEEDS TO BE SET TO 1 if genotype data
   # filters = TRUE
   # interactive.filter = TRUE
   # parallel.core = 1
@@ -233,7 +239,6 @@ sexy_markers <- function(data,
   # het.qr.input = 1
   # threshold.x.markers.qr = NULL
   # data = "../1.Data/G.galeus/SchoolShark_SNP_counts.csv"
-  # silicodata <- "../1.Data/G.galeus/SchoolShark_silico_counts.csv"
   # strata = "../1.Data/G.galeus/SchoolShark_strata.tsv"
 
   # parallel.core = parallel::detectCores() - 1
@@ -241,7 +246,9 @@ sexy_markers <- function(data,
   # Check for when interactive.filter = FALSE ---------------------------------
   verbose <- TRUE
   if (interactive.filter == FALSE) {
-    arguments <- c("mis.threshold.data", "mis.threshold.silicodata",
+    arguments <- c("species", "population",
+                   "tau",
+                   "mis.threshold.data", "mis.threshold.silicodata",
                    "threshold.y.markers", "threshold.y.silico.markers",
                    "sex.id.input", "het.qr.input", "threshold.x.markers.qr",
                    "zoom.data", "threshold.x.markers.RD", "zoom.silicodata",
@@ -254,7 +261,7 @@ sexy_markers <- function(data,
     }
   }
 
-  if (boost.analysis) message("Under construction: come back next week... ")
+  if (boost.analysis) message("Under construction... ")
 
 
   # Cleanup-------------------------------------------------------------------
@@ -281,27 +288,31 @@ sexy_markers <- function(data,
     fd = rlang::fn_fmls_names(),
     args.list = as.list(environment()),
     dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
-    keepers = c("species", "population", "tau",
-                "threshold.y.markers", "threshold.y.silico.markers",
-                "sex.id.input", "threshold.x.markers.qr", "threshold.x.markers.RD",
-                "threshold.x.markers.RD.silico", "mis.threshold.data",
-                "mis.threshold.silicodata", "zoom.data", "zoom.silicodata",
-                "folder.name", "sex.id.input", "het.qr.input"),
+    keepers = c(
+      "species",
+      "population",
+      "tau",
+      "threshold.y.markers",
+      "threshold.y.silico.markers",
+      "sex.id.input",
+      "threshold.x.markers.qr",
+      "threshold.x.markers.RD",
+      "threshold.x.markers.RD.silico",
+      "mis.threshold.data",
+      "mis.threshold.silicodata",
+      "zoom.data",
+      "zoom.silicodata",
+      "sex.id.input",
+      "het.qr.input"
+    ),
     verbose = FALSE
   )
 
   # Folders---------------------------------------------------------------------
+  if (is.null(folder.name)) folder.name <- "sexy_markers"
   wd <- path.folder <- radiator::generate_folder(
     f = NULL,
-    if (exists("folder.name")) {
-      if (!is.null(folder.name)) {
-        rad.folder = folder.name
-      } else{
-        rad.folder = "sexy_markers"
-      }
-    } else{
-      rad.folder = "sexy_markers"
-    },
+    rad.folder = folder.name,
     internal = FALSE,
     prefix_int = FALSE,
     file.date = file.date,
@@ -320,13 +331,20 @@ sexy_markers <- function(data,
 
 
   # Detect format---------------------------------------------------------------
+  count.data <- FALSE
   data.type <- radiator::detect_genomic_format(data)
 
   if (!data.type %in% c("SeqVarGDSClass", "gds.file", "dart", "vcf.file")) {
     rlang::abort("Input not supported for this function: read function documentation")
   }
 
-  # * GDS file and object --------------------------------------------------------
+
+  if (Sys.info()[['sysname']] == "Windows" && parallel.core != 1) {
+    message("There is currently an issue with the cluster allocation in WINDOWS systems.\nConsequently, we set the 'parallel.core' to 1.")
+    parallel.core <-  1
+  }
+
+  #  GDS file and object --------------------------------------------------------
   if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
     radiator_packages_dep(package = "SeqArray", cran = FALSE, bioc = TRUE)
 
@@ -336,12 +354,8 @@ sexy_markers <- function(data,
     }
   }
 
-  # * VCF files ------------------------------------------------------------------
+  # VCF files ------------------------------------------------------------------
   if (data.type == "vcf.file") {
-    if (Sys.info()[['sysname']] == "Windows" && parallel.core != 1) {
-      message("There is currently an issue with the cluster allocation in WINDOWS systems.\nConsequently, we set the 'parallel.core' to 1.")
-      parallel.core <-  1
-    }
     data <- radiator::read_vcf(
       data = data,
       strata = strata,
@@ -351,10 +365,11 @@ sexy_markers <- function(data,
       parallel.core = parallel.core,
       verbose = FALSE
     )
+    count.data <- TRUE
   }
 
 
-  # * DArT files ------------------------------------------------------------------
+  #  DArT files ------------------------------------------------------------------
   if (data.type == "dart") {
     data <- radiator::read_dart(
       data = data,
@@ -365,6 +380,14 @@ sexy_markers <- function(data,
       internal = TRUE,
       verbose = FALSE
     )
+    # Filter monomorphic
+    data <- radiator::filter_monomorphic(
+      data = data,
+      parallel.core = parallel.core,
+      verbose = FALSE,
+      internal = FALSE,
+      path.folder = path.folder
+    )
   }
 
   # Detect source --------------------------------------------------------------
@@ -372,28 +395,11 @@ sexy_markers <- function(data,
   if (!data.type %in% c("SeqVarGDSClass", "gds.file", "dart", "vcf.file")) {
     rlang::abort("Input not supported for this function: read function documentation")
   }
-
-
-  if (Sys.info()[['sysname']] == "Windows" && parallel.core != 1) {
-    message("There is currently an issue with the cluster allocation in WINDOWS systems.\nConsequently, we set the 'parallel.core' to 1. This will only affect the data-filtering time.")
-    parallel.core <- 1
-  }
-
-  # Filter monomorphic ---------------------------------------------------------
-  data <- radiator::filter_monomorphic(
-    data = data,
-    parallel.core = parallel.core,
-    verbose = FALSE,
-    internal = FALSE,
-    path.folder = path.folder
-  )
-
+  if ("counts" %in% data.source) count.data <- TRUE
 
   # Filters----------------------------------------------------------------------
   if (filters) {
-    if ("counts" %in% data.source | "vcf.file" %in% data.type) {
-      count.data <- TRUE
-    } else {count.data <- FALSE}
+
     data <- radiator::filter_individuals(
       data = data,
       interactive.filter = interactive.filter,
@@ -433,6 +439,7 @@ sexy_markers <- function(data,
       STRATA = stringi::stri_sub(str = STRATA, from = 1, to = 1),
       STRATA = replace(x = STRATA, !STRATA %in% c("F", "M"), "U")
     )
+
   #checks
   strata.groups <- unique(sort(strata$STRATA))
   if (length(strata.groups) > 3 || length(strata.groups) < 2) {
@@ -444,14 +451,16 @@ sexy_markers <- function(data,
   }
 
   # Generate new strata and write to disk
-  # strata <- generate_strata(data)
-  readr::write_tsv(x = strata,
-                   file = file.path(path.folder, "sexy_markers_strata-original_cleaned.tsv"))
+  readr::write_tsv(
+    x = strata,
+    file = file.path(path.folder, "sexy_markers_strata-original_cleaned.tsv")
+  )
 
 
   # check Sex Ratio ------------------------------------------------------------
   sex.ratio <- dplyr::filter(strata, STRATA != "U") %>%
     dplyr::count(STRATA, name = "SEX_RATIO")
+
   message("\n\nSex-ratio (F/M): ", round((sex.ratio$SEX_RATIO[sex.ratio$STRATA == "F"] / sex.ratio$SEX_RATIO[sex.ratio$STRATA == "M"]), 2))
 
 
@@ -469,7 +478,6 @@ sexy_markers <- function(data,
                             verbose = FALSE)
   } else {
     sample <- SeqArray::seqGetData(data, "sample.id")
-    # variant <- SeqArray::seqGetData(gds.bk, "variant.id")
     variant <- radiator::extract_markers_metadata(data, markers.meta.select = "MARKERS", whitelist = TRUE)$MARKERS
 
     GT.mat <- SeqArray::seqGetData(data, "$dosage") # genotype dosage, or the number of copies of reference allele (so opposite to DArT?)
@@ -486,7 +494,13 @@ sexy_markers <- function(data,
       tibble::as_tibble(.)
 
     #TODO Check if DP is present in all vcf formats
-    DP.mat <- SeqArray::seqGetData(data, "annotation/format/DP")$data
+    depth.info <- check_coverage(gds = data, genotypes.metadata.check = TRUE)
+    if (is.null(depth.info)) {
+      message("\n\nCoverate information is not available for this dataset, returning data")
+      return(data)
+    }
+
+    DP.mat <- SeqArray::seqGetData(gdsfile = data, var.name = "annotation/format/DP")
     DP.mat <- data.frame(INDIVIDUALS = sample, DP.mat)
     colnames(DP.mat) <- c("INDIVIDUALS", variant)
 
@@ -545,7 +559,7 @@ sexy_markers <- function(data,
   }
 
   ### add warning about not using count data
-  if (!(tibble::has_name(data, "READ_DEPTH"))) {
+  if (!(rlang::has_name(data, "READ_DEPTH"))) {
     message(
       "Your data does not have Read Depth information; the analysis based on \nRead Depth will not be performed"
     )
@@ -590,14 +604,9 @@ sexy_markers <- function(data,
   # TODO perhaps for count data, set coverage threshold, based on plot?
 
   ###* For data.sum ####
-  ### SCATTER
-  plot.filename <- "1A.sexy_markers_PA_scatter_plot"
-  if (!is.null(species) && !is.null(population)) {
-    plot.filename <-
-      stringi::stri_join(plot.filename, species, population, sep = "_")
-  }
-  plot.filename <-
-    stringi::stri_join(path.folder, "/", plot.filename, "_", file.date, ".pdf")
+  ### SCATTER ----
+  plot.filename <- stringi::stri_join("1A.sexy_markers_PA_scatter_plot", species, population, file.date, sep = "_", ignore_null = TRUE) %>%
+    stringi::stri_join(".pdf")
 
   scat.fig <- sex_markers_plot(
     data = data.sum,
@@ -614,18 +623,16 @@ sexy_markers <- function(data,
       paste0(population, ": Sex is ", SexID, " assigned")
     },
     title = "Absence of each SNP marker between females and males",
-    plot.filename = plot.filename
+    plot.filename = plot.filename,
+    path = path.folder
   )
   print(scat.fig)
 
-  ### TUCKEY
-  plot.filename <- "1B.sexy_markers_PA_tuckey_plot"
-  if (!is.null(species) && !is.null(population)) {
-    plot.filename <-
-      stringi::stri_join(plot.filename, species, population, sep = "_")
-  }
-  plot.filename <-
-    stringi::stri_join(path.folder, "/", plot.filename, "_", file.date, ".pdf")
+  message("Figure written: ", plot.filename)
+
+  ### TUCKEY ----
+  plot.filename <- stringi::stri_join("1B.sexy_markers_PA_tuckey_plot", species, population, file.date, sep = "_", ignore_null = TRUE) %>%
+    stringi::stri_join(".pdf")
 
   scat.fig <- sex_markers_plot(
     data = data.sum,
@@ -642,13 +649,13 @@ sexy_markers <- function(data,
       paste0(population, ": Sex is ", SexID, " assigned")
     },
     title = "Tukey mean-difference plot of each SNP marker between females \nand males",
-    plot.filename = plot.filename
+    plot.filename = plot.filename,
+    path = path.folder
   )
   print(scat.fig)
+  message("Figure written: ", plot.filename)
 
-  message(
-    "Files written: '1A.sexy_markers_PA_scatter_plot.pdf' & '1B.sexy_markers_PA_tuckey_plot.pdf'"
-  )
+
 
   # Interacive selection of threshold
   if (interactive.filter) {
@@ -684,13 +691,9 @@ sexy_markers <- function(data,
   ###* For silico.sum ####
   if ("silico.dart" %in% data.source) {
     ### SCATTER
-    plot.filename <- "2A.sexy_markers_SILICO_PA_scatter_plot"
-    if (!is.null(species) && !is.null(population)) {
-      plot.filename <-
-        stringi::stri_join(plot.filename, species, population, sep = "_")
-    }
-    plot.filename <-
-      stringi::stri_join(path.folder, "/", plot.filename, "_", file.date, ".pdf")
+
+    plot.filename <- stringi::stri_join("2A.sexy_markers_SILICO_PA_scatter_plot", species, population, file.date, sep = "_", ignore_null = TRUE) %>%
+      stringi::stri_join(".pdf")
 
     scat.fig <- sex_markers_plot(
       data = silico.sum,
@@ -707,18 +710,15 @@ sexy_markers <- function(data,
         paste0(population, ": Sex is ", SexID, " assigned")
       },
       title = "Absence of each SILICO marker between females and males",
-      plot.filename = plot.filename
+      plot.filename = plot.filename,
+      path = path.folder
     )
     print(scat.fig)
+    message("Figure written: ", plot.filename)
 
     ### TUCKEY
-    plot.filename <- "2B.sexy_markers_SILICO_PA_tuckey_plot"
-    if (!is.null(species) && !is.null(population)) {
-      plot.filename <-
-        stringi::stri_join(plot.filename, species, population, sep = "_")
-    }
-    plot.filename <-
-      stringi::stri_join(path.folder, "/", plot.filename, "_", file.date, ".pdf")
+    plot.filename <- stringi::stri_join("2B.sexy_markers_SILICO_PA_tuckey_plot", species, population, file.date, sep = "_", ignore_null = TRUE) %>%
+    stringi::stri_join(".pdf")
 
     scat.fig <- sex_markers_plot(
       data = silico.sum,
@@ -735,13 +735,13 @@ sexy_markers <- function(data,
         paste0(population, ": Sex is ", SexID, " assigned")
       },
       title = "Tukey mean-difference plot of each SILICO marker between females \nand males",
-      plot.filename = plot.filename
+      plot.filename = plot.filename,
+      path = path.folder
     )
     print(scat.fig)
 
-    message(
-      "Files written: '2A.sexy_markers_SILICO_PA_scatter_plot.pdf' & '2B.sexy_markers_SILICO_PA_tuckey_plot.pdf'"
-    )
+    message("Figure written: ", plot.filename)
+
 
     # Interacive selection of threshold
     if (interactive.filter) {
@@ -783,7 +783,7 @@ sexy_markers <- function(data,
       !rlang::is_empty(y.markers)) {
     ####** Y markers ####
     if (threshold.y.markers < 0) {
-      if (tibble::has_name(data, "READ_DEPTH")) {
+      if (rlang::has_name(data, "READ_DEPTH")) {
         y.data <-
           dplyr::filter(data, MARKERS %in% y.markers) %>%
           dplyr::group_by(INDIVIDUALS) %>%
@@ -801,7 +801,7 @@ sexy_markers <- function(data,
           dplyr::mutate(STRATA = GENETIC_SEX) %>%
           dplyr::select(-TARGET_ID)
       }
-      else if (tibble::has_name(data, "GT_BIN")) {
+      else if (rlang::has_name(data, "GT_BIN")) {
         if (length(y.markers) > 1) {
           y.data <- dplyr::filter(data, MARKERS %in% y.markers) %>%
             dplyr::group_by(INDIVIDUALS) %>%
@@ -844,7 +844,7 @@ sexy_markers <- function(data,
       }
       ####** W markers ####
     } else if (threshold.y.markers > 0) {
-      if (tibble::has_name(data, "READ_DEPTH")) {
+      if (rlang::has_name(data, "READ_DEPTH")) {
         y.data <-
           dplyr::filter(data, MARKERS %in% y.markers) %>%
           dplyr::group_by(INDIVIDUALS) %>%
@@ -862,7 +862,7 @@ sexy_markers <- function(data,
           dplyr::mutate(STRATA = GENETIC_SEX) %>%
           dplyr::select(-TARGET_ID)
 
-      } else if (tibble::has_name(data, "GT_BIN")) {
+      } else if (rlang::has_name(data, "GT_BIN")) {
         if (length(y.markers) > 1) {
           y.data <- dplyr::filter(data, MARKERS %in% y.markers) %>%
             dplyr::group_by(INDIVIDUALS) %>%
@@ -922,7 +922,7 @@ This marker could be absent due to an error.")
 
   if (exists("y.silico.markers") &&
       !rlang::is_empty(y.silico.markers)) {
-    #### ** Y SILICO markers ####
+    ###* Y SILICO markers ####
     if (threshold.y.silico.markers < 0) {
       if (max(silicodata$VALUE, na.rm = TRUE) > 1) {
         y.silico.data <-
@@ -1223,8 +1223,10 @@ This marker could be absent due to an error.")
   # Remove markers that are already extracted and have high missingness
   print(ggplot2::qplot(data.sum$MISSINGNESS, xlab = "Missingness per SNP marker"))
   if (interactive.filter) {
-    mis.threshold.data <-
-      radiator::radiator_question(x = "Have a look at the plot: Choose the upper threshold for missingness per SNP marker (e.g. 0.2):", minmax = c(0, 1))
+    mis.threshold.data <- radiator::radiator_question(
+      x = "Have a look at the plot: Choose the upper threshold for missingness per SNP marker (e.g. 0.2):",
+      minmax = c(0, 1)
+      )
 
     message(
       "For detecting heterogametic markers, the SILICO data is filtered on a missingness >: ",
@@ -1270,13 +1272,11 @@ This marker could be absent due to an error.")
 
   ### SCATTER
   message("Start finding X- or Z-linked markers. CAUTION: this step is largely affected by structure in your data (e.g. families, populations or species).")
-  plot.filename <- "3A.sexy_markers_HET_scat_plot"
-  if (!is.null(species) && !is.null(population)) {
-    plot.filename <-
-      stringi::stri_join(plot.filename, species, population, sep = "_")
-  }
-  plot.filename <-
-    stringi::stri_join(path.folder, "/", plot.filename, "_", file.date, ".pdf")
+
+  plot.filename <- stringi::stri_join("3A.sexy_markers_HET_scat_plot", species, population, file.date, sep = "_", ignore_null = TRUE) %>%
+    stringi::stri_join(".pdf")
+
+
 
   scat.fig <- sex_markers_plot(
     data = data.sum,
@@ -1292,7 +1292,8 @@ This marker could be absent due to an error.")
       paste0(population, ": Sex is ", SexID, " assigned")
     },
     title = "Heterozygosity of each SNP marker between females and males",
-    plot.filename = plot.filename
+    plot.filename = plot.filename,
+    path = path.folder
   )
   print(scat.fig)
 
@@ -1308,13 +1309,8 @@ This marker could be absent due to an error.")
 
   # Quantilte regression
   if (het.qr.input == 1) {
-    plot.filename <- "3B.sexy_markers_HET_qr_plot"
-    if (!is.null(species) && !is.null(population)) {
-      plot.filename <-
-        stringi::stri_join(plot.filename, species, population, sep = "_")
-    }
-    plot.filename <-
-      stringi::stri_join(path.folder, "/", plot.filename, "_", file.date, ".pdf")
+    plot.filename <- stringi::stri_join("3B.sexy_markers_HET_qr_plot", species, population, file.date, sep = "_", ignore_null = TRUE) %>%
+      stringi::stri_join(".pdf")
 
     qr.fig <- sex_markers_plot(
       data = data.sum,
@@ -1330,18 +1326,14 @@ This marker could be absent due to an error.")
         paste0(population, ": Sex is ", SexID, " assigned; tau = ", tau)
       },
       title = "Quantile residual plot of each SNP marker between females and males",
-      plot.filename = plot.filename
+      plot.filename = plot.filename,
+      path = path.folder
     )
     print(qr.fig)
 
   } else if (het.qr.input == 2) {
-    plot.filename <- "3B.sexy_markers_HET_qr_plot"
-    if (!is.null(species) && !is.null(population)) {
-      plot.filename <-
-        stringi::stri_join(plot.filename, species, population, sep = "_")
-    }
-    plot.filename <-
-      stringi::stri_join(path.folder, "/", plot.filename, "_", file.date, ".pdf")
+    plot.filename <- stringi::stri_join("3B.sexy_markers_HET_qr_plot", species, population, file.date, sep = "_", ignore_null = TRUE) %>%
+      stringi::stri_join(".pdf")
 
     qr.fig <- sex_markers_plot(
       data = data.sum,
@@ -1357,7 +1349,8 @@ This marker could be absent due to an error.")
         paste0(population, ": Sex is ", SexID, " assigned; tau = ", tau)
       },
       title = "Quantile residual plot of each SNP marker between females and males",
-      plot.filename = plot.filename
+      plot.filename = plot.filename,
+      path = path.folder
     )
     print(qr.fig)
   } else {
@@ -1401,16 +1394,11 @@ This marker could be absent due to an error.")
 
   #### READ DEPTH ####
   ####* For data.sum ####
-  if (tibble::has_name(data, "READ_DEPTH")) {
+  if (rlang::has_name(data, "READ_DEPTH")) {
     ### SCATTER
-    plot.filename <- "4A.sexy_markers_RD_scat_plot"
-    if (!is.null(species) && !is.null(population)) {
-      plot.filename <-
-        stringi::stri_join(plot.filename, species, population, sep = "_")
-    }
+    plot.filename <- stringi::stri_join("4A.sexy_markers_RD_scat_plot", species, population, file.date, sep = "_", ignore_null = TRUE) %>%
+      stringi::stri_join(".pdf")
 
-    plot.filename <-
-      stringi::stri_join(path.folder, "/", plot.filename, "_", file.date, ".pdf")
 
     scat.fig <- sex_markers_plot(
       data = data.sum,
@@ -1428,20 +1416,15 @@ This marker could be absent due to an error.")
         paste0(population, ": Sex is ", SexID, " assigned")
       },
       title = "Average coverage of each marker between females and males",
-      plot.filename = plot.filename
+      plot.filename = plot.filename,
+      path = path.folder
     )
     print(scat.fig)
 
 
     ##HIST
-    plot.filename <- "4B.sexy_markers_RD_hist_plot"
-    if (!is.null(species) && !is.null(population)) {
-      plot.filename <-
-        stringi::stri_join(plot.filename, species, population, sep = "_")
-    }
-
-    plot.filename <-
-      stringi::stri_join(path.folder, "/", plot.filename, "_", file.date, ".pdf")
+    plot.filename <- stringi::stri_join("4B.sexy_markers_RD_hist_plot", species, population, file.date, sep = "_", ignore_null = TRUE) %>%
+      stringi::stri_join(".pdf")
 
     hist1.fig <- sex_markers_plot(
       data = data.sum,
@@ -1457,7 +1440,8 @@ This marker could be absent due to an error.")
         paste0(population, ": Sex is ", SexID, " assigned")
       },
       title = "Histogram of females over males coverage for each marker",
-      plot.filename = plot.filename
+      plot.filename = plot.filename,
+      path = path.folder
     )
     print(hist1.fig)
 
@@ -1469,14 +1453,8 @@ This marker could be absent due to an error.")
       zoom.data <- zoom.data
     }
     ##HIST2
-    plot.filename <- "4C.sexy_markers_RD_hist_subsetted_plot"
-    if (!is.null(species) && !is.null(population)) {
-      plot.filename <-
-        stringi::stri_join(plot.filename, species, population, sep = "_")
-    }
-
-    plot.filename <-
-      stringi::stri_join(path.folder, "/", plot.filename, "_", file.date, ".pdf")
+    plot.filename <- stringi::stri_join("4C.sexy_markers_RD_hist_subsetted_plot", species, population, file.date, sep = "_", ignore_null = TRUE) %>%
+      stringi::stri_join(".pdf")
 
     hist2.fig <- sex_markers_plot(
       data =
@@ -1497,7 +1475,8 @@ This marker could be absent due to an error.")
         paste0(population, ": Sex is ", SexID, " assigned")
       },
       title = "Histogram of females counts over males counts for each marker",
-      plot.filename = plot.filename
+      plot.filename = plot.filename,
+      path = path.folder
     )
     print(hist2.fig)
 
@@ -1541,14 +1520,8 @@ This marker could be absent due to an error.")
   ####* For silico.sum ####
   if (all(c("silico.dart", "counts") %in% data.source)) {
     ### SCATTER
-    plot.filename <- "5A.sexy_markers_SILICO_RD_scat_plot"
-    if (!is.null(species) && !is.null(population)) {
-      plot.filename <-
-        stringi::stri_join(plot.filename, species, population, sep = "_")
-    }
-
-    plot.filename <-
-      stringi::stri_join(path.folder, "/", plot.filename, "_", file.date, ".pdf")
+    plot.filename <- stringi::stri_join("5A.sexy_markers_SILICO_RD_scat_plot", species, population, file.date, sep = "_", ignore_null = TRUE) %>%
+      stringi::stri_join(".pdf")
 
     scat.fig <- sex_markers_plot(
       data = silico.sum,
@@ -1566,20 +1539,15 @@ This marker could be absent due to an error.")
         paste0(population, ": Sex is ", SexID, " assigned")
       },
       title = "Average coverage of each silico marker between females and males",
-      plot.filename = plot.filename
+      plot.filename = plot.filename,
+      path = path.folder
     )
     print(scat.fig)
 
 
     ##HIST
-    plot.filename <- "5B.sexy_markers_SILICO_RD_hist_plot"
-    if (!is.null(species) && !is.null(population)) {
-      plot.filename <-
-        stringi::stri_join(plot.filename, species, population, sep = "_")
-    }
-
-    plot.filename <-
-      stringi::stri_join(path.folder, "/", plot.filename, "_", file.date, ".pdf")
+    plot.filename <- stringi::stri_join("5B.sexy_markers_SILICO_RD_hist_plot", species, population, file.date, sep = "_", ignore_null = TRUE) %>%
+      stringi::stri_join(".pdf")
 
     hist1.fig <- sex_markers_plot(
       data = silico.sum,
@@ -1595,7 +1563,8 @@ This marker could be absent due to an error.")
         paste0(population, ": Sex is ", SexID, " assigned")
       },
       title = "Histogram of females coverage over males coverage for each SILICO",
-      plot.filename = plot.filename
+      plot.filename = plot.filename,
+      path = path.folder
     )
     print(hist1.fig)
 
@@ -1608,14 +1577,8 @@ This marker could be absent due to an error.")
       zoom.silicodata <- zoom.silicodata
     }
     ##HIST2
-    plot.filename <- "5C.sexy_markers_SILICO_RD_hist_subsetted_plot"
-    if (!is.null(species) && !is.null(population)) {
-      plot.filename <-
-        stringi::stri_join(plot.filename, species, population, sep = "_")
-    }
-
-    plot.filename <-
-      stringi::stri_join(path.folder, "/", plot.filename, "_", file.date, ".pdf")
+    plot.filename <- stringi::stri_join("5C.sexy_markers_SILICO_RD_hist_subsetted_plot", species, population, file.date, sep = "_", ignore_null = TRUE) %>%
+      stringi::stri_join(".pdf")
 
     hist2.fig <- sex_markers_plot(
       data =
@@ -1636,7 +1599,8 @@ This marker could be absent due to an error.")
         paste0(population, ": Sex is ", SexID, " assigned")
       },
       title = "Histogram of females coverage over males coverage for each SILICO",
-      plot.filename = plot.filename
+      plot.filename = plot.filename,
+      path = path.folder
     )
     print(hist2.fig)
 
@@ -1765,7 +1729,7 @@ This marker could be absent due to an error.")
           )
       )
     # TODO add check for when SEQUENCE data is not available
-    if (tibble::has_name(meta, "SEQUENCE")) {
+    if (rlang::has_name(meta, "SEQUENCE")) {
       res$sexy.summary %<>% dplyr::mutate(
         SEQUENCE =
           c(
@@ -1851,7 +1815,7 @@ This marker could be absent due to an error.")
       res$homogametic.het.markers,
       res$homogametic.RD.markers,
       res$homogametic.RD.silico.markers
-    )) & (tibble::has_name(meta, "SEQUENCE"))) {
+    )) & (rlang::has_name(meta, "SEQUENCE"))) {
     afile <-
       file(file.path(path.folder, "7.sexy_markers_sequences.fasta"),
            open = 'w')
@@ -1889,7 +1853,8 @@ This marker could be absent due to an error.")
 
 sex_markers_plot <- function(
   data, x, y, x.title = "x title", y.title = "y title", subtitle = "subtitle", title = "Big title",
-  width = 15, height = 15, scat = FALSE, tuckey = FALSE, qreg = FALSE, hist = FALSE, RD = FALSE, plot.filename = NULL) {
+  width = 15, height = 15, scat = FALSE, tuckey = FALSE, qreg = FALSE, hist = FALSE, RD = FALSE, plot.filename = NULL, path = NULL) {
+
   x <- dplyr::sym(x)
 
   element.text <- ggplot2::element_text(size = 10, face = "bold")
@@ -1939,6 +1904,7 @@ sex_markers_plot <- function(
 
   ggplot2::ggsave(
     filename = plot.filename,
+    path = path,
     plot = sex.plot,
     width = width,
     height = height,
@@ -1955,7 +1921,7 @@ sex_markers_plot <- function(
 #' @export
 
 summarize_sex <- function(data, silicodata, data.source, coverage.thresholds = NULL, tau = 0.3) {
-  if (tibble::has_name(data, "READ_DEPTH")) {
+  if (rlang::has_name(data, "READ_DEPTH")) {
     # With DArT count data and VCFs
 
     mis <-
@@ -2006,7 +1972,7 @@ summarize_sex <- function(data, silicodata, data.source, coverage.thresholds = N
             residuals
         )
     )
-  } else if (tibble::has_name(data, "GT_BIN") ) {  #genotype data
+  } else if (rlang::has_name(data, "GT_BIN") ) {  #genotype data
     mis <-
       dplyr::select(data, MARKERS, INDIVIDUALS, STRATA, GT_BIN) %>%
       dplyr::group_by(MARKERS) %>%
