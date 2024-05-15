@@ -1,3 +1,10 @@
+# radiator 1.3.3 2024-05-15
+
+* Fix issue #188 related to coverage in DArT 1row and 2rows format
+
+
+
+
 # radiator 1.3.2 2024-04-30
 
 * works with R 4.3.4

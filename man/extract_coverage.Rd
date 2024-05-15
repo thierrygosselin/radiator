@@ -35,7 +35,7 @@ baddly generated. It will say you have Read and allele Depth info, but you don't
 Default: \code{stacks.haplo.check = FALSE}.}
 
 \item{dart.check}{(optional, logical) DArT have different reporting for coverage
-information.
+information. Will no longer report the average coverage stats from 1 and 2-rows DArT format.
 Default: \code{dart.check = FALSE}.}
 
 \item{individuals}{(optional, logical) Default: \code{individuals = TRUE}.}
