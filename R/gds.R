@@ -1100,7 +1100,7 @@ extract_coverage <- function(
     coverage.stats = c("sum", "mean", "median", "iqr"),
     subsample.info = 1,
     verbose = TRUE,
-    parallel.core = TRUE,
+    parallel.core = TRUE
     ) {
 
   if (verbose) cli::cli_progress_step("Coverage ...")
@@ -1114,7 +1114,7 @@ extract_coverage <- function(
     ad = TRUE,
     individuals = TRUE,
     markers = TRUE,
-    parallel.core = TRUE,
+    parallel.core = TRUE
   ) {
 
     coverage.stats <- match.arg(
@@ -3363,5 +3363,3 @@ write_gds <- function(
   if (open) data.gds <- read_rad(data.gds, verbose = FALSE)
   return(data.gds)
 } # End write_gds
-
-

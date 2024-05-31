@@ -923,7 +923,7 @@ minor_allele_stats <- function(
             coverage.stats = "sum",
             subsample.info = 1,
             verbose = FALSE,
-            parallel.core = parallel.core,
+            parallel.core = parallel.core
           ) %$%
             m.info
         } else {
@@ -1104,4 +1104,3 @@ ma_one <- carrier::crate(function(x) {
   mac.data$MAC_GLOBAL %<>% as.integer(.)
   return(mac.data)
 })#End ma_one
-
