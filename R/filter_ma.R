@@ -922,7 +922,8 @@ minor_allele_stats <- function(
             ad = TRUE,
             coverage.stats = "sum",
             subsample.info = 1,
-            verbose = FALSE
+            verbose = FALSE,
+            parallel.core = parallel.core,
           ) %$%
             m.info
         } else {
