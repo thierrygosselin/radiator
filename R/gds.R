@@ -2863,7 +2863,7 @@ generate_stats <- function(
         corr.info <- stringi::stri_join(corr.info, cmt)
       }
       if (coverage) {
-        if (stats::sd(i.info$COVERAGE_MEAN) != 0) {
+        if (stats::sd(i.info$COVERAGE_MEAN, na.rm = TRUE) != 0) {
           cc <- ceiling(stats::cor(i.info$COVERAGE_TOTAL, i.info$COVERAGE_MEAN, use = "pairwise.complete.obs") * 100) / 100
         } else {
           cc <- "NA"
