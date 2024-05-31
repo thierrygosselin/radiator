@@ -2322,7 +2322,7 @@ generate_stats <- function(
       if (!rlang::has_name(m.info, "HET_OBS") || force.stats) {
         m.info %<>%
           dplyr::mutate(
-            HET_OBS = round(markers_het(gds), 6),
+            HET_OBS = round(markers_het(gds, parallel.core), 6),
             FIS = round(markers_fis(gds), 6)
           )
       }
@@ -3064,7 +3064,7 @@ individual_het <- function(gds) {
 #' @rdname markers_het
 #' @keywords internal
 #' @export
-markers_het <- function(gds) {
+markers_het <- function(gds, parallel.core = TRUE) {
   # PLAN A
   SeqArray::seqApply(
     gdsfile = gds,
@@ -3072,7 +3072,7 @@ markers_het <- function(gds) {
     FUN = function(x) sum(x == 1, na.rm = TRUE) / sum(!is.na(x)),
     margin = "by.variant",
     as.is = "double",
-    parallel = TRUE
+    parallel = parallel.core
   )
   # PLAN B
   # not faster... strange because for sample it is faster...
