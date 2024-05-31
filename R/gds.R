@@ -1099,7 +1099,8 @@ extract_coverage <- function(
     ad = TRUE,
     coverage.stats = c("sum", "mean", "median", "iqr"),
     subsample.info = 1,
-    verbose = TRUE
+    verbose = TRUE,
+    parallel.core = TRUE,
     ) {
 
   if (verbose) cli::cli_progress_step("Coverage ...")
@@ -1112,7 +1113,8 @@ extract_coverage <- function(
     dp = TRUE,
     ad = TRUE,
     individuals = TRUE,
-    markers = TRUE
+    markers = TRUE,
+    parallel.core = TRUE,
   ) {
 
     coverage.stats <- match.arg(
@@ -1148,7 +1150,7 @@ extract_coverage <- function(
             FUN = rad_cov_stats,
             as.is = "integer",
             margin = "by.variant",
-            parallel = TRUE
+            parallel = parallel.core
           )
         }
 
@@ -1271,7 +1273,8 @@ extract_coverage <- function(
     dp = dp,
     ad = ad,
     individuals = individuals,
-    markers = markers
+    markers = markers,
+    parallel.core = parallel.core
   )
 
   # required for individuals and markers
