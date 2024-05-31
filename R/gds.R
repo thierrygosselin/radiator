@@ -1135,7 +1135,7 @@ extract_coverage <- function(
       )
 
       if (markers) {
-        dp_f_m <- function(gds, coverage.stats) {
+        dp_f_m <- function(gds, coverage.stats, parallel.core = TRUE) {
 
           # Using switch instead was not optimal for additional options in the func...
           if (coverage.stats == "sum") rad_cov_stats <- function(x) round(sum(x, na.rm = TRUE))
@@ -1154,7 +1154,7 @@ extract_coverage <- function(
           )
         }
 
-        dp.m <- purrr::map_dfc(.x = coverage.stats.l, .f = dp_f_m, gds = gds)
+        dp.m <- purrr::map_dfc(.x = coverage.stats.l, .f = dp_f_m, gds = gds, parallel.core = parallel.core)
       }
 
       if (individuals) {
@@ -2543,7 +2543,7 @@ generate_stats <- function(
         }
 
         if (markers) {
-          dp_f_m <- function(gds, coverage.stats, dart.data) {
+          dp_f_m <- function(gds, coverage.stats, dart.data, parallel.core = TRUE) {
             # Using switch instead was not optimal for additional options in the func...
             if (coverage.stats == "sum") rad_cov_stats <- function(x) round(sum(x, na.rm = TRUE))
             if (coverage.stats == "mean") rad_cov_stats <- function(x) round(mean(x, na.rm = TRUE))
@@ -2561,13 +2561,13 @@ generate_stats <- function(
                 FUN = rad_cov_stats,
                 as.is = "integer",
                 margin = "by.variant",
-                parallel = TRUE
+                parallel = parallel.core
               )
             }
             return(x)
           }
 
-          dp.m <- purrr::map_dfc(.x = coverage.stats.l, .f = dp_f_m, gds = gds, dart.data = dart.data)
+          dp.m <- purrr::map_dfc(.x = coverage.stats.l, .f = dp_f_m, gds = gds, dart.data = dart.data, parallel.core = parallel.core)
         }
 
         if (individuals) {
