@@ -1099,7 +1099,8 @@ extract_coverage <- function(
     ad = TRUE,
     coverage.stats = c("sum", "mean", "median", "iqr"),
     subsample.info = 1,
-    verbose = TRUE
+    verbose = TRUE,
+    parallel.core = TRUE
     ) {
 
   if (verbose) cli::cli_progress_step("Coverage ...")
@@ -1112,7 +1113,8 @@ extract_coverage <- function(
     dp = TRUE,
     ad = TRUE,
     individuals = TRUE,
-    markers = TRUE
+    markers = TRUE,
+    parallel.core = TRUE
   ) {
 
     coverage.stats <- match.arg(
@@ -1133,7 +1135,7 @@ extract_coverage <- function(
       )
 
       if (markers) {
-        dp_f_m <- function(gds, coverage.stats) {
+        dp_f_m <- function(gds, coverage.stats, parallel.core = TRUE) {
 
           # Using switch instead was not optimal for additional options in the func...
           if (coverage.stats == "sum") rad_cov_stats <- function(x) round(sum(x, na.rm = TRUE))
@@ -1148,11 +1150,11 @@ extract_coverage <- function(
             FUN = rad_cov_stats,
             as.is = "integer",
             margin = "by.variant",
-            parallel = TRUE
+            parallel = parallel.core
           )
         }
 
-        dp.m <- purrr::map_dfc(.x = coverage.stats.l, .f = dp_f_m, gds = gds)
+        dp.m <- purrr::map_dfc(.x = coverage.stats.l, .f = dp_f_m, gds = gds, parallel.core = parallel.core)
       }
 
       if (individuals) {
@@ -1271,7 +1273,8 @@ extract_coverage <- function(
     dp = dp,
     ad = ad,
     individuals = individuals,
-    markers = markers
+    markers = markers,
+    parallel.core = parallel.core
   )
 
   # required for individuals and markers
@@ -2319,7 +2322,7 @@ generate_stats <- function(
       if (!rlang::has_name(m.info, "HET_OBS") || force.stats) {
         m.info %<>%
           dplyr::mutate(
-            HET_OBS = round(markers_het(gds), 6),
+            HET_OBS = round(markers_het(gds, parallel.core), 6),
             FIS = round(markers_fis(gds), 6)
           )
       }
@@ -2540,7 +2543,7 @@ generate_stats <- function(
         }
 
         if (markers) {
-          dp_f_m <- function(gds, coverage.stats, dart.data) {
+          dp_f_m <- function(gds, coverage.stats, dart.data, parallel.core = TRUE) {
             # Using switch instead was not optimal for additional options in the func...
             if (coverage.stats == "sum") rad_cov_stats <- function(x) round(sum(x, na.rm = TRUE))
             if (coverage.stats == "mean") rad_cov_stats <- function(x) round(mean(x, na.rm = TRUE))
@@ -2558,13 +2561,13 @@ generate_stats <- function(
                 FUN = rad_cov_stats,
                 as.is = "integer",
                 margin = "by.variant",
-                parallel = TRUE
+                parallel = parallel.core
               )
             }
             return(x)
           }
 
-          dp.m <- purrr::map_dfc(.x = coverage.stats.l, .f = dp_f_m, gds = gds, dart.data = dart.data)
+          dp.m <- purrr::map_dfc(.x = coverage.stats.l, .f = dp_f_m, gds = gds, dart.data = dart.data, parallel.core = parallel.core)
         }
 
         if (individuals) {
@@ -2860,7 +2863,7 @@ generate_stats <- function(
         corr.info <- stringi::stri_join(corr.info, cmt)
       }
       if (coverage) {
-        if (stats::sd(i.info$COVERAGE_MEAN) != 0) {
+        if (stats::sd(i.info$COVERAGE_MEAN, na.rm = TRUE) != 0) {
           cc <- ceiling(stats::cor(i.info$COVERAGE_TOTAL, i.info$COVERAGE_MEAN, use = "pairwise.complete.obs") * 100) / 100
         } else {
           cc <- "NA"
@@ -3061,7 +3064,7 @@ individual_het <- function(gds) {
 #' @rdname markers_het
 #' @keywords internal
 #' @export
-markers_het <- function(gds) {
+markers_het <- function(gds, parallel.core = TRUE) {
   # PLAN A
   SeqArray::seqApply(
     gdsfile = gds,
@@ -3069,7 +3072,7 @@ markers_het <- function(gds) {
     FUN = function(x) sum(x == 1, na.rm = TRUE) / sum(!is.na(x)),
     margin = "by.variant",
     as.is = "double",
-    parallel = TRUE
+    parallel = parallel.core
   )
   # PLAN B
   # not faster... strange because for sample it is faster...
@@ -3360,5 +3363,3 @@ write_gds <- function(
   if (open) data.gds <- read_rad(data.gds, verbose = FALSE)
   return(data.gds)
 } # End write_gds
-
-

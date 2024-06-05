@@ -236,7 +236,7 @@ detect_paralogs <- function(
 
   # Extract the depth/coverage info from GDS -----------------------------------
   if (verbose) message("Extracting coverage...")
-  depth.info <- extract_coverage(gds = data, individuals = FALSE, coverage.stats = "sum") %>%
+  depth.info <- extract_coverage(gds = data, individuals = FALSE, coverage.stats = "sum", parallel.core = parallel.core) %>%
     dplyr::mutate(dplyr::across(where(is.factor), .fns = as.character)) %>%
     dplyr::left_join(
       gds2tidy(gds = data, parallel.core = parallel.core) %>%
