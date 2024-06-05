@@ -4,7 +4,7 @@
 \alias{markers_het}
 \title{markers_het}
 \usage{
-markers_het(gds)
+markers_het(gds, parallel.core = TRUE)
 }
 \description{
 Calculate markers het

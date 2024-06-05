@@ -1,3 +1,9 @@
+# radiator 1.3.4 2024-06-05
+
+* Open the `parallel.core` argument for some internal functions to help windows users with parallel processing problems in R. #188
+* Work around for `.DynamicClusterCall` pushed greavess #189
+
+
 # radiator 1.3.3 2024-05-15
 
 * Fix issue #188 related to coverage in DArT 1row and 2rows format

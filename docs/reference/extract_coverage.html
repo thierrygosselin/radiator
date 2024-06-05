@@ -19,7 +19,7 @@ Extract coverage information from a GDS file"><!-- mathjax --><script src="https
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.3.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.3.4</span>
       </span>
     </div>
 
@@ -91,7 +91,8 @@ look for the DP and AD info in the FORMAT field.</p>
 <span>  ad <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  coverage.stats <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sum"</span>, <span class="st">"mean"</span>, <span class="st">"median"</span>, <span class="st">"iqr"</span><span class="op">)</span>,</span>
 <span>  subsample.info <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  parallel.core <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -150,6 +151,12 @@ The subsample proportion used (e.g. 0.3 or none the default).</p></dd>
 <dd><p>(optional, logical) When <code>verbose = TRUE</code>
 the function is a little more chatty during execution.
 Default: <code>verbose = TRUE</code>.</p></dd>
+
+
+<dt>parallel.core</dt>
+<dd><p>(optional) The number of core used for parallel
+execution during import.
+Default: <code>parallel.core = parallel::detectCores() - 1</code>.</p></dd>
 
 </dl></div>
 

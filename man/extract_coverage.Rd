@@ -20,7 +20,8 @@ extract_coverage(
   ad = TRUE,
   coverage.stats = c("sum", "mean", "median", "iqr"),
   subsample.info = 1,
-  verbose = TRUE
+  verbose = TRUE,
+  parallel.core = TRUE
 )
 }
 \arguments{
@@ -56,6 +57,10 @@ The subsample proportion used (e.g. 0.3 or none the default).}
 \item{verbose}{(optional, logical) When \code{verbose = TRUE}
 the function is a little more chatty during execution.
 Default: \code{verbose = TRUE}.}
+
+\item{parallel.core}{(optional) The number of core used for parallel
+execution during import.
+Default: \code{parallel.core = parallel::detectCores() - 1}.}
 }
 \description{
 Check that the coverage info is in the GDS. By default, it will
