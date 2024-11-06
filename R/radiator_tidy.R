@@ -426,7 +426,8 @@ tidy_genomic_data <- function(
   # Strata----------------------------------------------------------------------
   strata.df <- read_strata(
     strata = strata,
-    pop.id = TRUE,
+    pop.id = FALSE,
+    # pop.id = TRUE,
     blacklist.id = blacklist.id,
     verbose = verbose) %$% strata
 

@@ -1,3 +1,10 @@
+# radiator 1.3.5 2024-11-06
+
+* Fix the one column matrices in dplyr::filter warning.
+* Fix the error when dplyr::select couldn't find the column STRATA.
+
+
+
 # radiator 1.3.4 2024-06-05
 
 * Open the `parallel.core` argument for some internal functions to help windows users with parallel processing problems in R. #188

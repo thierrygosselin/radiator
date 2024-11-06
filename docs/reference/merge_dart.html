@@ -3,7 +3,7 @@
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]--></head><body data-spy="scroll" data-target="#toc">
-    
+
 
     <div class="container template-reference-topic">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.3.4</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.3.5</span>
       </span>
     </div>
 
@@ -34,7 +34,7 @@
 <li class="dropdown">
   <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
-     
+
     <span class="caret"></span>
   </a>
   <ul class="dropdown-menu" role="menu"><li>
@@ -50,14 +50,14 @@
       </ul><ul class="nav navbar-nav navbar-right"><li>
   <a href="https://github.com/thierrygosselin/radiator" class="external-link">
     <span class="fa fa-github fa-lg"></span>
-     
+
   </a>
 </li>
       </ul></div><!--/.nav-collapse -->
   </div><!--/.container -->
 </div><!--/.navbar -->
 
-      
+
 
       </header><div class="row">
   <div class="col-md-9 contents">
@@ -88,33 +88,35 @@
 
     <div id="arguments">
     <h2>Arguments</h2>
-    <dl><dt>dart1</dt>
+
+
+<dl><dt id="arg-dart-">dart1<a class="anchor" aria-label="anchor" href="#arg-dart-"></a></dt>
 <dd><p>Full path of the first DArT file.</p></dd>
 
 
-<dt>strata1</dt>
+<dt id="arg-strata-">strata1<a class="anchor" aria-label="anchor" href="#arg-strata-"></a></dt>
 <dd><p>Full path of the first strata file for dart1.</p></dd>
 
 
-<dt>dart2</dt>
+<dt id="arg-dart-">dart2<a class="anchor" aria-label="anchor" href="#arg-dart-"></a></dt>
 <dd><p>Full path of the second DArT file.</p></dd>
 
 
-<dt>strata2</dt>
+<dt id="arg-strata-">strata2<a class="anchor" aria-label="anchor" href="#arg-strata-"></a></dt>
 <dd><p>Full path of the second strata file for dart2.</p></dd>
 
 
-<dt>filter.monomorphic</dt>
+<dt id="arg-filter-monomorphic">filter.monomorphic<a class="anchor" aria-label="anchor" href="#arg-filter-monomorphic"></a></dt>
 <dd><p>(optional, logical)
 Default: <code>filter.monomorphic = TRUE</code>.</p></dd>
 
 
-<dt>filter.common.markers</dt>
+<dt id="arg-filter-common-markers">filter.common.markers<a class="anchor" aria-label="anchor" href="#arg-filter-common-markers"></a></dt>
 <dd><p>(optional, logical)
 Default: <code>filter.common.markers = TRUE</code>.</p></dd>
 
 
-<dt>filename</dt>
+<dt id="arg-filename">filename<a class="anchor" aria-label="anchor" href="#arg-filename"></a></dt>
 <dd><p>Name of the merged DArT file.
 By default, the function gives the merged data the filename:<code>merge_dart</code>
 with date and time appended. The function will also append the date and time
@@ -123,28 +125,26 @@ The data is written in the working directory.
 Default: <code>filename = NULL</code>.</p></dd>
 
 
-<dt>remove.non.immortalized.dart.markers</dt>
+<dt id="arg-remove-non-immortalized-dart-markers">remove.non.immortalized.dart.markers<a class="anchor" aria-label="anchor" href="#arg-remove-non-immortalized-dart-markers"></a></dt>
 <dd><p>(logical). By default the function
 will remove markers starting <code>1000</code>, those are called <code>non-immortalized</code>
 markers by DArT.
 Default: <code>remove.non.immortalized.dart.markers = TRUE</code>.</p></dd>
 
 
-<dt>parallel.core</dt>
+<dt id="arg-parallel-core">parallel.core<a class="anchor" aria-label="anchor" href="#arg-parallel-core"></a></dt>
 <dd><p>(optional) The number of core used for parallel
 execution during import.
 Default: <code>parallel.core = parallel::detectCores() - 1</code>.</p></dd>
 
 
-<dt>...</dt>
+<dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>(optional) To pass further arguments for fine-tuning the function.</p></dd>
 
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    
-
-<p>The function returns a list in the global environment and 2 data frames
+    <p>The function returns a list in the global environment and 2 data frames
 in the working directory. The dataframes are the tidy dataset and a strata file
 of the 2 merged DArT files.</p>
     </div>
@@ -172,12 +172,12 @@ this as to be done manually by the user.</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
 <span class="r-in"><span><span class="co"># The simplest way to run the function:</span></span></span>
 <span class="r-in"><span><span class="va">merged.data</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">merge_dart</span><span class="op">(</span></span></span>
 <span class="r-in"><span>dart1 <span class="op">=</span> <span class="st">"bluefin_larvae.tsv"</span>, strata1 <span class="op">=</span> <span class="st">"strata1_bft_larvae.tsv"</span>,</span></span>
 <span class="r-in"><span>dart2 <span class="op">=</span> <span class="st">"bluefin_adults.csv"</span>, strata2 <span class="op">=</span> <span class="st">"strata2_bft_adults.tsv"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span></span></span>
+<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -192,15 +192,15 @@ this as to be done manually by the user.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.9.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
 </div>
 
       </footer></div>
 
-  
 
 
-  
+
+
 
   </body></html>
 

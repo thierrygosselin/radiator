@@ -5,7 +5,7 @@ Extract coverage information from a GDS file"><!-- mathjax --><script src="https
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]--></head><body data-spy="scroll" data-target="#toc">
-    
+
 
     <div class="container template-reference-topic">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -19,7 +19,7 @@ Extract coverage information from a GDS file"><!-- mathjax --><script src="https
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.3.4</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.3.5</span>
       </span>
     </div>
 
@@ -36,7 +36,7 @@ Extract coverage information from a GDS file"><!-- mathjax --><script src="https
 <li class="dropdown">
   <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
-     
+
     <span class="caret"></span>
   </a>
   <ul class="dropdown-menu" role="menu"><li>
@@ -52,14 +52,14 @@ Extract coverage information from a GDS file"><!-- mathjax --><script src="https
       </ul><ul class="nav navbar-nav navbar-right"><li>
   <a href="https://github.com/thierrygosselin/radiator" class="external-link">
     <span class="fa fa-github fa-lg"></span>
-     
+
   </a>
 </li>
       </ul></div><!--/.nav-collapse -->
   </div><!--/.container -->
 </div><!--/.navbar -->
 
-      
+
 
       </header><div class="row">
   <div class="col-md-9 contents">
@@ -98,62 +98,64 @@ look for the DP and AD info in the FORMAT field.</p>
 
     <div id="arguments">
     <h2>Arguments</h2>
-    <dl><dt>gds</dt>
+
+
+<dl><dt id="arg-gds">gds<a class="anchor" aria-label="anchor" href="#arg-gds"></a></dt>
 <dd><p>The gds object.</p></dd>
 
 
-<dt>genotypes.metadata.check</dt>
+<dt id="arg-genotypes-metadata-check">genotypes.metadata.check<a class="anchor" aria-label="anchor" href="#arg-genotypes-metadata-check"></a></dt>
 <dd><p>(optional, logical) Look for already extracted coverage information in the
 radiator genotypes_metadata field of the GDS.
 Default: <code>genotypes.metadata.check = FALSE</code>.</p></dd>
 
 
-<dt>stacks.haplo.check</dt>
+<dt id="arg-stacks-haplo-check">stacks.haplo.check<a class="anchor" aria-label="anchor" href="#arg-stacks-haplo-check"></a></dt>
 <dd><p>(optional, logical) stacks haplotypes VCF header is
 baddly generated. It will say you have Read and allele Depth info, but you don't.
 Default: <code>stacks.haplo.check = FALSE</code>.</p></dd>
 
 
-<dt>dart.check</dt>
+<dt id="arg-dart-check">dart.check<a class="anchor" aria-label="anchor" href="#arg-dart-check"></a></dt>
 <dd><p>(optional, logical) DArT have different reporting for coverage
 information. Will no longer report the average coverage stats from 1 and 2-rows DArT format.
 Default: <code>dart.check = FALSE</code>.</p></dd>
 
 
-<dt>individuals</dt>
+<dt id="arg-individuals">individuals<a class="anchor" aria-label="anchor" href="#arg-individuals"></a></dt>
 <dd><p>(optional, logical) Default: <code>individuals = TRUE</code>.</p></dd>
 
 
-<dt>markers</dt>
+<dt id="arg-markers">markers<a class="anchor" aria-label="anchor" href="#arg-markers"></a></dt>
 <dd><p>(optional, logical) Default: <code>markers = TRUE</code>.</p></dd>
 
 
-<dt>dp</dt>
+<dt id="arg-dp">dp<a class="anchor" aria-label="anchor" href="#arg-dp"></a></dt>
 <dd><p>(optional, logical) Default: <code>dp = TRUE</code>.</p></dd>
 
 
-<dt>ad</dt>
+<dt id="arg-ad">ad<a class="anchor" aria-label="anchor" href="#arg-ad"></a></dt>
 <dd><p>(optional, logical) Default: <code>ad = TRUE</code>.</p></dd>
 
 
-<dt>coverage.stats</dt>
+<dt id="arg-coverage-stats">coverage.stats<a class="anchor" aria-label="anchor" href="#arg-coverage-stats"></a></dt>
 <dd><p>(optional, character string). Choice of stats to use with
 coverage.
 Default: <code>coverage.stats = c("sum", "mean", "median", "iqr")</code>.</p></dd>
 
 
-<dt>subsample.info</dt>
+<dt id="arg-subsample-info">subsample.info<a class="anchor" aria-label="anchor" href="#arg-subsample-info"></a></dt>
 <dd><p>(optional, double) Default: <code>subsample.info = 1</code>.
 The subsample proportion used (e.g. 0.3 or none the default).</p></dd>
 
 
-<dt>verbose</dt>
+<dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
 <dd><p>(optional, logical) When <code>verbose = TRUE</code>
 the function is a little more chatty during execution.
 Default: <code>verbose = TRUE</code>.</p></dd>
 
 
-<dt>parallel.core</dt>
+<dt id="arg-parallel-core">parallel.core<a class="anchor" aria-label="anchor" href="#arg-parallel-core"></a></dt>
 <dd><p>(optional) The number of core used for parallel
 execution during import.
 Default: <code>parallel.core = parallel::detectCores() - 1</code>.</p></dd>
@@ -172,15 +174,15 @@ Default: <code>parallel.core = parallel::detectCores() - 1</code>.</p></dd>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.9.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
 </div>
 
       </footer></div>
 
-  
 
 
-  
+
+
 
   </body></html>
 

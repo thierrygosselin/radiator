@@ -10,7 +10,7 @@ and might be of interest for users."><!-- mathjax --><script src="https://cdnjs.
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]--></head><body data-spy="scroll" data-target="#toc">
-    
+
 
     <div class="container template-reference-topic">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -24,7 +24,7 @@ and might be of interest for users."><!-- mathjax --><script src="https://cdnjs.
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.3.4</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.3.5</span>
       </span>
     </div>
 
@@ -41,7 +41,7 @@ and might be of interest for users."><!-- mathjax --><script src="https://cdnjs.
 <li class="dropdown">
   <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
-     
+
     <span class="caret"></span>
   </a>
   <ul class="dropdown-menu" role="menu"><li>
@@ -57,14 +57,14 @@ and might be of interest for users."><!-- mathjax --><script src="https://cdnjs.
       </ul><ul class="nav navbar-nav navbar-right"><li>
   <a href="https://github.com/thierrygosselin/radiator" class="external-link">
     <span class="fa fa-github fa-lg"></span>
-     
+
   </a>
 </li>
       </ul></div><!--/.nav-collapse -->
   </div><!--/.container -->
 </div><!--/.navbar -->
 
-      
+
 
       </header><div class="row">
   <div class="col-md-9 contents">
@@ -101,28 +101,30 @@ and might be of interest for users.</p>
 
     <div id="arguments">
     <h2>Arguments</h2>
-    <dl><dt>data</dt>
+
+
+<dl><dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
 <dd><p>A file in the working directory ending with .rad or .gds,
 and produced by radiator, assigner or grur.</p></dd>
 
 
-<dt>columns</dt>
+<dt id="arg-columns">columns<a class="anchor" aria-label="anchor" href="#arg-columns"></a></dt>
 <dd><p>(optional) For fst file. Column names to read. The default is to read all all columns.
 Default: <code>columns = NULL</code>.</p></dd>
 
 
-<dt>from</dt>
+<dt id="arg-from">from<a class="anchor" aria-label="anchor" href="#arg-from"></a></dt>
 <dd><p>(optional) For fst file. Read data starting from this row number.
 Default: <code>from = 1</code>.</p></dd>
 
 
-<dt>to</dt>
+<dt id="arg-to">to<a class="anchor" aria-label="anchor" href="#arg-to"></a></dt>
 <dd><p>(optional) For fst file. Read data up until this row number.
 The default is to read to the last row of the stored dataset.
 Default: <code>to = NULL</code>.</p></dd>
 
 
-<dt>as.data.table</dt>
+<dt id="arg-as-data-table">as.data.table<a class="anchor" aria-label="anchor" href="#arg-as-data-table"></a></dt>
 <dd><p>(optional, logical) For fst file. If <code>TRUE</code>,
 the result will be returned as a <code>data.table</code> object.
 Any keys set on dataset <code>x</code> before writing will be retained.
@@ -130,25 +132,25 @@ This allows for storage of sorted datasets.
 Default: <code>as.data.table = TRUE</code>.</p></dd>
 
 
-<dt>old.format</dt>
+<dt id="arg-old-format">old.format<a class="anchor" aria-label="anchor" href="#arg-old-format"></a></dt>
 <dd><p>(optional, logical) For fst file. Use <code>TRUE</code> to read fst
 files generated with a fst package version lower than v.0.8.0
 Default: <code>old.format = FALSE</code>.</p></dd>
 
 
-<dt>allow.dup</dt>
+<dt id="arg-allow-dup">allow.dup<a class="anchor" aria-label="anchor" href="#arg-allow-dup"></a></dt>
 <dd><p>(optional, logical) To allow the opening of a GDS file with
 read-only mode when it has been opened in the same R session.
 Default: <code>allow.dup = FALSE</code>.</p></dd>
 
 
-<dt>check</dt>
+<dt id="arg-check">check<a class="anchor" aria-label="anchor" href="#arg-check"></a></dt>
 <dd><p>(optional, logical) Verify that GDS number of samples and markers
 match.
 Default: <code>check = TRUE</code>.</p></dd>
 
 
-<dt>verbose</dt>
+<dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
 <dd><p>(optional, logical) <code>verbose = TRUE</code> to be chatty
 during execution.
 Default: <code>verbose = FALSE</code>.</p></dd>
@@ -156,9 +158,7 @@ Default: <code>verbose = FALSE</code>.</p></dd>
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    
-
-<p>A radiator tidy data frame or
+    <p>A radiator tidy data frame or
 GDS object (with read/write permissions) in the global environment.</p>
     </div>
     <div id="details">
@@ -179,11 +179,11 @@ set the filters (variants and samples) based on the info found in the file.</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
 <span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="va"><a href="https://github.com/zhengxwen/SeqArray" class="external-link">SeqArray</a></span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">shark</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">read_rad</span><span class="op">(</span>data <span class="op">=</span> <span class="st">"data.shark.gds"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">turtle</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">read_rad</span><span class="op">(</span>data <span class="op">=</span> <span class="st">"data.turtle.rad"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span></span></span>
+<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -198,15 +198,15 @@ set the filters (variants and samples) based on the info found in the file.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.9.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
 </div>
 
       </footer></div>
 
-  
 
 
-  
+
+
 
   </body></html>
 

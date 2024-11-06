@@ -6,7 +6,7 @@ software GMATA: Genome-wide Microsatellite Analyzing Toward Application."><!-- m
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]--></head><body data-spy="scroll" data-target="#toc">
-    
+
 
     <div class="container template-reference-topic">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -20,7 +20,7 @@ software GMATA: Genome-wide Microsatellite Analyzing Toward Application."><!-- m
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.3.4</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.3.5</span>
       </span>
     </div>
 
@@ -37,7 +37,7 @@ software GMATA: Genome-wide Microsatellite Analyzing Toward Application."><!-- m
 <li class="dropdown">
   <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Vignettes
-     
+
     <span class="caret"></span>
   </a>
   <ul class="dropdown-menu" role="menu"><li>
@@ -53,14 +53,14 @@ software GMATA: Genome-wide Microsatellite Analyzing Toward Application."><!-- m
       </ul><ul class="nav navbar-nav navbar-right"><li>
   <a href="https://github.com/thierrygosselin/radiator" class="external-link">
     <span class="fa fa-github fa-lg"></span>
-     
+
   </a>
 </li>
       </ul></div><!--/.nav-collapse -->
   </div><!--/.container -->
 </div><!--/.navbar -->
 
-      
+
 
       </header><div class="row">
   <div class="col-md-9 contents">
@@ -83,7 +83,9 @@ software <a href="https://github.com/XuewenWangUGA/GMATA" class="external-link">
 
     <div id="arguments">
     <h2>Arguments</h2>
-    <dl><dt>data</dt>
+
+
+<dl><dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
 <dd><p>(path or object)
 Object in your global environment or a file in the working directory.
 The tibble must contain 2 columns named: <code>MARKERS</code> and <code>SEQUENCE</code>.
@@ -91,7 +93,7 @@ When RADseq data from DArT is used, <code><a href="filter_rad.html">filter_rad</
 automatically this file under the name <code>whitelist.markers.tsv</code>.</p></dd>
 
 
-<dt>gmata.dir</dt>
+<dt id="arg-gmata-dir">gmata.dir<a class="anchor" aria-label="anchor" href="#arg-gmata-dir"></a></dt>
 <dd><p>(path) For the function to work, the path to the directory
 with GMATA software needs to be given.
 If not found or <code>NULL</code>, the function download GMATA
@@ -99,7 +101,7 @@ from github in the working directory.
 Default: <code>gmata.path = NULL</code>.</p></dd>
 
 
-<dt>...</dt>
+<dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>(optional) Advance mode that allows to pass further arguments
 for fine-tuning the function. Also used for legacy arguments (see details or
 special section)</p></dd>
@@ -107,9 +109,7 @@ special section)</p></dd>
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    
-
-<p>6 files are returned in the folder: detect_microsatellites:</p><ol><li><p>".fa.fms": the fasta file of sequences</p></li>
+    <p>6 files are returned in the folder: detect_microsatellites:</p><ol><li><p>".fa.fms": the fasta file of sequences</p></li>
 <li><p>".fa.fms.sat1": the summary of sequences analysed (not important)</p></li>
 <li><p>".fa.ssr": The microsatellites found per markers (see GMATA doc)</p></li>
 <li><p>".fa.ssr.sat2": Extensive summary (see GMATA doc).</p></li>
@@ -130,7 +130,7 @@ radiator.</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
 <span class="r-in"><span><span class="co"># The simplest way to run the function when the raw data was DArT:</span></span></span>
 <span class="r-in"><span><span class="va">mic</span> <span class="op">&lt;-</span> <span class="fu">radiator</span><span class="fu">::</span><span class="fu">detect_microsatellites</span><span class="op">(</span>data <span class="op">=</span> <span class="st">"my_whitelist.tsv"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
@@ -160,7 +160,7 @@ radiator.</p>
 <span class="r-in"><span><span class="co">#   return(fasta)</span></span></span>
 <span class="r-in"><span><span class="co">#  } #prep_stacks_fasta</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="op">}</span></span></span>
+<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -175,15 +175,15 @@ radiator.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.9.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
 </div>
 
       </footer></div>
 
-  
 
 
-  
+
+
 
   </body></html>
 
