@@ -10,7 +10,7 @@ generate_filename(
   date = TRUE,
   extension = c("tsv", "gds.rad", "rad", "gds", "gen", "dat", "genind", "genlight",
     "gtypes", "vcf", "colony", "bayescan", "gsisim", "hierfstat", "hzar", "ldna",
-    "pcadapt", "related", "stockr", "structure", "arlequin")
+    "pcadapt", "related", "stockr", "structure", "arlequin", "arrow.parquet")
 )
 }
 \description{

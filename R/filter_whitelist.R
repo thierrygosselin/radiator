@@ -39,6 +39,7 @@
 
 read_whitelist <- function(whitelist.markers = NULL, verbose = FALSE) {
   if (!is.null(whitelist.markers)) {
+    if (verbose) message("Reading whitelist of markers")
     # Import whitelist of markers
     if (is.vector(whitelist.markers)) {
       whitelist.markers <- suppressMessages(
@@ -67,6 +68,12 @@ read_whitelist <- function(whitelist.markers = NULL, verbose = FALSE) {
       whitelist.markers$VARIANT_ID <- as.integer(whitelist.markers$VARIANT_ID)
     }
 
+    if (tibble::has_name(whitelist.markers, "VARIANT_ID")) {
+      whitelist.markers$M_SEQ <- as.integer(whitelist.markers$M_SEQ)
+    }
+
+    n.markers <- nrow(whitelist.markers)
+  if (verbose) message("Number of whitelisted markers: ", n.markers)
   } else {
     whitelist.markers <- NULL
   }
@@ -283,14 +290,15 @@ filter_whitelist <- function(
         dplyr::mutate(
           .data = .,
           COMMON_META = stringi::stri_join(!!!common.meta, sep = "__")
-        )
+        ) #%>%
+        #dplyr::filter(COMMON_META %in% whitelist.markers$COMMON_META)
 
-      test <- markers.meta %>%
-        dplyr::mutate(
-          .data = .,
-          COMMON_META = stringi::stri_join(!!!common.meta, sep = "__")
-        ) %>%
-        dplyr::filter(COMMON_META %in% whitelist.markers$COMMON_META)
+      # test <- markers.meta %>%
+      #   dplyr::mutate(
+      #     .data = .,
+      #     COMMON_META = stringi::stri_join(!!!common.meta, sep = "__")
+      #   ) %>%
+      #   dplyr::filter(COMMON_META %in% whitelist.markers$COMMON_META)
 
       #   FILTERS = dplyr::if_else(
       #     !COMMON_META %in% whitelist.markers$COMMON_META &

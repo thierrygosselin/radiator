@@ -224,16 +224,17 @@ tidy_genlight <- function(
 
 # write_genlight ----------------------------------------------------------------
 #' @name write_genlight
-#' @title Write a genlight object from a tidy data frame or GDS file or object.
-#' @description Write a genlight object from a tidy data frame or GDS file or object.
+#' @title Write a \code{genlight} object from: a tidy data frame, GDS file or object.
+#' @description Write a \code{genlight} object from a tidy data frame or GDS file or object.
 #' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
-#' and might be of interest for users.
+#' and might be of interest for users. \code{genlight} is a formal (S4) class
+#' for storing genotypes of binary SNPs in a compact way, using a bit-level
+#' coding scheme. This storage is most efficient with haploid data,
+#' where the memory taken to represent data can be reduced more than 50 times.
+#' However, \code{genlight} can be used for any level of ploidy,
+#' and still remain an efficient storage mode.
 
 #' @inheritParams radiator_common_arguments
-
-#' @param biallelic (logical, optional) If you already know that the data is
-#' biallelic use this argument to speed up the function.
-#' Default: \code{biallelic = TRUE}.
 
 #' @param write (logical, optional) To write in the working directory the genlight
 #' object. The file is written with \code{radiator_genlight_DATE@TIME.RData} and
@@ -241,12 +242,17 @@ tidy_genlight <- function(
 #' Default: \code{write = FALSE}.
 
 #' @param dartr (logical, optional) For non-dartR users who wants to have a genlight
-#' object ready for the package. This option transfer or generates:
+#' object ready for the dartR package. This option transfer or generates:
 #' \code{CALL_RATE, AVG_COUNT_REF, AVG_COUNT_SNP, REP_AVG,
 #' ONE_RATIO_REF, ONE_RATIO_SNP}. These markers metadata are stored into
 #' the genlight slot: \code{genlight.obj@other$loc.metrics}.
 #' \strong{Use the radiator generated GDS data for best result}.
 #' Default: \code{dartr = FALSE}.
+
+
+#' @param biallelic (logical, optional) If you already know that the data is
+#' biallelic use this argument to speed up the function.
+#' Default: \code{biallelic = TRUE}.
 
 #' @export
 #' @rdname write_genlight
@@ -279,11 +285,11 @@ tidy_genlight <- function(
 
 write_genlight <- function(
     data,
-    biallelic = TRUE,
     write = FALSE,
     dartr = FALSE,
     verbose = FALSE,
-    parallel.core = parallel::detectCores() - 2
+    parallel.core = parallel::detectCores() - 2,
+    biallelic = TRUE
 ) {
 
 
@@ -332,18 +338,18 @@ write_genlight <- function(
       markers.levels <- unique(data$MARKERS)
       ind.levels <- unique(data$INDIVIDUALS)
 
-      if (!"counts" %in% data.source) {
-        # genotypes.meta <- extract_coverage(# Note to my self... need to adapt the code here for the new extract function when you have the time
-        #   gds = data.bk,
-        #   individuals = FALSE,
-        #   depth.tibble = TRUE,
-        #   parallel.core = parallel.core
-        # )
-        # suppressWarnings(
-        #   data %<>%
-        #     dplyr::left_join(genotypes.meta, by = c("INDIVIDUALS", "MARKERS"))
-        # )
-      }
+      # if (!"counts" %in% data.source) {
+      #   # genotypes.meta <- extract_coverage(# Note to my self... need to adapt the code here for the new extract function when you have the time
+      #   #   gds = data.bk,
+      #   #   individuals = FALSE,
+      #   #   depth.tibble = TRUE,
+      #   #   parallel.core = parallel.core
+      #   # )
+      #   # suppressWarnings(
+      #   #   data %<>%
+      #   #     dplyr::left_join(genotypes.meta, by = c("INDIVIDUALS", "MARKERS"))
+      #   # )
+      # }
 
       genotypes.meta <- NULL
       want <- c("MARKERS", "CHROM", "LOCUS", "POS",
@@ -367,7 +373,7 @@ write_genlight <- function(
 
     # dartR-----------------------------------------------------------------------
     if (dartr) {
-      # That bits of code below generate what's nenessary for dartR
+      # That bits of code below generate what's necessary for dartR
       if (verbose) message("Calculating read depth for each SNP\n")
       if ("dart" %in% data.source) {
         # if (any(unique(c("1row", "2rows") %in% data.source))) {
@@ -465,6 +471,7 @@ write_genlight <- function(
     # Detect if biallelic data ---------------------------------------------------
     if (is.null(biallelic)) biallelic <- radiator::detect_biallelic_markers(data)
     if (!biallelic) rlang::abort("genlight object requires biallelic genotypes")
+
     want <- c("MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT",
               "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG",
               "ONE_RATIO_REF", "ONE_RATIO_SNP")

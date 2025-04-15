@@ -4,7 +4,7 @@
 \alias{split_vec}
 \title{split_vec}
 \usage{
-split_vec(x, chunks)
+split_vec(x, chunks = NULL, tibble.split = FALSE, strata.split = FALSE)
 }
 \description{
 Split input into chunk for parallel processing

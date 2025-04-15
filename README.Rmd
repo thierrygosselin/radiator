@@ -3,6 +3,9 @@ output: github_document
 ---
 
 
+# radr <a href='http://thierrygosselin.github.io/radr/'><img src='man/figures/logo.png' align="right" height="160" /></a>
+
+
 ```{r, echo = FALSE}
 description <- readLines("DESCRIPTION")
 rvers <- stringr::str_match(grep("R \\(", description, value = TRUE), "[0-9]{1,4}\\.[0-9]{1,4}\\.[0-9]{1,4}")[1,1]

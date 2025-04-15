@@ -2,15 +2,15 @@
 % Please edit documentation in R/genlight.R
 \name{write_genlight}
 \alias{write_genlight}
-\title{Write a genlight object from a tidy data frame or GDS file or object.}
+\title{Write a \code{genlight} object from: a tidy data frame, GDS file or object.}
 \usage{
 write_genlight(
   data,
-  biallelic = TRUE,
   write = FALSE,
   dartr = FALSE,
   verbose = FALSE,
-  parallel.core = parallel::detectCores() - 2
+  parallel.core = parallel::detectCores() - 2,
+  biallelic = TRUE
 )
 }
 \arguments{
@@ -25,17 +25,13 @@ Look into \code{\link{tidy_genomic_data}},
 \code{\link{read_vcf}} or
 \code{\link{tidy_vcf}}.}
 
-\item{biallelic}{(logical, optional) If you already know that the data is
-biallelic use this argument to speed up the function.
-Default: \code{biallelic = TRUE}.}
-
 \item{write}{(logical, optional) To write in the working directory the genlight
 object. The file is written with \code{radiator_genlight_DATE@TIME.RData} and
 can be open with load or readRDS.
 Default: \code{write = FALSE}.}
 
 \item{dartr}{(logical, optional) For non-dartR users who wants to have a genlight
-object ready for the package. This option transfer or generates:
+object ready for the dartR package. This option transfer or generates:
 \code{CALL_RATE, AVG_COUNT_REF, AVG_COUNT_SNP, REP_AVG,
 ONE_RATIO_REF, ONE_RATIO_SNP}. These markers metadata are stored into
 the genlight slot: \code{genlight.obj@other$loc.metrics}.
@@ -49,11 +45,20 @@ Default: \code{verbose = TRUE}.}
 \item{parallel.core}{(optional) The number of core used for parallel
 execution during import.
 Default: \code{parallel.core = parallel::detectCores() - 1}.}
+
+\item{biallelic}{(logical, optional) If you already know that the data is
+biallelic use this argument to speed up the function.
+Default: \code{biallelic = TRUE}.}
 }
 \description{
-Write a genlight object from a tidy data frame or GDS file or object.
+Write a \code{genlight} object from a tidy data frame or GDS file or object.
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
-and might be of interest for users.
+and might be of interest for users. \code{genlight} is a formal (S4) class
+for storing genotypes of binary SNPs in a compact way, using a bit-level
+coding scheme. This storage is most efficient with haploid data,
+where the memory taken to represent data can be reduced more than 50 times.
+However, \code{genlight} can be used for any level of ploidy,
+and still remain an efficient storage mode.
 }
 \examples{
 \dontrun{

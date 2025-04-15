@@ -4,12 +4,7 @@
 \alias{clean_dart_colnames}
 \title{clean_dart_colnames}
 \usage{
-clean_dart_colnames(
-  data,
-  blacklist.id = NULL,
-  dart.col.num = NULL,
-  strata = NULL
-)
+clean_dart_colnames(x, dart.check, blacklist.id = NULL, strata = NULL)
 }
 \description{
 clean_dart_colnames (only the DArT columns = snakecase...)

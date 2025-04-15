@@ -1,9 +1,10 @@
 # read .rad file
 
 #' @name read_rad
-#' @title Read radiator file ending \code{.gds, .rad, .gds.rad}.
-#' @description Fast read of \code{.gds, .rad, .gds.rad} files.
-#' The function uses \code{\link[fst]{read_fst}} or
+#' @title Read radiator file ending \code{.gds, .rad, .gds.rad, .arrow.parquet}.
+#' @description Fast read of \code{.gds, .rad, .gds.rad, .arrow.parquet} files.
+
+#' The function uses \code{\link[arrow]{read_parquet}} or
 #' CoreArray Genomic Data Structure (\href{https://github.com/zhengxwen/gdsfmt}{GDS})
 #' file system.
 #'
@@ -13,24 +14,10 @@
 #' and might be of interest for users.
 
 
-#' @param data A file in the working directory ending with .rad or .gds,
+#' @param data A file in the working directory ending with .arrow.parquet or .gds,
 #' and produced by radiator, assigner or grur.
-
-#' @param columns (optional) For fst file. Column names to read. The default is to read all all columns.
+#' @param columns (optional) For arrow.parquet file. Column names to read. The default is to read all all columns.
 #' Default: \code{columns = NULL}.
-#' @param from (optional) For fst file. Read data starting from this row number.
-#' Default: \code{from = 1}.
-#' @param to (optional) For fst file. Read data up until this row number.
-#' The default is to read to the last row of the stored dataset.
-#' Default: \code{to = NULL}.
-#' @param as.data.table (optional, logical) For fst file. If \code{TRUE},
-#' the result will be returned as a \code{data.table} object.
-#' Any keys set on dataset \code{x} before writing will be retained.
-#' This allows for storage of sorted datasets.
-#' Default: \code{as.data.table = TRUE}.
-#' @param old.format (optional, logical) For fst file. Use \code{TRUE} to read fst
-#' files generated with a fst package version lower than v.0.8.0
-#' Default: \code{old.format = FALSE}.
 #' @param allow.dup (optional, logical) To allow the opening of a GDS file with
 #' read-only mode when it has been opened in the same R session.
 #' Default: \code{allow.dup = FALSE}.
@@ -49,7 +36,7 @@
 #' @export
 #' @rdname read_rad
 #' @seealso
-#' \href{https://github.com/fstpackage/fst}{fst}
+#' \href{https://github.com/apache/arrow/}{arrow}
 #' \href{https://github.com/zhengxwen/gdsfmt}{GDS}
 #' \code{\link{read_rad}}
 
@@ -58,18 +45,16 @@
 #' \dontrun{
 #' require(SeqArray)
 #' shark <- radiator::read_rad(data = "data.shark.gds")
-#' turtle <- radiator::read_rad(data = "data.turtle.rad")
+#' turtle <- radiator::read_rad(data = "data.turtle.arrow.parquet")
 #' }
 
 read_rad <- function(
-  data,
-  columns = NULL,
-  from = 1, to = NULL,
-  as.data.table = FALSE,
-  old.format = FALSE,
-  allow.dup = FALSE,
-  check = TRUE,
-  verbose = FALSE) {
+    data,
+    columns = NULL,
+    allow.dup = FALSE,
+    check = TRUE,
+    verbose = FALSE
+) {
 
   ## TEST
   # columns = NULL
@@ -81,16 +66,32 @@ read_rad <- function(
   # detect format---------------------------------------------------------------
   data.type <- detect_genomic_format(data)
 
+  # arrow parquet file ---------------------------------------------------------
+  if ("arrow.parquet" %in% data.type) {
+    data <- arrow::read_parquet(file = data, col_select = columns)
+    message("If the dataset is not readable, use:")
+    message("obj <- arrow::read_parquet(file = 'your.file.arrow.parquet')")
+    return(data)
+  }
+
   # FST FILE -------------------------------------------------------------------
   if ("fst.file" %in% data.type) {
 
     # since version 0.8.4 there is a distinction between old and new format...
     # Catch error while reading
     read_rad_fst <- function(
-      data) {
+    data) {
+      message("This file format will be deprecated soon:")
+      message("    Save to another format (e.g. parquet) or ")
+      message("    Use the package fst to open and save in the future")
       fst::read_fst(
-        path = data, columns = NULL, from = 1, to = 2,
-        as.data.table = FALSE, old_format = FALSE) %>%
+        path = data,
+        columns = NULL,
+        from = 1,
+        to = 2,
+        as.data.table = FALSE,
+        old_format = FALSE
+      ) %>%
         tibble::as_tibble(.)
     }
 
@@ -100,8 +101,12 @@ read_rad <- function(
     if (is.null(data.safe$error)) {
       # return(data.safe$result)
       data <- fst::read_fst(
-        path = data, columns = columns, from = from, to = to,
-        as.data.table = as.data.table, old_format = old.format) %>%
+        path = data,
+        columns = columns,
+        from = from,
+        to = to,
+        as.data.table = as.data.table
+      ) %>%
         tibble::as_tibble(.)
       return(data)
     } else {
@@ -109,12 +114,14 @@ read_rad <- function(
         radiator::write_rad(data = ., path = data)
       data.old <- NULL
       data <- fst::read_fst(
-        path = data, columns = columns, from = from, to = to,
-        as.data.table = as.data.table, old_format = old.format) %>%
+        path = data,
+        columns = columns,
+        old_format = old.format) %>%
         tibble::as_tibble(.)
       message("\nThis .rad file was created with an earlier version of the fst package")
       message("A new version with the same name was written")
     }
+    return(data)
   }#End fst.file
 
   # GDS file -------------------------------------------------------------------
@@ -184,17 +191,22 @@ read_rad <- function(
         rlang::abort("Number of markers don't match, contact author")
       }
     }
+    return(data)
   }#End gds.file
-  return(data)
 }#End read_rad
 
 
 #' @name write_rad
 #' @title Write tidy genomic data file or close GDS file
-#' @description When dataset is a tidy data frame, the function provides a
-#' fast way to write a radiator \code{.rad} file.
-#' The function uses \code{\link[fst]{write_fst}} with a compression level of 85,
-#' that work well with RADseq dataset.
+#' @description When datasets are a tidy data frame, the function provides a
+#' fast way to write a \code{.arrow.parquet} file. It superseded the
+#' \code{.rad} file format that is essentially the \code{.fst} format provided by the
+#' the package \href{https://github.com/fstpackage/fst}{fst}.
+#' The \code{.fst} end was replaced by \code{.rad} to remove the confusion
+#' with population genetics statistic fst ...
+#' The decision to use arrow parquet format from Apache was taken because the
+#' package is easier to install than \code{fst}, write and read files faster and
+#' files sizes are are also smaller.
 #' When the object is a CoreArray Genomic Data Structure
 #' (\href{https://github.com/zhengxwen/gdsfmt}{GDS}) file system, the function
 #' set filters (variants and samples) based on the info found in the file and
@@ -259,15 +271,15 @@ read_rad <- function(
 
 
 write_rad <- function(
-  data,
-  path = NULL,
-  filename = NULL,
-  tsv = FALSE,
-  internal = FALSE,
-  append = FALSE,
-  col.names = TRUE,
-  write.message = "standard",
-  verbose = FALSE
+    data,
+    path = NULL,
+    filename = NULL,
+    tsv = FALSE,
+    internal = FALSE,
+    append = FALSE,
+    col.names = TRUE,
+    write.message = "standard",
+    verbose = FALSE
 ) {
 
   if (!internal) {
@@ -318,8 +330,12 @@ write_rad <- function(
         return(gds.filename)
       } else {
         if (is.null(path)) rlang::abort("The function requires the path of the file")
+        if (verbose) cli::cli_progress_step(msg = "Writing arrow parquet tidy dataset...")
         tibble::as_tibble(data) %>%
-          fst::write_fst(x = ., path = path, compress = 85)
+          arrow::write_parquet(x = ., sink = path)
+        if (verbose) cli::cli_progress_done()
+        # tibble::as_tibble(data) %>%
+        #   fst::write_fst(x = ., path = path, compress = 85)
         if (!is.null(write.message) && verbose) {
           if (write.message == "standard") {
             message("File written: ", folder_short(filename))

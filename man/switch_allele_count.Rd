@@ -4,7 +4,7 @@
 \alias{switch_allele_count}
 \title{switch_allele_count}
 \usage{
-switch_allele_count(x, dart.group = FALSE, ref = TRUE)
+switch_allele_count(x, dart.check = FALSE, ref = TRUE)
 }
 \description{
 Switch from dart genotyping 2 presence absence

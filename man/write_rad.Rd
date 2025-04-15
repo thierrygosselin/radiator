@@ -55,10 +55,15 @@ Default: \code{verbose = FALSE}.}
 A file written in the working directory or nothing if it's a GDS connection file.
 }
 \description{
-When dataset is a tidy data frame, the function provides a
-fast way to write a radiator \code{.rad} file.
-The function uses \code{\link[fst]{write_fst}} with a compression level of 85,
-that work well with RADseq dataset.
+When datasets are a tidy data frame, the function provides a
+fast way to write a \code{.arrow.parquet} file. It superseded the
+\code{.rad} file format that is essentially the \code{.fst} format provided by the
+the package \href{https://github.com/fstpackage/fst}{fst}.
+The \code{.fst} end was replaced by \code{.rad} to remove the confusion
+with population genetics statistic fst ...
+The decision to use arrow parquet format from Apache was taken because the
+package is easier to install than \code{fst}, write and read files faster and
+files sizes are are also smaller.
 When the object is a CoreArray Genomic Data Structure
 (\href{https://github.com/zhengxwen/gdsfmt}{GDS}) file system, the function
 set filters (variants and samples) based on the info found in the file and

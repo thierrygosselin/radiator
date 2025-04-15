@@ -2,43 +2,22 @@
 % Please edit documentation in R/read_rad.R
 \name{read_rad}
 \alias{read_rad}
-\title{Read radiator file ending \code{.gds, .rad, .gds.rad}.}
+\title{Read radiator file ending \code{.gds, .rad, .gds.rad, .arrow.parquet}.}
 \usage{
 read_rad(
   data,
   columns = NULL,
-  from = 1,
-  to = NULL,
-  as.data.table = FALSE,
-  old.format = FALSE,
   allow.dup = FALSE,
   check = TRUE,
   verbose = FALSE
 )
 }
 \arguments{
-\item{data}{A file in the working directory ending with .rad or .gds,
+\item{data}{A file in the working directory ending with .arrow.parquet or .gds,
 and produced by radiator, assigner or grur.}
 
-\item{columns}{(optional) For fst file. Column names to read. The default is to read all all columns.
+\item{columns}{(optional) For arrow.parquet file. Column names to read. The default is to read all all columns.
 Default: \code{columns = NULL}.}
-
-\item{from}{(optional) For fst file. Read data starting from this row number.
-Default: \code{from = 1}.}
-
-\item{to}{(optional) For fst file. Read data up until this row number.
-The default is to read to the last row of the stored dataset.
-Default: \code{to = NULL}.}
-
-\item{as.data.table}{(optional, logical) For fst file. If \code{TRUE},
-the result will be returned as a \code{data.table} object.
-Any keys set on dataset \code{x} before writing will be retained.
-This allows for storage of sorted datasets.
-Default: \code{as.data.table = TRUE}.}
-
-\item{old.format}{(optional, logical) For fst file. Use \code{TRUE} to read fst
-files generated with a fst package version lower than v.0.8.0
-Default: \code{old.format = FALSE}.}
 
 \item{allow.dup}{(optional, logical) To allow the opening of a GDS file with
 read-only mode when it has been opened in the same R session.
@@ -57,8 +36,8 @@ A radiator tidy data frame or
 GDS object (with read/write permissions) in the global environment.
 }
 \description{
-Fast read of \code{.gds, .rad, .gds.rad} files.
-The function uses \code{\link[fst]{read_fst}} or
+Fast read of \code{.gds, .rad, .gds.rad, .arrow.parquet} files.
+The function uses \code{\link[arrow]{read_parquet}} or
 CoreArray Genomic Data Structure (\href{https://github.com/zhengxwen/gdsfmt}{GDS})
 file system.
 
@@ -75,11 +54,11 @@ set the filters (variants and samples) based on the info found in the file.
 \dontrun{
 require(SeqArray)
 shark <- radiator::read_rad(data = "data.shark.gds")
-turtle <- radiator::read_rad(data = "data.turtle.rad")
+turtle <- radiator::read_rad(data = "data.turtle.arrow.parquet")
 }
 }
 \seealso{
-\href{https://github.com/fstpackage/fst}{fst}
+\href{https://github.com/apache/arrow/}{arrow}
 \href{https://github.com/zhengxwen/gdsfmt}{GDS}
 \code{\link{read_rad}}
 }

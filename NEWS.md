@@ -1,3 +1,10 @@
+# radiator 1.3.5 2025-04-15
+
+* Speed improvements for some functions
+* gradually replacing data.table and fst package: always difficult to install to work in parallel
+* now using arrow package to store tibble...
+
+
 # radiator 1.3.4 2024-06-05
 
 * Open the `parallel.core` argument for some internal functions to help windows users with parallel processing problems in R. #188

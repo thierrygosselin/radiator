@@ -5,14 +5,11 @@
 \title{dart2gds}
 \usage{
 dart2gds(
-  data,
+  genotypes,
   strata = NULL,
   markers.meta,
   filename.gds,
-  dart.format,
-  gt.vcf = FALSE,
-  gt.vcf.nuc = FALSE,
-  gt = FALSE,
+  dart.check,
   parallel.core = parallel::detectCores() - 1,
   verbose = TRUE
 )

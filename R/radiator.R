@@ -514,7 +514,8 @@ generate_filename <- function(
     "tsv", "gds.rad", "rad", "gds", "gen", "dat",
     "genind", "genlight", "gtypes", "vcf", "colony",
     "bayescan", "gsisim", "hierfstat", "hzar", "ldna",
-    "pcadapt", "related", "stockr", "structure", "arlequin"
+    "pcadapt", "related", "stockr", "structure", "arlequin",
+    "arrow.parquet"
   )
 ) {
 
@@ -533,15 +534,18 @@ generate_filename <- function(
   # Extension
   want <- c("tsv", "gds.rad", "rad", "gds", "gen", "dat", "genind", "genlight", "gtypes",
             "vcf", "colony", "bayescan", "gsisim", "hierfstat", "hzar", "ldna",
-            "pcadapt", "plink", "related", "stockr", "structure", "arlequin")
+            "pcadapt", "plink", "related", "stockr", "structure", "arlequin",
+            "arrow.parquet")
   extension <- match.arg(extension, want)
 
-  # note to myself: currently excluded output : "fineradstructure", "maverick", "plink", "betadiv"
+  # note to myself: currently excluded output :
+  # "fineradstructure", "maverick", "plink", "betadiv"
 
 
   # with same extension
   # extension <- "tsv"
-  if (extension %in% c("tsv", "gds.rad", "rad", "gds", "vcf", "colony", "ldna")) {
+  if (extension %in% c("tsv", "gds.rad", "rad", "gds", "vcf", "colony", "ldna",
+                       "arrow.parquet")) {
     extension <- stringi::stri_join(file.date, ".", extension)
   }
 

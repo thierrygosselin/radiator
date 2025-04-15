@@ -70,14 +70,41 @@ distance2tibble <- function(
 #' @rdname split_vec
 #' @keywords internal
 #' @export
-split_vec <- function(x, chunks) {
-  if (any(class(x) %in% c("tbl_df","tbl","data.frame"))) x <- nrow(x)
-  if (length(x) > 1L) x <- length(x)
-  stopifnot(is.integer(x))
-  split.vec <- as.integer(floor((chunks * (seq_len(x) - 1) / x) + 1))
+split_vec <- function(x, chunks = NULL, tibble.split = FALSE, strata.split = FALSE) {
+  if (any(class(x) %in% c("tbl_df","tbl","data.frame"))) xl <- nrow(x)
+  if (length(x) > 1L && is.vector(x)) xl <- length(x)
+  stopifnot(is.integer(xl))
+  split.vec <- as.integer(floor((chunks * (seq_len(xl) - 1) / xl) + 1))
   # split.vec <- as.integer(floor((parallel.core * cpu.rounds * (seq_len(x) - 1) / x) + 1))
-  stopifnot(length(split.vec) == x)
-  return(split.vec)
+  stopifnot(length(split.vec) == xl)
+
+  if (strata.split && !rlang::has_name(x, "STRATA")) {
+     strata.split <- FALSE
+  }
+
+  if (strata.split && !is.null(chunks)) {
+    # not efficient if higher...
+    n.strata <- length(unique(x$STRATA))
+    if (chunks < n.strata) {
+      strata.split <- FALSE
+      tibble.split <- TRUE
+    }
+  }
+
+  if (tibble.split) {
+    x$SPLIT_VEC <- split.vec
+    x %<>%
+      dplyr::group_by(SPLIT_VEC) %>%
+      dplyr::group_split(.tbl = ., .keep = FALSE)
+    return(x)
+  } else if (strata.split) {
+    x %<>%
+      dplyr::group_by(STRATA) %>%
+      dplyr::group_split(.tbl = ., .keep = TRUE)
+    return(x)
+  } else {
+    return(split.vec)
+  }
 }#End split_vec
 
 
