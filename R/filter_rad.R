@@ -786,7 +786,7 @@ filter_rad <- function(
       filter.long.ld = filter.long.ld.bk,
       parallel.core = parallel.core,
       filename = NULL,
-      iiiiverbose = verbose,
+      verbose = verbose,
       long.ld.missing = long.ld.missing.bk,
       ld.method = ld.method.bk,
       parameters = filters.parameters,
@@ -895,7 +895,7 @@ filter_rad <- function(
             path = path.folder,
             filename = "strata.filtered.tsv",
             tsv = TRUE,
-            write.message = "Writing the filtered strata: strata.filtered.tsv",
+            write.message = "Writing the filtered strata: ",
             verbose = verbose)
 
 

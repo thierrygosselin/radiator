@@ -1,8 +1,16 @@
+<<<<<<< HEAD
 # radiator 1.3.5 2025-04-15
 
 * Speed improvements for some functions
 * gradually replacing data.table and fst package: always difficult to install to work in parallel
 * now using arrow package to store tibble...
+=======
+# radiator 1.3.5 2024-11-06
+
+* Fix the one column matrices in dplyr::filter warning.
+* Fix the error when dplyr::select couldn't find the column STRATA.
+
+>>>>>>> 625193a82a4a404c7c069f479c704172b2f74f16
 
 
 # radiator 1.3.4 2024-06-05

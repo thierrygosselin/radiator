@@ -190,7 +190,6 @@ filter_genotyping <- function(
   if (interactive.filter) message("\nStep 1. Missing visualization and helper table\n")
 
   # Generate coverage stats---------------------------------------------------
-  if (verbose) message("Generating statistics")
   info <- generate_stats(
     gds = data,
     individuals = FALSE,
@@ -205,7 +204,8 @@ filter_genotyping <- function(
     plot = FALSE,
     path.folder = path.folder,
     file.date = file.date,
-    parallel.core = parallel.core
+    parallel.core = parallel.core,
+    verbose = verbose
   )
 
   stats <- info$m.stats

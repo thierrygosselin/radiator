@@ -438,7 +438,7 @@ filter_ma <- function(
       choices = c("MAC_GLOBAL_CORR", "MAF_GLOBAL_COUNT_CORR", "MAF_GLOBAL_DEPTH_CORR", "MAD_GLOBAL_CORR"),
       several.ok = FALSE
     )
-  if (rlang::has_name(x, stats)) nrow(dplyr::filter(.data = x, x[stats] >= threshold))
+  if (rlang::has_name(x, stats)) nrow(dplyr::filter(.data = x, x[[stats]] >= threshold))
   }#End how_many_markers
 
   end.seq <- ceiling(0.2 * n.diplo.samples)
@@ -453,7 +453,8 @@ filter_ma <- function(
     ) %>%
     readr::write_tsv(
       x = .,
-      file = file.path(path.folder, "mac.helper.table.tsv"))
+      file = file.path(path.folder, "mac.helper.table.tsv")
+      )
 
   # if (verbose) message("File written: mac.helper.table.tsv")
 
