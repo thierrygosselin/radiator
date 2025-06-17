@@ -182,19 +182,20 @@ detect_mixed_genomes <- function(
 
     # Folders---------------------------------------------------------------------
     path.folder <- generate_folder(
-      f = path.folder,
       rad.folder = "detect_mixed_genomes",
+      path.folder = path.folder,
       internal = internal,
       file.date = file.date,
       verbose = verbose)
 
     # write the dots file
-    write_rad(
+    write_radiator_tsv(
       data = rad.dots,
-      path = path.folder,
-      filename = stringi::stri_join("radiator_detect_mixed_genomes_args_", file.date, ".tsv"),
-      tsv = TRUE,
+      path.folder = path.folder,
+      filename = "radiator_detect_mixed_genomes_args",
+      date = TRUE,
       internal = internal,
+      write.message = "Function call and arguments stored in: ",
       verbose = verbose
     )
 

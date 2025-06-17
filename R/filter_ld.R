@@ -216,20 +216,20 @@ filter_ld <- function(
 
   # Folders---------------------------------------------------------------------
   path.folder <- generate_folder(
-    f = path.folder,
     rad.folder = "filter_ld",
+    path.folder = path.folder,
     internal = internal,
     file.date = file.date,
     verbose = verbose)
 
   # write the dots file
-  write_rad(
+  write_radiator_tsv(
     data = rad.dots,
-    path = path.folder,
-    filename = stringi::stri_join("radiator_filter_ld_args_", file.date, ".tsv"),
-    tsv = TRUE,
-    write.message = "Function call and arguments stored in: ",
+    path.folder = path.folder,
+    filename = "radiator_filter_ld_args",
+    date = TRUE,
     internal = internal,
+    write.message = "Function call and arguments stored in: ",
     verbose = verbose
   )
 
@@ -866,22 +866,25 @@ filter_ld <- function(
 
       wl %<>% dplyr::filter(VARIANT_ID %in% wl.variant.id)
       bl %<>% dplyr::setdiff(wl) %>% dplyr::mutate(FILTERS = "filter.long.ld")
-      write_rad(
+      write_radiator_tsv(
         data = wl,
-        path = path.folder,
-        filename = "whitelist.long.ld.tsv",
-        tsv = TRUE,
+        path.folder = path.folder,
+        filename = "whitelist.long.ld",
+        date = TRUE,
         internal = FALSE,
+        write.message = "standard",
         verbose = verbose
       )
-      write_rad(
+      write_radiator_tsv(
         data = bl,
-        path = path.folder,
-        filename = "blacklist.long.ld.tsv",
-        tsv = TRUE,
+        path.folder = path.folder,
+        filename = "blacklist.long.ld",
+        date = TRUE,
         internal = FALSE,
+        write.message = "standard",
         verbose = verbose
       )
+
       wl.variant.id <- NULL
 
       # updating the GDS object
@@ -970,11 +973,11 @@ ld_boxplot <- function(
       x = variant.id.bk,
       size = min(n.snp, subsample.markers.n))
     bp.filename <- "snp.long.ld.boxplot.subsample.pdf"
-    ld.summary.filename <- "ld.summary.stats.subsample.tsv"
+    ld.summary.filename <- "ld.summary.stats.subsample"
   } else {
     variant.sub <- variant.id.bk
     bp.filename <- "snp.long.ld.boxplot.pdf"
-    ld.summary.filename <- "ld.summary.stats.tsv"
+    ld.summary.filename <- "ld.summary.stats"
   }
   n.snp.sub <- length(variant.sub)
 
@@ -1062,15 +1065,17 @@ ld_boxplot <- function(
     )
   ld.res <- NULL
 
-  # write the dots file
-  write_rad(
+  # write the  file
+  write_radiator_tsv(
     data = ld.summary,
-    path = path.folder,
+    path.folder = path.folder,
     filename = ld.summary.filename,
-    tsv = TRUE,
+    date = TRUE,
     internal = FALSE,
+    write.message = "standard",
     verbose = verbose
   )
+
 
   if (ld.method == "r2") {
     ld.title <- expression(paste("Long distance linkage disequilibrium (", r^2, ")"))

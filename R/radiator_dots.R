@@ -263,7 +263,7 @@ message_func_call <- function(n, v, verbose = TRUE) {
 
 extract_dots <- function(n, v, env.arg, verbose = TRUE) {
   assign(x = n, value = v, pos = env.arg, envir = env.arg)
-  if (n == "path.folder" && !is.null(v)) v <- folder_short(v)
+  if (n == "path.folder" && !is.null(v)) v <- basename(v)
   if (n == "subsample") v <- length(n)
   if (n == "pop.levels") v <- length(n)
   if (n == "pop.labels") v <- length(n)

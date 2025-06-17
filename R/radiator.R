@@ -195,8 +195,16 @@ radiator_parameters <- function(
 
   # GENERATE filters parameters file
   if (generate) {
-    filters.parameters.name <- stringi::stri_join("filters_parameters_", file.date, ".tsv")
-    parameter.obj$filters.parameters.path <- res$filters.parameters.path <- file.path(path.folder, filters.parameters.name)
+
+    filters.parameters.name <- generate_filename(
+      name.shortcut = "filters_parameters",
+      path.folder = path.folder,
+      date = file.date,
+      extension = "tsv"
+    )$filename
+
+    parameter.obj$filters.parameters.path <- res$filters.parameters.path <- filters.parameters.name
+
     res$filters.parameters <- tibble::tibble(
       FILTERS = as.character(),
       PARAMETERS = as.character(),
@@ -207,15 +215,11 @@ radiator_parameters <- function(
       UNITS = as.character(),
       COMMENTS = as.character())
 
-    write_rad(
-      data = res$filters.parameters,
-      filename = res$filters.parameters.path,
-      tsv = TRUE,
-      internal = internal,
-      append = FALSE,
-      write.message = NULL,
-      verbose = verbose)
-    if (verbose) message("Filters parameters file generated: ", filters.parameters.name)
+    readr::write_tsv(
+      x = res$filters.parameters,
+      file = filters.parameters.name
+      )
+    if (verbose) message("Filters parameters file generated: ", basename(filters.parameters.name))
   }#End generate
 
   # INITIATE filters parameters file
@@ -246,31 +250,18 @@ radiator_parameters <- function(
       COMMENTS = comments
     )
 
-    write_rad(
-      data = res$filters.parameters,
-      filename = parameter.obj$filters.parameters.path,
-      tsv = TRUE,
-      internal = internal,
-      append = TRUE, col.names = FALSE,
-      write.message = NULL,
-      verbose = verbose)
+    readr::write_tsv(
+      x = res$filters.parameters,
+      file = parameter.obj$filters.parameters.path,
+      append = TRUE,
+      col_names = FALSE
+    )
+    if (verbose) message("Filters parameters file updated: ", basename(parameter.obj$filters.parameters.path))
+
     # update info
     res$info <- info.new
     res$filters.parameters.path <- parameter.obj$filters.parameters.path
   }#End update
-
-  # messages
-  # if (initiate && update) {
-  #   if (verbose) message("Filters parameters file: initiated and updated")
-  # }
-
-  # if (initiate && !update) {
-  #   if (verbose) message("Filters parameters file: initiated")
-  # }
-
-  # if (!initiate && update) {
-  #   if (verbose) message("Filters parameters file: updated")
-  # }
 
   return(res)
 }#End radiator_parameters
@@ -379,38 +370,59 @@ radiator_results_message <- function(
 #' @title radiator_folder
 #' @description Generate the rad folders
 #' @param path.folder path of the folder
-#' @param prefix_int Use an integer prefix padded left with 0.
-#' Default: \code{prefix_int = TRUE}.
-#' @inheritParams folder_short
+#' @param prefix.int Use an integer prefix padded left with 0.
+#' Default: \code{prefix.int = TRUE}.
 #' @keywords internal
 #' @export
 #' @rdname radiator_folder
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
-radiator_folder <- function(f, path.folder = NULL, prefix_int = TRUE) {
+radiator_folder <- function(rad.folder, path.folder = NULL, prefix.int = TRUE) {
   if (is.null(path.folder)) path.folder <- getwd()
-  if (prefix_int) {
-    n.dir <- list.dirs(path = path.folder, full.names = FALSE)[-1]
-    n.dir <- length(n.dir) - sum(stringi::stri_count_fixed(
-      str = n.dir, pattern = "/")
-    ) + 1L
+  if (prefix.int) {
+    existing.dirs <- list.dirs(path = path.folder, full.names = FALSE, recursive = FALSE)
+    if (length(existing.dirs) > 0) {
+      check <- existing.dirs %>%
+        stringi::stri_extract_first_regex(str = ., pattern = "^[0-9]*_") %>%
+        stringi::stri_remove_na(x = .)
 
-    f <- stringi::stri_join(
-      stringi::stri_pad_left(str = n.dir, width = 2, pad = 0),
-      "_",
-      f
-    )
-    n.dir <- NULL
+      if (length(check) > 0L) {
+        check %<>%
+          stringi::stri_extract_first_regex(
+            str = .,
+            pattern = "\\d{2}"
+          ) %>%
+          stringi::stri_replace_first_regex(
+            str = .,
+            pattern = "^[0]",
+            # pattern = "0",
+            replacement = ""
+          ) %>%
+          as.integer(x = .) %>%
+          sort
 
-    # old version for bk
-    # f <- stringi::stri_join(stringi::stri_pad_left(
-    #   str = length(list.dirs(path = path.folder, full.names = FALSE)[-1]) + 1L,
-    #   width = 2,
-    #   pad = 0
-    # ), "_", f)
+        last.num <- utils::tail(x = check, 1)
+        check.num <- length(check)
+        if (identical(check.num, last.num)) {
+          select.last <- max(check.num, last.num, na.rm = TRUE)
+        } else {
+          select.last <- check.num <- last.num
+        }
+        existing.dirs <- select.last + 1L
+      } else {
+        existing.dirs <- 1L
+      }
+    } else {
+      existing.dirs <- 1L
+    }
+
+    rad.folder <- existing.dirs %>%
+      as.character %>%
+      stringi::stri_pad_left(str = ., width = 2, pad = 0) %>%
+      stringi::stri_join(., "_", rad.folder)
   }
-  folder.prefix <- file.path(path.folder, f)
-  return(folder.prefix)
+  radiator.folder.full.path <- file.path(path.folder, rad.folder)
+  return(radiator.folder.full.path)
 }#End radiator_folder
 
 
@@ -491,11 +503,11 @@ generate_squeleton_folders <- function(
   for (f in folders) {
     # message("Processing: ", f)
     temp <- folder_prefix(
-      prefix_int = fp.loop,
+      prefix.int = fp.loop,
       prefix.name = f,
       path.folder = path.folder)
     res[[f]] <- temp$folder.prefix
-    fp.loop <- temp$prefix_int
+    fp.loop <- temp$prefix.int
   }
   return(res)
 }#End generate_squeleton_folders
@@ -522,7 +534,9 @@ generate_filename <- function(
   if (is.null(path.folder)) path.folder <- getwd()
 
   # date and time-
-  if (date) {
+  if (is.character(date)) {
+    file.date <- stringi::stri_join("_", date)
+  } else if (date) {
     file.date <- stringi::stri_join("_", format(Sys.time(), "%Y%m%d@%H%M"))
   } else {
     file.date <- ""
@@ -612,77 +626,54 @@ generate_filename <- function(
 #' default \code{file.date = NULL}, generated by the fucntion.
 #' @inheritParams radiator_folder
 #' @inheritParams radiator_common_arguments
-#' @inheritParams folder_short
 #' @keywords internal
 #' @export
 #' @rdname generate_folder
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 generate_folder <- function(
-  f,
-  rad.folder = NULL,
-  internal = FALSE,
-  append.date = TRUE,
-  file.date = NULL,
-  prefix_int = TRUE,
-  verbose = FALSE
+    rad.folder = NULL,
+    path.folder = NULL,
+    internal = FALSE,
+    append.date = TRUE,
+    file.date = NULL,
+    prefix.int = TRUE,
+    verbose = FALSE
 ) {
 
   if (internal) {
     rad.folder <- NULL
+    f.temp <- radiator.folder.full.path <- path.folder
   }
-  if (!is.null(rad.folder)) f <- radiator_folder(rad.folder, f, prefix_int = prefix_int)
+
+  if (!is.null(rad.folder)) {
+    f.temp <- radiator.folder.full.path <- radiator_folder(
+      rad.folder = rad.folder,
+      path.folder = path.folder,
+      prefix.int = prefix.int
+      )
+  }
 
 
-  f.temp <- f
+
   if (is.null(file.date)) {
     file.date <- format(Sys.time(), "%Y%m%d@%H%M")# Date and time
   }
 
-  if (is.null(f)) {
-    f <- getwd()
+  if (is.null(radiator.folder.full.path)) {
+    radiator.folder.full.path <- getwd()
   } else {
     #working directory in the path?
-    wd.present <- TRUE %in% unique(stringi::stri_detect_fixed(str = f, pattern = c(getwd(), paste0(getwd(), "/"))))
-    date.present <- TRUE %in% unique(stringi::stri_detect_fixed(str = f, pattern = "@"))
-    if (!date.present && append.date) f <- stringi::stri_join(f, file.date, sep = "_")
-    if (!wd.present) f <- file.path(getwd(), f)
-    if (verbose && !identical(f.temp, f)) message("Folder created: ", folder_short(f))
+    wd.present <- TRUE %in% unique(stringi::stri_detect_fixed(str = radiator.folder.full.path, pattern = c(getwd(), paste0(getwd(), "/"))))
+    date.present <- TRUE %in% unique(stringi::stri_detect_fixed(str = radiator.folder.full.path, pattern = "@"))
+    if (!date.present && append.date) radiator.folder.full.path <- stringi::stri_join(radiator.folder.full.path, file.date, sep = "_")
+    if (!wd.present) radiator.folder.full.path <- file.path(getwd(), radiator.folder.full.path)
+    if (verbose && !identical(f.temp, radiator.folder.full.path)) message("Folder created: ", basename(radiator.folder.full.path))
   }
-  if (!dir.exists(f)) dir.create(f)
-  return(f)
+  if (!dir.exists(radiator.folder.full.path)) dir.create(radiator.folder.full.path)
+  return(radiator.folder.full.path)
 }#End generate_folder
 
-# folder_short------------------------------------------------------------------
-#' @title folder_short
-#' @description Extract the short name of the folder generated by radiator
-#' @name folder_short
-#' @param f Folder name
-#' @rdname folder_short
-#' @keywords internal
-#' @export
-#' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
-folder_short <- function(f) {
-  # remove / if found last
-  if (stringi::stri_sub(str = f, from = -1, length = 1) == "/") {
-    f <- stringi::stri_replace_last_regex(
-      str = f,
-      pattern = "[/$]",
-      replacement = "")
-  }
-
-  # detect the presence of /
-  if (stringi::stri_detect_fixed(str = f, pattern = "/")) {
-    f %<>% stringi::stri_sub(
-      str = .,
-      from = stringi::stri_locate_last_fixed(
-        str = .,
-        pattern = "/")[2] + 1,
-      to = stringi::stri_length(str = .)
-    )
-  }
-  return(f)
-}#End folder_short
 
 # folder_prefix-----------------------------------------------------------------
 #' @title folder_prefix
@@ -692,7 +683,7 @@ folder_short <- function(f) {
 #' @keywords internal
 #' @export
 folder_prefix <- function(
-  prefix_int = NULL,
+  prefix.int = NULL,
   prefix.name = NULL,
   path.folder = NULL
 ) {
@@ -707,33 +698,33 @@ folder_prefix <- function(
     }
   }
 
-  if (is.null(prefix_int)) {
-    prefix_int <- 0L
+  if (is.null(prefix.int)) {
+    prefix.int <- 0L
   } else {
-    if (is.list(prefix_int)) {
-      prefix_int <- as.integer(prefix_int$prefix_int) + 1L
+    if (is.list(prefix.int)) {
+      prefix.int <- as.integer(prefix.int$prefix.int) + 1L
     } else {
-      prefix_int <- as.integer(prefix_int) + 1L
+      prefix.int <- as.integer(prefix.int) + 1L
     }
   }
 
   if (is.null(prefix.name)) {
     folder.prefix <- stringi::stri_join(
       stringi::stri_pad_left(
-        str = prefix_int, width = 2, pad = 0
+        str = prefix.int, width = 2, pad = 0
       ), "_"
     )
   } else {
     folder.prefix <- stringi::stri_join(
       stringi::stri_pad_left(
-        str = prefix_int, width = 2, pad = 0
+        str = prefix.int, width = 2, pad = 0
       ),
       prefix.name,
       sep = "_"
     )
   }
   folder.prefix <- file.path(path.folder, folder.prefix)
-  res = list(prefix_int = prefix_int, folder.prefix = folder.prefix)
+  res = list(prefix.int = prefix.int, folder.prefix = folder.prefix)
 }#End folder_prefix
 
 
@@ -789,15 +780,18 @@ radiator_function_header <- function(f.name = NULL, start = TRUE, verbose = TRUE
   if (is.null(f.name)) invisible(NULL)
   if (start) {
     if (verbose) {
-      # cat("################################################################################\n")
-      cat(paste0(stringi::stri_pad_both(str = "", width = 80L, pad = "#"), "\n"))
-      cat(paste0(stringi::stri_pad_both(str = paste0(" radiator::", f.name, " "), width = 80L, pad = "#"), "\n"))
-      cat(paste0(stringi::stri_pad_both(str = "", width = 80L, pad = "#"), "\n"))
-      # cat("################################################################################\n")
+      # cat(paste0(stringi::stri_pad_both(str = "", width = 80L, pad = "#"), "\n"))
+      # cat(paste0(stringi::stri_pad_both(str = paste0(" radiator::", f.name, " "), width = 80L, pad = "#"), "\n"))
+      # cat(paste0(stringi::stri_pad_both(str = "", width = 80L, pad = "#"), "\n"))
+
+      message(stringi::stri_pad_both(str = "", width = 80L, pad = "#"))
+      message(stringi::stri_pad_both(str = paste0(" radiator::", f.name, " "), width = 80L, pad = "#"))
+      message(stringi::stri_pad_both(str = "", width = 80L, pad = "#"), "\n")
     }
   } else {
     if (verbose) {
-      cat(paste0(stringi::stri_pad_both(str = paste0(" completed ", f.name, " "), width = 80L, pad = "#"), "\n"))
+      # cat(paste0(stringi::stri_pad_both(str = paste0(" completed ", f.name, " "), width = 80L, pad = "#"), "\n"))
+      message(stringi::stri_pad_both(str = paste0(" completed ", f.name, " "), width = 80L, pad = "#"), "\n")
     }
   }
 }# End radiator_function_header

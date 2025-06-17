@@ -248,20 +248,20 @@ detect_duplicate_genomes <- function(
 
     # Folders---------------------------------------------------------------------
     path.folder <- generate_folder(
-      f = path.folder,
       rad.folder = "detect_duplicate_genomes",
+      path.folder = path.folder,
       internal = internal,
       file.date = file.date,
       verbose = verbose)
 
     # write the dots file
-    message("Function call and arguments stored in a file")
-    write_rad(
+    write_radiator_tsv(
       data = rad.dots,
-      path = path.folder,
-      filename = stringi::stri_join("radiator_detect_duplicate_genomes_args_", file.date, ".tsv"),
-      tsv = TRUE,
+      path.folder = path.folder,
+      filename = "radiator_detect_duplicate_genomes_args",
+      date = TRUE,
       internal = internal,
+      write.message = "Function call and arguments stored in: ",
       verbose = verbose
     )
 
@@ -842,6 +842,7 @@ detect_duplicate_genomes <- function(
 
     } # end genome method
 
+    # Filtering --------
     # Removing duplicates ------------------------------------------------------
     if (blacklist.duplicates || interactive.filter) {
       check.mono <- FALSE

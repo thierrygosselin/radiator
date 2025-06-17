@@ -322,18 +322,18 @@ filter_hwe <- function(
     }
     # Folders---------------------------------------------------------------------
     path.folder <- generate_folder(
-      f = path.folder,
       rad.folder = "filter_hwe",
+      path.folder = path.folder,
       internal = internal,
       file.date = file.date,
       verbose = verbose)
 
     # write the dots file
-    write_rad(
+    write_radiator_tsv(
       data = rad.dots,
-      path = path.folder,
-      filename = stringi::stri_join("radiator_filter_hwe_args_", file.date, ".tsv"),
-      tsv = TRUE,
+      path.folder = path.folder,
+      filename = "radiator_filter_hwe_arg",
+      date = TRUE,
       internal = internal,
       write.message = "Function call and arguments stored in: ",
       verbose = verbose
@@ -1007,19 +1007,22 @@ blacklist_hw <- function(
         path.folder,
         stringi::stri_join(
           "blacklist.markers.hwd", significance.group, "mid.p.value",
-          hw.pop.threshold, "hw.pop.threshold", "tsv", sep = "."))
+          hw.pop.threshold, "hw.pop.threshold", "tsv", sep = ".")
+        )
 
       whitelist.filename <- file.path(
         path.folder,
         stringi::stri_join(
           "whitelist.markers.hwe", significance.group, "mid.p.value",
-          hw.pop.threshold, "hw.pop.threshold", "tsv", sep = "."))
+          hw.pop.threshold, "hw.pop.threshold", "tsv", sep = ".")
+        )
 
       rad.filename <- file.path(
         path.folder,
         stringi::stri_join(
           "tidy.filtered.hwe", significance.group, "mid.p.value",
-          hw.pop.threshold, "hw.pop.threshold", "rad", sep = "."))
+          hw.pop.threshold, "hw.pop.threshold", "arrow.parquet", sep = ".")
+        )
 
       # Generate the blacklist
       want <- c("MARKERS", "CHROM", "LOCUS", "POS")
@@ -1030,7 +1033,8 @@ blacklist_hw <- function(
           , by = "MARKERS") %>%
         readr::write_tsv(
           x = .,
-          file = blacklist.filename)
+          file = blacklist.filename
+          )
 
       # Generate the rad data + the whitelist
       if (!is.null(data.temp)) {
@@ -1039,17 +1043,33 @@ blacklist_hw <- function(
             dplyr::bind_rows(data.temp) %>%
             dplyr::mutate(STRATA = factor(STRATA, levels = pop.id.levels)) %>%
             dplyr::filter(!MARKERS %in% blacklist$MARKERS))
-        radiator::write_rad(data = whitelist, path = rad.filename)
+
+        write_rad(
+          data = whitelist,
+          filename = rad.filename,
+          internal = FALSE,
+          write.message = "standard",
+          verbose = TRUE
+        )
+
         whitelist %>%
           dplyr::select(tidyselect::any_of(want)) %>%
           dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
           readr::write_tsv(x = ., file = whitelist.filename)
+
       } else {
         whitelist <- suppressWarnings(
           unfiltered.data %>%
             dplyr::filter(!MARKERS %in% blacklist$MARKERS))
 
-        radiator::write_rad(data = whitelist, path = rad.filename)
+        write_rad(
+          data = whitelist,
+          filename = rad.filename,
+          internal = FALSE,
+          write.message = "standard",
+          verbose = TRUE
+        )
+
         whitelist %>%
           dplyr::select(tidyselect::any_of(want)) %>%
           dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
@@ -1062,7 +1082,8 @@ blacklist_hw <- function(
       .x = ., .f = bl_map,
       unfiltered.data = unfiltered.data,
       hw.pop.threshold = hw.pop.threshold,
-      path.folder = path.folder)
+      path.folder = path.folder
+      )
 
   return(message("done!"))
 }#End blacklist_hw
@@ -1073,9 +1094,11 @@ blacklist_hw <- function(
 #' @keywords internal
 #' @export
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
-update_filter_parameter <- function(filter, unfiltered,
-                                    filtered, parameter,
-                                    threshold, param.path) {
+update_filter_parameter <- function(
+    filter, unfiltered,
+    filtered, parameter,
+    threshold, param.path
+) {
   # Update filters.parameters SNP ----------------------------------------------
   snp.before <- as.integer(dplyr::n_distinct(unfiltered$MARKERS))
   snp.after <- as.integer(dplyr::n_distinct(filtered$MARKERS))

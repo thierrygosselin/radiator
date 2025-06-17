@@ -334,16 +334,12 @@ separately.
 \item \strong{long.ld.missing}: described in \code{\link[radiator]{filter_ld}}.
 \item \strong{ld.method}: described in \code{\link[radiator]{filter_ld}}.
 \item \strong{detect.mixed.genomes}: described in \code{\link[radiator]{detect_mixed_genomes}}.
+\item \strong{ind.heterozygosity.threshold}: described in \code{\link[radiator]{detect_mixed_genomes}}.
 \item \strong{detect.duplicate.genomes}: described in \code{\link[radiator]{detect_duplicate_genomes}}.
 \item \strong{dup.threshold}: described in \code{\link[radiator]{detect_duplicate_genomes}}.
 \item \strong{filter.hwe}: described in \code{\link[radiator]{filter_hwe}}.
 \item \strong{hw.pop.threshold}: described in \code{\link[radiator]{filter_hwe}}.
 \item \strong{midp.threshold}: described in \code{\link[radiator]{filter_hwe}}.
-\item \strong{filter.hwe}: described in \code{\link[radiator]{filter_hwe}}.
-\item \strong{filter.hwe}: described in \code{\link[radiator]{filter_hwe}}.
-\item \strong{ind.heterozygosity.threshold}: described in \code{\link[radiator]{detect_mixed_genomes}}.
-\item \strong{ind.heterozygosity.threshold}: described in \code{\link[radiator]{detect_mixed_genomes}}.
-\item \strong{ind.heterozygosity.threshold}: described in \code{\link[radiator]{detect_mixed_genomes}}.
 }
 }
 

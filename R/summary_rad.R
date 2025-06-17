@@ -49,9 +49,9 @@ summary_rad <- function(
 
   # Folders---------------------------------------------------------------------
   path.folder <- generate_folder(
-    f = path.folder,
     rad.folder = "summary_stats",
-    prefix_int = FALSE,
+    path.folder = path.folder,
+    prefix.int = FALSE,
     internal = FALSE,
     file.date = file.date,
     verbose = verbose)
@@ -154,23 +154,35 @@ summary_rad <- function(
     )
 
   # writting the results
-  write_rad(
+  write_radiator_tsv(
     data = ms,
-    path = path.folder,
-    filename = "summary.stats.markers.tsv",
-    tsv = TRUE, verbose = verbose)
+    path.folder = path.folder,
+    filename = "summary.stats.markers",
+    date = TRUE,
+    internal = FALSE,
+    write.message = "standard",
+    verbose = verbose
+  )
 
-  write_rad(
+  write_radiator_tsv(
     data = mps,
-    path = path.folder,
-    filename = "summary.stats.markers.pop.tsv",
-    tsv = TRUE, verbose = verbose)
+    path.folder = path.folder,
+    filename = "summary.stats.markers.pop",
+    date = TRUE,
+    internal = FALSE,
+    write.message = "standard",
+    verbose = verbose
+  )
 
-  write_rad(
+  write_radiator_tsv(
     data = ps,
-    path = path.folder,
-    filename = "summary.stats.pop.tsv",
-    tsv = TRUE, verbose = verbose)
+    path.folder = path.folder,
+    filename = "summary.stats.pop",
+    date = TRUE,
+    internal = FALSE,
+    write.message = "standard",
+    verbose = verbose
+  )
 
   return(res = list(summary.stats.pop = ps,
                     summary.stats.markers.pop = mps,

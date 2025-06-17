@@ -16,7 +16,9 @@
 
 #' @param data A file in the working directory ending with .arrow.parquet or .gds,
 #' and produced by radiator, assigner or grur.
-#' @param columns (optional) For arrow.parquet file. Column names to read. The default is to read all all columns.
+#' @param columns (optional) For arrow.parquet file.
+#' Column names to read.
+#' The default is to read all all columns.
 #' Default: \code{columns = NULL}.
 #' @param allow.dup (optional, logical) To allow the opening of a GDS file with
 #' read-only mode when it has been opened in the same R session.
@@ -68,9 +70,13 @@ read_rad <- function(
 
   # arrow parquet file ---------------------------------------------------------
   if ("arrow.parquet" %in% data.type) {
-    data <- arrow::read_parquet(file = data, col_select = columns)
-    message("If the dataset is not readable, use:")
-    message("obj <- arrow::read_parquet(file = 'your.file.arrow.parquet')")
+    # for some results, arrow doesn't like having option B only when col_select
+    # is NULL from the function call...
+    if (is.null(columns)) { #option A
+      data <- arrow::read_parquet(file = data)
+    } else { #option B
+      data <- arrow::read_parquet(file = data, col_select = columns)
+    }
     return(data)
   }
 
@@ -105,7 +111,7 @@ read_rad <- function(
         columns = columns,
         from = from,
         to = to,
-        as.data.table = as.data.table
+        as.data.table = FALSE
       ) %>%
         tibble::as_tibble(.)
       return(data)
@@ -198,58 +204,60 @@ read_rad <- function(
 
 #' @name write_rad
 #' @title Write tidy genomic data file or close GDS file
-#' @description When datasets are a tidy data frame, the function provides a
-#' fast way to write a \code{.arrow.parquet} file. It superseded the
-#' \code{.rad} file format that is essentially the \code{.fst} format provided by the
+#' @description For tidy genomic datasets, the function provides a
+#' fast way to write a \code{.arrow.parquet} file from Apache.
+#' This new file ending replaces \code{.rad} file format that was essentially
+#' the \code{.fst}, provided by
 #' the package \href{https://github.com/fstpackage/fst}{fst}.
-#' The \code{.fst} end was replaced by \code{.rad} to remove the confusion
-#' with population genetics statistic fst ...
-#' The decision to use arrow parquet format from Apache was taken because the
-#' package is easier to install than \code{fst}, write and read files faster and
-#' files sizes are are also smaller.
+#' See explanation in section below.
+#'
+#'
 #' When the object is a CoreArray Genomic Data Structure
 #' (\href{https://github.com/zhengxwen/gdsfmt}{GDS}) file system, the function
-#' set filters (variants and samples) based on the info found in the file and
-#' close the connection with the GDS file.
-#'
+#' \strong{close the connection with the GDS file}. Before doing so it sets the
+#' filters (variants and samples) based on the info found in the file.
 #'
 #' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 #' and \href{https://github.com/thierrygosselin/assigner}{assigner}
 #' and might be of interest for users.
 
-#' @param data An object in the global environment: tidy data frame or GDS connection file
+#' @param data An object in the global environment: tidy genomic dataset
+#' or GDS connection file
 
-#' @param path (optional) For tidy data frame, the path to write the data on disk.
-#' Default: \code{path = NULL}.
-
-#' @param filename (optional) Name of the file (when using tsv files).
+#' @param filename (optional) Name of the file. If default, \code{radiator_date_time.arrow.parquet} is used.
 #' Default: \code{filename = NULL}.
 
-#' @param tsv (optinal, logical) To trigger saving using \code{readr::write_tsv}.
-#' Default: \code{tsv = FALSE}.
-
 #' @param internal (optional, logical) This is used inside radiator internal code and it stops
-#' from writting the file.
+#' from writing the file.
 #' Default: \code{internal = FALSE}.
 
-#' @param append (optional, logical) If \code{FALSE}, will overwrite existing file.
-#' If \code{TRUE}, will append to existing file.
-#' In both cases, if file does not exist a new file is created.
-#' Default: \code{append = FALSE}.
-
-#' @param col.names (optional, logical) Write columns names at the top of the file?
-#' Must be either TRUE or FALSE.
-#' Default: \code{col.names = TRUE}.
-
 #' @param write.message (optional, character) Print a message in the console
-#' after writting file.
+#' after writing file.
 #' With \code{write.message = NULL}, nothing is printed in the console.
 #' Default: \code{write.message = "standard"}. This will print
-#' \code{message("File written: ", folder_short(filename))}.
+#' \code{message("File written: ", basename(filename))}.
 
 #' @param verbose (optional, logical) \code{verbose = TRUE} to be chatty
 #' during execution.
 #' Default: \code{verbose = FALSE}.
+
+#' @section Why is .rad is no longer supported:
+#'
+#' Originally, the ending \code{.fst} from
+#' package \href{https://github.com/fstpackage/fst}{fst} was replaced
+#' by \code{.rad} to remove the confusion with population genetics statistic fst ...
+#' The decision to stop using the package \code{fst} was taken because:
+#' \itemize{
+#' \item The package was \strong{always difficult} to install when you
+#' wanted all cores to function.
+#' \item Successful recipe to install with one OS was rarely working
+#' after changing R version or OS version = painful.
+#' \item Asking users to play with \code{.R/Makevars} was always time
+#' consuming to troubleshoot after for me.
+#' \item \href{https://arrow.apache.org/docs/r/}{arrow} is easy to install,
+#' files are smaller in size and read/write faster!
+#' }
+
 
 #' @return A file written in the working directory or nothing if it's a GDS connection file.
 #' @export
@@ -258,92 +266,218 @@ read_rad <- function(
 #'
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 #' @seealso
+#' \href{https://arrow.apache.org}{appache arrow}
+#'
 #' \href{https://github.com/fstpackage/fst}{fst}
+#'
 #' \href{https://github.com/zhengxwen/gdsfmt}{GDS}
+#'
 #' \code{\link{read_rad}}
 #'
 #' @examples
 #' \dontrun{
 #' require(SeqArray)
-#' radiator::write_rad(data = tidy.data, path = "data.shark.rad")
+#' radiator::write_rad(data = tidy.data, filename = "data.shark.arrow.parquet")
 #' radiator::write_rad(data = gds.object)
 #' }
 
 
 write_rad <- function(
     data,
-    path = NULL,
-    filename = NULL,
-    tsv = FALSE,
+    filename,
     internal = FALSE,
-    append = FALSE,
-    col.names = TRUE,
     write.message = "standard",
     verbose = FALSE
 ) {
 
   if (!internal) {
-    if (tsv) {
-      # write the dots file
-      if (!is.null(path)) {
-        path.filename <- file.path(path, filename)
+    # detect format---------------------------------------------------------------
+    data.type <- class(data)
+
+    # GDS closing connection and setting filters
+    if ("SeqVarGDSClass" %in% data.type) {
+      s <- extract_individuals_metadata(
+        gds = data,
+        ind.field.select = "INDIVIDUALS",
+        whitelist = TRUE
+      ) %$%
+        INDIVIDUALS
+      m <- extract_markers_metadata(
+        gds = data,
+        markers.meta.select = "VARIANT_ID",
+        whitelist = TRUE
+      ) %$%
+        VARIANT_ID
+      if (verbose) message("Setting filters to:")
+      if (verbose) message("    number of samples: ", length(s))
+      if (verbose) message("    number of markers: ", length(m))
+      SeqArray::seqSetFilter(object = data,
+                             variant.id = m,
+                             sample.id = as.character(s),
+                             verbose = FALSE)
+      if (verbose) message("Closing connection with GDS file:\n", data$filename)
+      gds.filename <- data$filename
+      SeqArray::seqClose(data)
+      return(gds.filename)
+    }
+
+    # using arrow parquet
+    if (is.null(filename)) rlang::abort("A filename must be provided")
+
+    file.type <- stringi::stri_extract(
+      str = filename,
+      regex = "\\.[^\\.]*$"
+    )
+
+    # check for .rad file ending
+    if (".rad" %in% file.type) {
+      message("fst file format deprecated, see function doc")
+      message("Changing .rad to .arrow.parquet")
+      filename <- stringi::stri_sub_replace(str = filename, from = -4, to = -1, replacement = ".arrow.parquet")
+      file.type <- ".parquet"
+    }
+
+    if (!".parquet" %in% file.type) {
+      rlang::abort("filename with .arrow.parquet must be provided")
+    }
+
+    if (verbose) cli::cli_progress_step(msg = "Writing arrow parquet tidy dataset...")
+
+    # writing arrow parquet file
+    tibble::as_tibble(data) %>%
+      arrow::write_parquet(x = ., sink = filename)
+
+    if (verbose) cli::cli_progress_done()
+
+    if (!is.null(write.message) && verbose) {
+      if (write.message == "standard") {
+        message("File written: ", basename(filename))
       } else {
-        path.filename <- filename
-      }
-      readr::write_tsv(x = data, file = path.filename, append = append, col_names = col.names)
-
-      if (!is.null(write.message) && verbose) {
-        if (write.message == "standard") {
-          message("File written: ", folder_short(filename))
-        } else {
-          message(write.message,  folder_short(filename))
-        }
-      }
-
-    } else {
-      # detect format---------------------------------------------------------------
-      data.type <- class(data)
-
-      if ("SeqVarGDSClass" %in% data.type) {
-        s <- extract_individuals_metadata(
-          gds = data,
-          ind.field.select = "INDIVIDUALS",
-          whitelist = TRUE
-        ) %$%
-          INDIVIDUALS
-        m <- extract_markers_metadata(
-          gds = data,
-          markers.meta.select = "VARIANT_ID",
-          whitelist = TRUE
-        ) %$%
-          VARIANT_ID
-        if (verbose) message("Setting filters to:")
-        if (verbose) message("    number of samples: ", length(s))
-        if (verbose) message("    number of markers: ", length(m))
-        SeqArray::seqSetFilter(object = data,
-                               variant.id = m,
-                               sample.id = as.character(s),
-                               verbose = FALSE)
-        if (verbose) message("Closing connection with GDS file:\n", data$filename)
-        gds.filename <- data$filename
-        SeqArray::seqClose(data)
-        return(gds.filename)
-      } else {
-        if (is.null(path)) rlang::abort("The function requires the path of the file")
-        if (verbose) cli::cli_progress_step(msg = "Writing arrow parquet tidy dataset...")
-        tibble::as_tibble(data) %>%
-          arrow::write_parquet(x = ., sink = path)
-        if (verbose) cli::cli_progress_done()
-        # tibble::as_tibble(data) %>%
-        #   fst::write_fst(x = ., path = path, compress = 85)
-        if (!is.null(write.message) && verbose) {
-          if (write.message == "standard") {
-            message("File written: ", folder_short(filename))
-          } else {
-            write.message
-          }
-        }
+        write.message
       }
     }
   }
+
 }#End write_rad
+
+
+
+#' @name write_radiator_tsv
+#' @title Write radiator tsv
+#' @description Write tsv file. Using the package \code{readr}. Takes cares of
+#' the file path and proper filenaming. The complete filename is built with the
+#' \code{path.folder} + \code{filename} + \code{datetime} + \code{.tsv}.
+#'
+#' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
+#' and \href{https://github.com/thierrygosselin/assigner}{assigner}
+#' and might be of interest for users.
+
+#' @param data An object in the global environment. Ideally a tibble...
+
+#' @param path.folder (optional) Path to write the file.
+#' With default, the working directory is used.
+#' Default: \code{path.folder = NULL}.
+
+#' @param filename (required, character string) Name of the file.
+#'
+#' @param append If FALSE, will overwrite existing file.
+#' If TRUE, will append to existing file.
+#' In both cases, if the file does not exist a new file is created.
+#' Default: \code{append = FALSE}.
+#'
+#' @param col.names If FALSE, column names will not be included at the top of the file.
+#' If TRUE, column names will be included.
+#' If not specified, col_names will take the opposite value given to append.
+#' Default: \code{col.names = TRUE}.
+#'
+#' @param date (logical) To append time to the filename.
+#' Default: \code{date = TRUE}.
+
+#' @param internal (optional, logical) This is used inside radiator internal code and it stops
+#' from writting the file.
+#' Default: \code{internal = FALSE}.
+
+#' @param write.message (optional, character) Print a message in the console
+#' after writing file.
+#' With \code{write.message = NULL}, nothing is printed in the console.
+#' Default: \code{write.message = "standard"}. This will print
+#' \code{message("File written: ", basename(filename))}.
+
+#' @param verbose (optional, logical) \code{verbose = TRUE} to be chatty
+#' during execution.
+#' Default: \code{verbose = FALSE}.
+
+#' @return A file written in the working directory.
+#' @export
+#' @rdname write_radiator_tsv
+#'
+#'
+#' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
+#'
+#' \code{\link{read_rad}}
+#'
+#' @examples
+#' \dontrun{
+#' radiator::write_radiator_tsv(data = tidy.data, filename = "data.shark")
+#' }
+
+
+write_radiator_tsv <- function(
+    data,
+    path.folder = NULL,
+    filename,
+    append = FALSE,
+    col.names = TRUE,
+    date = TRUE,
+    internal = FALSE,
+    write.message = "standard",
+    verbose = FALSE
+) {
+
+  if (!internal) {
+
+    # checks
+    generate.filename <- TRUE # by default
+
+    # check if .tsv is present in filename
+    file.type <- stringi::stri_extract(
+      str = filename,
+      regex = "\\.[^\\.]*$"
+    )
+
+    if (".tsv" %in% file.type) {
+      # check path
+      if (identical(basename(filename), filename)) {
+        generate.filename <- TRUE
+      } else {
+        generate.filename <- FALSE
+        full.filename <- filename
+      }
+    }
+
+    if (generate.filename) {
+      full.filename <- generate_filename(
+        name.shortcut = filename,
+        path.folder = path.folder,
+        date = date,
+        extension = "tsv"
+      )$filename
+    }
+
+    readr::write_tsv(
+      x = data,
+      file = full.filename,
+      append = append,
+      col_names = col.names
+    )
+
+    if (!is.null(write.message) && verbose) {
+      if (write.message == "standard") {
+        message("File written: ", basename(full.filename))
+      } else {
+        write.message
+      }
+    }
+  }
+
+}#End write_radiator_tsv

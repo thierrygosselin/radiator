@@ -4,7 +4,7 @@
 \alias{gt2array}
 \title{gt2array}
 \usage{
-gt2array(gt.bin, n.ind, n.snp)
+gt2array(genotypes, n.ind = NULL, n.snp = NULL)
 }
 \description{
 Alternate allele dosage gt (GT_BIN) to

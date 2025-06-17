@@ -4,15 +4,13 @@
 \alias{radiator_folder}
 \title{radiator_folder}
 \usage{
-radiator_folder(f, path.folder = NULL, prefix_int = TRUE)
+radiator_folder(rad.folder, path.folder = NULL, prefix.int = TRUE)
 }
 \arguments{
-\item{f}{Folder name}
-
 \item{path.folder}{path of the folder}
 
-\item{prefix_int}{Use an integer prefix padded left with 0.
-Default: \code{prefix_int = TRUE}.}
+\item{prefix.int}{Use an integer prefix padded left with 0.
+Default: \code{prefix.int = TRUE}.}
 }
 \description{
 Generate the rad folders

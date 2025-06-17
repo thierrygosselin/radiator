@@ -220,29 +220,29 @@ read_plink <- function(
       verbose = FALSE
     )
 
-    # Folders---------------------------------------------------------------------
+    # Generate folders and filenames ---------------------------------------------
     wf <- path.folder <- generate_folder(
-      f = path.folder,
       rad.folder = "read_plink",
-      prefix_int = FALSE,
+      path.folder = path.folder,
+      prefix.int = FALSE,
       internal = internal,
       file.date = file.date,
       verbose = verbose)
 
     radiator.folder <- generate_folder(
-      f = path.folder,
       rad.folder = "import_gds",
-      prefix_int = TRUE,
+      path.folder = path.folder,
+      prefix.int = TRUE,
       internal = internal,
       file.date = file.date,
       verbose = verbose)
 
     # write the dots file
-    write_rad(
+    write_radiator_tsv(
       data = rad.dots,
-      path = radiator.folder,
-      filename = stringi::stri_join("radiator_read_plink_args_", file.date, ".tsv"),
-      tsv = TRUE,
+      path.folder = path.folder,
+      filename = "radiator_read_plink_args",
+      date = TRUE,
       internal = internal,
       write.message = "Function call and arguments stored in: ",
       verbose = verbose
@@ -431,7 +431,7 @@ read_plink <- function(
 #' @name tidy_plink
 #' @title Tidy PLINK tped and bed files
 
-#' @description Transform bi-allelic PLINK files in \code{.tped} or {.bed} formats
+#' @description Transform bi-allelic PLINK files in \code{.tped} or \code{.bed} formats
 #' into a tidy dataset.
 #'
 #' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}

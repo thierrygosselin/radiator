@@ -44,14 +44,14 @@ into a new pop called \code{"NEW"}:
 \code{pop.labels = c("NEW", "NEW", "ALB")}.
 To rename \code{"QUE"} to \code{"TAS"}:
 \code{pop.labels = c("TAS", "ONT", "ALB")}.
-Default: \code{pop.labels = NULL}. If you find this too complicated,
-there is also the \code{strata} argument that can do the same thing,
-see below.
+Default: \code{pop.labels = NULL}.
 White spaces in population names are replaced by underscore.}
 
 \item{pop.select}{(optional, string) Selected list of populations for
 the analysis. e.g. \code{pop.select = c("QUE", "ONT")} to select \code{QUE}
-and \code{ONT} population samples (out of 20 pops).
+and \code{ONT} population samples (out of 20 pops). If \code{pop.labels}
+argument was used to rename the strata column, use the new names with
+\code{pop.select}.
 Default: \code{pop.select = NULL}}
 
 \item{blacklist.id}{(optional, path or object) A blacklist file in the working directory

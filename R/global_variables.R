@@ -145,8 +145,9 @@ if (getRversion() >= "2.15.1") {
       "GENETIC_SEX.y", "MEAN_GT", "QCcode", "alleles", "assayLSID", "center",
       "panelLSID", "pop.info", "protLSID", "strand", "MICROSATELLITES",
       "INDIVIDUALS_PLINK", "ind.heterozygosity.threshold", "INDIVIDUALS...3",
-      "INDIVIDUALS...7", "MARKERS...2", "MARKERS...6", "VARIANT_ID...1",
-      "VARIANT_ID...5", "THRESHOLDS", "THRESHOLD_OUTLIERS_HIGH",
+      "INDIVIDUALS...7", "MARKERS...2", "MARKERS...6",
+      "VARIANT_ID...1", "VARIANT_ID...4", "VARIANT_ID...5",
+      "THRESHOLDS", "THRESHOLD_OUTLIERS_HIGH",
       "THRESHOLD_OUTLIERS_LOW", "A_SUM", "N_ALLELES",
       "filter.individuals.coverage.iqr",
       "filter.individuals.coverage.median", "COMMON_META", "where", "everything",
@@ -155,7 +156,9 @@ if (getRversion() >= "2.15.1") {
       "ALLELES_ALT_A2", "ALLELES_REF_A1", "NUC_ALT_A2", "NUC_REF_A1",
       "MAD_GLOBAL_CORR", "MAC_GLOBAL_CORR", "MAF_GLOBAL_DEPTH_CORR",
       "TOTAL_COUNT", "m.info", "MAF_GLOBAL_COUNT_CORR", "MAF_GLOBAL_DEPTH_CORR",
-      "MAD_GLOBAL", "i.info", "ID1_POP", "ID2_POP"
+      "MAD_GLOBAL", "i.info", "ID1_POP", "ID2_POP", "VARIANT_DART", "MIX_RISK",
+      "COVERAGE_GROUP", "BAD", "BAD_HET", "BAD_FEELING", "GDS",
+      "ID_SEQ...2", "ID_SEQ...5", "to", "from", "old.format", "LABELS"
     )
   )
 }

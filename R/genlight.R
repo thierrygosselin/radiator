@@ -153,7 +153,7 @@ tidy_genlight <- function(
 
   if (tidy) {
     if (write) {
-      filename.temp <- generate_filename(extension = "rad")
+      filename.temp <- generate_filename(extension = "arrow.parquet")
       filename.short <- filename.temp$filename.short
       filename.genlight <- filename.temp$filename
     }
@@ -186,25 +186,36 @@ tidy_genlight <- function(
       ) %$%
       input
 
-    if (write) radiator::write_rad(data = tidy.data, path = filename.genlight, verbose = verbose)
+    if (write) radiator::write_rad(data = tidy.data, filename = filename.genlight, verbose = verbose)
 
   }#End tidy genlight
 
   if (gds) {
     # generate the GDS --------------------------------------------------------------
     # markers %<>% dplyr::mutate(VARIANT_ID = as.integer(factor(MARKERS)))
+
+    # generate genotypes format for easy reading into GDS
+    tidy.data %<>%
+      dplyr::mutate(
+        GDS_A1 = dplyr::case_when(
+          GT_BIN == 0 ~ 0,
+          GT_BIN == 1 ~ 0,
+          GT_BIN == 2 ~ 1,
+          is.na(GT_BIN) ~ NA_integer_),
+        GDS_A2 = dplyr::case_when(
+          GT_BIN == 0 ~ 0,
+          GT_BIN == 1 ~ 1,
+          GT_BIN == 2 ~ 1,
+          is.na(GT_BIN) ~ NA_integer_)
+      )
+
     gds.filename <- radiator_gds(
       data.source = "genlight",
-      geno.coding = "alt.dos",
       genotypes = gt2array(
-        gt.bin = tidy.data$GT_BIN,
+        genotypes = tidy.data,
         n.ind = n.ind,
         n.snp = n.markers
       ),
-      # genotypes = tibble::as_tibble(data.frame(data) %>% t) %>%
-      #   tibble::add_column(.data = ., MARKERS = markers$MARKERS, .before = 1) %>%
-      #   dplyr::arrange(MARKERS) %>%
-      #   tibble::column_to_rownames(.data = ., var = "MARKERS"),
       strata = strata,
       biallelic = TRUE,
       markers.meta = markers,
@@ -337,19 +348,6 @@ write_genlight <- function(
                        calibrate.alleles = FALSE)
       markers.levels <- unique(data$MARKERS)
       ind.levels <- unique(data$INDIVIDUALS)
-
-      # if (!"counts" %in% data.source) {
-      #   # genotypes.meta <- extract_coverage(# Note to my self... need to adapt the code here for the new extract function when you have the time
-      #   #   gds = data.bk,
-      #   #   individuals = FALSE,
-      #   #   depth.tibble = TRUE,
-      #   #   parallel.core = parallel.core
-      #   # )
-      #   # suppressWarnings(
-      #   #   data %<>%
-      #   #     dplyr::left_join(genotypes.meta, by = c("INDIVIDUALS", "MARKERS"))
-      #   # )
-      # }
 
       genotypes.meta <- NULL
       want <- c("MARKERS", "CHROM", "LOCUS", "POS",

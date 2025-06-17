@@ -42,8 +42,8 @@
 #' @param filename The name of the file written to the working directory.
 # @param ... other parameters passed to the function in the future
 
-#' @seealso /href{https://github.com/eriqande/gsi_sim}{gsi_sim} and
-#' /href{https://github.com/eriqande/rubias}{rubias}: genetic stock
+#' @seealso \href{https://github.com/eriqande/gsi_sim}{gsi_sim} and
+#' \href{https://github.com/eriqande/rubias}{rubias}: genetic stock
 #' identification (GSI) in the tidyverse.
 
 #' @return A gsi_sim input file is saved to the working directory.
@@ -88,6 +88,9 @@ write_gsi_sim <- function(
 
   # Import data
   data %<>% radiator::tidy_wide(data = .)
+  if (rlang::has_name(data, "STRATA") & !rlang::has_name(data, "POP_ID")) {
+    data %<>% dplyr::rename(POP_ID = STRATA)
+  }
 
   # Info for gsi_sim input
   n.individuals <- dplyr::n_distinct(data$INDIVIDUALS)  # number of individuals
@@ -106,14 +109,23 @@ write_gsi_sim <- function(
       A2 = stringi::stri_sub(str = GT, from = 4, to = 6),
       GT = NULL
     ) %>%
-    radiator::rad_long(x = ., cols = c("POP_ID", "INDIVIDUALS", "MARKERS"), names_to = "ALLELES", values_to = "GT") %>%
+    tidyr::pivot_longer(
+      cols = -c("POP_ID", "INDIVIDUALS", "MARKERS"),
+      names_to = "ALLELES",
+      values_to = "GT"
+    ) %>%
     dplyr::arrange(MARKERS) %>%
     dplyr::mutate(
       MARKERS_ALLELES = stringi::stri_join(MARKERS , ALLELES, sep = "_"),
       MARKERS = NULL, ALLELES = NULL
-      ) %>%
+    ) %>%
     dplyr::arrange(POP_ID, INDIVIDUALS, MARKERS_ALLELES) %>%
-    radiator::rad_wide(x = ., formula = "POP_ID_ INDIVIDUALS ~ MARKERS_ALLELES", values_from = "GT") %>%
+    tidyr::pivot_wider(
+      data = .,
+      id_cols = c("POP_ID", "INDIVIDUALS"),
+      names_from = MARKERS_ALLELES,
+      values_from = "GT"
+    ) %>%
     dplyr::ungroup(.)
 
   # population levels and strata

@@ -230,7 +230,6 @@ detect_dart_format <- function(data, verbose = TRUE) {
       if(stringi::stri_detect_regex(str = temp.line, pattern = "REF")) "REF"
       )
 
-    # suppressWarnings(
     binary <- vroom::vroom(
       file = data,
       delim = tokenizer.dart,

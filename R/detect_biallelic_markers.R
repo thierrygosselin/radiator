@@ -70,13 +70,21 @@ detect_biallelic_markers <- function(data, verbose = FALSE, parallel.core = para
     }
 
     if (is.null(biallelic.attr)) {
-      ref <- SeqArray::seqGetData(gdsfile = data, var.name = "$ref")
-      sample.size <- min(length(unique(ref)), 100)
-      biallelic <- max(unique(stringi::stri_count_regex(
-        str = sample(
-          x = unique(ref),
-          size = sample.size), pattern = "[A-Z]"))) == 1
-      sample.size <- ref <- NULL
+      safe_ref <- purrr::safely(.f = SeqArray::seqGetData)
+      ref.safe <- safe_ref(gdsfile = data, var.name = "$ref")
+      if (is.null(ref.safe$error)) {
+        ref <- ref.safe$result
+        sample.size <- min(length(unique(ref)), 100)
+        biallelic <- max(unique(stringi::stri_count_regex(
+          str = sample(
+            x = unique(ref),
+            size = sample.size), pattern = "[A-Z]"))) == 1
+        sample.size <- ref <- NULL
+      } else {
+        biallelic <- FALSE
+        ref <- max(SeqArray::seqGetData(gdsfile = data, var.name = "$num_allele"))
+        if (ref == 2L) biallelic <- TRUE
+      }
 
       if (!is.null(radiator.gds)) {
         # add biallelic info to GDS

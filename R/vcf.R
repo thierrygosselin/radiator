@@ -33,7 +33,7 @@
 #' the COL column is POS -1. With a reference genome, the ID column in stacks VCF is
 #' separated into "LOCUS", "COL", "STRANDS".
 #' \item \strong{DArT VCFs:} CHROM with \code{.} are replaced by \code{denovo}.
-#' \code{POS} with \code{NA} are replaced by {50}.
+#' \code{POS} with \code{NA} are replaced by \code{50}.
 #' \code{COL}: the position of the SNP on the read is extracted from the
 #' \code{LOCUS} as any other DArT data.
 #' \code{LOCUS}: are the first group of digits the rest of the info is discarded
@@ -186,7 +186,7 @@
 #' If the supplied directory doesn't exist, it's created.
 #' \item \code{random.seed}: (integer, optional) For reproducibility, set an integer
 #' that will be used inside codes that uses randomness. With default,
-#' a random number is generated, printed and written in the directory.
+#' a random number is generated, printed and written in the appropriate directory.
 #' Default: \code{random.seed = NULL}.
 #' \item \code{subsample.markers.stats}: By default, when no filters are
 #' requested and that the number of markers is > 200K,
@@ -410,33 +410,40 @@ read_vcf <- function(
   }
 
   # Folders---------------------------------------------------------------------
+  prefix.int = FALSE
+  if (TRUE %in% unique(stringi::stri_detect_fixed(str = path.folder, pattern = "@"))) {
+    prefix.int <- TRUE
+    internal <- FALSE
+  }
+
+
   wf <- path.folder <- generate_folder(
-    f = path.folder,
     rad.folder = "read_vcf",
-    prefix_int = FALSE,
+    path.folder = path.folder,
+    prefix.int = prefix.int,
     internal = internal,
     file.date = file.date,
     verbose = verbose)
 
   radiator.folder <- generate_folder(
-    f = path.folder,
     rad.folder = "import_gds",
-    prefix_int = TRUE,
+    path.folder = path.folder,
+    prefix.int = TRUE,
     internal = internal,
     file.date = file.date,
     verbose = verbose)
 
   # write the dots file
-  write_rad(
+
+  write_radiator_tsv(
     data = rad.dots,
-    path = radiator.folder,
-    filename = stringi::stri_join("radiator_read_vcf_args_", file.date, ".tsv"),
-    tsv = TRUE,
+    path.folder = path.folder,
+    filename = "radiator_read_vcf_args",
+    date = TRUE,
     internal = internal,
     write.message = "Function call and arguments stored in: ",
     verbose = verbose
   )
-
 
   if (is.null(filename)) {
     ind.file <- stringi::stri_join("vcf_individuals_info_", file.date, ".tsv")
@@ -884,8 +891,8 @@ read_vcf <- function(
       if (filter.strands != "keep.both") {
         # Folders
         path.folder.strands <- generate_folder(
-          f = path.folder,
           rad.folder = "filter_duplicated_markers",
+          path.folder = path.folder,
           internal = FALSE,
           file.date = file.date,
           verbose = verbose)
@@ -893,13 +900,15 @@ read_vcf <- function(
         # update the blacklist
         blacklist.strands %<>%
           dplyr::mutate(FILTER = "filter.strands")
-
-        write_rad(
+        write_radiator_tsv(
           data = blacklist.strands,
-          path = path.folder.strands,
-          filename = stringi::stri_join("blacklist.duplicated.markers.strands_",
-                                        file.date, ".tsv"),
-          tsv = TRUE, internal = FALSE, verbose = verbose)
+          path.folder = path.folder.strands,
+          filename = "blacklist.duplicated.markers.strands",
+          date = TRUE,
+          internal = FALSE,
+          write.message = "standard",
+          verbose = verbose
+        )
 
         # bl.gds <- update_bl_markers(gds = gds, update = blacklist.strands)
         # Update markers.meta
@@ -910,13 +919,15 @@ read_vcf <- function(
             )
           )
         # check <- markers.meta
-        write_rad(
+        write_radiator_tsv(
           data = dplyr::filter(markers.meta, FILTERS == "whitelist"),
-          path = path.folder.strands,
-          filename = stringi::stri_join("whitelist.duplicated.markers.strands_",
-                                        file.date, ".tsv"),
-          tsv = TRUE, internal = FALSE, verbose = verbose)
-
+          path.folder = path.folder.strands,
+          filename = "whitelist.duplicated.markers.strands",
+          date = TRUE,
+          internal = FALSE,
+          write.message = "standard",
+          verbose = verbose
+        )
         # Update GDS
         update_radiator_gds(
           gds = gds,
@@ -1142,54 +1153,67 @@ read_vcf <- function(
 
   # generate a folder to put the stats...
   path.folder <- generate_folder(
-    f = wf,
     rad.folder = "filtered",
+    path.folder = wf,
     internal = FALSE,
     file.date = file.date,
     verbose = verbose)
 
   # Whitelist
-  write_rad(data = markers.meta,
-            path = path.folder,
-            filename = "whitelist.markers.tsv",
-            tsv = TRUE,
-            write.message = "standard",
-            verbose = verbose)
+  write_radiator_tsv(
+    data = markers.meta,
+    path.folder = path.folder,
+    filename = "whitelist.markers",
+    date = TRUE,
+    internal = internal,
+    write.message = "standard",
+    verbose = verbose
+  )
+
 
   # blacklist
   bl <- extract_markers_metadata(gds, blacklist = TRUE)
   if (nrow(bl) > 0) {
-    write_rad(data = bl,
-              path = path.folder,
-              filename = "blacklist.markers.tsv",
-              tsv = TRUE,
-              write.message = "standard",
-              verbose = verbose)
+    write_radiator_tsv(
+      data = bl,
+      path.folder = path.folder,
+      filename = "blacklist.markers",
+      date = TRUE,
+      internal = internal,
+      write.message = "standard",
+      verbose = verbose
+    )
   }
 
   # writing the blacklist of id
   blacklist.id <- extract_individuals_metadata(gds, blacklist = TRUE)
 
   if (nrow(blacklist.id) > 0) {
-    write_rad(data = blacklist.id,
-              path = path.folder,
-              filename = "blacklist.id.tsv",
-              tsv = TRUE,
-              write.message = "standard",
-              verbose = verbose)
+    write_radiator_tsv(
+      data = blacklist.id,
+      path.folder = path.folder,
+      filename = "blacklist.id",
+      date = TRUE,
+      internal = internal,
+      write.message = "standard",
+      verbose = verbose
+    )
+
   }
 
   # Generate new strata
-  write_rad(data = strata,
-            path = path.folder,
-            filename = "strata.filtered.tsv",
-            tsv = TRUE,
-            write.message = "standard",
-            verbose = verbose)
-
+  write_radiator_tsv(
+    data = strata,
+    path.folder = path.folder,
+    filename = "strata.filtered",
+    date = TRUE,
+    internal = internal,
+    write.message = "standard",
+    verbose = verbose
+  )
   #-----------------------------------  VCF STATS   ----------------------------
   if (vcf.stats) {
-    message("\nVCF statistics per individuals and markers")
+    if (verbose) message("\nVCF statistics per individuals and markers")
     # check for problem with large vector size
     n.markers <- length(markers.meta$VARIANT_ID)
     n.ind <- as.numeric(length(strata$INDIVIDUALS))
@@ -1223,7 +1247,7 @@ read_vcf <- function(
 
     # SUBSAMPLE markers
     if (subsample.markers.stats < 1) {
-      message("Using a subsample proportion of markers: ", subsample.markers.stats)
+      if (verbose) message("Using a subsample proportion of markers: ", subsample.markers.stats)
       markers.subsampled <- dplyr::sample_frac(
         tbl = markers.meta,
         size = subsample.markers.stats)
@@ -1250,7 +1274,7 @@ read_vcf <- function(
       digits = 6,
       file.date = file.date,
       parallel.core = parallel.core,
-      verbose = TRUE
+      verbose = verbose
     )
 
     # For summary at the end of the function:
@@ -1283,7 +1307,7 @@ read_vcf <- function(
   summary_strata(strata)
   i.m.stats <- markers.meta <- NULL
 
-  message("radiator Genomic Data Structure (GDS) file: ", folder_short(filename))
+  message("radiator Genomic Data Structure (GDS) file: ", basename(filename))
   return(gds)
 } # End read_vcf
 
@@ -1361,22 +1385,19 @@ read_vcf <- function(
 #' consequently any misspelling will generate an error or be ignored.
 #'
 #' \emph{dots-dots-dots ...} arguments names and values are reported and written
-#' in the working directory when \code{internal = FALSE} and \code{verbose = TRUE}.
+#' in the working directory.
 #'
 #' \strong{General arguments: }
 #' \enumerate{
 #' \item \code{path.folder}: to write ouput in a specific path
 #' (used internally in radiator). Default: \code{path.folder = getwd()}.
 #' If the supplied directory doesn't exist, it's created.
-#' \item \code{internal: } (optional, character)
-#' Default (\code{internal = FALSE}). A folder is generated to write the files.
 #' \item \code{random.seed}: (integer, optional) For reproducibility, set an integer
 #' that will be used inside codes that uses randomness. With default,
-#' a random number is generated, printed and written in the directory.
+#' a random number is generated, printed and written in the appropriate directory.
+#' Random seed is recycled inside the function that will import the VCF file before
+#' tidying.
 #' Default: \code{random.seed = NULL}.
-#' \item \code{parameters} It's a parameter file where radiator output results of
-#' filtering. Used internally.
-#' Default: \code{parameters = NULL}.
 #' }
 
 #' \strong{tidying arguments/behavior:}
@@ -1537,6 +1558,10 @@ tidy_vcf <- function(
   # random.seed = NULL
   # parameters = NULL
   # subsample.markers.stats <- 1
+  # ld.method <- "r2"
+  # tidy.vcf <- TRUE
+  # tidy.check <- TRUE
+
 
   # Cleanup---------------------------------------------------------------------
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
@@ -1585,7 +1610,8 @@ tidy_vcf <- function(
       "vcf.metadata", "vcf.stats",
       "whitelist.markers",
       "internal",
-      "tidy.check", "tidy.vcf"
+      "tidy.check",
+      "tidy.vcf"
     ),
     verbose = FALSE
   )
@@ -1649,9 +1675,9 @@ tidy_vcf <- function(
 
   # Folders---------------------------------------------------------------------
   wf <- path.folder <- generate_folder(
-    f = path.folder,
     rad.folder = "tidy_vcf",
-    prefix_int = FALSE,
+    path.folder = path.folder,
+    prefix.int = FALSE,
     internal = internal,
     file.date = file.date,
     verbose = verbose)
@@ -1663,7 +1689,7 @@ tidy_vcf <- function(
     filename = filename,
     verbose = FALSE,
     parallel.core = parallel.core,
-    internal = TRUE,
+    internal = FALSE,
     vcf.stats = vcf.stats,
     vcf.metadata = vcf.metadata,
     path.folder = path.folder,
@@ -1689,20 +1715,21 @@ tidy_vcf <- function(
 
   # tidy_vcf folder ------------------------------------------------------------
   tidy.folder <- generate_folder(
-    f = path.folder,
     rad.folder = "tidy_vcf",
-    prefix_int = TRUE,
+    path.folder = path.folder,
+    prefix.int = TRUE,
     internal = FALSE,
     file.date = file.date,
     verbose = verbose)
 
   # write the dots file: after the GDS import...
-  write_rad(
+  write_radiator_tsv(
     data = rad.dots,
-    path = tidy.folder,
-    filename = stringi::stri_join("radiator_tidy_vcf_args_", file.date, ".tsv"),
-    tsv = TRUE,
+    path.folder = path.folder,
+    filename = "radiator_tidy_vcf_args",
+    date = TRUE,
     internal = internal,
+    write.message = "Function call and arguments stored in: ",
     verbose = verbose
   )
 
@@ -1714,11 +1741,9 @@ tidy_vcf <- function(
   if (!tidy.vcf) return(data)
 
   # Get info markers and individuals -----------------------------------------
-  markers.meta <- extract_markers_metadata(gds = data, markers.meta.select = "M_SEQ", whitelist = TRUE)
+  markers.meta <- extract_markers_metadata(gds = data, whitelist = TRUE)
+  # markers.meta <- extract_markers_metadata(gds = data, markers.meta.select = "M_SEQ", whitelist = TRUE)
   n.markers <- nrow(markers.meta)
-
-  check <- extract_markers_metadata(gds = data, whitelist = TRUE)
-
 
   # STRATEGY -----------------------------------------------------------------
   if (tidy.check && n.markers > 20000) {
@@ -1760,6 +1785,7 @@ tidy_vcf <- function(
     gds = data,
     markers.meta = markers.meta,
     strip.rad = TRUE,
+    pop.id = FALSE,
     calibrate.alleles = FALSE # not done here
   )
 
@@ -1929,12 +1955,12 @@ tidy_vcf <- function(
 
   filename.rad <- generate_filename(
     path.folder = tidy.folder,
-    extension = "rad")
-  write_rad(data = tidy.data, path = filename.rad$filename)
+    extension = "arrow.parquet")
+  write_rad(data = tidy.data, filename = filename.rad$filename, verbose = verbose)
 
   if (verbose) message("Updating GDS with genotypes.meta values")
   update_radiator_gds(gds = data, node.name = "genotypes.meta", value = tidy.data)
-  message("\nTidy data file written: ", filename.rad$filename.short)
+  # message("\nTidy data file written: ", filename.rad$filename.short)
   if (verbose) message("Closing GDS file connection")
   SeqArray::seqClose(data) # close the connection
   return(tidy.data)

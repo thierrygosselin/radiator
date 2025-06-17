@@ -6,46 +6,28 @@
 \usage{
 write_rad(
   data,
-  path = NULL,
-  filename = NULL,
-  tsv = FALSE,
+  filename,
   internal = FALSE,
-  append = FALSE,
-  col.names = TRUE,
   write.message = "standard",
   verbose = FALSE
 )
 }
 \arguments{
-\item{data}{An object in the global environment: tidy data frame or GDS connection file}
+\item{data}{An object in the global environment: tidy genomic dataset
+or GDS connection file}
 
-\item{path}{(optional) For tidy data frame, the path to write the data on disk.
-Default: \code{path = NULL}.}
-
-\item{filename}{(optional) Name of the file (when using tsv files).
+\item{filename}{(optional) Name of the file. If default, \code{radiator_date_time.arrow.parquet} is used.
 Default: \code{filename = NULL}.}
 
-\item{tsv}{(optinal, logical) To trigger saving using \code{readr::write_tsv}.
-Default: \code{tsv = FALSE}.}
-
 \item{internal}{(optional, logical) This is used inside radiator internal code and it stops
-from writting the file.
+from writing the file.
 Default: \code{internal = FALSE}.}
 
-\item{append}{(optional, logical) If \code{FALSE}, will overwrite existing file.
-If \code{TRUE}, will append to existing file.
-In both cases, if file does not exist a new file is created.
-Default: \code{append = FALSE}.}
-
-\item{col.names}{(optional, logical) Write columns names at the top of the file?
-Must be either TRUE or FALSE.
-Default: \code{col.names = TRUE}.}
-
 \item{write.message}{(optional, character) Print a message in the console
-after writting file.
+after writing file.
 With \code{write.message = NULL}, nothing is printed in the console.
 Default: \code{write.message = "standard"}. This will print
-\code{message("File written: ", folder_short(filename))}.}
+\code{message("File written: ", basename(filename))}.}
 
 \item{verbose}{(optional, logical) \code{verbose = TRUE} to be chatty
 during execution.
@@ -55,35 +37,56 @@ Default: \code{verbose = FALSE}.}
 A file written in the working directory or nothing if it's a GDS connection file.
 }
 \description{
-When datasets are a tidy data frame, the function provides a
-fast way to write a \code{.arrow.parquet} file. It superseded the
-\code{.rad} file format that is essentially the \code{.fst} format provided by the
+For tidy genomic datasets, the function provides a
+fast way to write a \code{.arrow.parquet} file from Apache.
+This new file ending replaces \code{.rad} file format that was essentially
+the \code{.fst}, provided by
 the package \href{https://github.com/fstpackage/fst}{fst}.
-The \code{.fst} end was replaced by \code{.rad} to remove the confusion
-with population genetics statistic fst ...
-The decision to use arrow parquet format from Apache was taken because the
-package is easier to install than \code{fst}, write and read files faster and
-files sizes are are also smaller.
+See explanation in section below.
+
+
 When the object is a CoreArray Genomic Data Structure
 (\href{https://github.com/zhengxwen/gdsfmt}{GDS}) file system, the function
-set filters (variants and samples) based on the info found in the file and
-close the connection with the GDS file.
-
+\strong{close the connection with the GDS file}. Before doing so it sets the
+filters (variants and samples) based on the info found in the file.
 
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and \href{https://github.com/thierrygosselin/assigner}{assigner}
 and might be of interest for users.
 }
+\section{Why is .rad is no longer supported}{
+
+
+Originally, the ending \code{.fst} from
+package \href{https://github.com/fstpackage/fst}{fst} was replaced
+by \code{.rad} to remove the confusion with population genetics statistic fst ...
+The decision to stop using the package \code{fst} was taken because:
+\itemize{
+\item The package was \strong{always difficult} to install when you
+wanted all cores to function.
+\item Successful recipe to install with one OS was rarely working
+after changing R version or OS version = painful.
+\item Asking users to play with \code{.R/Makevars} was always time
+consuming to troubleshoot after for me.
+\item \href{https://arrow.apache.org/docs/r/}{arrow} is easy to install,
+files are smaller in size and read/write faster!
+}
+}
+
 \examples{
 \dontrun{
 require(SeqArray)
-radiator::write_rad(data = tidy.data, path = "data.shark.rad")
+radiator::write_rad(data = tidy.data, filename = "data.shark.arrow.parquet")
 radiator::write_rad(data = gds.object)
 }
 }
 \seealso{
+\href{https://arrow.apache.org}{appache arrow}
+
 \href{https://github.com/fstpackage/fst}{fst}
+
 \href{https://github.com/zhengxwen/gdsfmt}{GDS}
+
 \code{\link{read_rad}}
 }
 \author{

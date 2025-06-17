@@ -390,16 +390,12 @@
 #' \item \strong{long.ld.missing}: described in \code{\link[radiator]{filter_ld}}.
 #' \item \strong{ld.method}: described in \code{\link[radiator]{filter_ld}}.
 #' \item \strong{detect.mixed.genomes}: described in \code{\link[radiator]{detect_mixed_genomes}}.
+#' \item \strong{ind.heterozygosity.threshold}: described in \code{\link[radiator]{detect_mixed_genomes}}.
 #' \item \strong{detect.duplicate.genomes}: described in \code{\link[radiator]{detect_duplicate_genomes}}.
 #' \item \strong{dup.threshold}: described in \code{\link[radiator]{detect_duplicate_genomes}}.
 #' \item \strong{filter.hwe}: described in \code{\link[radiator]{filter_hwe}}.
 #' \item \strong{hw.pop.threshold}: described in \code{\link[radiator]{filter_hwe}}.
 #' \item \strong{midp.threshold}: described in \code{\link[radiator]{filter_hwe}}.
-#' \item \strong{filter.hwe}: described in \code{\link[radiator]{filter_hwe}}.
-#' \item \strong{filter.hwe}: described in \code{\link[radiator]{filter_hwe}}.
-#' \item \strong{ind.heterozygosity.threshold}: described in \code{\link[radiator]{detect_mixed_genomes}}.
-#' \item \strong{ind.heterozygosity.threshold}: described in \code{\link[radiator]{detect_mixed_genomes}}.
-#' \item \strong{ind.heterozygosity.threshold}: described in \code{\link[radiator]{detect_mixed_genomes}}.
 #' }
 
 #' @export
@@ -508,28 +504,27 @@ filter_rad <- function(
   # wf for working folder
   # radiator.folder : the 01_radiator folder to put most things...
   wf <- path.folder <- generate_folder(
-    f = path.folder,
     rad.folder = "filter_rad",
-    prefix_int = FALSE,
+    path.folder = path.folder,
+    prefix.int = FALSE,
     internal = internal,
     file.date = file.date,
     verbose = verbose)
 
   radiator.folder <- generate_folder(
-    f = path.folder,
     rad.folder = "radiator",
-    prefix_int = TRUE,
+    path.folder = path.folder,
+    prefix.int = TRUE,
     internal = FALSE,
     file.date = file.date,
     verbose = verbose)
 
   # write the dots file
-  write_rad(
+  write_radiator_tsv(
     data = rad.dots,
-    path = radiator.folder,
-    filename = stringi::stri_join(
-      "radiator_filter_rad_args_", file.date, ".tsv"),
-    tsv = TRUE,
+    path.folder = radiator.folder,
+    filename = "radiator_filter_rad_args",
+    date = TRUE,
     internal = internal,
     write.message = "Function call and arguments stored in: ",
     verbose = verbose
@@ -854,50 +849,62 @@ filter_rad <- function(
   # FINAL PREP
   # filtered data folder
   path.folder <- generate_folder(
-    f = wf,
     rad.folder = "filtered",
+    path.folder = wf,
     internal = FALSE,
     file.date = file.date,
     verbose = verbose)
 
   # Whitelist
-  write_rad(data = markers.meta,
-            path = path.folder,
-            filename = "whitelist.markers.tsv",
-            tsv = TRUE,
-            write.message = "standard",
-            verbose = verbose)
+  write_radiator_tsv(
+    data = markers.meta,
+    path.folder = path.folder,
+    filename = "whitelist.markers",
+    date = TRUE,
+    internal = FALSE,
+    write.message = "standard",
+    verbose = verbose
+  )
+
   # blacklist
   bl <- extract_markers_metadata(gds = gds, blacklist = TRUE)
   if (nrow(bl) > 0) {
-    write_rad(data = bl,
-              path = path.folder,
-              filename = "blacklist.markers.tsv",
-              tsv = TRUE,
-              write.message = "standard",
-              verbose = verbose)
+    write_radiator_tsv(
+      data = bl,
+      path.folder = path.folder,
+      filename = "blacklist.markers",
+      date = TRUE,
+      internal = FALSE,
+      write.message = "standard",
+      verbose = verbose
+    )
   }
 
 
   # writing the blacklist of id
   blacklist.id <- extract_individuals_metadata(gds = gds, blacklist = TRUE)
   if (nrow(blacklist.id) > 0) {
-    write_rad(data = blacklist.id,
-              path = path.folder,
-              filename = "blacklist.id.tsv",
-              tsv = TRUE,
-              write.message = "standard",
-              verbose = verbose)
+    write_radiator_tsv(
+      data = blacklist.id,
+      path.folder = path.folder,
+      filename = "blacklist.id",
+      date = TRUE,
+      internal = FALSE,
+      write.message = "standard",
+      verbose = verbose
+    )
   }
 
   # Generate new strata
-  write_rad(data = strata,
-            path = path.folder,
-            filename = "strata.filtered.tsv",
-            tsv = TRUE,
-            write.message = "Writing the filtered strata: ",
-            verbose = verbose)
-
+  write_radiator_tsv(
+    data = strata,
+    path.folder = path.folder,
+    filename = "strata.filtered",
+    date = TRUE,
+    internal = FALSE,
+    write.message = "Writing the filtered strata: ",
+    verbose = verbose
+  )
 
   # Statistics after filtering -------------------------------------------------
   if (verbose) message("\nGenerating statistics after filtering")

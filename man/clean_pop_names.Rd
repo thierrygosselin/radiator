@@ -4,10 +4,12 @@
 \alias{clean_pop_names}
 \title{Clean population's names for radiator and other packages}
 \usage{
-clean_pop_names(x)
+clean_pop_names(x, factor = TRUE)
 }
 \arguments{
 \item{x}{(character string) Population character string.}
+
+\item{factor}{(logical) Default: \code{factor = TRUE}. Will also keep or transform the factor levels.}
 }
 \description{
 Function to clean pop's name

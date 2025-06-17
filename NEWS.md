@@ -1,3 +1,11 @@
+# radiator 1.3.7 2025-06-17
+
+* Improved DArT file import and filtering
+* Several functions were not handling generating folder names and numbers inside 
+nested function. Presently working on an overhaul. 
+VCF and DArT files are impacted by this one. 
+
+
 # radiator 1.3.6 2025-04-15
 
 * Speed improvements for some functions

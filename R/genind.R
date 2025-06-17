@@ -87,7 +87,7 @@ tidy_genind <- function(
   if (gds) tidy <- TRUE
 
   if (write) {
-    filename.temp <- generate_filename(extension = "rad")
+    filename.temp <- generate_filename(extension = "arrow.parquet")
     filename.short <- filename.temp$filename.short
     filename.genind <- filename.temp$filename
   }
@@ -230,7 +230,7 @@ tidy_genind <- function(
       }
     }#End for multi-allelic or weird genind
 
-    if (write) radiator::write_rad(data = data, path = filename.genind, verbose = verbose)
+    if (write) radiator::write_rad(data = data, filename = filename.genind, verbose = verbose)
 
   }# End tidy genind
   if (gds) {
@@ -239,11 +239,26 @@ tidy_genind <- function(
     n.snp <- dplyr::n_distinct(data$MARKERS)
     n.ind <- dplyr::n_distinct(data$INDIVIDUALS)
 
+    # generate genotypes format for easy reading into GDS
+    data %<>%
+      dplyr::mutate(
+        GDS_A1 = dplyr::case_when(
+          GT_BIN == 0 ~ 0,
+          GT_BIN == 1 ~ 0,
+          GT_BIN == 2 ~ 1,
+          is.na(GT_BIN) ~ NA_integer_),
+        GDS_A2 = dplyr::case_when(
+          GT_BIN == 0 ~ 0,
+          GT_BIN == 1 ~ 1,
+          GT_BIN == 2 ~ 1,
+          is.na(GT_BIN) ~ NA_integer_)
+      )
+
+
     gds.filename <- radiator_gds(
       data.source = "genind",
-      geno.coding = "alt.dos",
       genotypes = gt2array(
-        gt.bin = data$GT_BIN,
+        genotypes = data,
         n.ind = n.ind,
         n.snp = n.snp
       ),

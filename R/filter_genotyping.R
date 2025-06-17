@@ -135,22 +135,23 @@ filter_genotyping <- function(
 
   # Folders---------------------------------------------------------------------
   path.folder <- generate_folder(
-    f = path.folder,
     rad.folder = "filter_genotyping",
+    path.folder = path.folder,
     internal = internal,
     file.date = file.date,
     verbose = verbose)
 
   # write the dots file
-  write_rad(
+  write_radiator_tsv(
     data = rad.dots,
-    path = path.folder,
-    filename = stringi::stri_join("radiator_filter_genotyping_args_", file.date, ".tsv"),
-    tsv = TRUE,
+    path.folder = path.folder,
+    filename = "radiator_filter_genotyping_args",
+    date = TRUE,
     internal = internal,
     write.message = "Function call and arguments stored in: ",
     verbose = verbose
   )
+
   # Message about steps taken during the process ---------------------------------
   if (interactive.filter) {
     message("Interactive mode: on\n")
@@ -337,17 +338,26 @@ filter_genotyping <- function(
     value = markers.meta,
     sync = TRUE
   )
-  write_rad(
-    data = markers.meta %>% dplyr::filter(FILTERS == "filter.genotyping"),
-    path = path.folder,
-    filename = stringi::stri_join("blacklist.markers.genotyping_", file.date, ".tsv"),
-    tsv = TRUE, internal = internal, verbose = verbose)
 
-  write_rad(
+  write_radiator_tsv(
+    data = markers.meta %>% dplyr::filter(FILTERS == "filter.genotyping"),
+    path.folder = path.folder,
+    filename = "blacklist.markers.genotyping",
+    date = TRUE,
+    internal = internal,
+    write.message = "standard",
+    verbose = verbose
+  )
+
+  write_radiator_tsv(
     data = markers.meta %>% dplyr::filter(FILTERS == "whitelist"),
-    path = path.folder,
-    filename = stringi::stri_join("whitelist.markers.genotyping_", file.date, ".tsv"),
-    tsv = TRUE, internal = internal, verbose = verbose)
+    path.folder = path.folder,
+    filename = "whitelist.markers.genotyping",
+    date = TRUE,
+    internal = internal,
+    write.message = "standard",
+    verbose = verbose
+  )
 
   # Update parameters --------------------------------------------------------
   filters.parameters <- radiator_parameters(

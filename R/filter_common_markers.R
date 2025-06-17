@@ -57,12 +57,12 @@
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 filter_common_markers <- function(
-  data,
-  filter.common.markers = TRUE,
-  fig = FALSE,
-  parallel.core = parallel::detectCores() - 1,
-  verbose = FALSE,
-  ...
+    data,
+    filter.common.markers = TRUE,
+    fig = FALSE,
+    parallel.core = parallel::detectCores() - 1,
+    verbose = FALSE,
+    ...
 ) {
   # Test
   # filter.common.markers = TRUE
@@ -112,19 +112,18 @@ filter_common_markers <- function(
     }
     # Folders---------------------------------------------------------------------
     path.folder <- generate_folder(
-      f = path.folder,
       rad.folder = "filter_common_markers",
+      path.folder = path.folder,
       internal = internal,
       file.date = file.date,
       verbose = verbose)
 
     # write the dots file
-    write_rad(
+    write_radiator_tsv(
       data = rad.dots,
-      path = path.folder,
-      filename = stringi::stri_join(
-        "radiator_filter_common_markers_args_", file.date, ".tsv"),
-      tsv = TRUE,
+      path.folder = path.folder,
+      filename = "radiator_filter_common_markers_args",
+      date = TRUE,
       internal = internal,
       write.message = "Function call and arguments stored in: ",
       verbose = verbose
@@ -209,11 +208,20 @@ filter_common_markers <- function(
             )
           )
 
-        write_rad(
-          data = markers.meta %>% dplyr::filter(FILTERS == "filter.common.markers"),
-          path = path.folder,
-          filename = stringi::stri_join("blacklist.not.common.markers_", file.date, ".tsv"),
-          tsv = TRUE, internal = internal, verbose = verbose)
+        blacklist.ncm <- radiator::generate_filename(
+          name.shortcut = "blacklist.not.common.markers",
+          path.folder = path.folder,
+          extension = "tsv"
+        )$filename
+
+        if (!internal) {
+          readr::write_tsv(
+            x = markers.meta %>% dplyr::filter(FILTERS == "filter.common.markers"),
+            file = blacklist.ncm,
+          )
+          if (verbose) message("File written: ", basename(blacklist.ncm))
+        }
+
 
         # Update GDS
         update_radiator_gds(
@@ -224,13 +232,20 @@ filter_common_markers <- function(
         )
 
       }
-      write_rad(
-        data = markers.meta %>% dplyr::filter(FILTERS == "whitelist"),
-        path = path.folder,
-        filename = stringi::stri_join("whitelist.common.markers_", file.date, ".tsv"),
-        tsv = TRUE,
-        internal = internal,
-        verbose = verbose)
+
+      if (!internal) {
+        whitelist.common.markers <- generate_filename(
+          name.shortcut = "whitelist.common.markers",
+          path.folder = path.folder,
+          extension = "tsv"
+        )$filename
+
+        readr::write_tsv(
+          x = markers.meta %>% dplyr::filter(FILTERS == "whitelist"),
+          file = whitelist.common.markers,
+        )
+        if (verbose) message("File written: ", basename(whitelist.common.markers))
+      }
 
     } else {#Tidy data
       # Import data ---------------------------------------------------------------
@@ -295,18 +310,28 @@ filter_common_markers <- function(
       if (n.markers.removed > 0) {
         data <- dplyr::filter(data, !MARKERS %in% bl$MARKERS)
         bl <- wl %>% dplyr::filter(MARKERS %in% bl$MARKERS)
-        write_rad(
+
+        write_radiator_tsv(
           data = bl,
-          path = path.folder,
-          filename = stringi::stri_join("blacklist.not.common.markers_", file.date, ".tsv"),
-          tsv = TRUE, internal = internal, verbose = verbose)
+          path.folder = path.folder,
+          filename = "blacklist.not.common.markers",
+          date = TRUE,
+          internal = internal,
+          write.message = "standard",
+          verbose = verbose
+        )
 
         wl %<>% dplyr::filter(!MARKERS %in% bl$MARKERS)
-        write_rad(
+        write_radiator_tsv(
           data = wl,
-          path = path.folder,
-          filename = stringi::stri_join("whitelist.common.markers_", file.date, ".tsv"),
-          tsv = TRUE, internal = internal, verbose = verbose)
+          path.folder = path.folder,
+          filename = "whitelist.common.markers",
+          date = TRUE,
+          internal = internal,
+          write.message = "standard",
+          verbose = verbose
+        )
+
       } else {
         bl <- wl[0,]
       }
@@ -347,9 +372,9 @@ filter_common_markers <- function(
 #' @keywords internal
 #' @export
 not_common_markers <- function(
-  x,
-  strata,
-  parallel.core = parallel::detectCores() - 2
+    x,
+    strata,
+    parallel.core = parallel::detectCores() - 2
 ) {
 
   # PLAN B
@@ -426,11 +451,11 @@ not_common_markers <- function(
 #' @export
 
 plot_upset <- function(
-  x,
-  data.type,
-  plot.filename = NULL,
-  parallel.core = parallel::detectCores() - 2,
-  verbose = FALSE
+    x,
+    data.type,
+    plot.filename = NULL,
+    parallel.core = parallel::detectCores() - 2,
+    verbose = FALSE
 ) {
 
   # For pc set the number of core to 1 -----------------------------------------
@@ -451,9 +476,9 @@ plot_upset <- function(
 
     sample.bk <- strata$INDIVIDUALS
     missing_markers_pop <- function(
-      strata.split,
-      x,
-      parallel.core = parallel::detectCores() - 2
+    strata.split,
+    x,
+    parallel.core = parallel::detectCores() - 2
     ) {
       # strata.split <- dplyr::group_split(.tbl = strata, STRATA)[[4]]
       parallel.core.opt <- parallel_core_opt(parallel.core)
@@ -518,13 +543,13 @@ plot_upset <- function(
   #   file = stringi::stri_join(plot.filename, ".pdf"),
   #   onefile = FALSE
   # )
-  grDevices::png(filename = stringi::stri_join(plot.filename, ".png"))
+  grDevices::png(filename = stringi::stri_join(plot.filename, ".png"), width = 3000, height = 1500, res = 300)
   print(
     UpSetR::upset(
-    data = plot.data,
-    nsets = n.pop,
-    order.by = "freq",
-    empty.intersections = NULL)
+      data = plot.data,
+      nsets = n.pop,
+      order.by = "freq",
+      empty.intersections = NULL)
   )
   dev.off()
   # print(dev.list())

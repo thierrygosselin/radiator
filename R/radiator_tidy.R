@@ -396,18 +396,18 @@ tidy_genomic_data <- function(
 
   # Folders---------------------------------------------------------------------
   path.folder <- generate_folder(
-    f = path.folder,
     rad.folder = "radiator_tidy_genomic",
+    path.folder = path.folder,
     internal = internal,
     file.date = file.date,
     verbose = verbose)
 
   # write the dots file
-  write_rad(
+  write_radiator_tsv(
     data = rad.dots,
-    path = path.folder,
-    filename = stringi::stri_join("radiator_tidy_genomic_data_args_", file.date, ".tsv"),
-    tsv = TRUE,
+    path.folder = path.folder,
+    filename = "radiator_tidy_genomic_data_args",
+    date = TRUE,
     internal = internal,
     write.message = "Function call and arguments stored in: ",
     verbose = verbose
@@ -806,9 +806,8 @@ tidy_genomic_data <- function(
 
   # Write to working directory -------------------------------------------------
   if (!is.null(filename)) {
-    tidy.name <- stringi::stri_join(filename, ".rad")
-    message("\nWriting tidy data set:\n", tidy.name)
-    write_rad(data = input, path = file.path(path.folder, tidy.name))
+    tidy.name <- stringi::stri_join(filename, ".arrow.parquet")
+    write_rad(data = input, filename = file.path(path.folder, tidy.name))
   }
   n.markers <- length(unique(input$MARKERS))
   if (rlang::has_name(input, "CHROM")) {

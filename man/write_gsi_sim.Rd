@@ -64,8 +64,8 @@ loci for population assignment: standard methods are upwardly biased.
 Molecular ecology resources 10, 4:701-710.
 }
 \seealso{
-/href{https://github.com/eriqande/gsi_sim}{gsi_sim} and
-/href{https://github.com/eriqande/rubias}{rubias}: genetic stock
+\href{https://github.com/eriqande/gsi_sim}{gsi_sim} and
+\href{https://github.com/eriqande/rubias}{rubias}: genetic stock
 identification (GSI) in the tidyverse.
 }
 \author{

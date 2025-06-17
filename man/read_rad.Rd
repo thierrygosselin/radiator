@@ -16,7 +16,9 @@ read_rad(
 \item{data}{A file in the working directory ending with .arrow.parquet or .gds,
 and produced by radiator, assigner or grur.}
 
-\item{columns}{(optional) For arrow.parquet file. Column names to read. The default is to read all all columns.
+\item{columns}{(optional) For arrow.parquet file.
+Column names to read.
+The default is to read all all columns.
 Default: \code{columns = NULL}.}
 
 \item{allow.dup}{(optional, logical) To allow the opening of a GDS file with

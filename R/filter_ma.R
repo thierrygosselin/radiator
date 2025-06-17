@@ -259,18 +259,18 @@ filter_ma <- function(
 
   # Folders---------------------------------------------------------------------
   path.folder <- generate_folder(
-    f = path.folder,
     rad.folder = "filter_ma",
+    path.folder = path.folder,
     internal = internal,
     file.date = file.date,
     verbose = verbose)
 
   # write the dots file
-  write_rad(
+  write_radiator_tsv(
     data = rad.dots,
-    path = path.folder,
-    filename = stringi::stri_join("radiator_filter_ma_args_", file.date, ".tsv"),
-    tsv = TRUE,
+    path.folder = path.folder,
+    filename = "radiator_filter_ma_args",
+    date = TRUE,
     internal = internal,
     write.message = "Function call and arguments stored in: ",
     verbose = verbose
@@ -628,28 +628,34 @@ filter_ma <- function(
   #blacklist
 
   if (nrow(bl) > 0L) {
-    write_rad(
+    write_radiator_tsv(
       data = bl,
-      path = path.folder,
-      filename = stringi::stri_join("blacklist.markers.ma_", file.date, ".tsv"),
-      tsv = TRUE, internal = internal, verbose = verbose
+      path.folder = path.folder,
+      filename = "blacklist.markers.ma",
+      date = TRUE,
+      internal = internal,
+      write.message = "standard",
+      verbose = verbose
     )
   }
 
   # whitelist
   if (nrow(wl) > 0L) {
-    write_rad(
+    write_radiator_tsv(
       data = wl,
-      path = path.folder,
-      filename = stringi::stri_join("whitelist.markers.ma_", file.date, ".tsv"),
-      tsv = TRUE, internal = internal, verbose = verbose)
+      path.folder = path.folder,
+      filename = "whitelist.markers.ma",
+      date = TRUE,
+      internal = internal,
+      write.message = "standard",
+      verbose = verbose
+    )
   }
 
   if (!is.null(filename)) {
     if (data.type == "tbl_df") {
-      tidy.name <- stringi::stri_join(filename, ".rad")
-      if (verbose) message("Writing the MA filtered tidy data set: ", tidy.name)
-      write_rad(data = data, path = file.path(path.folder, tidy.name))
+      tidy.name <- stringi::stri_join(filename, ".arrow.parquet")
+      write_rad(data = data, filename = file.path(path.folder, tidy.name), verbose = verbose)
     }
   }
 
@@ -919,8 +925,8 @@ minor_allele_stats <- function(
             gds = data,
             individuals = FALSE,
             markers = TRUE,
-            dp = FALSE,
-            ad = TRUE,
+            coverage = FALSE,
+            allele.coverage = TRUE,
             coverage.stats = "sum",
             subsample.info = 1,
             verbose = FALSE,
@@ -953,13 +959,14 @@ minor_allele_stats <- function(
         dplyr::mutate(N_ALLELES = purrr::map_int(.x = ac, .f = length)) %>%
         dplyr::filter(N_ALLELES > 2) %>%
         dplyr::select(dplyr::any_of(wanted.info)) %>%
-        write_rad(
+        write_radiator_tsv(
           data = .,
-          path = path.folder,
-          filename = "markers_number_alleles_problem.tsv",
-          tsv = TRUE,
+          path.folder = path.folder,
+          filename = "markers_number_alleles_problem",
+          date = TRUE,
+          internal = FALSE,
           write.message = "standard",
-          verbose = TRUE
+          verbose = verbose
         )
     }
     n.al.max <- NULL

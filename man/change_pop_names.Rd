@@ -39,9 +39,7 @@ into a new pop called \code{"NEW"}:
 \code{pop.labels = c("NEW", "NEW", "ALB")}.
 To rename \code{"QUE"} to \code{"TAS"}:
 \code{pop.labels = c("TAS", "ONT", "ALB")}.
-Default: \code{pop.labels = NULL}. If you find this too complicated,
-there is also the \code{strata} argument that can do the same thing,
-see below.
+Default: \code{pop.labels = NULL}.
 White spaces in population names are replaced by underscore.}
 }
 \description{

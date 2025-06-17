@@ -48,9 +48,10 @@ clean_ind_names <- function(x) {
 #' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 #' and might be of interest for users.
 #' @param x (character string) Population character string.
+#' @param factor (logical) Default: \code{factor = TRUE}. Will also keep or transform the factor levels.
 #' @rdname clean_pop_names
 #' @export
-clean_pop_names <- function(x) {
+clean_pop_names <- function(x, factor = TRUE) {
   clean_pop <- function(x) {
     stringi::stri_replace_all_fixed(
       str = as.character(x),
@@ -65,5 +66,6 @@ clean_pop_names <- function(x) {
     pop.levels <- clean_pop(as.character(unique(x)))
   }
   x <- clean_pop(as.character(x))
-  x <- factor(x, levels = pop.levels)
+  if (factor) x <- factor(x, levels = pop.levels)
+  return(x)
 }#End clean_pop_names

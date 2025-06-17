@@ -9,6 +9,7 @@ read_dart(
   strata,
   filename = NULL,
   tidy.dart = FALSE,
+  calibrate.alleles = TRUE,
   verbose = TRUE,
   parallel.core = parallel::detectCores() - 1,
   ...
@@ -74,6 +75,10 @@ in the global environment only (i.e. not written in the working directory...).}
 
 \item{tidy.dart}{(logical, optional) Generate a tidy dataset.
 Default:\code{tidy.dart = FALSE}.}
+
+\item{calibrate.alleles}{(optional, logical)
+Default: \code{calibrate.alleles = TRUE}.
+Documented in \code{\link[radiator]{calibrate_alleles}}.}
 
 \item{verbose}{(optional, logical) When \code{verbose = TRUE}
 the function is a little more chatty during execution.

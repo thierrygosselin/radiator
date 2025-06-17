@@ -16,12 +16,12 @@ extract_coverage(
   gds,
   individuals = TRUE,
   markers = TRUE,
-  dp = TRUE,
-  ad = TRUE,
+  coverage = TRUE,
+  allele.coverage = TRUE,
   coverage.stats = c("sum", "mean", "median", "iqr"),
   subsample.info = 1,
   verbose = TRUE,
-  parallel.core = TRUE
+  parallel.core = parallel::detectCores() - 1
 )
 }
 \arguments{
@@ -43,9 +43,9 @@ Default: \code{dart.check = FALSE}.}
 
 \item{markers}{(optional, logical) Default: \code{markers = TRUE}.}
 
-\item{dp}{(optional, logical) Default: \code{dp = TRUE}.}
+\item{coverage}{(optional, logical) Default: \code{coverage = TRUE}.}
 
-\item{ad}{(optional, logical) Default: \code{ad = TRUE}.}
+\item{allele.coverage}{(optional, logical) Default: \code{ad = TRUE}.}
 
 \item{coverage.stats}{(optional, character string). Choice of stats to use with
 coverage.

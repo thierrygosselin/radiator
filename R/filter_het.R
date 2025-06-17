@@ -89,7 +89,7 @@
 #' \code{coverage.info = TRUE}, if you want to visualize
 #' the relationshio between locus coverage and locus observed heterozygosity
 #' statistics. Coverage information is required (e.g. in a vcf file...).
-#' Default: {coverage.info = FALSE}.
+#' Default: \code{coverage.info = FALSE}.
 
 #' @param helper.tables (logical) Output tables that show
 #' the number of markers blacklisted or whitelisted based on a series of
@@ -1537,9 +1537,8 @@ number of populations in the dataset turns off the filter.\n")
 
   # saving filtered tidy data --------------------------------------------------
   if (!is.null(filename)) {
-    tidy.name <- stringi::stri_join(filename, ".rad")
-    message("Writing the filtered tidy data set: ", tidy.name)
-    write_rad(data = filter, path = file.path(path.folder, tidy.name))
+    tidy.name <- stringi::stri_join(filename, ".arrow.parquet")
+    write_rad(data = filter, filename = file.path(path.folder, tidy.name))
   }
 
   # saving whitelist -----------------------------------------------------------

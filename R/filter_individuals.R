@@ -159,22 +159,23 @@ filter_individuals <- function(
 
     # Folders---------------------------------------------------------------------
     path.folder <- generate_folder(
-      f = path.folder,
       rad.folder = "filter_individuals",
+      path.folder = path.folder,
       internal = internal,
       file.date = file.date,
       verbose = verbose)
 
     # write the dots file
-    write_rad(
+    write_radiator_tsv(
       data = rad.dots,
-      path = path.folder,
-      filename = stringi::stri_join("radiator_filter_individuals_args_", file.date, ".tsv"),
-      tsv = TRUE,
+      path.folder = path.folder,
+      filename = "radiator_filter_individuals_args",
+      date = TRUE,
       internal = internal,
       write.message = "Function call and arguments stored in: ",
       verbose = verbose
     )
+
 
     # Message about steps taken during the process -----------------------------
     if (interactive.filter) {
@@ -226,7 +227,7 @@ filter_individuals <- function(
       gds = data,
       individuals = TRUE,
       markers = FALSE,
-      exhaustive = FALSE,
+      exhaustive = TRUE,
       subsample = variant.select,
       path.folder = path.folder,
       file.date = file.date,
@@ -234,6 +235,17 @@ filter_individuals <- function(
       verbose = TRUE
     )
     print(id.stats$i.fig)
+
+    # experimental qc...
+    # for now it prints and write in the folder
+    # nothing more to do
+    message("\nGenerating suggestions for identifying bad samples: experimental...")
+    experimental.qc <- id_qc_helper(
+      x = id.stats$i.info,
+      x.sum = id.stats$i.stats,
+      path.folder = path.folder
+      )
+
 
 
     # Step 2. Missingness-----------------------------------------------------------------

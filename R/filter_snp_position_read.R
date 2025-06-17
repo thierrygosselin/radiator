@@ -119,18 +119,18 @@ filter_snp_position_read <- function(
 
     # Folders---------------------------------------------------------------------
     path.folder <- generate_folder(
-      f = path.folder,
       rad.folder = "filter_snp_position_read",
+      path.folder = path.folder,
       internal = internal,
       file.date = file.date,
       verbose = verbose)
 
     # write the dots file
-    write_rad(
+    write_radiator_tsv(
       data = rad.dots,
-      path = path.folder,
-      filename = stringi::stri_join("radiator_filter_snp_position_read_args_", file.date, ".tsv"),
-      tsv = TRUE,
+      path.folder = path.folder,
+      filename = "radiator_filter_snp_position_read_args",
+      date = TRUE,
       internal = internal,
       write.message = "Function call and arguments stored in: ",
       verbose = verbose

@@ -31,7 +31,7 @@ filled with "1", the LOCUS column correspond to the CHROM section in stacks VCF 
 the COL column is POS -1. With a reference genome, the ID column in stacks VCF is
 separated into "LOCUS", "COL", "STRANDS".
 \item \strong{DArT VCFs:} CHROM with \code{.} are replaced by \code{denovo}.
-\code{POS} with \code{NA} are replaced by {50}.
+\code{POS} with \code{NA} are replaced by \code{50}.
 \code{COL}: the position of the SNP on the read is extracted from the
 \code{LOCUS} as any other DArT data.
 \code{LOCUS}: are the first group of digits the rest of the info is discarded
@@ -214,7 +214,7 @@ Using, \code{markers.info = character(0)} will not import INFO variables.
 If the supplied directory doesn't exist, it's created.
 \item \code{random.seed}: (integer, optional) For reproducibility, set an integer
 that will be used inside codes that uses randomness. With default,
-a random number is generated, printed and written in the directory.
+a random number is generated, printed and written in the appropriate directory.
 Default: \code{random.seed = NULL}.
 \item \code{subsample.markers.stats}: By default, when no filters are
 requested and that the number of markers is > 200K,

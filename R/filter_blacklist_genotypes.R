@@ -186,7 +186,7 @@ filter_blacklist_genotypes <- function(
   erase.genotypes <- radiator.dots[["erase.genotypes"]]
   masked.genotypes <- radiator.dots[["masked.genotypes"]]
   path.folder <- radiator.dots[["path.folder"]]
-  path.folder <- generate_folder(f = path.folder, file.date = file.date, verbose = verbose)
+  path.folder <- generate_folder(path.folder = path.folder, file.date = file.date, verbose = verbose)
 
   if (!is.null(erase.genotypes) && !is.null(masked.genotypes) && !is.null(blacklist.genotypes)) {
     rlang::abort("Only one of: erase.genotypes, masked.genotypes or blacklist.genotypes should be used")

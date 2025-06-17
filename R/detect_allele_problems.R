@@ -6,8 +6,14 @@
 
 #' @description Detect alternate allele problems.
 #' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
-#' and might be of interest for users. The function computes alternate allele
+#' and might be of interest for users.
+#'
+#' The function computes alternate allele
 #' counts and looks for alternate alleles bellow a certain threshold.
+#'
+#' Keeping in mind the overall dataset QC, this function
+#' helps to understand \emph{potential problems} with
+#' \strong{Allele DropOut and Null Alleles}.
 #' The summary statistics for the
 #' markers with problematic allele is computed based on coverage and
 #' genotype likelihood. This function is very fast to highlight: i) bias in

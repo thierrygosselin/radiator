@@ -311,21 +311,22 @@ sexy_markers <- function(data,
   # Folders---------------------------------------------------------------------
   if (is.null(folder.name)) folder.name <- "sexy_markers"
   wd <- path.folder <- radiator::generate_folder(
-    f = NULL,
     rad.folder = folder.name,
+    path.folder = NULL,
     internal = FALSE,
-    prefix_int = FALSE,
+    prefix.int = FALSE,
     file.date = file.date,
     verbose = TRUE
   )
 
   # write the dots file
-  write_rad(
+  write_radiator_tsv(
     data = rad.dots,
-    path = path.folder,
-    filename = stringi::stri_join("radiator_sexy_markers_args_", file.date, ".tsv"),
-    tsv = TRUE,
+    path.folder = path.folder,
+    filename = "radiator_sexy_markers_args",
+    date = TRUE,
     internal = FALSE,
+    write.message = "Function call and arguments stored in: ",
     verbose = TRUE
   )
 
@@ -1139,8 +1140,10 @@ This marker could be absent due to an error.")
       # dplyr::rename(TARGET_ID = TARGET_ID.x) %>%
       # dplyr::select(-c(TARGET_ID.y))
       # dplyr::mutate(GENETIC_STRATA = STRATA)
-      radiator::write_rad(data = data,
-                          path = file.path(wd, "sexy_markers_genetic_SNP_sex_ID.rad"))
+      radiator::write_rad(
+        data = data,
+        filename = file.path(wd, "sexy_markers_genetic_SNP_sex_ID.arrow.parquet")
+      )
 
       if ("silico.dart" %in% data.source) {
         silicodata <-
@@ -1150,8 +1153,10 @@ This marker could be absent due to an error.")
         # dplyr::rename(TARGET_ID = TARGET_ID.x) %>%
         # dplyr::select(-c(TARGET_ID.y))
         # dplyr::mutate(GENETIC_STRATA = STRATA)
-        radiator::write_rad(data = silicodata,
-                            path = file.path(wd, "sexy_markers_silicodata_genetic_SNP_sex_ID.rad"))
+        radiator::write_rad(
+          data = silicodata,
+          filename = file.path(wd, "sexy_markers_silicodata_genetic_SNP_sex_ID.arrow.parquet")
+          )
       } else{
         silicodata <- NULL
       }
@@ -1174,8 +1179,10 @@ This marker could be absent due to an error.")
       # dplyr::rename(TARGET_ID = TARGET_ID.x) %>%
       # dplyr::select(-c(TARGET_ID.y))
       # dplyr::mutate(GENETIC_STRATA = STRATA)
-      radiator::write_rad(data = data,
-                          path = file.path(wd, "sexy_markers_data_genetic_SILCIO_sex_ID.rad"))
+      radiator::write_rad(
+        data = data,
+        filename = file.path(wd, "sexy_markers_data_genetic_SILCIO_sex_ID.arrow.parquet")
+        )
 
       if ("silico.dart" %in% data.source) {
         silicodata <-
@@ -1185,8 +1192,10 @@ This marker could be absent due to an error.")
         # dplyr::rename(TARGET_ID = TARGET_ID.x) %>%
         # dplyr::select(-c(TARGET_ID.y))
         # dplyr::mutate(GENETIC_STRATA = STRATA)
-        radiator::write_rad(data = silicodata,
-                            path = file.path(wd, "sexy_markers_silicodata_genetic_SILICO_sex_ID.rad"))
+        radiator::write_rad(
+          data = silicodata,
+          filename = file.path(wd, "sexy_markers_silicodata_genetic_SILICO_sex_ID.arrow.parquet")
+          )
       } else{
         silicodata <- NULL
       }

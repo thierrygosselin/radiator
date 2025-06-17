@@ -126,18 +126,18 @@ filter_snp_number <- function(
 
     # Folders---------------------------------------------------------------------
     path.folder <- generate_folder(
-      f = path.folder,
       rad.folder = "filter_snp_number",
+      path.folder = path.folder,
       internal = internal,
       file.date = file.date,
       verbose = verbose)
 
     # write the dots file
-    write_rad(
+    write_radiator_tsv(
       data = rad.dots,
-      path = path.folder,
-      filename = stringi::stri_join("radiator_filter_snp_number_args_", file.date, ".tsv"),
-      tsv = TRUE,
+      path.folder = path.folder,
+      filename = "radiator_filter_snp_number_args",
+      date = TRUE,
       internal = internal,
       write.message = "Function call and arguments stored in: ",
       verbose = verbose
@@ -292,7 +292,7 @@ filter_snp_number <- function(
       nrow(dplyr::filter(x, SNP_PER_LOCUS > threshold))
     }#End how_many_markers
 
-    snp.range <- stats[[2]]:stats[[6]]
+    snp.range <- stats[[2]]:stats[[7]]
     n.markers <- nrow(wl)
 
     helper.table <- tibble::tibble(SNP_PER_LOCUS = snp.range) %>%
@@ -333,7 +333,7 @@ filter_snp_number <- function(
     ggplot2::ggsave(
       filename = file.path(path.folder, "snp.per.locus.helper.plot.pdf"),
       plot = markers.plot,
-      width = 20 + (stats[[6]] / 10),
+      width = 20 + (stats[[7]] / 10),
       height = 15,
       dpi = 300,
       units = "cm",
@@ -344,7 +344,7 @@ filter_snp_number <- function(
 
     # Step 2. Thresholds selection ---------------------------------------------
     if (interactive.filter) {
-      max.allowed <- stats[[6]]
+      max.allowed <- stats[[7]]
       if (verbose) message("\nStep 2. Filtering markers based on the maximum of SNPs per locus\n")
 
       filter.snp.number <- radiator_question(

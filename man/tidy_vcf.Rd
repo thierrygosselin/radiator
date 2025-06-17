@@ -103,22 +103,19 @@ The arguments below are not available using code completion (e.g. with TAB),
 consequently any misspelling will generate an error or be ignored.
 
 \emph{dots-dots-dots ...} arguments names and values are reported and written
-in the working directory when \code{internal = FALSE} and \code{verbose = TRUE}.
+in the working directory.
 
 \strong{General arguments: }
 \enumerate{
 \item \code{path.folder}: to write ouput in a specific path
 (used internally in radiator). Default: \code{path.folder = getwd()}.
 If the supplied directory doesn't exist, it's created.
-\item \code{internal: } (optional, character)
-Default (\code{internal = FALSE}). A folder is generated to write the files.
 \item \code{random.seed}: (integer, optional) For reproducibility, set an integer
 that will be used inside codes that uses randomness. With default,
-a random number is generated, printed and written in the directory.
+a random number is generated, printed and written in the appropriate directory.
+Random seed is recycled inside the function that will import the VCF file before
+tidying.
 Default: \code{random.seed = NULL}.
-\item \code{parameters} It's a parameter file where radiator output results of
-filtering. Used internally.
-Default: \code{parameters = NULL}.
 }
 \strong{tidying arguments/behavior:}
 \enumerate{

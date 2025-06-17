@@ -112,23 +112,22 @@ detect_microsatellites <- function(data, gmata.dir = NULL, ...) {
 
   # Folders---------------------------------------------------------------------
   path.folder <- generate_folder(
-    f = NULL,
     rad.folder = "detect_microsatellites",
+    path.folder = NULL,
     internal = FALSE,
     file.date = file.date,
     verbose = TRUE)
 
   # write the dots file
-  write_rad(
+  write_radiator_tsv(
     data = rad.dots,
-    path = path.folder,
-    filename = stringi::stri_join(
-      "radiator_detect_microsatellites_args_", file.date, ".tsv"),
-    tsv = TRUE,
+    path.folder = path.folder,
+    filename = "radiator_detect_microsatellites_args",
+    date = TRUE,
     internal = FALSE,
-    verbose = TRUE
+    write.message = "Function call and arguments stored in: ",
+    verbose = verbose
   )
-
 
   # GMATA CHECKS ---------------------------------------------------------------
   download.gmata <- FALSE
@@ -196,7 +195,7 @@ detect_microsatellites <- function(data, gmata.dir = NULL, ...) {
       names_to = "MARKERS_SEQUENCE",
       values_to = "MICROSATELLITES",
       variable_factor = FALSE
-      ) %>%
+    ) %>%
     dplyr::arrange(ID) %>%
     dplyr::select(MICROSATELLITES) %>%
     readr::write_tsv(x = ., file = filename, col_names = FALSE)

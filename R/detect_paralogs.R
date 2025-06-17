@@ -38,13 +38,13 @@
 #' \item \strong{Absence of pattern of heterozygosity driven by missingness:}
 #' see \code{\link{detect_mixed_genomes}}. Don't use this function if the
 #' individual heterozygosity is not under control. If your data is not uniform
-#' inside this function, don't expect mush of \code{detect_paralogs}.
+#' inside this function, don't expect much of \code{detect_paralogs}.
 #' \item Use unfiltered dataset for fun only.
 #' \item Use this function preferably on filtered data, check
 #' \code{\link[radiator]{filter_rad}}.
 #' \item \strong{Sex-biased sampling and sex markers} will generate
 #' false-positive with this function.
-#' Use \code{\link{sexy_markers}} function before!
+#' Use \code{\link{sexy_markers}} if you have sexe information.
 #' }
 
 #' @param data (2 options) A Genomic Data Structure (GDS) file or object
@@ -150,19 +150,20 @@ detect_paralogs <- function(
 
   # Folders---------------------------------------------------------------------
   path.folder <- generate_folder(
-    f = path.folder,
     rad.folder = "detect_paralogs",
+    path.folder = path.folder,
     internal = FALSE,
     file.date = file.date,
     verbose = verbose)
 
   # write the dots file
-  write_rad(
+  write_radiator_tsv(
     data = rad.dots,
-    path = path.folder,
-    filename = stringi::stri_join("radiator_detect_paralogs_args_", file.date, ".tsv"),
-    tsv = TRUE,
+    path.folder = path.folder,
+    filename = "radiator_detect_paralogs_args",
+    date = TRUE,
     internal = FALSE,
+    write.message = "Function call and arguments stored in: ",
     verbose = verbose
   )
 
@@ -175,6 +176,23 @@ detect_paralogs <- function(
   if (data.type == "gds.file") {
     data <- radiator::read_rad(data, verbose = verbose)
     data.type <- "SeqVarGDSClass"
+  }
+
+  # check for coverage info...
+  coverage <- allele.coverage <- TRUE # default
+  got.coverage <- check_coverage(
+    gds = data,
+    stacks.haplo.check = TRUE,
+    genotypes.metadata.check = TRUE,
+    dart.check = TRUE
+  )
+  if (!"DP" %in% got.coverage && !"READ_DEPTH" %in% got.coverage) coverage <- FALSE
+  if (!"AD" %in% got.coverage) allele.coverage <- FALSE
+  if ("ALLELE_ALT_DEPTH" %in% got.coverage) allele.coverage <- TRUE
+  got.coverage <- NULL
+
+  if (!coverage | !allele.coverage) {
+    rlang::abort("Coverage for both alleles are required")
   }
 
   # Filter parameter file: generate and initiate -------------------------------
@@ -195,7 +213,7 @@ detect_paralogs <- function(
   # Get the variant id
   variants <- SeqArray::seqGetData(gdsfile = data, var.name = "variant.id")
 
-  # get the number of heterozygote samples per marker --------------------------
+  # HET: get the number of heterozygote samples per marker --------------------------
   if (verbose) message("Counting the number of heterozygote")
   het <- SeqArray::seqApply(
     gdsfile = data,
@@ -205,7 +223,7 @@ detect_paralogs <- function(
     as.is = "integer",
     parallel = parallel.core)
 
-  # get the number of missing samples per marker -------------------------------
+  # MIS: get the number of missing samples per marker -------------------------------
   if (verbose) message("Calculating missingness")
   missing <- SeqArray::seqApply(
     gdsfile = data,
@@ -215,7 +233,7 @@ detect_paralogs <- function(
     as.is = "integer",
     parallel = parallel.core)
 
-  # get the number of genotyped samples per marker -----------------------------
+  # GENO: get the number of genotyped samples per marker -----------------------------
   genotyped <- SeqArray::seqApply(
     gdsfile = data,
     var.name = "$dosage_alt",
@@ -229,97 +247,96 @@ detect_paralogs <- function(
     VARIANT_ID = variants,
     NUMBER_HET = het,
     NUMBER_MISSING = missing,
-    NUMBER_GENOTYPED = genotyped) %>%
+    NUMBER_GENOTYPED = genotyped
+    ) %>%
     dplyr::mutate(TOTAL = NUMBER_MISSING + NUMBER_GENOTYPED)
 
   het <- missing <- genotyped <- variants <- NULL
 
-  # Extract the depth/coverage info from GDS -----------------------------------
-  if (verbose) message("Extracting coverage...")
-  depth.info <- extract_coverage(gds = data, individuals = FALSE, coverage.stats = "sum", parallel.core = parallel.core) %>%
-    dplyr::mutate(dplyr::across(where(is.factor), .fns = as.character)) %>%
-    dplyr::left_join(
-      gds2tidy(gds = data, parallel.core = parallel.core) %>%
-        dplyr::select(-POP_ID) %>%
-        dplyr::mutate(dplyr::across(where(is.factor), .fns = as.character))
-      , by = c("ID_SEQ", "M_SEQ")
-      # , by = c("INDIVIDUALS", "MARKERS")
-    )
+  # COVERAGE Extract the depth/coverage info from GDS -----------------------------------
+  data.source <- radiator::extract_data_source(gds = data)
 
-  # check for stacks specific coverage problem ----------------------------------
-  stacks.ad.problem <- depth.info %>%
-    dplyr::select(GT_BIN, READ_DEPTH, ALLELE_REF_DEPTH, ALLELE_ALT_DEPTH) %>%
-    dplyr::filter(!is.na(READ_DEPTH)) %>%
-    dplyr::filter(is.na(ALLELE_REF_DEPTH) & is.na(ALLELE_ALT_DEPTH))
-  stacks.ad.problem.n <- nrow(stacks.ad.problem)
-
-  if (stacks.ad.problem.n > 0) {
-    non.missing.gt <- length(depth.info$GT_BIN[!is.na(depth.info$GT_BIN)])
-    stacks.ad.problem.prop <- round(stacks.ad.problem.n / non.missing.gt, 4)
-
-    message("\n\nStacks problem detected")
-    message("    missing allele depth info")
-    message("    number of genotypes with problem: ", stacks.ad.problem.n, " (prop: ", stacks.ad.problem.prop,")")
-    message("    correcting problem by adding the read depth info into AD fields...\n\n")
-
-    stacks.ad.problem <- dplyr::select(depth.info, GT_BIN) %>%
-      dplyr::bind_cols(dplyr::select(depth.info, READ_DEPTH, ALLELE_REF_DEPTH, ALLELE_ALT_DEPTH)) %>%
-      dplyr::mutate(COL_ID = seq(1, n())) %>%
-      dplyr::filter(!is.na(READ_DEPTH)) %>%
-      dplyr::filter(is.na(ALLELE_REF_DEPTH) & is.na(ALLELE_ALT_DEPTH)) %>%
-      dplyr::mutate(
-        ALLELE_REF_DEPTH = dplyr::if_else(GT_BIN == 0, READ_DEPTH, ALLELE_REF_DEPTH),
-        ALLELE_ALT_DEPTH = dplyr::if_else(GT_BIN == 2, READ_DEPTH, ALLELE_ALT_DEPTH)
+  if ("dart" %in% data.source) {
+    # individuals.metadata <- radiator::extract_individuals_metadata(gds = data, ind.field.select = c("ID_SEQ", "INDIVIDUALS"), whitelist = TRUE)
+    markers.metadata <- radiator::extract_markers_metadata(
+      gds = data,
+      markers.meta.select = c("VARIANT_ID", "M_SEQ"),
+      whitelist = TRUE
       )
+    depth.info <- radiator::extract_genotypes_metadata(
+      gds = data,
+      genotypes.meta.select = c("VARIANT_ID", "M_SEQ", "ID_SEQ", "GT_BIN", "READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH"),
+      whitelist = TRUE
+    )
+    col.intersect.m <- intersect(colnames(markers.metadata), colnames(depth.info))
+    depth.info %<>%
+      dplyr::left_join(markers.metadata, by = col.intersect.m) %>%
+      dplyr::select(tidyselect::any_of(c("VARIANT_ID","M_SEQ", "ID_SEQ", "GT_BIN", "READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH")))
 
-    depth.info$ALLELE_REF_DEPTH[stacks.ad.problem$COL_ID] <- stacks.ad.problem$ALLELE_REF_DEPTH
-    depth.info$ALLELE_ALT_DEPTH[stacks.ad.problem$COL_ID] <- stacks.ad.problem$ALLELE_ALT_DEPTH
-  }
-  stacks.ad.problem.n <- stacks.ad.problem <- NULL
+  } else {
+    depth.info <- gds2tidy(
+      gds = data,
+      markers.meta.select = c("VARIANT_ID", "M_SEQ", "MARKERS"),
+      strip.rad = FALSE,
+      pop.id = FALSE,
+      calibrate.alleles = FALSE # not done here
+    ) %>%
+      dplyr::select(tidyselect::one_of(c("VARIANT_ID", "M_SEQ", "MARKERS", "STRATA", "INDIVIDUALS", "GT_BIN")))
+
+    have <-  SeqArray::seqSummary(
+      gdsfile = data,
+      varname = "annotation/format",
+      check = "none", verbose = FALSE)$ID
+
+    if (length(have) > 0) {
+      want <- c("DP", "AD")
+      parse.format.list <- purrr::keep(.x = have, .p = have %in% want)
+      meta <- parse_gds_metadata(x = parse.format.list, gds = data, strip.rad = TRUE, verbose = FALSE)
+      depth.info %<>% dplyr::left_join(meta, by = intersect(colnames(depth.info), colnames(meta)))
+      meta <- NULL
+    } else {
+      rlang::abort("Coverage for both alleles are required")
+    }
 
 
-  # summarizing the read depth info --------------------------------------------
+  } # END not DART
+
+
+# summarizing the read depth info --------------------------------------------
 
   # recalibration of REF/ALT allele
   calibration <- depth.info %>%
-    dplyr::group_by(MARKERS) %>%
+    dplyr::group_by(VARIANT_ID) %>%
     dplyr::summarise(
       REF = sum(ALLELE_REF_DEPTH, na.rm = TRUE),
-      ALT = sum(ALLELE_ALT_DEPTH, na.rm = TRUE)
+      ALT = sum(ALLELE_ALT_DEPTH, na.rm = TRUE),
+      .groups = "drop"
     ) %>%
     dplyr::mutate(
       CALIBRATE = dplyr::if_else(ALT > REF, TRUE, FALSE)
     ) %>%
-    dplyr::ungroup(.) %>%
-    dplyr::select(MARKERS, CALIBRATE)
+    # dplyr::ungroup(.) %>%
+    dplyr::select(VARIANT_ID, CALIBRATE)
+
 
   message("Number of REF/ALT re-calibration based on allele read depth: ",
           nrow(dplyr::filter(calibration, CALIBRATE)))
 
   if (verbose) message("Generating summary...")
-
   depth.info %<>%
     dplyr::filter(GT_BIN == 1) %>%
-    dplyr::group_by(MARKERS) %>%
+    dplyr::group_by(VARIANT_ID) %>%
     dplyr::summarise(
       REF = sum(ALLELE_REF_DEPTH, na.rm = TRUE),
-      ALT = sum(ALLELE_ALT_DEPTH, na.rm = TRUE)
+      ALT = sum(ALLELE_ALT_DEPTH, na.rm = TRUE),
+      .groups = "drop"
     ) %>%
-    dplyr::ungroup(.) %>%
-    dplyr::left_join(calibration, by = "MARKERS") %>%
+    dplyr::left_join(calibration, by = "VARIANT_ID") %>%
     dplyr::mutate(
       DEPTH_REF = dplyr::if_else(CALIBRATE, ALT, REF),
       DEPTH_ALT = dplyr::if_else(CALIBRATE, REF, ALT),
       REF = NULL, ALT = NULL, CALIBRATE = NULL
-    ) %>%
-    dplyr::left_join(
-      extract_markers_metadata(
-        gds = data,
-        markers.meta.select = c("VARIANT_ID", "MARKERS"),
-        whitelist = TRUE
-      ), by = "MARKERS"
-    ) %>%
-    dplyr::select(-MARKERS)
+    )
   calibration <- NULL
 
   if (verbose) message("Looking for paralogous markers...")
@@ -337,7 +354,10 @@ detect_paralogs <- function(
       Z_SCORE = -(TOTAL_COUNTS / 2 - DEPTH_REF) / sqrt(TOTAL_COUNTS * 0.5 * 0.5)
     )
   depth.info <- NULL
-  readr::write_tsv(x = markers.het.summary, file = file.path(path.folder, "markers.het.summary.tsv"))
+  readr::write_tsv(
+    x = markers.het.summary,
+    file = file.path(path.folder, "markers.het.summary.tsv")
+    )
 
   # prepare the summary for the figure
   markers.het.summary %<>%
@@ -359,11 +379,21 @@ detect_paralogs <- function(
     data = markers.het.summary,
     ggplot2::aes(x = HET_PROP, y = VALUE, size = MISSING_PROP)) +
     ggplot2::geom_rect(
-      ggplot2::aes(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = 0.5),
-      fill = "grey", alpha = 0.1) +
-    ggplot2::geom_point(alpha = 0.3) +
-    ggplot2::scale_size_area(name = "Marker's missing proportion", max_size = 4) +
-    ggplot2::scale_x_continuous(name = "Proportion of heterozygotes (H)", breaks = seq(0, 1, by = 0.1)) +
+      ggplot2::aes(
+        xmin = -Inf, xmax = Inf,
+        ymin = -Inf, ymax = 0.5
+        ),
+      fill = "grey",
+      alpha = 0.1) +
+    ggplot2::geom_point(alpha = 0.3, na.rm = TRUE) +
+    ggplot2::scale_size_area(
+      name = "Marker's missing proportion",
+      max_size = 4
+      ) +
+    ggplot2::scale_x_continuous(
+      name = "Proportion of heterozygotes (H)",
+      breaks = seq(0, 1, by = 0.1)
+      ) +
     ggplot2::scale_y_continuous(name = "Value") +
     ggplot2::theme_bw() +
     ggplot2::theme(
@@ -387,7 +417,8 @@ detect_paralogs <- function(
     height = 15,
     dpi = 300,
     units = "cm",
-    useDingbats = FALSE)
+    useDingbats = FALSE
+    )
 
   return(data)
 }#End detect_paralogs

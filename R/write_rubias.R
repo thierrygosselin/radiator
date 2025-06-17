@@ -21,7 +21,7 @@
 #' With default, only the rubias object is generated. The filename will be appended
 #' \code{_rubias.tsv}.
 
-#' @seealso /href{https://github.com/eriqande/rubias}{rubias}: genetic stock
+#' @seealso \href{https://github.com/eriqande/rubias}{rubias}: genetic stock
 #' identification (GSI) in the tidyverse.
 
 #' @return A rubias object in the global environment and a file is written in the

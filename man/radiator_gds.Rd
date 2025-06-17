@@ -8,7 +8,6 @@ radiator_gds(
   genotypes = NULL,
   biallelic = TRUE,
   data.source = NULL,
-  geno.coding = c("alt.dos", "ref.dos"),
   strata = NULL,
   markers.meta = NULL,
   genotypes.meta = NULL,

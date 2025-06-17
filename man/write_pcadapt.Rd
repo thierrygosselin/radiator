@@ -21,7 +21,9 @@ Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.}
 
 \item{pop.select}{(optional, string) Selected list of populations for
 the analysis. e.g. \code{pop.select = c("QUE", "ONT")} to select \code{QUE}
-and \code{ONT} population samples (out of 20 pops).
+and \code{ONT} population samples (out of 20 pops). If \code{pop.labels}
+argument was used to rename the strata column, use the new names with
+\code{pop.select}.
 Default: \code{pop.select = NULL}}
 
 \item{filename}{(optional) The file name prefix for the pcadapt file

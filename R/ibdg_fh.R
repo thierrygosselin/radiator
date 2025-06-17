@@ -148,9 +148,9 @@ ibdg_fh <- function(
 
   # Folders---------------------------------------------------------------------
   path.folder <- generate_folder(
-    f = path.folder,
     rad.folder = "ibdg_fh",
-    prefix_int = FALSE,
+    path.folder = path.folder,
+    prefix.int = FALSE,
     internal = FALSE,
     file.date = file.date,
     verbose = verbose)
@@ -302,12 +302,15 @@ ibdg_fh <- function(
 
 
   # Write FH individuals
-  write_rad(
+  write_radiator_tsv(
     data = fh,
-    path = path.folder,
-    filename = "fh.individuals.tsv",
-    tsv = TRUE, verbose = verbose)
-
+    path.folder = path.folder,
+    filename = "fh.individuals",
+    date = TRUE,
+    internal = FALSE,
+    write.message = "standard",
+    verbose = verbose
+  )
 
   # FH statistics per pop
   fh.stats <- fh %>%
@@ -322,11 +325,15 @@ ibdg_fh <- function(
     FH = unlist(dplyr::summarise(.data = fh.stats, FH = mean(FH)))
   )
   # Write FH individuals
-  write_rad(
+ write_radiator_tsv(
     data = fh.stats,
-    path = path.folder,
-    filename = "fh.populations.tsv",
-    tsv = TRUE, verbose = verbose)
+    path.folder = path.folder,
+    filename = "fh.populations",
+    date = TRUE,
+    internal = FALSE,
+    write.message = "standard",
+    verbose = verbose
+  )
 
   # plots ----------------------------------------------------------------------
   message("Generating plots")

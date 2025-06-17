@@ -970,6 +970,8 @@ radiator_helper_plot <- function(data, strata = FALSE, stats, x.axis.title = NUL
 
   if (strata) {
     helper.plot <- helper.plot + ggplot2::facet_grid(LIST ~ STRATA, scales = "free", space = "free")
+    n.pop <- length(unique(data$STRATA))
+    width.factor <- width.factor + n.pop
   } else {
     helper.plot <- helper.plot + ggplot2::facet_grid(LIST ~. , scales = "free", space = "free")
   }

@@ -73,7 +73,7 @@ read_whitelist <- function(whitelist.markers = NULL, verbose = FALSE) {
     }
 
     n.markers <- nrow(whitelist.markers)
-  if (verbose) message("Number of whitelisted markers: ", n.markers)
+    if (verbose) message("Number of whitelisted markers: ", n.markers)
   } else {
     whitelist.markers <- NULL
   }
@@ -115,10 +115,10 @@ read_whitelist <- function(whitelist.markers = NULL, verbose = FALSE) {
 
 
 filter_whitelist <- function(
-  data,
-  whitelist.markers = NULL,
-  verbose = TRUE,
-  ...) {
+    data,
+    whitelist.markers = NULL,
+    verbose = TRUE,
+    ...) {
   # obj.keeper <- c(ls(envir = globalenv()), "data")
   if (is.null(whitelist.markers)) return(data)
   radiator_function_header(f.name = "filter_whitelist", verbose = verbose)
@@ -152,20 +152,20 @@ filter_whitelist <- function(
 
   # Folders---------------------------------------------------------------------
   path.folder <- generate_folder(
-    f = path.folder,
     rad.folder = "filter_whitelist",
+    path.folder = path.folder,
     internal = internal,
     file.date = file.date,
     verbose = verbose)
 
   # write the dots file
-  write_rad(
+  write_radiator_tsv(
     data = rad.dots,
-    path = path.folder,
-    filename = stringi::stri_join(
-      "radiator_filter_whitelist_args_", file.date, ".tsv"),
-    tsv = TRUE,
+    path.folder = path.folder,
+    filename = "radiator_filter_whitelist_args",
+    date = TRUE,
     internal = internal,
+    write.message = "Function call and arguments stored in: ",
     verbose = verbose
   )
 
@@ -291,7 +291,7 @@ filter_whitelist <- function(
           .data = .,
           COMMON_META = stringi::stri_join(!!!common.meta, sep = "__")
         ) #%>%
-        #dplyr::filter(COMMON_META %in% whitelist.markers$COMMON_META)
+      #dplyr::filter(COMMON_META %in% whitelist.markers$COMMON_META)
 
       # test <- markers.meta %>%
       #   dplyr::mutate(
@@ -324,18 +324,26 @@ filter_whitelist <- function(
       sync = TRUE,
       verbose = TRUE
     )
-
-    write_rad(
+    write_radiator_tsv(
       data = markers.meta %>% dplyr::filter(FILTERS == "filter.whitelist"),
-      path = path.folder,
-      filename = stringi::stri_join("blacklist.markers_", file.date, ".tsv"),
-      tsv = TRUE, internal = internal, verbose = verbose)
+      path.folder = path.folder,
+      filename = "blacklist.markers",
+      date = TRUE,
+      internal = internal,
+      write.message = "standard",
+      verbose = verbose
+    )
 
-    write_rad(
+    write_radiator_tsv(
       data = markers.meta %>% dplyr::filter(FILTERS == "whitelist"),
-      path = path.folder,
-      filename = stringi::stri_join("whitelist.markers_", file.date, ".tsv"),
-      tsv = TRUE, internal = internal, verbose = verbose)
+      path.folder = path.folder,
+      filename = "whitelist.markers",
+      date = TRUE,
+      internal = internal,
+      write.message = "standard",
+      verbose = verbose
+    )
+
   } # End GDS
 
   # Filter parameter file: update --------------------------------------------
@@ -407,7 +415,7 @@ generate_whitelist <- function(x, t, path.folder = NULL) {
         path.folder,
         stringi::stri_join(
           "tidy.filtered.hwe", significance.group, "mid.p.value",
-          hw.pop.threshold, "hw.pop.threshold", "rad", sep = "."))
+          hw.pop.threshold, "hw.pop.threshold", "arrow.parquet", sep = "."))
 
       # Generate the blacklist
       want <- c("MARKERS", "CHROM", "LOCUS", "POS")
@@ -424,17 +432,17 @@ generate_whitelist <- function(x, t, path.folder = NULL) {
       # Generate the rad data + the whitelist
       if (!is.null(data.temp)) {
         whitelist <- unfiltered.data %>%
-            dplyr::bind_rows(data.temp) %>%
-            dplyr::mutate(POP_ID = factor(POP_ID, levels = pop.id.levels)) %>%
-            dplyr::filter(!MARKERS %in% blacklist$MARKERS) %>%
-            radiator::write_rad(data = ., path = rad.filename) %>%
-            dplyr::select(tidyselect::any_of(want)) %>%
-            dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
-            readr::write_tsv(x = ., file = whitelist.filename)
+          dplyr::bind_rows(data.temp) %>%
+          dplyr::mutate(POP_ID = factor(POP_ID, levels = pop.id.levels)) %>%
+          dplyr::filter(!MARKERS %in% blacklist$MARKERS) %>%
+          radiator::write_rad(data = ., filename = rad.filename) %>%
+          dplyr::select(tidyselect::any_of(want)) %>%
+          dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
+          readr::write_tsv(x = ., file = whitelist.filename)
       } else {
         whitelist <- unfiltered.data %>%
           dplyr::filter(!MARKERS %in% blacklist$MARKERS) %>%
-          radiator::write_rad(data = ., path = rad.filename) %>%
+          radiator::write_rad(data = ., filename = rad.filename) %>%
           dplyr::select(tidyselect::any_of(want)) %>%
           dplyr::distinct(MARKERS, .keep_all = TRUE) %>%
           readr::write_tsv(x = ., file = whitelist.filename)

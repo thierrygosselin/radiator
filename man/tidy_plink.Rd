@@ -36,7 +36,7 @@ special section)}
 A tidy tibble of the PLINK file.
 }
 \description{
-Transform bi-allelic PLINK files in \code{.tped} or {.bed} formats
+Transform bi-allelic PLINK files in \code{.tped} or \code{.bed} formats
 into a tidy dataset.
 
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}

@@ -9,7 +9,6 @@ radiator_gds <- function(
     genotypes = NULL,
     biallelic = TRUE,
     data.source = NULL,
-    geno.coding = c("alt.dos", "ref.dos"),
     strata = NULL,
     markers.meta = NULL,
     genotypes.meta = NULL,
@@ -26,11 +25,11 @@ radiator_gds <- function(
 
   # Types of genotypes coding:
   # SNPRelate is coded by ref allele dosage...
-  geno.coding <- match.arg(
-    arg = geno.coding,
-    choices = c("alt.dos", "ref.dos"),
-    several.ok = FALSE
-  )
+  # geno.coding <- match.arg(
+  #   arg = geno.coding,
+  #   choices = c("alt.dos", "ref.dos"),
+  #   several.ok = FALSE
+  # )
 
   # Filename -------------------------------------------------------------------
   if (is.null(filename)) {
@@ -262,7 +261,7 @@ radiator_gds <- function(
   }
 
   genotypes.meta <- NULL
-  message("File written: ", folder_short(filename))
+  message("File written: ", basename(filename))
   data.gds <- radiator::write_rad(data = data.gds)
   if (open) data.gds <- radiator::read_rad(data = data.gds)
   return(data.gds)
@@ -276,24 +275,54 @@ radiator_gds <- function(
 #' @rdname gt2array
 #' @keywords internal
 #' @export
-gt2array <- function(gt.bin, n.ind, n.snp) {
-  # The genotypes coding and the array...
-  genotypes <- cbind(
-    dplyr::case_when(
-      gt.bin == 0L ~ 0L,
-      gt.bin == 1L ~ 0L,
-      gt.bin == 2L ~ 1L
-    ),
-    dplyr::if_else(gt.bin == 2L, 1L, gt.bin)
-  )
+gt2array <- function(genotypes, n.ind = NULL, n.snp = NULL) {
+  # The genotypes coding for the 3-dimensional array
+  # with respect to allele, sample, variant
+  # 0 for REF, ref allele
+  # 1 for ATL, alt allele
 
-  #NA...
+  # the genotypes array is sorted by individuals and then by variant...
+  # in case info on number of samples and markers is not provided...
+
+  if (rlang::has_name(genotypes, "ID_SEQ")) {
+    if (is.null(n.ind)) n.ind <- length(unique(genotypes$ID_SEQ))
+    if (is.null(n.snp)) n.snp <- length(unique(genotypes$VARIANT_ID))
+    genotypes %<>% dplyr::arrange(ID_SEQ, VARIANT_ID)
+  } else {
+    if (is.null(n.ind)) n.ind <- length(unique(genotypes$INDIVIDUALS))
+    if (is.null(n.snp)) n.snp <- length(unique(genotypes$MARKERS))
+    genotypes %<>% dplyr::arrange(INDIVIDUALS, MARKERS)
+  }
+
+  genotypes <- cbind(genotypes$GDS_A1, genotypes$GDS_A2)
+  # here A1 and A2 refers to allele 1 and 2
+
+  #NA...15 will be used
   genotypes[is.na(genotypes)] <- 0x0F
+
+  # check dim
+
+  # dim(genotypes)
+  # ncol(genotypes)
+  # nrow(genotypes)
 
   # dimensions
   dim(genotypes) <- c(n.snp, n.ind, 2)
 
+  # dim(genotypes)
+  # ncol(genotypes)
+  # nrow(genotypes)
+
+  # The tibble is arrange this way, reading 1 col at a time 1 row at a time:
+  # MARKERS (1, 2, 3, ...), INDIVIDUALS (1, 2, 3.)
+  # rows are the markers
+  # cols are the individuals REF and then ALT
+  # so if 3 individuals the first 3 cols are id1 REF, id2 REF, id3 REF,
+
   # permute the array: alleles, samples, markers
+  # rows1: REF
+  # rows2: ALT
+  # cols: marker1 id1, marker 1 id 2, marker3 id 3, marker 2 id 1, etc
   genotypes <- aperm(a = genotypes, c(3,2,1))
 
   # dimension names
@@ -330,12 +359,28 @@ tidy2gds <- function(x) {
     dplyr::select(-dplyr::any_of(notwanted)) %>%
     dplyr::rename(STRATA = tidyselect::any_of("POP_ID"))
 
+
+  # generate genotypes format for easy reading into GDS
+  x %<>%
+    dplyr::mutate(
+      GDS_A1 = dplyr::case_when(
+        GT_BIN == 0 ~ 0,
+        GT_BIN == 1 ~ 0,
+        GT_BIN == 2 ~ 1,
+        is.na(GT_BIN) ~ NA_integer_),
+      GDS_A2 = dplyr::case_when(
+        GT_BIN == 0 ~ 0,
+        GT_BIN == 1 ~ 1,
+        GT_BIN == 2 ~ 1,
+        is.na(GT_BIN) ~ NA_integer_)
+    )
+
   # the genotypes array is sorted by individuals and then by variant...
-  x %<>% dplyr::arrange(STRATA, INDIVIDUALS, VARIANT_ID)
+  x %<>% dplyr::arrange(INDIVIDUALS, VARIANT_ID)
 
   x <- radiator_gds(
     genotypes = gt2array(
-      gt.bin = x$GT_BIN,
+      genotypes = x,
       n.ind = length(unique(x$INDIVIDUALS)),
       n.snp = length(unique(x$VARIANT_ID))
     ),
@@ -380,6 +425,9 @@ gds2tidy <- function(
   }
   if (pop.id) individuals %<>% dplyr::rename(POP_ID = tidyselect::any_of("STRATA"))
 
+  # check
+  # identical(individuals$ID_SEQ, sort(individuals$ID_SEQ))
+
 
   if (wide) markers.meta.select <- "MARKERS"
   if (is.null(markers.meta.select) && strip.rad) markers.meta.select <- "M_SEQ"
@@ -393,8 +441,10 @@ gds2tidy <- function(
     )
   }
 
-  # added 20210616
+  # check
+  # identical(markers.meta$VARIANT_ID, sort(markers.meta$VARIANT_ID))
 
+  # added 20210616
   weird.locus <- suppressWarnings(length(unique(markers.meta$LOCUS)) <= 1)
   if (weird.locus) {
     message("LOCUS field empty... adding unique id instead")
@@ -402,10 +452,11 @@ gds2tidy <- function(
   }
 
   # colnames and "id" tidy data...
-  if (rlang::has_name(markers.meta, "M_SEQ")) {
-    cn <- markers.meta %>% dplyr::pull(M_SEQ)
-    want.m <- "M_SEQ"
-  } else {
+  # by default
+  cn <- markers.meta %>% dplyr::pull(M_SEQ)
+  want.m <- "M_SEQ"
+
+  if (!rlang::has_name(markers.meta, "M_SEQ")) {
     if (!rlang::has_name(markers.meta, "MARKERS")) {
       markers.meta %<>%
         dplyr::mutate(
@@ -421,12 +472,13 @@ gds2tidy <- function(
     cn <- markers.meta %>% dplyr::pull(MARKERS)
     want.m <- "MARKERS"
   }
-  if (rlang::has_name(individuals, "ID_SEQ")) {
-    want.id <- "ID_SEQ"
-  } else {
+
+  # id string
+  want.id <- "ID_SEQ" # default
+  if (!rlang::has_name(individuals, "ID_SEQ")) {
     want.id <- "INDIVIDUALS"
   }
-  id <- individuals %>% dplyr::select(tidyselect::any_of(want.id))
+  id <- dplyr::select(individuals, tidyselect::any_of(want.id))
 
 
   # summary_gds(gds)
@@ -442,7 +494,7 @@ gds2tidy <- function(
         cols = want.id,
         names_to = want.m,
         values_to = "GT_BIN",
-        variable_factor = FALSE
+        tidy = TRUE
       )
 
     if (strip.rad) {
@@ -471,6 +523,15 @@ gds2tidy <- function(
     SeqArray::seqClose(gds)
     gds <- NULL
   }
+
+  if (rlang::has_name(tidy.data, "VARIANT_ID")) {
+    tidy.data %<>% dplyr::arrange(VARIANT_ID, ID_SEQ)
+  } else if (rlang::has_name(tidy.data, "MARKERS")) {
+    tidy.data %<>% dplyr::arrange(MARKERS, ID_SEQ)
+  } else {
+    tidy.data %<>% dplyr::arrange(ID_SEQ)
+  }
+
 
   return(tidy.data)
 } #End tidy gds
@@ -669,6 +730,7 @@ extract_individuals_metadata <- function(
       }
     }
 
+    # Another radiator.node is necessary here don't remove it to include with previous...
     if (radiator.node) {
       if (!is.null(ind.field.select)) {
         if (length(ind.field.select) == 1) keep.one <- TRUE
@@ -704,15 +766,16 @@ extract_individuals_metadata <- function(
     individuals %<>% dplyr::mutate(FILTERS = "whitelist")
   }
 
-  if (whitelist && rlang::has_name(individuals, "FILTERS")){
+  if (whitelist && rlang::has_name(individuals, "FILTERS")) {
     individuals %<>%
       dplyr::filter(FILTERS == "whitelist") %>%
       dplyr::select(-FILTERS)
   }
-  if (blacklist && rlang::has_name(individuals, "FILTERS")){
-    individuals %<>%
-      dplyr::filter(FILTERS != "whitelist") %>%
-      dplyr::select(-FILTERS)
+  if (blacklist && rlang::has_name(individuals, "FILTERS")) {
+    individuals %<>% dplyr::filter(FILTERS != "whitelist")
+    #%>% dplyr::select(-FILTERS) # removed 20250613
+    # I think the info is useful in the blacklist at the end
+    # That was already done for the markers ...
   }
 
   return(individuals)
@@ -802,6 +865,7 @@ extract_markers_metadata <- function(
       markers.df[[x]] <- SeqArray::seqGetData(gds, x)
     }
   }
+  # x <- markers.index[["VARIANT_ID"]]
 
   markers.df <- list()
   markers.meta <- purrr::map_df(
@@ -832,7 +896,7 @@ extract_markers_metadata <- function(
       dplyr::select(-FILTERS)
   }
   if (blacklist && rlang::has_name(markers.meta, "FILTERS")) {
-    markers.meta %<>% dplyr::filter(FILTERS != "whitelist")# %>%
+    markers.meta %<>% dplyr::filter(FILTERS != "whitelist")
   }
   return(markers.meta)
 }#End extract_markers_metadata
@@ -952,6 +1016,11 @@ extract_genotypes_metadata <- function(
         dplyr::select(-FILTERS)
     }
 
+    if (rlang::has_name(genotypes.meta, "VARIANT_ID")) {
+      genotypes.meta %<>% dplyr::arrange(VARIANT_ID)
+    }
+
+
     return(genotypes.meta)
   } else {
     return(geno.index)
@@ -1061,8 +1130,8 @@ check_coverage <- function(gds, genotypes.metadata.check = FALSE, stacks.haplo.c
 #' @param gds The gds object.
 #' @param markers (optional, logical) Default: \code{markers = TRUE}.
 #' @param individuals (optional, logical) Default: \code{individuals = TRUE}.
-#' @param dp (optional, logical) Default: \code{dp = TRUE}.
-#' @param ad (optional, logical) Default: \code{ad = TRUE}.
+#' @param coverage (optional, logical) Default: \code{coverage = TRUE}.
+#' @param allele.coverage (optional, logical) Default: \code{ad = TRUE}.
 #' @param coverage.stats (optional, character string). Choice of stats to use with
 #' coverage.
 #' Default: \code{coverage.stats = c("sum", "mean", "median", "iqr")}.
@@ -1095,16 +1164,32 @@ extract_coverage <- function(
     gds,
     individuals = TRUE,
     markers = TRUE,
-    dp = TRUE,
-    ad = TRUE,
+    coverage = TRUE,
+    allele.coverage = TRUE,
     coverage.stats = c("sum", "mean", "median", "iqr"),
     subsample.info = 1,
     verbose = TRUE,
-    parallel.core = TRUE
-    ) {
-
+    parallel.core = parallel::detectCores() - 1
+) {
   if (verbose) cli::cli_progress_step("Coverage ...")
   i.info <- i.stats <- m.info <- m.stats <- NULL
+
+  if (coverage || allele.coverage) {
+    got.coverage <- check_coverage(
+      gds = gds,
+      stacks.haplo.check = TRUE,
+      genotypes.metadata.check = TRUE,
+      dart.check = TRUE
+    )
+    if (!"DP" %in% got.coverage && !"READ_DEPTH" %in% got.coverage) coverage <- FALSE
+    if (!"AD" %in% got.coverage) allele.coverage <- FALSE
+    if ("ALLELE_ALT_DEPTH" %in% got.coverage) allele.coverage <- TRUE
+    got.coverage <- NULL
+  }
+
+  if (!allele.coverage & !coverage) {
+    rlang::abort("No coverage information detected...")
+  }
 
   # internal function
   coverage_stats <- function(
@@ -1114,7 +1199,7 @@ extract_coverage <- function(
     ad = TRUE,
     individuals = TRUE,
     markers = TRUE,
-    parallel.core = TRUE
+    parallel.core = parallel::detectCores() - 1
   ) {
 
     coverage.stats <- match.arg(
@@ -1133,9 +1218,29 @@ extract_coverage <- function(
         replacement = c("COVERAGE_TOTAL", "COVERAGE_MEAN", "COVERAGE_MEDIAN", "COVERAGE_IQR"),
         vectorize_all = FALSE
       )
+      data.source <- radiator::extract_data_source(gds = gds)
+
+      if ("dart" %in% data.source) {
+        dart.data <- radiator::extract_genotypes_metadata(
+          gds = gds,
+          genotypes.meta.select = c("M_SEQ", "ID_SEQ", "READ_DEPTH"),
+          whitelist = TRUE
+        ) %>%
+          radiator::rad_wide(
+            x = .,
+            formula = "ID_SEQ ~ M_SEQ",
+            values_from = "READ_DEPTH"
+          ) %>%
+          dplyr::select(-ID_SEQ)
+        colnames(dart.data) <- NULL
+        dart.data <- as.matrix(dart.data)
+      } else {
+        dart.data <- NULL
+      }
+
 
       if (markers) {
-        dp_f_m <- function(gds, coverage.stats, parallel.core = TRUE) {
+        dp_f_m <- function(gds, coverage.stats, parallel.core = parallel::detectCores() - 1) {
 
           # Using switch instead was not optimal for additional options in the func...
           if (coverage.stats == "sum") rad_cov_stats <- function(x) round(sum(x, na.rm = TRUE))
@@ -1143,32 +1248,41 @@ extract_coverage <- function(
           if (coverage.stats == "median") rad_cov_stats <- function(x) round(stats::median(x, na.rm = TRUE))
           # if (coverage.stats == "iqr") rad_cov_stats <- function(x) round(abs(diff(stats::quantile(x, probs = c(0.25, 0.75), na.rm = TRUE))))
           if (coverage.stats == "iqr") rad_cov_stats <- function(x) round(matrixStats::iqr(x, na.rm = TRUE)) # faster
-
-          x <- SeqArray::seqApply(
-            gdsfile = gds,
-            var.name = "annotation/format/DP",
-            FUN = rad_cov_stats,
-            as.is = "integer",
-            margin = "by.variant",
-            parallel = parallel.core
-          )
+          if (!is.null(dart.data)) {
+            x <- as.integer(apply(X = dart.data, MARGIN = 2, FUN = rad_cov_stats))
+            dart.data <- NULL
+          } else {
+            x <- SeqArray::seqApply(
+              gdsfile = gds,
+              var.name = "annotation/format/DP",
+              FUN = rad_cov_stats,
+              as.is = "integer",
+              margin = "by.variant",
+              parallel = parallel.core
+            )
+          }
+          return(x)
         }
 
         dp.m <- purrr::map_dfc(.x = coverage.stats.l, .f = dp_f_m, gds = gds, parallel.core = parallel.core)
       }
 
       if (individuals) {
-        # changing the margin doesnt work with seqarray, the GDS needs to be optimized by sample
+        # changing the margin doesn't work with seqarray, the GDS needs to be optimized by sample
         # this operation is very costly in both time and disk space.
         # faster to do matrix calculations by rows and sums
         # Note to myself: the huge speed gain by using other packages robustbse, Rfast, etc.
         # is not worth the unreliability of the results check your testing files...
 
-        dp.temp <- SeqArray::seqGetData(
-          gdsfile = gds,
-          var.name = "annotation/format/DP"
-        )
-
+        if ("dart" %in% data.source) {
+          dp.temp <- dart.data
+          dart.data <- NULL
+        } else {
+          dp.temp <- SeqArray::seqGetData(
+            gdsfile = gds,
+            var.name = "annotation/format/DP"
+          )
+        }
         dp_f_i <- function(coverage.stats, x) {
           if ("sum" %in% coverage.stats) x <- rowSums(x, na.rm = TRUE)
           if ("mean" %in% coverage.stats) x <- rowMeans(x, na.rm = TRUE)
@@ -1181,24 +1295,54 @@ extract_coverage <- function(
         dp.i <- purrr::map_dfc(.x = coverage.stats.l, .f = dp_f_i, x = dp.temp)
         dp.temp <- NULL
       }
-    }
-
+    }# END DP
 
     if (ad) {
-      #temp object contains AD for REF and ALT
-      ref <- SeqArray::seqGetData(
-        gdsfile = gds,
-        var.name = "annotation/format/AD"
-      )$data
 
 
-      # to extract the REF and ALT
-      column.vec <- seq_len(length.out = dim(ref)[2])
-      alt <- ref[, column.vec %% 2 == 0]
-      alt[alt == 0] <- NA
-      ref <- ref[, column.vec %% 2 == 1]
-      ref[ref == 0] <- NA
-      column.vec <- NULL
+      if ("dart" %in% data.source) {
+        dart.data <- radiator::extract_genotypes_metadata(
+          gds = gds,
+          genotypes.meta.select = c("M_SEQ", "ID_SEQ", "ALLELE_ALT_DEPTH", "ALLELE_REF_DEPTH"),
+          whitelist = TRUE
+        )
+
+        ref <- radiator::rad_wide(
+          x = dart.data,
+          formula = "ID_SEQ ~ M_SEQ",
+          values_from = "ALLELE_REF_DEPTH"
+        ) %>%
+          dplyr::select(-ID_SEQ)
+        colnames(ref) <- NULL
+        ref <- as.matrix(ref)
+
+        alt <- radiator::rad_wide(
+          x = dart.data,
+          formula = "ID_SEQ ~ M_SEQ",
+          values_from = "ALLELE_ALT_DEPTH"
+        ) %>%
+          dplyr::select(-ID_SEQ)
+        colnames(alt) <- NULL
+        alt <- as.matrix(alt)
+        dart.data <- NULL
+
+
+      } else {
+        #temp object contains AD for REF and ALT
+        ref <- SeqArray::seqGetData(
+          gdsfile = gds,
+          var.name = "annotation/format/AD"
+        )$data
+
+
+        # to extract the REF and ALT
+        column.vec <- seq_len(length.out = dim(ref)[2])
+        alt <- ref[, column.vec %% 2 == 0]
+        alt[alt == 0] <- NA
+        ref <- ref[, column.vec %% 2 == 1]
+        ref[ref == 0] <- NA
+        column.vec <- NULL
+      }
 
       ad_f <- function(coverage.stats, x, margin = c("markers", "individuals")) {
 
@@ -1256,7 +1400,7 @@ extract_coverage <- function(
         )
       }
       ref <- alt <- NULL
-    }
+    }# END AD
 
     cov.m <- dplyr::bind_cols(dp.m, ad.m)
     cov.i <- dplyr::bind_cols(dp.i, ad.i)
@@ -1266,16 +1410,15 @@ extract_coverage <- function(
     return(cov.stats)
   } # END dp_stats
 
-
   c.s <- coverage_stats(
     gds = gds,
-    coverage.stats = coverage.stats,
-    dp = dp,
-    ad = ad,
+    coverage.stats = c("sum", "mean", "median", "iqr"),
+    dp = coverage,
+    ad = allele.coverage,
     individuals = individuals,
-    markers = markers,
-    parallel.core = parallel.core
+    markers = markers
   )
+
 
   # required for individuals and markers
   cov_tibble_stats <- function(have, tibble.group, data, subsample.info) {
@@ -1831,11 +1974,14 @@ reset_filters <- function(
     filter.whitelist = FALSE
 ) {
   radiator_packages_dep(package = "SeqArray", cran = FALSE, bioc = TRUE)
+
+  # detect file type to make sure it's GDS...
   data.type <- radiator::detect_genomic_format(gds)
 
   if (!data.type %in% c("SeqVarGDSClass", "gds.file")) {
     rlang::abort("Input not supported for this function: read function documentation")
   }
+
   if (data.type == "gds.file") {
     gds <- radiator::read_rad(gds)
     data.type <- "SeqVarGDSClass"
@@ -1846,15 +1992,27 @@ reset_filters <- function(
 
   # reset all ------------------------------------------------------------------
   if (reset.all) {
+    message("Resetting ALL filters...")
+
+    # markers
     markers.meta <- extract_markers_metadata(gds = gds, whitelist = FALSE) %>%
       dplyr::mutate(FILTERS = "whitelist")
+    # update
     update_radiator_gds(gds = gds, node.name = "markers.meta", value = markers.meta, sync = FALSE)
+    #reset
     SeqArray::seqSetFilter(object = gds, variant.id = markers.meta$VARIANT_ID, verbose = FALSE)
 
+    # individials
     individuals <- extract_individuals_metadata(gds = gds, whitelist = FALSE) %>%
       dplyr::mutate(FILTERS = "whitelist")
+    # update
     update_radiator_gds(gds = gds, node.name = "individuals.meta", value = individuals, sync = FALSE)
+    #reset
     SeqArray::seqSetFilter(object = gds, sample.id = individuals$INDIVIDUALS, verbose = FALSE)
+
+    # final summary
+    summary_gds(gds = gds, check.sync = TRUE, verbose = TRUE)
+    return(message("done"))
   }
   # reset individuals ----------------------------------------------------------
   reset.i <- list()
@@ -1877,7 +2035,7 @@ reset_filters <- function(
   }
 
   if (length(reset.i) > 0) {
-    message("Resetting ", length(reset.i), " filters for individuals")
+    message("Resetting ", length(reset.i), " filters that target individuals")
     individuals <- extract_individuals_metadata(gds = gds, whitelist = FALSE) %>%
       dplyr::mutate(FILTERS = dplyr::if_else(FILTERS %in% reset.i, "whitelist", FILTERS))
     # update
@@ -1938,7 +2096,7 @@ reset_filters <- function(
   }
 
   if (length(reset.m) > 0) {
-    message("Resetting ", length(reset.m), " filters for markers")
+    message("Resetting ", length(reset.m), " filters that target SNP markers")
     markers.meta <- extract_markers_metadata(gds = gds, whitelist = FALSE) %>%
       dplyr::mutate(FILTERS = dplyr::if_else(FILTERS %in% reset.m, "whitelist", FILTERS))
     # update
@@ -1946,6 +2104,10 @@ reset_filters <- function(
     #reset
     SeqArray::seqSetFilter(object = gds, variant.id = markers.meta$VARIANT_ID, verbose = FALSE)
   }
+
+  # summary
+  summary_gds(gds = gds, check.sync = TRUE, verbose = TRUE)
+  return(message("done"))
 
 }#reset_filters
 
@@ -2377,11 +2539,10 @@ generate_stats <- function(
         m.info %>%
           dplyr::filter(N_ALLELES > 2) %>%
           dplyr::select(dplyr::any_of(wanted.info)) %>%
-          write_rad(
+          write_radiator_tsv(
             data = .,
-            path = path.folder,
-            filename = "markers_number_alleles_problem.tsv",
-            tsv = TRUE,
+            path.folder = path.folder,
+            filename = "markers_number_alleles_problem",
             write.message = "standard",
             verbose = TRUE
           )
@@ -3013,6 +3174,129 @@ generate_stats <- function(
   # return stats ---------------------------------------------------------------
   return(list(i.info = i.info, m.info = m.info, i.stats = i.stats, m.stats = m.stats, i.fig = i.fig, m.fig = m.fig))
 }#End generate_stats
+
+# id_qc_helper statistics--------------------------------------------------------
+#' @title id_qc_helper
+#' @description Generate helpers tables and blacklists for individual's QC
+#' @rdname id_qc_helper
+#' @keywords internal
+#' @export
+id_qc_helper <- function(x, x.sum, stats.id = c("missing", "heterozygozygosity", "coverage"), path.folder = NULL) {
+  #testing
+  # x <- "individuals.qc.stats_20250607@1559.tsv"
+  # x.sum <- "individuals.qc.stats.summary_20250607@1559.tsv"
+
+  # file or object
+  if (is.vector(x)) x <- readr::read_tsv(file = x, show_col_types = FALSE)
+  if (is.vector(x.sum)) x.sum <- readr::read_tsv(file = x.sum, show_col_types = FALSE)
+  if (is.null(path.folder)) path.folder <- getwd()
+
+  qc <- x %>%
+    # dplyr::select(tidyselect::all_of(stats.select))
+    # dplyr::select(INDIVIDUALS, STRATA, COVERAGE_TOTAL, MISSING_PROP, HETEROZYGOSITY) %>%
+    dplyr::mutate(
+      COVERAGE_GROUP = dplyr::case_when(
+        # COVERAGE_TOTAL < x.sum[[3,9]] ~ '\U274c', # outlier low discard
+        COVERAGE_TOTAL < x.sum[[3,3]] ~ '\U1F534', # below Q25 problem
+        COVERAGE_TOTAL > x.sum[[3,6]] ~ '\U1F7E1', #> Q75 careful
+        .default = '\U1F7E2'
+      ),
+      MISSING_GROUP = dplyr::case_when(
+        # MISSING_PROP <= x.sum[[1,9]] ~ "outlier_low",
+        MISSING_PROP < x.sum[[1,3]] ~ '\U1F7E1', # lower than Q25 = yellow
+        # MISSING_PROP >= x.sum[[1,10]] ~ "outlier_high",
+        # MISSING_PROP > x.sum[[1,6]] & MISSING_PROP < x.sum[[1,10]] ~ '\U1F534', # > Q75 problem
+        # MISSING_PROP >= x.sum[[1,10]] ~ '\U274c', # outlier high discard
+        MISSING_PROP > x.sum[[1,6]] ~ '\U1F534', # > Q75 problem
+        .default = '\U1F7E2'
+      ),
+      HET_GROUP = dplyr::case_when(
+        HETEROZYGOSITY <= x.sum[[2,9]] ~ '\U274c', # outlier low: discard
+        HETEROZYGOSITY < x.sum[[2,3]] ~ '\U1F7E1', # < Q25 careful
+        HETEROZYGOSITY >= x.sum[[2,10]] ~ '\U274c', # outlier high: discard
+        HETEROZYGOSITY > x.sum[[2,6]] & HETEROZYGOSITY < x.sum[[2,10]] ~ '\U1F7E1', # >Q75 careful
+        .default = '\U1F7E2'
+      ),
+      BAD = dplyr::case_when(
+        COVERAGE_GROUP == '\U1F534' & MISSING_GROUP == '\U1F534' & HET_GROUP == '\U274c' ~ '\U274c', # discard
+        COVERAGE_GROUP == '\U1F7E1' & MISSING_GROUP == '\U1F7E1' & HET_GROUP == '\U274c' ~ '\U274c', # discard
+        COVERAGE_GROUP == '\U1F534' & MISSING_GROUP == '\U1F534' & HET_GROUP == '\U1F7E1' ~ '\U1F534', # problem
+        COVERAGE_GROUP == '\U1F7E2' & MISSING_GROUP == '\U1F7E2' & HET_GROUP == '\U1F7E2' ~ '\U1F7E2', # keeper
+        .default = '\U1F7E1' # careful
+      ),
+      MIX_RISK = dplyr::if_else(
+        REF_DEPTH_MEAN > x.sum[[8,6]] & ALT_DEPTH_MEAN > x.sum[[12,4]], "\U1F7E1 med", '\U1F7E2 low'),
+      MIX_RISK = dplyr::if_else(MIX_RISK == "\U1F7E1 med" & HET_GROUP == '\U274c', '\U1F534 high', MIX_RISK),
+      .by = c("INDIVIDUALS", "STRATA"),
+      .keep = "used"
+    ) %>%
+    dplyr::select(INDIVIDUALS, STRATA, COVERAGE_GROUP, MISSING_GROUP, HET_GROUP, BAD, MIX_RISK)
+
+  radiator::write_radiator_tsv(data = qc, filename = "id.qc.experimental", path.folder = path.folder, verbose = TRUE)
+
+
+  # consider blacklisting whole strata when stats > x% e.g. if 50% of samples are bad...
+  bad.strata <- qc %>%
+    dplyr::summarise(
+      N = dplyr::n(),
+      BAD_HET = length(HET_GROUP[HET_GROUP == '\U274c']),
+      BAD = length(BAD[BAD == '\U274c']),
+      .by = STRATA
+      # .groups = "drop"
+    ) %>%
+    dplyr::mutate(
+      BAD_HET = BAD_HET / N,
+      BAD = BAD / N,
+      BAD_FEELING = dplyr::if_else(BAD_HET > 0.5 | BAD > 0.5, "BAD_BATCH", "OK")
+    ) %>%
+    dplyr::filter(BAD_FEELING == "BAD_BATCH") %>%
+    dplyr::pull(STRATA)
+
+  if (length(bad.strata) > 0) {
+    message("Consider removing entirely these strata: ", paste0(bad.strata, collapse = ", "))
+  }
+
+  bl.1 <- qc %>%
+    dplyr::filter(BAD == '\U274c') %>%
+    dplyr::select(INDIVIDUALS, STRATA)
+  radiator::write_radiator_tsv(data = bl.1, filename = "blacklist.individuals.qc.1st.suggestion.experimental",  path.folder = path.folder, verbose = TRUE)
+
+  bl.2 <- qc %>%
+    dplyr::filter(BAD == '\U1F534') %>%
+    dplyr::select(INDIVIDUALS, STRATA)
+  radiator::write_radiator_tsv(data = bl.2, filename = "blacklist.individuals.qc.2nd.suggestion.experimental",  path.folder = path.folder, verbose = TRUE)
+
+  bl <- qc %>%
+    dplyr::filter(BAD == '\U1F534' | BAD == '\U274c') %>%
+    dplyr::select(INDIVIDUALS, STRATA)
+  radiator::write_radiator_tsv(data = bl, filename = "blacklist.individuals.qc.1&2.suggestion.experimental",  path.folder = path.folder, verbose = TRUE)
+
+  bad.stats <- qc %>%
+    dplyr::count(BAD) %>%
+    dplyr::mutate(
+      BAD = dplyr::case_when(
+        BAD == '\U274c' ~ "\U274c blacklist from start",
+        BAD == '\U1F534' ~ "\U1F534 problem blacklist 2nd",
+        BAD == '\U1F7E1' ~ "\U1F7E1 careful",
+        BAD == '\U1F7E2' ~ "\U1F7E2 Keeper"
+      )
+    )
+  radiator::write_radiator_tsv(data = bad.stats, filename = "id.qc.bad.summary.experimental",  path.folder = path.folder, verbose = TRUE)
+
+  mix.risk <- qc %>%
+    dplyr::count(MIX_RISK)
+
+  radiator::write_radiator_tsv(data = mix.risk, filename = "mix.risk.suggestion.experimental",  path.folder = path.folder, verbose = TRUE)
+
+
+  bl.mix.risk.high <- qc %>%
+    dplyr::filter(MIX_RISK == '\U1F534 high') %>%
+    dplyr::select(INDIVIDUALS, STRATA)
+  radiator::write_radiator_tsv(data = bl.mix.risk.high, filename = "bl.mix.risk.high.suggestion.experimental",  path.folder = path.folder, verbose = TRUE)
+
+
+  return(list(id.qc = qc, bad.stats = bad.stats, mix.risk = mix.risk))
+}# End id_qc
 
 
 # Calculate individual het------------------------------------------------------

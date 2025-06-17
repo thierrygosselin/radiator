@@ -108,7 +108,7 @@ Default: \code{helper.tables = FALSE}.}
 \code{coverage.info = TRUE}, if you want to visualize
 the relationshio between locus coverage and locus observed heterozygosity
 statistics. Coverage information is required (e.g. in a vcf file...).
-Default: {coverage.info = FALSE}.}
+Default: \code{coverage.info = FALSE}.}
 
 \item{filename}{(optional) The function uses \code{\link[fst]{write.fst}},
 to write the tidy data frame in

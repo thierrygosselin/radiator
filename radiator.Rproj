@@ -24,3 +24,5 @@ PackageCheckArgs: --as-cran
 PackageRoxygenize: rd,collate,namespace,vignette
 
 QuitChildProcessesOnExit: Yes
+
+SpellingDictionary: en_CA

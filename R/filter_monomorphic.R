@@ -93,23 +93,24 @@ filter_monomorphic <- function(
 
     # Folders---------------------------------------------------------------------
     path.folder <- generate_folder(
-      f = path.folder,
       rad.folder = "filter_monomorphic",
+      path.folder = path.folder,
       internal = internal,
       file.date = file.date,
       verbose = verbose)
 
     # write the dots file
-    write_rad(
+    write_radiator_tsv(
       data = rad.dots,
-      path = path.folder,
-      filename = stringi::stri_join(
-        "radiator_filter_monomorphic_args_", file.date, ".tsv"),
-      tsv = TRUE,
+      path.folder = path.folder,
+      filename = "radiator_filter_monomorphic_args",
+      date = TRUE,
       internal = internal,
       write.message = "Function call and arguments stored in: ",
       verbose = verbose
     )
+
+
     # Detect format --------------------------------------------------------------
     data.type <- radiator::detect_genomic_format(data)
     if (!data.type %in% c("tbl_df", "fst.file", "SeqVarGDSClass", "gds.file")) {
@@ -150,12 +151,16 @@ filter_monomorphic <- function(
           dplyr::mutate(
             FILTERS = dplyr::if_else(VARIANT_ID %in% bl, "filter.monomorphic", FILTERS)
           )
-
-        write_rad(
+        write_radiator_tsv(
           data = markers.meta %>% dplyr::filter(FILTERS == "filter.monomorphic"),
-          path = path.folder,
-          filename = stringi::stri_join("blacklist.monomorphic.markers_", file.date, ".tsv"),
-          tsv = TRUE, internal = internal, verbose = verbose)
+          path.folder = path.folder,
+          filename = "blacklist.monomorphic.markers",
+          date = TRUE,
+          internal = internal,
+          write.message = "standard",
+          verbose = verbose
+        )
+
 
         # wl %<>% dplyr::filter(!MARKERS %in% bl$MARKERS)
 
@@ -171,12 +176,15 @@ filter_monomorphic <- function(
       }
 
       # write the whitelist even if no blacklist...
-      write_rad(
+      write_radiator_tsv(
         data = markers.meta %>% dplyr::filter(FILTERS == "whitelist"),
-        path = path.folder,
-        filename = stringi::stri_join("whitelist.polymorphic.markers_", file.date, ".tsv"),
-        tsv = TRUE, internal = internal, verbose = verbose)
-
+        path.folder = path.folder,
+        filename = "whitelist.polymorphic.markers",
+        date = TRUE,
+        internal = internal,
+        write.message = "standard",
+        verbose = verbose
+      )
     } else {# tidy data
       # Import data ---------------------------------------------------------------
       if (is.vector(data)) data <- radiator::tidy_wide(data = data, import.metadata = TRUE)
@@ -240,21 +248,31 @@ filter_monomorphic <- function(
       if (n.markers.removed > 0) {
         data <- dplyr::filter(data, !MARKERS %in% bl$MARKERS)
         bl <- wl %>% dplyr::filter(MARKERS %in% bl$MARKERS)
-        write_rad(
+        write_radiator_tsv(
           data = bl,
-          path = path.folder,
-          filename = stringi::stri_join("blacklist.monomorphic.markers_", file.date, ".tsv"),
-          tsv = TRUE, internal = internal, verbose = verbose)
+          path.folder = path.folder,
+          filename = "blacklist.monomorphic.markers",
+          date = TRUE,
+          internal = internal,
+          write.message = "standard",
+          verbose = verbose
+        )
+
       } else {
         bl <- wl[0,]
       }
       # write the whitelist even if no blacklist...
       wl %<>% dplyr::filter(!MARKERS %in% bl$MARKERS)
-      write_rad(
+      write_radiator_tsv(
         data = wl,
-        path = path.folder,
-        filename = stringi::stri_join("whitelist.polymorphic.markers_", file.date, ".tsv"),
-        tsv = TRUE, internal = internal, verbose = verbose)
+        path.folder = path.folder,
+        filename = "whitelist.polymorphic.markers",
+        date = TRUE,
+        internal = internal,
+        write.message = "standard",
+        verbose = verbose
+      )
+
     }#Tidy data
 
     # Filter parameter file: update --------------------------------------------

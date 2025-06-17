@@ -68,6 +68,9 @@
 #' @param tidy.dart (logical, optional) Generate a tidy dataset.
 #' Default:\code{tidy.dart = FALSE}.
 
+#' @param calibrate.alleles (optional, logical)
+#' Default: \code{calibrate.alleles = TRUE}.
+#' Documented in \code{\link[radiator]{calibrate_alleles}}.
 
 #' @inheritParams tidy_genomic_data
 #' @inheritParams radiator_common_arguments
@@ -210,6 +213,7 @@ read_dart <- function(
     strata,
     filename = NULL,
     tidy.dart = FALSE,
+    calibrate.alleles = TRUE,
     verbose = TRUE,
     parallel.core = parallel::detectCores() - 1,
     ...
@@ -227,7 +231,7 @@ read_dart <- function(
   # path.folder = NULL
   # internal <- FALSE
   # tidy.dart = FALSE
-  # tidy.check = FALSE
+  # calibrate.alleles = TRUE
   # gt = NULL
   # gt.bin = NULL
   # gt.vcf = NULL
@@ -237,7 +241,8 @@ read_dart <- function(
   # Cleanup-------------------------------------------------------------------
   radiator_function_header(f.name = "read_dart", verbose = verbose)
   file.date <- format(Sys.time(), "%Y%m%d@%H%M")
-  if (verbose) cat(paste0(stringi::stri_pad_both(str = paste0(" Reproducibility "), width = 80L, pad = "-"), "\n"))
+  # if (verbose) cat(paste0(stringi::stri_pad_both(str = paste0(" Reproducibility "), width = 80L, pad = "-"), "\n"))
+  if (verbose) message(stringi::stri_pad_both(str = " Reproducibility ", width = 80L, pad = "-"), "\n")
   if (verbose) message("Execution date@time: ", file.date)
   old.dir <- getwd()
   opt.change <- getOption("width")
@@ -273,51 +278,56 @@ read_dart <- function(
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("data is missing")
 
-  # Folders---------------------------------------------------------------------
+
+  # Generate folders and filenames ---------------------------------------------
   wf <- path.folder <- generate_folder(
-    f = path.folder,
     rad.folder = "read_dart",
-    prefix_int = FALSE,
+    path.folder = path.folder,
+    prefix.int = FALSE,
     internal = internal,
     file.date = file.date,
-    verbose = verbose)
+    verbose = verbose
+    )
 
   # write the dots file
-  write_rad(
+  write_radiator_tsv(
     data = rad.dots,
-    path = path.folder,
-    filename = stringi::stri_join("radiator_tidy_dart_args_", file.date, ".tsv"),
-    tsv = TRUE,
+    path.folder = path.folder,
+    filename = "radiator_tidy_dart_args",
+    date = TRUE,
     internal = internal,
+    write.message = "Function call and arguments stored in: ",
     verbose = verbose
   )
 
-  # Generate filenames ---------------------------------------------------------
+
   filename.gds <- generate_filename(
     name.shortcut = filename,
     path.folder = path.folder,
     date = TRUE,
-    extension = "gds.rad")
+    extension = "gds.rad")$filename
 
   filename <- generate_filename(
     name.shortcut = filename,
     path.folder = path.folder,
     date = TRUE,
-    extension = "arrow.parquet")
+    extension = "arrow.parquet")$filename
 
   meta.filename <- generate_filename(
     name.shortcut = "radiator_tidy_dart_metadata",
     path.folder = path.folder,
     date = TRUE,
-    extension = "tsv")
+    extension = "tsv")$filename
 
   # Read TARGET_ID -------------------------------------------------------------
-  if (verbose) cat(paste0(stringi::stri_pad_both(str = paste0(" Target ids "), width = 80L, pad = "-"), "\n"))
+  # if (verbose) cat(paste0(stringi::stri_pad_both(str = paste0(" Target ids "), width = 80L, pad = "-"), "\n"))
+  if (verbose) message(stringi::stri_pad_both(str = " Target ids ", width = 80L, pad = "-"), "\n")
   if (verbose) message("Extracting DArT TARGET_ID")
   target.id <- extract_dart_target_id(data, write = FALSE, metadata = TRUE)
 
   # Read Strata file -----------------------------------------------------------
-  if (verbose) cat(paste0(stringi::stri_pad_both(str = paste0(" Strata "), width = 80L, pad = "-"), "\n"))
+  # if (verbose) cat(paste0(stringi::stri_pad_both(str = paste0(" Strata "), width = 80L, pad = "-"), "\n"))
+  if (verbose) message(stringi::stri_pad_both(str = " Strata ", width = 80L, pad = "-"), "\n")
   strata <- radiator::read_strata(
     strata = strata,
     pop.levels = pop.levels,
@@ -337,9 +347,11 @@ read_dart <- function(
     path.folder = path.folder,
     verbose = TRUE
   )
+  target.id <- NULL
 
   # Read markers metadata ------------------------------------------------------
-  if (verbose) cat(paste0(stringi::stri_pad_both(str = paste0(" Markers "), width = 80L, pad = "-"), "\n"))
+  # if (verbose) cat(paste0(stringi::stri_pad_both(str = paste0(" Markers "), width = 80L, pad = "-"), "\n"))
+  if (verbose) message(stringi::stri_pad_both(str = " Markers ", width = 80L, pad = "-"), "\n")
   markers.meta <- read_dart_markers_metadata(
     data = data,
     whitelist.markers = whitelist.markers,
@@ -352,7 +364,8 @@ read_dart <- function(
   # will save when recalibration is checked...below
 
   # Read Genotypes -------------------------------------------------------------
-  if (verbose) cat(paste0(stringi::stri_pad_both(str = paste0(" Genotypes "), width = 80L, pad = "-"), "\n"))
+  # if (verbose) cat(paste0(stringi::stri_pad_both(str = paste0(" Genotypes "), width = 80L, pad = "-"), "\n"))
+  if (verbose) message(stringi::stri_pad_both(str = " Genotypes ", width = 80L, pad = "-"), "\n")
   if (verbose) message("Importing DArT genotypes information from file...")
 
   # Check DArT format file
@@ -377,32 +390,36 @@ read_dart <- function(
     parallel.core = parallel.core,
     .progress = TRUE
   ) %>%
-    purrr::list_rbind(.)
-  # lobstr::obj_size(test)
+    purrr::list_rbind(.) %>%
+    dplyr::arrange(VARIANT_ID, ID_SEQ)
   cli::cli_progress_done()
 
   strata.split <- variant.id <- NULL
 
   # Calibration-----------------------------------------------------------------
-  if (verbose) cat(paste0(stringi::stri_pad_both(str = paste0(" Calibration "), width = 80L, pad = "-"), "\n"))
-  switch <- detect_calibration_problem(x = genotypes, dart.check = dart.check)
-  n.switch <- switch$n.switch
-  switch <- switch$switch
+  # if (verbose) cat(paste0(stringi::stri_pad_both(str = paste0(" Calibration "), width = 80L, pad = "-"), "\n"))
+  if (verbose) message(stringi::stri_pad_both(str = " Calibration ", width = 80L, pad = "-"), "\n")
 
-  if (n.switch > 0) {
-    markers.meta <- dart_calibration(switch = switch, metadata = markers.meta)
-    genotypes <- dart_calibration(switch = switch, genotypes = genotypes)
+  if (calibrate.alleles) {
+    switch <- detect_calibration_problem(x = genotypes, dart.check = dart.check)
+    n.switch <- switch$n.switch
+    switch <- switch$switch
 
-    # save metadata
-    write_rad(
-      data = markers.meta,
-      path = path.folder,
-      filename = meta.filename$filename.short,
-      write.message = "standard",
-      tsv = TRUE,
-      verbose = verbose
-    )
-  }#End if switching alleles
+    if (n.switch > 0) {
+      markers.meta <- dart_calibration(switch = switch, metadata = markers.meta)
+      genotypes <- dart_calibration(switch = switch, genotypes = genotypes)
+    }#End if switching alleles
+  } else {
+    message("Calibration of alleles was turned off: not recommended")
+  }
+
+
+  # save markers metadata
+  readr::write_tsv(
+    x = markers.meta,
+    file = meta.filename,
+  )
+  if (verbose) message("File written: ", basename(meta.filename))
 
 
   # Whitelist ------------------------------------------------------------------
@@ -436,24 +453,26 @@ read_dart <- function(
       name.shortcut = "radiator.silico.dart",
       path.folder = path.folder,
       date = TRUE,
-      extension = "rad")
+      extension = "arrow.parquet"
+      )$filename
 
     write_rad(
       data = data,
-      path = filename$filename,
-      filename = filename$filename.short,
+      filename = filename,
       write.message = "standard",
       verbose = verbose
     )
 
-    if (verbose) cat("################################### SUMMARY ####################################\n")
+
+    if (verbose) message("################################### SUMMARY ####################################\n")
     message("\nNumber of clones: ", n.clone)
     summary_strata(strata)
     return(data)
   }
 
   # DArT genotyping ------------------------------------------------------------
-  if (verbose) cat(paste0(stringi::stri_pad_both(str = paste0(" Normalization "), width = 80L, pad = "-"), "\n"))
+  # if (verbose) cat(paste0(stringi::stri_pad_both(str = paste0(" Normalization "), width = 80L, pad = "-"), "\n"))
+  if (verbose) message(stringi::stri_pad_both(str = " Normalization ", width = 80L, pad = "-"), "\n")
 
   # DArT genotyping strategy
   # All this can be overwritten in ... argument
@@ -477,34 +496,58 @@ read_dart <- function(
     gt.vcf.nuc = dart.strategy$gt.vcf.nuc,
     gt = dart.strategy$gt
   )
+  dart.strategy <- NULL
 
   # dart2gds -------------------------------------------------------------------
-  if (verbose) cat(paste0(stringi::stri_pad_both(str = paste0(" Format: GDS "), width = 80L, pad = "-"), "\n"))
+  # if (verbose) cat(paste0(stringi::stri_pad_both(str = paste0(" Format: GDS "), width = 80L, pad = "-"), "\n"))
+  if (verbose) message(stringi::stri_pad_both(str = " Format: GDS ", width = 80L, pad = "-"), "\n")
 
-  dart.gds <- dart2gds(
-    genotypes = genotypes,
+  # Generate GDS
+  dart.gds <- radiator_gds(
+    genotypes = gt2array(
+      genotypes = genotypes, n.ind = nrow(strata), n.snp = n.markers
+    ),
+    biallelic = TRUE,
+    data.source = dart.check$data.type,
     strata = strata,
     markers.meta = markers.meta,
-    filename.gds = filename.gds,
-    dart.check = dart.check,
-    parallel.core = parallel.core,
+    genotypes.meta = genotypes,
+    filename = filename.gds,
+    open = TRUE,
     verbose = verbose
   )
 
+  if (verbose) message("done!")
+
+  # no longer relevant to have this function...
+  # dart.gds <- dart2gds(
+  #   genotypes = genotypes,
+  #   strata = strata,
+  #   markers.meta = markers.meta,
+  #   filename.gds = filename.gds,
+  #   dart.check = dart.check,
+  #   parallel.core = parallel.core,
+  #   verbose = verbose
+  # )
+
   n.chrom <- length(unique(markers.meta$CHROM))
   n.locus <- length(unique(markers.meta$LOCUS))
-  n.snp <- length(unique(markers.meta$MARKERS))
+  n.snp <- n.markers
 
   # Tidy data -----------------------------------------------------------------
   if (tidy.dart) {
-    if (verbose) cat(paste0(stringi::stri_pad_both(str = paste0(" Format: tidy "), width = 80L, pad = "-"), "\n"))
+    # if (verbose) cat(paste0(stringi::stri_pad_both(str = paste0(" Format: tidy "), width = 80L, pad = "-"), "\n"))
+    if (verbose) message(stringi::stri_pad_both(str = " Format: tidy ", width = 80L, pad = "-"), "\n")
     if (verbose) message("Generating tidy data...")
     want <- c("VARIANT_ID", "M_SEQ", "VARIANT_ID","MARKERS", "CHROM", "LOCUS", "POS", "REF", "ALT")
+    notwanted <- c("REF_COUNT", "ALT_COUNT", "M_SEQ", "REF", "ALT")
+    genotypes %<>% dplyr::select(!dplyr::any_of(notwanted))
 
     dart.tidy <- markers.meta %>%
       dplyr::select(tidyselect::any_of(want)) %>%
-      dplyr::left_join(genotypes, by = "VARIANT_ID")
-
+      dplyr::left_join(genotypes, by = "VARIANT_ID") %>%
+      dplyr::arrange(VARIANT_ID, ID_SEQ)
+    want <- notwanted <- NULL
 
     # Final strata ---------------------------------------------------------
     if (!is.null(strata)) {
@@ -512,10 +555,11 @@ read_dart <- function(
         name.shortcut = "radiator_tidy_dart_strata",
         path.folder = path.folder,
         date = TRUE,
-        extension = "tsv")
+        extension = "tsv"
+        )$filename
 
       # strata <- extract_individuals_metadata(gds = data, whitelist = TRUE)
-      readr::write_tsv(x = strata, file = strata.filename$filename)
+      readr::write_tsv(x = strata, file = strata.filename)
 
       # if (rlang::has_name(dart.tidy, "TARGET_ID")) {
       common.col <- intersect(colnames(dart.tidy), colnames(strata))
@@ -524,9 +568,6 @@ read_dart <- function(
           dplyr::select(strata, ID_SEQ, INDIVIDUALS, STRATA)
           , by = common.col
         )
-      # tidy.data %<>%
-      #   dplyr::left_join(strata, by = "INDIVIDUALS") %>%
-      #   dplyr::rename(POP_ID = STRATA)
     }
 
 
@@ -564,13 +605,18 @@ read_dart <- function(
     # }#End missing.memory
 
 
-    # write tidy
-    write_rad(data = dart.tidy, path = filename$filename, filename = filename$filename.short, verbose = verbose)
+    # Write tidy --------
+    write_rad(
+      data = dart.tidy,
+      filename = filename,
+      verbose = verbose
+      )
 
   }#tidy
 
   # summary dart ---------------------------------------------------------------
-  if (verbose) cat(paste0(stringi::stri_pad_both(str = paste0(" Summary "), width = 80L, pad = "-"), "\n"))
+  # if (verbose) cat(paste0(stringi::stri_pad_both(str = paste0(" Summary "), width = 80L, pad = "-"), "\n"))
+  if (verbose) message(stringi::stri_pad_both(str = " Summary ", width = 80L, pad = "-"), "\n")
   message("Number of chrom: ", n.chrom)
   message("Number of locus: ", n.locus)
   message("Number of SNPs: ", n.snp)
@@ -847,12 +893,19 @@ checks_dart_target <- function(
       dplyr::distinct(TARGET_ID, .keep_all = TRUE) %>%
       dplyr::select_if(~ !any(is.na(.)))
 
-    write_rad(data = blacklist.id,
-              path = path.folder,
-              filename = "blacklist.individuals.tsv",
-              tsv = TRUE,
-              write.message = "standard",
-              verbose = verbose)
+    blacklist.individuals.file <- radiator::generate_filename(
+      name.shortcut = "blacklist.individuals",
+      path.folder = path.folder,
+      extension = "tsv",
+      date = TRUE
+    )$filename
+
+    readr::write_tsv(
+      x = blacklist.id,
+      file = blacklist.individuals.file
+    )
+    if (verbose) message("File written: ",  basename(blacklist.individuals.file))
+
 
     blacklist.id <- blacklist.id$TARGET_ID
 
@@ -918,6 +971,16 @@ read_dart_markers_metadata <- function(
       show_col_types = FALSE
     )
   )
+  if (dart.check$dart.format == "2rows" || dart.check$dart.format == "counts") {
+    n.markers <- nrow(metadata) / 2
+    variant.id <- rep(1:n.markers, times = 1, each = 2)
+  } else {
+    n.markers <- nrow(metadata)
+    variant.id <- rep(1:n.markers, times = 1)
+  }
+  metadata %<>%  tibble::add_column(VARIANT_ID = variant.id, .before = 1)
+  # keep a non filter vector for import genotypes FAKE# keep a non filter vector for import genotypes later...
+
 
   # clean the headers --------------------------------
   if (verbose) message("DArT markers naming normalization")
@@ -928,9 +991,6 @@ read_dart_markers_metadata <- function(
     strata = NULL
   )
 
-  # keep a non filter vector for import genotypes later...
-  variant.id <- metadata$VARIANT_ID
-
   # Check for problematic DArT 2 rows and counts
   # When modified, this is a common problem found ...
   unique.variant.id <- unique(metadata$VARIANT_ID)
@@ -938,6 +998,7 @@ read_dart_markers_metadata <- function(
   if (dart.check$dart.format == "2rows" || dart.check$dart.format == "counts") {
     if (n.markers != nrow(metadata) / 2) {
       message("\n\nProblem with DArT file")
+      path.folder <- getwd()
       prob.file <- file.path(path.folder, "dart_problem.tsv")
 
       check <- metadata %>%
@@ -996,7 +1057,8 @@ read_dart_markers_metadata <- function(
     dplyr::select(
       FILTERS, M_SEQ, VARIANT_ID, MARKERS, CHROM, LOCUS, POS, COL, REF, ALT,
       tidyselect::everything(.)
-    )
+    ) %>%
+    dplyr::arrange(VARIANT_ID)
   return(list(metadata = metadata, variant.id = variant.id))
 }#End read_dart_markers_metadata
 
@@ -1088,7 +1150,7 @@ clean_dart_colnames <- function(x, dart.check, blacklist.id = NULL, strata = NUL
       x %<>% dplyr::rename(SEQUENCE = CLUSTER_CONSENSUS_SEQUENCE)
     }
   }
-  # For all DArT format except SILICO ------------------------------------------
+  # For all  except SILICO ------------------------------------------
   silico.dart <- "silico.dart" %in% dart.check$dart.format
 
   if (!silico.dart) {
@@ -1215,7 +1277,7 @@ clean_dart_locus <- function(x, fast = TRUE) {
           REF = stringi::stri_extract_first_regex(str = VARIANT_DART, pattern = "[A-Z]"),
           ALT = stringi::stri_extract_last_regex(str = VARIANT_DART, pattern = "[A-Z]"),
           MARKERS = stringi::stri_join(CHROM, LOCUS, POS, sep = "__"),
-          VARIANT_ID = as.integer(factor(MARKERS)),
+          # VARIANT_ID = as.integer(factor(MARKERS)),
           M_SEQ = VARIANT_ID,
           VARIANT_DART = NULL,
           SNP = NULL
@@ -1227,7 +1289,7 @@ clean_dart_locus <- function(x, fast = TRUE) {
             .fns = as.character
           )
         ) %>%
-        dplyr::arrange(CHROM, LOCUS, POS, REF)
+        dplyr::arrange(VARIANT_ID, CHROM, LOCUS, POS, REF)
     } else {
       x %<>%
         dplyr::mutate(
@@ -1244,7 +1306,7 @@ clean_dart_locus <- function(x, fast = TRUE) {
           REF = stringi::stri_extract_first_regex(str = SNP, pattern = "[A-Z]"),
           ALT = stringi::stri_extract_last_regex(str = SNP, pattern = "[A-Z]"),
           MARKERS = stringi::stri_join(CHROM, LOCUS, POS, sep = "__"),
-          VARIANT_ID = as.integer(factor(MARKERS)),
+          # VARIANT_ID = as.integer(factor(MARKERS)),
           M_SEQ = VARIANT_ID,
           SNP = NULL
         ) %>%
@@ -1255,7 +1317,7 @@ clean_dart_locus <- function(x, fast = TRUE) {
             .fns = as.character
           )
         ) %>%
-        dplyr::arrange(CHROM, LOCUS, POS, REF)
+        dplyr::arrange(VARIANT_ID, CHROM, LOCUS, POS, REF)
     }
   } else {
     want <- c("VARIANT_ID", "M_SEQ", "MARKERS", "CHROM", "LOCUS", "POS", "COL",
@@ -1275,7 +1337,7 @@ clean_dart_locus <- function(x, fast = TRUE) {
       dplyr::mutate(
         CHROM = rep("CHROM_1", n()),
         MARKERS = stringi::stri_join(CHROM, LOCUS, POS, sep = "__"),
-        VARIANT_ID = as.integer(factor(MARKERS)),
+        # VARIANT_ID = as.integer(factor(MARKERS)),
         M_SEQ = VARIANT_ID,
         COL = POS
       ) %>%
@@ -1286,7 +1348,7 @@ clean_dart_locus <- function(x, fast = TRUE) {
           .fns = as.character
         )
       ) %>%
-      dplyr::arrange(CHROM, LOCUS, POS, REF)
+      dplyr::arrange(VARIANT_ID, CHROM, LOCUS, POS, REF)
   }
 }#End clean_dart_locus
 
@@ -1377,22 +1439,28 @@ import_dart_geno <- function(strata.split, variant.id, data, dart.check, paralle
 
   #1-row
   if ("1row" %in% dart.check$dart.format) {
+    # 0: REF/REF, 1: ALT/ALT, 2: REF/ALT
+    # We transform into PRESENCE / ABSENCE
+    # REF_COUNT: 0 -> 1, 1 -> 0, 2 -> 1
+    # ALT_COUNT: 0 -> 0, 1 -> 1, 1 -> 1
+
+
     gen %<>%
       radiator::rad_long(
         x = .,
         cols = "VARIANT_ID",
         names_to = "ID_SEQ",
-        values_to = "DART",
+        values_to = "GDS",
         tidy = TRUE
       ) %>%
       dplyr::mutate(
-        REF = dplyr::case_when(
-          DART == 1L ~ 0L,
-          DART == 2L ~ 1L,
-          DART == 0L ~ 1L
+        REF_COUNT = dplyr::case_when(
+          GDS == 1L ~ 0L,
+          GDS == 2L ~ 1L,
+          GDS == 0L ~ 1L
         ),
-        ALT = dplyr::if_else(DART == 2L, 1L, DART), # the other coding remain the same
-        DART = NULL
+        ALT_COUNT = dplyr::if_else(GDS == 2L, 1L, GDS), # the other coding remain the same
+        GDS = NULL
       )
   }#END 1row genotypes
 
@@ -1401,6 +1469,13 @@ import_dart_geno <- function(strata.split, variant.id, data, dart.check, paralle
     # n.ind <- ncol(gen) - 2
     # n.snp <- nrow(gen) / 2
 
+    ref.values <- "REF_COUNT"
+    alt.values <- "ALT_COUNT"
+    if (dart.check$dart.format == "counts") {
+      ref.values <- "ALLELE_REF_DEPTH"
+      alt.values <- "ALLELE_ALT_DEPTH"
+    }
+
     gen <- suppressMessages(
       dplyr::filter(gen, is.na(SNP)) %>%
         dplyr::select(-SNP) %>%
@@ -1408,7 +1483,7 @@ import_dart_geno <- function(strata.split, variant.id, data, dart.check, paralle
           x = .,
           cols = "VARIANT_ID",
           names_to = "ID_SEQ",
-          values_to = "REF",
+          values_to = ref.values,
           tidy = TRUE
         ) %>%
         dplyr::bind_cols(
@@ -1418,11 +1493,18 @@ import_dart_geno <- function(strata.split, variant.id, data, dart.check, paralle
               x = .,
               cols = "VARIANT_ID",
               names_to = "ID_SEQ",
-              values_to = "ALT",
+              values_to = alt.values,
               tidy = TRUE
             )
         )
     )
+
+    if (dart.check$dart.format == "counts") {
+      gen %<>% dplyr::mutate(
+        REF_COUNT = dplyr::if_else(ALLELE_REF_DEPTH > 0, 1, ALLELE_REF_DEPTH),
+        ALT_COUNT = dplyr::if_else(ALLELE_ALT_DEPTH > 0, 1, ALLELE_ALT_DEPTH)
+      )
+    }
 
     # Faster to check that the bind_cols worked by checking the variant id
     if (!identical(gen$VARIANT_ID...1, gen$VARIANT_ID...4)) {
@@ -1448,19 +1530,32 @@ import_dart_geno <- function(strata.split, variant.id, data, dart.check, paralle
 #' @keywords internal
 #' @export
 detect_calibration_problem <- function(x, dart.check) {
-  switch <- x %>%
-    dplyr::summarise(
-      REF = sum(REF, na.rm = TRUE),
-      ALT = sum(ALT, na.rm = TRUE),
-      .by = "VARIANT_ID"
-    ) %>%
-    dplyr::filter(REF < ALT) %>%
-    dplyr::pull(VARIANT_ID)
+
+  if ("counts" %in% dart.check$dart.format) {
+    switch <- x %>%
+      dplyr::summarise(
+        ALLELE_REF_DEPTH = sum(ALLELE_REF_DEPTH, na.rm = TRUE),
+        ALLELE_ALT_DEPTH = sum(ALLELE_ALT_DEPTH, na.rm = TRUE),
+        .by = "VARIANT_ID"
+      ) %>%
+      dplyr::filter(ALLELE_REF_DEPTH < ALLELE_ALT_DEPTH) %>%
+      dplyr::pull(VARIANT_ID)
+  } else {
+    switch <- x %>%
+      dplyr::summarise(
+        REF_COUNT = sum(REF_COUNT, na.rm = TRUE),
+        ALT_COUNT = sum(ALT_COUNT, na.rm = TRUE),
+        .by = "VARIANT_ID"
+      ) %>%
+      dplyr::filter(REF_COUNT < ALT_COUNT) %>%
+      dplyr::pull(VARIANT_ID)
+  }
+
   n.switch <- length(switch)
 
   if (n.switch > 0) {
     if ("counts" %in% dart.check$dart.format) {
-      count.what <- " read depth"
+      count.what <- "read depth"
     } else {
       count.what <- "alleles"
     }
@@ -1481,11 +1576,25 @@ dart_calibration <- function(switch, genotypes = NULL, metadata = NULL) {
   # genotypes recalibration
   if (!is.null(genotypes)) {
     message("Calibration of REF and ALT alleles in genotypes")
-    new.gen <- dplyr::bind_rows(
-      dplyr::filter(genotypes, !VARIANT_ID %in% switch),
-      dplyr::filter(genotypes, VARIANT_ID %in% switch) %>%
-        dplyr::rename(ALT = REF, REF = ALT)
-    )
+
+    if (rlang::has_name(genotypes, "ALLELE_REF_DEPTH")) {
+      new.gen <- dplyr::bind_rows(
+        dplyr::filter(genotypes, !VARIANT_ID %in% switch),
+        dplyr::filter(genotypes, VARIANT_ID %in% switch) %>%
+          dplyr::rename(
+            ALT_COUNT = REF_COUNT,
+            REF_COUNT = ALT_COUNT,
+            ALLELE_ALT_DEPTH = ALLELE_REF_DEPTH,
+            ALLELE_REF_DEPTH = ALLELE_ALT_DEPTH
+          )
+      )
+    } else {
+      new.gen <- dplyr::bind_rows(
+        dplyr::filter(genotypes, !VARIANT_ID %in% switch),
+        dplyr::filter(genotypes, VARIANT_ID %in% switch) %>%
+          dplyr::rename(ALT_COUNT = REF_COUNT, REF_COUNT = ALT_COUNT)
+      )
+    }
     return(new.gen)
   }
 
@@ -1590,14 +1699,14 @@ dart_genotyper <- function(
   if (gt.vcf.nuc && is.null(markers.metadata)) {
     rlang::abort("Problem during DArT genotypes normalization write to author...")
   } else {
-    markers.metadata %<>% dplyr::select(VARIANT_ID, REF, ALT)
+    markers.metadata %<>% dplyr::select(VARIANT_ID, M_SEQ, REF, ALT)
   }
 
   # Dosage of ALTernate allele -------------------------------------------------
   # modify genotypes meta to generate GT_BIN
   if ("counts" %in% dart.check$dart.format) {
+
     x %<>%
-      dplyr::rename(ALLELE_REF_DEPTH = REF, ALLELE_ALT_DEPTH = ALT) %>%
       dplyr::mutate(
         READ_DEPTH = ALLELE_REF_DEPTH + ALLELE_ALT_DEPTH,
         GT_BIN = dplyr::case_when(
@@ -1605,20 +1714,31 @@ dart_genotyper <- function(
           ALLELE_REF_DEPTH > 0L & ALLELE_ALT_DEPTH > 0L ~ 1L,
           ALLELE_REF_DEPTH == 0L & ALLELE_ALT_DEPTH > 0L ~ 2L
         )
-      ) %>%
+      )
+
+    # having 0 count is not equal to GT_BIN = NA... if the other allele has count...
+    # in this case it's a real 0 for no counts.
+    missing <- dplyr::filter(x, is.na(GT_BIN)) %>%
       dplyr::mutate(
         dplyr::across(
-          .cols = c(READ_DEPTH, ALLELE_REF_DEPTH, ALLELE_ALT_DEPTH),
+          .cols = c(READ_DEPTH, ALLELE_REF_DEPTH, ALLELE_ALT_DEPTH, REF_COUNT, ALT_COUNT),
           .fns = ~ replace_by_na(data = ., what = 0L)
         )
       )
+
+    x %<>% dplyr::filter(!is.na(GT_BIN)) %>%
+      dplyr::bind_rows(missing) %>%
+      dplyr::full_join(markers.metadata, by = "VARIANT_ID")
+
+    missing <- NULL
   } else {# for presence and absence: 1row and 2rows
     x %<>%
       dplyr::mutate(
         GT_BIN = REF + ALT,
         REF = NULL,
         ALT = NULL
-      )
+      ) %>%
+      dplyr::full_join(markers.metadata, by = "VARIANT_ID")
   }
 
   # generate VCF format --------------------------------------------------------
@@ -1633,8 +1753,12 @@ dart_genotyper <- function(
 
   # generate VCFnuc format -----------------------------------------------------
   if (gt.vcf.nuc) {
+    if (!rlang::has_name(x, "M_SEQ")) {
+      x %<>%
+        dplyr::full_join(markers.metadata, by = "VARIANT_ID")
+    }
+
     x %<>%
-      dplyr::full_join(markers.metadata, by = "VARIANT_ID") %>%
       dplyr::mutate(
         GT_VCF_NUC = dplyr::case_when(
           GT_BIN == 0 ~ stringi::stri_join(REF, REF, sep = "/"),
@@ -1654,6 +1778,25 @@ dart_genotyper <- function(
           vectorize_all = FALSE)
       )
   }
+
+  # GDS array format -----------------------------------------------------------
+  # generate genotypes format for easy reading into GDS
+  x %<>%
+    dplyr::mutate(
+      GDS_A1 = dplyr::case_when(
+        GT_BIN == 0 ~ 0,
+        GT_BIN == 1 ~ 0,
+        GT_BIN == 2 ~ 1,
+        is.na(GT_BIN) ~ NA_integer_),
+      GDS_A2 = dplyr::case_when(
+        GT_BIN == 0 ~ 0,
+        GT_BIN == 1 ~ 1,
+        GT_BIN == 2 ~ 1,
+        is.na(GT_BIN) ~ NA_integer_)
+    )
+
+  # Sorting by individuals and variant -----------------------------------------
+  x %<>% dplyr::arrange(ID_SEQ, VARIANT_ID)
   cli::cli_progress_done()
   message("Genotypes formats generated: ")
   message("GT_BIN: genotypes based on dosage of alternate allele: 0, 1, 2, NA")
@@ -1679,14 +1822,14 @@ dart2gds <- function(
     parallel.core = parallel::detectCores() - 1,
     verbose = TRUE
 ) {
+
   # Generate GDS
   x <- radiator_gds(
     genotypes = gt2array(
-      gt.bin = genotypes$GT_BIN, n.ind = nrow(strata), n.snp = nrow(markers.meta)
+      genotypes = genotypes, n.ind = nrow(strata), n.snp = nrow(markers.meta)
     ),
     biallelic = TRUE,
     data.source = dart.check$data.type,
-    geno.coding = "alt.dos",
     strata = strata,
     markers.meta = markers.meta,
     genotypes.meta = genotypes,
@@ -1774,7 +1917,10 @@ tidy_dart_metadata <- function(
   if (missing(data)) rlang::abort("Input file missing")
   # Date and Time --------------------------------------------------------------
   if (!is.null(filename)) {
-    meta.filename <- stringi::stri_join(filename, "_metadata_", file.date,".rad")
+    meta.filename <- generate_filename(
+      name.shortcut = stringi::stri_join(filename, "_metadata"),
+      extension = "tsv"
+    )$filename
   }
 
   data.type <- radiator::detect_genomic_format(data)
@@ -1897,15 +2043,20 @@ tidy_dart_metadata <- function(
   }
 
   if (!is.null(filename)) {
-    radiator::write_rad(data = input, path = meta.filename)
-    short.name <- list.files(path = ".", pattern = "metadata")
-    if (length(short.name) > 1) {
-      short.name <- file.info(short.name) %>%
-        tibble::rownames_to_column(df = ., var = "FILE") %>%
-        dplyr::filter(mtime == max(mtime))
-      short.name <- short.name$FILE
-    }
-    message("Marker's metadata file written:\n    ", short.name)
+    readr::write_tsv(
+      x = input,
+      file = meta.filename,
+    )
+    if (verbose) message("File written: ",  basename(filename))
+    # short.name <- list.files(path = ".", pattern = "metadata")
+    #
+    # if (length(short.name) > 1) {
+    #   short.name <- file.info(short.name) %>%
+    #     tibble::rownames_to_column(df = ., var = "FILE") %>%
+    #     dplyr::filter(mtime == max(mtime))
+    #   short.name <- short.name$FILE
+    # }
+    # message("Marker's metadata file written:\n    ", short.name)
   }
   # Results --------------------------------------------------------------------
   if (verbose) {
@@ -2037,12 +2188,27 @@ merge_dart <- function(
 
   # Filename -------------------------------------------------------------------
   # Get date and time to have unique filenaming
+
   if (is.null(filename)) {
-    filename <- stringi::stri_join("merged_dart_", file.date, ".rad")
-    strata.filename <- stringi::stri_join("merged_dart_strata_", file.date, ".tsv")
+    filename <- generate_filename(
+      name.shortcut = "merged_dart",
+      extension = "arrow.parquet"
+      )$filename
+
+    strata.filename <- generate_filename(
+      name.shortcut = "merged_dart_strata",
+      extension = "tsv"
+    )$filename
   } else {
-    filename <- stringi::stri_join(filename, "_", file.date, ".rad")
-    strata.filename <- stringi::stri_join(filename, "_strata_", file.date, ".tsv")
+    filename <- generate_filename(
+      name.shortcut = filename,
+      extension = "arrow.parquet"
+    )$filename
+
+    strata.filename <- generate_filename(
+      name.shortcut = stringi::stri_join(filename, "_strata"),
+      extension = "tsv"
+    )$filename
   }
 
   # File type detection---------------------------------------------------------
@@ -2054,9 +2220,9 @@ merge_dart <- function(
   # import data ----------------------------------------------------------------
   # generate the folder to store the merged data
   path.folder <- generate_folder(
-    f = NULL,
     rad.folder = "merge_dart",
-    prefix_int = FALSE,
+    path.folder = NULL,
+    prefix.int = FALSE,
     internal = FALSE,
     file.date = file.date,
     verbose = TRUE)
@@ -2174,10 +2340,10 @@ merge_dart <- function(
 
 
   # Write tidy in the working directory
-  radiator::write_rad(data = input, path = file.path(path.folder, filename))
+  radiator::write_rad(data = input, filename = filename)
 
   strata <- radiator::generate_strata(data = input, pop.id = FALSE)
-  readr::write_tsv(x = strata, file = file.path(path.folder, strata.filename))
+  readr::write_tsv(x = strata, file = strata.filename)
 
   # results --------------------------------------------------------------------
   message("\nMerged DArT file and strata file generated:")

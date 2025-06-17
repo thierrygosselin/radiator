@@ -94,13 +94,13 @@ obvious genotyping errors.
 \item \strong{Absence of pattern of heterozygosity driven by missingness:}
 see \code{\link{detect_mixed_genomes}}. Don't use this function if the
 individual heterozygosity is not under control. If your data is not uniform
-inside this function, don't expect mush of \code{detect_paralogs}.
+inside this function, don't expect much of \code{detect_paralogs}.
 \item Use unfiltered dataset for fun only.
 \item Use this function preferably on filtered data, check
 \code{\link[radiator]{filter_rad}}.
 \item \strong{Sex-biased sampling and sex markers} will generate
 false-positive with this function.
-Use \code{\link{sexy_markers}} function before!
+Use \code{\link{sexy_markers}} if you have sexe information.
 }
 }
 

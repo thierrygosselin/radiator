@@ -93,9 +93,9 @@ pi <- function(
 
   # Folders---------------------------------------------------------------------
   path.folder <- generate_folder(
-    f = path.folder,
     rad.folder = "pi",
-    prefix_int = FALSE,
+    path.folder = path.folder,
+    prefix.int = FALSE,
     internal = FALSE,
     file.date = file.date,
     verbose = verbose)
@@ -167,12 +167,15 @@ pi <- function(
     dplyr::group_by(POP_ID, INDIVIDUALS) %>%
     dplyr::summarise(PI = mean(PI))
 
-
-  write_rad(
+  write_radiator_tsv(
     data = res$pi.individuals,
-    path = path.folder,
-    filename = "pi.individuals.tsv",
-    tsv = TRUE, verbose = verbose)
+    path.folder = path.folder,
+    filename = "pi.individuals",
+    date = TRUE,
+    internal = FALSE,
+    write.message = "standard",
+    verbose = verbose
+  )
 
   # Pi: by pop------------------------------------------------------------------
   message("    Pi calculations: populations...")
@@ -208,11 +211,17 @@ pi <- function(
       dplyr::summarise(PI_NEI = mean(PI), .groups = "drop") %>%
       purrr::flatten_dbl(.)
   )
-  write_rad(
+
+  write_radiator_tsv(
     data = res$pi.populations,
-    path = path.folder,
-    filename = "pi.populations.tsv",
-    tsv = TRUE, verbose = verbose)
+    path.folder = path.folder,
+    filename = "pi.populations",
+    date = TRUE,
+    internal = FALSE,
+    write.message = "standard",
+    verbose = verbose
+  )
+
 
   # figure ---------------------------------------------------------------------
   if (verbose) message("Generating violin plot of pi")

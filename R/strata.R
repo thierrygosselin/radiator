@@ -16,11 +16,6 @@
 #' the stratification colname \code{POP_ID}.
 #' Default: \code{pop.id = FALSE}, returns \code{STRATA}.
 
-#' @param pop.select (optional, string) Selected list of populations for
-#' the analysis. e.g. \code{pop.select = c("QUE", "ONT")} to select \code{QUE}
-#' and \code{ONT} population samples (out of 20 pops).
-#' Default: \code{pop.select = NULL}
-
 #' @param pop.levels (optional, string) This refers to the levels in a factor. In this
 #' case, the id of the pop.
 #' Use this argument to have the pop ordered your way instead of the default
@@ -39,11 +34,16 @@
 #' \code{pop.labels = c("NEW", "NEW", "ALB")}.
 #' To rename \code{"QUE"} to \code{"TAS"}:
 #' \code{pop.labels = c("TAS", "ONT", "ALB")}.
-#' Default: \code{pop.labels = NULL}. If you find this too complicated,
-#' there is also the \code{strata} argument that can do the same thing,
-#' see below.
+#' Default: \code{pop.labels = NULL}.
 #' White spaces in population names are replaced by underscore.
 
+
+#' @param pop.select (optional, string) Selected list of populations for
+#' the analysis. e.g. \code{pop.select = c("QUE", "ONT")} to select \code{QUE}
+#' and \code{ONT} population samples (out of 20 pops). If \code{pop.labels}
+#' argument was used to rename the strata column, use the new names with
+#' \code{pop.select}.
+#' Default: \code{pop.select = NULL}
 #' @inheritParams tidy_genomic_data
 #' @inheritParams read_blacklist_id
 
@@ -169,10 +169,51 @@ read_strata <- function(
 
     # clean....
     strata$INDIVIDUALS <- radiator::clean_ind_names(strata$INDIVIDUALS)
-    strata$STRATA <- radiator::clean_pop_names(strata$STRATA)
+    strata$STRATA <- radiator::clean_pop_names(x = strata$STRATA, factor = FALSE)
+    # unique(strata$STRATA)
+    # length(unique(strata$STRATA))
 
-    if (verbose) message("    Number of strata: ", length(unique(strata$STRATA)))
-    if (verbose) message("    Number of individuals: ", length(unique(strata$INDIVIDUALS)))
+    # manage levels, labels and pop.select ---------------------------------------
+    check <- check_pop_levels(
+      pop.levels = pop.levels,
+      pop.labels = pop.labels,
+      pop.select = pop.select
+      )
+
+    pop.levels <- check$pop.levels
+    pop.labels <- check$pop.labels
+    pop.select <- check$pop.select
+
+
+    # POP LABELS changing strata names -----------------------------------------
+    if (!is.null(pop.labels)) {
+      strata %<>%
+        dplyr::left_join(
+          tibble::tibble(STRATA = pop.levels, LABELS = pop.labels),
+          by = "STRATA"
+        ) %>%
+        dplyr::mutate(
+          STRATA = LABELS,
+          LABELS = NULL,
+          STRATA = factor(STRATA, levels = pop.labels)
+        )
+    } else {
+      if (is.null(pop.levels)) { # no pop.levels
+        strata$STRATA <- factor(strata$STRATA)
+        pop.levels <- unique(strata$STRATA)
+      } else {# with pop.levels
+        n.pop <- unique(strata$STRATA)
+        if (length(n.pop) != length(pop.levels)) {
+          message("pop.levels and unique STRATA/POP_ID have different length")
+          message("    using unique STRATA/POP_ID names to replace pop.levels")
+          pop.levels <- unique(strata$STRATA)
+        }
+        strata$STRATA <- factor(
+          x = strata$STRATA,
+          levels = pop.levels,
+          ordered = FALSE)
+      }
+    }
 
     #blacklist.id ----------------------------------------------------------------
     blacklist.id <- read_blacklist_id(blacklist.id, verbose)
@@ -180,41 +221,16 @@ read_strata <- function(
       strata  %<>% dplyr::filter(!INDIVIDUALS %in% blacklist.id$INDIVIDUALS)
     }
 
-    # manage levels, labels and pop.select ---------------------------------------
-    check <- check_pop_levels(pop.levels = pop.levels,
-                              pop.labels = pop.labels,
-                              pop.select = pop.select)
-    pop.levels <- check$pop.levels
-    pop.labels <- check$pop.labels
-    pop.select <- check$pop.select
 
     if (!is.null(pop.select)) {
       n.pop.new <- length(pop.select)
-      if (verbose) message("\nPopulations/strata selected: ", stringi::stri_join(pop.select, collapse = ", "), " (", n.pop.new," pops)")
       strata  %<>% dplyr::filter(STRATA %in% pop.select)
-    }
-
-
-    if (is.null(pop.levels)) { # no pop.levels
-      strata$STRATA <- factor(strata$STRATA)
-      pop.levels <- pop.labels <- unique(strata$STRATA)
-    } else {# with pop.levels
-      n.pop <- unique(strata$STRATA)
-      if (length(n.pop) != length(pop.levels)) {
-        if (verbose) message("pop.levels and unique STRATA/POP_ID have different length")
-        if (verbose) message("    using unique STRATA/POP_ID names to replace pop.levels")
-        pop.levels <- pop.labels <- unique(strata$STRATA)
-      }
-      strata$STRATA <- factor(
-        x = strata$STRATA,
-        levels = pop.levels,
-        labels = pop.labels,
-        ordered = FALSE)
+      strata$STRATA <- droplevels(strata$STRATA)
     }
 
     if (!is.null(pop.select) || !is.null(blacklist.id)) {
-      if (is.factor(pop.levels)) pop.levels <- droplevels(pop.levels)
-      if (is.factor(pop.labels)) pop.labels <- droplevels(pop.labels)
+      pop.levels <- levels(strata$STRATA)
+      if (!is.null(pop.labels)) pop.labels <- pop.levels
     }
 
     # If dart file manage TARGET_ID ----------------------------------------------
@@ -228,22 +244,24 @@ read_strata <- function(
     strata  %<>% dplyr::arrange(STRATA, INDIVIDUALS)
 
     if (isTRUE(pop.id)) strata %<>% dplyr::rename(POP_ID = STRATA)
+    if (verbose) message("    Number of strata: ", length(unique(strata$STRATA)))
+    if (verbose) message("    Number of individuals: ", length(unique(strata$INDIVIDUALS)))
 
-
-
-
-    if (!is.null(blacklist.id) || !is.null(pop.select)) {
-      if (is.null(filename)) {
-        filename <- generate_filename(
-          name.shortcut = "strata_radiator_filtered",
-          path.folder = path.folder,
-          date = TRUE,
-          extension = "tsv")$filename
-      }
+    if (!is.null(pop.select)) {
+      if (verbose) message("\nPopulations/strata selected: ", stringi::stri_join(pop.select, collapse = ", "), " (", n.pop.new," pops)")
     }
 
-    if (!is.null(filename)) {
-      write_rad(data = strata, filename = filename, tsv = TRUE, verbose = TRUE)
+    if (!is.null(blacklist.id) || !is.null(pop.select)) {
+      write_radiator_tsv(
+        data = strata,
+        path.folder = path.folder,
+        filename = "strata_radiator_filtered",
+        date = TRUE,
+        internal = FALSE,
+        write.message = "standard",
+        verbose = TRUE
+      )
+
     }
 
     res = list(
@@ -480,7 +498,7 @@ check_pop_levels <- function(
   # checks ---------------------------------------------------------------------
   # removing spaces in data$POP_ID, pop.levels and pop.labels
   if (!is.null(pop.levels) && is.null(pop.labels)) {
-    pop.labels <- pop.levels <- clean_pop_names(pop.levels)
+    pop.labels <- pop.levels <- clean_pop_names(x = pop.levels, factor = FALSE)
   }
 
   if (!is.null(pop.labels)) {
@@ -488,9 +506,10 @@ check_pop_levels <- function(
     if (length(pop.labels) != length(pop.levels)) {
       rlang::abort("pop.levels and pop.labels with different length: check arguments")
     }
-    pop.labels <- clean_pop_names(pop.labels)
+    pop.levels <- clean_pop_names(x = pop.levels, factor = FALSE)
+    pop.labels <- clean_pop_names(x = pop.labels, factor = FALSE)
   }
-  if (!is.null(pop.select)) pop.select <- clean_pop_names(pop.select)
+  if (!is.null(pop.select)) pop.select <- clean_pop_names(x = pop.select, factor = FALSE)
   return(res = list(pop.levels = pop.levels, pop.labels = pop.labels, pop.select = pop.select))
 }# end function change_pop_names
 
