@@ -15,51 +15,74 @@ replace_by_na <- function(data, what = ".") {
 #' @export
 #' @keywords internal
 distance2tibble <- function(
-  x,
-  remove.diag = TRUE,
-  na.diag = FALSE,
-  remove.lower = TRUE,
-  relative = TRUE,
-  pop.levels = NULL,
-  distance.class.double = TRUE
+    x,
+    remove.diag = TRUE,
+    na.diag = FALSE,
+    remove.lower = TRUE,
+    relative = TRUE,
+    pop.levels = NULL,
+    distance.class.double = TRUE
 ) {
   # x <- dist.computation
+  # Convert distance matrix to full matrix
   x <- as.matrix(x)
+
   if (remove.diag || na.diag) diag(x) <- NA
   if (remove.lower) x[lower.tri(x)] <- NA
-  x <- dplyr::bind_cols(tibble::tibble(ID1 = rownames(x)),
-                        tibble::as_tibble(x)) %>%
-    data.table::as.data.table(.) %>%
-    data.table::melt.data.table(
-      data = ., id.vars = "ID1", variable.name = "ID2", value.name = "DISTANCE",
-      variable.factor = FALSE) %>%
-    tibble::as_tibble(.)
 
-  if (na.diag || remove.diag) x  %<>% dplyr::filter(!is.na(DISTANCE))
+  # Turn matrix into tibble format
+  x <- dplyr::bind_cols(
+    tibble::tibble(ID1 = rownames(x)),
+    tibble::as_tibble(x)
+    ) %>%
+    tidyr::pivot_longer(
+      cols = -ID1,
+      names_to = "ID2",
+      values_to = "DISTANCE"
+    )
+
+  # Optional: remove NA distances
+  if (na.diag || remove.diag) {
+    x <- dplyr::filter(x, !is.na(DISTANCE))
+  }
+
+  # Optional: DISTANCE to double
+  if (distance.class.double) {
+    x <- dplyr::mutate(x, DISTANCE = as.double(as.character(DISTANCE)))
+  }
 
   if (distance.class.double) {
     x %<>% dplyr::mutate(DISTANCE = as.double(as.character(DISTANCE)))
   }
 
+  # Arrange by distance
   x %<>% dplyr::arrange(DISTANCE)
 
+  # Relative distance column
   if (relative) {
-    x  %<>% dplyr::mutate(DISTANCE_RELATIVE = DISTANCE / max(DISTANCE))
+    x %<>%
+      dplyr::mutate(DISTANCE_RELATIVE = DISTANCE / max(DISTANCE, na.rm = TRUE))
+    # x  %<>% dplyr::mutate(DISTANCE_RELATIVE = DISTANCE / max(DISTANCE))
   }
-  x %<>% dplyr::mutate(dplyr::across(.cols = c("ID1", "ID2"), .fns = as.character))
 
+  # Convert IDs to character
+  x %<>%
+    dplyr::mutate(dplyr::across(c("ID1", "ID2"), as.character))
+
+  # Assign factor levels if given
   if (!is.null(pop.levels)) {
-    x  %<>% dplyr::mutate(
-      ID1 = factor(x = ID1, levels = pop.levels, ordered = TRUE),
-      ID2 = factor(x = ID2, levels = pop.levels, ordered = TRUE)
-    )
+    x  %<>%
+      dplyr::mutate(
+        ID1 = factor(x = ID1, levels = pop.levels, ordered = TRUE),
+        ID2 = factor(x = ID2, levels = pop.levels, ordered = TRUE)
+      )
   } else {
-    x  %<>% dplyr::mutate(
-      ID1 = factor(x = ID1),
-      ID2 = factor(x = ID2)
-    )
+    x  %<>%
+      dplyr::mutate(
+        ID1 = factor(x = ID1),
+        ID2 = factor(x = ID2)
+      )
   }
-
   return(x)
 }#End distance2tibble
 
@@ -79,7 +102,7 @@ split_vec <- function(x, chunks = NULL, tibble.split = FALSE, strata.split = FAL
   stopifnot(length(split.vec) == xl)
 
   if (strata.split && !rlang::has_name(x, "STRATA")) {
-     strata.split <- FALSE
+    strata.split <- FALSE
   }
 
   if (strata.split && !is.null(chunks)) {
@@ -116,10 +139,10 @@ split_vec <- function(x, chunks = NULL, tibble.split = FALSE, strata.split = FAL
 #' @keywords internal
 #' @export
 split_tibble_rows <- function(
-  x,
-  lines.cpu = 1000, #lines per CPU rounds
-  parallel.core = parallel::detectCores() - 1,
-  group.split = TRUE # does dplyr: group_by and group_split
+    x,
+    lines.cpu = 1000, #lines per CPU rounds
+    parallel.core = parallel::detectCores() - 1,
+    group.split = TRUE # does dplyr: group_by and group_split
 ) {
   n.row <- nrow(x)
   n.cores <- parallel::detectCores()
@@ -216,15 +239,15 @@ split_tibble_rows <- function(
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 
 separate_markers <- function(
-  data,
-  sep = "__",
-  markers.meta.lists.only = FALSE,
-  markers.meta.all.only = FALSE,
-  generate.markers.metadata = TRUE,
-  generate.ref.alt = FALSE,
-  biallelic = NULL,
-  parallel.core = parallel::detectCores() - 1,
-  verbose = TRUE
+    data,
+    sep = "__",
+    markers.meta.lists.only = FALSE,
+    markers.meta.all.only = FALSE,
+    generate.markers.metadata = TRUE,
+    generate.ref.alt = FALSE,
+    biallelic = NULL,
+    parallel.core = parallel::detectCores() - 1,
+    verbose = TRUE
 ) {
   # data.bk <- data
   # sep <- "__"
@@ -342,12 +365,12 @@ separate_markers <- function(
 
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
 generate_markers_metadata <- function(
-  data,
-  generate.markers.metadata = TRUE,
-  generate.ref.alt = FALSE,
-  biallelic = NULL,
-  parallel.core = parallel::detectCores() - 1,
-  verbose = TRUE
+    data,
+    generate.markers.metadata = TRUE,
+    generate.ref.alt = FALSE,
+    biallelic = NULL,
+    parallel.core = parallel::detectCores() - 1,
+    verbose = TRUE
 ) {
   if (!generate.markers.metadata && generate.ref.alt) {
     if (verbose) message("generate.markers.metadata: switched to TRUE automatically")
@@ -433,16 +456,16 @@ generate_markers_metadata <- function(
 #' @keywords internal
 #' @export
 separate_gt <- function(
-  x,
-  gt = "GT_VCF_NUC",
-  gather = TRUE,
-  haplotypes = FALSE,
-  exclude = c("LOCUS", "INDIVIDUALS", "POP_ID"),
-  alleles.naming = c("A1", "A2"),
-  remove = TRUE,
-  filter.missing = FALSE,
-  split.chunks = 3,
-  parallel.core = parallel::detectCores() - 1
+    x,
+    gt = "GT_VCF_NUC",
+    gather = TRUE,
+    haplotypes = FALSE,
+    exclude = c("LOCUS", "INDIVIDUALS", "POP_ID"),
+    alleles.naming = c("A1", "A2"),
+    remove = TRUE,
+    filter.missing = FALSE,
+    split.chunks = 3,
+    parallel.core = parallel::detectCores() - 1
 ) {
 
   ## TEST
@@ -710,15 +733,15 @@ parallel_core_opt <- function(parallel.core = NULL, max.core = NULL) {
 #' @rdname radiator_future
 #' @keywords internal
 radiator_future <- function(
-  .x,
-  .f,
-  flat.future = c("int", "chr", "dfr", "dfc", "walk", "drop"),
-  split.vec = FALSE,
-  split.with = NULL,
-  split.chunks = 4L,
-  parallel.core = parallel::detectCores() - 1,
-  forking = FALSE,
-  ...
+    .x,
+    .f,
+    flat.future = c("int", "chr", "dfr", "dfc", "walk", "drop"),
+    split.vec = FALSE,
+    split.with = NULL,
+    split.chunks = 4L,
+    parallel.core = parallel::detectCores() - 1,
+    forking = FALSE,
+    ...
 ) {
   os <- Sys.info()[['sysname']]
   if (os == "Windows") forking <- FALSE
@@ -887,58 +910,56 @@ radiator_future <- function(
 #' @export
 
 rad_long <- function(
-  x,
-  cols = NULL,
-  measure_vars = NULL,
-  names_to = NULL,
-  values_to = NULL,
-  names_sep = NULL,
-  variable_factor = TRUE,
-  keep_rownames = FALSE,
-  tidy = FALSE
+    x,
+    cols = NULL,
+    measure_vars = NULL,
+    names_to = NULL,
+    values_to = NULL,
+    names_sep = NULL,
+    variable_factor = TRUE,
+    keep_rownames = FALSE,
+    tidy = FALSE
 ){
 
   # tidyr
   if (tidy) {
+    # Use tidyr::pivot_longer
     if (is.null(names_sep)) {
-      x %<>%
-        tidyr::pivot_longer(
-          data = .,
-          cols = -cols,
-          names_to = names_to,
-          values_to = values_to
-        )
+      out <- tidyr::pivot_longer(
+        data = x,
+        cols = -tidyselect::all_of(cols),
+        names_to = names_to,
+        values_to = values_to
+      )
     } else {
-      x %<>%
-        tidyr::pivot_longer(
-          data = .,
-          cols = -cols,
-          names_to = names_to,
-          values_to = values_to,
-          names_sep = names_sep
-        )
+      out <- tidyr::pivot_longer(
+        data = x,
+        cols = -tidyselect::all_of(cols),
+        names_to = names_to,
+        values_to = values_to,
+        names_sep = names_sep
+      )
     }
 
-  } else {# data.table
-    x %<>%
-      data.table::as.data.table(., keep.rownames = keep_rownames) %>%
+  } else {
+    # Use data.table::melt.data.table
+    out <- x %>%
+      data.table::as.data.table(keep.rownames = keep_rownames) %>%
       data.table::melt.data.table(
-        data = .,
         id.vars = cols,
         measure.vars = measure_vars,
         variable.name = names_to,
         value.name = values_to,
         variable.factor = variable_factor
       ) %>%
-      tibble::as_tibble(.)
+      tibble::as_tibble()
+  }
+  # Optional: Convert common sequence column names to integer
+  if (length(names_to) == 1L && names_to %in% c("M_SEQ", "ID_SEQ")) {
+    out[[names_to]] <- as.integer(out[[names_to]])
   }
 
-  if (length(names_to) == 1L) {
-    if (names_to == "M_SEQ") x$M_SEQ %<>% as.integer
-    if (names_to == "ID_SEQ") x$ID_SEQ %<>% as.integer
-  }
-
-  return(x)
+  return(out)
 }#rad_long
 
 
@@ -949,36 +970,36 @@ rad_long <- function(
 #' @keywords internal
 #' @export
 rad_wide <- function(
-  x ,
-  formula = NULL,
-  names_from = NULL,
-  values_from = NULL,
-  values_fill = NULL,
-  sep = "_",
-  tidy = FALSE
+    x ,
+    formula = NULL,
+    names_from = NULL,
+    values_from = NULL,
+    values_fill = NULL,
+    sep = "_",
+    tidy = FALSE
 
 ){
-  # tidyr
+  # Pivot using tidyr
   if (tidy) {
-    x %<>%
-      tidyr::pivot_wider(
-        data = .,
-        names_from = names_from,
-        values_from = values_from,
-        values_fill = values_fill
-      )
+    out <- tidyr::pivot_wider(
+      data = x,
+      names_from = names_from,
+      values_from = values_from,
+      values_fill = values_fill
+    )
   } else {# data.table
-    x  %>%
-      data.table::as.data.table(.) %>%
+    # Pivot using data.table::dcast
+    out <- x %>%
+      data.table::as.data.table() %>%
       data.table::dcast.data.table(
-        data = .,
-        formula =  formula,
+        formula = formula,
         value.var = values_from,
         sep = sep,
         fill = values_fill
       ) %>%
-      tibble::as_tibble(.)
+      tibble::as_tibble()
   }
+  return(out)
 }#rad_wide
 
 
@@ -996,15 +1017,16 @@ rad_wide <- function(
 #' @keywords internal
 #' @export
 strip_rad <- function(
-  x,
-  m = c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF", "ALT"),
-  env.arg = NULL,
-  keep.strata = TRUE,
-  verbose = TRUE
+    x,
+    m = c("VARIANT_ID", "MARKERS", "CHROM", "LOCUS", "POS", "COL", "REF", "ALT"),
+    env.arg = NULL,
+    keep.strata = TRUE,
+    verbose = TRUE
 ) {
   objs <- utils::object.size(x)
 
-  # Check if ID_SEQ, STRATA_SEQ and M_SEQ present...
+  # If ID_SEQ, STRATA_SEQ and M_SEQ already present... remove...
+
   if (rlang::has_name(x, "ID_SEQ") && rlang::has_name(x, "INDIVIDUALS")) {
     x %<>% dplyr::select(-ID_SEQ)
   }
@@ -1032,12 +1054,14 @@ strip_rad <- function(
         ID_SEQ = seq_len(length.out = dplyr::n()),
         STRATA_SEQ = as.integer(factor(x = POP_ID, levels = unique(POP_ID)))
       )
+    pop.levels <- as.character(unique(strata$POP_ID))
   } else {#STRATA
     strata <- radiator::generate_strata(data = x, pop.id = FALSE) %>%
       dplyr::mutate(
         ID_SEQ = seq_len(length.out = dplyr::n()),
         STRATA_SEQ = as.integer(factor(x = STRATA, levels = unique(STRATA)))
       )
+    pop.levels <- as.character(unique(strata$STRATA))
   }
 
 
@@ -1056,6 +1080,14 @@ strip_rad <- function(
     envir = env.arg
   )
   cm <- keep.strata <- pop.id <- strata <- NULL
+
+
+  assign(
+    x = "pop.levels.bk",
+    value = pop.levels,
+    pos = env.arg,
+    envir = env.arg
+  )
 
   # MARKERS ---------
   x %<>%
@@ -1083,7 +1115,8 @@ strip_rad <- function(
   markers.meta <- cm <- m <- NULL
 
   # GENOTYPE META ---------
-  # g <- c("READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH",
+
+   # g <- c("READ_DEPTH", "ALLELE_REF_DEPTH", "ALLELE_ALT_DEPTH",
   # "GL", "CATG", "PL", "HQ", "GQ", "GOF","NR", "NV")
   want <- c("GT", "GT_VCF_NUC", "GT_VCF", "GT_BIN", "REF", "ALT", "MARKERS",
             "CHROM", "LOCUS", "POS", "INDIVIDUALS", "POP_ID"
@@ -1379,11 +1412,11 @@ gt_recoding <- function(x, gt = TRUE, gt.bin = TRUE, gt.vcf = TRUE, gt.vcf.nuc =
 
     if (gt) {
       if (all(!rlang::has_name(x, "A1"), rlang::has_name(x, "REF"))) {
-      x  %<>%
-        dplyr::mutate(
-          A1 = dplyr::recode(REF, "A" = "001", "C" = "002", "G" = "003", "T" = "004"),
-          A2 = dplyr::recode(ALT, "A" = "001", "C" = "002", "G" = "003", "T" = "004")
-        )
+        x  %<>%
+          dplyr::mutate(
+            A1 = dplyr::recode(REF, "A" = "001", "C" = "002", "G" = "003", "T" = "004"),
+            A2 = dplyr::recode(ALT, "A" = "001", "C" = "002", "G" = "003", "T" = "004")
+          )
       }
 
       if (all(!rlang::has_name(x, "A1"), !rlang::has_name(x, "REF"))) {
@@ -1394,12 +1427,12 @@ gt_recoding <- function(x, gt = TRUE, gt.bin = TRUE, gt.vcf = TRUE, gt.vcf.nuc =
 
 
     gt_map <- function(
-      x,
-      gt.format = c("GT", "GT_BIN", "GT_VCF", "GT_VCF_NUC"),
-      gt = TRUE,
-      gt.bin = TRUE,
-      gt.vcf = TRUE,
-      gt.vcf.nuc = TRUE
+    x,
+    gt.format = c("GT", "GT_BIN", "GT_VCF", "GT_VCF_NUC"),
+    gt = TRUE,
+    gt.bin = TRUE,
+    gt.vcf = TRUE,
+    gt.vcf.nuc = TRUE
     ) {
 
       gt.format <- match.arg(

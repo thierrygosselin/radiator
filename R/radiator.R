@@ -15,6 +15,27 @@
 #   packageStartupMessage(startup.message)
 # }
 
+# radiator_function_header -----------------------------------------------------
+#' @title radiator_function_header
+#' @description Generate function header
+#' @rdname radiator_function_header
+#' @keywords internal
+#' @export
+radiator_function_header <- function(f.name = NULL, start = TRUE, verbose = TRUE) {
+  if (is.null(f.name)) invisible(NULL)
+  if (start) {
+    if (verbose) {
+      message(stringi::stri_pad_both(str = "", width = 80L, pad = "#"))
+      message(stringi::stri_pad_both(str = paste0(" radiator::", f.name, " "), width = 80L, pad = "#"))
+      message(stringi::stri_pad_both(str = "", width = 80L, pad = "#"), "\n")
+    }
+  } else {
+    if (verbose) {
+      message(stringi::stri_pad_both(str = paste0(" completed ", f.name, " "), width = 80L, pad = "#"), "\n")
+    }
+  }
+}# End radiator_function_header
+
 # radiator common arguments ----------------------------------------------------
 #' @name radiator_common_arguments
 #' @title radiator common arguments
@@ -730,17 +751,19 @@ folder_prefix <- function(
 
 # radiator_snakecase------------------------------------------------------------
 #' @title radiator_snakecase
-#' @description Transform CamelCase to snake_cases
+#' @description Transform CamelCase to SCREAMING snake_cases
 #' @name radiator_snakecase
 #' @rdname radiator_snakecase
 #' @keywords internal
 #' @export
 radiator_snakecase <- function(x) {
-  x <- base::gsub(pattern = "([A-Za-z])([A-Z])([a-z])", replacement = "\\1_\\2\\3", x = x) %>%
-    base::gsub(pattern = ".", replacement = "_", x =  ., fixed = TRUE) %>%
-    base::gsub(pattern = "([a-z])([A-Z])", replacement = "\\1_\\2", x = .) %>%
-    stringi::stri_trans_toupper(str = .)
-  return(x)
+  x |>
+    stringi::stri_replace_all_regex("([A-Za-z])([A-Z])([a-z])", "$1_$2$3") |>
+    stringi::stri_replace_all_fixed(".", "_") |>
+    stringi::stri_replace_all_regex("([a-z])([A-Z])", "$1_$2") |>
+    stringi::stri_trans_toupper()
+
+
 }#End radiator_snakecase
 
 
@@ -770,31 +793,6 @@ radiator_packages_dep <- function(package, cran = TRUE, bioc = FALSE) {
 # requireNamespace
 # installed.packages
 
-# radiator_function_header -----------------------------------------------------
-#' @title radiator_function_header
-#' @description Generate function header
-#' @rdname radiator_function_header
-#' @keywords internal
-#' @export
-radiator_function_header <- function(f.name = NULL, start = TRUE, verbose = TRUE) {
-  if (is.null(f.name)) invisible(NULL)
-  if (start) {
-    if (verbose) {
-      # cat(paste0(stringi::stri_pad_both(str = "", width = 80L, pad = "#"), "\n"))
-      # cat(paste0(stringi::stri_pad_both(str = paste0(" radiator::", f.name, " "), width = 80L, pad = "#"), "\n"))
-      # cat(paste0(stringi::stri_pad_both(str = "", width = 80L, pad = "#"), "\n"))
-
-      message(stringi::stri_pad_both(str = "", width = 80L, pad = "#"))
-      message(stringi::stri_pad_both(str = paste0(" radiator::", f.name, " "), width = 80L, pad = "#"))
-      message(stringi::stri_pad_both(str = "", width = 80L, pad = "#"), "\n")
-    }
-  } else {
-    if (verbose) {
-      # cat(paste0(stringi::stri_pad_both(str = paste0(" completed ", f.name, " "), width = 80L, pad = "#"), "\n"))
-      message(stringi::stri_pad_both(str = paste0(" completed ", f.name, " "), width = 80L, pad = "#"), "\n")
-    }
-  }
-}# End radiator_function_header
 
 # radiator_clock ---------------------------------------------------------------
 #' @title radiator_tic

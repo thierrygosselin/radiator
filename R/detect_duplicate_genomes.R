@@ -774,7 +774,9 @@ detect_duplicate_genomes <- function(
         res$manhattan.plot.genome <- ggplot2::ggplot(
           data = data.import,
           ggplot2::aes(x = PAIRWISE, y = IDENTICAL_PROP, colour = POP_COMP,
-                       size = MARKERS_MISSING))
+                       size = MARKERS_MISSING))+
+          ggplot2::geom_blank(data = data.frame(IDENTICAL_PROP = c(0, 1), PAIRWISE = NA),
+                              mapping = ggplot2::aes(y = IDENTICAL_PROP))
       } else {
         res$violin.plot.genome <- ggplot2::ggplot(
           data = res$pairwise.genome.similarity,
@@ -783,7 +785,9 @@ detect_duplicate_genomes <- function(
         res$manhattan.plot.genome <- ggplot2::ggplot(
           data = res$pairwise.genome.similarity,
           ggplot2::aes(x = PAIRWISE, y = IDENTICAL_PROP, colour = POP_COMP,
-                       size = MARKERS_MISSING))
+                       size = MARKERS_MISSING))++
+          ggplot2::geom_blank(data = data.frame(IDENTICAL_PROP = c(0, 1), PAIRWISE = NA),
+                              mapping = ggplot2::aes(y = IDENTICAL_PROP))
       }
 
       # violin plot
@@ -794,6 +798,8 @@ detect_duplicate_genomes <- function(
         ggplot2::labs(y = "Genome similarity (proportion)") +
         ggplot2::labs(x = "Pairwise comparison") +
         ggplot2::theme(
+          panel.grid.minor.x = ggplot2::element_blank(),
+          panel.grid.major.x = ggplot2::element_blank(),
           # legend.position = "none",
           panel.grid.minor.x = ggplot2::element_blank(),
           panel.grid.major.x = ggplot2::element_blank(),
@@ -816,7 +822,10 @@ detect_duplicate_genomes <- function(
         ggplot2::labs(colour = "Population comparisons") +
         ggplot2::scale_colour_manual(values = c("#0571b0", "black")) +
         ggplot2::scale_size_area(name = "Markers missing", max_size = 6) +
+        # ggplot2::coord_cartesian(ylim = c(0, 1)) +  # ← this line ensures full y range is shown
         ggplot2::theme(
+          panel.grid.minor.x = ggplot2::element_blank(),
+          panel.grid.major.x = ggplot2::element_blank(),
           # legend.position = "none",
           panel.grid.minor.x = ggplot2::element_blank(),
           panel.grid.major.x = ggplot2::element_blank(),

@@ -7,6 +7,6 @@
 radiator_snakecase(x)
 }
 \description{
-Transform CamelCase to snake_cases
+Transform CamelCase to SCREAMING snake_cases
 }
 \keyword{internal}

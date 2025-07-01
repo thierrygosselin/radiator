@@ -60,7 +60,8 @@
 #' !is.null(pop.select)}, the modified strata is written by default in the
 #' working directory with date and time appended to \code{strata_radiator_filtered},
 #' to make the file unique. If you plan on writing more than 1 strata file per minute,
-#' use this argument to supply the unique filename.
+#' use this argument to supply the unique filename. When filename is not NULL, it
+#' will also trigger saving the strata to a file.
 #' Default: \code{filename = NULL}.
 
 
@@ -150,7 +151,9 @@ read_strata <- function(
 
   if (is.null(strata)) {
     return(res = NULL)
-  } else {
+  }
+
+  if (!is.null(strata)) {
     if (verbose) message("Analyzing strata file")
     if (is.vector(strata)) {
       if (!file.exists(strata)) rlang::abort("\nstrata file doesn't exist...\n")
@@ -178,7 +181,7 @@ read_strata <- function(
       pop.levels = pop.levels,
       pop.labels = pop.labels,
       pop.select = pop.select
-      )
+    )
 
     pop.levels <- check$pop.levels
     pop.labels <- check$pop.labels
@@ -195,8 +198,10 @@ read_strata <- function(
         dplyr::mutate(
           STRATA = LABELS,
           LABELS = NULL,
-          STRATA = factor(STRATA, levels = pop.labels)
+          STRATA = factor(STRATA, levels = unique(pop.labels))
         )
+      pop.labels <- pop.levels <- unique(pop.labels)
+
     } else {
       if (is.null(pop.levels)) { # no pop.levels
         strata$STRATA <- factor(strata$STRATA)
@@ -251,18 +256,28 @@ read_strata <- function(
       if (verbose) message("\nPopulations/strata selected: ", stringi::stri_join(pop.select, collapse = ", "), " (", n.pop.new," pops)")
     }
 
+    write.strata <- FALSE
     if (!is.null(blacklist.id) || !is.null(pop.select)) {
+      write.strata <- TRUE
+    }
+    if (!is.null(filename)) {
+      write.strata <- TRUE
+    } else {
+      filename <- "strata_radiator_filtered"
+    }
+
+    if (write.strata) {
       write_radiator_tsv(
         data = strata,
         path.folder = path.folder,
-        filename = "strata_radiator_filtered",
+        filename = filename,
         date = TRUE,
         internal = FALSE,
         write.message = "standard",
         verbose = TRUE
       )
-
     }
+
 
     res = list(
       strata = strata,

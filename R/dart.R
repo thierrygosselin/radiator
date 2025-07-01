@@ -287,7 +287,7 @@ read_dart <- function(
     internal = internal,
     file.date = file.date,
     verbose = verbose
-    )
+  )
 
   # write the dots file
   write_radiator_tsv(
@@ -454,7 +454,7 @@ read_dart <- function(
       path.folder = path.folder,
       date = TRUE,
       extension = "arrow.parquet"
-      )$filename
+    )$filename
 
     write_rad(
       data = data,
@@ -556,7 +556,7 @@ read_dart <- function(
         path.folder = path.folder,
         date = TRUE,
         extension = "tsv"
-        )$filename
+      )$filename
 
       # strata <- extract_individuals_metadata(gds = data, whitelist = TRUE)
       readr::write_tsv(x = strata, file = strata.filename)
@@ -610,7 +610,7 @@ read_dart <- function(
       data = dart.tidy,
       filename = filename,
       verbose = verbose
-      )
+    )
 
   }#tidy
 
@@ -717,10 +717,11 @@ extract_dart_target_id <- function(data, write = TRUE, metadata = FALSE) {
       n_max = matadata.keeper,
       na = "-",
       col_names = FALSE,
-      col_types = readr::cols(.default = readr::col_character())) %>%
-      t %>%
-      magrittr::set_colnames(x = ., value = metadata.colnames) %>%
-      tibble::as_tibble(.)
+      col_types = readr::cols(.default = readr::col_character())
+    ) %>%
+      t %>% # Transpose the data
+      magrittr::set_colnames(metadata.colnames) %>% # Set column names from the vector
+      tibble::as_tibble(.) # Convert to tibble
 
     if (dart.check$star.number > 0) {
       dart.target.id  %<>% dplyr::filter(dplyr::row_number() > dart.check$star.number)
@@ -746,7 +747,7 @@ extract_dart_target_id <- function(data, write = TRUE, metadata = FALSE) {
       col_names = FALSE,
       col_types = readr::cols(.default = readr::col_character())) %>%
       t %>%
-      magrittr::set_colnames(x = ., value = "TARGET_ID") %>%
+      magrittr::set_colnames("TARGET_ID") %>%
       tibble::as_tibble(.)
 
     if (dart.check$star.number > 0) {
@@ -1107,10 +1108,13 @@ clean_dart_colnames <- function(x, dart.check, blacklist.id = NULL, strata = NUL
     colnames(x) <- c(
       stringi::stri_trans_toupper(clean_ind_names(colnames(x)))
     )
+
+    # remove blacklisted ids
     if (!is.null(blacklist.id)) {
       x %<>% dplyr::select(-tidyselect::any_of(blacklist.id))
     }
 
+    # combined with strata
     colnames(x) <- tibble::tibble(TARGET_ID = colnames(x)) %>%
       dplyr::left_join(strata, by = "TARGET_ID") %>%
       dplyr::mutate(
@@ -1121,35 +1125,24 @@ clean_dart_colnames <- function(x, dart.check, blacklist.id = NULL, strata = NUL
   } else {
     colnames(x) <- c(
       radiator::radiator_snakecase(x = colnames(x)))
-    # radiator::radiator_snakecase(x = colnames(x)[1:metadata.ncol]))
   }
 
-
-  # Below generate errors when some id are very close... ID-10 and ID-1
-  # colnames(data) <- stringi::stri_replace_all_fixed(
-  #   str = colnames(data),
-  #   pattern = strata$TARGET_ID,
-  #   replacement = strata$INDIVIDUALS,
-  #   vectorize_all = FALSE
-  #   )
 
   # Variant Call Format SPECS----------------------------------------------------
   # keep consensus sequence if found
   # Changed 2020-02-06
   # TRIMMED_SEQUENCE
   # turns out I think it's better to keep ALLELE_SEQUENCE...
-  # check <- dplyr::distinct(data, ALLELE_SEQUENCE, CLUSTER_CONSENSUS_SEQUENCE)
-  # test <- dplyr::select(.data = data, dplyr::ends_with("_SEQUENCE"))
 
-  if (rlang::has_name(x, "ALLELE_SEQUENCE")) {
-    x %<>% dplyr::rename(SEQUENCE = ALLELE_SEQUENCE)
-  } else if (rlang::has_name(x, "TRIMMED_SEQUENCE")) {
-    x %<>% dplyr::rename(SEQUENCE = TRIMMED_SEQUENCE)
-  } else {
-    if (rlang::has_name(x, "CLUSTER_CONSENSUS_SEQUENCE")) {
-      x %<>% dplyr::rename(SEQUENCE = CLUSTER_CONSENSUS_SEQUENCE)
-    }
-  }
+  # Define possible column names to check
+  possible.columns <- c("ALLELE_SEQUENCE", "TRIMMED_SEQUENCE", "CLUSTER_CONSENSUS_SEQUENCE")
+
+  # Rename columns dynamically
+  x %<>% dplyr::rename_with(
+    .fn = ~ "SEQUENCE",    # Rename to "SEQUENCE"
+    .cols = tidyselect::any_of(possible.columns)  # Select columns from possible.columns
+  )
+
   # For all  except SILICO ------------------------------------------
   silico.dart <- "silico.dart" %in% dart.check$dart.format
 
@@ -1161,44 +1154,61 @@ clean_dart_colnames <- function(x, dart.check, blacklist.id = NULL, strata = NUL
     # ALLELE_ID or CLONE_ID -> LOCUS
     # SNP_POSITION -> POS
 
-    colnames(x) %<>%
-      stringi::stri_replace_all_fixed(
+    x %<>% dplyr::rename_with(
+      .fn = ~ stringi::stri_replace_all_fixed(
         str = .,
-        pattern = c("ALLELE_ID","SNP_POSITION"),
+        pattern = c("ALLELE_ID", "SNP_POSITION"),
         replacement = c("LOCUS", "POS"),
-        vectorize_all = FALSE)
+        vectorize_all = FALSE
+      ),
+      .cols = tidyselect::any_of(c("ALLELE_ID", "SNP_POSITION"))
+    )
 
-    if (rlang::has_name(x, "CLONE_ID")) {
-      if (rlang::has_name(x, "LOCUS")) {
+    # If CLONE_ID exists and LOCUS already exists → remove CLONE_ID.
+    # If CLONE_ID exists but LOCUS doesn't → rename CLONE_ID to LOCUS.
+
+    if ("CLONE_ID" %in% names(x)) {
+      if ("LOCUS" %in% names(x)) {
         x %<>% dplyr::select(-CLONE_ID)
       } else {
-        colnames(x) %<>%
-          stringi::stri_replace_all_fixed(
-            str = .,
-            pattern = "CLONE_ID",
-            replacement = "LOCUS",
-            vectorize_all = FALSE)
+        x %<>% dplyr::rename_with(
+          .fn = ~ stringi::stri_replace_all_fixed(., "CLONE_ID", "LOCUS"),
+          .cols = tidyselect::any_of("CLONE_ID")
+        )
       }
     }
 
+
+
     # If Locus info not found beyond that point....
-    if (!rlang::has_name(x, "LOCUS")) {
-      if (rlang::has_name(x, "MARKER_NAME")) {
-        colnames(x) %<>%
-          stringi::stri_replace_all_fixed(
-            str = .,
-            pattern = "MARKER_NAME",
-            replacement = "LOCUS",
-            vectorize_all = FALSE)
-        if (rlang::has_name(x, "VARIANT")) {
-          colnames(x) %<>%
-            stringi::stri_replace_all_fixed(
-              str = .,
-              pattern = "VARIANT",
-              replacement = "VARIANT_DART",
-              vectorize_all = FALSE)
-          x %<>% dplyr::mutate(SNP = VARIANT_DART)
+
+    # 1. If "MARKER_NAME" exists:
+    ## Rename it to "LOCUS".
+    # If "VARIANT" exists:
+    ## Rename it to "VARIANT_DART".
+    ## Create a new column SNP = VARIANT_DART.
+
+    # 2. Else, abort.
+    if (!"LOCUS" %in% names(x)) {
+      if ("MARKER_NAME" %in% names(x)) {
+
+        # Rename MARKER_NAME to LOCUS
+        x %<>% dplyr::rename_with(
+          .fn = ~ stringi::stri_replace_all_fixed(., "MARKER_NAME", "LOCUS"),
+          .cols = tidyselect::any_of("MARKER_NAME")
+        )
+
+        if ("VARIANT" %in% names(x)) {
+          # Rename VARIANT to VARIANT_DART
+          x %<>% dplyr::rename_with(
+            .fn = ~ stringi::stri_replace_all_fixed(., "VARIANT", "VARIANT_DART"),
+            .cols = tidyselect::any_of("VARIANT")
+          )
+
+          # Copy VARIANT_DART to new column SNP
+          x %<>% dplyr::mutate(SNP = .data$VARIANT_DART)
         }
+
       } else {
         rlang::abort("\nProblem tidying DArT dataset: contact author")
       }
@@ -2193,7 +2203,7 @@ merge_dart <- function(
     filename <- generate_filename(
       name.shortcut = "merged_dart",
       extension = "arrow.parquet"
-      )$filename
+    )$filename
 
     strata.filename <- generate_filename(
       name.shortcut = "merged_dart_strata",

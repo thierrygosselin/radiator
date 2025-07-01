@@ -32,13 +32,13 @@ clean_ind_names <- function(x) {
     str = as.character(x),
     pattern = c("_", ":", " ", ","),
     replacement = c("-", "-", "", ""),
-    vectorize_all = FALSE)
-  x <- stringi::stri_replace_all_regex(
-    str = x,
-    pattern = "\\s+",
-    replacement = "",
-    vectorize_all = FALSE
-  )
+    vectorize_all = FALSE) %>%
+    stringi::stri_replace_all_regex(
+      str = .,
+      pattern = "\\s+",
+      replacement = "",
+      vectorize_all = FALSE
+    )
 }#End clean_ind_names
 
 #' @title Clean population's names for radiator and other packages

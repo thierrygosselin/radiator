@@ -1,3 +1,8 @@
+# radiator 1.3.8 2025-07-01
+* Improved the use of arrow
+* Better reporting
+
+
 # radiator 1.3.7 2025-06-17
 
 * Improved DArT file import and filtering

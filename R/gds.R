@@ -413,6 +413,20 @@ gds2tidy <- function(
     close.gds = FALSE,
     ...
 ) {
+
+  # dotslist -------------------------------------------------------------------
+  rad.dots <- rlang::list2(...)
+  gt <- rad.dots[["gt"]]
+  gt.vcf.nuc <- rad.dots[["gt.vcf.nuc"]]
+  gt.vcf <- rad.dots[["gt.vcf"]]
+  gt.bin <- rad.dots[["gt.bin"]]
+  if (is.null(gt.vcf.nuc)) gt.vcf.nuc <- FALSE
+  if (is.null(gt.vcf)) gt.vcf <- FALSE
+  if (is.null(gt)) gt <- FALSE
+  if (is.null(gt.bin)) gt.bin <- FALSE
+
+  # work on individuals
+
   if (is.null(individuals)) {
     individuals <- extract_individuals_metadata(gds = gds, whitelist = TRUE, verbose = FALSE)
   }
@@ -514,6 +528,10 @@ gds2tidy <- function(
     tidy.data %<>%
       radiator::calibrate_alleles(
         data = .,
+        gt = gt,
+        gt.vcf.nuc = gt.vcf.nuc,
+        gt.vcf = gt.vcf,
+        gt.bin = gt.bin,
         verbose = FALSE
       ) %$% input
   }

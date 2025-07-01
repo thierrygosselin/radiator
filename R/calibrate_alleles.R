@@ -81,6 +81,7 @@ calibrate_alleles <- function(
   # gt.vcf <- FALSE
   # gt.vcf.nuc <- FALSE
 
+  if (verbose) cli::cli_progress_step(msg = "Calibrating REF/ALT alleles", msg_done = "done")
 
   # Checking for missing and/or default arguments ------------------------------
   if (missing(data)) rlang::abort("Input file missing")
@@ -129,7 +130,8 @@ calibrate_alleles <- function(
     if (all(!gt.bin, !gt.vcf, !gt.vcf.nuc)) {
       return(list(input = data, biallelic = biallelic))
     } else {
-      if (verbose) message("Generating new genotypes coding with calibrated alleles")
+      # if (verbose) message("Generating new genotypes coding with calibrated alleles")
+      if (verbose) cli::cli_progress_message("Generating new genotypes coding with calibrated alleles")
       data %<>%
         radiator::gt_recoding(
           x = .,
@@ -142,8 +144,6 @@ calibrate_alleles <- function(
       return(list(input = data, biallelic = biallelic))
     }
   }
-
-  message("Calibrating REF/ALT alleles...")
 
 
   # what we need to make the switch
@@ -286,7 +286,9 @@ calibrate_alleles <- function(
   # het from the other format don't change
   n.switch <- length(switch.ref)
   if (n.switch > 0) {
-    if (verbose) message("Number of REF/ALT switch = ", n.switch)
+    # if (verbose) message("Number of REF/ALT switch = ", n.switch)
+    if (verbose) cli::cli_progress_message(paste0("Number of REF/ALT switch = ", n.switch))
+
     col.order <- colnames(data)
     remove.gt <- setdiff(c("GT", "GT_BIN", "GT_VCF", "GT_VCF_NUC"), detect.gt)
     ref.depth <- FALSE
@@ -308,7 +310,8 @@ calibrate_alleles <- function(
     )
   }
   if (recoding.todo > 0L) {
-    if (verbose) message("Generating new genotypes coding")
+    # if (verbose) message("Generating new genotypes coding")
+    if (verbose) cli::cli_progress_message("Generating new genotypes coding")
     data %<>%
       radiator::gt_recoding(
         x = .,
@@ -320,6 +323,7 @@ calibrate_alleles <- function(
       )
   }
   # Results --------------------------------------------------------------------
+  if (verbose) cli::cli_progress_done()
   return(list(input = data, biallelic = biallelic))
 }#End calibrate_alleles
 

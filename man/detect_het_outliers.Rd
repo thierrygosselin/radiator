@@ -51,7 +51,8 @@ Option to set \code{pop.levels/pop.labels} is also available.}
 !is.null(pop.select)}, the modified strata is written by default in the
 working directory with date and time appended to \code{strata_radiator_filtered},
 to make the file unique. If you plan on writing more than 1 strata file per minute,
-use this argument to supply the unique filename.
+use this argument to supply the unique filename. When filename is not NULL, it
+will also trigger saving the strata to a file.
 Default: \code{filename = NULL}.}
 
 \item{parallel.core}{(optional) The number of core used for parallel
