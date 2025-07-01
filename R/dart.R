@@ -1135,12 +1135,21 @@ clean_dart_colnames <- function(x, dart.check, blacklist.id = NULL, strata = NUL
   # turns out I think it's better to keep ALLELE_SEQUENCE...
 
   # Define possible column names to check
-  possible.columns <- c("ALLELE_SEQUENCE", "TRIMMED_SEQUENCE", "CLUSTER_CONSENSUS_SEQUENCE")
+  # possible.columns <- c("ALLELE_SEQUENCE", "TRIMMED_SEQUENCE", "CLUSTER_CONSENSUS_SEQUENCE")
+  # Check for preferred column
+  preferred.col <- dplyr::case_when(
+    "ALLELE_SEQUENCE" %in% names(x) ~ "ALLELE_SEQUENCE",
+    "TRIMMED_SEQUENCE" %in% names(x) ~ "TRIMMED_SEQUENCE",
+    "CLUSTER_CONSENSUS_SEQUENCE" %in% names(x) ~ "CLUSTER_CONSENSUS_SEQUENCE",
+    TRUE ~ NA_character_
+  )
+
+
 
   # Rename columns dynamically
   x %<>% dplyr::rename_with(
     .fn = ~ "SEQUENCE",    # Rename to "SEQUENCE"
-    .cols = tidyselect::any_of(possible.columns)  # Select columns from possible.columns
+    .cols = tidyselect::any_of(preferred.col)  # Select columns from possible.columns
   )
 
   # For all  except SILICO ------------------------------------------
