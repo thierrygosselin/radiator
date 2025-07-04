@@ -323,7 +323,7 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
 
   if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
     if (data.type == "gds.file") data %<>% radiator::read_rad(data = ., verbose = verbose)
-    data <- gds2tidy(gds = data, parallel.core = parallel::detectCores() - 1)
+    data <- gds2tidy(gds = data, parallel.core = parallel::detectCores() - 1, pop.id = FALSE)
     data.type <- "tbl_df"
   } else {
     want <- c("MARKERS", "STRATA", "INDIVIDUALS", "REF", "ALT", "GT", "GT_BIN")
