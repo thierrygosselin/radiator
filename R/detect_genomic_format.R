@@ -199,9 +199,18 @@ detect_dart_format <- function(data, verbose = TRUE) {
   # deconstruct
   if (dart.headers) {
     temp.file <- suppressWarnings(suppressMessages(readr::read_table(file = data, n_max = 20, col_names = "HEADER")))
+
+    # skip.number <- which(
+    #   stringi::stri_detect_regex(str = temp.file$HEADER,pattern = "^[:Letter:]")
+    # ) - 1
     skip.number <- which(
-      stringi::stri_detect_regex(str = temp.file$HEADER,pattern = "^[:Letter:]")
-    ) - 1
+      stringi::stri_detect_regex(str = temp.file$HEADER,pattern = "^[[:alnum:]]")
+    )[1] - 1
+
+
+    # skip.number <- rle(grepl("^\\*", temp.file$HEADER))$lengths[1]
+
+
     star.number <- stringi::stri_count_fixed(str = data.type, pattern = "*")
     data.type <- readr::read_lines(file = data, skip = skip.number, n_max = skip.number + 1)[1]
   } else {
@@ -211,9 +220,10 @@ detect_dart_format <- function(data, verbose = TRUE) {
   dart.clone.id <- stringi::stri_detect_fixed(str = data.type, pattern = "CloneID")
   dart.allele.id <- stringi::stri_detect_fixed(str = data.type, pattern = "AlleleID")
   dart.snp.position <- stringi::stri_detect_fixed(str = data.type, pattern = "SnpPosition")
+  dart.allele.sequece <- stringi::stri_detect_fixed(str = data.type, pattern = "AlleleSequence")
 
   # DArT or no
-  if (dart.snp.position || dart.allele.id || dart.clone.id) {
+  if (dart.snp.position || dart.allele.id || dart.clone.id || dart.allele.sequece) {
     data.type <- "dart"
   } else {
     return(res = list(data.type = NULL))
@@ -226,14 +236,15 @@ detect_dart_format <- function(data, verbose = TRUE) {
   } else {
     temp.line <- readr::read_lines(file = data, skip = skip.number, n_max = 1)
     dart.col <- c(
-      if(stringi::stri_detect_regex(str = temp.line, pattern = "SNP")) "SNP",
-      if(stringi::stri_detect_regex(str = temp.line, pattern = "REF")) "REF"
-      )
+      if (stringi::stri_detect_regex(str = temp.line, pattern = "SNP")) "SNP",
+      if (stringi::stri_detect_regex(str = temp.line, pattern = "REF")) "REF",
+      if (stringi::stri_detect_regex(str = temp.line, pattern = "Variant")) "Variant"
+    )
 
     binary <- vroom::vroom(
       file = data,
       delim = tokenizer.dart,
-      col_selec = tidyselect::all_of(dart.col),
+      # col_selec = tidyselect::all_of(dart.col),
       skip = skip.number,
       na = c("-", "NA",""),
       guess_max = 20,

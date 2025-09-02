@@ -157,9 +157,15 @@ read_strata <- function(
     if (verbose) message("Analyzing strata file")
     if (is.vector(strata)) {
       if (!file.exists(strata)) rlang::abort("\nstrata file doesn't exist...\n")
-      strata <- readr::read_tsv(
+      # strata <- readr::read_tsv(
+      #   file = strata,
+      #   col_types = readr::cols(.default = readr::col_character()))
+
+      strata <- vroom::vroom(
         file = strata,
-        col_types = readr::cols(.default = readr::col_character()))
+        col_types = readr::cols(.default = readr::col_character()),
+        show_col_types = FALSE
+        )
     }
 
     if (rlang::has_name(strata, "POP_ID") && !rlang::has_name(strata, "STRATA")) {

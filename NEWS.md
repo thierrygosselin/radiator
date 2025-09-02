@@ -1,3 +1,8 @@
+# radiator 1.3.9 2025-09-02
+* Improved DArT file import
+* New flavor of strata file import for DArT data
+
+
 # radiator 1.3.8 2025-07-01
 * Improved the use of arrow
 * Better reporting

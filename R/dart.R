@@ -519,17 +519,6 @@ read_dart <- function(
 
   if (verbose) message("done!")
 
-  # no longer relevant to have this function...
-  # dart.gds <- dart2gds(
-  #   genotypes = genotypes,
-  #   strata = strata,
-  #   markers.meta = markers.meta,
-  #   filename.gds = filename.gds,
-  #   dart.check = dart.check,
-  #   parallel.core = parallel.core,
-  #   verbose = verbose
-  # )
-
   n.chrom <- length(unique(markers.meta$CHROM))
   n.locus <- length(unique(markers.meta$LOCUS))
   n.snp <- n.markers
@@ -703,12 +692,13 @@ extract_dart_target_id <- function(data, write = TRUE, metadata = FALSE) {
   if (no.metadata && metadata) metadata <- FALSE
   if (metadata) {
     matadata.keeper <- (dart.check$skip.number + 1L)
-    if (matadata.keeper > 7) metadata <- FALSE # don't know what DArT did
+    if (matadata.keeper > 8) metadata <- FALSE # don't know what DArT did
     if (matadata.keeper < 6) metadata <- FALSE # don't know what DArT did
   }
   if (metadata) {
     if (matadata.keeper == 6) metadata.colnames <- c("DART_NUMBER", "DART_PLATE_BARCODE", "CLIENT_BARCODE", "WELL_ROW", "WELL_COL", "TARGET_ID")
     if (matadata.keeper == 7) metadata.colnames <- c("DART_NUMBER", "DART_PLATE_BARCODE", "CLIENT_BARCODE", "WELL_ROW", "WELL_COL", "SAMPLE_COMMENTS", "TARGET_ID")
+    if (matadata.keeper == 8) metadata.colnames <- c("DART_NUMBER", "DART_PLATE_BARCODE", "SAMPLE_COMMENTS", "WELL_ROW", "WELL_COL", "PLATE_ID", "CLIENT_ID", "TARGET_ID")
 
     dart.target.id <- readr::read_delim(
       file = data,
@@ -1173,6 +1163,16 @@ clean_dart_colnames <- function(x, dart.check, blacklist.id = NULL, strata = NUL
       .cols = tidyselect::any_of(c("ALLELE_ID", "SNP_POSITION"))
     )
 
+    # check <- x %>% dplyr::rename_with(
+    #   .fn = ~ stringi::stri_replace_all_fixed(
+    #     str = .,
+    #     pattern = c("ALLELE_ID", "SNP_POSITION"),
+    #     replacement = c("LOCUS", "POS"),
+    #     vectorize_all = FALSE
+    #   ),
+    #   .cols = tidyselect::any_of(c("ALLELE_ID", "SNP_POSITION"))
+    # )
+
     # If CLONE_ID exists and LOCUS already exists → remove CLONE_ID.
     # If CLONE_ID exists but LOCUS doesn't → rename CLONE_ID to LOCUS.
 
@@ -1274,69 +1274,97 @@ clean_dart_locus <- function(x, fast = TRUE) {
 
   if (fast) {
     # x <- data
-    if (!rlang::has_name(x, "CHROM")) x %<>% dplyr::mutate(CHROM = "CHROM_1")
-    want <- c("VARIANT_ID", "M_SEQ", "MARKERS", "CHROM", "LOCUS", "POS", "COL",
-              "REF", "ALT", "SEQUENCE",
-              "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")
 
-    if (rlang::has_name(x, "VARIANT_DART")) {
+    scaffold <- dplyr::slice_head(x, n = 20) %$%
+      LOCUS %>%
+      stringi::stri_detect_regex(str = ., pattern = "scaffold") %>%
+      unique
+
+    if (scaffold) {
       x %<>%
         dplyr::mutate(
-          COL = stringi::stri_extract_first_regex(
-            str = LOCUS,
-            pattern = "[-][0-9]+[\\:]"),
-          COL = stringi::stri_replace_all_fixed(
-            str = COL,
-            pattern = c("-", ":"),
-            replacement = c("", ""),
-            vectorize_all = FALSE),
-          POS = COL,
-          COL = as.integer(COL),
-          LOCUS = stringi::stri_extract_first_regex(str = LOCUS, pattern = "^[0-9]+"),
+          CHROM = stringi::stri_extract_first_regex(LOCUS, "(?<=_)[0-9]+(?=_[0-9]+$)"),
+          POS = stringi::stri_extract_first_regex(LOCUS, "(?<=_)[0-9]+$"),
           REF = stringi::stri_extract_first_regex(str = VARIANT_DART, pattern = "[A-Z]"),
           ALT = stringi::stri_extract_last_regex(str = VARIANT_DART, pattern = "[A-Z]"),
-          MARKERS = stringi::stri_join(CHROM, LOCUS, POS, sep = "__"),
-          # VARIANT_ID = as.integer(factor(MARKERS)),
+          MARKERS = stringi::stri_join(VARIANT_ID, CHROM, POS, sep = "__"),
           M_SEQ = VARIANT_ID,
+          COL = as.integer(CHROM),
           VARIANT_DART = NULL,
-          SNP = NULL
-        ) %>%
-        dplyr::select(tidyselect::any_of(want), tidyselect::everything()) %>%
-        dplyr::mutate(
+          SNP = NULL,
           dplyr::across(
             .cols = c(MARKERS, CHROM, LOCUS, POS),
             .fns = as.character
           )
         ) %>%
         dplyr::arrange(VARIANT_ID, CHROM, LOCUS, POS, REF)
+
+      message("NOTE: POS and COL are not reliable numbers in this DART file and were generated based on scaffold metadata")
     } else {
-      x %<>%
-        dplyr::mutate(
-          COL = stringi::stri_extract_first_regex(
-            str = LOCUS,
-            pattern = "[-][0-9]+[\\:]"),
-          COL = stringi::stri_replace_all_fixed(
-            str = COL,
-            pattern = c("-", ":"),
-            replacement = c("", ""),
-            vectorize_all = FALSE),
-          COL = as.integer(COL),
-          LOCUS = stringi::stri_extract_first_regex(str = LOCUS, pattern = "^[0-9]+"),
-          REF = stringi::stri_extract_first_regex(str = SNP, pattern = "[A-Z]"),
-          ALT = stringi::stri_extract_last_regex(str = SNP, pattern = "[A-Z]"),
-          MARKERS = stringi::stri_join(CHROM, LOCUS, POS, sep = "__"),
-          # VARIANT_ID = as.integer(factor(MARKERS)),
-          M_SEQ = VARIANT_ID,
-          SNP = NULL
-        ) %>%
-        dplyr::select(tidyselect::any_of(want), tidyselect::everything()) %>%
-        dplyr::mutate(
-          dplyr::across(
-            .cols = c(MARKERS, CHROM, LOCUS, POS),
-            .fns = as.character
-          )
-        ) %>%
-        dplyr::arrange(VARIANT_ID, CHROM, LOCUS, POS, REF)
+      if (!rlang::has_name(x, "CHROM")) x %<>% dplyr::mutate(CHROM = "CHROM_1")
+      want <- c("VARIANT_ID", "M_SEQ", "MARKERS", "CHROM", "LOCUS", "POS", "COL",
+                "REF", "ALT", "SEQUENCE",
+                "CALL_RATE", "AVG_COUNT_REF", "AVG_COUNT_SNP", "REP_AVG")
+
+      if (rlang::has_name(x, "VARIANT_DART")) {
+        x %<>%
+          dplyr::mutate(
+            COL = stringi::stri_extract_first_regex(
+              str = LOCUS,
+              pattern = "[-][0-9]+[\\:]"),
+            COL = stringi::stri_replace_all_fixed(
+              str = COL,
+              pattern = c("-", ":"),
+              replacement = c("", ""),
+              vectorize_all = FALSE),
+            POS = COL,
+            COL = as.integer(COL),
+            LOCUS = stringi::stri_extract_first_regex(str = LOCUS, pattern = "^[0-9]+"),
+            REF = stringi::stri_extract_first_regex(str = VARIANT_DART, pattern = "[A-Z]"),
+            ALT = stringi::stri_extract_last_regex(str = VARIANT_DART, pattern = "[A-Z]"),
+            MARKERS = stringi::stri_join(CHROM, LOCUS, POS, sep = "__"),
+            # VARIANT_ID = as.integer(factor(MARKERS)),
+            M_SEQ = VARIANT_ID,
+            VARIANT_DART = NULL,
+            SNP = NULL
+          ) %>%
+          dplyr::select(tidyselect::any_of(want), tidyselect::everything()) %>%
+          dplyr::mutate(
+            dplyr::across(
+              .cols = c(MARKERS, CHROM, LOCUS, POS),
+              .fns = as.character
+            )
+          ) %>%
+          dplyr::arrange(VARIANT_ID, CHROM, LOCUS, POS, REF)
+      } else {
+        x %<>%
+          dplyr::mutate(
+            COL = stringi::stri_extract_first_regex(
+              str = LOCUS,
+              pattern = "[-][0-9]+[\\:]"),
+            COL = stringi::stri_replace_all_fixed(
+              str = COL,
+              pattern = c("-", ":"),
+              replacement = c("", ""),
+              vectorize_all = FALSE),
+            COL = as.integer(COL),
+            LOCUS = stringi::stri_extract_first_regex(str = LOCUS, pattern = "^[0-9]+"),
+            REF = stringi::stri_extract_first_regex(str = SNP, pattern = "[A-Z]"),
+            ALT = stringi::stri_extract_last_regex(str = SNP, pattern = "[A-Z]"),
+            MARKERS = stringi::stri_join(CHROM, LOCUS, POS, sep = "__"),
+            # VARIANT_ID = as.integer(factor(MARKERS)),
+            M_SEQ = VARIANT_ID,
+            SNP = NULL
+          ) %>%
+          dplyr::select(tidyselect::any_of(want), tidyselect::everything()) %>%
+          dplyr::mutate(
+            dplyr::across(
+              .cols = c(MARKERS, CHROM, LOCUS, POS),
+              .fns = as.character
+            )
+          ) %>%
+          dplyr::arrange(VARIANT_ID, CHROM, LOCUS, POS, REF)
+      }
     }
   } else {
     want <- c("VARIANT_ID", "M_SEQ", "MARKERS", "CHROM", "LOCUS", "POS", "COL",
@@ -1369,6 +1397,7 @@ clean_dart_locus <- function(x, fast = TRUE) {
       ) %>%
       dplyr::arrange(VARIANT_ID, CHROM, LOCUS, POS, REF)
   }
+  return(x)
 }#End clean_dart_locus
 
 
@@ -1428,10 +1457,34 @@ import_dart_geno <- function(strata.split, variant.id, data, dart.check, paralle
   new.col.names <- strata.split$ID_SEQ
   want.col <- strata.split$TARGET_ID
 
+
   if (dart.check$dart.format != "1row") {
+    dart.headers <- vroom::vroom(
+      file = data,
+      delim = dart.check$tokenizer.dart,
+      col_select = 1:dart.check$star.number,
+      col_names = TRUE,
+      skip = dart.check$skip.number,
+      n_max = 1,
+      na = c("-", "NA",""),
+      guess_max = 20,
+      altrep = TRUE,
+      skip_empty_rows = TRUE,
+      trim_ws = FALSE,
+      num_threads = parallel.core,
+      progress = FALSE,
+      show_col_types = FALSE,
+    )
     want.col <- c("SNP", strata.split$TARGET_ID)
     new.col.names <- c("SNP", strata.split$ID_SEQ)
+
+    if (rlang::has_name(dart.headers, "Variant")) {
+      want.col <- c("Variant", strata.split$TARGET_ID)
+      new.col.names <- c("SNP", strata.split$ID_SEQ)
+    }
+    dart.headers <- NULL
   }
+
   gen <- suppressWarnings(
     vroom::vroom(
       file = data,
@@ -1753,11 +1806,18 @@ dart_genotyper <- function(
   } else {# for presence and absence: 1row and 2rows
     x %<>%
       dplyr::mutate(
-        GT_BIN = REF + ALT,
-        REF = NULL,
-        ALT = NULL
+        GT_BIN = dplyr::case_when(
+          REF_COUNT == 1L & ALT_COUNT == 0L ~ 0L,
+          REF_COUNT == 1L & ALT_COUNT == 1L ~ 1L,
+          REF_COUNT == 0L & ALT_COUNT == 1L ~ 2L
+        )
       ) %>%
       dplyr::full_join(markers.metadata, by = "VARIANT_ID")
+      # dplyr::mutate(
+      #   GT_BIN = REF + ALT,
+      #   REF = NULL,
+      #   ALT = NULL
+      # )
   }
 
   # generate VCF format --------------------------------------------------------
