@@ -1,3 +1,7 @@
+# radiator 1.4.0 2025-09-04
+* bug fix when using the new DArT data and converting to genind
+
+
 # radiator 1.3.9 2025-09-02
 * Improved DArT file import
 * New flavor of strata file import for DArT data

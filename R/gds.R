@@ -146,11 +146,22 @@ radiator_gds <- function(
       verbose = verbose)
   n.markers <- nrow(markers.meta)
 
-  # reference genome or de novo
+  # reference genome or de novo---------
+  # dart
+  ref.genome <- FALSE # default
+  if (data.source == "dart") {
+    chrom.unique <- length(unique(markers.meta$CHROM)) == 1
+    scaffold.detected <- any(stringi::stri_detect_regex(str = markers.meta$LOCUS, pattern = "scaffold"))
+    if (!chrom.unique && scaffold.detected) ref.genome <- TRUE
+    chrom.unique <- scaffold.detected <- NULL
+  } else {
+    ref.genome <- detect_ref_genome(chromosome = markers.meta$CHROM, verbose = FALSE)
+  }
+
   update_radiator_gds(
     data.gds,
     node.name = "reference.genome",
-    value = detect_ref_genome(chromosome = markers.meta$CHROM, verbose = FALSE)
+    value = ref.genome
   )
 
   # ADD MARKERS META to GDS

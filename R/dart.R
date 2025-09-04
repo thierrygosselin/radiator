@@ -349,10 +349,10 @@ read_dart <- function(
   )
   target.id <- NULL
 
-  # Read markers metadata ------------------------------------------------------
+  # Extract markers metadata ------------------------------------------------------
   # if (verbose) cat(paste0(stringi::stri_pad_both(str = paste0(" Markers "), width = 80L, pad = "-"), "\n"))
   if (verbose) message(stringi::stri_pad_both(str = " Markers ", width = 80L, pad = "-"), "\n")
-  markers.meta <- read_dart_markers_metadata(
+  markers.meta <- extract_dart_markers_metadata(
     data = data,
     whitelist.markers = whitelist.markers,
     parallel.core = parallel.core,
@@ -696,9 +696,9 @@ extract_dart_target_id <- function(data, write = TRUE, metadata = FALSE) {
     if (matadata.keeper < 6) metadata <- FALSE # don't know what DArT did
   }
   if (metadata) {
-    if (matadata.keeper == 6) metadata.colnames <- c("DART_NUMBER", "DART_PLATE_BARCODE", "CLIENT_BARCODE", "WELL_ROW", "WELL_COL", "TARGET_ID")
-    if (matadata.keeper == 7) metadata.colnames <- c("DART_NUMBER", "DART_PLATE_BARCODE", "CLIENT_BARCODE", "WELL_ROW", "WELL_COL", "SAMPLE_COMMENTS", "TARGET_ID")
-    if (matadata.keeper == 8) metadata.colnames <- c("DART_NUMBER", "DART_PLATE_BARCODE", "SAMPLE_COMMENTS", "WELL_ROW", "WELL_COL", "PLATE_ID", "CLIENT_ID", "TARGET_ID")
+    if (matadata.keeper == 6) metadata.colnames <- c("DART_NUMBER", "DART_PLATE_BARCODE", "CLIENT_PLATE_BARCODE", "WELL_ROW", "WELL_COL", "TARGET_ID")
+    if (matadata.keeper == 7) metadata.colnames <- c("DART_NUMBER", "DART_PLATE_BARCODE", "CLIENT_PLATE_BARCODE", "WELL_ROW", "WELL_COL", "SAMPLE_COMMENTS", "TARGET_ID")
+    if (matadata.keeper == 8) metadata.colnames <- c("DART_NUMBER", "DART_PLATE_BARCODE", "SAMPLE_COMMENTS", "WELL_ROW", "WELL_COL", "CLIENT_PLATE_BARCODE", "CLIENT_ID", "TARGET_ID")
 
     dart.target.id <- readr::read_delim(
       file = data,
@@ -922,14 +922,14 @@ checks_dart_target <- function(
 
 
 
-# read_dart_markers_metadata ---------------------------------------------------
-#' @title read_dart_markers_metadata
-#' @description Read DArT markers/locus metadata.
-#' @rdname read_dart_markers_metadata
+# extract_dart_markers_metadata ---------------------------------------------------
+#' @title extract_dart_markers_metadata
+#' @description Extract DArT markers/locus metadata.
+#' @rdname extract_dart_markers_metadata
 #' @keywords internal
 #' @export
 
-read_dart_markers_metadata <- function(
+extract_dart_markers_metadata <- function(
     data,
     whitelist.markers = NULL,
     parallel.core = parallel::detectCores() - 1,
@@ -945,11 +945,11 @@ read_dart_markers_metadata <- function(
     rlang::abort("Contact author: problem with star number in DArT file")
   }
 
-  metadata <- suppressWarnings(
-    vroom::vroom(
+  metadata <- vroom::vroom(
       file = data,
       delim = dart.check$tokenizer.dart,
-      col_select = 1:metadata.ncol,
+      col_select = tidyselect::all_of(1:metadata.ncol),
+      # col_select = 1:metadata.ncol,
       col_names = TRUE,
       skip = dart.check$skip.number,
       na = c("-", "NA",""),
@@ -959,9 +959,9 @@ read_dart_markers_metadata <- function(
       trim_ws = FALSE,
       num_threads = parallel.core,
       progress = FALSE,
-      show_col_types = FALSE
+      show_col_types = FALSE,
+      .name_repair = "minimal"
     )
-  )
   if (dart.check$dart.format == "2rows" || dart.check$dart.format == "counts") {
     n.markers <- nrow(metadata) / 2
     variant.id <- rep(1:n.markers, times = 1, each = 2)
@@ -1051,7 +1051,7 @@ read_dart_markers_metadata <- function(
     ) %>%
     dplyr::arrange(VARIANT_ID)
   return(list(metadata = metadata, variant.id = variant.id))
-}#End read_dart_markers_metadata
+}#End extract_dart_markers_metadata
 
 
 # clean_dart_colnames----------------------------------------------------------------

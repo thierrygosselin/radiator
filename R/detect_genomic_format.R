@@ -58,7 +58,7 @@ detect_genomic_format <- function(data, guess = NULL){
       }
       return(data.type)
     } # not vector
-    if (is.vector(data)){
+    if (is.vector(data)) {
       data.type <- suppressWarnings(readLines(con = data, n = 1L))
       file.ending <- stringi::stri_sub(str = data, from = -4, to = -1)
 
@@ -85,6 +85,7 @@ detect_genomic_format <- function(data, guess = NULL){
         }
         return(data.type)
       }#End plink
+
       if (file.ending == ".bed") {
         data.type <- "plink.bed.file"
 
@@ -197,6 +198,9 @@ detect_dart_format <- function(data, verbose = TRUE) {
   n.col <- stringi::stri_count_fixed(str = data.type, pattern = tokenizer.dart) + 1
 
   # deconstruct
+  skip.number <- 0
+  star.number <- 0
+
   if (dart.headers) {
     temp.file <- suppressWarnings(suppressMessages(readr::read_table(file = data, n_max = 20, col_names = "HEADER")))
 
@@ -207,16 +211,10 @@ detect_dart_format <- function(data, verbose = TRUE) {
       stringi::stri_detect_regex(str = temp.file$HEADER,pattern = "^[[:alnum:]]")
     )[1] - 1
 
-
-    # skip.number <- rle(grepl("^\\*", temp.file$HEADER))$lengths[1]
-
-
     star.number <- stringi::stri_count_fixed(str = data.type, pattern = "*")
     data.type <- readr::read_lines(file = data, skip = skip.number, n_max = skip.number + 1)[1]
-  } else {
-    skip.number <- 0
-    star.number <- 0
   }
+
   dart.clone.id <- stringi::stri_detect_fixed(str = data.type, pattern = "CloneID")
   dart.allele.id <- stringi::stri_detect_fixed(str = data.type, pattern = "AlleleID")
   dart.snp.position <- stringi::stri_detect_fixed(str = data.type, pattern = "SnpPosition")
@@ -244,7 +242,8 @@ detect_dart_format <- function(data, verbose = TRUE) {
     binary <- vroom::vroom(
       file = data,
       delim = tokenizer.dart,
-      # col_selec = tidyselect::all_of(dart.col),
+      # col_select = tidyselect::all_of(1:star.number),
+      col_selec = tidyselect::all_of(dart.col),
       skip = skip.number,
       na = c("-", "NA",""),
       guess_max = 20,
@@ -252,7 +251,8 @@ detect_dart_format <- function(data, verbose = TRUE) {
       skip_empty_rows = TRUE,
       trim_ws = FALSE,
       progress = FALSE,
-      show_col_types = FALSE
+      show_col_types = FALSE,
+      .name_repair = "minimal"
     ) %>%
      anyNA(.)
 
@@ -272,7 +272,8 @@ detect_dart_format <- function(data, verbose = TRUE) {
         skip_empty_rows = TRUE,
         trim_ws = FALSE,
         progress = FALSE,
-        show_col_types = FALSE
+        show_col_types = FALSE,
+        .name_repair = "minimal"
       )
       count.data <- any(count.data > 1, na.rm = TRUE)
 
@@ -286,10 +287,18 @@ detect_dart_format <- function(data, verbose = TRUE) {
     }
   }
 
+  # New 20250904
+  # denovo or ref genome used
+
+  # default
+  ref.genome <- FALSE
+  ref.genome <- any(stringi::stri_detect_regex(str = temp.file$HEADER, pattern = "scaffold"))
+
   return(
     res = list(
       data.type = data.type,
       dart.format = dart.format,
+      ref.genome = ref.genome,
       skip.number = skip.number,
       star.number = star.number,
       tokenizer.dart = tokenizer.dart,

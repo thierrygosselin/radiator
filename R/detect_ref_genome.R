@@ -41,116 +41,124 @@ detect_ref_genome <- function(chromosome = NULL, data = NULL, verbose = TRUE) {
     if (!is.null(data)) {
       # Detect format and import if necessary
       data.type <- radiator::detect_genomic_format(data)
-      if (!data.type %in% c("SeqVarGDSClass", "gds.file")) {
-        rlang::abort("Input not supported for this function: read function documentation")
-      }
-      radiator_packages_dep(package = "SeqArray", cran = FALSE, bioc = TRUE)
-
-      if (data.type == "gds.file") {
-        data <- radiator::read_rad(data, verbose = verbose)
-        data.type <- "SeqVarGDSClass"
-      }
-
-      # check radiator node
-      radiator.gds <- gdsfmt::index.gdsn(node = data, path = "radiator", silent = TRUE)
-
-      if (is.null(radiator.gds)) {
-        chromosome <- SeqArray::seqGetData(data, "chromosome")
+      if (data.type == "dart") {
+        ref.genome <- radiator::detect_dart_format(data = data, verbose = FALSE)$ref.genome
+        radiator.gds <- NULL
         sync.gds <- FALSE
       } else {
-        ref.genome <- gdsfmt::get.attr.gdsn(gdsfmt::index.gdsn(
-          node = radiator.gds, path = "reference.genome", silent = TRUE))$R.class[1]
-        sync.gds <- FALSE
-        if (!is.null(ref.genome) && !is.logical(ref.genome)) {
-          ref.genome <- NULL
-          sync.gds <- TRUE
+
+        if (!data.type %in% c("SeqVarGDSClass", "gds.file")) {
+          rlang::abort("Input not supported for this function: read function documentation")
         }
-        # Check the markers.meta field
-        if (is.null(ref.genome)) {
-          sync.gds <- TRUE
-          chromosome <- gdsfmt::index.gdsn(
-            node = radiator.gds, path = "markers.meta/CHROM", silent = TRUE)
-          if (!is.null(chromosome)) {
-            chromosome <- gdsfmt::read.gdsn(chromosome)
-          } else {
-            chromosome <- SeqArray::seqGetData(data, "chromosome")
+        radiator_packages_dep(package = "SeqArray", cran = FALSE, bioc = TRUE)
+
+        if (data.type == "gds.file") {
+          data <- radiator::read_rad(data, verbose = verbose)
+          data.type <- "SeqVarGDSClass"
+        }
+
+        # check radiator node
+        radiator.gds <- gdsfmt::index.gdsn(node = data, path = "radiator", silent = TRUE)
+
+        if (is.null(radiator.gds)) {
+          chromosome <- SeqArray::seqGetData(data, "chromosome")
+          sync.gds <- FALSE
+        } else {
+          ref.genome <- gdsfmt::get.attr.gdsn(gdsfmt::index.gdsn(
+            node = radiator.gds, path = "reference.genome", silent = TRUE))$R.class[1]
+          sync.gds <- FALSE
+          if (!is.null(ref.genome) && !is.logical(ref.genome)) {
+            ref.genome <- NULL
+            sync.gds <- TRUE
+          }
+          # Check the markers.meta field
+          if (is.null(ref.genome)) {
+            sync.gds <- TRUE
+            chromosome <- gdsfmt::index.gdsn(
+              node = radiator.gds, path = "markers.meta/CHROM", silent = TRUE)
+            if (!is.null(chromosome)) {
+              chromosome <- gdsfmt::read.gdsn(chromosome)
+            } else {
+              chromosome <- SeqArray::seqGetData(data, "chromosome")
+            }
           }
         }
       }
     }#End of data
 
-    if (is.null(ref.genome)) {
-      if (is.null(chromosome)) {
-        if (verbose) message("\nUndetermined chromosome field, will be tagged: de novo\n")
-        ref.genome <- FALSE
-      } else {
-        ref.genome <- sample(x = unique(chromosome),
-                             size = min(length(unique(chromosome)), 100),
-                             replace = FALSE)
-        # if the chrom.unique > 1 more likely not to be de novo assembly (e.g. with old stacks version)
-        chrom.unique <- length(unique(ref.genome)) == 1
-        chrom.unique.radiator <- any(unique(ref.genome) == "CHROM_1")
-        chrom.unique.stacks <- any(unique(ref.genome) == "un")
-
-        # presence of underscore or other separator: more likely ref genome
-        chrom.sep <- TRUE %in%
-          stringi::stri_detect_regex(str = ref.genome, pattern = "[^[:alnum:]]+") %>%
-          unique
-
-        # presence of letters = more likely ref genome
-        chrom.alpha <- TRUE %in%
-          stringi::stri_detect_regex(str = ref.genome, pattern = "[[:alpha:]]+") %>%
-          unique
-
-        if (chrom.unique && chrom.unique.radiator) ref.genome <- FALSE
-        if (chrom.unique.radiator) ref.genome <- FALSE
-        # if (!chrom.unique && chrom.alpha || chrom.sep) {
-        #   ref.genome <- TRUE
-        # } else {
-        #   ref.genome <- FALSE
-        # }
-        if (!chrom.unique && chrom.alpha && chrom.sep) {
-          ref.genome <- TRUE
-        } else {
+      if (is.null(ref.genome)) {
+        if (is.null(chromosome)) {
+          if (verbose) message("\nUndetermined chromosome field, will be tagged: de novo\n")
           ref.genome <- FALSE
-        }
-        if (chrom.unique.radiator) ref.genome <- FALSE
-        if (chrom.unique.stacks) ref.genome <- FALSE
+        } else {
+          ref.genome <- sample(x = unique(chromosome),
+                               size = min(length(unique(chromosome)), 100),
+                               replace = FALSE)
+          # if the chrom.unique > 1 more likely not to be de novo assembly (e.g. with old stacks version)
+          chrom.unique <- length(unique(ref.genome)) == 1
+          chrom.unique.radiator <- any(unique(ref.genome) == "CHROM_1")
+          chrom.unique.stacks <- any(unique(ref.genome) == "un")
 
+          # presence of underscore or other separator: more likely ref genome
+          chrom.sep <- TRUE %in%
+            stringi::stri_detect_regex(str = ref.genome, pattern = "[^[:alnum:]]+") %>%
+            unique
 
-        # stacks related
-        if (!is.null(data)) {
-          data.source <- radiator::extract_data_source(gds = data)
-          if (TRUE %in% stringi::stri_detect_fixed(str = data.source, pattern = "Stacks")) {
-            locus.type <- SeqArray::seqGetData(data, "annotation/id")
-            locus.missing <- unique(stringi::stri_detect_fixed(
-              str = locus.type,
-              pattern = "."))
-            locus.strands <- TRUE %in% (unique(stringi::stri_detect_fixed(
-              str = locus.type,
-              pattern = "+")))
+          # presence of letters = more likely ref genome
+          chrom.alpha <- TRUE %in%
+            stringi::stri_detect_regex(str = ref.genome, pattern = "[[:alpha:]]+") %>%
+            unique
 
-            if (locus.missing) ref.genome <- FALSE
-            if (locus.strands) ref.genome <- TRUE
-            if (!locus.missing && locus.strands) ref.genome <- TRUE
+          if (chrom.unique && chrom.unique.radiator) ref.genome <- FALSE
+          if (chrom.unique.radiator) ref.genome <- FALSE
+          # if (!chrom.unique && chrom.alpha || chrom.sep) {
+          #   ref.genome <- TRUE
+          # } else {
+          #   ref.genome <- FALSE
+          # }
+          if (!chrom.unique && chrom.alpha && chrom.sep) {
+            ref.genome <- TRUE
+          } else {
+            ref.genome <- FALSE
           }
-        }
+          if (chrom.unique.radiator) ref.genome <- FALSE
+          if (chrom.unique.stacks) ref.genome <- FALSE
 
-        # GATK related
-        if (!is.null(data)) {
-          data.source <- radiator::extract_data_source(gds = data)
-          if (TRUE %in% stringi::stri_detect_fixed(str = data.source, pattern = "GATK")) {
-            ref.genome <- any(stringi::stri_detect_fixed(str = unique(chromosome), pattern = "contig"))
+
+          # stacks related
+          if (!is.null(data)) {
+            data.source <- radiator::extract_data_source(gds = data)
+            if (TRUE %in% stringi::stri_detect_fixed(str = data.source, pattern = "Stacks")) {
+              locus.type <- SeqArray::seqGetData(data, "annotation/id")
+              locus.missing <- unique(stringi::stri_detect_fixed(
+                str = locus.type,
+                pattern = "."))
+              locus.strands <- TRUE %in% (unique(stringi::stri_detect_fixed(
+                str = locus.type,
+                pattern = "+")))
+
+              if (locus.missing) ref.genome <- FALSE
+              if (locus.strands) ref.genome <- TRUE
+              if (!locus.missing && locus.strands) ref.genome <- TRUE
+            }
           }
-        }
 
+          # GATK related
+          if (!is.null(data)) {
+            data.source <- radiator::extract_data_source(gds = data)
+            if (TRUE %in% stringi::stri_detect_fixed(str = data.source, pattern = "GATK")) {
+              ref.genome <- any(stringi::stri_detect_fixed(str = unique(chromosome), pattern = "contig"))
+            }
+          }
+
+        }
       }
-    }
-    chrom.unique <- chrom.alpha <- chrom.sep <- chrom.unique.radiator <- NULL
+      chrom.unique <- chrom.alpha <- chrom.sep <- chrom.unique.radiator <- NULL
 
-    # sync gds -------------------------------------------------------------------
-    if (!is.null(data) && !is.null(radiator.gds) && sync.gds) {
-      update_radiator_gds(gds = data, node.name = "reference.genome", value = ref.genome)
+      # sync gds -------------------------------------------------------------------
+      if (!is.null(data) && !is.null(radiator.gds) && sync.gds) {
+        update_radiator_gds(gds = data, node.name = "reference.genome", value = ref.genome)
+      }
     }
 
     # Result ---------------------------------------------------------------------
@@ -159,6 +167,6 @@ detect_ref_genome <- function(chromosome = NULL, data = NULL, verbose = TRUE) {
     } else {
       if (verbose) message("Reads assembly: de novo")
     }
-  }
+
   return(ref.genome)
 }#End detect_ref_genome
