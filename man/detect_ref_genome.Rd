@@ -2,38 +2,73 @@
 % Please edit documentation in R/detect_ref_genome.R
 \name{detect_ref_genome}
 \alias{detect_ref_genome}
-\title{Detect reference genome}
+\title{Detect whether a dataset is reference-guided or de novo assembled}
 \usage{
-detect_ref_genome(chromosome = NULL, data = NULL, verbose = TRUE)
+detect_ref_genome(data = NULL, verbose = TRUE)
 }
 \arguments{
-\item{chromosome}{(string) String with chromosome ID, unique or not.
-Default: \code{chromosome = NULL}.}
-
-\item{data}{(optional, path or object) radiator GDS object or file. When this
-argument is used, the function look inside the GDS radiator node for:
-\itemize{
-\item \code{reference.genome} node and \code{TRUE/FALSE} value
-\item \code{markers.meta} node and detect the information using the \code{CHROM}
-column
-\item \code{chromosome} node directly.
-}
+\item{data}{A radiator GDS object, a \pkg{SeqArray} GDS object, or a path to a file.
+If provided, the function extracts information from radiator metadata,
+SeqArray header fields, \code{markers.meta}, and other pipeline-specific
+indicators.
 Default: \code{data = NULL}.}
 
-\item{verbose}{(optional, logical) When \code{verbose = TRUE}
-the function is a little more chatty during execution.
+\item{verbose}{(logical, optional)
+When \code{TRUE}, the function prints messages describing the decision
+process and final classification.
 Default: \code{verbose = TRUE}.}
 }
 \value{
-TRUE/FALSE if dataset is assembled with a reference genome or not.
+A single logical value:
+\itemize{
+  \item \code{TRUE} – reference-assisted assembly;
+  \item \code{FALSE} – de novo assembly.
+}
 }
 \description{
-Detect if the dataset was de novo or reference genome assembled
+Determine if genomic data were produced using a **reference genome**
+(reference-assisted assembly) or using a **de novo assembly**.
+
+The function integrates multiple sources of evidence depending on the input
+provided:
+
+\strong{1. Radiator GDS (preferred)}
+If a radiator-generated GDS is supplied, the function checks, in order:
+\itemize{
+  \item the \code{/radiator/reference.genome} node (logical value);
+  \item the \code{/radiator/markers.meta/CHROM} field;
+  \item the \code{SeqArray} \code{chromosome} node.
+}
+
+\strong{2. VCF imported with SeqArray or read by radiator}
+When a VCF has been converted to GDS via \pkg{SeqArray}, or when a VCF file
+is provided directly, the function may detect reference-guided assembly from:
+\itemize{
+  \item the VCF header’s \code{##reference=} field;
+  \item the presence of \code{##contig=<ID=...>} definitions;
+  \item the structure of chromosome labels.
+}
+
+\strong{3. Data-source-specific heuristics}
+Additional rules are applied for specific pipelines:
+\itemize{
+  \item \strong{Stacks}: optionally, detection of \code{.} or \code{+} in
+    \code{annotation/id} (see internal comments in the function body);
+  \item \strong{GATK}: chromosome names containing \code{"contig"};
+  \item \strong{FreeBayes}: inspection of reference and contig metadata
+    in the VCF header.
+}
 }
 \examples{
 \dontrun{
-ref.genome <- radiator::detect_ref_genome(chromosome = tidy.data$CHROM)
+# Using a radiator GDS file
+gds <- radiator::read_rad("my_data.gds")
+ref.genome <- radiator::detect_ref_genome(data = gds)
+
+# Using a VCF file directly
+ref.genome <- radiator::detect_ref_genome(data = "variants.vcf.gz")
 }
+
 }
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}

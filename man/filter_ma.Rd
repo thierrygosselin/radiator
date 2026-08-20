@@ -10,6 +10,7 @@ filter_ma(
   ma.stats = "mac",
   filter.ma = NULL,
   calibrate.alleles = "depth",
+  keep.biallelic = TRUE,
   filename = NULL,
   parallel.core = parallel::detectCores() - 1,
   verbose = TRUE,
@@ -56,6 +57,10 @@ check if the information is available, if not, it will use
 Using \code{calibrate.alleles = "ancestral"} will turn off calibration and
 use the information preset available in the data.
 Default: \code{calibrate.alleles = "depth"}.}
+
+\item{keep.biallelic}{(logical) Keep only biallelic variants (REF + 1 ALT)
+when computing allele counts from GDS.
+Default: \code{keep.biallelic = TRUE}.}
 
 \item{filename}{(optional, character) Write to folder the MAF filtered
 tidy dataset. The name will be appended \code{.rad}. With default, the filtered
@@ -111,7 +116,7 @@ the ALT allele or 1 homozygote individuals for the ALT allele and
 \description{
 The Allele Frequency is the relative frequency of an allele for a markers/SNP.
 Calculations usually involve classifying the alleles into Major/Minor,
-Reference (REF)/Alternate (ALT) and/or Ancestral or dirived allele.
+Reference (REF)/Alternate (ALT) and/or Ancestral or derived allele.
 radiator provides a filter based of Minor Allele Count, frequency and depth function.
 Remove/blacklist markers based on Minor/Alternate Allele Count (MAC), Frequency (MAF)
 or Depth of coverage (MAD).
@@ -190,7 +195,9 @@ use the interactive version.
 
 Step 1. Visualization and helper table.
 
-Step 2. Filtering markers based on MAC, MAF or MAD
+Step 2. Minor Allele statistic and threshold selection
+
+Step 3. Filtering markers based on MAC, MAF or MAD
 }
 
 \examples{

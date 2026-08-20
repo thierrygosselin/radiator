@@ -1,19 +1,20 @@
 # radiator package startup message ---------------------------------------------
-# .onAttach <- function(libname, pkgname) {
-#   radiator.version <- utils::packageDescription("radiator", fields = "Version")
-#   radiator.build <- utils::packageDescription("radiator", fields = "Built")
-#   startup.message <- stringi::stri_join(
-#     "******************************* IMPORTANT NOTICE *******************************\n",
-#     "radiator v.", radiator.version, " was modified heavily.\n",
-#     "Read functions documentation and available vignettes.\n\n",
-#     "For reproducibility:\n",
-#     "    radiator version: ", radiator.version,"\n",
-#     "    radiator build date: ", radiator.build,"\n",
-#     "    Keep zenodo DOI.\n",
-#     "********************************************************************************",
-#     sep = "")
-#   packageStartupMessage(startup.message)
-# }
+.onAttach <- function(libname, pkgname) {
+  version <- utils::packageVersion(pkgname)
+
+  packageStartupMessage(
+    paste0(
+      "radiator ", version, " has reached the end of its active development.\n",
+      "Existing workflows remain available for reproducibility. For new work, use:\n",
+      "  - genometranslator: import, standardize, and translate genomic data\n",
+      "  - radr: screen, filter, diagnose, and explore genomic data\n",
+      "See https://github.com/thierrygosselin/genometranslator and ",
+      "https://github.com/thierrygosselin/radr"
+    )
+  )
+
+  invisible(NULL)
+}
 
 # radiator_function_header -----------------------------------------------------
 #' @title radiator_function_header
@@ -35,6 +36,131 @@ radiator_function_header <- function(f.name = NULL, start = TRUE, verbose = TRUE
     }
   }
 }# End radiator_function_header
+
+# radiator_startup--------------------------------------------------------------
+#' @title Common startup helper for radiator functions
+#'
+#' @description
+#' Perform standard radiator initialisation steps inside a function:
+#' \itemize{
+#'   \item print a header with \code{radiator_function_header()};
+#'   \item record execution date/time;
+#'   \item record and temporarily modify global options
+#'     (e.g. \code{width}, \code{future.globals.maxSize});
+#'   \item start a timing object with \code{radiator_tic()}.
+#' }
+#'
+#' The function returns a small list with everything needed for a matching
+#' teardown helper. You should typically pair this with
+#' \code{radiator_teardown()} inside an \code{on.exit()} call in the calling
+#' function.
+#'
+#' @param f.name (character) Name of the calling function
+#'   (e.g. \code{"read_vcf"}). Used only for logging in
+#'   \code{radiator_function_header()}.
+#'
+#' @param verbose (logical) When \code{TRUE}, the helper prints the execution
+#'   date/time and passes verbosity to the teardown helper.
+#'   Default: \code{verbose = TRUE}.
+#'
+#' @param width (integer) Temporary value for \code{getOption("width")}.
+#'   Default: \code{width = 70}.
+#'
+#' @return A named list containing:
+#' \itemize{
+#'   \item \code{file.date} – character timestamp \code{"YYYYMMDD@HHMM"};
+#'   \item \code{old.dir} – working directory to restore;
+#'   \item \code{opt.width} – original \code{options("width")};
+#'   \item \code{opt.future} – original \code{options("future.globals.maxSize")};
+#'   \item \code{timing} – timer object from \code{radiator_tic()};
+#'   \item \code{f.name} – function name;
+#'   \item \code{verbose} – verbosity flag.
+#' }
+#'
+#' @keywords internal
+#' @export
+radiator_startup <- function(f.name, verbose = TRUE, width = 70L) {
+
+  # Standard header
+  radiator_function_header(f.name = f.name, verbose = verbose)
+
+  # Execution timestamp
+  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
+  if (isTRUE(verbose)) {
+    message("Execution date@time: ", file.date)
+  }
+
+  # Save current state
+  old.dir    <- getwd()
+  opt.width  <- getOption("width")
+  opt.future <- getOption("future.globals.maxSize")
+
+  # Temporary options
+  options(future.globals.maxSize = Inf)
+  options(width = width)
+
+  # Start timer
+  timing <- radiator_tic()
+
+  # Return everything needed for teardown
+  list(
+    file.date  = file.date,
+    old.dir    = old.dir,
+    opt.width  = opt.width,
+    opt.future = opt.future,
+    timing     = timing,
+    f.name     = f.name,
+    verbose    = verbose
+  )
+} # End radiator_startup
+
+
+# radiator_teardown-------------------------------------------------------------
+#' @title Common teardown helper for radiator functions
+#'
+#' @description
+#' Companion to \code{radiator_startup()}. Restores working directory and
+#' options, stops the timer, and prints a closing header.
+#'
+#' Intended to be called from \code{on.exit()} in the calling function.
+#'
+#' @param start.obj (list) The object returned by \code{radiator_startup()}.
+#'
+#' @return Invisibly returns \code{NULL}. Called for its side effects.
+#'
+#' @keywords internal
+#' @export
+radiator_teardown <- function(start.obj) {
+
+  # Be defensive about missing elements
+  if (!is.null(start.obj$old.dir)) {
+    try(setwd(start.obj$old.dir), silent = TRUE)
+  }
+
+  if (!is.null(start.obj$opt.width)) {
+    options(width = start.obj$opt.width)
+  }
+
+  if (!is.null(start.obj$opt.future)) {
+    options(future.globals.maxSize = start.obj$opt.future)
+  }
+
+  # Stop timer (if present)
+  if (!is.null(start.obj$timing)) {
+    radiator_toc(start.obj$timing, verbose = isTRUE(start.obj$verbose))
+  }
+
+  # Closing header
+  radiator_function_header(
+    f.name  = start.obj$f.name %||% "radiator_function",
+    start   = FALSE,
+    verbose = isTRUE(start.obj$verbose)
+  )
+
+  invisible(NULL)
+} # End radiator_teardown
+
+
 
 # radiator common arguments ----------------------------------------------------
 #' @name radiator_common_arguments
@@ -337,11 +463,23 @@ data_info <- function(x, verbose = FALSE) {
   } else {
     i <- extract_markers_metadata(
       gds = x,
-      markers.meta.select = c("CHROM", "LOCUS", "MARKERS"),
+      markers.meta.select = c("CHROM", "LOCUS", "MARKERS", "VARIANT_ID"),
       whitelist = TRUE)
+    # res$n.chrom <- length(unique(i$CHROM))
+    # res$n.locus <- length(unique(i$LOCUS))
+    # res$n.snp <- length(unique(i$MARKERS))
+
+    # choose the best SNP identifier available
+    snp.id <- if ("VARIANT_ID" %in% names(i) && !all(is.na(i$VARIANT_ID))) {
+      i$VARIANT_ID
+    } else {
+      i$MARKERS
+    }
+
     res$n.chrom <- length(unique(i$CHROM))
     res$n.locus <- length(unique(i$LOCUS))
-    res$n.snp <- length(unique(i$MARKERS))
+    res$n.snp   <- length(unique(snp.id))
+
     i <- extract_individuals_metadata(
       gds = x,
       ind.field.select = c("STRATA", "INDIVIDUALS"),
@@ -378,7 +516,7 @@ radiator_results_message <- function(
   verbose = TRUE
 ) {
   if (!internal) {
-    if (verbose) cat("################################### RESULTS ####################################\n")
+    # if (verbose) cat("################################### RESULTS ####################################\n")
     if (!is.null(rad.message)) message(rad.message)
     message("Number of individuals / strata / chrom / locus / SNP:")
     if (verbose) message("    Before: ", filters.parameters$filters.parameters$BEFORE)
@@ -816,5 +954,4 @@ radiator_toc <- function(
 ) {
   if (verbose) message("\n", end.message, " ", round((proc.time() - timing)[[3]]), " sec")
 }# End radiator_toc
-
 

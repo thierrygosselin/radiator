@@ -24,6 +24,61 @@
 #' @inheritParams radiator_common_arguments
 #' @param filter.monomorphic (optional, logical)
 #' Default: \code{filter.monomorphic = TRUE}.
+
+#' @details
+#' \strong{Important distinction — genotype-level monomorphism}
+#'
+#' \code{\link{filter_monomorphic}} evaluates monomorphism based on the actual
+#' genotypes stored inside a GDS file. A marker is considered monomorphic when
+#' all non-missing individuals display the \strong{same genotype phenotype}.
+#'
+#' Internally, this is assessed using the variant-level alternate allele dosage
+#' (\code{$dosage_alt}):
+#'
+#' \preformatted{
+#' length(unique(g[!is.na(g)])) == 1
+#' }
+#'
+#' This captures cases such as:
+#' \itemize{
+#'   \item all REF/REF (dosage = 0)
+#'   \item all REF/ALT (dosage = 1)
+#'   \item all ALT/ALT (dosage = 2)
+#' }
+#'
+#' Even if the allele frequency in the population is neither 0 nor 1 (e.g.,
+#' all individuals are REF/ALT heterozygotes), the variant is still considered
+#' genotype-monomorphic.
+#'
+#' This is a \strong{genotype-level} definition of polymorphism, which is more
+#' conservative and more appropriate for downstream population genomics.
+#'
+#' Consequently, \code{\link{filter_monomorphic}} will often identify additional
+#' monomorphic markers that were not removed earlier by
+#' \code{\link{filter_monomorphic_vcf}}, which uses allele-level logic.
+#'
+#' \strong{This discrepancy is by design}.
+
+
+#' @note
+#' \strong{Why results differ between \code{\link{filter_monomorphic_vcf}} and
+#' \code{\link{filter_monomorphic}}}
+#'
+#' These functions intentionally implement two different biological definitions:
+#' \itemize{
+#'   \item \code{\link{filter_monomorphic_vcf}} removes sites that are
+#'   \strong{allele-monomorphic}, based on INFO/AC and INFO/AN.
+#'   \item \code{\link{filter_monomorphic}} removes sites that are
+#'   \strong{genotype-monomorphic}, based on the distribution of genotype
+#'   phenotypes in the GDS.
+#' }
+#'
+#' A variant can contain both REF and ALT alleles (allele-level polymorphism)
+#' but still have only one genotype phenotype across all individuals.
+#' Therefore, it is expected and correct that
+#' \code{\link{filter_monomorphic}} may remove additional markers.
+
+
 #' @return A list with the filtered input, whitelist and blacklist of markers..
 
 #' @export
@@ -57,26 +112,11 @@ filter_monomorphic <- function(
   # obj.keeper <- c(ls(envir = globalenv()), "data")
 
   if (filter.monomorphic) {
-    radiator_function_header(f.name = "filter_monomorphic", verbose = verbose)
-
-    # Cleanup---------------------------------------------------------------------
-    file.date <- format(Sys.time(), "%Y%m%d@%H%M")
-    if (verbose) message("Execution date@time: ", file.date)
-    old.dir <- getwd()
-    opt.change <- getOption("width")
-    options(width = 70)
-    timing <- radiator_tic()
+    # Common startup -------------------------------------------------------------
+    .start   <- radiator_startup(f.name = "filter_monomorphic", verbose = verbose)
+    file.date <- .start$file.date
+    on.exit(radiator_teardown(.start), add = TRUE)
     res <- list()
-    #back to the original directory and options
-    on.exit(setwd(old.dir), add = TRUE)
-    on.exit(options(width = opt.change), add = TRUE)
-    on.exit(radiator_toc(timing, verbose = verbose), add = TRUE)
-    on.exit(radiator_function_header(f.name = "filter_monomorphic", start = FALSE, verbose = verbose), add = TRUE)
-    # on.exit(rm(list = setdiff(ls(envir = sys.frame(-1L)), obj.keeper), envir = sys.frame(-1L)))
-
-
-    # if (verbose) message("\nScanning for monomorphic markers...")
-    # message("\nScanning for monomorphic markers...")
 
     # Checking for missing and/or default arguments ------------------------------
     if (missing(data)) rlang::abort("Input file missing")

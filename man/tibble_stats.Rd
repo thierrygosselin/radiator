@@ -4,7 +4,7 @@
 \alias{tibble_stats}
 \title{tibble_stats}
 \usage{
-tibble_stats(x, group, subsample = NULL)
+tibble_stats(x, group, subsample = NULL, reporting = FALSE)
 }
 \description{
 Generate a tibble of statistics

@@ -10,11 +10,7 @@
 
 
 
-<<<<<<< HEAD
-<meta name="date" content="2025-04-09" />
-=======
-<meta name="date" content="2024-11-06" />
->>>>>>> 625193a82a4a404c7c069f479c704172b2f74f16
+<meta name="date" content="2025-11-20" />
 
 <title>RADseq Genomics in R</title>
 
@@ -1484,11 +1480,7 @@ border-radius: 0px;
 
 <h1 class="title toc-ignore">RADseq Genomics in R</h1>
 <h3 class="subtitle">computer setup</h3>
-<<<<<<< HEAD
-<h4 class="date">2025-04-09</h4>
-=======
-<h4 class="date">2024-11-06</h4>
->>>>>>> 625193a82a4a404c7c069f479c704172b2f74f16
+<h4 class="date">2025-11-20</h4>
 
 </div>
 
@@ -1593,19 +1585,11 @@ compiler on your computer <code>/usr/local</code> directory.</li>
 <h3>Update GCC</h3>
 <p>Choose the binary version number based on your OS and change the
 version accordingly <a href="http://hpc.sourceforge.net">link</a>.</p>
-<<<<<<< HEAD
 <p><strong>Sonoma</strong> <a href="http://prdownloads.sourceforge.net/hpc/gcc-14.1-m1-bin.tar.gz?download">gcc-14.1-bin.tar.gz</a></p>
 <pre class="bash"><code>#In Terminal
 cd Downloads
 sudo tar -zxvf gcc-14.1-bin.tar.gz -C /usr/local --strip-components=2</code></pre>
-<pre class="bash"><code>sudo rm gcc-14.1-bin.tar.gz
-=======
-<p><strong>Sonoma</strong> <a href="http://prdownloads.sourceforge.net/hpc/gcc-14.1-m1-bin.tar.gz">gcc-14.1-m1-bin.tar.gz</a></p>
-<pre class="bash"><code>#In Terminal
-cd Downloads
-sudo tar -zxvf gcc-14.1-m1-bin.tar.gz -C /usr/local --strip-components=2</code></pre>
 <pre class="bash"><code>sudo rm gcc-14.1-m1-bin.tar.gz
->>>>>>> 625193a82a4a404c7c069f479c704172b2f74f16
 gcc -v</code></pre>
 </div>
 <div id="update-clang" class="section level3">
@@ -1912,6 +1896,26 @@ updated:</p>
 <li>restart R</li>
 <li>re-install the package that generated this error</li>
 </ol>
+</div>
+<div id="vcfppR" class="section level2">
+<h2>Error: <code>dyn.load</code> and <code>library not loaded</code>
+when installing <code>vcfppR</code></h2>
+<pre class="bash"><code>Library not loaded: @rpath/libunwind.1.dylib  
+Referenced from: /usr/local/lib/libc++.1.0.dylib  
+Reason: tried: &#39;/usr/local/lib/libunwind.1.dylib&#39; (no such file)</code></pre>
+<p><strong>Diagnosis</strong></p>
+<p>You’re on macOS (ARM64, Apple Silicon) and using a custom LLVM/Clang
+install <code>/usr/local/bin/clang++</code> instead of the system
+compiler <code>/usr/bin/clang++</code>. This version of libc++
+<code>/usr/local/lib/libc++.1.0.dylib</code> expects libunwind to be
+installed at <code>/usr/local/lib/libunwind.1.dylib</code>, but it isn’t
+found. macOS’ system libunwind is in <code>/usr/lib</code>, which
+user-installed clang doesn’t automatically link against.</p>
+<p>Check the ownership and if it’s not symlinked to
+<code>/usr/lib/libc++.1.dylib</code>, consider removing or renaming
+it:</p>
+<pre class="bash"><code>ls -l /usr/local/lib/libc++.*</code></pre>
+<pre class="bash"><code>sudo mv /usr/local/lib/libc++.1.dylib /usr/local/lib/libc++.1.dylib.bak</code></pre>
 </div>
 <div id="Dynload" class="section level2">
 <h2>Error: <code>dyn.load</code></h2>

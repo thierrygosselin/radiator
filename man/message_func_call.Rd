@@ -7,6 +7,6 @@
 message_func_call(n, v, verbose = TRUE)
 }
 \description{
-Message the function call
+Message the function call arguments
 }
 \keyword{internal}

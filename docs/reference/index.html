@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.3.9</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.1</span>
       </span>
     </div>
 
@@ -146,10 +146,6 @@
         </td>
         <td><p>read strata</p></td>
       </tr><tr><td>
-          <p><code><a href="read_vcf.html">read_vcf()</a></code> </p>
-        </td>
-        <td><p>Read VCF files and write a GDS file</p></td>
-      </tr><tr><td>
           <p><code><a href="read_whitelist.html">read_whitelist()</a></code> </p>
         </td>
         <td><p>read whitelist of markers</p></td>
@@ -224,7 +220,15 @@
       </tr><tr><td>
           <p><code><a href="filter_genotyping.html">filter_genotyping()</a></code> </p>
         </td>
-        <td><p>Filter markers based on genotyping/missing rate</p></td>
+        <td><p>Filter markers based on genotyping / missing rate</p></td>
+      </tr><tr><td>
+          <p><code><a href="filter_genotyping_vcf.html">filter_genotyping_vcf()</a></code> </p>
+        </td>
+        <td><p>Filter SNPs in a VCF based on genotyping / missing rate (bcftools)</p></td>
+      </tr><tr><td>
+          <p><code><a href="filter_haplotype_format.html">filter_haplotype_format()</a></code> </p>
+        </td>
+        <td><p>Filter non-biallelic / haplotype-style variants in a radiator GDS</p></td>
       </tr><tr><td>
           <p><code><a href="filter_het.html">filter_het()</a></code> </p>
         </td>
@@ -246,9 +250,17 @@
         </td>
         <td><p>MAC, MAF and MAD filter</p></td>
       </tr><tr><td>
+          <p><code><a href="filter_mac_vcf.html">filter_mac_vcf()</a></code> </p>
+        </td>
+        <td><p>Filter low-MAC variants in a VCF using bcftools (AC-based)</p></td>
+      </tr><tr><td>
           <p><code><a href="filter_monomorphic.html">filter_monomorphic()</a></code> </p>
         </td>
         <td><p>Filter monomorphic markers</p></td>
+      </tr><tr><td>
+          <p><code><a href="filter_monomorphic_vcf.html">filter_monomorphic_vcf()</a></code> </p>
+        </td>
+        <td><p>Filter monomorphic SNPs in a VCF using bcftools (AC/AN-based)</p></td>
       </tr><tr><td>
           <p><code><a href="filter_rad.html">filter_rad()</a></code> </p>
         </td>
@@ -310,6 +322,14 @@
         </td>
         <td><p>Detect heterozygotes outliers and estimate miscall rate</p></td>
       </tr><tr><td>
+          <p><code><a href="detect_ibm.html">detect_ibm()</a></code> </p>
+        </td>
+        <td><p>Detect identity-by-missingness structure</p></td>
+      </tr><tr><td>
+          <p><code><a href="detect_inversions.html">detect_inversions()</a></code> </p>
+        </td>
+        <td><p>Detect candidate inversions from a VCF using local PCA</p></td>
+      </tr><tr><td>
           <p><code><a href="detect_microsatellites.html">detect_microsatellites()</a></code> </p>
         </td>
         <td><p>Detect microsatellites</p></td>
@@ -324,7 +344,7 @@
       </tr><tr><td>
           <p><code><a href="detect_ref_genome.html">detect_ref_genome()</a></code> </p>
         </td>
-        <td><p>Detect reference genome</p></td>
+        <td><p>Detect whether a dataset is reference-guided or de novo assembled</p></td>
       </tr></tbody><tbody><tr><th colspan="2">
           <h2 id="sex-markers">Sex markers <a href="#sex-markers" class="anchor" aria-hidden="true"></a></h2>
           <p class="section-desc"></p>
@@ -344,7 +364,7 @@
       </tr><tr><td>
           <p><code><a href="extract_dart_target_id.html">extract_dart_target_id()</a></code> </p>
         </td>
-        <td><p>Extract <a href="http://www.diversityarrays.com" class="external-link">DArT</a> target id</p></td>
+        <td><p>Extract <a href="http://www.diversityarrays.com" class="external-link">DArT</a> TARGET_ID</p></td>
       </tr><tr><td>
           <p><code><a href="extract_genotypes_metadata.html">extract_genotypes_metadata()</a></code> </p>
         </td>
@@ -574,7 +594,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
       </footer></div>

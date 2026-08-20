@@ -17,35 +17,34 @@ write_radiator_tsv(
 )
 }
 \arguments{
-\item{data}{An object in the global environment. Ideally a tibble...}
+\item{data}{An object to write, typically a tibble or data frame.}
 
 \item{path.folder}{(optional) Path to write the file.
 With default, the working directory is used.
 Default: \code{path.folder = NULL}.}
 
-\item{filename}{(required, character string) Name of the file.}
+\item{filename}{(required, character string) Name of the file (base name).}
 
 \item{append}{If FALSE, will overwrite existing file.
 If TRUE, will append to existing file.
 In both cases, if the file does not exist a new file is created.
 Default: \code{append = FALSE}.}
 
-\item{col.names}{If FALSE, column names will not be included at the top of the file.
-If TRUE, column names will be included.
-If not specified, col_names will take the opposite value given to append.
+\item{col.names}{If FALSE, column names will not be included at the top
+of the file. If TRUE, column names will be included.
 Default: \code{col.names = TRUE}.}
 
-\item{date}{(logical) To append time to the filename.
+\item{date}{(logical) Append timestamp to the filename.
 Default: \code{date = TRUE}.}
 
-\item{internal}{(optional, logical) This is used inside radiator internal code and it stops
-from writting the file.
+\item{internal}{(logical) Used inside radiator internal code.
+When \code{TRUE}, the function returns without writing the file.
 Default: \code{internal = FALSE}.}
 
 \item{write.message}{(optional, character) Print a message in the console
 after writing file.
 With \code{write.message = NULL}, nothing is printed in the console.
-Default: \code{write.message = "standard"}. This will print
+Default: \code{write.message = "standard"} which prints
 \code{message("File written: ", basename(filename))}.}
 
 \item{verbose}{(optional, logical) \code{verbose = TRUE} to be chatty
@@ -53,16 +52,23 @@ during execution.
 Default: \code{verbose = FALSE}.}
 }
 \value{
-A file written in the working directory.
+Invisibly, the full path to the written file, or \code{NULL} if
+nothing was written (e.g. \code{internal = TRUE} or data object not found).
 }
 \description{
-Write tsv file. Using the package \code{readr}. Takes cares of
-the file path and proper filenaming. The complete filename is built with the
-\code{path.folder} + \code{filename} + \code{datetime} + \code{.tsv}.
+Write a TSV file using \code{readr::write_tsv()}.
+The complete filename is built as
+\code{path.folder} + \code{filename} + \code{datetime} + \code{".tsv"}.
 
-Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
+Used internally in
+\href{https://github.com/thierrygosselin/radiator}{radiator}
 and \href{https://github.com/thierrygosselin/assigner}{assigner}
 and might be of interest for users.
+
+If \code{data} is passed as a bare object name that does not exist in the
+calling environment (e.g. \code{data = rad.dots} but \code{rad.dots} is
+missing), the function quietly returns without writing a file. When
+\code{verbose = TRUE}, a short message is printed instead of an error.
 }
 \examples{
 \dontrun{
@@ -71,6 +77,4 @@ radiator::write_radiator_tsv(data = tidy.data, filename = "data.shark")
 }
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}
-
-\code{\link{read_rad}}
 }

@@ -1,8 +1,8 @@
 Package: radiator
 Type: Package
 Title: RADseq Data Exploration, Manipulation and Visualization using R
-Version: 1.4.0
-Date: 2025-09-04
+Version: 1.4.1
+Date: 2026-08-17
 Encoding: UTF-8
 Authors@R: c(
   person("Thierry", "Gosselin", email = "thierrygosselin@icloud.com", role = c("aut", "cre")),
@@ -11,6 +11,9 @@ Authors@R: c(
   )
 Maintainer: Thierry Gosselin <thierrygosselin@icloud.com>
 Description: RADseq Data Exploration, Manipulation and Visualization using R.
+    This package is retained for reproducibility and is no longer under active
+    development. New workflows are continued in the genometranslator and radr
+    packages.
 Depends:
     R (>= 4.3)
 biocViews:
@@ -23,7 +26,8 @@ Imports:
     HardyWeinberg,
     magrittr,
     SeqArray (>= 1.36.0),
-    UpSetR
+    sys,
+    ComplexUpset
 Suggests:
     adegenet,
     amap,
@@ -59,7 +63,7 @@ License: GPL-3
 LazyLoad: yes
 VignetteBuilder:
     knitr
-RoxygenNote: 7.3.2
 ByteCompile: TRUE
 URL: https://thierrygosselin.github.io/radiator/
 BugReports: https://github.com/thierrygosselin/radiator/issues
+Config/roxygen2/version: 8.1.0

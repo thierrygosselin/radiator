@@ -67,7 +67,7 @@ detect_genomic_format <- function(data, guess = NULL){
         file.ending <- stringi::stri_sub(str = data, from = -7, to = -4)
       }
 
-      # VCF
+      # VCF --------------------------------------------------------------------
       # if (identical(data.type, "##fileformat=VCF") || file.ending == ".vcf") {
       if (stringi::stri_detect_fixed(str = data.type, pattern = "##fileformat=VCF") || file.ending == ".vcf") {
         data.type <- "vcf.file"
@@ -76,7 +76,7 @@ detect_genomic_format <- function(data, guess = NULL){
       } #End VCF
 
 
-      # PLINK
+      # PLINK ------------------------------------------------------------------
       if (file.ending == "tped") {
         data.type <- "plink.tped.file"
         # message("File type: PLINK tped")
@@ -99,7 +99,7 @@ detect_genomic_format <- function(data, guess = NULL){
       }#end plink
 
 
-      # TIBBLE
+      # TIBBLE -----------------------------------------------------------------
       if (stringi::stri_detect_fixed(str = data.type, pattern = "POP_ID") | stringi::stri_detect_fixed(str = data.type, pattern = "INDIVIDUALS") | stringi::stri_detect_fixed(str = data.type, pattern = "MARKERS") | stringi::stri_detect_fixed(str = data.type, pattern = "LOCUS")) {
         data.type <- "tbl_df" #"df.file"
         # message("File type: data frame of genotypes")
@@ -118,7 +118,7 @@ detect_genomic_format <- function(data, guess = NULL){
         return(data.type)
       }
 
-      # .rad, fst file or gds
+      # .rad, fst file or gds --------------------------------------------------
       if (TRUE %in% (c(".rad", ".gds") %in% file.ending)) {
         if (stringi::stri_detect_fixed(str = data.type, pattern = "COREARRAY")) {
           data.type <- "gds.file"
@@ -131,14 +131,14 @@ detect_genomic_format <- function(data, guess = NULL){
         return(data.type)
       }
 
-      # Arrow Parquet
+      # Arrow Parquet ----------------------------------------------------------
       if (file.ending == "quet") {
         data.type <- "arrow.parquet"
         return(data.type)
       }
 
 
-      # DArT data
+      # DArT data --------------------------------------------------------------
       data.type <- detect_dart_format(data = data, verbose = FALSE) %$% data.type
       if ("dart" %in% data.type) {
       return(data.type)
@@ -204,9 +204,6 @@ detect_dart_format <- function(data, verbose = TRUE) {
   if (dart.headers) {
     temp.file <- suppressWarnings(suppressMessages(readr::read_table(file = data, n_max = 20, col_names = "HEADER")))
 
-    # skip.number <- which(
-    #   stringi::stri_detect_regex(str = temp.file$HEADER,pattern = "^[:Letter:]")
-    # ) - 1
     skip.number <- which(
       stringi::stri_detect_regex(str = temp.file$HEADER,pattern = "^[[:alnum:]]")
     )[1] - 1
@@ -219,31 +216,33 @@ detect_dart_format <- function(data, verbose = TRUE) {
   dart.allele.id <- stringi::stri_detect_fixed(str = data.type, pattern = "AlleleID")
   dart.snp.position <- stringi::stri_detect_fixed(str = data.type, pattern = "SnpPosition")
   dart.allele.sequece <- stringi::stri_detect_fixed(str = data.type, pattern = "AlleleSequence")
+  dart.markern.name <- stringi::stri_detect_fixed(str = data.type, pattern = "MarkerName")
 
-  # DArT or no
-  if (dart.snp.position || dart.allele.id || dart.clone.id || dart.allele.sequece) {
+
+  # DArT or not ---------
+  if (dart.snp.position || dart.allele.id || dart.clone.id || dart.allele.sequece || dart.markern.name) {
     data.type <- "dart"
   } else {
     return(res = list(data.type = NULL))
   }
 
-  # What DArT format
+  # What DArT format -----
   if (dart.clone.id && !dart.allele.id) {
     dart.format <- "silico.dart"
     if (verbose) message("DArT format: silico DArT")
   } else {
     temp.line <- readr::read_lines(file = data, skip = skip.number, n_max = 1)
-    dart.col <- c(
-      if (stringi::stri_detect_regex(str = temp.line, pattern = "SNP")) "SNP",
-      if (stringi::stri_detect_regex(str = temp.line, pattern = "REF")) "REF",
-      if (stringi::stri_detect_regex(str = temp.line, pattern = "Variant")) "Variant"
+    dart.col <- dplyr::case_when(
+      stringi::stri_detect_fixed(temp.line, "Variant") ~ "Variant",
+      stringi::stri_detect_fixed(temp.line, "REF")     ~ "REF",
+      stringi::stri_detect_fixed(temp.line, "SNP")     ~ "SNP",
+      TRUE                                             ~ NA_character_
     )
 
-    binary <- vroom::vroom(
+    rows.check <- vroom::vroom(
       file = data,
       delim = tokenizer.dart,
-      # col_select = tidyselect::all_of(1:star.number),
-      col_selec = tidyselect::all_of(dart.col),
+      col_select = tidyselect::all_of(dart.col),
       skip = skip.number,
       na = c("-", "NA",""),
       guess_max = 20,
@@ -253,10 +252,22 @@ detect_dart_format <- function(data, verbose = TRUE) {
       progress = FALSE,
       show_col_types = FALSE,
       .name_repair = "minimal"
-    ) %>%
-     anyNA(.)
+    )
 
-    if (!binary) {
+    # 20250912
+    # One more layer or dart flavor format...
+
+    # one-column name (safer than trusting dart.col)
+    id.col <- names(rows.check)[1]
+
+    dup.rows <- FALSE # default
+    dup.rows.na <- anyNA(rows.check[[id.col]])
+    equal.rows  <- nrow(rows.check) >= 2 &&
+      identical(rows.check[[id.col]][1], rows.check[[id.col]][2])
+    dup.rows <- dup.rows.na || equal.rows
+    rows.check <- equal.rows <- dup.rows.na <- NULL
+
+    if (!dup.rows) {
       if (verbose) message("DArT format: genotypes in 1 Row")
       dart.format <- "1row"
     } else {
@@ -291,8 +302,15 @@ detect_dart_format <- function(data, verbose = TRUE) {
   # denovo or ref genome used
 
   # default
-  ref.genome <- FALSE
-  ref.genome <- any(stringi::stri_detect_regex(str = temp.file$HEADER, pattern = "scaffold"))
+  ref.genome <- FALSE # default
+
+  #20260218
+  # The problem here is that dart will sometimes mix de novo and use of genome...
+  # reading 20 lines is not enough to detect ...
+  last20 <- system2("tail", c("-n", "20", shQuote(data)), stdout = TRUE)
+  last20 <- suppressWarnings(suppressMessages(readr::read_table(I(last20), col_names = "HEADER")))
+  temp.genome <- dplyr::bind_rows(last20, temp.file)
+  ref.genome <- any(stringi::stri_detect_regex(str = temp.genome$HEADER, pattern = "scaffold"))
 
   return(
     res = list(

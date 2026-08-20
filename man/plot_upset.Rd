@@ -13,6 +13,6 @@ plot_upset(
 )
 }
 \description{
-Generate UpSetR plot
+Generate UpSet plot (ComplexUpset)
 }
 \keyword{internal}

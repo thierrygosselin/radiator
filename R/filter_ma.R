@@ -3,7 +3,7 @@
 #' @title MAC, MAF and MAD filter
 #' @description The Allele Frequency is the relative frequency of an allele for a markers/SNP.
 #' Calculations usually involve classifying the alleles into Major/Minor,
-#' Reference (REF)/Alternate (ALT) and/or Ancestral or dirived allele.
+#' Reference (REF)/Alternate (ALT) and/or Ancestral or derived allele.
 #' radiator provides a filter based of Minor Allele Count, frequency and depth function.
 #' Remove/blacklist markers based on Minor/Alternate Allele Count (MAC), Frequency (MAF)
 #' or Depth of coverage (MAD).
@@ -42,6 +42,9 @@
 #' use the information preset available in the data.
 #' Default: \code{calibrate.alleles = "depth"}.
 
+#' @param keep.biallelic (logical) Keep only biallelic variants (REF + 1 ALT)
+#' when computing allele counts from GDS.
+#' Default: \code{keep.biallelic = TRUE}.
 
 #' @param filename (optional, character) Write to folder the MAF filtered
 #' tidy dataset. The name will be appended \code{.rad}. With default, the filtered
@@ -107,7 +110,9 @@
 #'
 #' Step 1. Visualization and helper table.
 #'
-#' Step 2. Filtering markers based on MAC, MAF or MAD
+#' Step 2. Minor Allele statistic and threshold selection
+#'
+#' Step 3. Filtering markers based on MAC, MAF or MAD
 
 
 #' @rdname filter_ma
@@ -190,15 +195,16 @@
 
 
 filter_ma <- function(
-  data,
-  interactive.filter = TRUE,
-  ma.stats = "mac",
-  filter.ma = NULL,
-  calibrate.alleles = "depth",
-  filename = NULL,
-  parallel.core = parallel::detectCores() - 1,
-  verbose = TRUE,
-  ...
+    data,
+    interactive.filter = TRUE,
+    ma.stats = "mac",
+    filter.ma = NULL,
+    calibrate.alleles = "depth",
+    keep.biallelic = TRUE,
+    filename = NULL,
+    parallel.core = parallel::detectCores() - 1,
+    verbose = TRUE,
+    ...
 ) {
 
   ## testing
@@ -213,33 +219,24 @@ filter_ma <- function(
   # path.folder = NULL
   # parameters <- NULL
   # internal <- FALSE
-
+  # keep.biallelic = TRUE
 
   if (is.null(filter.ma) && !interactive.filter) return(data)
   if (interactive.filter) verbose <- TRUE
 
-  # Cleanup-------------------------------------------------------------------
-  radiator_function_header(f.name = "filter_ma", verbose = verbose)
-  if (!verbose) message("filter_ma...")
-  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
-  if (verbose) message("Execution date@time: ", file.date)
-  old.dir <- getwd()
-  opt.change <- getOption("width")
-  options(width = 70)
-  timing <- radiator_tic()
-  on.exit(setwd(old.dir), add = TRUE)
-  on.exit(options(width = opt.change), add = TRUE)
-  on.exit(radiator_toc(timing), add = TRUE)
-  on.exit(radiator_function_header(f.name = "filter_ma", start = FALSE, verbose = verbose), add = TRUE)
+  # Common startup -------------------------------------------------------------
+  .start   <- radiator_startup(f.name = "filter_ma", verbose = verbose)
+  file.date <- .start$file.date
+  on.exit(radiator_teardown(.start), add = TRUE)
 
   # Function call and dotslist -------------------------------------------------
   rad.dots <- radiator_dots(
     func.name = as.list(sys.call())[[1]],
-    fd = rlang::fn_fmls_names(),
+    fd        = rlang::fn_fmls_names(),
     args.list = as.list(environment()),
-    dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
-    keepers = c("path.folder", "parameters", "internal"),
-    verbose = FALSE
+    dotslist  = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
+    keepers   = c("path.folder", "parameters", "internal"),
+    verbose   = FALSE
   )
 
   calibrate.alleles <- match.arg(
@@ -280,7 +277,8 @@ filter_ma <- function(
   if (interactive.filter) {
     message("Interactive mode: on")
     message("Step 1. Visualization and helper table")
-    message("Step 2. Filtering markers based on MA stats\n\n")
+    message("Step 2. Minor Allele statistic and threshold selection")
+    message("Step 3. Filtering\n\n")
   }
 
 
@@ -343,10 +341,15 @@ filter_ma <- function(
     data = data,
     markers.meta = NULL, # will import inside function
     calibrate.alleles = calibrate.alleles,
+    keep.biallelic = keep.biallelic,
     path.folder = path.folder,
     parallel.core = parallel.core,
     verbose = verbose
   )
+  n.markers.start <- mac.data$n.markers
+  bl.multi.al <- mac.data$bl.multi.al
+  bl.mono <- mac.data$bl.mono
+  mac.data <- mac.data$mac.data
 
   readr::write_tsv(x = mac.data, file = file.path(path.folder, "ma.global.tsv"))
   if (verbose) message("File written: ma.global.tsv")
@@ -366,7 +369,7 @@ filter_ma <- function(
 
 
   # Figures --------------------------------------------------------------------
-  if (verbose) cli::cli_progress_step("Generating MAC helper tables and plots")
+  if (verbose) cli::cli_progress_step("Generating MAC helper tables and plots", spinner = TRUE)
   q25 <- mac.stats$Q25[mac.stats$GROUP == "MAC_GLOBAL_CORR"]
 
   # boxplot
@@ -382,9 +385,10 @@ filter_ma <- function(
     bp.filename = stringi::stri_join("ma.boxplot_", file.date, ".pdf"),
     path.folder = path.folder,
     facet.columns = TRUE
-    )
+  )
   suppressWarnings(print(mac.fig))
 
+  cli::cli_progress_update()
   # Histo
   histo.mac.global <- plot_histogram(
     data = mac.data, variable = "MAC_GLOBAL_CORR",
@@ -404,6 +408,7 @@ filter_ma <- function(
     limitsize = FALSE,
     useDingbats = FALSE
   )
+  cli::cli_progress_update()
 
 
   if (rlang::has_name(mac.data, "MAF_GLOBAL_DEPTH_CORR")) {
@@ -411,7 +416,7 @@ filter_ma <- function(
       data = mac.data, variable = "MAF_GLOBAL_DEPTH_CORR",
       x.axis.title = "Minor Allele Frequency depth corrected\n(MAF global)",
       y.axis.title = "Number of SNPs"
-      )
+    )
     print(histo.maf.global)
     ggplot2::ggsave(
       filename = file.path(path.folder, "distribution.maf.global.pdf"),
@@ -423,6 +428,7 @@ filter_ma <- function(
       limitsize = FALSE,
       useDingbats = FALSE
     )
+    cli::cli_progress_update()
   }
 
   mac.min <- mac.stats$MIN[mac.stats$GROUP == "MAC_GLOBAL_CORR"]
@@ -438,7 +444,7 @@ filter_ma <- function(
       choices = c("MAC_GLOBAL_CORR", "MAF_GLOBAL_COUNT_CORR", "MAF_GLOBAL_DEPTH_CORR", "MAD_GLOBAL_CORR"),
       several.ok = FALSE
     )
-  if (rlang::has_name(x, stats)) nrow(dplyr::filter(.data = x, x[[stats]] >= threshold))
+    if (rlang::has_name(x, stats)) nrow(dplyr::filter(.data = x, x[[stats]] >= threshold))
   }#End how_many_markers
 
   end.seq <- ceiling(0.2 * n.diplo.samples)
@@ -454,7 +460,8 @@ filter_ma <- function(
     readr::write_tsv(
       x = .,
       file = file.path(path.folder, "mac.helper.table.tsv")
-      )
+    )
+  cli::cli_progress_update()
 
   # if (verbose) message("File written: mac.helper.table.tsv")
 
@@ -469,8 +476,9 @@ filter_ma <- function(
     x.axis.title =  "Minor Allele Count threshold (MAC)",
     x.breaks = seq(1, 25, by = 1),
     plot.filename = file.path(path.folder, "mac.markers.plot")
-    )
+  )
   print(mac.markers.plot)
+  cli::cli_progress_update()
 
   # MAF
   if (rlang::has_name(mac.data, "MAF_GLOBAL_DEPTH_CORR")) {
@@ -506,6 +514,7 @@ filter_ma <- function(
     )
     print(maf.markers.plot)
     min.maf <- maf.round <- maf.digits <- maf.seq <- NULL
+    cli::cli_progress_update()
   }
 
   # MAD
@@ -535,6 +544,7 @@ filter_ma <- function(
       plot.filename = file.path(path.folder, "mad.markers.plot")
     )
     print(mad.markers.plot)
+    cli::cli_progress_update()
   }
   cli::cli_progress_done()
 
@@ -560,7 +570,7 @@ filter_ma <- function(
       vectorize_all = FALSE
     )
 
-    message("\nStep 2. Minor Allele statistic\n")
+    message("\nStep 2. Minor Allele statistic selection required\n")
     message("Your available options: ", stringi::stri_join(available.options, collapse = ", "))
     ma.stats <- radiator_question(
       x = "Choose the statistic: ", answer.opt = available.options)
@@ -580,6 +590,7 @@ filter_ma <- function(
       min.t <- 0
       max.t <- 1
     }
+    # Step 3. Filtering --------------------------------------------------------
     message("\nStep 3. Filtering markers based on ", ma.stats, "\n")
     rqm <- paste0("Choose the ", ma.stats, " threshold: ")
     filter.ma <- radiator_question(
@@ -607,7 +618,29 @@ filter_ma <- function(
   }
 
   if (data.type == "SeqVarGDSClass") {
-    markers.meta <- extract_markers_metadata(gds = data, whitelist = FALSE) %>%
+    markers.meta <- extract_markers_metadata(gds = data, whitelist = FALSE)
+
+    # update blacklist and whitelist of markers
+    if (!is.null(bl.multi.al)) {
+      markers.meta%<>%
+        dplyr::mutate(
+          FILTERS = dplyr::if_else(
+            VARIANT_ID %in% bl.multi.al$VARIANT_ID, "filter.multi.allelic", FILTERS
+          )
+        )
+    }
+    if (!is.null(bl.mono)) {
+      markers.meta%<>%
+        dplyr::mutate(
+          FILTERS = dplyr::if_else(
+            VARIANT_ID %in% bl.mono$VARIANT_ID, "filter.monomorphic", FILTERS
+          )
+        )
+    }
+
+
+    # final update with the minor allele filters
+    markers.meta %<>%
       dplyr::mutate(
         FILTERS = dplyr::if_else(
           VARIANT_ID %in% mac.data$VARIANT_ID, "filter.ma", FILTERS
@@ -652,11 +685,12 @@ filter_ma <- function(
     )
   }
 
-  if (!is.null(filename)) {
-    if (data.type == "tbl_df") {
-      tidy.name <- stringi::stri_join(filename, ".arrow.parquet")
-      write_rad(data = data, filename = file.path(path.folder, tidy.name), verbose = verbose)
-    }
+  if (!is.null(filename) && data.type == "tbl_df") {
+    write_rad(
+      data = data,
+      filename = file.path(path.folder, stringi::stri_join(filename, ".arrow.parquet")),
+      verbose = verbose
+    )
   }
 
   # Update parameters --------------------------------------------------------
@@ -682,6 +716,12 @@ filter_ma <- function(
     internal,
     verbose
   )
+  if (!is.null(bl.mono) && verbose) {
+    cli::cli_alert_info("Blacklisted marker counts above include monomorphic markers")
+  }
+  if (!is.null(bl.multi.al) && verbose && keep.biallelic) {
+    cli::cli_alert_info("Blacklisted marker counts above include multiallelic markers")
+  }
   return(data)
 }#End filter_ma
 
@@ -837,15 +877,16 @@ compute_maf <- carrier::crate(function(x, biallelic) {
 #' @export
 #' @keywords internal
 minor_allele_stats <- function(
-  data,
-  calibrate.alleles = c("count", "depth", "ancestral"),
-  blacklist.markers = NULL,
-  markers.meta = NULL,
-  path.folder = NULL,
-  parallel.core = parallel::detectCores() - 1,
-  verbose = TRUE
+    data,
+    calibrate.alleles = c("count", "depth", "ancestral"),
+    keep.biallelic = TRUE,
+    blacklist.markers = NULL,
+    markers.meta = NULL,
+    path.folder = NULL,
+    parallel.core = parallel::detectCores() - 1,
+    verbose = TRUE
 ) {
-  if (verbose) cli::cli_progress_step("Calculating Minor Allele statistics")
+  if (verbose) cli::cli_progress_step("Calculating Minor Allele statistics", spinner = TRUE)
   n.inversion.count <- NULL
   n.inversion.depth <- NULL
 
@@ -885,6 +926,8 @@ minor_allele_stats <- function(
 
   # GDS
   if (data.type == "SeqVarGDSClass") {
+
+    # extracting markers metadata ----------------------------------------------
     if (is.null(markers.meta)) {
       mac.data <- extract_markers_metadata(
         gds = data,
@@ -899,96 +942,121 @@ minor_allele_stats <- function(
       mac.data %<>% dplyr::select(VARIANT_ID, MARKERS)
     }
 
+    if (verbose) cli::cli_progress_update()
+
     # blacklist markers
     if (!is.null(blacklist.markers)) {
       mac.data %<>% dplyr::filter(!MARKERS %in% blacklist.markers$MARKERS)
       sync_gds(gds = data, variant.id = mac.data$VARIANT_ID)
     }
+    # keep the numbers of markers
     n.markers <- nrow(mac.data)
-
+    if (verbose) cli::cli_progress_update()
 
     # calibration of alleles ---------------------------------------------------
+    if (verbose) cli::cli_progress_update(status = "calibration of alleles")
     ad <- NULL
-    if (calibrate.alleles != "ancestral") {
-      if (calibrate.alleles == "depth") {
-        # check if AD is available...
-        ad <- check_coverage(
+
+    if (calibrate.alleles == "depth") {
+      # check if AD is available...
+      ad <- check_coverage(
+        gds = data,
+        stacks.haplo.check = TRUE,
+        genotypes.metadata.check = TRUE,
+        dart.check = TRUE
+      )
+      if ("AD" %in% ad) {
+        # get the read depth for each alleles
+        calibrate.alleles <- "depth"
+        ad <- extract_coverage(
           gds = data,
-          stacks.haplo.check = TRUE,
-          genotypes.metadata.check = TRUE,
-          dart.check = TRUE
-        )
-        if ("AD" %in% ad) {
-          # get the read depth for each alleles
-          calibrate.alleles <- "depth"
-          ad <- extract_coverage(
-            gds = data,
-            individuals = FALSE,
-            markers = TRUE,
-            coverage = FALSE,
-            allele.coverage = TRUE,
-            coverage.stats = "sum",
-            subsample.info = 1,
-            verbose = FALSE,
-            parallel.core = parallel.core
-          ) %$%
-            m.info
-        } else {
-          calibrate.alleles <- "count"
-          message("depth info not available, switching to count")
-        }
+          individuals = FALSE,
+          markers = TRUE,
+          coverage = FALSE,
+          allele.coverage = TRUE,
+          coverage.stats = "sum",
+          subsample.info = 1,
+          verbose = FALSE,
+          parallel.core = parallel.core
+        ) %$%
+          m.info
+      } else {
+        calibrate.alleles <- "count"
+        if (verbose) cli::cli_progress_update(status = "depth info not available, switching to count")
+        # cli::cli_alert_info("depth info not available, switching to count")
       }
     }
+    if (verbose) cli::cli_progress_update()
 
-    # get the count information
     # extract the allele count from GDS
     ac <- SeqArray::seqAlleleCount(
       gdsfile = data,
       ref.allele = NULL,
       parallel = parallel.core)
 
-    # check the number of alt alleles
-    n.al.max <- max(purrr::map_int(.x = ac, .f = length), na.rm = TRUE)
-
-    # when more than 2 alternate alleles...
-    if (n.al.max > 2) {
-      message("\n\nCaution: More than 2 alleles detected in the dataset")
-      wanted.info <- c("VARIANT_ID", "CHROM", "LOCUS", "POS", "MARKERS", "REF", "ALT", "N_ALLELES")
-
-      prob.markers <- mac.data %>%
-        dplyr::mutate(N_ALLELES = purrr::map_int(.x = ac, .f = length)) %>%
-        dplyr::filter(N_ALLELES > 2) %>%
-        dplyr::select(dplyr::any_of(wanted.info)) %>%
-        write_radiator_tsv(
-          data = .,
-          path.folder = path.folder,
-          filename = "markers_number_alleles_problem",
-          date = TRUE,
-          internal = FALSE,
-          write.message = "standard",
-          verbose = verbose
-        )
-    }
-    n.al.max <- NULL
+    if (verbose) cli::cli_progress_update()
 
     # make sure ac and ad are the same length
     if (calibrate.alleles == "depth") {
-      if (length(ac) != nrow(ad)) rlang::abort("Problem with the data, contact author")
+      if (length(ac) != nrow(ad)) rlang::abort("Problem with the data, allele count (ac) length != length of allele depth (ad): send dataset to author")
     }
 
-    # compile the info----------------------------------------------------------
-    # Add count info
+    # number of alleles per variant
+    n.alleles <- purrr::map_int(.x = ac, .f = length)
+
+    # check the number of alt alleles
+    n.al.max <- max(n.alleles, na.rm = TRUE)
+
+    # max number of ALT
+    n.col.ac <- n.al.max - 1L
+
+    alt.col.names <- paste0("ALT_COUNT_", seq_len(n.col.ac))
+
+    # longer and superseded
+    # mac.data %<>%
+    #   dplyr::bind_cols(
+    #     tibble::as_tibble_col(x = n.alleles, column_name = "ALT_N"),
+    #     purrr::map(.x = ac, .f = tibble::as_tibble_row, .name_repair = "universal_quiet") %>%
+    #       purrr::list_rbind() %>%
+    #       dplyr::rename_with(~ c("REF_COUNT", alt.col.names))
+    #   ) %>%
+    #   dplyr::mutate(
+    #     ALT_COUNT = sum(dplyr::across(dplyr::all_of(alt.col.names)), na.rm = TRUE),
+    #     .by = VARIANT_ID,
+    #     .after = "REF_COUNT"
+    #   )
+
+    pad_ac <- function(x, n) {
+      length(x) <- n
+      x
+    }
+
     ac %<>%
-      unlist(.) %>%
+      lapply(X = ., FUN = pad_ac, n = n.al.max) %>%
+      unlist(x = ., use.names = FALSE) %>%
       matrix(
         data = .,
-        nrow = n.markers, ncol = 2, byrow = TRUE,
-        dimnames = list(rownames = mac.data$VARIANT_ID,
-                        colnames = c("REF_COUNT", "ALT_COUNT"))) %>%
-      tibble::as_tibble(.)
-    mac.data %<>% dplyr::bind_cols(ac)
-    ac <- NULL
+        ncol = n.al.max,
+        byrow = TRUE
+      ) %>%
+      tibble::as_tibble(.name_repair = "universal_quiet") %>%
+      dplyr::rename_with(~ c("REF_COUNT", alt.col.names))
+    if (verbose) cli::cli_progress_update()
 
+
+    mac.data %<>%
+      dplyr::bind_cols(
+        tibble::as_tibble_col(x = n.alleles, column_name = "ALT_N"),
+        ac
+      ) %>%
+      dplyr::mutate(
+        ALT_COUNT = sum(dplyr::across(dplyr::all_of(alt.col.names)), na.rm = TRUE),
+        .by = VARIANT_ID,
+        .after = "REF_COUNT"
+      )
+
+    n.alleles <- ac <- n.col.ac <- alt.col.names <- pad_ac <- NULL
+    if (verbose) cli::cli_progress_update()
 
     # Add depth info
     if (calibrate.alleles == "depth") {
@@ -996,12 +1064,39 @@ minor_allele_stats <- function(
       ad <- NULL
     }
 
+    # when more than 2 alternate alleles...
+
+    bl.multi.al <- NULL # default
+    if (n.al.max > 2) {
+      # wanted.info <- c("VARIANT_ID", "CHROM", "LOCUS", "POS", "MARKERS", "REF", "ALT", "N_ALLELES")
+
+      bl.multi.al <- mac.data %>%
+        dplyr::filter(ALT_N > 2L) %>%
+        dplyr::mutate(FILTERS = "filter.ma")
+
+      multi.al.alert <- "Caution: more than 2 alleles detected and kept in {nrow(bl.multi.al)} SNP"
+      if (keep.biallelic) {
+        mac.data %<>%
+          dplyr::filter(ALT_N <= 2L) %>%
+          dplyr::select(-dplyr::starts_with("ALT_COUNT_"))
+        multi.al.alert <- "Note: {nrow(bl.multi.al)} multi-allelic SNPs were blacklisted from dataset"
+      }
+      if (verbose) cli::cli_progress_update()
+    }
+
+
     # calibrate ----------------------------------------------------------------
     # monomorphic marker check
-    mono <- dplyr::filter(.data = mac.data, REF_COUNT == 0)
-    # will have to deal with that...
+    bl.mono <- dplyr::filter(.data = mac.data, REF_COUNT == 0) %>%
+      dplyr::mutate(FILTERS = "filter.ma")
 
-    mac.data %<>% dplyr::filter(REF_COUNT != 0)
+    if (nrow(bl.mono) > 0) {
+      mac.data %<>% dplyr::filter(REF_COUNT != 0)
+      mono.alert <- "Number of monomorphic markers detected: {nrow(bl.mono)}"
+    } else {
+      bl.mono <- NULL
+    }
+
 
     if (calibrate.alleles == "ancestral") {
       mac.data %<>%
@@ -1012,6 +1107,7 @@ minor_allele_stats <- function(
           REF_COUNT = NULL
         ) %>%
         dplyr::rename(MAC_GLOBAL = ALT_COUNT)
+      if (verbose) cli::cli_progress_update()
     }
 
     if (calibrate.alleles != "ancestral") {
@@ -1020,10 +1116,13 @@ minor_allele_stats <- function(
         dplyr::filter(ALT_COUNT >= REF_COUNT) %>%
         nrow()
 
-
+      if (calibrate.alleles == "depth") {
+        n.inversion.depth <- dplyr::select(mac.data, ALT_DEPTH_TOTAL, REF_DEPTH_TOTAL) %>%
+          dplyr::filter(ALT_DEPTH_TOTAL >= REF_DEPTH_TOTAL) %>%
+          nrow()
+      }
 
       # NOTE: report tibble of mac based on original mac / maf ?
-
       mac.data %<>%
         dplyr::mutate(
           INVERSION = NULL,
@@ -1037,10 +1136,6 @@ minor_allele_stats <- function(
         dplyr::rename(MAC_GLOBAL = ALT_COUNT)
 
       if (calibrate.alleles == "depth") {
-        n.inversion.depth <- dplyr::select(mac.data, ALT_DEPTH_TOTAL, REF_DEPTH_TOTAL) %>%
-          dplyr::filter(ALT_DEPTH_TOTAL >= REF_DEPTH_TOTAL) %>%
-          nrow()
-
         mac.data %<>%
           dplyr::mutate(
             MAD_GLOBAL_CORR = dplyr::if_else(ALT_DEPTH_TOTAL < REF_DEPTH_TOTAL, ALT_DEPTH_TOTAL, REF_DEPTH_TOTAL),
@@ -1049,10 +1144,38 @@ minor_allele_stats <- function(
           ) %>%
           dplyr::rename(MAD_GLOBAL = ALT_DEPTH_TOTAL) %>%
           dplyr::relocate(MAC_GLOBAL, MAC_GLOBAL_CORR, MAD_GLOBAL, MAD_GLOBAL_CORR, MAF_GLOBAL, MAF_GLOBAL_COUNT_CORR, MAF_GLOBAL_DEPTH_CORR, .after = tidyselect::last_col())
+        if (verbose) cli::cli_progress_update()
       }
     }
   } # END GDS
-  cli::cli_progress_done()
+
+  if (verbose) cli::cli_progress_done()
+
+  # alert:
+  if (!is.null(bl.mono)) {
+    if (verbose) cli::cli_alert_info(mono.alert)
+    write_radiator_tsv(
+      data = bl.mono,
+      path.folder = path.folder,
+      filename = "blacklist_monomorphic_markers",
+      date = TRUE,
+      internal = FALSE,
+      write.message = "standard",
+      verbose = verbose
+    )
+  }
+  if (!is.null(bl.multi.al)) {
+    if (verbose) cli::cli_alert_info(multi.al.alert)
+    write_radiator_tsv(
+      data = bl.multi.al,
+      path.folder = path.folder,
+      filename = "blacklist_markers_multi_allelic",
+      date = TRUE,
+      internal = FALSE,
+      write.message = "standard",
+      verbose = verbose
+    )
+  }
 
   # Report number of inversion based on depth
   if (!is.null(n.inversion.count) && n.inversion.count > 0) {
@@ -1063,7 +1186,7 @@ minor_allele_stats <- function(
     if (verbose) message("Number of REF/ALT inversions based on read depth: ", n.inversion.depth)
   }
 
-  return(mac.data)
+  return(res = list(n.markers = n.markers, mac.data = mac.data, bl.multi.al = bl.multi.al, bl.mono = bl.mono))
 }#End minor_allele_stats
 
 #' @title ma_one

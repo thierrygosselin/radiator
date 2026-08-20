@@ -2,11 +2,54 @@
 % Please edit documentation in R/vcf.R
 \name{check_header_source_vcf}
 \alias{check_header_source_vcf}
-\title{Check the vcf header and detect vcf source}
+\title{Check a VCF header and detect its source (caller)}
 \usage{
-check_header_source_vcf(vcf)
+check_header_source_vcf(vcf, markers.info = NULL, vcf.metadata = NULL)
+}
+\arguments{
+\item{vcf}{(character) Path to a VCF file (optionally bgzipped).}
+
+\item{markers.info}{(optional, character)
+Names of INFO fields to import. If \code{NULL}, caller-specific defaults are
+used when available; if those are also \code{NULL}, all INFO fields are
+imported. Any values not present in the header are silently dropped.}
+
+\item{vcf.metadata}{(optional)
+Controls which FORMAT fields are imported:
+\itemize{
+  \item \code{NULL}: use caller-specific defaults (if any), otherwise import
+        all FORMAT fields;
+  \item logical: \code{TRUE} = import all FORMAT fields,
+                 \code{FALSE} = import only \code{GT};
+  \item character: explicit list of FORMAT field IDs to import; \code{GT} is
+        always added if missing. Any fields not present in the header are
+        silently dropped.
+}}
+}
+\value{
+A list with:
+\itemize{
+  \item \code{data.source} – inferred caller (e.g. "bcftools", "freebayes", …);
+  \item \code{vcf.source.raw} – exact raw \code{##source=} string or \code{NA};
+  \item \code{stacks.check} – whether this is a Stacks VCF (TRUE/FALSE);
+  \item \code{check.header} – cleaned \code{SeqArray::seqVCF_Header()} object;
+  \item \code{markers.info} – final INFO fields to import (or \code{NULL} = all);
+  \item \code{overwrite.metadata} – final FORMAT fields to import
+        (or \code{NULL} = all).
+}
 }
 \description{
-Check the vcf header and detect vcf source
+Inspect the VCF header (via \code{SeqArray::seqVCF_Header()}) to:
+\itemize{
+  \item fix known FORMAT/INFO inconsistencies (Stacks, samtools/freebayes-style),
+  \item detect the variant caller / pipeline (Stacks, freebayes, bcftools, GATK, etc.),
+  \item flag whether the VCF comes from Stacks,
+  \item suggest reasonable INFO/FORMAT subsets for import,
+  \item return a cleaned header object for safe import into GDS.
+}
+
+The function preserves the original \code{##source=} line (if present)
+and returns it as \code{vcf.source.raw}.
+Classification into a standardised descriptor is returned as \code{data.source}.
 }
 \keyword{internal}

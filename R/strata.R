@@ -48,8 +48,8 @@
 #' @inheritParams read_blacklist_id
 
 #' @param keep.two (optional, logical) The output is limited to 2 columns:
-#' \code{INDIVIDUALS, STRATA}.
-#' Default: \code{keep.two = TRUE}.
+#' \code{INDIVIDUALS, STRATA}. By default all the samples metadata is imported.
+#' Default: \code{keep.two = FALSE}.
 
 #' @param path.folder (optional, path)
 #' If \code{!is.null(blacklist.id) || !is.null(pop.select)}, the modified strata
@@ -141,31 +141,28 @@ read_strata <- function(
     pop.labels = NULL,
     pop.select = NULL,
     blacklist.id = NULL,
-    keep.two = TRUE,
-    path.folder = NULL,
+    keep.two = FALSE,
+    path.folder = getwd(),
     filename = NULL,
     verbose = FALSE
 ) {
   if (missing(strata)) rlang::abort("\nMissing strata argument...\n")
   # file.date <- format(Sys.time(), "%Y%m%d@%H%M")
 
-  if (is.null(strata)) {
-    return(res = NULL)
-  }
+  # required for some radiator function when strata is not there
+  if (is.null(strata)) return(NULL)
 
   if (!is.null(strata)) {
-    if (verbose) message("Analyzing strata file")
-    if (is.vector(strata)) {
-      if (!file.exists(strata)) rlang::abort("\nstrata file doesn't exist...\n")
-      # strata <- readr::read_tsv(
-      #   file = strata,
-      #   col_types = readr::cols(.default = readr::col_character()))
+    if (verbose) message("Reading strata")
 
+    if (is.vector(strata)) {
+      if (!file.exists(strata)) rlang::abort("strata file doesn't exist.")
+      # now using vroom because its faster
       strata <- vroom::vroom(
         file = strata,
-        col_types = readr::cols(.default = readr::col_character()),
+        col_types = vroom::cols(.default = "c"),
         show_col_types = FALSE
-        )
+      )
     }
 
     if (rlang::has_name(strata, "POP_ID") && !rlang::has_name(strata, "STRATA")) {
@@ -174,11 +171,15 @@ read_strata <- function(
         vectorize_all = FALSE)
     }
 
+    # necessary for some analysis
+    # When no need for additionnal individuals metadata info
+    # TARGET_ID is removed if present
     if (keep.two) strata  %<>% dplyr::select(INDIVIDUALS, STRATA)
 
     # clean....
     strata$INDIVIDUALS <- radiator::clean_ind_names(strata$INDIVIDUALS)
     strata$STRATA <- radiator::clean_pop_names(x = strata$STRATA, factor = FALSE)
+
     # unique(strata$STRATA)
     # length(unique(strata$STRATA))
 
@@ -215,8 +216,8 @@ read_strata <- function(
       } else {# with pop.levels
         n.pop <- unique(strata$STRATA)
         if (length(n.pop) != length(pop.levels)) {
-          message("pop.levels and unique STRATA/POP_ID have different length")
-          message("    using unique STRATA/POP_ID names to replace pop.levels")
+          cli::cli_alert_info("pop.levels and unique STRATA have different length")
+          cli::cli_alert_info("unique STRATA names will replace pop.levels")
           pop.levels <- unique(strata$STRATA)
         }
         strata$STRATA <- factor(
@@ -244,7 +245,7 @@ read_strata <- function(
       if (!is.null(pop.labels)) pop.labels <- pop.levels
     }
 
-    # If dart file manage TARGET_ID ----------------------------------------------
+    # DArT TARGET_ID
     if (rlang::has_name(strata, "TARGET_ID")) {
       strata  %<>%
         dplyr::mutate(
@@ -254,18 +255,23 @@ read_strata <- function(
 
     strata  %<>% dplyr::arrange(STRATA, INDIVIDUALS)
 
+    if (verbose) message("Number of strata: ", length(unique(strata$STRATA)))
+    if (verbose) message("Number of individuals: ", length(unique(strata$INDIVIDUALS)))
+
+    # POP_ID is still currently used but will be deprecated soon
+    # so I keep it for now
     if (isTRUE(pop.id)) strata %<>% dplyr::rename(POP_ID = STRATA)
-    if (verbose) message("    Number of strata: ", length(unique(strata$STRATA)))
-    if (verbose) message("    Number of individuals: ", length(unique(strata$INDIVIDUALS)))
 
     if (!is.null(pop.select)) {
-      if (verbose) message("\nPopulations/strata selected: ", stringi::stri_join(pop.select, collapse = ", "), " (", n.pop.new," pops)")
+      if (verbose) message("Strata selected: ", stringi::stri_join(pop.select, collapse = ", "), " (", n.pop.new," strata)")
     }
 
     write.strata <- FALSE
+    # if the strata is modified by blacklisting samples, we write a new one...
     if (!is.null(blacklist.id) || !is.null(pop.select)) {
       write.strata <- TRUE
     }
+
     if (!is.null(filename)) {
       write.strata <- TRUE
     } else {
@@ -292,7 +298,6 @@ read_strata <- function(
       pop.select = pop.select,
       blacklist.id = blacklist.id)
   }
-  # if (verbose) message("This function returns an object (list), not a strata object")
   return(res)
 }#End read_strata
 
@@ -328,6 +333,8 @@ summary_strata <- function(strata) {
     dplyr::mutate(POP_IND = stringi::stri_join(STRATA, n, sep = " = "))
 
   duplicate.id <- nrow(strata) - length(unique(strata$INDIVIDUALS))
+  # here we just want to know if duplicated ids exist
+  # not the time or place to list and print...
 
   message("Number of strata: ", length(unique(strata$STRATA)))
   message("Number of individuals: ", length(unique(strata$INDIVIDUALS)))
@@ -572,6 +579,7 @@ join_strata <- function(data, strata = NULL, pop.id = FALSE, verbose = TRUE) {
   if (verbose) message("Synchronizing data and strata...")
   data %<>% dplyr::select(-tidyselect::any_of(c("POP_ID", "STRATA")))
   strata %<>% dplyr::filter(INDIVIDUALS %in% data$INDIVIDUALS)
+
   if (nrow(strata) == 0) {
     rlang::abort("No more individuals in your data, check data and strata ID names...")
   }
@@ -729,32 +737,32 @@ strata_haplo <- function(strata = NULL, data = NULL, blacklist.id = NULL) {
 #' bl <- radiator::read_blacklist_id("blacklist.tsv")
 #' }
 read_blacklist_id <- function(blacklist.id = NULL, verbose = TRUE) {
-  if (!is.null(blacklist.id)) {# With blacklist of ID
-    if (is.vector(blacklist.id)) {
-      suppressMessages(blacklist.id <- readr::read_tsv(
-        blacklist.id,
-        col_names = TRUE,
-        col_types = readr::cols(.default = readr::col_character())))
-    } else {
-      if (!rlang::has_name(blacklist.id, "INDIVIDUALS")) {
-        rlang::abort("Blacklist of individuals should have 1 column named: INDIVIDUALS")
-      }
-      blacklist.id <- dplyr::mutate(
-        .data = blacklist.id,
-        dplyr::across(tidyselect::everything(), .fns = as.character)
-      )
-    }
-    blacklist.id$INDIVIDUALS <- radiator::clean_ind_names(blacklist.id$INDIVIDUALS)
-
-    # remove potential duplicate id
-    dup <- dplyr::distinct(.data = blacklist.id, INDIVIDUALS)
-    blacklist.id.dup <- nrow(blacklist.id) - nrow(dup)
-    if (blacklist.id.dup > 1) {
-      if (verbose) message("Duplicate id's in blacklist: ", blacklist.id.dup)
-      blacklist.id <- dup
-    }
-    dup <- blacklist.id.dup <- NULL
-    if (verbose) message("Number of individuals in blacklist: ", nrow(blacklist.id))
+  if (is.null(blacklist.id)) return(NULL)
+  if (is.vector(blacklist.id)) {
+    blacklist.id <- vroom::vroom(
+      file = blacklist.id,
+      col_types = vroom::cols(.default = "c"),
+      show_col_types = FALSE
+    )
+  } else {
+    blacklist.id <- dplyr::mutate(
+      .data = blacklist.id,
+      dplyr::across(tidyselect::everything(), .fns = as.character)
+    )
   }
+  if (!rlang::has_name(blacklist.id, "INDIVIDUALS")) {
+    rlang::abort("Blacklist of individuals should have 1 column named: INDIVIDUALS")
+  }
+  blacklist.id$INDIVIDUALS <- radiator::clean_ind_names(blacklist.id$INDIVIDUALS)
+
+  # remove potential duplicate id
+  dup <- dplyr::distinct(.data = blacklist.id, INDIVIDUALS)
+  blacklist.id.dup <- nrow(blacklist.id) - nrow(dup)
+  if (blacklist.id.dup > 1) {
+    if (verbose) cli::cli_alert_info("Duplicate id's in blacklist: ", blacklist.id.dup)
+    blacklist.id <- dup
+  }
+  dup <- blacklist.id.dup <- NULL
+  if (verbose) message("Number of individuals in blacklist: ", nrow(blacklist.id))
   return(blacklist.id)
 }#End read_blacklist_id

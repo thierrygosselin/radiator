@@ -11,8 +11,8 @@ read_strata(
   pop.labels = NULL,
   pop.select = NULL,
   blacklist.id = NULL,
-  keep.two = TRUE,
-  path.folder = NULL,
+  keep.two = FALSE,
+  path.folder = getwd(),
   filename = NULL,
   verbose = FALSE
 )
@@ -62,8 +62,8 @@ only \code{-} are tolerated. Duplicates are removed automatically.
 Default: \code{blacklist.id = NULL}.}
 
 \item{keep.two}{(optional, logical) The output is limited to 2 columns:
-\code{INDIVIDUALS, STRATA}.
-Default: \code{keep.two = TRUE}.}
+\code{INDIVIDUALS, STRATA}. By default all the samples metadata is imported.
+Default: \code{keep.two = FALSE}.}
 
 \item{path.folder}{(optional, path)
 If \code{!is.null(blacklist.id) || !is.null(pop.select)}, the modified strata

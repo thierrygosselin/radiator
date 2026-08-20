@@ -116,28 +116,17 @@ The command below fro both GCC and Clang will:
 
 Choose the binary version number based on your OS and change the version accordingly [link](http://hpc.sourceforge.net).
 
-<<<<<<< HEAD
 **Sonoma** [gcc-14.1-bin.tar.gz](http://prdownloads.sourceforge.net/hpc/gcc-14.1-m1-bin.tar.gz?download)
-=======
-**Sonoma** [gcc-14.1-m1-bin.tar.gz](http://prdownloads.sourceforge.net/hpc/gcc-14.1-m1-bin.tar.gz)
->>>>>>> 625193a82a4a404c7c069f479c704172b2f74f16
+
 
 ```{bash eval=FALSE}
 #In Terminal
 cd Downloads
-<<<<<<< HEAD
 sudo tar -zxvf gcc-14.1-bin.tar.gz -C /usr/local --strip-components=2
 ```
 
 ```{bash eval=FALSE}
-sudo rm gcc-14.1-bin.tar.gz
-=======
-sudo tar -zxvf gcc-14.1-m1-bin.tar.gz -C /usr/local --strip-components=2
-```
-
-```{bash eval=FALSE}
 sudo rm gcc-14.1-m1-bin.tar.gz
->>>>>>> 625193a82a4a404c7c069f479c704172b2f74f16
 gcc -v
 ```
 
@@ -529,6 +518,31 @@ The error below usually happens when several packages are updated:
 
 1. restart R
 2. re-install the package that generated this error
+
+
+## Error: `dyn.load` and `library not loaded` when installing `vcfppR` {#vcfppR}
+
+```{bash, eval=FALSE}
+Library not loaded: @rpath/libunwind.1.dylib  
+Referenced from: /usr/local/lib/libc++.1.0.dylib  
+Reason: tried: '/usr/local/lib/libunwind.1.dylib' (no such file)
+```
+
+**Diagnosis**
+
+You’re on macOS (ARM64, Apple Silicon) and using a custom LLVM/Clang install `/usr/local/bin/clang++` instead of the system compiler `/usr/bin/clang++`.
+This version of libc++ `/usr/local/lib/libc++.1.0.dylib` expects libunwind to be installed at `/usr/local/lib/libunwind.1.dylib`, but it isn’t found.
+macOS’ system libunwind is in `/usr/lib`, which user-installed clang doesn’t 
+automatically link against.
+
+Check the ownership and if it’s not symlinked to `/usr/lib/libc++.1.dylib`, consider removing or renaming it:
+```{bash, eval=FALSE}
+ls -l /usr/local/lib/libc++.*
+```
+
+```{bash, eval=FALSE}
+sudo mv /usr/local/lib/libc++.1.dylib /usr/local/lib/libc++.1.dylib.bak
+```
 
 ## Error: `dyn.load` {#Dynload}
 

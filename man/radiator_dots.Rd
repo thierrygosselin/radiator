@@ -34,58 +34,59 @@ radiator_dots(
     "snp.ld", "filter.call.rate", "filter.markers.coverage", "filter.markers.missing",
     "number.snp.reads", "mixed.genomes.analysis", "duplicate.genomes.analysis",
     "ref.calibration"),
+  env = parent.frame(),
+  assign = TRUE,
   verbose = TRUE
 )
 }
 \arguments{
-\item{func.name}{Default: \code{as.list(sys.call())[[1]]}.}
+\item{func.name}{Name of the calling function
+(used only in messages).
+Default: \code{as.list(sys.call())[[1]]}.}
 
-\item{fd}{(optional) Default: \code{rlang::fn_fmls_names()}.}
+\item{fd}{(optional) The formal argument names of the calling function.
+Default: \code{rlang::fn_fmls_names()}.}
 
-\item{args.list}{(optional) Default:\code{args.list = as.list(environment())}.}
+\item{args.list}{(optional) Named list of current arguments from the calling
+environment. Default: \code{as.list(environment())}.}
 
-\item{dotslist}{The dots dots dots arguments captured.
-Default: \code{
-dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE)}.}
+\item{dotslist}{Captured `...` arguments, usually from
+\code{rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE)}.}
 
-\item{keepers}{(optional) The arguments that are used inside the function.
-Default: \code{keepers = c(
-"subsample.markers.stats", "subsample",
-"filter.reproducibility", "filter.individuals.missing",
-"filter.individuals.heterozygosity", "filter.individuals.coverage.total",
-"filter.individuals.coverage.median", "filter.individuals.coverage.iqr",
-"filter.common.markers", "filter.monomorphic", "filter.ma", "ma.stats"
-"filter.coverage", "filter.genotyping", "filter.snp.position.read",
-"filter.snp.number", "filter.short.ld", "filter.long.ld", "long.ld.missing",
-"ld.method", "detect.mixed.genomes", "ind.heterozygosity.threshold",
-"detect.duplicate.genomes",
-"filter.hwe", "filter.strands", "random.seed", "path.folder", "filename",
-"blacklist.genotypes", "erase.genotypes",
-"gt", "gt.bin", "gt.vcf", "gt.vcf.nuc",
-"pop.levels", "pop.labels", "pop.select", "blacklist.id",
-"markers.info", "keep.allele.names", "keep.gds", "calibrate.alleles",
-"vcf.metadata", "vcf.stats", "id.stats", "dp",
-"whitelist.markers",
-"write.tidy",
-"dart.sequence",
-"missing.memory",
-"internal", "heatmap.fst", "tidy.check", "tidy.vcf", "tidy.dart",
-"species", "population", "tau", "threshold.y.markers", "threshold.y.silico.markers",
-"sex.id.input", "threshold.x.markers.qr", "threshold.x.markers.RD", "threshold.x.markers.RD.silico",
-"mis.threshold.data", "mis.threshold.silicodata", "zoom.data", "zoom.silicodata",
-"sex.id.input", "het.qr.input")}.}
+\item{keepers}{Character vector of argument names that are valid inside
+\code{...} and should be assigned into the calling environment.}
 
-\item{deprecated}{(optional) radiator's deprecated arguments.
-Default: \code{deprecated = c("maf.thresholds", "common.markers",
-"max.marker","monomorphic.out", "snp.ld", "filter.call.rate",
-"filter.markers.coverage", "filter.mac","filter.markers.missing", "number.snp.reads",
-"mixed.genomes.analysis", "duplicate.genomes.analysis", "maf.data", "ref.calibration")}.}
+\item{deprecated}{Character vector of deprecated argument names.}
 
-\item{verbose}{(optional, logical) When \code{verbose = TRUE}
-the function is a little more chatty during execution.
+\item{env}{Environment where keeper arguments and defaults should be
+assigned. Default: \code{parent.frame()}.}
+
+\item{assign}{(logical) If \code{TRUE}, assign keeper and default values
+into \code{env}. If \code{FALSE}, no assignment is performed and the
+function only returns the summary tibble.
+Default: \code{assign = TRUE}.}
+
+\item{verbose}{(logical) When \code{TRUE}, messages about function call
+arguments, `...` resolution, deprecated and unknown arguments are printed.
 Default: \code{verbose = TRUE}.}
 }
+\value{
+A tibble with columns:
+  \itemize{
+    \item \code{ARGUMENTS}: argument name
+    \item \code{VALUES}: character representation of the value or class
+    \item \code{GROUPS}: one of \code{"fct.call.args"}, \code{"fct.call..."},
+      \code{"default..."}, \code{"deprecated..."}, \code{"unknowned..."}.
+  }
+
+The side-effect (when \code{assign = TRUE}) is to assign resolved keeper
+arguments and their defaults into \code{env}.
+}
 \description{
-Extract and assign the dots-dots-dots
+Parse and manage `...` for radiator functions:
+  - assign supported arguments ("keepers") into a target environment
+  - fill in internal defaults for missing keepers
+  - detect deprecated and unknown arguments
+  - return a compact summary tibble for logging/debugging.
 }
 \keyword{internal}

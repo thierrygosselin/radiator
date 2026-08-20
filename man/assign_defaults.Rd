@@ -4,9 +4,9 @@
 \alias{assign_defaults}
 \title{assign_defaults}
 \usage{
-assign_defaults(n, env.arg, verbose = TRUE)
+assign_defaults(n, env.arg, assign = TRUE, verbose = TRUE)
 }
 \description{
-Assign the default values for...
+Assign the default values for `...` arguments
 }
 \keyword{internal}

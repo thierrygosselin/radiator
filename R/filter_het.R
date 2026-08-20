@@ -422,7 +422,7 @@ information")
       HET_MIN = min(HET_PROP, na.rm = TRUE),
       HET_MAX = max(HET_PROP, na.rm = TRUE)
     ) %>%
-    dplyr::mutate(dplyr::across(where(is.numeric), .fns = round, digits = 4)) %>%
+    dplyr::mutate(dplyr::across(where(is.numeric), .fns = \(x) round(x, digits = digits))) %>%
     tidyr::unite(data = ., HET_RANGE, HET_MIN, HET_MAX, sep = " - ") %>%
     dplyr::arrange(POP_ID, HET_MEAN)
 
@@ -465,7 +465,7 @@ information")
       axis.title.y = ggplot2::element_text(size = 10, face = "bold"),
       axis.text.y = ggplot2::element_text(size = 8)
     ) +
-    ggplot2::geom_hline(mapping = ggplot2::aes(yintercept = HET_MEAN), het.ind.stats, linetype = "dotted", size = 0.6) + #mean
+    ggplot2::geom_hline(mapping = ggplot2::aes(yintercept = HET_MEAN), het.ind.stats, linetype = "dotted", linewidth = 0.6) + #mean
     # geom_hline(mapping = aes(yintercept = HET_sig_minus), het.ind.stats.pop, linetype = "dashed") + #3 sigma -
     # geom_hline(mapping = aes(yintercept = HET_sig_plus), het.ind.stats.pop, linetype = "dashed") + #3 sigma +
     ggplot2::facet_grid(MISSING_GROUP ~ POP_ID, switch = "x", scales = "free", labeller = ggplot2::labeller(MISSING_GROUP = facet_names))

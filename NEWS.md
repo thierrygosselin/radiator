@@ -1,3 +1,13 @@
+# radiator 1.4.1 2026-08-17
+
+* radiator has reached the end of active development and is retained for
+  reproducibility.
+* New genomic import, standardization, and translation workflows are continued
+  in genometranslator.
+* Genomic screening, filtering, diagnostics, and exploration are continued in
+  radr.
+
+
 # radiator 1.4.0 2025-09-04
 * bug fix when using the new DArT data and converting to genind
 

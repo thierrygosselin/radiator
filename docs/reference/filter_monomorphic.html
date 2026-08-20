@@ -29,7 +29,7 @@ their dataset."><meta property="og:image" content="/logo.png"><!-- mathjax --><s
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.3.9</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.1</span>
       </span>
     </div>
 
@@ -142,6 +142,44 @@ special section)</p></dd>
     <h2>Value</h2>
     <p>A list with the filtered input, whitelist and blacklist of markers..</p>
     </div>
+    <div id="details">
+    <h2>Details</h2>
+    <p><strong>Important distinction — genotype-level monomorphism</strong></p>
+<p><code>filter_monomorphic</code> evaluates monomorphism based on the actual
+genotypes stored inside a GDS file. A marker is considered monomorphic when
+all non-missing individuals display the <strong>same genotype phenotype</strong>.</p>
+<p>Internally, this is assessed using the variant-level alternate allele dosage
+(<code>$dosage_alt</code>):</p>
+<div class="sourceCode"><pre><code><span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">g</span><span class="op">[</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">g</span><span class="op">)</span><span class="op">]</span><span class="op">)</span><span class="op">)</span> <span class="op">==</span> <span class="fl">1</span></span></code></pre></div>
+
+<p>This captures cases such as:</p><ul><li><p>all REF/REF (dosage = 0)</p></li>
+<li><p>all REF/ALT (dosage = 1)</p></li>
+<li><p>all ALT/ALT (dosage = 2)</p></li>
+</ul><p>Even if the allele frequency in the population is neither 0 nor 1 (e.g.,
+all individuals are REF/ALT heterozygotes), the variant is still considered
+genotype-monomorphic.</p>
+<p>This is a <strong>genotype-level</strong> definition of polymorphism, which is more
+conservative and more appropriate for downstream population genomics.</p>
+<p>Consequently, <code>filter_monomorphic</code> will often identify additional
+monomorphic markers that were not removed earlier by
+<code><a href="filter_monomorphic_vcf.html">filter_monomorphic_vcf</a></code>, which uses allele-level logic.</p>
+<p><strong>This discrepancy is by design</strong>.</p>
+    </div>
+    <div id="note">
+    <h2>Note</h2>
+    <p><strong>Why results differ between <code><a href="filter_monomorphic_vcf.html">filter_monomorphic_vcf</a></code> and
+<code>filter_monomorphic</code></strong></p>
+<p>These functions intentionally implement two different biological definitions:</p><ul><li><p><code><a href="filter_monomorphic_vcf.html">filter_monomorphic_vcf</a></code> removes sites that are
+  <strong>allele-monomorphic</strong>, based on INFO/AC and INFO/AN.</p></li>
+<li><p><code>filter_monomorphic</code> removes sites that are
+  <strong>genotype-monomorphic</strong>, based on the distribution of genotype
+  phenotypes in the GDS.</p></li>
+</ul><p>A variant can contain both REF and ALT alleles (allele-level polymorphism)
+but still have only one genotype phenotype across all individuals.
+Therefore, it is expected and correct that
+<code>filter_monomorphic</code> may remove additional markers.</p>
+    </div>
     <div id="see-also">
     <h2>See also</h2>
     <div class="dont-index"><p><code><a href="filter_rad.html">filter_rad</a></code>,
@@ -173,7 +211,7 @@ special section)</p></dd>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
       </footer></div>

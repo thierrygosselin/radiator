@@ -31,9 +31,8 @@
 #' @param filter.common.markers (optional, logical)
 #' Default: \code{filter.common.markers = TRUE}.
 #'
-#' @param fig (optional, logical) \code{fig = TRUE} will produce an
-#' \href{https://github.com/hms-dbmi/UpSetR}{UpSet fig} to visualize the number
-#' of markers between populations. The package is required for this to work...
+#' @param fig (optional, logical) \code{fig = TRUE} will produce a ComplexUpset
+#' figure to visualize the number of markers between populations.
 #' Default: \code{fig = FALSE}.
 
 #' @param verbose (optional, logical) \code{verbose = TRUE} to be chatty
@@ -105,9 +104,9 @@ filter_common_markers <- function(
     )
     if (internal) fig <- FALSE
     if (fig) {
-      if (!requireNamespace("UpSetR", quietly = TRUE)) {
-        rlang::abort("UpSetR needed for this function to work
-                   Install with install.packages('UpSetR')")
+      if (!requireNamespace("ComplexUpset", quietly = TRUE)) {
+        rlang::abort("ComplexUpset needed for this function to work
+               Install with install.packages('ComplexUpset')")
       }
     }
     # Folders---------------------------------------------------------------------
@@ -169,7 +168,7 @@ filter_common_markers <- function(
       n.pop <- length(unique(strata$STRATA))
 
       if (n.pop == 1) {
-        message("Filter common markers: only 1 strata, returning data")
+        if (verbose) message("Filter common markers: only 1 strata, returning data")
         return(data)
       }
       check.strata <- strata %>% dplyr::count(STRATA) %>% dplyr::filter(n <= 1)
@@ -443,13 +442,12 @@ not_common_markers <- function(
   return(bl)
 }#End not_common_markers
 
-# Generate UPSETR plot----------------------------------------------------------
+# Generate UPSET plot----------------------------------------------------------
 #' @title plot_upset
-#' @description Generate UpSetR plot
+#' @description Generate UpSet plot (ComplexUpset)
 #' @rdname plot_upset
 #' @keywords internal
 #' @export
-
 plot_upset <- function(
     x,
     data.type,
@@ -461,26 +459,56 @@ plot_upset <- function(
   # For pc set the number of core to 1 -----------------------------------------
   parallel.core <- 1
 
-  # if (Sys.info()[['sysname']] == "Windows") parallel.core <- 1
-
   if (verbose) message("Generating UpSet plot to visualize markers in common")
 
+  if (!requireNamespace("ComplexUpset", quietly = TRUE)) {
+    rlang::abort(
+      "ComplexUpset needed for this function to work\nInstall with install.packages('ComplexUpset')"
+    )
+  }
+  if (!requireNamespace("ggplot2", quietly = TRUE)) {
+    rlang::abort(
+      "ggplot2 needed for this function to work\nInstall with install.packages('ggplot2')"
+    )
+  }
+
+  # helper: ensure membership columns are valid binary/logical ------------------
+  coerce_membership_cols <- function(df, cols) {
+    df[cols] <- lapply(df[cols], function(v) {
+      if (is.logical(v)) return(v)
+      if (is.factor(v)) v <- as.character(v)
+      if (is.character(v)) v <- suppressWarnings(as.integer(v))
+      if (is.integer(v)) return(v != 0L)
+      if (is.numeric(v)) return(v != 0)
+      as.logical(v)
+    })
+    df
+  }
+
+  # helper: compute a future-proof y-top limit for intersection labels ----------
+  compute_y_top <- function(df, cols, multiplier = 1.30) {
+    # cols are logical membership columns
+    patterns <- apply(as.data.frame(df[cols]), 1, paste0, collapse = "_")
+    max.intersection <- max(as.integer(table(patterns)), na.rm = TRUE)
+    ceiling(max.intersection * multiplier)
+  }
+
+  # Build plot data -------------------------------------------------------------
   if (data.type == "SeqVarGDSClass") {
-    # Get the sample from radiator node or gds ---------------------------------
+
     strata <- extract_individuals_metadata(
       gds = x,
       ind.field.select = c("STRATA", "INDIVIDUALS"),
       whitelist = TRUE
     )
-    n.pop = length(unique(strata$STRATA))
-
+    n.pop <- length(unique(strata$STRATA))
     sample.bk <- strata$INDIVIDUALS
+
     missing_markers_pop <- function(
     strata.split,
     x,
     parallel.core = parallel::detectCores() - 2
     ) {
-      # strata.split <- dplyr::group_split(.tbl = strata, STRATA)[[4]]
       parallel.core.opt <- parallel_core_opt(parallel.core)
 
       SeqArray::seqSetFilter(
@@ -502,7 +530,7 @@ plot_upset <- function(
       ) %>%
         magrittr::set_colnames(., unique(strata.split$STRATA))
       return(res)
-    }#End not_common
+    }
 
     plot.data <- dplyr::group_split(.tbl = strata, STRATA) %>%
       purrr::map_dfc(
@@ -510,17 +538,29 @@ plot_upset <- function(
         .f = missing_markers_pop,
         x = x,
         parallel.core = parallel.core
-      ) %>%
-      data.frame(.)#UpSetR requires data.frame
+      )
 
-    readr::write_tsv(x = plot.data, file = stringi::stri_join(plot.filename, ".tsv"))
+    readr::write_tsv(
+      x = plot.data,
+      file = stringi::stri_join(plot.filename, ".tsv")
+    )
+
     SeqArray::seqSetFilter(
       object = x,
       sample.id = sample.bk,
       action = "set",
-      verbose = FALSE)
+      verbose = FALSE
+    )
+
+    set.cols <- colnames(plot.data)
+
+    # ComplexUpset benefits from an id column (not used in intersect)
+    plot.data <- dplyr::mutate(plot.data, MARKER_ROW = dplyr::row_number())
+
   } else {
-    n.pop = length(unique(x$STRATA))
+
+    n.pop <- length(unique(x$STRATA))
+
     if (tibble::has_name(x, "GT_BIN")) {
       plot.data <- dplyr::filter(x, !is.na(GT_BIN))
     } else {
@@ -529,29 +569,82 @@ plot_upset <- function(
 
     plot.data <- dplyr::distinct(plot.data, MARKERS, STRATA) %>%
       dplyr::mutate(
-        n = rep(1, n()),
+        n = 1L,
         STRATA = stringi::stri_join("POP_", STRATA)
       ) %>%
-      tidyr::pivot_wider(data = ., names_from = "STRATA", values_from = "n", values_fill = 0) %>%
-      data.frame(.)#UpSetR requires data.frame
+      tidyr::pivot_wider(
+        names_from = "STRATA",
+        values_from = "n",
+        values_fill = 0
+      )
+
+    set.cols <- setdiff(colnames(plot.data), "MARKERS")
+
+    readr::write_tsv(
+      x = plot.data,
+      file = stringi::stri_join(plot.filename, ".tsv")
+    )
   }
 
-  # generate the plot
-  # print(dev.list())
+  # ensure membership columns are logical (ComplexUpset expects binary columns)
+  plot.data <- coerce_membership_cols(plot.data, set.cols)
 
-  # pdf(
-  #   file = stringi::stri_join(plot.filename, ".pdf"),
-  #   onefile = FALSE
-  # )
-  grDevices::png(filename = stringi::stri_join(plot.filename, ".png"), width = 3000, height = 1500, res = 300)
-  print(
-    UpSetR::upset(
-      data = plot.data,
-      nsets = n.pop,
-      order.by = "freq",
-      empty.intersections = NULL)
+  # compute a future-proof y-top limit for the intersection panel
+  y.top <- compute_y_top(plot.data, set.cols, multiplier = 1.30)
+
+  # Build plot -----------------------------------------------------------------
+  p <- ComplexUpset::upset(
+    data = plot.data,
+    intersect = set.cols,
+    sort_intersections = "descending",
+    sort_intersections_by = "cardinality",
+    keep_empty_groups = FALSE,
+
+    # generate themes at runtime to avoid ggplot2 validation issues
+    themes = ComplexUpset::upset_default_themes(),
+
+    # avoid size->linewidth deprecation coming from stripes
+    stripes = ComplexUpset::upset_stripes(
+      geom = ggplot2::geom_segment(linewidth = 7)
+    ),
+
+    base_annotations = list(
+      "Intersection size" = (
+        ComplexUpset::intersection_size(
+          counts = TRUE,
+
+          # always draw labels above bars (so they're black & never white)
+          bar_number_threshold = 1,
+
+          # label styling (geom_text params)
+          text = list(
+            angle = 90,
+            vjust = 0.5,
+            hjust = 0,
+            colour = "black"
+          ),
+          text_colors = c(on_background = "black", on_bar = "black")
+        ) +
+          # reserve headroom proportionally to the largest intersection
+          ggplot2::coord_cartesian(clip = "off", ylim = c(0, y.top)) +
+          # extra breathing room above panel for rotated labels
+          ggplot2::theme(
+            plot.margin = ggplot2::margin(t = 22, r = 6, b = 6, l = 6, unit = "pt")
+          )
+      )
+    )
   )
-  dev.off()
-  # print(dev.list())
 
-}#End plot_upset
+  # Save as PNG (match your previous 3000x1500 @300dpi => 10x5 inches) ----------
+  ggplot2::ggsave(
+    filename = stringi::stri_join(plot.filename, ".png"),
+    plot = p,
+    width = 10,
+    height = 5,
+    units = "in",
+    dpi = 300,
+    bg = "white"
+  )
+
+  invisible(TRUE)
+} # END plot_upset

@@ -195,12 +195,12 @@ detect_biallelic_markers <- function(data, verbose = FALSE, parallel.core = para
         n.allele <- dplyr::filter(data, n > 2)
         if (nrow(n.allele) == n.markers) {
           data <- FALSE
-          if (verbose) message("    Data is multi-allelic")
+          if (verbose) message("Data is multi-allelic")
         } else {
-          if (verbose) message("    Data is bi-allelic")
+          if (verbose) message("Data is bi-allelic")
           if (max(data$n) > 2) {
-            message("\nNote: more than 2 types of alleles/nucleotides detected")
-            message("artifact/biological ? run radiator::detect_biallelic_problem for more details")
+            cli::cli_alert_info("Note: more than 2 types of alleles/nucleotides detected")
+            cli::cli_alert_info("artifact/biological ? run radiator::detect_biallelic_problem for more details")
           }
           data <- TRUE
         }

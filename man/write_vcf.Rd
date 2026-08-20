@@ -4,13 +4,7 @@
 \alias{write_vcf}
 \title{Write a vcf file from a tidy data frame}
 \usage{
-write_vcf(
-  data,
-  pop.info = FALSE,
-  filename = NULL,
-  source = NULL,
-  empty = FALSE
-)
+write_vcf(data, strata = FALSE, filename = NULL, source = NULL, empty = FALSE)
 }
 \arguments{
 \item{data}{A tidy data frame object in the global environment or
@@ -18,11 +12,11 @@ a tidy data frame in wide or long format in the working directory.
 \emph{How to get a tidy data frame ?}
 Look into \pkg{radiator} \code{\link{tidy_genomic_data}}.}
 
-\item{pop.info}{(optional, logical) Should the population information be
+\item{strata}{(optional, logical) Should the strata information be
 included in the FORMAT field (along the GT info for each samples ?). To make
-the VCF population-ready use \code{pop.info = TRUE}. The population information
-must be included in the \code{POP_ID} column of the tidy dataset.
-Default: \code{pop.info = FALSE}. Experimental.}
+the VCF population-ready use \code{strata = TRUE}. The strata information
+must be included in the \code{STRATA} column of the tidy dataset.
+Default: \code{strata = FALSE}. Experimental.}
 
 \item{filename}{(optional) The file name prefix for the vcf file
 written to the working directory. With default: \code{filename = NULL},
@@ -30,7 +24,8 @@ the date and time is appended to \code{radiator_vcf_file_}.}
 
 \item{source}{source of vcf}
 
-\item{empty}{generate an empty vcf}
+\item{empty}{generate an empty vcf.
+Default: \code{empty = FALSE}.}
 }
 \description{
 Write a vcf file (file format version 4.3, see details below)

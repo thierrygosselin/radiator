@@ -14,20 +14,31 @@ extract_markers_metadata(
 )
 }
 \arguments{
-\item{gds}{The gds object.}
+\item{gds}{The GDS object (radiator or SeqArray).}
 
-\item{markers.meta.select}{(optional, character) Default:\code{markers.meta.select = NULL}.}
+\item{markers.meta.select}{(optional, character) Names of metadata fields to
+import. For radiator GDS, these are the column names in
+\code{radiator/markers.meta}. For plain SeqArray GDS, radiator-style names
+\code{VARIANT_ID}, \code{CHROM}, \code{LOCUS}, \code{POS} are mapped to
+\code{variant.id}, \code{chromosome}, \code{annotation/id}, \code{position}.
+Default: \code{markers.meta.select = NULL}.}
 
-\item{radiator.node}{(optional, logical) Default:\code{radiator.node = TRUE}.}
+\item{radiator.node}{(logical) Whether to prefer the \code{radiator/markers.meta}
+node if present. If the node is missing or empty, the function falls back
+to SeqArray nodes. Default: \code{radiator.node = TRUE}.}
 
-\item{whitelist}{(optional, logical) Default:\code{whitelist = FALSE}.}
+\item{whitelist}{(logical) If \code{TRUE} and a \code{FILTERS} column is
+present, only rows with \code{FILTERS == "whitelist"} are returned.
+Default: \code{whitelist = FALSE}.}
 
-\item{blacklist}{(optional, logical) Default:\code{blacklist = FALSE}.}
+\item{blacklist}{(logical) If \code{TRUE} and a \code{FILTERS} column is
+present, only rows with \code{FILTERS != "whitelist"} are returned.
+Default: \code{blacklist = FALSE}.}
 
 \item{verbose}{(optional, logical) When \code{verbose = TRUE}
 the function is a little more chatty during execution.
 Default: \code{verbose = TRUE}.}
 }
 \description{
-Import gds or radiator markers meta node
+Import markers metadata from a radiator or SeqArray GDS.
 }

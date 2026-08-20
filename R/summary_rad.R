@@ -135,7 +135,7 @@ summary_rad <- function(
         .data = .,
         dplyr::across(
           .cols = c(N, FREQ_REF, MAF_LOCAL, HET_O, HET_E),
-          .fns = mean, na.rm = TRUE
+          .fns = \(x) mean(x, na.rm = TRUE)
         ),
         .groups = "keep"
       ) %>%
@@ -148,8 +148,7 @@ summary_rad <- function(
     dplyr::mutate(
       dplyr::across(
         .cols = c(FREQ_REF, MAF_LOCAL, HET_O, HET_E, FIS),
-        .fns = round,
-        digits = digits
+        .fns  = \(x) round(x, digits = digits)
       )
     )
 

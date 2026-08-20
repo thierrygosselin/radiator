@@ -203,22 +203,23 @@ markers_genotyped_helper <- function(x, y, overall.only = FALSE) {
 #' @rdname tibble_stats
 #' @keywords internal
 #' @export
-tibble_stats <- function(x, group, subsample = NULL) {
+tibble_stats <- function(x, group, subsample = NULL, reporting = FALSE) {
   if (is.null(subsample)) subsample <- 1L
   Q <- stats::quantile(x, probs = c(0.25, 0.75), na.rm = TRUE)
   res <- tibble::tibble(
     GROUP = group,
     MIN = min(x, na.rm = TRUE),
-    # Q25 = stats::quantile(x, 0.25, na.rm = TRUE),
-    Q25 = Q[1],
+    Q25 = Q[1],# Q25 = stats::quantile(x, 0.25, na.rm = TRUE)
     MEAN = mean(x, na.rm = TRUE),
     MEDIAN = stats::median(x, na.rm = TRUE),
     Q75 = Q[2],
     MAX = max(x, na.rm = TRUE),
-    IQR = abs(diff(Q)),
-    # IQR = stats::IQR(depth, na.rm = TRUE),
-    OUTLIERS_LOW = Q25 - (1.5 * IQR),
-    OUTLIERS_HIGH =  Q75 + (1.5 * IQR)) %>%
+    IQR = abs(diff(Q))# IQR = stats::IQR(depth, na.rm = TRUE)
+    ) %>%
+    dplyr::mutate(
+      OUTLIERS_LOW = Q25 - (1.5 * IQR),
+      OUTLIERS_HIGH =  Q75 + (1.5 * IQR)
+    ) %>%
     dplyr::mutate(dplyr::across(where(is.integer), .fns = as.numeric)) %>%
     dplyr::mutate(
       OUTLIERS_LOW = dplyr::if_else(OUTLIERS_LOW < MIN, MIN, OUTLIERS_LOW),
@@ -226,6 +227,21 @@ tibble_stats <- function(x, group, subsample = NULL) {
       SUBSAMPLE = subsample
     )
   Q <- NULL
+
+  if (reporting) {
+    res %<>%
+      dplyr::mutate(
+        dplyr::across(
+          .cols = where(is.numeric),
+          .fns = ~ ifelse(
+            abs(.x) < 1,
+            format(round(.x, 2), scientific = FALSE, trim = TRUE),
+            format(round(.x, 0), scientific = FALSE, trim = TRUE)
+          )
+        )
+      )
+  }
+
   return(res)
 }#End tibble_stats
 
@@ -332,14 +348,49 @@ boxplot_stats <- function(
         linetype = "dashed")
   }
 
+  # if (scale.log) {
+  #   if (!scientific.format) {
+  #     fig.boxplot <- fig.boxplot +
+  #       ggplot2::scale_y_log10(labels = scales::number_format(), oob = scales::squish_infinite)
+  #   } else {
+  #     fig.boxplot <- fig.boxplot +
+  #       ggplot2::scale_y_log10(oob = scales::squish_infinite)
+  #   }
+  # } else {
+  #   fig.boxplot <- fig.boxplot +
+  #     ggplot2::scale_y_continuous(labels = scales::number_format())
+  # }
+
+  # was introducing warnings.
+  # below should fix it...
+
   if (scale.log) {
-    if (!scientific.format) {
-      fig.boxplot <- fig.boxplot +
-        ggplot2::scale_y_log10(labels = scales::number_format(), oob = scales::squish_infinite)
+
+    y.cols <- c("OUTLIERS_LOW","Q25","MEDIAN","Q75","OUTLIERS_HIGH","MIN","MAX")
+    y.mat <- as.matrix(dplyr::select(data, dplyr::all_of(y.cols)))
+    has.nonpositive <- any(!is.finite(y.mat) | y.mat <= 0, na.rm = TRUE)
+
+    if (has.nonpositive) {
+      # Option 1 (recommended): pseudo-log keeps zeros without warnings
+      if (!scientific.format) {
+        fig.boxplot <- fig.boxplot +
+          ggplot2::scale_y_continuous(trans = scales::pseudo_log_trans(base = 10),
+                                      labels = scales::number_format())
+      } else {
+        fig.boxplot <- fig.boxplot +
+          ggplot2::scale_y_continuous(trans = scales::pseudo_log_trans(base = 10))
+      }
     } else {
-      fig.boxplot <- fig.boxplot +
-        ggplot2::scale_y_log10(oob = scales::squish_infinite)
+      # Safe to use true log10
+      if (!scientific.format) {
+        fig.boxplot <- fig.boxplot +
+          ggplot2::scale_y_log10(labels = scales::number_format(), oob = scales::squish_infinite)
+      } else {
+        fig.boxplot <- fig.boxplot +
+          ggplot2::scale_y_log10(oob = scales::squish_infinite)
+      }
     }
+
   } else {
     fig.boxplot <- fig.boxplot +
       ggplot2::scale_y_continuous(labels = scales::number_format())

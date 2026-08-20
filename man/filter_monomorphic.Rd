@@ -60,6 +60,58 @@ Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
 and might be of interest for users who wants to keep only polymorphic markers in
 their dataset.
 }
+\details{
+\strong{Important distinction — genotype-level monomorphism}
+
+\code{\link{filter_monomorphic}} evaluates monomorphism based on the actual
+genotypes stored inside a GDS file. A marker is considered monomorphic when
+all non-missing individuals display the \strong{same genotype phenotype}.
+
+Internally, this is assessed using the variant-level alternate allele dosage
+(\code{$dosage_alt}):
+
+\preformatted{
+length(unique(g[!is.na(g)])) == 1
+}
+
+This captures cases such as:
+\itemize{
+  \item all REF/REF (dosage = 0)
+  \item all REF/ALT (dosage = 1)
+  \item all ALT/ALT (dosage = 2)
+}
+
+Even if the allele frequency in the population is neither 0 nor 1 (e.g.,
+all individuals are REF/ALT heterozygotes), the variant is still considered
+genotype-monomorphic.
+
+This is a \strong{genotype-level} definition of polymorphism, which is more
+conservative and more appropriate for downstream population genomics.
+
+Consequently, \code{\link{filter_monomorphic}} will often identify additional
+monomorphic markers that were not removed earlier by
+\code{\link{filter_monomorphic_vcf}}, which uses allele-level logic.
+
+\strong{This discrepancy is by design}.
+}
+\note{
+\strong{Why results differ between \code{\link{filter_monomorphic_vcf}} and
+\code{\link{filter_monomorphic}}}
+
+These functions intentionally implement two different biological definitions:
+\itemize{
+  \item \code{\link{filter_monomorphic_vcf}} removes sites that are
+  \strong{allele-monomorphic}, based on INFO/AC and INFO/AN.
+  \item \code{\link{filter_monomorphic}} removes sites that are
+  \strong{genotype-monomorphic}, based on the distribution of genotype
+  phenotypes in the GDS.
+}
+
+A variant can contain both REF and ALT alleles (allele-level polymorphism)
+but still have only one genotype phenotype across all individuals.
+Therefore, it is expected and correct that
+\code{\link{filter_monomorphic}} may remove additional markers.
+}
 \examples{
 \dontrun{
 require(SeqArray) # when using gds

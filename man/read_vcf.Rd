@@ -2,279 +2,235 @@
 % Please edit documentation in R/vcf.R
 \name{read_vcf}
 \alias{read_vcf}
-\title{Read VCF files and write a GDS file}
+\alias{filter_vcf_filter_column}
+\title{Read VCF files and write a radiator GDS file}
 \usage{
 read_vcf(
   data,
   strata = NULL,
   filename = NULL,
-  vcf.stats = TRUE,
+  vcf.stats = FALSE,
   parallel.core = parallel::detectCores() - 1,
   verbose = TRUE,
   ...
 )
+
+filter_vcf_filter_column(
+  gds,
+  markers.meta,
+  filters.parameters,
+  path.folder,
+  file.date,
+  verbose = TRUE
+)
 }
 \arguments{
-\item{data}{(path, character) The VCF markers are biallelic SNPs or haplotypes.
-To make the VCF population-ready, you have to use \code{strata} argument.
-
-\itemize{
-\item \strong{GATK, platypus, samtools and ipyrad VCFs:}
-Some VCFs have an \code{ID} column filled with \code{.},
-the LOCUS information is all contained along the linkage group in the
-\code{CHROM} column. Consequently, the short read locus information is unknown.
-To make it work with
-\href{https://github.com/thierrygosselin/radiator}{radiator},
-the \code{ID} column is filled with the \code{POS} column info.
-\item \strong{stacks VCFs:} with \emph{de novo} approaches, the CHROM column is
-filled with "1", the LOCUS column correspond to the CHROM section in stacks VCF and
-the COL column is POS -1. With a reference genome, the ID column in stacks VCF is
-separated into "LOCUS", "COL", "STRANDS".
-\item \strong{DArT VCFs:} CHROM with \code{.} are replaced by \code{denovo}.
-\code{POS} with \code{NA} are replaced by \code{50}.
-\code{COL}: the position of the SNP on the read is extracted from the
-\code{LOCUS} as any other DArT data.
-\code{LOCUS}: are the first group of digits the rest of the info is discarded
-and \code{LOCUS} is then joined with \code{POS} by a \code{_}.
-\code{POS} is replaced by \code{COL}, (col info is duplicated).
-This is necessary to make the lines in the VCF unique.
-}}
+\item{data}{(character)
+Path to a VCF file (optionally bgzipped, \code{*.vcf} or \code{*.vcf.gz}).
+Markers can be biallelic SNPs or haplotypes; downstream filters
+(e.g. \code{filter.haplotype.format}) will normalise variants to the
+desired representation.}
 
 \item{strata}{(optional)
-The strata file is a tab delimited file with a minimum of 2 columns headers:
-\code{INDIVIDUALS} and \code{STRATA}. Documented in \code{\link{read_strata}}.
-DArT data: a third column \code{TARGET_ID} is required.
-Documented on \code{\link{read_dart}}. Also use the strata read function to
-blacklist individuals.
+Strata definition, passed to \code{\link[radiator]{read_strata}}.
+Can be a path to a strata file or an object.
 Default: \code{strata = NULL}.}
 
-\item{filename}{(optional) The file name of the Genomic Data Structure (GDS) file.
-radiator will append \code{.gds.rad} to the filename.
-If the filename chosen exists in the working directory,
-the default \code{radiator_datetime.gds} is chosen.
+\item{filename}{(optional, character)
+Base name of the GDS file to generate. Radiator will append
+\code{.gds.rad} to the filename. If the chosen filename already exists
+in \code{path.folder}, a timestamped default name is used instead.
 Default: \code{filename = NULL}.}
 
-\item{vcf.stats}{(optional, logical) Generates individuals and markers
-statistics helpful for filtering.
-These are very fast to generate and because computational
-cost is minimal, even for huge VCFs, the default is \code{vcf.stats = TRUE}.
-Individual's missing genotype proportion, averaged heterozygosity,
-total coverage, mean genotype coverage and marker's metadata
-along count for ref and alt alleles and mean
-coverage is generated and written in the working directory.
-Default: \code{vcf.stats = TRUE}.}
+\item{vcf.stats}{(logical, optional)
+Generate basic statistics for individuals and markers (missingness, coverage,
+etc.) and write them to disk.
+Computational cost can be high for very large unfiltered VCF
+Default: \code{vcf.stats = FALSE}.}
 
-\item{parallel.core}{(optional) The number of core used for parallel
-execution during import.
+\item{parallel.core}{(integer, optional)
+Approximate number of cores to use where parallelism is supported
+(e.g. \code{SeqArray::seqApply}, some filter helpers).
 Default: \code{parallel.core = parallel::detectCores() - 1}.}
 
-\item{verbose}{(optional, logical) When \code{verbose = TRUE}
-the function is a little more chatty during execution.
-Default: \code{verbose = TRUE}.}
+\item{verbose}{(logical) Verbosity.}
 
 \item{...}{(optional) To pass further arguments for fine-tuning the function.}
+
+\item{gds}{A SeqArray GDS object containing the imported VCF.}
+
+\item{markers.meta}{The current markers metadata tibble (from radiator).}
+
+\item{filters.parameters}{The filters.parameters object to update.}
+
+\item{path.folder}{Path to the filtering results folder.}
+
+\item{file.date}{Character string used for naming result files.}
 }
 \value{
-The function returns a GDS object.
+A \code{SeqVarGDSClass} object (radiator GDS) with a \code{/radiator} node
+containing per-marker and per-individual metadata and a record of all
+filters applied.
+
+A list with:
+\itemize{
+  \item \code{markers.meta}: updated tibble;
+  \item \code{filters.parameters}: updated parameters object.
+}
 }
 \description{
-The function reads VCF files for radiator and
-generate a connection \href{https://github.com/zhengxwen/SeqArray}{SeqArray}
-GDS object/file of class \code{SeqVarGDSClass} (Zheng et al. 2017).
-The Genomic Data Structure (GDS) file format is detailed in
-\href{https://github.com/zhengxwen/gdsfmt}{gdsfmt}.
+Read a VCF file and convert it to a
+\href{https://github.com/zhengxwen/SeqArray}{SeqArray} GDS object
+(\code{SeqVarGDSClass}; Zheng et al. 2017), with a
+\code{/radiator} node containing radiator-specific metadata.
 
-The function as an advance mode that allows various filtering arguments to
-be used. Handy to prune the dataset based on various QCs but also to
-remove artifacts, duplicated information and thus lower the overall noise in
-the VCF.
+The function has an "advanced" mode (via \code{...}) that allows a number of
+filters to be applied on the fly (MAC, coverage, genotyping rate, LD, etc.),
+as well as several VCF-specific clean-ups (Stacks, ipyrad, PLINK, DArT,
+FreeBayes, GATK, samtools, etc.).
 
 Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
-and might be of interest for users.
+and might be of interest for users who want a fast and robust VCF → GDS
+import with basic QC.
+
+Internal helper used by \code{read_vcf()} to synchronise radiator's
+\code{FILTERS} field with the VCF \code{FILTER} annotation.
+
+If the VCF contains more than one distinct FILTER value, markers with
+FILTER != "PASS" (e.g., low quality, failed filters, etc.) are tagged in
+radiator as:
+\itemize{
+  \item \code{"vcf filter column"} in \code{FILTERS}
+}
+
+The function updates both \code{markers.meta} inside the GDS and the
+\code{filters.parameters} tracking object.
 }
 \details{
-A vcf file of 35 GB with ~4 millions SNPs take about ~7 min with 8 CPU.
-A vcf file of 21 GB with ~2 millions SNPs take about ~5 min with 7 CPU.
-
-After the file is generated, you can close your computer and
-come back to it a months later and it's now a matter of sec to open a connection.
-See example below.
-
-
-\strong{markers heterozygosity and inbreeding coefficient}:
-The heterozygosity statistics (het obs and Fis) presented in this function
-are calculated globally across strata, without the possibility to filter out
-markers. We think this filtering for these statistics are best
-addressed in \code{\link{filter_het}}, \code{\link{filter_fis}} and
-\code{\link{filter_hwe}}, after outlier individuals and
-markers (for other stats) are blacklisted. Why ? The reason is that an excess of
-heterozygotes and negative Fis values are not a bad thing \emph{per se}.
-Genomic regions under balancing selection may contain such markers and
-statistics.
-}
-\section{VCF file format}{
-
-
-\strong{PLINK:} radiator fills the \code{LOCUS} column of PLINK VCFs with
-a unique integer based on the \code{CHROM} column
-(\code{as.integer(factor(x = CHROM))}).
-The \code{COL} column is filled with 1L for lack of bettern info on this.
-Not what you need ? Open an issue on GitHub for a request.
-
-\strong{ipyrad:} the pattern \code{locus_} in the \code{CHROM} column
-is removed and used. The \code{COL} column is filled with the same value as
-\code{POS}.
-
-\strong{GATK:} Some VCF have an \code{ID} column filled with \code{.},
-the LOCUS information is all contained along the linkage group in the
-\code{CHROM} column. To make it work with
-\href{https://github.com/thierrygosselin/radiator}{radiator},
-the \code{ID} column is filled with the \code{POS} column info.
-
-\strong{platypus:} Some VCF files don't have an ID filed with values,
-here the same thing is done as GATK VCF files above.
-
-\strong{freebayes:} Some VCF files don't have an ID filed with values,
-here the same thing is done as GATK VCF files above.
-\strong{samtools:} Some VCF files don't have an ID filed with values,
-here the same thing is done as GATK VCF files above.
-\strong{stacks:} with \emph{de novo} approaches, the CHROM column is
-filled with "1", the LOCUS column correspond to the CHROM section in stacks VCF and
-the COL column is POS -1. With a reference genome, the ID column in stacks VCF is
-separated into "LOCUS", "COL", "STRANDS".
-
-\emph{stacks problem: } current version as some intrinsic problem with
-missing allele depth info, during the tidying process a message will
-highlight the number of genotypes impacted by the problem. When possible, the
-problem is corrected by adding the read depth info into the allele depth field.
+Typical performance (rough order of magnitude):
+\itemize{
+  \item a 35 GB VCF with ~4M SNPs: \eqn{\sim}7 minutes with 8 CPU;
+  \item a 21 GB VCF with ~2M SNPs: \eqn{\sim}5 minutes with 7 CPU.
 }
 
-\section{Advance mode}{
+The resulting GDS file can be reopened almost instantly in a later R session
+with \code{radiator::read_rad()}.
 
-
-\emph{dots-dots-dots ...} allows to pass several arguments for fine-tuning the function:
-\enumerate{
-\item \code{whitelist.markers}: detailed in \code{\link[radiator]{filter_whitelist}}.
-\item \code{blacklist.id}: detailed in \code{\link[radiator]{tidy_genomic_data}}.
-\item \code{pop.select}: detailed in \code{\link[radiator]{tidy_genomic_data}}.
-\item \code{pop.levels}: detailed in \code{\link[radiator]{tidy_genomic_data}}.
-\item \code{pop.labels}: detailed in \code{\link[radiator]{tidy_genomic_data}}.
-\item \code{filter.strands}: (optional, character) Filter duplicate SNPs
-found on different strands (+/-), options are:
-\code{"keep.both", "best.stats", "blacklist"}. \code{"keep.both"}: does nothing
-and duplicated markers are kept (not recommended, but here for testing purposes),
-\code{"best.stats"}: will keep only one, based on the best statistics
-(MAC and missingness). \code{"blacklist"}: discard all duplicated markers.
-Default (\code{filter.strands = "blacklist"}).
-\item \code{filter.common.markers}: (logical) Default: \code{filter.common.markers = TRUE}.
-Documented in \code{\link{filter_common_markers}}.
-\item \code{filter.ma}: (integer) Default: \code{filter.ma = NULL}.
-To blacklist markers below a specific Minor Allele Count, Frequency or Depth (calculated overall/global).
-Documented in \code{\link{filter_ma}}.
-
-\item \code{filter.coverage}: (optional, string)
-Default: \code{filter.coverage = NULL}. To blacklist markers based on mean coverage.
-Documented in \code{\link{filter_coverage}}.
-
-\item \code{filter.genotyping}: (integer) To blacklist markers with too
-many missing data. e.g. \code{filter.genotyping = 0.1}, will only keep
-markers with missing rate <= to 10 percent.
-Documented in \code{\link{filter_genotyping}}.
-\item \code{filter.snp.position.read}: 3 options available, \code{"outliers", "q75", "iqr"}.
-This argument will blacklist markers based on it's position on the read.
-\code{filter.snp.position.read = "outliers"}, will remove markers based
-on outlier statistics of the position on the reads. e.g. if majority of SNPs
-are found between 10 and 90 pb, and very few above and below, those markers are
-discarded. Use this function argument with dataset with problematic assembly,
-or \emph{de novo} assembly with undocumented or poorly selected
-mismatch threshold.
-\item \code{filter.short.ld}: Described in \code{\link[radiator]{filter_ld}}
-\item \code{filter.long.ld}: Described in  \code{\link[radiator]{filter_ld}}
-\item \code{long.ld.missing}: Described in \code{\link[radiator]{filter_ld}}
-\item \code{ld.method}: (optional, character) The values available are
-\code{"composite"}, for LD composite measure, \code{"r"} for R coefficient
-(by EM algorithm assuming HWE, it could be negative), \code{"r2"} for r^2,
-\code{"dprime"} for D',
-\code{"corr"} for correlation coefficient. The method corr and composite are
-equivalent when SNPs are coded based on the presence of the alternate allele
-(\code{0, 1, 2}).
-Default: \code{ld.method = "r2"}.
-\item \code{filter.individuals.missing}: (double) Use this argument to
-blacklist individuals with too many missing data.
-e.g. \code{filter.individuals.missing = 0.7}, will remove individuals with >
-0.7 or 70% missing genotypes. This can help discover more polymorphic markers
-with some dataset.
-\item \code{markers.info}: (character) With default: \code{markers.info = NULL},
-all the variable in the vcf INFO field are imported.
-To import only DP (the SNP total read depth) and AF (the SNP allele frequency),
-use \code{markers.info = c("DP", "AF")}.
-Using, \code{markers.info = character(0)} will not import INFO variables.
-\item \code{path.folder}: to write ouput in a specific path
-(used internally in radiator). Default: \code{path.folder = getwd()}.
-If the supplied directory doesn't exist, it's created.
-\item \code{random.seed}: (integer, optional) For reproducibility, set an integer
-that will be used inside codes that uses randomness. With default,
-a random number is generated, printed and written in the appropriate directory.
-Default: \code{random.seed = NULL}.
-\item \code{subsample.markers.stats}: By default, when no filters are
-requested and that the number of markers is > 200K,
-0.2 of markers are randomly selected to generate the
-statistics (individuals and markers). This is an all-around and
-reliable number.
-In doubt, overwrite this value by using 1 (all markers selected) and
-expect a small computational cost.
+\strong{Heterozygosity and inbreeding (Fis):}
+The heterozygosity statistics generated here are global across strata and
+primarily descriptive. For filtering on het/Fis/HWE, we recommend using
+\code{\link{filter_het}}, \code{\link{filter_fis}} and
+\code{\link{filter_hwe}} \emph{after} obvious outlier individuals and
+markers have been removed.
 }
+\section{VCF file format behaviour}{
+
+
+\strong{PLINK:}
+\itemize{
+  \item \code{LOCUS} is filled with an integer based on \code{CHROM}
+  (\code{as.integer(factor(x = CHROM))});
+  \item \code{COL} is set to \code{1L} (no within-read position available).
+}
+
+\strong{ipyrad:}
+\itemize{
+  \item the pattern \code{"locus_"} is stripped from \code{CHROM};
+  \item \code{COL} is set to \code{POS}.
+}
+
+\strong{GATK / platypus / FreeBayes / samtools:}
+\itemize{
+  \item if the VCF \code{ID} column is \code{.}, it is replaced with
+  the position (\code{POS});
+  \item short-read locus identity is assumed to be encoded in
+  \code{CHROM} + \code{POS}.
+}
+
+\strong{Stacks:}
+\itemize{
+  \item \emph{de novo}: \code{CHROM} is typically "1";
+    \code{LOCUS} corresponds to "CHROM" in the Stacks VCF;
+    \code{COL} is \code{POS - 1};
+  \item \emph{reference}: \code{ID} is split into \code{LOCUS}, \code{COL},
+    \code{STRANDS}.
+}
+
+\strong{DArT VCFs:}
+\itemize{
+  \item \code{CHROM == "."} is replaced by \code{"denovo"};
+  \item missing \code{POS} (\code{NA}) are set to \code{50};
+  \item \code{COL} is extracted from \code{LOCUS} (read position);
+  \item \code{LOCUS} is the first group of digits, then joined with \code{POS}
+    using \code{"_"}, and \code{POS} is replaced by \code{COL}.
+}
+}
+
+\section{Advanced mode (\code{...})}{
+
+
+The \code{...} lets you pass many additional arguments used by radiator’s
+filtering framework, for example:
+\itemize{
+  \item \code{whitelist.markers}, \code{blacklist.id},
+    \code{pop.select}, \code{pop.levels}, \code{pop.labels};
+  \item \code{filter.strands} – handle duplicate SNPs on opposite strands;
+  \item \code{filter.common.markers} – keep markers common to all strata;
+  \item \code{filter.ma} – global MAC/MAF/DP filtering;
+  \item \code{filter.coverage}, \code{filter.genotyping};
+  \item \code{filter.snp.position.read}, \code{filter.snp.number};
+  \item \code{filter.short.ld}, \code{filter.long.ld}, \code{ld.method};
+  \item \code{filter.individuals.missing}, coverage filters by individual;
+  \item \code{markers.info}, \code{vcf.metadata};
+  \item \code{path.folder}, \code{random.seed}, \code{subsample.markers.stats};
+  \item \code{filter.monomorphic}, \code{filter.haplotype.format}, etc.
+}
+
+See the documentation of the individual filter functions
+(e.g. \code{\link{filter_ma}}, \code{\link{filter_ld}},
+\code{\link{filter_monomorphic}}) for more detail.
 }
 
 \examples{
 \dontrun{
-# require(SeqArray)
-# with built-in defaults:
+# Simple import, no strata, defaults:
+gds <- radiator::read_vcf(data = "populations.snps.vcf")
 
-data <- radiator::read_vcf(data = "populations.snps.vcf")
+# With strata and a few filters:
+gds <- radiator::read_vcf(
+  data                      = "populations.snps.vcf",
+  strata                    = "strata_salamander.tsv",
+  path.folder               = "salamander",
+  filter.individuals.missing = "outliers",
+  filter.common.markers      = TRUE,
+  filter.strands             = "blacklist",
+  filter.ma                  = 4,
+  filter.genotyping          = 0.3,
+  filter.snp.position.read   = "outliers",
+  filter.short.ld            = "mac",
+  filter.long.ld             = NULL,
+  verbose                    = TRUE
+)
 
-# Because no strata file is provided, the individuals are assumed to be in
-# the same group.
-
-# If you need to filter the VCF I recommend using ?radiator::filter_rad
-
-# But if you're certain about the filters thresholds, additional arguments are available:
-
-data <- radiator::read_vcf(
-    data = "populations.snps.vcf",
-    strata = "strata_salamander.tsv",
-    path.folder = "salamander",
-    filter.individuals.missing = "outliers",
-    filter.common.markers = TRUE,
-    filter.strands = "blacklist",
-    filter.ma = 4,
-    filter.genotyping = 0.3,
-    filter.snp.position.read = "outliers",
-    filter.short.ld = "mac",
-    filter.long.ld = NULL,
-    verbose = TRUE
-    )
-
-# In a new R session, to re-open the GDS file/connection:
-
-data <- radiator::read_rad(data = "radiator_20200911@0748.gds")
+# Later, in a new R session, reopen the GDS:
+gds <- radiator::read_rad(data = "radiator_20200911@0748.gds")
 }
+
 }
 \references{
-Zheng X, Gogarten S, Lawrence M, Stilp A, Conomos M, Weir BS,
-Laurie C, Levine D (2017). SeqArray -- A storage-efficient high-performance
-data format for WGS variant calls.
-Bioinformatics.
+Zheng X, Gogarten S, Lawrence M, Stilp A, Conomos M, Weir BS, Laurie C,
+Levine D (2017). SeqArray -- A storage-efficient high-performance data
+format for WGS variant calls. *Bioinformatics*.
 
-Danecek P, Auton A, Abecasis G et al. (2011)
-The variant call format and VCFtools.
-Bioinformatics, 27, 2156-2158.
+Danecek P, Auton A, Abecasis G et al. (2011) The variant call format and
+VCFtools. *Bioinformatics* 27:2156–2158.
 }
 \seealso{
-\code{\link{filter_ld}}
-\code{\link[radiator]{tidy_genomic_data}}
+\code{\link{filter_ld}},
+\code{\link[radiator]{tidy_genomic_data}},
 \code{\link[radiator]{tidy_vcf}}
 }
 \author{
 Thierry Gosselin \email{thierrygosselin@icloud.com}
 }
+\keyword{internal}

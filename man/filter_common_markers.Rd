@@ -28,9 +28,8 @@ Look into \code{\link{tidy_genomic_data}},
 \item{filter.common.markers}{(optional, logical)
 Default: \code{filter.common.markers = TRUE}.}
 
-\item{fig}{(optional, logical) \code{fig = TRUE} will produce an
-\href{https://github.com/hms-dbmi/UpSetR}{UpSet fig} to visualize the number
-of markers between populations. The package is required for this to work...
+\item{fig}{(optional, logical) \code{fig = TRUE} will produce a ComplexUpset
+figure to visualize the number of markers between populations.
 Default: \code{fig = FALSE}.}
 
 \item{parallel.core}{(optional) The number of core used for parallel

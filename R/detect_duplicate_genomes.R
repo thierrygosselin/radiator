@@ -449,7 +449,6 @@ detect_duplicate_genomes <- function(
       readr::write_tsv(
         x = geno.stats,
         file = file.path(path.folder, "genotyped.statistics.tsv"))
-      genome <- FALSE
     }
     # Computing distance ---------------------------------------------------------
     if (!is.null(distance.method)) {
@@ -609,7 +608,34 @@ detect_duplicate_genomes <- function(
     # Compute genome similarity -------------------------------------------------
     if (genome) {
 
+
+      # check data type
+      if (data.type %in% c("SeqVarGDSClass", "gds.file")) {
+        if (data.type == "gds.file") {
+          data <- radiator::read_rad(data, verbose = verbose)
+          data.type <- "SeqVarGDSClass"
+        }
+
+        data <- radiator::gds2tidy(
+          gds = data,
+          pop.id = FALSE) %>%
+          dplyr::select(INDIVIDUALS, STRATA, MARKERS, GT_BIN)
+
+        if (rlang::has_name(data, "GT_BIN")) {
+          gt.field <- "GT_BIN"
+        } else {
+          gt.field <- "GT"
+        }
+
+        n.markers <- dplyr::n_distinct(data$MARKERS)
+
+
+      }
+
       # If GT_BIN available, we need a new input.prep (not the same as dist method)
+
+
+
       if (gt.field == "GT_BIN") {
         input.prep <- dplyr::filter(.data = data, !is.na(GT_BIN))
       }
@@ -702,24 +728,6 @@ detect_duplicate_genomes <- function(
         pairwise.filename = pairwise.filename,
         blacklist.pairs.filename = blacklist.pairs.filename
       )
-
-      # as.integer is usually twice as light as numeric vector...
-      # all.pairs$SPLIT_VEC <- as.integer(floor((parallel.core * round.cpu * (seq_len(number.pairwise) - 1) / number.pairwise) + 1))
-      # res$pairwise.genome.similarity <- radiator_parallel(
-      #   X = unique(all.pairs$SPLIT_VEC),
-      #   FUN = genome_similarity,
-      #   mc.preschedule = FALSE,
-      #   mc.silent = FALSE,
-      #   mc.cleanup = TRUE,
-      #   mc.cores = parallel.core,
-      #   all.pairs = all.pairs,
-      #   data = input.prep,
-      #   threshold.common.markers = threshold.common.markers,
-      #   keep.data = keep.data,
-      #   pairwise.filename = pairwise.filename,
-      #   blacklist.pairs.filename = blacklist.pairs.filename
-      # ) %>%
-      #   dplyr::bind_rows(.)
       input.prep <- id.pairwise <- NULL # no longer needed
 
       if (verbose) message("Generating summary statistics")
@@ -774,7 +782,7 @@ detect_duplicate_genomes <- function(
         res$manhattan.plot.genome <- ggplot2::ggplot(
           data = data.import,
           ggplot2::aes(x = PAIRWISE, y = IDENTICAL_PROP, colour = POP_COMP,
-                       size = MARKERS_MISSING))+
+                       size = MARKERS_MISSING)) +
           ggplot2::geom_blank(data = data.frame(IDENTICAL_PROP = c(0, 1), PAIRWISE = NA),
                               mapping = ggplot2::aes(y = IDENTICAL_PROP))
       } else {
@@ -782,12 +790,32 @@ detect_duplicate_genomes <- function(
           data = res$pairwise.genome.similarity,
           ggplot2::aes(x = PAIRWISE, y = IDENTICAL_PROP, na.rm = TRUE))
 
+        # res$manhattan.plot.genome <- ggplot2::ggplot(
+        #   data = res$pairwise.genome.similarity,
+        #   ggplot2::aes(x = PAIRWISE, y = IDENTICAL_PROP, colour = POP_COMP,
+        #                size = MARKERS_MISSING)) +
+        #   ggplot2::geom_blank(data = data.frame(IDENTICAL_PROP = c(0, 1), PAIRWISE = NA),
+        #                       mapping = ggplot2::aes(y = IDENTICAL_PROP))
+
+
         res$manhattan.plot.genome <- ggplot2::ggplot(
           data = res$pairwise.genome.similarity,
-          ggplot2::aes(x = PAIRWISE, y = IDENTICAL_PROP, colour = POP_COMP,
-                       size = MARKERS_MISSING))++
-          ggplot2::geom_blank(data = data.frame(IDENTICAL_PROP = c(0, 1), PAIRWISE = NA),
-                              mapping = ggplot2::aes(y = IDENTICAL_PROP))
+          ggplot2::aes(
+            x = PAIRWISE,
+            y = IDENTICAL_PROP,
+            colour = POP_COMP,
+            size = MARKERS_MISSING
+          )
+        ) +
+          ggplot2::geom_blank(
+            data = data.frame(
+              PAIRWISE = c(min(res$pairwise.genome.similarity$PAIRWISE, na.rm = TRUE),
+                           max(res$pairwise.genome.similarity$PAIRWISE, na.rm = TRUE)),
+              IDENTICAL_PROP = c(0, 1)
+            ),
+            ggplot2::aes(x = PAIRWISE, y = IDENTICAL_PROP),
+            inherit.aes = FALSE
+          )
       }
 
       # violin plot
@@ -800,10 +828,6 @@ detect_duplicate_genomes <- function(
         ggplot2::theme(
           panel.grid.minor.x = ggplot2::element_blank(),
           panel.grid.major.x = ggplot2::element_blank(),
-          # legend.position = "none",
-          panel.grid.minor.x = ggplot2::element_blank(),
-          panel.grid.major.x = ggplot2::element_blank(),
-          # panel.grid.major.y = element_blank(),
           axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
           axis.text.x = ggplot2::element_blank(),
           axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
@@ -819,22 +843,17 @@ detect_duplicate_genomes <- function(
         ggplot2::geom_jitter(alpha = 0.3) +
         ggplot2::labs(y = "Genome similarity (proportion)") +
         ggplot2::labs(x = "Pairwise comparisons") +
-        ggplot2::labs(colour = "Population comparisons") +
-        ggplot2::scale_colour_manual(values = c("#0571b0", "black")) +
+        ggplot2::scale_colour_manual(name = "Population comparisons", values = c("#0571b0", "black")) +
         ggplot2::scale_size_area(name = "Markers missing", max_size = 6) +
-        # ggplot2::coord_cartesian(ylim = c(0, 1)) +  # ← this line ensures full y range is shown
         ggplot2::theme(
           panel.grid.minor.x = ggplot2::element_blank(),
           panel.grid.major.x = ggplot2::element_blank(),
-          # legend.position = "none",
-          panel.grid.minor.x = ggplot2::element_blank(),
-          panel.grid.major.x = ggplot2::element_blank(),
-          # panel.grid.major.y = element_blank(),
           axis.title.x = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
           axis.text.x = ggplot2::element_blank(),
           axis.title.y = ggplot2::element_text(size = 10, family = "Helvetica", face = "bold"),
           axis.text.y = ggplot2::element_text(size = 8, family = "Helvetica")
         ) +
+        ggplot2::scale_x_discrete(labels = NULL) +
         ggplot2::theme_light()
 
       ggplot2::ggsave(

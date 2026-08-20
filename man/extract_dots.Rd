@@ -4,9 +4,9 @@
 \alias{extract_dots}
 \title{extract_dots}
 \usage{
-extract_dots(n, v, env.arg, verbose = TRUE)
+extract_dots(n, v, env.arg, assign = TRUE, verbose = TRUE)
 }
 \description{
-Extract and Assign ...
+Extract and assign `...` arguments (keepers)
 }
 \keyword{internal}

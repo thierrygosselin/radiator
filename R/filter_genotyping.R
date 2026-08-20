@@ -1,386 +1,448 @@
-# Filter markers genotyping
+# Filter markers genotyping ----------------------------------------------------
 #' @name filter_genotyping
-#' @title Filter markers based on genotyping/missing rate
-#' @description This function is designed to remove/blacklist markers
-#' based on genotyping/call rate.
+#' @title Filter markers based on genotyping / missing rate
 #'
-#' \strong{Filter targets}: SNPs
+#' @description
+#' Filter markers based on their genotyping (call) rate, i.e. the proportion of
+#' non-missing genotypes per marker. This is a convenient way to remove SNPs
+#' with too much missing data before downstream analyses.
 #'
-#' \strong{Statistics}: mean genotyping/call rate (missingness information).
+#' \strong{Filter targets}: SNPs.
 #'
-#' @param interactive.filter (optional, logical) Do you want the filtering session to
-#' be interactive. With default: \code{interactive.filter == TRUE}, figures and
-#' tables are shown before making decisions for filtering.
-
-#' @param filter.genotyping (optional, string) 2 options:
+#' \strong{Statistics}: marker-level missingness
+#' (\code{MISSING_PROP} from \code{\link{generate_stats}}).
+#'
+#' @param data
+#' A Genomic Data Structure (GDS) file or connection
+#' (\code{SeqVarGDSClass} or \code{gds.file}) created by
+#' \code{\link{read_vcf}} or other \pkg{radiator} import functions.
+#'
+#' @param interactive.filter (optional, logical).
+#' Do you want the filtering session to be interactive ?
+#' With \code{interactive.filter = TRUE}, helper tables and plots are shown,
+#' and the user is prompted for a threshold.
+#' Default: \code{interactive.filter = TRUE}.
+#'
+#' @param filter.genotyping (optional, character or double).
+#' Two modes are available:
 #' \itemize{
-#' \item character string \code{filter.genotyping = "outliers"} will use as
-#' thresholds the higher outlier values in the box plot.
-#' \item double \code{filter.genotyping = 0.2}. Will allow up to 0.2 missing genotypes.
+#'   \item character string:
+#'   \code{filter.genotyping = "outliers"} uses the upper outlier value from the
+#'   missingness boxplot as threshold (i.e. removes high-missingness outliers);
+#'   \item double:
+#'   \code{filter.genotyping = 0.2} allows up to \code{0.2} missing genotypes
+#'   (i.e. keeps markers with \code{MISSING_PROP <= 0.2}).
 #' }
 #' Default: \code{filter.genotyping = NULL}.
-
-#' @param filename (optional, character)
+#'
+#' If \code{interactive.filter = FALSE} and \code{filter.genotyping = NULL},
+#' the function returns \code{data} unchanged.
+#'
+#' @param filename (optional, character).
+#' Basename for some output files (plots, tables). If \code{NULL}, a name is
+#' generated automatically from the function and date.
 #' Default: \code{filename = NULL}.
-
+#'
+#' @param parallel.core (optional, integer).
+#' Number of CPU cores to use in helper statistics.
+#' Default: \code{parallel.core = parallel::detectCores() - 1}.
+#'
+#' @param verbose (optional, logical).
+#' Show messages and progress.
+#' Default: \code{verbose = TRUE}.
+#'
 #' @inheritParams radiator_common_arguments
-
-#' @section Advance mode:
 #'
-#' \emph{dots-dots-dots ...} allows to pass several arguments for fine-tuning the function:
-#' \enumerate{
-#' \item \code{filter.common.markers} (optional, logical).
-#' Default: \code{filter.common.markers = FALSE},
-#' Documented in \code{\link{filter_common_markers}}.
-#' \item \code{filter.monomorphic} (logical, optional) Should the monomorphic
-#' markers present in the dataset be filtered out ?
-#' Default: \code{filter.monomorphic = TRUE}.
-#' Documented in \code{\link{filter_monomorphic}}.
-#' \item \code{path.folder}: to write ouput in a specific path
-#' (used internally in radiator).
-#' Default: \code{path.folder = getwd()}.
-#' If the supplied directory doesn't exist, it's created.
-#' }
-
-
-#' @section Interactive version:
+#' @details
+#' Internally, the function uses \code{\link{generate_stats}} to compute
+#' marker-level missingness (\code{MISSING_PROP}). Markers with missing
+#' proportion greater than the chosen threshold are blacklisted and have their
+#' \code{FILTERS} column updated to \code{"filter.genotyping"} in
+#' \code{markers.meta}.
 #'
-#' To help choose a threshold use the interactive version.
-#'
-#' 2 steps in the interactive version:
-#'
-#' Step 1. Visualization and helper table.
-#'
-#' Step 2. Filtering markers based on mean genotyping/missing rate
-
-
-#' @rdname filter_genotyping
-#' @export
-#' @return With \code{interactive.filter = FALSE}, a list in the global environment,
-#' with 7 objects:
-#' \enumerate{
-#' \item $tidy.filtered.mac
-#' \item $whitelist.markers
-#' \item $blacklist.markers
-#' \item $mac.data
-#' \item $filters.parameters
+#' With \code{interactive.filter = TRUE}, a helper table and plot are generated
+#' to assist in choosing a threshold:
+#' \itemize{
+#'   \item \code{genotyping.helper.table.tsv}:
+#'   number of markers kept/removed for thresholds from 0 to 1 by 0.1;
+#'   \item if strata are present, \code{markers.pop.missing.helper.table.tsv}
+#'   summarises missingness per population;
+#'   \item a PDF/PNG helper plot summarising these patterns.
 #' }
 #'
-#' With \code{interactive.filter = TRUE}, a list with 4 additionnal objects are generated.
-#' \enumerate{
-#' \item $distribution.mac.global
-#' \item $distribution.mac.local
-#' \item $mac.global.summary
-#' \item $mac.helper.table
+#' This function operates on the GDS representation of the data and is meant
+#' for genotyping/missingness-based pruning \emph{after} VCF import
+#' (e.g. after \code{\link{read_vcf}}), in contrast to VCF-level slimming using
+#' tools like \code{\link{filter_monomorphic_vcf}}.
+#'
+#' @return
+#' The filtered dataset, of the same type as the input:
+#' \itemize{
+#'   \item if \code{data} is a GDS connection (\code{SeqVarGDSClass}), the
+#'   same connection is returned with updated \code{markers.meta};
+#'   \item if \code{data} is a GDS file path, the path is returned (the file is
+#'   updated on disk).
 #' }
-
+#'
+#' Side-effects:
+#' \itemize{
+#'   \item helper tables and plots are written under
+#'   \code{filter_genotyping_YYYYMMDD@HHMM};
+#'   \item \code{markers.meta} inside the GDS is updated and synchronised;
+#'   \item the \code{filters.parameters} file is updated to record the filter.
+#' }
+#'
+#' @seealso
+#' \code{\link{filter_common_markers}},
+#' \code{\link{filter_monomorphic}},
+#' \code{\link{filter_ma}},
+#' \code{\link{read_vcf}},
+#' \code{\link{filter_rad}}.
+#'
 #' @examples
 #' \dontrun{
-
-#' # The minumum
+#' # Filter markers with more than 20% missing genotypes
+#' gds <- radiator::read_vcf(data = "populations.snps.vcf") %>%
+#'        radiator::filter_genotyping(
+#'             data               = .,
+#'             interactive.filter = FALSE,
+#'             filter.genotyping  = 0.2
+#' )
 #' }
-
+#'
+#' @export
+#' @rdname filter_genotyping
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
-
 filter_genotyping <- function(
     data,
     interactive.filter = TRUE,
-    filter.genotyping = NULL,
-    filename = NULL,
-    parallel.core = parallel::detectCores() - 1,
-    verbose = TRUE,
+    filter.genotyping  = NULL,
+    filename           = NULL,
+    parallel.core      = parallel::detectCores() - 1,
+    verbose            = TRUE,
     ...
 ) {
-  # obj.keeper <- c(ls(envir = globalenv()), "data")
-  # data = gds
-  # interactive.filter = TRUE
-  # filter.genotyping = 0.2
-  # filename = NULL
-  # parallel.core = parallel::detectCores() - 1
-  # verbose = TRUE
-  # path.folder = NULL
-  # parameters <- NULL
-  # force.stats <- TRUE
 
-  if (is.null(filter.genotyping) && !interactive.filter) return(data)
+  # Early exit: nothing to do ---------------------------------------------------
+  if (is.null(filter.genotyping) && !interactive.filter) {
+    return(data)
+  }
+
   if (interactive.filter) verbose <- TRUE
 
-  # Cleanup-------------------------------------------------------------------
-  radiator_function_header(f.name = "filter_genotyping", verbose = verbose)
-  file.date <- format(Sys.time(), "%Y%m%d@%H%M")
-  if (verbose) message("Execution date@time: ", file.date)
-  old.dir <- getwd()
-  opt.change <- getOption("width")
-  options(width = 70)
-  timing <- radiator_tic()
-  #back to the original directory and options
-  on.exit(setwd(old.dir), add = TRUE)
-  on.exit(options(width = opt.change), add = TRUE)
-  on.exit(radiator_toc(timing), add = TRUE)
-  on.exit(radiator_function_header(f.name = "filter_genotyping", start = FALSE, verbose = verbose), add = TRUE)
-  # on.exit(rm(list = setdiff(ls(envir = sys.frame(-1L)), obj.keeper), envir = sys.frame(-1L)))
+  # Common startup --------------------------------------------------------------
+  .start    <- radiator_startup(f.name = "filter_genotyping", verbose = verbose)
+  file.date <- .start$file.date
+  on.exit(radiator_teardown(.start), add = TRUE)
 
-  # Function call and dotslist -------------------------------------------------
+  # Function call and dotslist --------------------------------------------------
   rad.dots <- radiator_dots(
     func.name = as.list(sys.call())[[1]],
-    fd = rlang::fn_fmls_names(),
+    fd        = rlang::fn_fmls_names(),
     args.list = as.list(environment()),
-    dotslist = rlang::dots_list(..., .homonyms = "error", .check_assign = TRUE),
-    keepers = c("path.folder", "parameters", "force.stats", "internal"),
-    verbose = FALSE
+    dotslist  = rlang::dots_list(
+      ...,
+      .homonyms     = "error",
+      .check_assign = TRUE
+    ),
+    keepers   = c("path.folder", "parameters", "force.stats", "internal"),
+    verbose   = FALSE
   )
 
   # Checking for missing and/or default arguments ------------------------------
-  if (missing(data)) rlang::abort("data is missing")
+  if (missing(data)) {
+    rlang::abort("data is missing")
+  }
 
-  # Folders---------------------------------------------------------------------
+  # Folders ---------------------------------------------------------------------
   path.folder <- generate_folder(
-    rad.folder = "filter_genotyping",
+    rad.folder  = "filter_genotyping",
     path.folder = path.folder,
-    internal = internal,
-    file.date = file.date,
-    verbose = verbose)
-
-  # write the dots file
-  write_radiator_tsv(
-    data = rad.dots,
-    path.folder = path.folder,
-    filename = "radiator_filter_genotyping_args",
-    date = TRUE,
-    internal = internal,
-    write.message = "Function call and arguments stored in: ",
-    verbose = verbose
+    internal    = internal,
+    file.date   = file.date,
+    verbose     = verbose
   )
 
-  # Message about steps taken during the process ---------------------------------
+  # Write the dots file ---------------------------------------------------------
+  write_radiator_tsv(
+    data          = rad.dots,
+    path.folder   = path.folder,
+    filename      = "radiator_filter_genotyping_args",
+    date          = TRUE,
+    internal      = internal,
+    write.message = "Function call and arguments stored in: ",
+    verbose       = verbose
+  )
+
+  # Message about steps taken during the process --------------------------------
   if (interactive.filter) {
     message("Interactive mode: on\n")
     message("Step 1. Visualization and helper table")
-    message("Step 2. Filtering markers based on maximum missing proportion allowed\n\n")
+    message("Step 2. Filtering markers based on maximum missing proportion allowed\n")
   }
 
-  # Detect format --------------------------------------------------------------
+  # Detect format ---------------------------------------------------------------
   data.type <- radiator::detect_genomic_format(data)
 
   if (!data.type %in% c("SeqVarGDSClass", "gds.file")) {
     rlang::abort("Input not supported for this function: read function documentation")
   }
 
-  # Import data ---------------------------------------------------------------
+  # Import data -----------------------------------------------------------------
   if (verbose) message("Importing data ...")
   radiator_packages_dep(package = "SeqArray", cran = FALSE, bioc = TRUE)
 
   if (data.type == "gds.file") {
-    data <- radiator::read_rad(data, verbose = verbose)
+    data      <- radiator::read_rad(data, verbose = verbose)
     data.type <- "SeqVarGDSClass"
   }
 
-  # Filter parameter file: initiate ------------------------------------------
+  # Filter parameter file: initiate ---------------------------------------------
   filters.parameters <- radiator_parameters(
-    generate = TRUE,
-    initiate = TRUE,
-    update = FALSE,
+    generate      = TRUE,
+    initiate      = TRUE,
+    update        = FALSE,
     parameter.obj = parameters,
-    data = data,
-    path.folder = path.folder,
-    file.date = file.date,
-    internal = internal,
-    verbose = verbose)
+    data          = data,
+    path.folder   = path.folder,
+    file.date     = file.date,
+    internal      = internal,
+    verbose       = verbose
+  )
 
-  # Step 1. Visuals ----------------------------------------------------------
-  if (interactive.filter) message("\nStep 1. Missing visualization and helper table\n")
+  # Step 1. Visuals -------------------------------------------------------------
+  if (interactive.filter) {
+    message("\nStep 1. Missing visualization and helper table\n")
+  }
 
-  # Generate coverage stats---------------------------------------------------
+  # Generate missingness stats --------------------------------------------------
   info <- generate_stats(
-    gds = data,
-    individuals = FALSE,
-    missing = TRUE,
-    coverage = FALSE,
+    gds             = data,
+    individuals     = FALSE,
+    missing         = TRUE,
+    coverage        = FALSE,
     allele.coverage = FALSE,
-    mac = FALSE,
-    heterozygosity = FALSE,
-    snp.per.locus = FALSE,
+    mac             = FALSE,
+    heterozygosity  = FALSE,
+    snp.per.locus   = FALSE,
     snp.position.read = FALSE,
-    force.stats = TRUE,
-    plot = FALSE,
-    path.folder = path.folder,
-    file.date = file.date,
-    parallel.core = parallel.core,
-    verbose = verbose
+    force.stats     = TRUE,
+    plot            = FALSE,
+    path.folder     = path.folder,
+    file.date       = file.date,
+    parallel.core   = parallel.core,
+    verbose         = verbose
   )
 
   stats <- info$m.stats
-  info <- info$m.info
+  info  <- info$m.info
 
-  # Helper table -------------------------------------------------------------
+  # Helper table ----------------------------------------------------------------
   if (verbose) message("Generating missingness/genotyping helper table...")
+
   mis_many_markers <- function(threshold, x) {
     nrow(dplyr::filter(x, MISSING_PROP <= threshold))
-  }#End how_many_markers
+  }
 
   n.markers <- nrow(info)
+
   helper.table <- tibble::tibble(MISSING_PROP = seq(0, 1, by = 0.1)) %>%
     dplyr::mutate(
       WHITELISTED_MARKERS = purrr::map_int(
-        .x = seq(0, 1, by = 0.1),
+        .x = MISSING_PROP,
         .f = mis_many_markers,
-        x = info),
+        x  = info
+      ),
       BLACKLISTED_MARKERS = n.markers - WHITELISTED_MARKERS
     )
 
   readr::write_tsv(
-    x = helper.table,
+    x    = helper.table,
     file = file.path(path.folder, "genotyping.helper.table.tsv")
   )
 
-  # checking if strata present
-  strata <- extract_individuals_metadata(
-    gds = data,
-    ind.field.select = c("INDIVIDUALS", "STRATA"),
-    whitelist = TRUE)
-  if (!is.null(strata$STRATA)) {
+  # Strata-specific helper table -----------------------------------------------
+  strata.meta <- extract_individuals_metadata(
+    gds               = data,
+    ind.field.select  = c("INDIVIDUALS", "STRATA"),
+    whitelist         = TRUE
+  )
+
+  has.strata <- !is.null(strata.meta$STRATA)
+
+  if (has.strata) {
     m.strata <- missing_per_pop(
-      gds = data, strata = strata, parallel.core = parallel.core)
+      gds           = data,
+      strata        = strata.meta,
+      parallel.core = parallel.core
+    )
 
     round_mean <- function(x) as.integer(round(mean(x, na.rm = TRUE), 0))
-    mean.pop <- m.strata %>% dplyr::group_by(MISSING_PROP) %>%
-      dplyr::summarise_if(.tbl = ., .predicate = is.integer, .funs = round_mean) %>%
+
+    mean.pop <- m.strata %>%
+      dplyr::group_by(MISSING_PROP) %>%
+      dplyr::summarise_if(.predicate = is.integer, .funs = round_mean) %>%
       dplyr::mutate(STRATA = "MEAN_POP")
-    if (is.factor(strata$STRATA)) {
-      strata.pop <- levels(strata$STRATA)
+
+    if (is.factor(strata.meta$STRATA)) {
+      strata.pop <- levels(strata.meta$STRATA)
     } else {
-      strata.pop <- unique(strata$STRATA)
+      strata.pop <- unique(strata.meta$STRATA)
     }
 
     strata.levels <- c(strata.pop, "MEAN_POP", "OVERALL")
-    n.pop <- length(strata.levels)
 
     suppressWarnings(
-      helper.table %<>%
+      helper.table %>%
         dplyr::mutate(STRATA = "OVERALL") %>%
         dplyr::bind_rows(mean.pop, m.strata) %>%
         dplyr::mutate(STRATA = factor(STRATA, levels = strata.levels, ordered = TRUE)) %>%
         dplyr::arrange(STRATA) %>%
         readr::write_tsv(
-          x = .,
-          file = file.path(path.folder, "markers.pop.missing.helper.table.tsv")))
-    m.strata <- round_mean <- mean.pop <- NULL
+          x    = .,
+          file = file.path(path.folder, "markers.pop.missing.helper.table.tsv")
+        )
+    )
 
-    if (verbose) message("File written: markers.pop.missing.helper.table.tsv")
-    helper.table  %<>%
+    if (verbose) {
+      message("File written: markers.pop.missing.helper.table.tsv")
+    }
+
+    helper.table.long <- helper.table %>%
+      dplyr::mutate(STRATA = "OVERALL") %>%
       tidyr::pivot_longer(
-        data = .,
-        cols = -c("MISSING_PROP", "STRATA"),
-        names_to = "LIST",
+        data      = .,
+        cols      = -c("MISSING_PROP", "STRATA"),
+        names_to  = "LIST",
         values_to = "MARKERS"
       ) %>%
       dplyr::mutate(STRATA = factor(STRATA, levels = strata.levels, ordered = TRUE)) %>%
       dplyr::arrange(STRATA)
 
-    strata <- TRUE
-    strata.levels <- NULL
   } else {
-    helper.table  %<>%
+
+    helper.table.long <- helper.table %>%
       tidyr::pivot_longer(
-        data = .,
-        cols = -MISSING_PROP,
-        names_to = "LIST",
+        data      = .,
+        cols      = -MISSING_PROP,
+        names_to  = "LIST",
         values_to = "MARKERS"
       )
-    n.pop <- 1L
-    strata <- FALSE
   }
 
-  # figures
+  # Figures ---------------------------------------------------------------------
   markers.plot <- radiator_helper_plot(
-    data = helper.table,
-    strata = TRUE,
-    stats = "MISSING_PROP",
-    x.axis.title =  "Maximum missing proportion allowed",
-    x.breaks = seq(0, 1, by = 0.1),
+    data          = helper.table.long,
+    strata        = has.strata,
+    stats         = "MISSING_PROP",
+    x.axis.title  = "Maximum missing proportion allowed",
+    x.breaks      = seq(0, 1, by = 0.1),
     plot.filename = file.path(path.folder, "markers.genotyping.helper.plot")
   )
 
   print(markers.plot)
-  helper.table <- markers.plot <- NULL
-  if (verbose) message("Files written: helper tables and plots")
+  helper.table      <- NULL
+  helper.table.long <- NULL
+  markers.plot      <- NULL
 
-
-  # Step 2. Thresholds selection ---------------------------------------------
-  if (interactive.filter) {
-    filter.genotyping <- 1L
-    if (verbose) message("\nStep 2. Filtering markers based on maximum missing proportion\n")
-    filter.genotyping <- radiator_question(
-      x = "Choose the maximum missing proportion allowed: ", minmax = c(0, 1))
+  if (verbose) {
+    message("Files written: helper tables and plots")
   }
 
-  # identify outliers: low and high -----------------------------------------
+  # Step 2. Threshold selection -------------------------------------------------
+  if (interactive.filter) {
+    if (verbose) {
+      message("\nStep 2. Filtering markers based on maximum missing proportion\n")
+    }
+    filter.genotyping <- radiator_question(
+      x      = "Choose the maximum missing proportion allowed: ",
+      minmax = c(0, 1)
+    )
+  }
+
+  # Identify threshold: outliers vs explicit value ------------------------------
   if (!purrr::is_double(filter.genotyping)) {
-    out.high <- floor(stats$OUTLIERS_HIGH[stats$GROUP == "missing genotypes"]*1000)/1000
-    if (verbose) message("\nRemoving outliers markers based on genotyping statistic: ", out.high)
+    out.high <- floor(
+      stats$OUTLIERS_HIGH[stats$GROUP == "missing genotypes"] * 1000
+    ) / 1000
+    if (verbose) {
+      message("\nRemoving outlier markers based on genotyping statistic: ", out.high)
+    }
     filter.genotyping <- out.high
   } else {
-    if (verbose) message("\nRemoving markers based on genotyping statistic: ", filter.genotyping)
+    if (verbose) {
+      message("\nRemoving markers based on genotyping statistic: ", filter.genotyping)
+    }
   }
 
-  # Whitelist and blacklist --------------------------------------------------
+  # Whitelist and blacklist -----------------------------------------------------
   bl <- info %>%
     dplyr::filter(MISSING_PROP > filter.genotyping) %$%
     VARIANT_ID
+
   markers.meta <- extract_markers_metadata(gds = data, whitelist = FALSE) %>%
     dplyr::mutate(
-      FILTERS = dplyr::if_else(VARIANT_ID %in% bl, "filter.genotyping", FILTERS)
+      FILTERS = dplyr::if_else(
+        VARIANT_ID %in% bl,
+        "filter.genotyping",
+        FILTERS
+      )
     )
-  # Update GDS
+
+  # Update GDS ------------------------------------------------------------------
   update_radiator_gds(
-    gds = data,
+    gds       = data,
     node.name = "markers.meta",
-    value = markers.meta,
-    sync = TRUE
+    value     = markers.meta,
+    sync      = TRUE
   )
 
   write_radiator_tsv(
-    data = markers.meta %>% dplyr::filter(FILTERS == "filter.genotyping"),
-    path.folder = path.folder,
-    filename = "blacklist.markers.genotyping",
-    date = TRUE,
-    internal = internal,
+    data          = dplyr::filter(markers.meta, FILTERS == "filter.genotyping"),
+    path.folder   = path.folder,
+    filename      = "blacklist.markers.genotyping",
+    date          = TRUE,
+    internal      = internal,
     write.message = "standard",
-    verbose = verbose
+    verbose       = verbose
   )
 
   write_radiator_tsv(
-    data = markers.meta %>% dplyr::filter(FILTERS == "whitelist"),
-    path.folder = path.folder,
-    filename = "whitelist.markers.genotyping",
-    date = TRUE,
-    internal = internal,
+    data          = dplyr::filter(markers.meta, FILTERS == "whitelist"),
+    path.folder   = path.folder,
+    filename      = "whitelist.markers.genotyping",
+    date          = TRUE,
+    internal      = internal,
     write.message = "standard",
-    verbose = verbose
+    verbose       = verbose
   )
 
-  # Update parameters --------------------------------------------------------
+  # Update parameters -----------------------------------------------------------
   filters.parameters <- radiator_parameters(
-    generate = FALSE,
-    initiate = FALSE,
-    update = TRUE,
+    generate      = FALSE,
+    initiate      = FALSE,
+    update        = TRUE,
     parameter.obj = filters.parameters,
-    data = data,
-    filter.name = "Filter genotyping",
-    param.name = "filter.genotyping",
-    values = filter.genotyping,
-    path.folder = path.folder,
-    file.date = file.date,
-    internal = internal,
-    verbose = verbose)
-
-
-  # results --------------------------------------------------------------------
-  radiator_results_message(
-    rad.message = stringi::stri_join("\nFilter genotyping threshold: ", filter.genotyping),
-    filters.parameters,
-    internal,
-    verbose
+    data          = data,
+    filter.name   = "Filter genotyping",
+    param.name    = "filter.genotyping",
+    values        = filter.genotyping,
+    path.folder   = path.folder,
+    file.date     = file.date,
+    internal      = internal,
+    verbose       = verbose
   )
+
+  # Results ---------------------------------------------------------------------
+  radiator_results_message(
+    rad.message       = stringi::stri_join(
+      "\nFilter genotyping threshold: ",
+      filter.genotyping
+    ),
+    filters.parameters = filters.parameters,
+    internal          = internal,
+    verbose           = verbose
+  )
+
   return(data)
-}#End filter_genotyping
+} # End filter_genotyping

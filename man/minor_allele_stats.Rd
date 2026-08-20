@@ -7,6 +7,7 @@
 minor_allele_stats(
   data,
   calibrate.alleles = c("count", "depth", "ancestral"),
+  keep.biallelic = TRUE,
   blacklist.markers = NULL,
   markers.meta = NULL,
   path.folder = NULL,

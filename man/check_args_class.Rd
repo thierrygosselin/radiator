@@ -7,6 +7,7 @@
 check_args_class(x)
 }
 \description{
-Check the class of the argument/parameter value
+Check the class of the argument/parameter value and return a
+  compact printable representation (value or class name).
 }
 \keyword{internal}

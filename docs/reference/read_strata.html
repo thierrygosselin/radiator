@@ -21,7 +21,7 @@ and might be of interest for users."><meta property="og:image" content="/logo.pn
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">radiator</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.3.9</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.1</span>
       </span>
     </div>
 
@@ -87,8 +87,8 @@ and might be of interest for users.</p>
 <span>  pop.labels <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  pop.select <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  blacklist.id <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  keep.two <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  path.folder <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  keep.two <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  path.folder <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/getwd.html" class="external-link">getwd</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  filename <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -155,8 +155,8 @@ Default: <code>blacklist.id = NULL</code>.</p></dd>
 
 <dt id="arg-keep-two">keep.two<a class="anchor" aria-label="anchor" href="#arg-keep-two"></a></dt>
 <dd><p>(optional, logical) The output is limited to 2 columns:
-<code>INDIVIDUALS, STRATA</code>.
-Default: <code>keep.two = TRUE</code>.</p></dd>
+<code>INDIVIDUALS, STRATA</code>. By default all the samples metadata is imported.
+Default: <code>keep.two = FALSE</code>.</p></dd>
 
 
 <dt id="arg-path-folder">path.folder<a class="anchor" aria-label="anchor" href="#arg-path-folder"></a></dt>
@@ -270,7 +270,7 @@ See the example in <code><a href="extract_dart_target_id.html">extract_dart_targ
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
       </footer></div>

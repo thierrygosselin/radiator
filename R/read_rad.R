@@ -134,9 +134,6 @@ read_rad <- function(
   if ("gds.file" %in% data.type) {
     if (verbose) message("Opening GDS file connection")
 
-    # if (!is.character(gds)) data <- data$filename
-
-
     seq_open_temp <- function(data, allow.dup) {
       SeqArray::seqOpen(gds.fn = data, readonly = allow.dup, allow.duplicate = allow.dup)
     }#End seq_open_temp
@@ -296,27 +293,34 @@ write_rad <- function(
 
     # GDS closing connection and setting filters
     if ("SeqVarGDSClass" %in% data.type) {
+      # samples
       s <- extract_individuals_metadata(
         gds = data,
         ind.field.select = "INDIVIDUALS",
         whitelist = TRUE
       ) %$%
         INDIVIDUALS
+
+      # markers
       m <- extract_markers_metadata(
         gds = data,
         markers.meta.select = "VARIANT_ID",
         whitelist = TRUE
       ) %$%
         VARIANT_ID
+
       if (verbose) message("Setting filters to:")
       if (verbose) message("    number of samples: ", length(s))
       if (verbose) message("    number of markers: ", length(m))
+      # ?SeqArray::seqSetFilter
+      gds.filename <- data$filename
+      SeqArray::seqClose(data)
+      data <- SeqArray::seqOpen(gds.fn = gds.filename, readonly = FALSE, allow.duplicate = FALSE)
       SeqArray::seqSetFilter(object = data,
                              variant.id = m,
                              sample.id = as.character(s),
-                             verbose = FALSE)
-      if (verbose) message("Closing connection with GDS file:\n", data$filename)
-      gds.filename <- data$filename
+                             verbose = verbose)
+      if (verbose) message("Closing connection with GDS file:\n", basename(gds.filename))
       SeqArray::seqClose(data)
       return(gds.filename)
     }
@@ -364,63 +368,66 @@ write_rad <- function(
 
 #' @name write_radiator_tsv
 #' @title Write radiator tsv
-#' @description Write tsv file. Using the package \code{readr}. Takes cares of
-#' the file path and proper filenaming. The complete filename is built with the
-#' \code{path.folder} + \code{filename} + \code{datetime} + \code{.tsv}.
+#' @description
+#' Write a TSV file using \code{readr::write_tsv()}.
+#' The complete filename is built as
+#' \code{path.folder} + \code{filename} + \code{datetime} + \code{".tsv"}.
 #'
-#' Used internally in \href{https://github.com/thierrygosselin/radiator}{radiator}
+#' Used internally in
+#' \href{https://github.com/thierrygosselin/radiator}{radiator}
 #' and \href{https://github.com/thierrygosselin/assigner}{assigner}
 #' and might be of interest for users.
-
-#' @param data An object in the global environment. Ideally a tibble...
-
+#'
+#' If \code{data} is passed as a bare object name that does not exist in the
+#' calling environment (e.g. \code{data = rad.dots} but \code{rad.dots} is
+#' missing), the function quietly returns without writing a file. When
+#' \code{verbose = TRUE}, a short message is printed instead of an error.
+#'
+#' @param data An object to write, typically a tibble or data frame.
+#'
 #' @param path.folder (optional) Path to write the file.
 #' With default, the working directory is used.
 #' Default: \code{path.folder = NULL}.
-
-#' @param filename (required, character string) Name of the file.
+#'
+#' @param filename (required, character string) Name of the file (base name).
 #'
 #' @param append If FALSE, will overwrite existing file.
 #' If TRUE, will append to existing file.
 #' In both cases, if the file does not exist a new file is created.
 #' Default: \code{append = FALSE}.
 #'
-#' @param col.names If FALSE, column names will not be included at the top of the file.
-#' If TRUE, column names will be included.
-#' If not specified, col_names will take the opposite value given to append.
+#' @param col.names If FALSE, column names will not be included at the top
+#' of the file. If TRUE, column names will be included.
 #' Default: \code{col.names = TRUE}.
 #'
-#' @param date (logical) To append time to the filename.
+#' @param date (logical) Append timestamp to the filename.
 #' Default: \code{date = TRUE}.
-
-#' @param internal (optional, logical) This is used inside radiator internal code and it stops
-#' from writting the file.
+#'
+#' @param internal (logical) Used inside radiator internal code.
+#' When \code{TRUE}, the function returns without writing the file.
 #' Default: \code{internal = FALSE}.
-
+#'
 #' @param write.message (optional, character) Print a message in the console
 #' after writing file.
 #' With \code{write.message = NULL}, nothing is printed in the console.
-#' Default: \code{write.message = "standard"}. This will print
+#' Default: \code{write.message = "standard"} which prints
 #' \code{message("File written: ", basename(filename))}.
-
+#'
 #' @param verbose (optional, logical) \code{verbose = TRUE} to be chatty
 #' during execution.
 #' Default: \code{verbose = FALSE}.
-
-#' @return A file written in the working directory.
+#'
+#' @return Invisibly, the full path to the written file, or \code{NULL} if
+#' nothing was written (e.g. \code{internal = TRUE} or data object not found).
 #' @export
 #' @rdname write_radiator_tsv
 #'
-#'
 #' @author Thierry Gosselin \email{thierrygosselin@@icloud.com}
-#'
-#' \code{\link{read_rad}}
 #'
 #' @examples
 #' \dontrun{
 #' radiator::write_radiator_tsv(data = tidy.data, filename = "data.shark")
 #' }
-
 
 write_radiator_tsv <- function(
     data,
@@ -434,50 +441,71 @@ write_radiator_tsv <- function(
     verbose = FALSE
 ) {
 
-  if (!internal) {
+  # nothing to do for internal calls
+  if (isTRUE(internal)) {
+    return(invisible(NULL))
+  }
 
-    # checks
-    generate.filename <- TRUE # by default
+  # capture the expression passed as `data`
+  data_expr <- substitute(data)
+  data_is_name <- is.name(data_expr)
+  data_label <- if (data_is_name) as.character(data_expr) else "data"
 
-    # check if .tsv is present in filename
-    file.type <- stringi::stri_extract(
-      str = filename,
-      regex = "\\.[^\\.]*$"
-    )
-
-    if (".tsv" %in% file.type) {
-      # check path
-      if (identical(basename(filename), filename)) {
-        generate.filename <- TRUE
-      } else {
-        generate.filename <- FALSE
-        full.filename <- filename
-      }
+  # if user passed a bare name but it doesn't exist in the caller, skip gracefully
+  if (data_is_name &&
+      !exists(data_label, envir = parent.frame(), inherits = TRUE)) {
+    if (verbose) {
+      message(
+        "write_radiator_tsv: object '", data_label,
+        "' not found in calling environment; no file written."
+      )
     }
+    return(invisible(NULL))
+  }
 
-    if (generate.filename) {
-      full.filename <- generate_filename(
-        name.shortcut = filename,
-        path.folder = path.folder,
-        date = date,
-        extension = "tsv"
-      )$filename
-    }
+  # evaluate data in caller environment
+  data_val <- eval(data_expr, envir = parent.frame())
 
-    readr::write_tsv(
-      x = data,
-      file = full.filename,
-      append = append,
-      col_names = col.names
-    )
+  # normal behaviour from here
+  generate.filename <- TRUE
 
-    if (!is.null(write.message) && verbose) {
-      if (write.message == "standard") {
-        message("File written: ", basename(full.filename))
-      } else {
-        write.message
-      }
+  file.type <- stringi::stri_extract(
+    str = filename,
+    regex = "\\.[^\\.]*$"
+  )
+
+  if (".tsv" %in% file.type) {
+    if (identical(basename(filename), filename)) {
+      generate.filename <- TRUE
+    } else {
+      generate.filename <- FALSE
+      full.filename <- filename
     }
   }
 
-}#End write_radiator_tsv
+  if (generate.filename) {
+    full.filename <- generate_filename(
+      name.shortcut = filename,
+      path.folder   = path.folder,
+      date          = date,
+      extension     = "tsv"
+    )$filename
+  }
+
+  readr::write_tsv(
+    x         = data_val,
+    file      = full.filename,
+    append    = append,
+    col_names = col.names
+  )
+
+  if (!is.null(write.message) && verbose) {
+    if (write.message == "standard") {
+      message("File written: ", basename(full.filename))
+    } else {
+      message(paste0(write.message, basename(full.filename)))
+    }
+  }
+
+  invisible(full.filename)
+} # End write_radiator_tsv

@@ -506,7 +506,8 @@ filter_rad <- function(
   wf <- path.folder <- generate_folder(
     rad.folder = "filter_rad",
     path.folder = path.folder,
-    prefix.int = FALSE,
+    prefix.int = TRUE,
+    append.date = TRUE,
     internal = internal,
     file.date = file.date,
     verbose = verbose)

@@ -332,11 +332,17 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
       dplyr::select(tidyselect::any_of(want))
   }
 
-  if (is.factor(data$STRATA)) {
+  #
+  # Check strata and pop.levels
+  pop.levels <- unique(data$STRATA)
+  if (rlang::has_name(data, "STRATA") && is.factor(data$STRATA)) {
+    if (dplyr::n_distinct(data$STRATA) != nlevels(data$STRATA)) {
+      data$STRATA <- droplevels(data$STRATA)
+      pop.levels <- levels(data$STRATA)
+    }
     pop.levels <- levels(data$STRATA)
-  } else {
-    pop.levels <- unique(data$STRATA)
   }
+
   # Make sure that STRATA and INDIVIDUALS are character
   data$INDIVIDUALS <- as.character(data$INDIVIDUALS)
   data$STRATA <- as.character(data$STRATA)
@@ -435,11 +441,51 @@ write_genind <- function(data, write = FALSE, verbose = FALSE) {
     dplyr::mutate(INDIVIDUALS = factor(INDIVIDUALS, levels = unique(data$INDIVIDUALS)))
 
   # genind arguments common to all data.type
+
   ind <- data$INDIVIDUALS
   pop <- data$STRATA
-  data <-  dplyr::ungroup(data) %>%
+
+  data <- dplyr::ungroup(data) %>%
     dplyr::select(-c(INDIVIDUALS, STRATA))
+
   suppressWarnings(rownames(data) <- ind)
+
+  # Remove individuals and loci entirely missing ---------------------------------
+  data.matrix <- as.matrix(data)
+
+  all.na.ind <- rowSums(is.na(data.matrix)) == ncol(data.matrix)
+  all.na.loc <- colSums(is.na(data.matrix)) == nrow(data.matrix)
+
+  if (any(all.na.ind)) {
+    message(
+      "number of individuals missing at all loci and removed: ",
+      sum(all.na.ind)
+    )
+    data.matrix <- data.matrix[!all.na.ind, , drop = FALSE]
+    pop <- pop[!all.na.ind]
+    ind <- ind[!all.na.ind]
+    strata.genind <- strata.genind %>%
+      dplyr::filter(INDIVIDUALS %in% ind)
+
+    strata.genind$INDIVIDUALS <- factor(strata.genind$INDIVIDUALS, levels = ind)
+
+    strata.genind <- dplyr::arrange(strata.genind, INDIVIDUALS)
+
+    }
+
+  if (any(all.na.loc)) {
+    message(
+      "number of loci missing in all individuals and removed: ",
+      sum(all.na.loc)
+    )
+    data.matrix <- data.matrix[, !all.na.loc, drop = FALSE]
+  }
+
+  data <- tibble::as_tibble(data.matrix)
+  suppressWarnings(rownames(data) <- ind)
+
+   if (nrow(data) == 0L) rlang::abort("No individuals left after removing all-NA individuals")
+  if (ncol(data) == 0L) rlang::abort("No loci left after removing all-NA loci")
 
   # genind constructor
   prevcall <- match.call()

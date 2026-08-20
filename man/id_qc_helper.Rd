@@ -7,7 +7,7 @@
 id_qc_helper(
   x,
   x.sum,
-  stats.id = c("missing", "heterozygozygosity", "coverage"),
+  stats.id = c("missing", "heterozygosity", "coverage"),
   path.folder = NULL
 )
 }
